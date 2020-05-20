@@ -87,6 +87,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/seed/{seed_name}/dc").
 		Handler(r.createDC())
 
+	mux.Methods(http.MethodPut).
+		Path("/seed/{seed_name}/dc/{dc}").
+		Handler(r.updateDC())
+
 	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/dc").
 		Handler(r.listDCForProvider())
@@ -1361,6 +1365,33 @@ func (r Routing) createDC() http.Handler {
 		)(dc.CreateEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
 		dc.DecodeCreateDCReq,
 		setStatusCreatedHeader(encodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v1/seed/{seed_name}/dc/{dc} datacenter updateDC
+//
+//     Update a datacenter.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Datacenter
+//       401: empty
+//       403: empty
+func (r Routing) updateDC() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(dc.UpdateEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
+		dc.DecodeUpdateDCReq,
+		encodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

@@ -7369,6 +7369,73 @@
         }
       }
     },
+    "/api/v1/seed/{seed_name}/dc/{dc}": {
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "datacenter"
+        ],
+        "summary": "Update a datacenter.",
+        "operationId": "updateDC",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Seed",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                },
+                "spec": {
+                  "$ref": "#/definitions/DatacenterSpec"
+                }
+              }
+            }
+          },
+          {
+            "type": "string",
+            "x-go-name": "DCToUpdate",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datacenter",
+            "schema": {
+              "$ref": "#/definitions/Datacenter"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/upgrades/cluster": {
       "get": {
         "description": "Lists all versions which don't result in automatic updates",
