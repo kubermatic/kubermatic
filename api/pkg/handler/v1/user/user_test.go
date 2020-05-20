@@ -280,6 +280,7 @@ func TestDeleteUserFromProject(t *testing.T) {
 		HTTPStatus                   int
 		ExistingAPIUser              apiv1.User
 		ExistingKubermaticObjs       []runtime.Object
+		privilegedOperation          bool
 	}{
 		// scenario 1
 		{
@@ -399,6 +400,7 @@ func TestDeleteUserFromProject(t *testing.T) {
 			ExistingAPIUser:              *genAPIUser("admin", "admin@acme.com"),
 			ExpectedResponse:             `{}`,
 			ExpectedBindingIDAfterDelete: test.GenBinding("plan9-ID", "bob@acme.com", "viewers").Name,
+			privilegedOperation:          true,
 		},
 	}
 	for _, tc := range testcases {
@@ -420,7 +422,8 @@ func TestDeleteUserFromProject(t *testing.T) {
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
 
 			kubermaticFakeClient := clients.FakeKubermaticClient
-			{
+			// only when impersonated client is used
+			if !tc.privilegedOperation {
 				if len(tc.ExpectedBindingIDAfterDelete) > 0 {
 					actionWasValidated := false
 					for _, action := range kubermaticFakeClient.Actions() {
@@ -457,6 +460,7 @@ func TestEditUserInProject(t *testing.T) {
 		HTTPStatus                 int
 		ExistingAPIUser            apiv1.User
 		ExistingKubermaticObjs     []runtime.Object
+		privilegedOperation        bool
 	}{
 		// scenario 1
 		{
@@ -615,6 +619,7 @@ func TestEditUserInProject(t *testing.T) {
 				binding.Name = test.GenBinding("plan9-ID", "bob@acme.com", "viewers").Name
 				return binding
 			}(),
+			privilegedOperation: true,
 		},
 	}
 	for _, tc := range testcases {
@@ -636,7 +641,8 @@ func TestEditUserInProject(t *testing.T) {
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
 
 			kubermaticFakeClient := clients.FakeKubermaticClient
-			{
+			// only when impersonated client is used
+			if !tc.privilegedOperation {
 				if tc.ExpectedBindingAfterUpdate != nil {
 					actionWasValidated := false
 					for _, action := range kubermaticFakeClient.Actions() {
@@ -673,6 +679,7 @@ func TestAddUserToProject(t *testing.T) {
 		HTTPStatus                     int
 		ExistingAPIUser                apiv1.User
 		ExistingKubermaticObjs         []runtime.Object
+		privilegedOperation            bool
 	}{
 		{
 			Name:          "scenario 1: john the owner of the plan9 project invites bob to the project as an editor",
@@ -919,6 +926,7 @@ func TestAddUserToProject(t *testing.T) {
 					ProjectID: "plan9-ID",
 				},
 			},
+			privilegedOperation: true,
 		},
 	}
 
@@ -941,7 +949,8 @@ func TestAddUserToProject(t *testing.T) {
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
 
 			kubermaticFakeClient := clients.FakeKubermaticClient
-			{
+			// only when impersonated client is used
+			if !tc.privilegedOperation {
 				if tc.ExpectedBindingAfterInvitation != nil {
 					actionWasValidated := false
 					for _, action := range kubermaticFakeClient.Actions() {
