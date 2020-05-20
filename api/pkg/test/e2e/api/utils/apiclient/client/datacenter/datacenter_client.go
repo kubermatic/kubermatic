@@ -25,6 +25,8 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInfoWriter) (*CreateDCCreated, error)
+
 	GetDCForProvider(params *GetDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForProviderOK, error)
 
 	GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter) (*GetDatacenterOK, error)
@@ -34,6 +36,40 @@ type ClientService interface {
 	ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter) (*ListDatacentersOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  CreateDC creates a datacenter for a specified seed
+*/
+func (a *Client) CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInfoWriter) (*CreateDCCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateDCParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "createDC",
+		Method:             "POST",
+		PathPattern:        "/api/v1/seed/{seed_name}/dc",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateDCReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateDCCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateDCDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
