@@ -133,7 +133,7 @@ presubmits:
           - 1.1.1.1 # Cloudflare DNS servers
           - 1.0.0.1
       containers:
-        - image: quay.io/kubermatic/e2e-kind:v1.0.15
+        - image: quay.io/kubermatic/e2e-kind:v1.0.13
           imagePullPolicy: Always
           command:
             - "./api/hack/ci/ci_run_api_e2e.sh"
