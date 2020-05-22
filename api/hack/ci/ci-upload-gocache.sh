@@ -21,28 +21,32 @@ export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 export CGO_ENABLED=0
 cd $(dirname $0)/../..
 
-echodate "Building binaries"
-TEST_NAME="Build Kubermatic"
-retry 2 make build
-(
-  TEST_NAME="Building Nodeport proxy"
-  cd cmd/nodeport-proxy
-  retry 2 make build
-)
-(
-  TEST_NAME="Building kubeletdnat controller"
-  cd cmd/kubeletdnat-controller
-  retry 2 make build
-)
+for editionTag in ee ce; do
+  edition="${editionTag^^}"
+  export KUBERMATIC_EDITION="$editionTag"
 
-echodate "Building tests"
-TEST_NAME="Build tests"
+  TEST_NAME="Build Kubermatic ($edition)"
+  echodate "Building $edition binaries"
 
-for edition in ee ce; do
-  retry 2 go test -tags "cloud $edition" ./... -run nope
-  retry 2 go test -tags "create $edition" ./... -run nope
-  retry 2 go test -tags "e2e $edition" ./... -run nope
-  retry 2 go test -tags "integration $edition" ./... -run nope
+  retry 2 make build
+  (
+    TEST_NAME="Building Nodeport proxy"
+    cd cmd/nodeport-proxy
+    retry 2 make build
+  )
+  (
+    TEST_NAME="Building kubeletdnat controller"
+    cd cmd/kubeletdnat-controller
+    retry 2 make build
+  )
+
+  TEST_NAME="Build tests ($edition)"
+  echodate "Building $edition tests"
+
+  retry 2 go test ./... -run nope -tags "cloud,$editionTag"
+  retry 2 go test ./... -run nope -tags "create,$editionTag"
+  retry 2 go test ./... -run nope -tags "e2e,$editionTag"
+  retry 2 go test ./... -run nope -tags "integration,$editionTag"
 done
 
 echodate "Creating gocache archive"
