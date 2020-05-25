@@ -14,7 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
-	listers "k8s.io/client-go/listers/core/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCreateToken(t *testing.T) {
@@ -47,20 +48,19 @@ func TestCreateToken(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			impersonationClient, _, indexer, err := createFakeKubernetesClients([]runtime.Object{})
+			impersonationClient, _, _, err := createFakeKubernetesClients([]runtime.Object{})
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
-
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, []runtime.Object{}...)
 			tokenGenerator := &fakeJWTTokenGenerator{}
 			token, err := tokenGenerator.Generate(serviceaccount.Claims(tc.saEmail, tc.projectToSync, tc.tokenID))
 			if err != nil {
 				t.Fatalf("unable to generate token, err = %v", err)
 			}
-			tokenLister := listers.NewSecretLister(indexer)
 
 			// act
-			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
+			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -143,15 +143,14 @@ func TestListTokens(t *testing.T) {
 				kubeObjects = append(kubeObjects, secret)
 			}
 
-			impersonationClient, _, indexer, err := createFakeKubernetesClients(kubeObjects)
+			impersonationClient, _, _, err := createFakeKubernetesClients(kubeObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
-
-			tokenLister := listers.NewSecretLister(indexer)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubeObjects...)
 
 			// act
-			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
+			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -214,15 +213,14 @@ func TestGetToken(t *testing.T) {
 				kubeObjects = append(kubeObjects, secret)
 			}
 
-			impersonationClient, _, indexer, err := createFakeKubernetesClients(kubeObjects)
+			impersonationClient, _, _, err := createFakeKubernetesClients(kubeObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
-
-			tokenLister := listers.NewSecretLister(indexer)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubeObjects...)
 
 			// act
-			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
+			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -281,15 +279,14 @@ func TestUpdateToken(t *testing.T) {
 				kubeObjects = append(kubeObjects, secret)
 			}
 
-			impersonationClient, _, indexer, err := createFakeKubernetesClients(kubeObjects)
+			impersonationClient, _, _, err := createFakeKubernetesClients(kubeObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
-
-			tokenLister := listers.NewSecretLister(indexer)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubeObjects...)
 
 			// act
-			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
+			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -349,15 +346,14 @@ func TestDeleteToken(t *testing.T) {
 				kubeObjects = append(kubeObjects, secret)
 			}
 
-			impersonationClient, _, indexer, err := createFakeKubernetesClients(kubeObjects)
+			impersonationClient, _, _, err := createFakeKubernetesClients(kubeObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
-
-			tokenLister := listers.NewSecretLister(indexer)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubeObjects...)
 
 			// act
-			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, tokenLister)
+			target, err := kubernetes.NewServiceAccountTokenProvider(impersonationClient.CreateKubernetesFakeImpersonatedClientSet, fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}

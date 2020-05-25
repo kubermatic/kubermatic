@@ -1,6 +1,7 @@
 package serviceaccount_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,8 +14,10 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestCreateTokenProject(t *testing.T) {
@@ -682,6 +685,7 @@ func TestDeleteToken(t *testing.T) {
 		httpStatus             int
 		existingAPIUser        apiv1.User
 		expectedResponse       string
+		privilegedOperation    bool
 	}{
 		{
 			name:       "scenario 1: delete token",
@@ -728,11 +732,12 @@ func TestDeleteToken(t *testing.T) {
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-3", "3"),
 				test.GenDefaultSaToken("plan11-ID", "serviceaccount-3", "test-4", "4"),
 			},
-			existingAPIUser:  *test.GenAPIUser("bob", "bob@acme.com"),
-			projectToSync:    "plan9-ID",
-			saToSync:         "1",
-			tokenToDelete:    "sa-token-3",
-			expectedResponse: "{}",
+			existingAPIUser:     *test.GenAPIUser("bob", "bob@acme.com"),
+			projectToSync:       "plan9-ID",
+			saToSync:            "1",
+			tokenToDelete:       "sa-token-3",
+			expectedResponse:    "{}",
+			privilegedOperation: true,
 		},
 	}
 
@@ -758,9 +763,16 @@ func TestDeleteToken(t *testing.T) {
 
 			test.CompareWithResult(t, res, tc.expectedResponse)
 
-			if _, err := clientset.FakeKubernetesCoreClient.CoreV1().Secrets("kubermatic").Get(tc.tokenToDelete, metav1.GetOptions{}); err == nil {
+			expectedToken := &corev1.Secret{}
+			if tc.privilegedOperation {
+				err = clientset.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: tc.tokenToDelete, Namespace: "kubermatic"}, expectedToken)
+			} else {
+				_, err = clientset.FakeKubermaticClient.KubermaticV1().Users().Get(tc.tokenToDelete, metav1.GetOptions{})
+			}
+			if err == nil {
 				t.Fatalf("failed to delete token %s", tc.tokenToDelete)
 			}
+
 		})
 	}
 }
