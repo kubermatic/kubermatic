@@ -48,6 +48,7 @@ const (
 --hostname-override={{ .Hostname }} \
 {{- end }}
 --read-only-port=0 \
+--dynamic-config-dir /etc/kubernetes/dynamic-config-dir \
 --exit-on-lock-contention \
 --lock-file=/tmp/kubelet.lock \
 --anonymous-auth=false \
