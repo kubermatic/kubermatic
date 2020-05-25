@@ -8,7 +8,7 @@ grafana:
     tag: 6.7.1
   utilImage:
     repository: quay.io/kubermatic/util
-    tag: 1.3.2
+    tag: 1.3.4
   pluginImage:
     repository: quay.io/kubermatic/grafana-plugins
     tag: 1.0.0

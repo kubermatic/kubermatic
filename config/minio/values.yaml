@@ -19,7 +19,7 @@ minio:
     enabled: true
     image:
       repository: quay.io/kubermatic/util
-      tag: 1.3.2
+      tag: 1.3.4
 
   # If your cluster does not have a default storage class,
   # you can specify the class to use for Minio. Note that
