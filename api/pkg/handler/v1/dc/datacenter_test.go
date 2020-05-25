@@ -574,3 +574,67 @@ func TestDatacenterUpdateEndpoint(t *testing.T) {
 		})
 	}
 }
+
+func TestDatacenterDeleteEndpoint(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name             string
+		dcName           string
+		seedName         string
+		expectedResponse string
+		httpStatus       int
+		existingAPIUser  *apiv1.User
+	}{
+		{
+			name:             "admin should be able to delete dc",
+			dcName:           "private-do1",
+			seedName:         "us-central1",
+			expectedResponse: `{}`,
+			httpStatus:       200,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name:             "non-admin should not be able to delete dc",
+			dcName:           "private-do1",
+			seedName:         "us-central1",
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
+			httpStatus:       403,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "should receive error when deleting non-existing dc",
+			dcName:           "idontexist",
+			seedName:         "us-central1",
+			expectedResponse: `{"error":{"code":400,"message":"Bad request: datacenter \"idontexist\" does not exists"}}`,
+			httpStatus:       400,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name:             "should receive error when deleting dc in non-existing seed",
+			dcName:           "private-do1",
+			seedName:         "idontexist",
+			expectedResponse: `{"error":{"code":400,"message":"Bad request: seed \"idontexist\" does not exist"}}`,
+			httpStatus:       400,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE",
+				fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seedName, tc.dcName), nil)
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []runtime.Object{},
+				[]runtime.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser), test.GenTestSeed()}, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected route to return code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
