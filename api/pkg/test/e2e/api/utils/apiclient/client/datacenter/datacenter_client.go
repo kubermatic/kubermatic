@@ -27,6 +27,8 @@ type Client struct {
 type ClientService interface {
 	CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInfoWriter) (*CreateDCCreated, error)
 
+	DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteDCOK, error)
+
 	GetDCForProvider(params *GetDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForProviderOK, error)
 
 	GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter) (*GetDatacenterOK, error)
@@ -71,6 +73,40 @@ func (a *Client) CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInf
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateDCDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteDC deletes a datacenter
+*/
+func (a *Client) DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteDCOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteDCParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteDC",
+		Method:             "DELETE",
+		PathPattern:        "/api/v1/seed/{seed_name}/dc/{dc}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteDCReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteDCOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteDCDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

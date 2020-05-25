@@ -91,6 +91,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/seed/{seed_name}/dc/{dc}").
 		Handler(r.updateDC())
 
+	mux.Methods(http.MethodDelete).
+		Path("/seed/{seed_name}/dc/{dc}").
+		Handler(r.deleteDC())
+
 	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/dc").
 		Handler(r.listDCForProvider())
@@ -1391,6 +1395,30 @@ func (r Routing) updateDC() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.UpdateEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
 		dc.DecodeUpdateDCReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v1/seed/{seed_name}/dc/{dc} datacenter deleteDC
+//
+//     Delete a datacenter.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteDC() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(dc.DeleteEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
+		dc.DecodeDeleteDCReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

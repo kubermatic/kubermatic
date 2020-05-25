@@ -390,6 +390,51 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 	}
 }
 
+// DeleteEndpoint an HTTP endpoint that deletes a specified apiv1.Datacenter
+func DeleteEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
+	seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(deleteDCReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		if err := validateUser(ctx, userInfoGetter); err != nil {
+			return nil, err
+		}
+
+		// Get the seed in which the dc should be deleted
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
+		seed, ok := seeds[req.Seed]
+		if !ok {
+			return nil, errors.New(http.StatusBadRequest,
+				fmt.Sprintf("Bad request: seed %q does not exist", req.Seed))
+		}
+
+		// get the dc to delete
+		if _, ok := seed.Spec.Datacenters[req.DC]; !ok {
+			return nil, errors.New(http.StatusBadRequest,
+				fmt.Sprintf("Bad request: datacenter %q does not exists", req.DC))
+		}
+		delete(seed.Spec.Datacenters, req.DC)
+
+		seedClient, err := seedsClientGetter(seed)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get seed client: %v", err))
+		}
+
+		if err = seedClient.Update(ctx, seed); err != nil {
+			return nil, errors.New(http.StatusInternalServerError,
+				fmt.Sprintf("failed to delete seed %q datacenter %q: %v", seed.Name, req.DC, err))
+		}
+
+		return nil, nil
+	}
+}
+
 func validateUser(ctx context.Context, userInfoGetter provider.UserInfoGetter) error {
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
@@ -580,7 +625,7 @@ func DecodeUpdateDCReq(c context.Context, r *http.Request) (interface{}, error) 
 	req.createDCReq = createReq.(createDCReq)
 
 	req.DCToUpdate = mux.Vars(r)["dc"]
-	if req.Seed == "" {
+	if req.DCToUpdate == "" {
 		return nil, fmt.Errorf("'dc' parameter is required but was not provided")
 	}
 
@@ -628,4 +673,32 @@ func validateProvider(dcSpec *apiv1.DatacenterSpec) error {
 		return fmt.Errorf("one DC provider should be specified, got: %v", providerNames)
 	}
 	return nil
+}
+
+// deleteDCReq defines HTTP request for DeleteDC
+// swagger:parameters deleteDC
+type deleteDCReq struct {
+	// in: path
+	// required: true
+	Seed string `json:"seed_name"`
+	// in: path
+	// required: true
+	DC string `json:"dc"`
+}
+
+// DecodeDeleteDCReq decodes http request into deleteDCReq
+func DecodeDeleteDCReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req deleteDCReq
+
+	req.Seed = mux.Vars(r)["seed_name"]
+	if req.Seed == "" {
+		return nil, fmt.Errorf("'seed_name' parameter is required but was not provided")
+	}
+
+	req.DC = mux.Vars(r)["dc"]
+	if req.DC == "" {
+		return nil, fmt.Errorf("'dc' parameter is required but was not provided")
+	}
+
+	return req, nil
 }
