@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -12,9 +13,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/kubernetes"
-	kubev1 "k8s.io/client-go/listers/core/v1"
-	"k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -23,16 +22,11 @@ const (
 )
 
 // NewServiceAccountProvider returns a service account provider
-func NewServiceAccountTokenProvider(kubernetesImpersonationClient kubernetesImpersonationClient, secretLister kubev1.SecretLister) (*ServiceAccountTokenProvider, error) {
-	kubernetesClient, err := kubernetesImpersonationClient(rest.ImpersonationConfig{})
-	if err != nil {
-		return nil, err
-	}
+func NewServiceAccountTokenProvider(kubernetesImpersonationClient kubernetesImpersonationClient, clientPrivileged ctrlruntimeclient.Client) (*ServiceAccountTokenProvider, error) {
 
 	return &ServiceAccountTokenProvider{
 		kubernetesImpersonationClient: kubernetesImpersonationClient,
-		secretLister:                  secretLister,
-		kubernetesClientPrivileged:    kubernetesClient,
+		kubernetesClientPrivileged:    clientPrivileged,
 	}, nil
 }
 
@@ -41,10 +35,7 @@ type ServiceAccountTokenProvider struct {
 	// kubernetesImpersonationClient is used as a ground for impersonation
 	kubernetesImpersonationClient kubernetesImpersonationClient
 
-	secretLister kubev1.SecretLister
-
-	// treat kubernetesClientPrivileged as a privileged user and use wisely
-	kubernetesClientPrivileged kubernetes.Interface
+	kubernetesClientPrivileged ctrlruntimeclient.Client
 }
 
 // Create creates a new token for service account
@@ -81,18 +72,13 @@ func (p *ServiceAccountTokenProvider) CreateUnsecured(sa *kubermaticv1.User, pro
 	}
 
 	secret := genToken(sa, projectID, tokenName, tokenID, token)
+	secret.Namespace = resources.KubermaticNamespace
 
-	kubernetesImpersonatedClient, err := p.kubernetesImpersonationClient(rest.ImpersonationConfig{})
-	if err != nil {
-		return nil, kerrors.NewInternalError(err)
-	}
-
-	createdToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Create(secret)
-	if err != nil {
+	if err := p.kubernetesClientPrivileged.Create(context.Background(), secret); err != nil {
 		return nil, err
 	}
-	createdToken.Name = removeTokenPrefix(createdToken.Name)
-	return createdToken, nil
+	secret.Name = removeTokenPrefix(secret.Name)
+	return secret, nil
 }
 
 func genToken(sa *kubermaticv1.User, projectID, tokenName, tokenID, token string) *v1.Secret {
@@ -131,18 +117,15 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 		options = &provider.ServiceAccountTokenListOptions{}
 	}
 
-	labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", kubermaticv1.ProjectIDLabelKey, project.Name))
-	if err != nil {
-		return nil, err
-	}
-	allSecrets, err := p.secretLister.List(labelSelector)
-	if err != nil {
+	allSecrets := &v1.SecretList{}
+	if err := p.kubernetesClientPrivileged.List(context.Background(), allSecrets, ctrlruntimeclient.MatchingLabels{kubermaticv1.ProjectIDLabelKey: project.Name}); err != nil {
+
 		return nil, err
 	}
 
 	resultList := make([]*v1.Secret, 0)
-	for _, secret := range allSecrets {
-		if isToken(secret) {
+	for _, secret := range allSecrets.Items {
+		if isToken(&secret) {
 			for _, owner := range secret.GetOwnerReferences() {
 				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.UserKindName &&
 					owner.Name == sa.Name && owner.UID == sa.UID {
@@ -201,13 +184,14 @@ func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAcc
 			labelSelector = options.LabelSelector
 		}
 	}
-	allSecrets, err := p.secretLister.List(labelSelector)
-	if err != nil {
+	allSecrets := &v1.SecretList{}
+	if err := p.kubernetesClientPrivileged.List(context.Background(), allSecrets, ctrlruntimeclient.MatchingLabelsSelector{Selector: labelSelector}); err != nil {
+
 		return nil, err
 	}
 	allTokens := []*v1.Secret{}
-	for _, secret := range allSecrets {
-		if isToken(secret) {
+	for _, secret := range allSecrets.Items {
+		if isToken(&secret) {
 			sCpy := secret.DeepCopy()
 			sCpy.Name = removeTokenPrefix(sCpy.Name)
 			allTokens = append(allTokens, sCpy)
@@ -281,13 +265,8 @@ func (p *ServiceAccountTokenProvider) GetUnsecured(name string) (*v1.Secret, err
 	}
 	name = addTokenPrefix(name)
 
-	kubernetesImpersonatedClient, err := p.kubernetesImpersonationClient(rest.ImpersonationConfig{})
-	if err != nil {
-		return nil, kerrors.NewInternalError(err)
-	}
-
-	token, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Get(name, metav1.GetOptions{})
-	if err != nil {
+	token := &v1.Secret{}
+	if err := p.kubernetesClientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Namespace: resources.KubermaticNamespace, Name: name}, token); err != nil {
 		return nil, err
 	}
 	token.Name = removeTokenPrefix(token.Name)
@@ -326,20 +305,16 @@ func (p *ServiceAccountTokenProvider) UpdateUnsecured(secret *v1.Secret) (*v1.Se
 	if secret == nil {
 		return nil, kerrors.NewBadRequest("secret cannot be empty")
 	}
-	secretCpy := *secret
+	secretCpy := secret.DeepCopy()
 	secretCpy.Name = addTokenPrefix(secretCpy.Name)
+	secretCpy.Namespace = resources.KubermaticNamespace
 
-	kubernetesImpersonatedClient, err := p.kubernetesImpersonationClient(rest.ImpersonationConfig{})
-	if err != nil {
-		return nil, kerrors.NewInternalError(err)
-	}
-
-	updatedToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Update(&secretCpy)
-	if err != nil {
+	if err := p.kubernetesClientPrivileged.Update(context.Background(), secretCpy); err != nil {
 		return nil, err
 	}
-	updatedToken.Name = removeTokenPrefix(updatedToken.Name)
-	return updatedToken, nil
+
+	secretCpy.Name = removeTokenPrefix(secretCpy.Name)
+	return secretCpy, nil
 }
 
 // Delete method deletes given token
@@ -368,12 +343,13 @@ func (p *ServiceAccountTokenProvider) DeleteUnsecured(name string) error {
 		return kerrors.NewBadRequest("token name cannot be empty")
 	}
 	name = addTokenPrefix(name)
-
-	kubernetesImpersonatedClient, err := p.kubernetesImpersonationClient(rest.ImpersonationConfig{})
-	if err != nil {
-		return kerrors.NewInternalError(err)
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: resources.KubermaticNamespace,
+		},
 	}
-	return kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Delete(name, &metav1.DeleteOptions{})
+	return p.kubernetesClientPrivileged.Delete(context.Background(), secret)
 }
 
 // removeTokenPrefix removes "sa-token-" from a token's ID

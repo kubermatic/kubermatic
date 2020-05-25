@@ -3,14 +3,15 @@ package kubernetes_test
 import (
 	"testing"
 
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-	"k8s.io/apimachinery/pkg/util/diff"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
+	"k8s.io/client-go/kubernetes/scheme"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCreateServiceAccount(t *testing.T) {
@@ -42,15 +43,14 @@ func TestCreateServiceAccount(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
+			impersonationClient, _, _, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
-
-			saLister := kubermaticv1lister.NewUserLister(indexer)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
 
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, saLister, "localhost")
+			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, "localhost")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -115,13 +115,13 @@ func TestList(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
+			impersonationClient, _, _, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
-			saLister := kubermaticv1lister.NewUserLister(indexer)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, saLister, "localhost")
+			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, "localhost")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -165,13 +165,13 @@ func TestGet(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
+			impersonationClient, _, _, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
-			saLister := kubermaticv1lister.NewUserLister(indexer)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, saLister, "localhost")
+			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, "localhost")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -217,13 +217,13 @@ func TestUpdate(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
+			impersonationClient, _, _, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
-			saLister := kubermaticv1lister.NewUserLister(indexer)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, saLister, "localhost")
+			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, "localhost")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -269,13 +269,13 @@ func TestDelete(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
+			impersonationClient, _, _, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
 			if err != nil {
 				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
-			saLister := kubermaticv1lister.NewUserLister(indexer)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, saLister, "localhost")
+			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, "localhost")
 			if err != nil {
 				t.Fatal(err)
 			}
