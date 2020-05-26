@@ -49,6 +49,7 @@ const (
 var (
 	DefaultAccessibleAddons = []string{
 		"node-exporter",
+		"gatekeeper",
 	}
 
 	DefaultUIResources = corev1.ResourceRequirements{
