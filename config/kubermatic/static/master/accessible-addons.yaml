@@ -2,3 +2,4 @@
 
 addons:
 - node-exporter
+- gatekeeper
