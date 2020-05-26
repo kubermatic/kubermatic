@@ -114,6 +114,11 @@ hostname: {{ .MachineSpec.Name }}
 {{- /* Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name */}}
 {{ end }}
 
+{{- if .OSConfig.DistUpgradeOnBoot }}
+package_upgrade: true
+package_reboot_if_required: true
+{{- end }}
+
 ssh_pwauth: no
 
 {{- if .ProviderSpec.SSHPublicKeys }}
@@ -241,36 +246,32 @@ write_files:
     mv /etc/fstab.noswap /etc/fstab
     swapoff -a
 
-    export CR_PKG='docker-ce=5:18.09.9~3-0~ubuntu-bionic'
+{{- /* We need to explicitly specify docker-ce and docker-ce-cli to the same version.
+	See: https://github.com/docker/cli/issues/2533 */}}
 
+    DOCKER_VERSION='5:18.09.9~3-0~ubuntu-bionic'
     DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
       curl \
       ca-certificates \
-      ceph-common \
-      cifs-utils \
       conntrack \
       e2fsprogs \
       ebtables \
       ethtool \
-      glusterfs-client \
       iptables \
       jq \
       kmod \
       openssh-client \
-      nfs-common \
       socat \
       util-linux \
-      ${CR_PKG} \
-      ipvsadm{{ if eq .CloudProviderName "vsphere" }} \
-      open-vm-tools{{ end }}
+      docker-ce="${DOCKER_VERSION}" \
+      docker-ce-cli="${DOCKER_VERSION}" \
+      {{- if eq .CloudProviderName "vsphere" }}
+      open-vm-tools \
+      {{- end }}
+      ipvsadm
 
 {{- /* If something failed during package installation but docker got installed, we need to put it on hold */}}
-    apt-mark hold docker.io || true
-    apt-mark hold docker-ce || true
-
-    {{- if .OSConfig.DistUpgradeOnBoot }}
-    DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade -y
-    {{- end }}
+    apt-mark hold docker-ce docker-ce-cli || true
 
     # Update grub to include kernel command options to enable swap accounting.
     # Exclude alibaba cloud until this is fixed https://github.com/kubermatic/machine-controller/issues/682
@@ -282,11 +283,8 @@ write_files:
       touch /var/run/reboot-required
     fi
     {{ end }}
-    if [[ -e /var/run/reboot-required ]]; then
-      reboot
-    fi
 
-{{ downloadBinariesScript .KubeletVersion true | indent 4 }}
+{{ safeDownloadBinariesScript .KubeletVersion | indent 4 }}
 
     systemctl enable --now docker
     systemctl enable --now kubelet

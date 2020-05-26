@@ -374,4 +374,4 @@ storage:
         inline: |
           #!/bin/bash
           set -xeuo pipefail
-{{ downloadBinariesScript .KubeletVersion false | indent 10 }}`
+{{ safeDownloadBinariesScript .KubeletVersion | indent 10 }}`

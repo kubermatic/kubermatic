@@ -162,7 +162,7 @@ write_files:
     SELINUXTYPE=targeted
 
 - path: "/opt/bin/setup"
-  permissions: "0777"
+  permissions: "0755"
   content: |
     #!/bin/bash
     set -xeuo pipefail
@@ -187,24 +187,28 @@ write_files:
     subscription-manager clean
     subscription-manager register --username='{{.OSConfig.RHELSubscriptionManagerUser}}' --password='{{.OSConfig.RHELSubscriptionManagerPassword}}'
     subscription-manager attach --auto
-    yum clean all
-    yum repolist
 
-    yum config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
+    dnf config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
 
-    yum install -y docker-ce-18.09.1-3.el7 \
+    DOCKER_VERSION='18.09.1-3.el7'
+    dnf install -y docker-ce-${DOCKER_VERSION} \
+      docker-ce-cli-${DOCKER_VERSION} \
       ebtables \
       ethtool \
-      nfs-utils \
       bash-completion \
       sudo \
       socat \
       wget \
       curl \
-      ipvsadm{{ if eq .CloudProviderName "vsphere" }} \
-      open-vm-tools{{ end }}
+      python3-dnf-plugin-versionlock \
+      {{- if eq .CloudProviderName "vsphere" }}
+      open-vm-tools \
+      {{- end }}
+      ipvsadm
+    dnf versionlock add docker-ce docker-ce-cli
+    dnf clean all
 
-{{ downloadBinariesScript .KubeletVersion true | indent 4 }}
+{{ safeDownloadBinariesScript .KubeletVersion | indent 4 }}
 
     {{- if eq .CloudProviderName "vsphere" }}
     systemctl enable --now vmtoolsd.service
