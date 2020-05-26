@@ -32,7 +32,7 @@ mkdir -p /opt/cni/bin
 
 {{- /* # cni */}}
 if [ ! -f /opt/cni/bin/loopback ]; then
-    curl -L https://github.com/containernetworking/plugins/releases/download/v0.8.2/cni-plugins-linux-amd64-v0.8.2.tgz | tar -xvzC /opt/cni/bin -f -
+    curl -L https://github.com/containernetworking/plugins/releases/download/v0.8.6/cni-plugins-linux-amd64-v0.8.6.tgz | tar -xvzC /opt/cni/bin -f -
 fi
 
 {{- if .DownloadKubelet }}
