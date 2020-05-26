@@ -966,7 +966,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			RewriteClusterID:       true,
 			HTTPStatus:             http.StatusCreated,
 			ProjectToSync:          test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultSettings()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 6
@@ -977,7 +977,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			RewriteClusterID:       true,
 			HTTPStatus:             http.StatusCreated,
 			ProjectToSync:          test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultSettings()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 7
@@ -987,7 +987,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			ExpectedResponse:       `{"error":{"code":400,"message":"invalid credentials: missing preset 'default' for the user 'bob@acme.com'"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectToSync:          test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultSettings()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -996,7 +996,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			ExpectedResponse:       `{"error":{"code":400,"message":"openshift clusters must be configured with an imagePullSecret"}}`,
 			HTTPStatus:             http.StatusBadRequest,
 			ProjectToSync:          test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultSettings()),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
