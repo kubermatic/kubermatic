@@ -1432,3 +1432,4 @@ com/cbeneke))
 
 - Added alerts for kubermatic master components being down [#1031](https://github.com/kubermatic/kubermatic/issues/1031) ([metalmatze](https://github.com/metalmatze))
 - Massive amount of general improvements to alerting
+foo
