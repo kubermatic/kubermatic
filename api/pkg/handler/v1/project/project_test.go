@@ -458,8 +458,11 @@ func TestListProjectMethod(t *testing.T) {
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.ExistingKubermaticObjects...)
 			kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 
-			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
+			fakeKubermaticImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
 				return kubermaticClient.KubermaticV1(), nil
+			}
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return fakeClient, nil
 			}
 			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
 			userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount)
@@ -473,7 +476,7 @@ func TestListProjectMethod(t *testing.T) {
 			kubernetesClient := fakerestclient.NewSimpleClientset([]runtime.Object{}...)
 			clusterProvider := kubernetes.NewClusterProvider(
 				&restclient.Config{},
-				fakeImpersonationClient,
+				fakeKubermaticImpersonationClient,
 				fUserClusterConnection,
 				"",
 				rbac.ExtractGroupPrefix,

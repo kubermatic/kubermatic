@@ -86,7 +86,7 @@ func TestCreateCluster(t *testing.T) {
 			}
 
 			// act
-			target := kubernetes.NewClusterProvider(&restclient.Config{}, impersonationClient.CreateFakeImpersonatedClientSet, nil, tc.workerName, nil, nil, nil, tc.shareKubeconfig)
+			target := kubernetes.NewClusterProvider(&restclient.Config{}, impersonationClient.CreateFakeKubermaticImpersonatedClientSet, nil, tc.workerName, nil, nil, nil, tc.shareKubeconfig)
 			partialCluster := &kubermaticv1.Cluster{}
 			partialCluster.Spec = *tc.spec
 			if tc.clusterType == "openshift" {
