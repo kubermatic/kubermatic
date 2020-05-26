@@ -18,7 +18,6 @@ package kubernetes
 
 import (
 	"fmt"
-	"k8s.io/apimachinery/pkg/watch"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
 	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
@@ -28,6 +27,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
 // UserProvider manages user resources
@@ -78,7 +78,7 @@ func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.Kubermat
 				Enforced: false,
 			},
 			DefaultNodeCount:      10,
-			ClusterTypeOptions:    kubermaticv1.ClusterTypeAll,
+			ClusterTypeOptions:    kubermaticv1.ClusterTypeKubernetes,
 			DisplayDemoInfo:       false,
 			DisplayAPIDocs:        false,
 			DisplayTermsOfService: false,
