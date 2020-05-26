@@ -917,3 +917,25 @@ func GenDefaultPreset() *kubermaticv1.Preset {
 		},
 	}
 }
+
+func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
+	return &kubermaticv1.KubermaticSetting{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kubermaticv1.GlobalSettingsName,
+		},
+		Spec: kubermaticv1.SettingSpec{
+			CustomLinks: []kubermaticv1.CustomLink{},
+			CleanupOptions: kubermaticv1.CleanupOptions{
+				Enabled:  false,
+				Enforced: false,
+			},
+			DefaultNodeCount:      10,
+			ClusterTypeOptions:    kubermaticv1.ClusterTypeAll,
+			DisplayDemoInfo:       false,
+			DisplayAPIDocs:        false,
+			DisplayTermsOfService: false,
+			EnableDashboard:       true,
+			EnableOIDCKubeconfig:  false,
+		},
+	}
+}
