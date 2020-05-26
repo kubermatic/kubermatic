@@ -162,7 +162,7 @@ write_files:
     SELINUXTYPE=targeted
 
 - path: "/opt/bin/setup"
-  permissions: "0777"
+  permissions: "0755"
   content: |
     #!/bin/bash
     set -xeuo pipefail
@@ -187,19 +187,27 @@ write_files:
     yum install -y yum-utils
     yum-config-manager --add-repo=https://download.docker.com/linux/centos/docker-ce.repo
 
-    yum install -y docker-ce-18.09.9-3.el7 \
+{{- /* We need to explicitly specify docker-ce and docker-ce-cli to the same version.
+	See: https://github.com/docker/cli/issues/2533 */}}
+
+    DOCKER_VERSION='18.09.9-3.el7'
+    yum install -y docker-ce-${DOCKER_VERSION} \
+      docker-ce-cli-${DOCKER_VERSION} \
       ebtables \
       ethtool \
-      nfs-utils \
       bash-completion \
       sudo \
       socat \
       wget \
       curl \
-      ipvsadm{{ if eq .CloudProviderName "vsphere" }} \
-      open-vm-tools{{ end }}
+      yum-plugin-versionlock \
+      {{- if eq .CloudProviderName "vsphere" }}
+      open-vm-tools \
+      {{- end }}
+      ipvsadm
+    yum versionlock docker-ce-*
 
-{{ downloadBinariesScript .KubeletVersion true | indent 4 }}
+{{ safeDownloadBinariesScript .KubeletVersion | indent 4 }}
 
     {{- if eq .CloudProviderName "vsphere" }}
     systemctl enable --now vmtoolsd.service
