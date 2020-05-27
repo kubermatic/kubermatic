@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-test/deep"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler/api"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
@@ -137,7 +138,7 @@ func TestReconcile(t *testing.T) {
 					Name: requestName,
 				},
 			},
-			expectedErr: `failed to apply distribution label: Could not detect distribution from image name ""`,
+			expectedErr: `failed to apply distribution label: could not detect distribution from image name ""`,
 		},
 	}
 
@@ -181,5 +182,33 @@ func TestReconcile(t *testing.T) {
 				t.Errorf("node doesn't have expected labels, diff: %v", diff)
 			}
 		})
+	}
+}
+
+func TestMatchOSLabels(t *testing.T) {
+	tests := []struct {
+		osImage  string
+		expected string
+	}{
+		{
+			osImage:  "container linux",
+			expected: api.ContainerLinuxLabelValue,
+		},
+		{
+			osImage:  "flatcar container linux",
+			expected: api.FlatcarLabelValue,
+		},
+	}
+
+	for n, test := range tests {
+		// go map iterations are randomized, so we just hammer out the entropy
+		// by running the same test a gazillion times
+		for i := 0; i < 1000; i++ {
+			result := findDistributionLabel(test.osImage)
+
+			if result != test.expected {
+				t.Fatalf("Test case %d: expected label %q, but got %q.", n+1, test.expected, result)
+			}
+		}
 	}
 }
