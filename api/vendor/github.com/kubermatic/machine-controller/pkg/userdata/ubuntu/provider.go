@@ -236,6 +236,7 @@ write_files:
     swapoff -a
 
     export CR_PKG='docker-ce=5:18.09.2~3-0~ubuntu-bionic'
+    export CR_CLI_PKG='docker-ce-cli=5:18.09.2~3-0~ubuntu-bionic'
 
     DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y \
       curl \
@@ -255,12 +256,14 @@ write_files:
       socat \
       util-linux \
       ${CR_PKG} \
+      ${CR_CLI_PKG} \
       ipvsadm{{ if eq .CloudProviderName "vsphere" }} \
       open-vm-tools{{ end }}
 
 {{- /* If something failed during package installation but docker got installed, we need to put it on hold */}}
     apt-mark hold docker.io || true
     apt-mark hold docker-ce || true
+    apt-mark hold docker-ce-cli || true
 
     {{- if .OSConfig.DistUpgradeOnBoot }}
     DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" dist-upgrade -y
