@@ -114,6 +114,11 @@ hostname: {{ .MachineSpec.Name }}
 {{- /* Never set the hostname on AWS nodes. Kubernetes(kube-proxy) requires the hostname to be the private dns name */}}
 {{ end }}
 
+{{- if .OSConfig.DistUpgradeOnBoot }}
+package_upgrade: true
+package_reboot_if_required: true
+{{- end }}
+
 ssh_pwauth: no
 
 {{- if .ProviderSpec.SSHPublicKeys }}
@@ -159,21 +164,17 @@ write_files:
     mv /etc/fstab.noswap /etc/fstab
     swapoff -a
 
-    zypper --non-interactive --quiet --color install ebtables \
-      ceph-common \
+    zypper --non-interactive --quiet --color install \
+      ebtables \
       e2fsprogs \
       jq \
       socat \
-      ipvsadm{{ if eq .CloudProviderName "vsphere" }} \
-      open-vm-tools{{ end }}
-    {{- if .OSConfig.DistUpgradeOnBoot }}
-    zypper --non-interactive --quiet --color dup
-    {{- end }}
-    if [[ -e /var/run/reboot-required ]]; then
-      reboot
-    fi
+      {{- if eq .CloudProviderName "vsphere" }}
+      open-vm-tools \
+      {{- end }}
+      ipvsadm
 
-{{ downloadBinariesScript .KubeletVersion true | indent 4 }}
+{{ safeDownloadBinariesScript .KubeletVersion | indent 4 }}
 
     systemctl enable --now docker
     systemctl enable --now kubelet
