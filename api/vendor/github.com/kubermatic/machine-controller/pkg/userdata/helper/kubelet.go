@@ -50,7 +50,7 @@ const (
 {{- if and (.Hostname) (ne .CloudProvider "aws") }}
 --hostname-override={{ .Hostname }} \
 {{- end }}
---dynamic-config-dir /etc/kubernetes/dynamic-config-dir \
+--dynamic-config-dir=/etc/kubernetes/dynamic-config-dir \
 --exit-on-lock-contention \
 --lock-file=/tmp/kubelet.lock \
 {{- if .PauseImage }}
@@ -59,9 +59,7 @@ const (
 {{- if .InitialTaints }}
 --register-with-taints={{- .InitialTaints }} \
 {{- end }}
---volume-plugin-dir=/var/lib/kubelet/volumeplugins \
---kube-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi \
---system-reserved=cpu=100m,memory=100Mi,ephemeral-storage=1Gi`
+--volume-plugin-dir=/var/lib/kubelet/volumeplugins`
 
 	kubeletSystemdUnitTpl = `[Unit]
 After=docker.service
@@ -146,7 +144,7 @@ func kubeletConfiguration(clusterDomain string, clusterDNS []net.IP) (string, er
 	cfg := kubeletv1b1.KubeletConfiguration{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "KubeletConfiguration",
-			APIVersion: "kubelet.config.k8s.io/v1beta1",
+			APIVersion: kubeletv1b1.SchemeGroupVersion.String(),
 		},
 		Authentication: kubeletv1b1.KubeletAuthentication{
 			X509: kubeletv1b1.KubeletX509Authentication{
@@ -171,6 +169,8 @@ func kubeletConfiguration(clusterDomain string, clusterDNS []net.IP) (string, er
 		RotateCertificates:    true,
 		ServerTLSBootstrap:    true,
 		StaticPodPath:         "/etc/kubernetes/manifests",
+		KubeReserved:          map[string]string{"cpu": "100m", "memory": "100Mi", "ephemeral-storage": "1Gi"},
+		SystemReserved:        map[string]string{"cpu": "100m", "memory": "100Mi", "ephemeral-storage": "1Gi"},
 	}
 
 	buf, err := kyaml.Marshal(cfg)
