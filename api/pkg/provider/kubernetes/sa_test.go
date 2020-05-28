@@ -50,7 +50,7 @@ func TestCreateServiceAccount(t *testing.T) {
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
 
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, "localhost")
+			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeKubermaticImpersonatedClientSet, fakeClient, "localhost")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -121,7 +121,7 @@ func TestList(t *testing.T) {
 			}
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, "localhost")
+			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeKubermaticImpersonatedClientSet, fakeClient, "localhost")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -171,7 +171,7 @@ func TestGet(t *testing.T) {
 			}
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, "localhost")
+			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeKubermaticImpersonatedClientSet, fakeClient, "localhost")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -223,7 +223,7 @@ func TestUpdate(t *testing.T) {
 			}
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, "localhost")
+			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeKubermaticImpersonatedClientSet, fakeClient, "localhost")
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -275,7 +275,7 @@ func TestDelete(t *testing.T) {
 			}
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, "localhost")
+			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeKubermaticImpersonatedClientSet, fakeClient, "localhost")
 			if err != nil {
 				t.Fatal(err)
 			}

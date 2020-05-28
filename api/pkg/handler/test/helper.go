@@ -168,7 +168,9 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	fakeKubernetesImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubernetesclientset.Interface, error) {
 		return kubernetesClient, nil
 	}
-
+	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+		return fakeClient, nil
+	}
 	userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeKubermaticImpersonationClient, fakeClient)
 	privilegedSSHKeyProvider, err := kubernetes.NewPrivilegedSSHKeyProvider(fakeClient)
@@ -189,7 +191,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, nil, err
 	}
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, fakeClient, "localhost")
-	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeKubermaticImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
+	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 	if err != nil {
 		return nil, nil, err
