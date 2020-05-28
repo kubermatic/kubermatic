@@ -9,9 +9,9 @@ import (
 	"syscall"
 
 	"github.com/go-logr/zapr"
-
 	"go.uber.org/zap"
 
+	cmdutil "github.com/kubermatic/kubermatic/api/cmd/util"
 	usersshkeys "github.com/kubermatic/kubermatic/api/pkg/controller/usersshkeysagent"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 
@@ -28,6 +28,8 @@ func main() {
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
+
+	cmdutil.Hello(log, "User SSH-Key Agent", logOpts.Debug)
 
 	cfg, err := config.GetConfig()
 	if err != nil {
