@@ -20,7 +20,6 @@ import (
 	"context"
 	"errors"
 
-	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/label"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
@@ -28,21 +27,15 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
-	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NewProjectProvider returns a project provider
-func NewProjectProvider(createMasterImpersonatedClient kubermaticImpersonationClient, client ctrlruntimeclient.Client) (*ProjectProvider, error) {
-	kubermaticClient, err := createMasterImpersonatedClient(restclient.ImpersonationConfig{})
-	if err != nil {
-		return nil, err
-	}
+func NewProjectProvider(createMasterImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) (*ProjectProvider, error) {
 
 	return &ProjectProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
-		clientPrivileged:               kubermaticClient.Projects(),
-		runtimeClient:                  client,
+		clientPrivileged:               client,
 	}, nil
 }
 
@@ -56,13 +49,10 @@ func NewPrivilegedProjectProvider(client ctrlruntimeclient.Client) (*PrivilegedP
 // ProjectProvider represents a data structure that knows how to manage projects
 type ProjectProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
-	createMasterImpersonatedClient kubermaticImpersonationClient
+	createMasterImpersonatedClient impersonationClient
 
-	// treat clientPrivileged as a privileged user and use wisely
-	clientPrivileged kubermaticclientv1.ProjectInterface
-
-	// runtimeClient privileged client
-	runtimeClient ctrlruntimeclient.Client
+	// clientPrivileged privileged client
+	clientPrivileged ctrlruntimeclient.Client
 }
 
 // PrivilegedProjectProvider represents a data structure that knows how to manage projects in a privileged way
@@ -103,7 +93,10 @@ func (p *ProjectProvider) New(user *kubermaticapiv1.User, projectName string, la
 		},
 	}
 
-	return p.clientPrivileged.Create(project)
+	if err := p.clientPrivileged.Create(context.Background(), project); err != nil {
+		return nil, err
+	}
+	return project, nil
 }
 
 // Update update a specific project for a specific user and returns the updated project
@@ -111,12 +104,15 @@ func (p *ProjectProvider) Update(userInfo *provider.UserInfo, newProject *kuberm
 	if userInfo == nil {
 		return nil, errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
-	return masterImpersonatedClient.Projects().Update(newProject)
+	if err := masterImpersonatedClient.Update(context.Background(), newProject); err != nil {
+		return nil, err
+	}
+	return newProject, nil
 }
 
 // Delete deletes the given project as the given user
@@ -127,21 +123,22 @@ func (p *ProjectProvider) Delete(userInfo *provider.UserInfo, projectInternalNam
 	if userInfo == nil {
 		return errors.New("a user is missing but required")
 	}
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
 
-	existingProject, err := masterImpersonatedClient.Projects().Get(projectInternalName, metav1.GetOptions{})
-	if err != nil {
+	existingProject := &kubermaticapiv1.Project{}
+	if err := masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: projectInternalName}, existingProject); err != nil {
 		return err
 	}
+
 	existingProject.Status.Phase = kubermaticapiv1.ProjectTerminating
-	if _, err := masterImpersonatedClient.Projects().Update(existingProject); err != nil {
+	if err := masterImpersonatedClient.Update(context.Background(), existingProject); err != nil {
 		return err
 	}
 
-	return masterImpersonatedClient.Projects().Delete(projectInternalName, &metav1.DeleteOptions{})
+	return masterImpersonatedClient.Delete(context.Background(), existingProject)
 }
 
 // Get returns the project with the given name
@@ -152,19 +149,19 @@ func (p *ProjectProvider) Get(userInfo *provider.UserInfo, projectInternalName s
 	if options == nil {
 		options = &provider.ProjectGetOptions{IncludeUninitialized: true}
 	}
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	project, err := masterImpersonatedClient.Projects().Get(projectInternalName, metav1.GetOptions{})
-	if err != nil {
+	existingProject := &kubermaticapiv1.Project{}
+	if err := masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: projectInternalName}, existingProject); err != nil {
 		return nil, err
 	}
-	if !options.IncludeUninitialized && project.Status.Phase != kubermaticapiv1.ProjectActive {
+	if !options.IncludeUninitialized && existingProject.Status.Phase != kubermaticapiv1.ProjectActive {
 		return nil, kerrors.NewServiceUnavailable("Project is not initialized yet")
 	}
 
-	return project, nil
+	return existingProject, nil
 }
 
 // GetUnsecured returns the project with the given name
@@ -219,7 +216,7 @@ func (p *ProjectProvider) List(options *provider.ProjectListOptions) ([]*kuberma
 		options = &provider.ProjectListOptions{}
 	}
 	projects := &kubermaticapiv1.ProjectList{}
-	if err := p.runtimeClient.List(context.Background(), projects); err != nil {
+	if err := p.clientPrivileged.List(context.Background(), projects); err != nil {
 		return nil, err
 	}
 

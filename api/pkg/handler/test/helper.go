@@ -181,9 +181,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	fakeKubermaticImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
 		return kubermaticClient.KubermaticV1(), nil
 	}
-	fakeKubernetesImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubernetesclientset.Interface, error) {
-		return kubernetesClient, nil
-	}
 	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 		return fakeClient, nil
 	}
@@ -202,7 +199,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, nil, err
 	}
 	tokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey))
-	serviceAccountTokenProvider, err := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, fakeClient)
+	serviceAccountTokenProvider, err := kubernetes.NewServiceAccountTokenProvider(fakeImpersonationClient, fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -239,7 +236,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	tokenExtractors := auth.NewTokenExtractorPlugins(extractors)
 	fakeOIDCClient := NewFakeOIDCClient(user)
 
-	projectProvider, err := kubernetes.NewProjectProvider(fakeKubermaticImpersonationClient, fakeClient)
+	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}

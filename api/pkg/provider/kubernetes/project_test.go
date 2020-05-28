@@ -30,6 +30,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	restclient "k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -139,15 +141,13 @@ func TestListProjects(t *testing.T) {
 			for _, binding := range tc.existingProjects {
 				kubermaticObjects = append(kubermaticObjects, binding)
 			}
-
-			impersonationClient, _, _, err := createFakeKubermaticClients(kubermaticObjects)
-			if err != nil {
-				t.Fatalf("unable to create fake clients, err = %v", err)
-			}
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubermaticObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return fakeClient, nil
+			}
 
 			// act
-			target, err := kubernetes.NewProjectProvider(impersonationClient.CreateFakeKubermaticImpersonatedClientSet, fakeClient)
+			target, err := kubernetes.NewProjectProvider(fakeImpersonationClient, fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}

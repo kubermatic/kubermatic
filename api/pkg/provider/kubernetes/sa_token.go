@@ -38,10 +38,10 @@ const (
 )
 
 // NewServiceAccountProvider returns a service account provider
-func NewServiceAccountTokenProvider(kubernetesImpersonationClient kubernetesImpersonationClient, clientPrivileged ctrlruntimeclient.Client) (*ServiceAccountTokenProvider, error) {
+func NewServiceAccountTokenProvider(impersonationClient impersonationClient, clientPrivileged ctrlruntimeclient.Client) (*ServiceAccountTokenProvider, error) {
 
 	return &ServiceAccountTokenProvider{
-		kubernetesImpersonationClient: kubernetesImpersonationClient,
+		kubernetesImpersonationClient: impersonationClient,
 		kubernetesClientPrivileged:    clientPrivileged,
 	}, nil
 }
@@ -49,7 +49,7 @@ func NewServiceAccountTokenProvider(kubernetesImpersonationClient kubernetesImpe
 // ServiceAccountProvider manages service account resources
 type ServiceAccountTokenProvider struct {
 	// kubernetesImpersonationClient is used as a ground for impersonation
-	kubernetesImpersonationClient kubernetesImpersonationClient
+	kubernetesImpersonationClient impersonationClient
 
 	kubernetesClientPrivileged ctrlruntimeclient.Client
 }
@@ -64,18 +64,17 @@ func (p *ServiceAccountTokenProvider) Create(userInfo *provider.UserInfo, sa *ku
 	}
 
 	secret := genToken(sa, projectID, tokenName, tokenID, token)
-
-	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
+	secret.Namespace = resources.KubermaticNamespace
+	kubernetesImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 	if err != nil {
 		return nil, kerrors.NewInternalError(err)
 	}
 
-	createdToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Create(secret)
-	if err != nil {
+	if err := kubernetesImpersonatedClient.Create(context.Background(), secret); err != nil {
 		return nil, err
 	}
-	createdToken.Name = removeTokenPrefix(createdToken.Name)
-	return createdToken, nil
+	secret.Name = removeTokenPrefix(secret.Name)
+	return secret, nil
 }
 
 // CreateUnsecured creates a new token
@@ -154,14 +153,13 @@ func (p *ServiceAccountTokenProvider) List(userInfo *provider.UserInfo, project 
 	// Note:
 	// After we get the list of tokens we try to get at least one item using unprivileged account to see if the token have read access
 	if len(resultList) > 0 {
-		kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
+		kubernetesImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 		if err != nil {
 			return nil, err
 		}
 
 		tokenToGet := resultList[0]
-		_, err = kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Get(tokenToGet.Name, metav1.GetOptions{})
-		if err != nil {
+		if err = kubernetesImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: tokenToGet.Name, Namespace: resources.KubermaticNamespace}, &v1.Secret{}); err != nil {
 			return nil, err
 		}
 	}
@@ -258,13 +256,13 @@ func (p *ServiceAccountTokenProvider) Get(userInfo *provider.UserInfo, name stri
 	}
 	name = addTokenPrefix(name)
 
-	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
+	kubernetesImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 	if err != nil {
 		return nil, kerrors.NewInternalError(err)
 	}
 
-	token, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Get(name, metav1.GetOptions{})
-	if err != nil {
+	token := &v1.Secret{}
+	if err := kubernetesImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: name, Namespace: resources.KubermaticNamespace}, token); err != nil {
 		return nil, err
 	}
 	token.Name = removeTokenPrefix(token.Name)
@@ -297,20 +295,20 @@ func (p *ServiceAccountTokenProvider) Update(userInfo *provider.UserInfo, secret
 	if secret == nil {
 		return nil, kerrors.NewBadRequest("secret cannot be empty")
 	}
-	secretCpy := *secret
+	secretCpy := secret.DeepCopy()
 	secretCpy.Name = addTokenPrefix(secretCpy.Name)
+	secretCpy.Namespace = resources.KubermaticNamespace
 
-	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
+	kubernetesImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 	if err != nil {
 		return nil, kerrors.NewInternalError(err)
 	}
 
-	updatedToken, err := kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Update(&secretCpy)
-	if err != nil {
+	if err := kubernetesImpersonatedClient.Update(context.Background(), secretCpy); err != nil {
 		return nil, err
 	}
-	updatedToken.Name = removeTokenPrefix(updatedToken.Name)
-	return updatedToken, nil
+	secretCpy.Name = removeTokenPrefix(secretCpy.Name)
+	return secretCpy, nil
 }
 
 // UpdateUnsecured updates the token
@@ -343,11 +341,11 @@ func (p *ServiceAccountTokenProvider) Delete(userInfo *provider.UserInfo, name s
 	}
 	name = addTokenPrefix(name)
 
-	kubernetesImpersonatedClient, err := createKubernetesImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
+	kubernetesImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.kubernetesImpersonationClient)
 	if err != nil {
 		return kerrors.NewInternalError(err)
 	}
-	return kubernetesImpersonatedClient.CoreV1().Secrets(resources.KubermaticNamespace).Delete(name, &metav1.DeleteOptions{})
+	return kubernetesImpersonatedClient.Delete(context.Background(), &v1.Secret{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: resources.KubermaticNamespace}})
 }
 
 // DeleteUnsecured deletes the token
