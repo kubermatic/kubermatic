@@ -22,8 +22,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	kubernetesclient "k8s.io/client-go/kubernetes"
-	fakerestclient "k8s.io/client-go/kubernetes/fake"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 )
@@ -35,25 +33,6 @@ const (
 	// TestFakeFinalizer is a dummy finalizer with no special meaning
 	TestFakeFinalizer = "test.kubermatic.io/dummy"
 )
-
-// fakeKubernetesImpersonationClient gives kubernetes client set that uses user impersonation
-type fakeKubernetesImpersonationClient struct {
-	kubernetesClent *fakerestclient.Clientset
-}
-
-func (f *fakeKubernetesImpersonationClient) CreateKubernetesFakeImpersonatedClientSet(impCfg restclient.ImpersonationConfig) (kubernetesclient.Interface, error) {
-	return f.kubernetesClent, nil
-}
-
-func createFakeKubernetesClients(kubermaticObjects []runtime.Object) (*fakeKubernetesImpersonationClient, *fakerestclient.Clientset, cache.Indexer, error) {
-	kubermaticClient := fakerestclient.NewSimpleClientset(kubermaticObjects...)
-
-	indexer, err := createIndexer(kubermaticObjects)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	return &fakeKubernetesImpersonationClient{kubermaticClient}, kubermaticClient, indexer, nil
-}
 
 type fakeJWTTokenGenerator struct {
 }

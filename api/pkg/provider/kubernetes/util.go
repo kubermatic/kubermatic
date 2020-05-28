@@ -5,7 +5,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -14,9 +13,6 @@ const (
 	// NamespacePrefix is the prefix for the cluster namespace
 	NamespacePrefix = "cluster-"
 )
-
-// kubernetesImpersonationClient gives kubernetes client set that uses user impersonation
-type kubernetesImpersonationClient func(impCfg restclient.ImpersonationConfig) (kubernetes.Interface, error)
 
 // kubermaticImpersonationClient gives kubermatic client set that uses user impersonation
 type kubermaticImpersonationClient func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error)
@@ -31,16 +27,6 @@ func NamespaceName(clusterName string) string {
 
 // createKubermaticImpersonationClientWrapperFromUserInfo is a helper method that spits back kubermatic client that uses user impersonation
 func createKubermaticImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, createImpersonationClient kubermaticImpersonationClient) (kubermaticclientv1.KubermaticV1Interface, error) {
-	impersonationCfg := restclient.ImpersonationConfig{
-		UserName: userInfo.Email,
-		Groups:   []string{userInfo.Group},
-	}
-
-	return createImpersonationClient(impersonationCfg)
-}
-
-// createKubernetesImpersonationClientWrapperFromUserInfo is a helper method that spits back kubernetes client that uses user impersonation
-func createKubernetesImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, createImpersonationClient kubernetesImpersonationClient) (kubernetes.Interface, error) {
 	impersonationCfg := restclient.ImpersonationConfig{
 		UserName: userInfo.Email,
 		Groups:   []string{userInfo.Group},
@@ -79,24 +65,6 @@ func (d *DefaultKubermaticImpersonationClient) CreateImpersonatedKubermaticClien
 	config := *d.cfg
 	config.Impersonate = impCfg
 	return kubermaticclientv1.NewForConfig(&config)
-}
-
-// NewKubernetesImpersonationClient creates a new default impersonation client
-// that knows how to create kubernetes Interface client for a impersonated user
-func NewKubernetesImpersonationClient(cfg *restclient.Config) *DefaultKubernetesImpersonationClient {
-	return &DefaultKubernetesImpersonationClient{cfg}
-}
-
-// DefaultKubermaticImpersonationClient knows how to create impersonated client set
-type DefaultKubernetesImpersonationClient struct {
-	cfg *restclient.Config
-}
-
-// CreateImpersonatedKubernetesClientSet actually creates impersonated kubernetes client set for the given user.
-func (d *DefaultKubernetesImpersonationClient) CreateImpersonatedKubernetesClientSet(impCfg restclient.ImpersonationConfig) (kubernetes.Interface, error) {
-	config := *d.cfg
-	config.Impersonate = impCfg
-	return kubernetes.NewForConfig(&config)
 }
 
 // NewImpersonationClient creates a new default impersonation client
