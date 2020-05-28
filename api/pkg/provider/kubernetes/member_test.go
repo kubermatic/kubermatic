@@ -22,31 +22,30 @@ import (
 
 	"github.com/go-test/deep"
 
-	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	restclient "k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCreateBinding(t *testing.T) {
 	// test data
 	kubermaticObjects := []runtime.Object{}
-	impersonationClient, _, _, err := createFakeKubermaticClients(kubermaticObjects)
-	if err != nil {
-		t.Fatalf("unable to create fake clients, err = %v", err)
-	}
 	fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubermaticObjects...)
 	authenticatedUser := createAuthenitactedUser()
 	existingProject := genDefaultProject()
 	memberEmail := ""
 	groupName := fmt.Sprintf("owners-%s", existingProject.Name)
-
+	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+		return fakeClient, nil
+	}
 	// act
-	target := kubernetes.NewProjectMemberProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, kubernetes.IsServiceAccount)
+	target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
 	result, err := target.Create(&provider.UserInfo{Email: authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", existingProject.Name)}, existingProject, memberEmail, groupName)
 
 	// validate
@@ -123,12 +122,12 @@ func TestListBinding(t *testing.T) {
 			for _, sa := range tc.existingSA {
 				kubermaticObjects = append(kubermaticObjects, sa)
 			}
-			kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
-			impersonationClient := &fakeKubermaticImpersonationClient{kubermaticClient}
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubermaticObjects...)
-
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return fakeClient, nil
+			}
 			// act
-			target := kubernetes.NewProjectMemberProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient, kubernetes.IsServiceAccount)
+			target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
 			result, err := target.List(&provider.UserInfo{Email: tc.authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", tc.projectToSync.Name)}, tc.projectToSync, nil)
 
 			// validate

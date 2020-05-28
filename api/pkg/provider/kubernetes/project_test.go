@@ -147,7 +147,7 @@ func TestListProjects(t *testing.T) {
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubermaticObjects...)
 
 			// act
-			target, err := kubernetes.NewProjectProvider(impersonationClient.CreateFakeImpersonatedClientSet, fakeClient)
+			target, err := kubernetes.NewProjectProvider(impersonationClient.CreateFakeKubermaticImpersonatedClientSet, fakeClient)
 			if err != nil {
 				t.Fatal(err)
 			}

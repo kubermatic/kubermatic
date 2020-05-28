@@ -161,6 +161,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to construct manager: %v", err)
 	}
+	defaultImpersonationClient := kubernetesprovider.NewImpersonationClient(masterCfg, mgr.GetRESTMapper())
 	seedsGetter, err := seedsGetterFactory(context.Background(), mgr.GetClient(), options)
 	if err != nil {
 		return providers{}, err
@@ -224,7 +225,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create service account token provider due to %v", err)
 	}
 	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, mgr.GetClient(), options.domain)
-	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, mgr.GetClient(), kubernetesprovider.IsServiceAccount)
+	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient(), kubernetesprovider.IsServiceAccount)
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, mgr.GetClient())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create project provider due to %v", err)

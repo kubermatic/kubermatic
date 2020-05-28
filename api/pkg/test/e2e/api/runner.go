@@ -267,6 +267,21 @@ func (r *runner) GetServiceAccount(saID, projectID string) (*apiv1.ServiceAccoun
 	return nil, fmt.Errorf("service account %s not found", saID)
 }
 
+// DeleteServiceAccount deletes service account for given ID and project
+func (r *runner) DeleteServiceAccount(saID, projectID string) error {
+	params := &serviceaccounts.DeleteServiceAccountParams{
+		ProjectID:        projectID,
+		ServiceAccountID: saID,
+	}
+	params.WithTimeout(timeout)
+
+	if _, err := r.client.Serviceaccounts.DeleteServiceAccount(params, r.bearerToken); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func convertServiceAccount(sa *models.ServiceAccount) (*apiv1.ServiceAccount, error) {
 	apiServiceAccount := &apiv1.ServiceAccount{}
 	apiServiceAccount.ID = sa.ID
@@ -293,6 +308,17 @@ func (r *runner) AddTokenToServiceAccount(name, saID, projectID string) (*apiv1.
 	}
 
 	return convertServiceAccountToken(token.Payload)
+}
+
+// DeleteTokenForServiceAccount deletes a token for service account
+func (r *runner) DeleteTokenForServiceAccount(tokenID, saID, projectID string) error {
+	params := &tokens.DeleteServiceAccountTokenParams{ProjectID: projectID, ServiceAccountID: saID, TokenID: tokenID}
+	params.WithTimeout(timeout)
+	if _, err := r.client.Tokens.DeleteServiceAccountToken(params, r.bearerToken); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func convertServiceAccountToken(saToken *models.ServiceAccountToken) (*apiv1.ServiceAccountToken, error) {

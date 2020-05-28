@@ -84,7 +84,7 @@ type fakeKubermaticImpersonationClient struct {
 	kubermaticClent *kubermaticfakeclentset.Clientset
 }
 
-func (f *fakeKubermaticImpersonationClient) CreateFakeImpersonatedClientSet(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
+func (f *fakeKubermaticImpersonationClient) CreateFakeKubermaticImpersonatedClientSet(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
 	return f.kubermaticClent.KubermaticV1(), nil
 }
 

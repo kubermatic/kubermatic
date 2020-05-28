@@ -29,11 +29,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 
-	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/diff"
-	clienttesting "k8s.io/client-go/testing"
 )
 
 func TestGetUsersForProject(t *testing.T) {
@@ -239,7 +236,7 @@ func TestGetUsersForProject(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -271,16 +268,14 @@ func TestGetUsersForProject(t *testing.T) {
 func TestDeleteUserFromProject(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		Name                         string
-		Body                         string
-		ExpectedResponse             string
-		ExpectedBindingIDAfterDelete string
-		ProjectToSync                string
-		UserIDToDelete               string
-		HTTPStatus                   int
-		ExistingAPIUser              apiv1.User
-		ExistingKubermaticObjs       []runtime.Object
-		privilegedOperation          bool
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		ProjectToSync          string
+		UserIDToDelete         string
+		HTTPStatus             int
+		ExistingAPIUser        apiv1.User
+		ExistingKubermaticObjs []runtime.Object
 	}{
 		// scenario 1
 		{
@@ -301,10 +296,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 				genUser("", "john", "john@acme.com"),
 				genDefaultUser(), /*bob*/
 			},
-			UserIDToDelete:               genDefaultUser().Name,
-			ExistingAPIUser:              *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse:             `{}`,
-			ExpectedBindingIDAfterDelete: test.GenBinding("plan9-ID", "bob@acme.com", "viewers").Name,
+			UserIDToDelete:   genDefaultUser().Name,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{}`,
 		},
 
 		// scenario 2
@@ -370,10 +364,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 				genUser("", "john", "john@acme.com"),
 				genDefaultUser(), /*bob*/
 			},
-			UserIDToDelete:               genDefaultUser().Name,
-			ExistingAPIUser:              *genAPIUser("john", "john@acme.com"),
-			ExpectedResponse:             `{}`,
-			ExpectedBindingIDAfterDelete: test.GenBinding("plan9-ID", "bob@acme.com", "viewers").Name,
+			UserIDToDelete:   genDefaultUser().Name,
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedResponse: `{}`,
 		},
 
 		// scenario 5
@@ -396,11 +389,9 @@ func TestDeleteUserFromProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 				genDefaultAdminUser(),
 			},
-			UserIDToDelete:               genDefaultUser().Name,
-			ExistingAPIUser:              *genAPIUser("admin", "admin@acme.com"),
-			ExpectedResponse:             `{}`,
-			ExpectedBindingIDAfterDelete: test.GenBinding("plan9-ID", "bob@acme.com", "viewers").Name,
-			privilegedOperation:          true,
+			UserIDToDelete:   genDefaultUser().Name,
+			ExistingAPIUser:  *genAPIUser("admin", "admin@acme.com"),
+			ExpectedResponse: `{}`,
 		},
 	}
 	for _, tc := range testcases {
@@ -409,7 +400,7 @@ func TestDeleteUserFromProject(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, clients, err := test.CreateTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, nil, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -420,30 +411,6 @@ func TestDeleteUserFromProject(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
-
-			kubermaticFakeClient := clients.FakeKubermaticClient
-			// only when impersonated client is used
-			if !tc.privilegedOperation {
-				if len(tc.ExpectedBindingIDAfterDelete) > 0 {
-					actionWasValidated := false
-					for _, action := range kubermaticFakeClient.Actions() {
-						if action.Matches("delete", "userprojectbindings") {
-							deleteAction, ok := action.(clienttesting.DeleteAction)
-							if !ok {
-								t.Fatalf("unexpected action %#v", action)
-							}
-							if deleteAction.GetName() != tc.ExpectedBindingIDAfterDelete {
-								t.Fatalf("wrong binding removed, wanted = %s, actual = %s", tc.ExpectedBindingIDAfterDelete, deleteAction.GetName())
-							}
-							actionWasValidated = true
-							break
-						}
-					}
-					if !actionWasValidated {
-						t.Fatal("create action was not validated, a binding for a user was not updated ?")
-					}
-				}
-			}
 		})
 	}
 }
@@ -451,16 +418,14 @@ func TestDeleteUserFromProject(t *testing.T) {
 func TestEditUserInProject(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		Name                       string
-		Body                       string
-		ExpectedResponse           string
-		ExpectedBindingAfterUpdate *kubermaticapiv1.UserProjectBinding
-		ProjectToSync              string
-		UserIDToUpdate             string
-		HTTPStatus                 int
-		ExistingAPIUser            apiv1.User
-		ExistingKubermaticObjs     []runtime.Object
-		privilegedOperation        bool
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		ProjectToSync          string
+		UserIDToUpdate         string
+		HTTPStatus             int
+		ExistingAPIUser        apiv1.User
+		ExistingKubermaticObjs []runtime.Object
 	}{
 		// scenario 1
 		{
@@ -484,12 +449,6 @@ func TestEditUserInProject(t *testing.T) {
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
-			ExpectedBindingAfterUpdate: func() *kubermaticapiv1.UserProjectBinding {
-				binding := test.GenBinding("plan9-ID", "bob@acme.com", "editors")
-				// the name of the original binding was derived from projectID, email and group
-				binding.Name = test.GenBinding("plan9-ID", "bob@acme.com", "viewers").Name
-				return binding
-			}(),
 		},
 
 		// scenario 2
@@ -583,12 +542,6 @@ func TestEditUserInProject(t *testing.T) {
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
-			ExpectedBindingAfterUpdate: func() *kubermaticapiv1.UserProjectBinding {
-				binding := test.GenBinding("plan9-ID", "bob@acme.com", "editors")
-				// the name of the original binding was derived from projectID, email and group
-				binding.Name = test.GenBinding("plan9-ID", "bob@acme.com", "viewers").Name
-				return binding
-			}(),
 		},
 		// scenario 6
 		{
@@ -613,13 +566,6 @@ func TestEditUserInProject(t *testing.T) {
 			UserIDToUpdate:   genDefaultUser().Name,
 			ExistingAPIUser:  *genAPIUser("admin", "admin@acme.com"),
 			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
-			ExpectedBindingAfterUpdate: func() *kubermaticapiv1.UserProjectBinding {
-				binding := test.GenBinding("plan9-ID", "bob@acme.com", "editors")
-				// the name of the original binding was derived from projectID, email and group
-				binding.Name = test.GenBinding("plan9-ID", "bob@acme.com", "viewers").Name
-				return binding
-			}(),
-			privilegedOperation: true,
 		},
 	}
 	for _, tc := range testcases {
@@ -628,7 +574,7 @@ func TestEditUserInProject(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, clients, err := test.CreateTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -639,31 +585,6 @@ func TestEditUserInProject(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
-
-			kubermaticFakeClient := clients.FakeKubermaticClient
-			// only when impersonated client is used
-			if !tc.privilegedOperation {
-				if tc.ExpectedBindingAfterUpdate != nil {
-					actionWasValidated := false
-					for _, action := range kubermaticFakeClient.Actions() {
-						if action.Matches("update", "userprojectbindings") {
-							updateAction, ok := action.(clienttesting.UpdateAction)
-							if !ok {
-								t.Fatalf("unexpected action %#v", action)
-							}
-							updatedBinding := updateAction.GetObject().(*kubermaticapiv1.UserProjectBinding)
-							if !equality.Semantic.DeepEqual(updatedBinding, tc.ExpectedBindingAfterUpdate) {
-								t.Fatalf("updated action mismatch %v", diff.ObjectDiff(updatedBinding, tc.ExpectedBindingAfterUpdate))
-							}
-							actionWasValidated = true
-							break
-						}
-					}
-					if !actionWasValidated {
-						t.Fatal("create action was not validated, a binding for a user was not updated ?")
-					}
-				}
-			}
 		})
 	}
 }
@@ -671,15 +592,13 @@ func TestEditUserInProject(t *testing.T) {
 func TestAddUserToProject(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
-		Name                           string
-		Body                           string
-		ExpectedResponse               string
-		ExpectedBindingAfterInvitation *kubermaticapiv1.UserProjectBinding
-		ProjectToSync                  string
-		HTTPStatus                     int
-		ExistingAPIUser                apiv1.User
-		ExistingKubermaticObjs         []runtime.Object
-		privilegedOperation            bool
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		ProjectToSync          string
+		HTTPStatus             int
+		ExistingAPIUser        apiv1.User
+		ExistingKubermaticObjs []runtime.Object
 	}{
 		{
 			Name:          "scenario 1: john the owner of the plan9 project invites bob to the project as an editor",
@@ -701,22 +620,6 @@ func TestAddUserToProject(t *testing.T) {
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
-			ExpectedBindingAfterInvitation: &kubermaticapiv1.UserProjectBinding{
-				ObjectMeta: metav1.ObjectMeta{
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticapiv1.ProjectKindName,
-							Name:       "plan9-ID",
-						},
-					},
-				},
-				Spec: kubermaticapiv1.UserProjectBindingSpec{
-					UserEmail: "bob@acme.com",
-					Group:     "editors-plan9-ID",
-					ProjectID: "plan9-ID",
-				},
-			},
 		},
 
 		{
@@ -849,22 +752,6 @@ func TestAddUserToProject(t *testing.T) {
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
-			ExpectedBindingAfterInvitation: &kubermaticapiv1.UserProjectBinding{
-				ObjectMeta: metav1.ObjectMeta{
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticapiv1.ProjectKindName,
-							Name:       "plan9-ID",
-						},
-					},
-				},
-				Spec: kubermaticapiv1.UserProjectBindingSpec{
-					UserEmail: "bob@acme.com",
-					Group:     "editors-plan9-ID",
-					ProjectID: "plan9-ID",
-				},
-			},
 		},
 
 		{
@@ -910,23 +797,6 @@ func TestAddUserToProject(t *testing.T) {
 			},
 			ExistingAPIUser:  *genAPIUser("admin", "admin@acme.com"),
 			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com","projects":[{"id":"plan9-ID","group":"editors"}]}`,
-			ExpectedBindingAfterInvitation: &kubermaticapiv1.UserProjectBinding{
-				ObjectMeta: metav1.ObjectMeta{
-					OwnerReferences: []metav1.OwnerReference{
-						{
-							APIVersion: kubermaticapiv1.SchemeGroupVersion.String(),
-							Kind:       kubermaticapiv1.ProjectKindName,
-							Name:       "plan9-ID",
-						},
-					},
-				},
-				Spec: kubermaticapiv1.UserProjectBindingSpec{
-					UserEmail: "bob@acme.com",
-					Group:     "editors-plan9-ID",
-					ProjectID: "plan9-ID",
-				},
-			},
-			privilegedOperation: true,
 		},
 	}
 
@@ -936,7 +806,7 @@ func TestAddUserToProject(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, clients, err := test.CreateTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -947,33 +817,6 @@ func TestAddUserToProject(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
-
-			kubermaticFakeClient := clients.FakeKubermaticClient
-			// only when impersonated client is used
-			if !tc.privilegedOperation {
-				if tc.ExpectedBindingAfterInvitation != nil {
-					actionWasValidated := false
-					for _, action := range kubermaticFakeClient.Actions() {
-						if action.Matches("create", "userprojectbindings") {
-							updateAction, ok := action.(clienttesting.CreateAction)
-							if !ok {
-								t.Fatalf("unexpected action %#v", action)
-							}
-							createdBinding := updateAction.GetObject().(*kubermaticapiv1.UserProjectBinding)
-							// Name was generated by the test framework, just rewrite it
-							tc.ExpectedBindingAfterInvitation.Name = createdBinding.Name
-							if !equality.Semantic.DeepEqual(createdBinding, tc.ExpectedBindingAfterInvitation) {
-								t.Fatalf("%v", diff.ObjectDiff(createdBinding, tc.ExpectedBindingAfterInvitation))
-							}
-							actionWasValidated = true
-							break
-						}
-					}
-					if !actionWasValidated {
-						t.Fatal("create action was not validated, a binding for a user was not created ?")
-					}
-				}
-			}
 		})
 	}
 }
@@ -1018,7 +861,7 @@ func TestGetCurrentUser(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -1082,7 +925,7 @@ func TestNewUser(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

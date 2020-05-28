@@ -34,7 +34,7 @@ import (
 )
 
 // NewProjectMemberProvider returns a project members provider
-func NewProjectMemberProvider(createMasterImpersonatedClient kubermaticImpersonationClient, clientPrivileged ctrlruntimeclient.Client, isServiceAccountFunc func(string) bool) *ProjectMemberProvider {
+func NewProjectMemberProvider(createMasterImpersonatedClient impersonationClient, clientPrivileged ctrlruntimeclient.Client, isServiceAccountFunc func(string) bool) *ProjectMemberProvider {
 	return &ProjectMemberProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               clientPrivileged,
@@ -47,7 +47,7 @@ var _ provider.ProjectMemberProvider = &ProjectMemberProvider{}
 // ProjectMemberProvider binds users with projects
 type ProjectMemberProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
-	createMasterImpersonatedClient kubermaticImpersonationClient
+	createMasterImpersonatedClient impersonationClient
 
 	// treat clientPrivileged as a privileged user and use wisely
 	clientPrivileged ctrlruntimeclient.Client
@@ -65,11 +65,14 @@ func (p *ProjectMemberProvider) Create(userInfo *provider.UserInfo, project *kub
 
 	binding := genBinding(project, memberEmail, group)
 
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	return masterImpersonatedClient.UserProjectBindings().Create(binding)
+	if err := masterImpersonatedClient.Create(context.Background(), binding); err != nil {
+		return nil, err
+	}
+	return binding, nil
 }
 
 // List gets all members of the given project
@@ -100,13 +103,13 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 	// After we get the list of members we try to get at least one item using unprivileged account to see if the user have read access
 	if len(projectMembers) > 0 {
 		if !options.SkipPrivilegeVerification {
-			masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+			masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 			if err != nil {
 				return nil, err
 			}
 
 			memberToGet := projectMembers[0]
-			_, err = masterImpersonatedClient.UserProjectBindings().Get(memberToGet.Name, metav1.GetOptions{})
+			err = masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: memberToGet.Name}, &kubermaticapiv1.UserProjectBinding{})
 			if err != nil {
 				return nil, err
 			}
@@ -134,11 +137,11 @@ func (p *ProjectMemberProvider) List(userInfo *provider.UserInfo, project *kuber
 // Note:
 // Use List to get binding for the specific member of the given project
 func (p *ProjectMemberProvider) Delete(userInfo *provider.UserInfo, bindingName string) error {
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
-	return masterImpersonatedClient.UserProjectBindings().Delete(bindingName, &metav1.DeleteOptions{})
+	return masterImpersonatedClient.Delete(context.Background(), &kubermaticapiv1.UserProjectBinding{ObjectMeta: metav1.ObjectMeta{Name: bindingName}})
 }
 
 // Update updates the given binding
@@ -146,11 +149,14 @@ func (p *ProjectMemberProvider) Update(userInfo *provider.UserInfo, binding *kub
 	if rbac.ExtractGroupPrefix(binding.Spec.Group) == rbac.OwnerGroupNamePrefix && !kuberneteshelper.HasFinalizer(binding, rbac.CleanupFinalizerName) {
 		kuberneteshelper.AddFinalizer(binding, rbac.CleanupFinalizerName)
 	}
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	return masterImpersonatedClient.UserProjectBindings().Update(binding)
+	if err := masterImpersonatedClient.Update(context.Background(), binding); err != nil {
+		return nil, err
+	}
+	return binding, nil
 }
 
 // MapUserToGroup maps the given user to a specific group of the given project
