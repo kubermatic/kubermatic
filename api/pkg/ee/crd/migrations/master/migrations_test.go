@@ -10,7 +10,6 @@ import (
 	"go.uber.org/zap/zaptest"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master/options"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -61,7 +60,7 @@ func TestMigrateAllDatacenterEmailRestrictions(t *testing.T) {
 	}
 
 	client := fakectrlruntimeclient.NewFakeClient(unmigratedSeed)
-	err := migrateAllDatacenterEmailRestrictions(context.Background(), zaptest.NewLogger(t).Sugar(), client, nsName, options.MigrationOptions{})
+	err := migrateAllDatacenterEmailRestrictions(context.Background(), zaptest.NewLogger(t).Sugar(), client, nsName, Options{})
 	assert.NoError(t, err)
 
 	key := ctrlruntimeclient.ObjectKey{
@@ -98,6 +97,6 @@ func TestMigrateAllDatacenterEmailRestrictionsInvalid(t *testing.T) {
 	}
 
 	client := fakectrlruntimeclient.NewFakeClient(unmigratedSeed)
-	err := migrateAllDatacenterEmailRestrictions(context.Background(), zaptest.NewLogger(t).Sugar(), client, nsName, options.MigrationOptions{})
+	err := migrateAllDatacenterEmailRestrictions(context.Background(), zaptest.NewLogger(t).Sugar(), client, nsName, Options{})
 	assert.Error(t, err, "datacenter %s->%s has both `requiredEmailDomain` and `requiredEmailDomains` set", seedName, dcName)
 }

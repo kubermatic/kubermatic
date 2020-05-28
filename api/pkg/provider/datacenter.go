@@ -9,6 +9,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
@@ -40,43 +41,44 @@ type ClusterProviderGetter = func(seed *kubermaticv1.Seed) (ClusterProvider, err
 type AddonProviderGetter = func(seed *kubermaticv1.Seed) (AddonProvider, error)
 
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
-func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName, dcFile, namespace string, dynamicDatacenters bool) (SeedGetter, error) {
-	seedGetter, err := seedGetterFactory(ctx, client, seedName, dcFile, namespace, dynamicDatacenters)
-	if err != nil {
-		return nil, err
-	}
+func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName string, namespace string) (SeedGetter, error) {
 	return func() (*kubermaticv1.Seed, error) {
-		seed, err := seedGetter()
-		if err != nil {
-			return nil, err
+		seed := &kubermaticv1.Seed{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: seedName}, seed); err != nil {
+			// allow callers to handle this gracefully
+			if kerrors.IsNotFound(err) {
+				return nil, err
+			}
+
+			return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
 		}
+
 		seed.SetDefaults()
+
 		return seed, nil
 	}, nil
 }
 
-func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace string, dynamicDatacenters bool) (SeedsGetter, error) {
-	seedsGetter, err := seedsGetterFactory(ctx, client, dcFile, namespace, dynamicDatacenters)
-	if err != nil {
-		return nil, err
-	}
+func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, namespace string) (SeedsGetter, error) {
 	return func() (map[string]*kubermaticv1.Seed, error) {
-		seeds, err := seedsGetter()
-		if err != nil {
-			return nil, err
+		seed := &kubermaticv1.Seed{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: defaultSeedName}, seed); err != nil {
+			if kerrors.IsNotFound(err) {
+				return nil, err
+			}
+
+			return nil, fmt.Errorf("failed to get seed %q: %v", defaultSeedName, err)
 		}
-		for idx := range seeds {
-			seeds[idx].SetDefaults()
-		}
-		return seeds, nil
+
+		seed.SetDefaults()
+
+		return map[string]*kubermaticv1.Seed{
+			defaultSeedName: seed,
+		}, nil
 	}, nil
 }
 
-func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, kubeconfigFilePath string, dynamicDatacenters bool) (SeedKubeconfigGetter, error) {
-	return seedKubeconfigGetterFactory(ctx, client, kubeconfigFilePath, dynamicDatacenters)
-}
-
-func secretBasedSeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (SeedKubeconfigGetter, error) {
+func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (SeedKubeconfigGetter, error) {
 	return func(seed *kubermaticv1.Seed) (*rest.Config, error) {
 		secret := &corev1.Secret{}
 		name := types.NamespacedName{
