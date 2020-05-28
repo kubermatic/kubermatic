@@ -32,6 +32,7 @@ import (
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"go.uber.org/zap"
 
+	cmdutil "github.com/kubermatic/kubermatic/api/cmd/util"
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac"
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
@@ -82,6 +83,8 @@ func main() {
 		}
 	}()
 	kubermaticlog.Logger = log
+
+	cmdutil.Hello(log, "API", options.log.Debug)
 
 	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
@@ -142,11 +145,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to construct manager: %v", err)
 	}
-	seedsGetter, err := provider.SeedsGetterFactory(context.Background(), mgr.GetClient(), options.dcFile, options.namespace, options.dynamicDatacenters)
+	seedsGetter, err := seedsGetterFactory(context.Background(), mgr.GetClient(), options)
 	if err != nil {
 		return providers{}, err
 	}
-	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(context.Background(), mgr.GetClient(), options.kubeconfig, options.dynamicDatacenters)
+	seedKubeconfigGetter, err := seedKubeconfigGetterFactory(context.Background(), mgr.GetClient(), options)
 	if err != nil {
 		return providers{}, err
 	}

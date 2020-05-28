@@ -405,7 +405,7 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
     kubermatic \
     ./config/kubermatic/
 
-  pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment "method=helm"
+  pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment 'method="helm"'
 
   # Return repo to previous state if we checked out older charts before.
   if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
@@ -470,7 +470,7 @@ EOF
 
   echodate "Kubermatic Master is ready."
 
-  pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment "method=operator"
+  pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment 'method="operator"'
 fi
 
 echodate "Finished installing Kubermatic"

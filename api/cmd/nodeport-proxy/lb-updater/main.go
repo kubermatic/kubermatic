@@ -10,6 +10,7 @@ import (
 	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
+	cmdutil "github.com/kubermatic/kubermatic/api/cmd/util"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 
@@ -65,6 +66,8 @@ func main() {
 			fmt.Println(err)
 		}
 	}()
+
+	cmdutil.Hello(log, "LoadBalancer Updater", logOpts.Debug)
 
 	config, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {
