@@ -12,33 +12,38 @@ EOF
 fi
 
 cd "$(dirname "$0")/../"
+source ./hack/lib.sh
+
+REPOSUFFIX=""
+if [ "${KUBERMATIC_EDITION:-ee}" != "ee" ]; then
+  REPOSUFFIX="-$KUBERMATIC_EDITION"
+fi
 
 make build
-docker build -t quay.io/kubermatic/api:${1} .
+docker build -t quay.io/kubermatic/api${REPOSUFFIX}:${1} .
 cd cmd/nodeport-proxy && export TAG=${1} && make docker && unset TAG && cd -
 cd cmd/kubeletdnat-controller && export TAG=${1} && make docker && unset TAG && cd -
 docker build -t "quay.io/kubermatic/addons:${1}" ../addons
 docker build -t "quay.io/kubermatic/openshift-addons:${1}" ../openshift_addons
 cd cmd/user-ssh-keys-agent && export TAG=${1} && make docker && unset TAG && cd -
 
-for TAG in "$@"
-do
-    if [[ -z "$TAG" ]]; then
-      continue
-    fi
+for TAG in "$@"; do
+  if [[ -z "$TAG" ]]; then
+    continue
+  fi
 
-    echo "Tagging ${TAG}"
-    docker tag quay.io/kubermatic/api:${1} quay.io/kubermatic/api:${TAG}
-    docker tag quay.io/kubermatic/nodeport-proxy:${1} quay.io/kubermatic/nodeport-proxy:${TAG}
-    docker tag quay.io/kubermatic/kubeletdnat-controller:${1}  quay.io/kubermatic/kubeletdnat-controller:${TAG}
-    docker tag quay.io/kubermatic/addons:${1} quay.io/kubermatic/addons:${TAG}
-    docker tag quay.io/kubermatic/openshift-addons:${1} quay.io/kubermatic/openshift-addons:${TAG}
-    docker tag quay.io/kubermatic/user-ssh-keys-agent:${1} quay.io/kubermatic/user-ssh-keys-agent:${TAG}
+  echodate "Tagging ${TAG}"
+  docker tag quay.io/kubermatic/api${REPOSUFFIX}:${1} quay.io/kubermatic/api${REPOSUFFIX}:${TAG}
+  docker tag quay.io/kubermatic/nodeport-proxy:${1} quay.io/kubermatic/nodeport-proxy:${TAG}
+  docker tag quay.io/kubermatic/kubeletdnat-controller:${1}  quay.io/kubermatic/kubeletdnat-controller:${TAG}
+  docker tag quay.io/kubermatic/addons:${1} quay.io/kubermatic/addons:${TAG}
+  docker tag quay.io/kubermatic/openshift-addons:${1} quay.io/kubermatic/openshift-addons:${TAG}
+  docker tag quay.io/kubermatic/user-ssh-keys-agent:${1} quay.io/kubermatic/user-ssh-keys-agent:${TAG}
 
-    docker push quay.io/kubermatic/api:${TAG}
-    docker push quay.io/kubermatic/nodeport-proxy:${TAG}
-    docker push quay.io/kubermatic/kubeletdnat-controller:${TAG}
-    docker push quay.io/kubermatic/addons:${TAG}
-    docker push quay.io/kubermatic/openshift-addons:${TAG}
-    docker push quay.io/kubermatic/user-ssh-keys-agent:${TAG}
+  docker push quay.io/kubermatic/api${REPOSUFFIX}:${TAG}
+  docker push quay.io/kubermatic/nodeport-proxy:${TAG}
+  docker push quay.io/kubermatic/kubeletdnat-controller:${TAG}
+  docker push quay.io/kubermatic/addons:${TAG}
+  docker push quay.io/kubermatic/openshift-addons:${TAG}
+  docker push quay.io/kubermatic/user-ssh-keys-agent:${TAG}
 done
