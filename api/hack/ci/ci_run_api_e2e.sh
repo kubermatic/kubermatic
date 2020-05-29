@@ -92,5 +92,5 @@ retry 2 kubectl apply -f user.yaml
 
 echodate "Running API E2E tests..."
 export KUBERMATIC_DEX_VALUES_FILE=$(realpath api/hack/ci/testdata/oauth_values.yaml)
-go test -tags=create -timeout 20m ./api/pkg/test/e2e/api -v
-go test -tags=e2e ./api/pkg/test/e2e/api -v
+go test -tags="create $KUBERMATIC_EDITION" -timeout 20m ./api/pkg/test/e2e/api -v
+go test -tags="e2e $KUBERMATIC_EDITION" -timeout 20m ./api/pkg/test/e2e/api -v

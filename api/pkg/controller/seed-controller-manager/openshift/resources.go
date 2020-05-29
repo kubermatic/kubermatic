@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/nodeportproxy"
 
 	corev1 "k8s.io/api/core/v1"
@@ -22,7 +22,7 @@ func (r *Reconciler) getOSData(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, fmt.Errorf("couldn't find dc %s", cluster.Spec.Cloud.DatacenterName)
 	}
 
-	supportsFailureDomainZoneAntiAffinity, err := controllerutil.SupportsFailureDomainZoneAntiAffinity(ctx, r.Client)
+	supportsFailureDomainZoneAntiAffinity, err := resources.SupportsFailureDomainZoneAntiAffinity(ctx, r.Client)
 	if err != nil {
 		return nil, err
 	}

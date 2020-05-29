@@ -20,6 +20,9 @@ presubmits:
           requests:
             memory: 7Gi
             cpu: 2
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
 
   - name: pre-kubermatic-verify
     run_if_changed: "^api/"
@@ -41,6 +44,9 @@ presubmits:
           limits:
             memory: 2.5Gi
             cpu: 1
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
 
   - name: pre-kubermatic-verify-charts
     run_if_changed: "^config/"
@@ -58,6 +64,9 @@ presubmits:
           limits:
             memory: 256Mi
             cpu: 250m
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
 
   - name: pre-kubermatic-verify-kubermatic-chart
     run_if_changed: "^(api|config)/"
@@ -75,6 +84,9 @@ presubmits:
           limits:
             memory: 1Gi
             cpu: 1
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
 
   - name: pre-kubermatic-verify-grafana-dashboards
     run_if_changed: "^config/monitoring/grafana/"
@@ -92,6 +104,9 @@ presubmits:
           limits:
             memory: 128Mi
             cpu: 250m
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
 
   - name: pre-kubermatic-verify-docs
     run_if_changed: "^(api|docs)/"
@@ -106,6 +121,9 @@ presubmits:
           requests:
             memory: 1Gi
             cpu: 1
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
 
   - name: pre-kubermatic-lint
     run_if_changed: "^api/"
@@ -124,8 +142,9 @@ presubmits:
           requests:
             memory: 10Gi
             cpu: 3
-          limits:
-            memory: 10Gi
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
 
   - name: pre-kubermatic-dependencies
     run_if_changed: "^api/"
@@ -147,6 +166,9 @@ presubmits:
           limits:
             memory: 256Mi
             cpu: 250m
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
 
   - name: pre-kubermatic-shellcheck
     optional: true
@@ -164,6 +186,9 @@ presubmits:
           requests:
             memory: 1Gi
             cpu: 0.5
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
 
   - name: pre-kubermatic-license-validation
     run_if_changed: "vendor"
@@ -178,6 +203,9 @@ presubmits:
         - -C
         - api
         - license-validation
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
 
   - name: pre-kubermatic-prometheus-rules-validation
     run_if_changed: "config/monitoring"
@@ -192,6 +220,9 @@ presubmits:
         - -C
         - config/monitoring
         - check-rules
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
       imagePullSecrets:
       - name: quay
 
@@ -204,6 +235,9 @@ presubmits:
       - image: quay.io/kubermatic/promtool:2.7.0-3
         command:
         - "./api/hack/verify-user-cluster-prometheus-configs.sh"
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
       imagePullSecrets:
       - name: quay
 
@@ -227,6 +261,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.15.11"
         - name: SERVICE_ACCOUNT_KEY
@@ -262,6 +298,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.16.9"
         - name: SERVICE_ACCOUNT_KEY
@@ -297,6 +335,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.17.5"
         - name: SERVICE_ACCOUNT_KEY
@@ -332,6 +372,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: SERVICE_ACCOUNT_KEY
@@ -371,6 +413,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: PROVIDER
@@ -411,6 +455,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: PROVIDER
@@ -448,6 +494,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: PROVIDER
@@ -490,6 +538,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -529,6 +579,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: PROVIDER
@@ -566,6 +618,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: PROVIDER
@@ -605,6 +659,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: PROVIDER
@@ -647,6 +703,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: PROVIDER
@@ -686,6 +744,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: PROVIDER
@@ -727,6 +787,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: PROVIDER
@@ -768,6 +830,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: PROVIDER
@@ -806,6 +870,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: PROVIDER
@@ -852,6 +918,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: OPENSHIFT
           value: "true"
         - name: OPENSHIFT_VERSION
@@ -906,6 +974,8 @@ presubmits:
           limits:
             memory: 6Gi
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -932,6 +1002,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: KUBERMATIC_USE_OPERATOR
@@ -1005,6 +1077,8 @@ presubmits:
         command:
         - ./api/hack/ci/ci-deploy-ci-kubermatic-io.sh
         env:
+        - name: KUBERMATIC_EDITION
+          value: ee
         - name: CANARY_DEPLOYMENT
           value: "true"
         # docker-in-docker needs privileged mode
@@ -1039,3 +1113,6 @@ presubmits:
           limits:
             memory: 6Gi
             cpu: 2
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee

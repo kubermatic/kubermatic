@@ -146,7 +146,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, err
 	}
-	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(context.Background(), mgr.GetClient(), options.kubeconfig, options.namespace, options.dynamicDatacenters)
+	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(context.Background(), mgr.GetClient(), options.kubeconfig, options.dynamicDatacenters)
 	if err != nil {
 		return providers{}, err
 	}

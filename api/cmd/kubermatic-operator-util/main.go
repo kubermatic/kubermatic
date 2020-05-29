@@ -7,15 +7,13 @@ import (
 
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
-	yaml3 "gopkg.in/yaml.v3"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/conversion"
 	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
 	"github.com/kubermatic/kubermatic/api/pkg/log"
+	yamlutil "github.com/kubermatic/kubermatic/api/pkg/util/yaml"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/test-infra/pkg/genyaml"
 	"sigs.k8s.io/yaml"
 )
 
@@ -40,20 +38,14 @@ func main() {
 		},
 	}
 
-	app.Commands = []cli.Command{
-		{
-			Name:      "convert",
-			Usage:     "Convert a Helm values.yaml to a KubermaticConfiguration manifest (YAML)",
-			Action:    convertAction,
-			ArgsUsage: "VALUES_FILE",
-		},
+	app.Commands = append([]cli.Command{
 		{
 			Name:      "defaults",
 			Usage:     "Outputs a KubermaticConfiguration with all default values, optionally applied to a given configuration manifest (YAML)",
 			Action:    defaultsAction,
 			ArgsUsage: "[MANIFEST_FILE]",
 		},
-	}
+	}, extraCommands()...)
 
 	// setup logging
 	app.Before = func(c *cli.Context) error {
@@ -71,44 +63,6 @@ func main() {
 	if err != nil && logger != nil {
 		logger.Fatalw("Failed to run command", zap.Error(err))
 	}
-}
-
-func convertAction(ctx *cli.Context) error {
-	valuesFile := ctx.Args().First()
-	if valuesFile == "" {
-		return cli.NewExitError("no values.yaml file given", 2)
-	}
-
-	var (
-		content []byte
-		err     error
-	)
-
-	if valuesFile == "-" {
-		content, err = ioutil.ReadAll(os.Stdin)
-	} else {
-		content, err = ioutil.ReadFile(valuesFile)
-	}
-	if err != nil {
-		return cli.NewExitError(fmt.Errorf("failed to read '%s': %v", valuesFile, err), 1)
-	}
-
-	resources, err := conversion.HelmValuesFileToCRDs(content, "kubermatic")
-	if err != nil {
-		return cli.NewExitError(err, 1)
-	}
-
-	for i, resource := range resources {
-		if err := printYAML(resource); err != nil {
-			return cli.NewExitError(fmt.Errorf("failed to create YAML: %v", err), 1)
-		}
-
-		if i < len(resources)-1 {
-			fmt.Println("\n---")
-		}
-	}
-
-	return nil
 }
 
 func defaultsAction(ctx *cli.Context) error {
@@ -141,17 +95,9 @@ func defaultsAction(ctx *cli.Context) error {
 		return cli.NewExitError(fmt.Errorf("failed to create KubermaticConfiguration: %v", err), 1)
 	}
 
-	if err := printYAML(defaulted); err != nil {
+	if err := yamlutil.Encode(defaulted, os.Stdout); err != nil {
 		return cli.NewExitError(fmt.Errorf("failed to create YAML: %v", err), 1)
 	}
 
 	return nil
-}
-
-func printYAML(resource interface{}) error {
-	encoder := yaml3.NewEncoder(os.Stdout)
-	encoder.SetIndent(2)
-
-	// genyaml is smart enough to not output a creationTimestamp when marshalling as YAML
-	return genyaml.NewCommentMap().EncodeYaml(resource, encoder)
 }

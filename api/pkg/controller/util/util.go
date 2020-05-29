@@ -5,10 +5,8 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -94,28 +92,6 @@ func EnqueueConst(queueKey string) *handler.EnqueueRequestsFromMapFunc {
 				Namespace: "",
 			}}}
 	})}
-}
-
-// SupportsFailureDomainZoneAntiAffinity checks if there are any nodes with the
-// TopologyKeyFailureDomainZone label.
-func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlruntimeclient.Client) (bool, error) {
-	selector, err := labels.Parse(resources.TopologyKeyFailureDomainZone)
-	if err != nil {
-		return false, fmt.Errorf("failed to parse selector: %v", err)
-	}
-	opts := &ctrlruntimeclient.ListOptions{
-		LabelSelector: selector,
-		Raw: &metav1.ListOptions{
-			Limit: 1,
-		},
-	}
-
-	nodeList := &corev1.NodeList{}
-	if err := client.List(ctx, nodeList, opts); err != nil {
-		return false, fmt.Errorf("failed to list nodes having the %s label: %v", resources.TopologyKeyFailureDomainZone, err)
-	}
-
-	return len(nodeList.Items) != 0, nil
 }
 
 // ClusterAvailableForReconciling returns true if the given cluster can be reconciled. This is true if
