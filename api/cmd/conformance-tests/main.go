@@ -300,7 +300,7 @@ func main() {
 		var login, password, token string
 
 		if err := measureTime(
-			kubermaticLoginDurationMetric,
+			kubermaticLoginDurationMetric.WithLabelValues(),
 			log,
 			func() error {
 				login, password = apitest.OIDCCredentials()
