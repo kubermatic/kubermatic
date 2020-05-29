@@ -43,6 +43,8 @@ const (
 
 	DefaultSSHPort     = 22
 	DefaultKubeletPort = 10250
+
+	DefaultKubeconfigFieldPath = "kubeconfig"
 )
 
 // CloudProvider declares a set of methods for interacting with a cloud provider
