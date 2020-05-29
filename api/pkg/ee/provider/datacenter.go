@@ -12,8 +12,6 @@ import (
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	providertypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/rest"
@@ -133,21 +131,7 @@ func LoadSeed(path, datacenterName string) (*kubermaticv1.Seed, error) {
 
 type EESeedGetter func() (*kubermaticv1.Seed, error)
 
-func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName, dcFile, namespace string, dynamicDatacenters bool) (EESeedGetter, error) {
-	if dynamicDatacenters {
-		return func() (*kubermaticv1.Seed, error) {
-			seed := &kubermaticv1.Seed{}
-			if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: seedName}, seed); err != nil {
-				// allow callers to handle this gracefully
-				if kerrors.IsNotFound(err) {
-					return nil, err
-				}
-				return nil, fmt.Errorf("failed to get seed %q: %v", seedName, err)
-			}
-			return seed, nil
-		}, nil
-	}
-
+func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile string, seedName string) (EESeedGetter, error) {
 	if dcFile == "" {
 		return nil, errors.New("--datacenters is required")
 	}
@@ -163,7 +147,7 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 
 type EESeedsGetter func() (map[string]*kubermaticv1.Seed, error)
 
-func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile, namespace string, dynamicDatacenters bool) (EESeedsGetter, error) {
+func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dcFile string, namespace string, dynamicDatacenters bool) (EESeedsGetter, error) {
 	if dynamicDatacenters {
 		// We only have a options func for raw *metav1.ListOpts as the rbac controller currently required that
 		listOpts := &ctrlruntimeclient.ListOptions{
@@ -204,10 +188,10 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 
 type EESeedKubeconfigGetter = func(seed *kubermaticv1.Seed) (*rest.Config, error)
 
-// KubeconfigBasedSeedKubeconfigGetterFactory returns a provider.SeedKubeconfigGetter
+// SeedKubeconfigGetterFactory returns a provider.SeedKubeconfigGetter
 // compatible implementation that returns kubeconfigs based on the given master
 // --kubeconfig file, which has to contain a context for every configured seed.
-func KubeconfigBasedSeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, kubeconfigFilePath string, dynamicDatacenters bool) (EESeedKubeconfigGetter, error) {
+func SeedKubeconfigGetterFactory(kubeconfigFilePath string) (EESeedKubeconfigGetter, error) {
 	if kubeconfigFilePath == "" {
 		return nil, errors.New("--kubeconfig is required when --dynamic-datacenters=false")
 	}

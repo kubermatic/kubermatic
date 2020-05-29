@@ -36,7 +36,6 @@ type controllerRunOptions struct {
 
 	externalURL                                      string
 	dc                                               string
-	dcFile                                           string
 	workerName                                       string
 	versionsFile                                     string
 	updatesFile                                      string
@@ -61,7 +60,6 @@ type controllerRunOptions struct {
 	dockerPullConfigJSONFile                         string
 	kubermaticImage                                  string
 	dnatControllerImage                              string
-	dynamicDatacenters                               bool
 	namespace                                        string
 	apiServerDefaultReplicas                         int
 	apiServerEndpointReconcilingDisabled             bool
@@ -94,7 +92,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal server is running on")
 	flag.StringVar(&c.externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	flag.StringVar(&c.dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
-	flag.StringVar(&c.dcFile, "datacenters", "", "The datacenters.yaml file path")
 	flag.StringVar(&c.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.StringVar(&c.versionsFile, "versions", "versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&c.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
@@ -126,15 +123,15 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", resources.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", resources.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
-	flag.BoolVar(&c.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")
 	flag.BoolVar(&c.apiServerEndpointReconcilingDisabled, "apiserver-reconciling-disabled-by-default", false, "Whether to disable reconciling for the apiserver endpoints by default")
 	flag.IntVar(&c.controllerManagerDefaultReplicas, "controller-manager-default-replicas", 1, "The default number of replicas for usercluster controller managers")
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
-	c.seedValidationHook.AddFlags(flag.CommandLine)
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
+	c.seedValidationHook.AddFlags(flag.CommandLine)
+	addFlags(flag.CommandLine)
 	flag.Parse()
 
 	featureGates, err := features.NewFeatures(rawFeatureGates)

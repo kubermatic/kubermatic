@@ -15,6 +15,7 @@ import (
 	envoycache "github.com/envoyproxy/go-control-plane/pkg/cache"
 	xds "github.com/envoyproxy/go-control-plane/pkg/server"
 
+	cmdutil "github.com/kubermatic/kubermatic/api/cmd/util"
 	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 
@@ -71,6 +72,7 @@ func main() {
 		}
 	}()
 
+	cmdutil.Hello(log, "Envoy-Manager", logOpts.Debug)
 	log.Infow("Starting the server...", "address", listenAddress)
 
 	snapshotCache := envoycache.NewSnapshotCache(true, hasher{}, log.With("component", "envoycache"))

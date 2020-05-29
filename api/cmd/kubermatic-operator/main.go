@@ -95,12 +95,12 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", certmanagerv1alpha2.SchemeGroupVersion), zap.Error(err))
 	}
 
-	seedsGetter, err := provider.SeedsGetterFactory(ctx, mgr.GetClient(), "", opt.namespace, true)
+	seedsGetter, err := seedsGetterFactory(ctx, mgr.GetClient(), opt)
 	if err != nil {
 		log.Fatalw("Failed to construct seedsGetter", zap.Error(err))
 	}
 
-	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, mgr.GetClient(), "", true)
+	seedKubeconfigGetter, err := provider.SeedKubeconfigGetterFactory(ctx, mgr.GetClient())
 	if err != nil {
 		log.Fatalw("Failed to construct seedKubeconfigGetter", zap.Error(err))
 	}

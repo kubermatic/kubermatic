@@ -10,13 +10,12 @@ import (
 	"strings"
 	"time"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-
 	"github.com/go-logr/zapr"
 	"github.com/heptiolabs/healthcheck"
 	"github.com/oklog/run"
 	"go.uber.org/zap"
 
+	cmdutil "github.com/kubermatic/kubermatic/api/cmd/util"
 	clusterrolelabeler "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
 	containerlinux "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/container-linux"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/ipam"
@@ -29,6 +28,7 @@ import (
 	usercluster "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources"
 	machinecontrolerresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	rolecloner "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/role-cloner"
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
@@ -96,6 +96,8 @@ func main() {
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
+
+	cmdutil.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug)
 
 	if runOp.ownerEmail == "" {
 		log.Fatal("-owner-email must be set")

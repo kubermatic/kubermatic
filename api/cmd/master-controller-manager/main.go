@@ -10,8 +10,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	mastermigrations "github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/migrations/master/options"
 	"github.com/kubermatic/kubermatic/api/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/metrics"
@@ -39,10 +37,8 @@ const (
 
 type controllerRunOptions struct {
 	kubeconfig         string
-	dcFile             string
 	masterURL          string
 	internalAddr       string
-	dynamicDatacenters bool
 	seedvalidationHook seedvalidation.WebhookOpts
 
 	workerName string
@@ -72,13 +68,12 @@ func main() {
 	logOpts.AddFlags(flag.CommandLine)
 	runOpts.seedvalidationHook.AddFlags(flag.CommandLine)
 	flag.StringVar(&runOpts.kubeconfig, "kubeconfig", "", "Path to a kubeconfig.")
-	flag.StringVar(&runOpts.dcFile, "datacenters", "", "The datacenters.yaml file path.")
 	flag.StringVar(&runOpts.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
 	flag.StringVar(&runOpts.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served.")
-	flag.BoolVar(&runOpts.dynamicDatacenters, "dynamic-datacenters", false, "Whether to enable dynamic datacenters. Enabling this and defining the datcenters flag will enable the migration of the datacenters defined in datancenters.yaml to Seed custom resources.")
 	flag.StringVar(&ctrlCtx.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources.")
+	addFlags(flag.CommandLine)
 	flag.Parse()
 
 	ctrlruntimelog.SetLogger(ctrlruntimelog.ZapLogger(false))
@@ -110,12 +105,6 @@ func main() {
 	defer ctxCancel()
 	ctrlCtx.ctx = ctx
 
-	// prepare migration options
-	migrationOptions := options.MigrationOptions{
-		DatacentersFile:    runOpts.dcFile,
-		DynamicDatacenters: runOpts.dynamicDatacenters,
-	}
-
 	// load kubeconfig and create API client; kubeconfig can be empty if no Seed CRD migrations need to run
 	var cfg *restclient.Config
 
@@ -141,8 +130,6 @@ func main() {
 		if err != nil {
 			log.Fatalw("failed to create client", zap.Error(err))
 		}
-
-		migrationOptions.Kubeconfig = kubeconfig
 	}
 
 	ctrlCtx.labelSelectorFunc = func(listOpts *metav1.ListOptions) {
@@ -184,32 +171,19 @@ func main() {
 
 	// these two getters rely on the ctrlruntime manager being started; they are
 	// only used inside controllers
-	ctrlCtx.seedsGetter, err = provider.SeedsGetterFactory(ctx, mgr.GetClient(), runOpts.dcFile, ctrlCtx.namespace, runOpts.dynamicDatacenters)
+	ctrlCtx.seedsGetter, err = seedsGetterFactory(ctx, mgr.GetClient(), ctrlCtx.namespace)
 	if err != nil {
 		log.Fatalw("failed to construct seedsGetter", zap.Error(err))
 	}
-	ctrlCtx.seedKubeconfigGetter, err = provider.SeedKubeconfigGetterFactory(
-		ctx, mgr.GetClient(), runOpts.kubeconfig, runOpts.dynamicDatacenters)
+	ctrlCtx.seedKubeconfigGetter, err = seedKubeconfigGetterFactory(ctx, mgr.GetClient(), runOpts)
 	if err != nil {
 		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
 
 	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
-		seedValidationWebhookServer, err := runOpts.seedvalidationHook.Server(
-			ctx,
-			log,
-			ctrlCtx.namespace,
-			runOpts.workerName,
-			ctrlCtx.seedsGetter,
-			provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter),
-			migrationOptions.SeedMigrationEnabled())
-		if err != nil {
-			log.Fatalw("failed to create validatingAdmissionWebhook server for seeds", zap.Error(err))
+		if err := setupSeedValidationWebhook(ctx, mgr, log, runOpts, ctrlCtx); err != nil {
+			log.Fatalw("failed to start seed validation webhook", zap.Error(err))
 		}
-		if err := mgr.Add(seedValidationWebhookServer); err != nil {
-			log.Fatalw("failed to add the seedValidationWebhookServer to the mgr", zap.Error(err))
-		}
-
 	} else {
 		log.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
 	}
@@ -249,14 +223,8 @@ func main() {
 			}
 
 			return leaderelection.RunAsLeader(leaderCtx, log, cfg, mgr.GetEventRecorderFor(controllerName), electionName, func(ctx context.Context) error {
-				if migrationOptions.MigrationEnabled() {
-					log.Info("executing migrations...")
-
-					if err := mastermigrations.RunAll(ctx, log, mgr.GetClient(), ctrlCtx.namespace, migrationOptions); err != nil {
-						return fmt.Errorf("failed to run migrations: %v", err)
-					}
-
-					log.Info("migrations executed successfully")
+				if err := runMigrations(ctx, mgr.GetClient(), log, runOpts, ctrlCtx); err != nil {
+					return err
 				}
 
 				log.Info("starting the master-controller-manager...")
