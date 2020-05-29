@@ -1,5 +1,6 @@
 export CGO_ENABLED?=0
-REPO=quay.io/kubermatic/api
+KUBERMATIC_EDITION?=ce
+REPO=quay.io/kubermatic/api$(shell [ "$(KUBERMATIC_EDITION)" != "ee" ] && echo "-$(KUBERMATIC_EDITION)" )
 CMD=$(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS?=-v
 GITTAG=$(shell git describe --tags --always)
@@ -18,7 +19,6 @@ HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
 BUILD_DEST?=_build
 GOTOOLFLAGS?=$(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
-KUBERMATIC_EDITION?=ce
 
 default: all
 

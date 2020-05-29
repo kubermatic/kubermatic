@@ -13,7 +13,7 @@ spec:
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic REST API image.
-    dockerRepository: quay.io/kubermatic/api
+    dockerRepository: quay.io/kubermatic/api-ce
     # PProfEndpoint controls the port the API should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
@@ -82,7 +82,7 @@ spec:
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic master-controller-manager image.
-    dockerRepository: quay.io/kubermatic/api
+    dockerRepository: quay.io/kubermatic/api-ce
     # PProfEndpoint controls the port the master-controller-manager should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
@@ -186,7 +186,7 @@ spec:
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic seed-controller-manager image.
-    dockerRepository: quay.io/kubermatic/api
+    dockerRepository: quay.io/kubermatic/api-ce
     # PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
@@ -214,7 +214,7 @@ spec:
         "share_kubeconfig": false
       }
     # DockerRepository is the repository containing the Kubermatic dashboard image.
-    dockerRepository: quay.io/kubermatic/dashboard
+    dockerRepository: quay.io/kubermatic/dashboard-ce
     # Replicas sets the number of pod replicas for the UI deployment.
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
@@ -367,7 +367,7 @@ spec:
     # EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
     etcdVolumeSize: 5Gi
     # KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
-    kubermaticDockerRepository: quay.io/kubermatic/api
+    kubermaticDockerRepository: quay.io/kubermatic/api-ce
     # Monitoring can be used to fine-tune to in-cluster Prometheus.
     monitoring:
       # CustomRules can be used to inject custom recording and alerting rules. This field
