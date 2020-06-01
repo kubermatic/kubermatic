@@ -16,7 +16,6 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	clienttesting "k8s.io/client-go/testing"
 )
 
 func TestDeleteSSHKey(t *testing.T) {
@@ -28,7 +27,6 @@ func TestDeleteSSHKey(t *testing.T) {
 		ExistingKubermaticObjs []runtime.Object
 		ExistingAPIUser        *apiv1.User
 		ExistingSSHKeys        []*kubermaticv1.UserSSHKey
-		privilegedOperation    bool
 	}{
 		// scenario 1
 		{
@@ -69,8 +67,7 @@ func TestDeleteSSHKey(t *testing.T) {
 				genSSHKey(test.DefaultCreationTimestamp(), "c08aa5c7abf34504f18552846485267d", "first-key", "my-first-project-ID", test.GenDefaultCluster().Name),
 				genSSHKey(test.DefaultCreationTimestamp(), "abc", "second-key", "my-first-project-ID", "abcd-ID"),
 			},
-			ExistingAPIUser:     test.GenAPIUser("admin", "admin@acme.com"),
-			privilegedOperation: true,
+			ExistingAPIUser: test.GenAPIUser("admin", "admin@acme.com"),
 		},
 		// scenario 3
 		{
@@ -102,7 +99,7 @@ func TestDeleteSSHKey(t *testing.T) {
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, clients, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -113,30 +110,6 @@ func TestDeleteSSHKey(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			kubermaticFakeClient := clients.FakeKubermaticClient
-			// only when impersonated client is used
-			if !tc.privilegedOperation {
-				// check only if ssh key was delteted
-				if tc.HTTPStatus == http.StatusOK {
-					actionWasValidated := false
-					for _, action := range kubermaticFakeClient.Actions() {
-						if action.Matches("delete", "usersshkeies") {
-							deleteAction, ok := action.(clienttesting.DeleteAction)
-							if !ok {
-								t.Fatalf("unexpected action %#v", action)
-							}
-							if deleteAction.GetName() != tc.SSHKeyToDelete {
-								t.Fatalf("wrong ssh-key removed, wanted = %s, actual = %s", tc.SSHKeyToDelete, deleteAction.GetName())
-							}
-							actionWasValidated = true
-							break
-						}
-					}
-					if !actionWasValidated {
-						t.Fatal("create action was not validated, a binding for a user was not updated ?")
-					}
-				}
-			}
 		})
 	}
 }
