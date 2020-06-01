@@ -15,7 +15,6 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,7 +32,6 @@ func TestCreateServiceAccountProject(t *testing.T) {
 		httpStatus             int
 		existingAPIUser        apiv1.User
 		existingKubermaticObjs []runtime.Object
-		privilegedOperation    bool
 	}{
 		{
 			name:       "scenario 1: create service account 'test' for editors group by project owner john",
@@ -120,11 +118,10 @@ func TestCreateServiceAccountProject(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				genUser("bob", "bob@acme.com", true),
 			},
-			existingAPIUser:     *test.GenAPIUser("bob", "bob@acme.com"),
-			projectToSync:       "plan9-ID",
-			expectedSAName:      "test",
-			expectedGroup:       "editors-plan9-ID",
-			privilegedOperation: true,
+			existingAPIUser: *test.GenAPIUser("bob", "bob@acme.com"),
+			projectToSync:   "plan9-ID",
+			expectedSAName:  "test",
+			expectedGroup:   "editors-plan9-ID",
 		},
 		{
 			name:       "scenario 6: the user Bob can not create service account 'test' for editors group for John project",
@@ -182,11 +179,7 @@ func TestCreateServiceAccountProject(t *testing.T) {
 
 				saName := fmt.Sprintf("serviceaccount-%s", sa.ID)
 				expectedSA := &kubermaticapiv1.User{}
-				if tc.privilegedOperation {
-					err = client.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: saName}, expectedSA)
-				} else {
-					expectedSA, err = client.FakeKubermaticClient.KubermaticV1().Users().Get(saName, metav1.GetOptions{})
-				}
+				err = client.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: saName}, expectedSA)
 				if err != nil {
 					t.Fatalf("expected SA object got error %v", err)
 				}
@@ -374,7 +367,6 @@ func TestEdit(t *testing.T) {
 		httpStatus             int
 		existingAPIUser        apiv1.User
 		existingKubermaticObjs []runtime.Object
-		privilegedOperation    bool
 	}{
 		{
 			name:       "scenario 1: update service account, change name and group",
@@ -441,12 +433,11 @@ func TestEdit(t *testing.T) {
 				/*add service account*/
 				test.GenServiceAccount("19840801", "test", "viewers", "plan9-ID"),
 			},
-			existingAPIUser:     *test.GenAPIUser("bob", "bob@acme.com"),
-			projectToSync:       "plan9-ID",
-			expectedSAName:      "newName",
-			expectedGroup:       "editors-plan9-ID",
-			saToUpdate:          "19840801",
-			privilegedOperation: true,
+			existingAPIUser: *test.GenAPIUser("bob", "bob@acme.com"),
+			projectToSync:   "plan9-ID",
+			expectedSAName:  "newName",
+			expectedGroup:   "editors-plan9-ID",
+			saToUpdate:      "19840801",
 		},
 	}
 	for _, tc := range testcases {
@@ -480,11 +471,7 @@ func TestEdit(t *testing.T) {
 
 				saName := fmt.Sprintf("serviceaccount-%s", sa.ID)
 				expectedSA := &kubermaticapiv1.User{}
-				if tc.privilegedOperation {
-					err = client.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: saName}, expectedSA)
-				} else {
-					expectedSA, err = client.FakeKubermaticClient.KubermaticV1().Users().Get(saName, metav1.GetOptions{})
-				}
+				err = client.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: saName}, expectedSA)
 				if err != nil {
 					t.Fatalf("expected SA object got error %v", err)
 				}

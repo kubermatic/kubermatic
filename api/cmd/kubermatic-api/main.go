@@ -136,7 +136,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	kubeMasterInformerFactory := informers.NewSharedInformerFactory(kubeMasterClient, 30*time.Minute)
 	kubermaticMasterClient := kubermaticclientset.NewForConfigOrDie(masterCfg)
 	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, 30*time.Minute)
-	defaultKubermaticImpersonationClient := kubernetesprovider.NewKubermaticImpersonationClient(masterCfg)
 
 	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
 	// other actions, because it doesn't support impersonation (and cant be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
@@ -210,7 +209,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create service account token provider due to %v", err)
 	}
 
-	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultKubermaticImpersonationClient.CreateImpersonatedKubermaticClientSet, mgr.GetClient(), options.domain)
+	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient(), options.domain)
 	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient(), kubernetesprovider.IsServiceAccount)
 	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
 	if err != nil {
