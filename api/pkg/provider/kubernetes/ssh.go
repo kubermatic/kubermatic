@@ -47,7 +47,7 @@ func NewPrivilegedSSHKeyProvider(client ctrlruntimeclient.Client) (*PrivilegedSS
 
 // NewSSHKeyProvider returns a new ssh key provider that respects RBAC policies
 // it uses createMasterImpersonatedClient to create a connection that uses User Impersonation
-func NewSSHKeyProvider(createMasterImpersonatedClient kubermaticImpersonationClient, client ctrlruntimeclient.Client) *SSHKeyProvider {
+func NewSSHKeyProvider(createMasterImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) *SSHKeyProvider {
 	return &SSHKeyProvider{createMasterImpersonatedClient: createMasterImpersonatedClient, client: client}
 }
 
@@ -56,7 +56,7 @@ func NewSSHKeyProvider(createMasterImpersonatedClient kubermaticImpersonationCli
 type SSHKeyProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createMasterImpersonatedClient kubermaticImpersonationClient
+	createMasterImpersonatedClient impersonationClient
 
 	client ctrlruntimeclient.Client
 }
@@ -78,11 +78,14 @@ func (p *SSHKeyProvider) Create(userInfo *provider.UserInfo, project *kubermatic
 		return nil, err
 	}
 
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	return masterImpersonatedClient.UserSSHKeys().Create(sshKey)
+	if err := masterImpersonatedClient.Create(context.Background(), sshKey); err != nil {
+		return nil, err
+	}
+	return sshKey, nil
 }
 
 // Create creates a ssh key that belongs to the given project
@@ -194,20 +197,24 @@ func (p *SSHKeyProvider) List(project *kubermaticapiv1.Project, options *provide
 
 // Get returns a key with the given name
 func (p *SSHKeyProvider) Get(userInfo *provider.UserInfo, keyName string) (*kubermaticapiv1.UserSSHKey, error) {
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	return masterImpersonatedClient.UserSSHKeys().Get(keyName, metav1.GetOptions{})
+	userKey := &kubermaticapiv1.UserSSHKey{}
+	if err := masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: keyName}, userKey); err != nil {
+		return nil, err
+	}
+	return userKey, nil
 }
 
 // Delete simply deletes the given key
 func (p *SSHKeyProvider) Delete(userInfo *provider.UserInfo, keyName string) error {
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
-	return masterImpersonatedClient.UserSSHKeys().Delete(keyName, &metav1.DeleteOptions{})
+	return masterImpersonatedClient.Delete(context.Background(), &kubermaticapiv1.UserSSHKey{ObjectMeta: metav1.ObjectMeta{Name: keyName}})
 }
 
 // Delete deletes the given ssh key
@@ -220,11 +227,14 @@ func (p *PrivilegedSSHKeyProvider) DeleteUnsecured(keyName string) error {
 
 // Update simply updates the given key
 func (p *SSHKeyProvider) Update(userInfo *provider.UserInfo, newKey *kubermaticapiv1.UserSSHKey) (*kubermaticapiv1.UserSSHKey, error) {
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	return masterImpersonatedClient.UserSSHKeys().Update(newKey)
+	if err := masterImpersonatedClient.Update(context.Background(), newKey); err != nil {
+		return nil, err
+	}
+	return newKey, nil
 }
 
 // UpdateUnsecured update a specific ssh key and returns the updated ssh key

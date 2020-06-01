@@ -185,7 +185,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return fakeClient, nil
 	}
 	userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeKubermaticImpersonationClient, fakeClient)
+	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeImpersonationClient, fakeClient)
 	privilegedSSHKeyProvider, err := kubernetes.NewPrivilegedSSHKeyProvider(fakeClient)
 	if err != nil {
 		return nil, nil, err
