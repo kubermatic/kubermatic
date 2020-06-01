@@ -36,7 +36,7 @@ const (
 )
 
 // NewServiceAccountProvider returns a service account provider
-func NewServiceAccountProvider(createMasterImpersonatedClient kubermaticImpersonationClient, clientPrivileged ctrlruntimeclient.Client, domain string) *ServiceAccountProvider {
+func NewServiceAccountProvider(createMasterImpersonatedClient impersonationClient, clientPrivileged ctrlruntimeclient.Client, domain string) *ServiceAccountProvider {
 	return &ServiceAccountProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               clientPrivileged,
@@ -47,7 +47,7 @@ func NewServiceAccountProvider(createMasterImpersonatedClient kubermaticImperson
 // ServiceAccountProvider manages service account resources
 type ServiceAccountProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
-	createMasterImpersonatedClient kubermaticImpersonationClient
+	createMasterImpersonatedClient impersonationClient
 
 	// treat clientPrivileged as a privileged user and use wisely
 	clientPrivileged ctrlruntimeclient.Client
@@ -67,17 +67,16 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 
 	sa := genServiceAccount(project, name, group, p.domain)
 
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
-	createdSA, err := masterImpersonatedClient.Users().Create(sa)
-	if err != nil {
+	if err := masterImpersonatedClient.Create(context.Background(), sa); err != nil {
 		return nil, err
 	}
-	createdSA.Name = removeSAPrefix(createdSA.Name)
-	return createdSA, nil
+	sa.Name = removeSAPrefix(sa.Name)
+	return sa, nil
 }
 
 // CreateUnsecured creates a new service accounts
@@ -144,13 +143,13 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 	// After we get the list of SA we try to get at least one item using unprivileged account to see if the user have read access
 	if len(resultList) > 0 {
 
-		masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+		masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 		if err != nil {
 			return nil, err
 		}
 
 		saToGet := resultList[0]
-		_, err = masterImpersonatedClient.Users().Get(saToGet.Name, metav1.GetOptions{})
+		err = masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: saToGet.Name}, &kubermaticv1.User{})
 		if err != nil {
 			return nil, err
 		}
@@ -244,14 +243,14 @@ func (p *ServiceAccountProvider) Get(userInfo *provider.UserInfo, name string, o
 		options = &provider.ServiceAccountGetOptions{RemovePrefix: true}
 	}
 
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
 	name = addSAPrefix(name)
-	serviceAccount, err := masterImpersonatedClient.Users().Get(name, metav1.GetOptions{})
-	if err != nil {
+	serviceAccount := &kubermaticv1.User{}
+	if err := masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: name}, serviceAccount); err != nil {
 		return nil, err
 	}
 
@@ -294,19 +293,18 @@ func (p *ServiceAccountProvider) Update(userInfo *provider.UserInfo, serviceAcco
 		return nil, kerrors.NewBadRequest("service account name cannot be nil")
 	}
 
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
 	serviceAccount.Name = addSAPrefix(serviceAccount.Name)
 
-	updatedSA, err := masterImpersonatedClient.Users().Update(serviceAccount)
-	if err != nil {
+	if err := masterImpersonatedClient.Update(context.Background(), serviceAccount); err != nil {
 		return nil, err
 	}
-	updatedSA.Name = removeSAPrefix(updatedSA.Name)
-	return updatedSA, nil
+	serviceAccount.Name = removeSAPrefix(serviceAccount.Name)
+	return serviceAccount, nil
 }
 
 // UpdateUnsecured gets all service accounts
@@ -336,13 +334,13 @@ func (p *ServiceAccountProvider) Delete(userInfo *provider.UserInfo, name string
 		return kerrors.NewBadRequest("service account name cannot be empty")
 	}
 
-	masterImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
 		return err
 	}
 
 	name = addSAPrefix(name)
-	return masterImpersonatedClient.Users().Delete(name, &metav1.DeleteOptions{})
+	return masterImpersonatedClient.Delete(context.Background(), &kubermaticv1.User{ObjectMeta: metav1.ObjectMeta{Name: name}})
 }
 
 // DeleteUnsecured gets all service accounts
