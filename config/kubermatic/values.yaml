@@ -84,7 +84,7 @@ kubermatic:
     nodeportRange: "30000-32767"
     replicas: 2
     image:
-      repository: "quay.io/kubermatic/api"
+      repository: "quay.io/kubermatic/kubermatic-ee"
       tag: "__KUBERMATIC_TAG__"
       pullPolicy: "IfNotPresent"
     pprofEndpoint: ":6600"
@@ -145,7 +145,7 @@ kubermatic:
     # The default list is taken from static/master/accessible-addons.yaml if the list below is null.
     accessibleAddons: null
     image:
-      repository: "quay.io/kubermatic/api"
+      repository: "quay.io/kubermatic/kubermatic-ee"
       tag: "__KUBERMATIC_TAG__"
       pullPolicy: "IfNotPresent"
     resources:
@@ -228,7 +228,7 @@ kubermatic:
   masterController:
     replicas: 1
     image:
-      repository: quay.io/kubermatic/api
+      repository: quay.io/kubermatic/kubermatic-ee
       tag: "__KUBERMATIC_TAG__"
       pullPolicy: IfNotPresent
     resources:
