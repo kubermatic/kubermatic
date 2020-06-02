@@ -87,6 +87,6 @@ keep semver-compatible version tags.
 ### Vendoring
 
 Currently we use vendoring to have the repository all contained. This speeds up compile times and makes
-builds more resilient against some cloud provider's network infrastructure and peering to GitHub. As
-having the `vendor` directory or not does not touch any of the proposals above, I propose that we keep
-the directory for now.
+builds more resilient against some cloud provider's network infrastructure and peering to GitHub. However
+moving forward the build time speed up should be achieved with proper modcache handling instead, making
+the `vendor` directory obsolete. I propose that we remove it from the repository.
