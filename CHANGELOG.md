@@ -1,4 +1,4 @@
-### [v2.14.0-rc.1]
+### [v2.14.0]
 
 
 **Misc:**
@@ -6,6 +6,7 @@
 - ACTION REQUIRED: The most recent backup for user clusters is kept when the cluster is deleted. Adjust the cleanup-container to get the old behaviour (delete all backups) back. [#5262](https://github.com/kubermatic/kubermatic/issues/5262) ([xrstf](https://github.com/xrs
 tf))
 - ACTION REQUIRED: Addon manifest templating is now a stable API, but different to the old implicit data. Custom addons might need to be adjusted. [#5275](https://github.com/kubermatic/kubermatic/issues/5275) ([xrstf](https://github.com/xrstf))
+- Added Flatcar Linux as an Operating System option
 - Add SLES as an Operating System option [#5040](https://github.com/kubermatic/kubermatic/issues/5040) ([kgroschoff](https://github.com/kgroschoff))
 - Audit logging can now be enforced in all clusters within a Datacenter. [#5045](https://github.com/kubermatic/kubermatic/issues/5045) ([kdomanski](https://github.com/kdomanski))
 - Added Kubernetes v1.15.10, v1.16.7, v1.17.3 [#5102](https://github.com/kubermatic/kubermatic/issues/5102) ([kdomanski](https://github.com/kdomanski))
@@ -42,11 +43,50 @@ tf))
 - Updated Thanos to v0.11.0 [#5176](https://github.com/kubermatic/kubermatic/issues/5176) ([youssefazrak](https://github.com/youssefazrak))
 - Updated Velero to v1.3.2 [#5326](https://github.com/kubermatic/kubermatic/issues/5326) ([scheeles](https://github.com/scheeles))
 
+**Dashboard**:
+
+- Added a dark theme and a selector to the user settings. [#1867](https://github.com/kubermatic/dashboard-v2/issues/1867) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added possibility to define a default project in user settings. When a default project is choosen, the user will be automatically redirected to this project after login. Attention: One initial log in might be needed for the feature to take effect. [#1895](https://github.com/kubermatic/dashboard-v2/issues/1895) ([kgroschoff](https://github.com/kgroschoff))
+- Added UI support for dynamic kubelet config option [#1923](https://github.com/kubermatic/dashboard-v2/issues/1923) ([floreks](https://github.com/floreks))
+- Added Paginators to all tables [#1932](https://github.com/kubermatic/dashboard-v2/issues/1932) ([kgroschoff](https://github.com/kgroschoff))
+- Added cluster metrics. [#1940](https://github.com/kubermatic/dashboard-v2/issues/1940) ([maciaszczykm](https://github.com/maciaszczykm))
+- Increased cpu &amp; memory defaults on vSphere [#1952](https://github.com/kubermatic/dashboard-v2/issues/1952) ([kgroschoff](https://github.com/kgroschoff))
+- Custom Presets are filtered by datacenter now [#1955](https://github.com/kubermatic/dashboard-v2/issues/1955) ([kgroschoff](https://github.com/kgroschoff))
+- Added notification panel. [#1957](https://github.com/kubermatic/dashboard-v2/issues/1957) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added Pod Node Selector field. [#1968](https://github.com/kubermatic/dashboard-v2/issues/1968) ([maciaszczykm](https://github.com/maciaszczykm))
+- Operation Systems on VSphere for which no template is specified in datacenters are now hidden. [#1981](https://github.com/kubermatic/dashboard-v2/issues/1981) ([kgroschoff](https://github.com/kgroschoff))
+- Added metrics for nodes. [#1982](https://github.com/kubermatic/dashboard-v2/issues/1982) ([maciaszczykm](https://github.com/maciaszczykm))
+- Fixes issue that prevented creating Addons which had no AddonConfig deployed. [#1985](https://github.com/kubermatic/dashboard-v2/issues/1985) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added possibility to collapse the sidenav. [#2004](https://github.com/kubermatic/dashboard-v2/issues/2004) ([kgroschoff](https://github.com/kgroschoff))
+- We now use WebSocket to get global settings. [#2008](https://github.com/kubermatic/dashboard-v2/issues/2008) ([maciaszczykm](https://github.com/maciaszczykm))
+- We now set &#39;SameSite=Strict&#39; for all cookies. [#2019](https://github.com/kubermatic/dashboard-v2/issues/2019) ([maciaszczykm](https://github.com/maciaszczykm))
+- We now use `SameSite=Lax` [#2046](https://github.com/kubermatic/dashboard-v2/issues/2046) ([kgroschoff](https://github.com/kgroschoff))
+- AddonConfig&#39;s shortDescription field is now used in the accessible addons overview. [#2050](https://github.com/kubermatic/dashboard-v2/issues/2050) ([maciaszczykm](https://github.com/maciaszczykm))
+- Audit Logging will be enforced when specified in the datacenter. [#2070](https://github.com/kubermatic/dashboard-v2/issues/2070) ([kgroschoff](https://github.com/kgroschoff))
+- Added the option to use an OIDC provider for the kubeconfig download. [#2076](https://github.com/kubermatic/dashboard-v2/issues/2076) ([floreks](https://github.com/floreks))
+- Added support for creating RBAC bindings to group subjects [#2123](https://github.com/kubermatic/dashboard-v2/issues/2123) ([bashofmann](https://github.com/bashofmann))
+- Fixed custom links display on the frontpage. [#2134](https://github.com/kubermatic/dashboard-v2/issues/2134) ([maciaszczykm](https://github.com/maciaszczykm))
+- Moved project selector to the navigation bar. Redesigned the sidebar menu. [#2144](https://github.com/kubermatic/dashboard-v2/issues/2144) ([maciaszczykm](https://github.com/maciaszczykm))
+- Fixed missing pagination issue in the project list view. [#2177](https://github.com/kubermatic/dashboard-v2/issues/2177) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added possibility to specify imageID for Azure node deployments (required for RHEL).
+- Added possibility to specify customImage for GCP node deployments (required for RHEL). [#2190](https://github.com/kubermatic/dashboard-v2/issues/2190) ([maciaszczykm](https://github.com/maciaszczykm))
+- Fixed user settings layout on the smaller screens. [#2209](https://github.com/kubermatic/dashboard-v2/issues/2209) ([maciaszczykm](https://github.com/maciaszczykm))
+- Fixed loading Openstack flavors in add/edit node deployment dialog [#2222](https://github.com/kubermatic/dashboard-v2/issues/2222) ([floreks](https://github.com/floreks))
+- Fixed filter in combo dropdown [#2238](https://github.com/kubermatic/dashboard-v2/issues/2238) ([kgroschoff](https://github.com/kgroschoff))
+- Fixed node data dialog for vSphere clusters. [#2251](https://github.com/kubermatic/dashboard-v2/issues/2251) ([maciaszczykm](https://github.com/maciaszczykm))
+- Cluster creation time is now visible in the UI. [#2253](https://github.com/kubermatic/dashboard-v2/issues/2253) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added info about End-of-life of Container Linux [#2264](https://github.com/kubermatic/dashboard-v2/issues/2264) ([kgroschoff](https://github.com/kgroschoff))
+- Enforcing pod security policy by the datacenter is now allowed. [#2270](https://github.com/kubermatic/dashboard-v2/issues/2270) ([maciaszczykm](https://github.com/maciaszczykm))
+- Introduced a number of responsiveness fixes to improve user experience on the smaller screens. [#2279](https://github.com/kubermatic/dashboard-v2/issues/2279) ([maciaszczykm](https://github.com/maciaszczykm))
+- Add support for system-wide dark/light theme selection. [#2294](https://github.com/kubermatic/dashboard-v2/issues/2294) ([floreks](https://github.com/floreks))
+
 **Cloud providers**:
 - Added Alibaba cloud [#5107](https://github.com/kubermatic/kubermatic/issues/5107) ([kgroschoff](https://github.com/kgroschoff))
-- Azure: added image ID property to clusters. [#5315](https://github.com/kubermatic/kubermatic/issues/5315) ([maciaszczykm](https://github.com/maciaszczykm))
-- Azure: added support for configurable OS and Data disk sizes [#5156](https://github.com/kubermatic/kubermatic/issues/5156) ([moelsayed](https://github.com/moelsayed))
-- GCP: added custom image property to clusters.
+- Azure: Added image ID property to clusters. [#5315](https://github.com/kubermatic/kubermatic/issues/5315) ([maciaszczykm](https://github.com/maciaszczykm))
+- Azure: Added multiple availability zones support [#2280](https://github.com/kubermatic/dashboard-v2/issues/2280) ([kgroschoff](https://github.com/kgroschoff))
+- Azure: Added support for configurable OS and Data disk sizes [#5156](https://github.com/kubermatic/kubermatic/issues/5156) ([moelsayed](https://github.com/moelsayed))
+- GCP: Added custom image property to clusters.
+- GCP: Subnetworks are now fetched from API [#1950](https://github.com/kubermatic/dashboard-v2/issues/1950) ([kgroschoff](https://github.com/kgroschoff))
 - Openstack: fixed a bug preventing the usage of pre-existing subnets connected to distributed routers [#5334](https://github.com/kubermatic/kubermatic/issues/5334) ([kdomanski](https://github.com/kdomanski))
 
 **Monitoring**:
