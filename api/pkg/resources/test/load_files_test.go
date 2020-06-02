@@ -563,7 +563,7 @@ func TestLoadFiles(t *testing.T) {
 					"https://dev.kubermatic.io/dex",
 					"kubermaticIssuer",
 					true,
-					"quay.io/kubermatic/api",
+					"quay.io/kubermatic/kubermatic",
 					"quay.io/kubermatic/kubeletdnat-controller",
 					false)
 
