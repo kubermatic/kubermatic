@@ -59,11 +59,6 @@ elif [[ $provider == "alibaba" ]]; then
      -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}"
 fi
 
-# TODO(2.13): Remove after 2.13 release, only needed for upgrade tests
-export NAMESPACE="${NAMESPACE:-kubermatic}"
-export KUBERMATIC_OIDC_ISSUER_URL_PREFIX="dex"
-export KUBERMATIC_APISERVER_ADDRESS="${KUBERMATIC_HOST}"
-
 # Needed when running in kind
 which kind && EXTRA_ARGS="$EXTRA_ARGS -create-oidc-token=true"
 
@@ -71,11 +66,6 @@ kubermatic_delete_cluster="true"
 if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
   kubermatic_delete_cluster="false"
 fi
-
-# TODO(2.13): this is only used for upgrade tests, remove after 2.13 is released
-echodate "Building legacy OIDC proxy"
-make -C api/pkg/test/e2e/api/utils/oidc-proxy-client build
-echodate "Finished building OIDC proxy"
 
 timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
