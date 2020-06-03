@@ -12,7 +12,7 @@ const (
 	DefaultDNATControllerImage = "quay.io/kubermatic/kubeletdnat-controller"
 
 	// DefaultDashboardAddonImage defines the default Docker repository containing the dashboard image.
-	DefaultDashboardImage = "quay.io/kubermatic/dashboard"
+	DefaultDashboardImage = "quay.io/kubermatic/dashboard-ee"
 
 	// DefaultKubernetesAddonImage defines the default Docker repository containing the Kubernetes addons.
 	DefaultKubernetesAddonImage = "quay.io/kubermatic/addons"
