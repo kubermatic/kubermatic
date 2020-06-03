@@ -184,7 +184,7 @@ kubermatic:
   ui:
     replicas: 2
     image:
-      repository: "quay.io/kubermatic/dashboard"
+      repository: "quay.io/kubermatic/dashboard-ee"
       tag: "__DASHBOARD_TAG__"
       pullPolicy: "IfNotPresent"
     # Config options for the dashboard, a JSON document. If this is not set, the
