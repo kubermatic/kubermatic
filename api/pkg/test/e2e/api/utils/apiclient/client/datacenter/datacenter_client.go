@@ -37,13 +37,15 @@ type ClientService interface {
 
 	ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter) (*ListDatacentersOK, error)
 
+	PatchDC(params *PatchDCParams, authInfo runtime.ClientAuthInfoWriter) (*PatchDCOK, error)
+
 	UpdateDC(params *UpdateDCParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateDCOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
 
 /*
-  CreateDC creates a datacenter for a specified seed
+  CreateDC creates the datacenter for a specified seed
 */
 func (a *Client) CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInfoWriter) (*CreateDCCreated, error) {
 	// TODO: Validate the params before sending
@@ -77,7 +79,7 @@ func (a *Client) CreateDC(params *CreateDCParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  DeleteDC deletes a datacenter
+  DeleteDC deletes the datacenter
 */
 func (a *Client) DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteDCOK, error) {
 	// TODO: Validate the params before sending
@@ -111,7 +113,7 @@ func (a *Client) DeleteDC(params *DeleteDCParams, authInfo runtime.ClientAuthInf
 }
 
 /*
-  GetDCForProvider gets a datacenter for a specified provider
+  GetDCForProvider gets the datacenter for the specified provider
 */
 func (a *Client) GetDCForProvider(params *GetDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForProviderOK, error) {
 	// TODO: Validate the params before sending
@@ -179,7 +181,7 @@ func (a *Client) GetDatacenter(params *GetDatacenterParams, authInfo runtime.Cli
 }
 
 /*
-  ListDCForProvider returns all datacenters for a specified provider
+  ListDCForProvider returns all datacenters for the specified provider
 */
 func (a *Client) ListDCForProvider(params *ListDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*ListDCForProviderOK, error) {
 	// TODO: Validate the params before sending
@@ -247,7 +249,41 @@ func (a *Client) ListDatacenters(params *ListDatacentersParams, authInfo runtime
 }
 
 /*
-  UpdateDC updates a datacenter
+  PatchDC patches the datacenter
+*/
+func (a *Client) PatchDC(params *PatchDCParams, authInfo runtime.ClientAuthInfoWriter) (*PatchDCOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchDCParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchDC",
+		Method:             "PATCH",
+		PathPattern:        "/api/v1/seed/{seed_name}/dc/{dc}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchDCReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchDCOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchDCDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  UpdateDC updates the datacenter the datacenter spec will be overwritten with the one provided in the request
 */
 func (a *Client) UpdateDC(params *UpdateDCParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateDCOK, error) {
 	// TODO: Validate the params before sending
