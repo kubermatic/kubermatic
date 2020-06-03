@@ -29,17 +29,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/cloud"
-	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"gopkg.in/square/go-jose.v2/jwt"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/cache"
 )
 
 const (
@@ -56,36 +51,6 @@ type fakeJWTTokenGenerator struct {
 // Generate generates new fake token
 func (j *fakeJWTTokenGenerator) Generate(claims *jwt.Claims, privateClaims *serviceaccount.CustomTokenClaim) (string, error) {
 	return TestFakeToken, nil
-}
-
-// fakeKubermaticImpersonationClient gives kubermatic client set that uses user impersonation
-type fakeKubermaticImpersonationClient struct {
-	kubermaticClent *kubermaticfakeclentset.Clientset
-}
-
-func (f *fakeKubermaticImpersonationClient) CreateFakeKubermaticImpersonatedClientSet(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
-	return f.kubermaticClent.KubermaticV1(), nil
-}
-
-func createFakeKubermaticClients(kubermaticObjects []runtime.Object) (*fakeKubermaticImpersonationClient, *kubermaticfakeclentset.Clientset, cache.Indexer, error) {
-	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
-
-	indexer, err := createIndexer(kubermaticObjects)
-	if err != nil {
-		return nil, nil, nil, err
-	}
-	return &fakeKubermaticImpersonationClient{kubermaticClient}, kubermaticClient, indexer, nil
-}
-
-func createIndexer(kubermaticObjects []runtime.Object) (cache.Indexer, error) {
-	indexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-	for _, obj := range kubermaticObjects {
-		err := indexer.Add(obj)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return indexer, nil
 }
 
 func createAuthenitactedUser() *kubermaticv1.User {

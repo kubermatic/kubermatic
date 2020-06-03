@@ -248,7 +248,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
 	clusterProvider := kubernetes.NewClusterProvider(
 		&restclient.Config{},
-		fakeKubermaticImpersonationClient,
+		fakeImpersonationClient,
 		fUserClusterConnection,
 		"",
 		rbac.ExtractGroupPrefix,
