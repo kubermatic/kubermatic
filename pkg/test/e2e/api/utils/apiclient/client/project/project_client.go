@@ -1036,7 +1036,7 @@ func (a *Client) GetClusterKubeconfig(params *GetClusterKubeconfigParams, authIn
 		ID:                 "getClusterKubeconfig",
 		Method:             "GET",
 		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig",
-		ProducesMediaTypes: []string{"application/yaml"},
+		ProducesMediaTypes: []string{"application/json", "application/yaml"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,

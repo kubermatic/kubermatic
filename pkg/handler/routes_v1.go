@@ -1909,6 +1909,7 @@ func (r Routing) getClusterEvents() http.Handler {
 //
 //     Produces:
 //     - application/yaml
+//	   - application/json
 //
 //     Responses:
 //       default: errorResponse
