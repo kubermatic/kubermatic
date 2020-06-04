@@ -91,6 +91,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/seed/{seed_name}/dc/{dc}").
 		Handler(r.updateDC())
 
+	mux.Methods(http.MethodPatch).
+		Path("/seed/{seed_name}/dc/{dc}").
+		Handler(r.patchDC())
+
 	mux.Methods(http.MethodDelete).
 		Path("/seed/{seed_name}/dc/{dc}").
 		Handler(r.deleteDC())
@@ -1300,7 +1304,7 @@ func (r Routing) datacenterHandler() http.Handler {
 
 // swagger:route GET /api/v1/providers/{provider_name}/dc datacenter listDCForProvider
 //
-//     Returns all datacenters for a specified provider.
+//     Returns all datacenters for the specified provider.
 //
 //     Produces:
 //     - application/json
@@ -1324,7 +1328,7 @@ func (r Routing) listDCForProvider() http.Handler {
 
 // swagger:route GET /api/v1/providers/{provider_name}/dc/{dc} datacenter getDCForProvider
 //
-//     Get a datacenter for a specified provider.
+//     Get the datacenter for the specified provider.
 //
 //     Produces:
 //     - application/json
@@ -1348,7 +1352,7 @@ func (r Routing) getDCForProvider() http.Handler {
 
 // swagger:route POST /api/v1/seed/{seed_name}/dc datacenter createDC
 //
-//     Create a datacenter for a specified seed.
+//     Create the datacenter for a specified seed.
 //
 //     Consumes:
 //     - application/json
@@ -1375,7 +1379,7 @@ func (r Routing) createDC() http.Handler {
 
 // swagger:route PUT /api/v1/seed/{seed_name}/dc/{dc} datacenter updateDC
 //
-//     Update a datacenter.
+//     Update the datacenter. The datacenter spec will be overwritten with the one provided in the request.
 //
 //     Consumes:
 //     - application/json
@@ -1400,9 +1404,36 @@ func (r Routing) updateDC() http.Handler {
 	)
 }
 
+// swagger:route PATCH /api/v1/seed/{seed_name}/dc/{dc} datacenter patchDC
+//
+//     Patch the datacenter.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Datacenter
+//       401: empty
+//       403: empty
+func (r Routing) patchDC() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(dc.PatchEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
+		dc.DecodePatchDCReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route DELETE /api/v1/seed/{seed_name}/dc/{dc} datacenter deleteDC
 //
-//     Delete a datacenter.
+//     Delete the datacenter.
 //
 //     Produces:
 //     - application/json

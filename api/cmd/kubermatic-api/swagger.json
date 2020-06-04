@@ -7184,7 +7184,7 @@
         "tags": [
           "datacenter"
         ],
-        "summary": "Returns all datacenters for a specified provider.",
+        "summary": "Returns all datacenters for the specified provider.",
         "operationId": "listDCForProvider",
         "parameters": [
           {
@@ -7228,7 +7228,7 @@
         "tags": [
           "datacenter"
         ],
-        "summary": "Get a datacenter for a specified provider.",
+        "summary": "Get the datacenter for the specified provider.",
         "operationId": "getDCForProvider",
         "parameters": [
           {
@@ -7320,7 +7320,7 @@
         "tags": [
           "datacenter"
         ],
-        "summary": "Create a datacenter for a specified seed.",
+        "summary": "Create the datacenter for a specified seed.",
         "operationId": "createDC",
         "parameters": [
           {
@@ -7380,7 +7380,7 @@
         "tags": [
           "datacenter"
         ],
-        "summary": "Update a datacenter.",
+        "summary": "Update the datacenter. The datacenter spec will be overwritten with the one provided in the request.",
         "operationId": "updateDC",
         "parameters": [
           {
@@ -7442,7 +7442,7 @@
         "tags": [
           "datacenter"
         ],
-        "summary": "Delete a datacenter.",
+        "summary": "Delete the datacenter.",
         "operationId": "deleteDC",
         "parameters": [
           {
@@ -7463,6 +7463,62 @@
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "datacenter"
+        ],
+        "summary": "Patch the datacenter.",
+        "operationId": "patchDC",
+        "parameters": [
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "object"
+            }
+          },
+          {
+            "type": "string",
+            "x-go-name": "DCToPatch",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Seed",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datacenter",
+            "schema": {
+              "$ref": "#/definitions/Datacenter"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"

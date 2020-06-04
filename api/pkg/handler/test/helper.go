@@ -367,6 +367,10 @@ func GenTestSeed() *kubermaticv1.Seed {
 						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{
 							Region: "ams2",
 						},
+						EnforceAuditLogging: true,
+					},
+					Node: kubermaticv1.NodeSettings{
+						PauseImage: "image-pause",
 					},
 				},
 				"regular-do1": {
