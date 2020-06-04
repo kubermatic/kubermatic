@@ -2310,7 +2310,8 @@
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/events": {
       "get": {
         "produces": [
-          "application/yaml"
+          "application/yaml",
+          "application/json"
         ],
         "tags": [
           "project"
@@ -2429,7 +2430,8 @@
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig": {
       "get": {
         "produces": [
-          "application/yaml"
+          "application/yaml",
+          "application/json"
         ],
         "tags": [
           "project"
@@ -3430,7 +3432,8 @@
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig": {
       "get": {
         "produces": [
-          "application/yaml"
+          "application/yaml",
+          "application/json"
         ],
         "tags": [
           "project"

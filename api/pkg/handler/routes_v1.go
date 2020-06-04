@@ -11,7 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1"
+	v1 "github.com/kubermatic/kubermatic/api/pkg/handler/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/addon"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
@@ -1696,6 +1696,7 @@ func (r Routing) patchCluster() http.Handler {
 //
 //     Produces:
 //     - application/yaml
+//     - application/json
 //
 //     Responses:
 //       default: errorResponse
@@ -1723,6 +1724,7 @@ func (r Routing) getClusterEvents() http.Handler {
 //
 //     Produces:
 //     - application/yaml
+//     - application/json
 //
 //     Responses:
 //       default: errorResponse
@@ -1750,6 +1752,7 @@ func (r Routing) getClusterKubeconfig() http.Handler {
 //
 //     Produces:
 //     - application/yaml
+//     - application/json
 //
 //     Responses:
 //       default: errorResponse

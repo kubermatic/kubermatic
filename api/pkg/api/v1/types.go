@@ -1282,23 +1282,23 @@ type NodeDeploymentSpec struct {
 // Event is a report of an event somewhere in the cluster.
 // swagger:model Event
 type Event struct {
-	ObjectMeta `json:",inline"`
+	ObjectMeta `json:",inline" yaml:",inline"`
 
 	// A human-readable description of the status of this operation.
-	Message string `json:"message,omitempty"`
+	Message string `json:"message,omitempty" yaml:"message,omitempty"`
 
 	// Type of this event (i.e. normal or warning). New types could be added in the future.
-	Type string `json:"type,omitempty"`
+	Type string `json:"type,omitempty" yaml:"type,omitempty"`
 
 	// The object reference that those events are about.
-	InvolvedObject ObjectReferenceResource `json:"involvedObject"`
+	InvolvedObject ObjectReferenceResource `json:"involvedObject" yaml:"involvedObject"`
 
 	// The time at which the most recent occurrence of this event was recorded.
 	// swagger:strfmt date-time
-	LastTimestamp Time `json:"lastTimestamp,omitempty"`
+	LastTimestamp Time `json:"lastTimestamp,omitempty" yaml:"lastTimestamp,omitempty"`
 
 	// The number of times this event has occurred.
-	Count int32 `json:"count,omitempty"`
+	Count int32 `json:"count,omitempty" yaml:"count,omitempty"`
 }
 
 // ObjectReferenceResource contains basic information about referred object.
