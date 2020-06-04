@@ -25,9 +25,9 @@ Supported Kubernetes versions:
 - ACTION REQUIRED: The most recent backup for user clusters is kept when the cluster is deleted. Adjust the cleanup-container to get the old behaviour (delete all backups) back. [#5262](https://github.com/kubermatic/kubermatic/issues/5262) ([xrstf](https://github.com/xrstf))
 - ACTION REQUIRED: Addon manifest templating is now a stable API, but different to the old implicit data. Custom addons might need to be adjusted. [#5275](https://github.com/kubermatic/kubermatic/issues/5275) ([xrstf](https://github.com/xrstf))
 - Added Flatcar Linux as an Operating System option
-- Add SLES as an Operating System option [#5040](https://github.com/kubermatic/kubermatic/issues/5040) ([kgroschoff](https://github.com/kgroschoff))
+- Added SLES as an Operating System option [#5040](https://github.com/kubermatic/kubermatic/issues/5040) ([kgroschoff](https://github.com/kgroschoff))
 - Audit logging can now be enforced in all clusters within a Datacenter. [#5045](https://github.com/kubermatic/kubermatic/issues/5045) ([kdomanski](https://github.com/kdomanski))
-- Add support for Kubernetes 1.18, drop support for Kubernetes &lt; 1.15. [#5325](https://github.com/kubermatic/kubermatic/issues/5325) ([xrstf](https://github.com/xrstf))
+- Added support for Kubernetes 1.18, drop support for Kubernetes &lt; 1.15. [#5325](https://github.com/kubermatic/kubermatic/issues/5325) ([xrstf](https://github.com/xrstf))
 - Administrators can now manage all projects and clusters
 - Added admission plugins CRD support [#5047](https://github.com/kubermatic/kubermatic/issues/5047) ([zreigz](https://github.com/zreigz))
 - Added configurable time window for coreos-operator node reboots [#5318](https://github.com/kubermatic/kubermatic/issues/5318) ([kdomanski](https://github.com/kdomanski))
@@ -93,7 +93,7 @@ Supported Kubernetes versions:
 - Added info about End-of-life of Container Linux [#2264](https://github.com/kubermatic/dashboard-v2/issues/2264) ([kgroschoff](https://github.com/kgroschoff))
 - Enforcing pod security policy by the datacenter is now allowed. [#2270](https://github.com/kubermatic/dashboard-v2/issues/2270) ([maciaszczykm](https://github.com/maciaszczykm))
 - Introduced a number of responsiveness fixes to improve user experience on the smaller screens. [#2279](https://github.com/kubermatic/dashboard-v2/issues/2279) ([maciaszczykm](https://github.com/maciaszczykm))
-- Add support for system-wide dark/light theme selection. [#2294](https://github.com/kubermatic/dashboard-v2/issues/2294) ([floreks](https://github.com/floreks))
+- Added support for system-wide dark/light theme selection. [#2294](https://github.com/kubermatic/dashboard-v2/issues/2294) ([floreks](https://github.com/floreks))
 
 **Cloud providers**:
 - Added Alibaba cloud [#5107](https://github.com/kubermatic/kubermatic/issues/5107) ([kgroschoff](https://github.com/kgroschoff))
