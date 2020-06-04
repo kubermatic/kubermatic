@@ -1,19 +1,16 @@
 package kubernetes_test
 
 import (
-	"reflect"
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
-	"k8s.io/client-go/kubernetes/scheme"
+
+	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/runtime"
 	restclient "k8s.io/client-go/rest"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCreateCluster(t *testing.T) {
@@ -42,11 +39,7 @@ func TestCreateCluster(t *testing.T) {
 				createAuthenitactedUser(),
 				genDefaultProject(),
 			},
-			expectedCluster: func() *kubermaticv1.Cluster {
-				cluster := genCluster("test-k8s", "kubernetes", "my-first-project-ID", "test-kubernetes", "john@acme.com")
-				cluster.ResourceVersion = "1"
-				return cluster
-			}(),
+			expectedCluster: genCluster("test-k8s", "kubernetes", "my-first-project-ID", "test-kubernetes", "john@acme.com"),
 		},
 		{
 			name:            "scenario 2, create OpenShift cluster",
@@ -60,11 +53,7 @@ func TestCreateCluster(t *testing.T) {
 				createAuthenitactedUser(),
 				genDefaultProject(),
 			},
-			expectedCluster: func() *kubermaticv1.Cluster {
-				cluster := genCluster("test-openshift", "openshift", "my-first-project-ID", "test-openshift", "john@acme.com")
-				cluster.ResourceVersion = "1"
-				return cluster
-			}(),
+			expectedCluster: genCluster("test-openshift", "openshift", "my-first-project-ID", "test-openshift", "john@acme.com"),
 		},
 		{
 			name:            "scenario 3, create kubernetes cluster when share kubeconfig is enabled and OIDC is set",
@@ -90,13 +79,14 @@ func TestCreateCluster(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
-			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
-				return fakeClient, nil
+
+			impersonationClient, _, _, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
+			if err != nil {
+				t.Fatalf("unable to create fake clients, err = %v", err)
 			}
 
 			// act
-			target := kubernetes.NewClusterProvider(&restclient.Config{}, fakeImpersonationClient, nil, tc.workerName, nil, nil, nil, tc.shareKubeconfig)
+			target := kubernetes.NewClusterProvider(&restclient.Config{}, impersonationClient.CreateFakeKubermaticImpersonatedClientSet, nil, tc.workerName, nil, nil, nil, tc.shareKubeconfig)
 			partialCluster := &kubermaticv1.Cluster{}
 			partialCluster.Spec = *tc.spec
 			if tc.clusterType == "openshift" {
@@ -125,8 +115,8 @@ func TestCreateCluster(t *testing.T) {
 				cluster.Name = tc.expectedCluster.Name
 				cluster.Status.NamespaceName = tc.expectedCluster.Status.NamespaceName
 
-				if !reflect.DeepEqual(cluster, tc.expectedCluster) {
-					t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedCluster, cluster))
+				if !equality.Semantic.DeepEqual(cluster, tc.expectedCluster) {
+					t.Fatalf("%v", diff.ObjectDiff(tc.expectedCluster, cluster))
 				}
 			}
 

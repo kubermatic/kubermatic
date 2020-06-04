@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -30,6 +31,111 @@ import (
 )
 
 const fakeDC = "fake-dc"
+
+func TestDeleteClusterEndpointWithFinalizers(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		ExistingKubermaticObjs []runtime.Object
+		HeaderParams           map[string]string
+		ExpectedFinalizers     []string
+	}{
+		{
+			Name: "scenario 1: tests deletion of a cluster with finalizers",
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add a cluster
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC), func(cluster *kubermaticv1.Cluster) {
+					cluster.Finalizers = []string{"kubermatic.io/delete-nodes"}
+				}),
+			),
+			HeaderParams:       map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "true"},
+			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv", "kubermatic.io/cleanup-in-cluster-lb", "kubermatic.io/delete-nodes"},
+		},
+		{
+			Name: "scenario 2: tests deletion of a cluster with only volume finalizer",
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add a cluster
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC), func(cluster *kubermaticv1.Cluster) {
+					cluster.Finalizers = []string{"kubermatic.io/delete-nodes"}
+				}),
+			),
+			HeaderParams:       map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "false"},
+			ExpectedFinalizers: []string{"kubermatic.io/cleanup-in-cluster-pv", "kubermatic.io/delete-nodes"},
+		},
+		{
+			Name: "scenario 3: tests deletion of a cluster without finalizers",
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add a cluster
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+			),
+			HeaderParams:       map[string]string{},
+			ExpectedFinalizers: []string{},
+		},
+		{
+			Name: "PV and LB finalizers do not get attached when cluster has no node delete finalizer",
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add a cluster
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+			),
+			HeaderParams:       map[string]string{"DeleteVolumes": "true", "DeleteLoadBalancers": "true"},
+			ExpectedFinalizers: []string{},
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			var kubermaticObj []runtime.Object
+			// validate if deletion was successful
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s", test.GenDefaultProject().Name, "clusterAbcID"), strings.NewReader(""))
+
+			for k, v := range tc.HeaderParams {
+				req.Header.Add(k, v)
+			}
+
+			res := httptest.NewRecorder()
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*test.GenDefaultAPIUser(), nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			kubermaticClient := clientsSets.FakeKubermaticClient
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != http.StatusOK {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", http.StatusOK, res.Code, res.Body.String())
+			}
+			test.CompareWithResult(t, res, "{}")
+
+			validatedActions := 0
+			for _, action := range kubermaticClient.Actions() {
+				if action.Matches("update", "clusters") {
+					updateaction, ok := action.(clienttesting.UpdateAction)
+					if !ok {
+						t.Fatalf("unexpected action %#v", action)
+					}
+
+					cluster := updateaction.GetObject().(*kubermaticv1.Cluster)
+					finalizers := cluster.GetFinalizers()
+					if len(finalizers) != len(tc.ExpectedFinalizers) {
+						t.Fatalf("expected %d finalizers, got %d", len(tc.ExpectedFinalizers), len(finalizers))
+					}
+
+					sort.Strings(finalizers)
+					sort.Strings(tc.ExpectedFinalizers)
+					if !equality.Semantic.DeepEqual(finalizers, tc.ExpectedFinalizers) {
+						t.Fatalf("finalizer list %v is not the same as expected %v", finalizers, tc.ExpectedFinalizers)
+					}
+
+					validatedActions++
+				}
+			}
+			if validatedActions != 1 {
+				t.Fatalf("expected 1 update, got %d", validatedActions)
+			}
+		})
+	}
+}
 
 func TestDeleteClusterEndpoint(t *testing.T) {
 	t.Parallel()
