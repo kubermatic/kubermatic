@@ -213,14 +213,14 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	if adminUserInfo.IsAdmin {
 		return privilegedClusterProvider.NewUnsecured(project, cluster, adminUserInfo.Email)
 	}
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	return clusterProvider.New(project, userInfo, cluster)
 }
@@ -335,7 +335,7 @@ func GetCluster(ctx context.Context, projectProvider provider.ProjectProvider, p
 func getInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	if adminUserInfo.IsAdmin {
 		cluster, err := privilegedClusterProvider.GetUnsecured(project, clusterID, options)
@@ -351,7 +351,7 @@ func getInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGet
 func getClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	cluster, err := clusterProvider.Get(userInfo, clusterID, options)
 	if err != nil {
