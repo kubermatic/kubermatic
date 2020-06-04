@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"sort"
 	"strings"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -234,12 +236,11 @@ func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacente
 		})
 
 		for datacenterName, datacenter := range seed.Spec.Datacenters {
-			spec, err := apiSpec(datacenter.DeepCopy())
+			spec, err := apiSpec(datacenter.DeepCopy(), seed.Name)
 			if err != nil {
 				log.Logger.Errorf("api spec error in dc %q: %v", datacenterName, err)
 				continue
 			}
-			spec.Seed = seed.Name
 			foundDCs = append(foundDCs, apiv1.Datacenter{
 				Metadata: apiv1.LegacyObjectMeta{
 					Name:            datacenterName,
@@ -253,7 +254,7 @@ func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacente
 	return foundDCs
 }
 
-// CreateEndpoint an HTTP endpoint that creates a specified apiv1.Datacenter
+// CreateEndpoint an HTTP endpoint that creates the specified apiv1.Datacenter
 func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(createDCReq)
@@ -309,7 +310,7 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 	}
 }
 
-// UpdateEndpoint an HTTP endpoint that updates a specified apiv1.Datacenter
+// UpdateEndpoint an HTTP endpoint that updates the specified apiv1.Datacenter
 func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
 	seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -374,7 +375,105 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 	}
 }
 
-// DeleteEndpoint an HTTP endpoint that deletes a specified apiv1.Datacenter
+// PatchEndpoint an HTTP endpoint that patches the specified apiv1.Datacenter
+func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
+	seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(patchDCReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		if err := req.validate(); err != nil {
+			return nil, err
+		}
+
+		if err := validateUser(ctx, userInfoGetter); err != nil {
+			return nil, err
+		}
+
+		// Get the seed in which the dc should be updated
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
+		seed, ok := seeds[req.Seed]
+		if !ok {
+			return nil, errors.New(http.StatusBadRequest,
+				fmt.Sprintf("Bad request: seed %q does not exist", req.Seed))
+		}
+
+		// get the dc to update
+		currentDC, ok := seed.Spec.Datacenters[req.DCToPatch]
+		if !ok {
+			return nil, errors.New(http.StatusBadRequest,
+				fmt.Sprintf("Bad request: datacenter %q does not exists", req.DCToPatch))
+		}
+
+		// patch
+		currentAPIDC, err := kubermaticToAPI(&currentDC, req.DCToPatch, req.Seed)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current dc: %v", err))
+		}
+
+		currentDCJSON, err := json.Marshal(currentAPIDC)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to marshal current dc: %v", err))
+		}
+
+		patchedJSON, err := jsonpatch.MergePatch(currentDCJSON, req.Patch)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to merge patch dc: %v", err))
+		}
+
+		var patched apiv1.Datacenter
+		err = json.Unmarshal(patchedJSON, &patched)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patched dc: %v", err))
+		}
+
+		// validate patched spec
+		if err := validateProvider(&patched.Spec); err != nil {
+			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("patched dc validation failed: %v", err))
+		}
+		kubermaticPatched := apiToKubermatic(&patched.Spec)
+
+		// As provider field is extracted from providers, we need to make sure its set properly
+		providerName, err := provider.DatacenterCloudProviderName(kubermaticPatched.Spec.DeepCopy())
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed extracting provider name from dc: %v", err))
+		}
+		patched.Spec.Provider = providerName
+
+		dcName := req.DCToPatch
+		// Do an extra check if name changed and remove old dc
+		if !strings.EqualFold(req.DCToPatch, patched.Metadata.Name) {
+			if _, ok := seed.Spec.Datacenters[patched.Metadata.Name]; ok {
+				return nil, errors.New(http.StatusBadRequest,
+					fmt.Sprintf("Bad request: cannot change %q datacenter name to %q as it already exists",
+						req.DCToPatch, patched.Metadata.Name))
+			}
+			delete(seed.Spec.Datacenters, req.DCToPatch)
+			dcName = patched.Metadata.Name
+		}
+
+		seed.Spec.Datacenters[dcName] = kubermaticPatched
+
+		seedClient, err := seedsClientGetter(seed)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to get seed client: %v", err))
+		}
+
+		if err = seedClient.Update(ctx, seed); err != nil {
+			return nil, errors.New(http.StatusInternalServerError,
+				fmt.Sprintf("failed to update seed %q datacenter %q: %v", seed.Name, req.DCToPatch, err))
+		}
+
+		return &patched, nil
+	}
+}
+
+// DeleteEndpoint an HTTP endpoint that deletes the specified apiv1.Datacenter
 func DeleteEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter,
 	seedsClientGetter provider.SeedClientGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -432,12 +531,27 @@ func validateUser(ctx context.Context, userInfoGetter provider.UserInfoGetter) e
 	return nil
 }
 
-func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
+func kubermaticToAPI(dc *kubermaticv1.Datacenter, dcName, seedName string) (*apiv1.Datacenter, error) {
+	dcSpec, err := apiSpec(dc, seedName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &apiv1.Datacenter{
+		Metadata: apiv1.LegacyObjectMeta{
+			Name: dcName,
+		},
+		Spec: *dcSpec,
+	}, nil
+}
+
+func apiSpec(dc *kubermaticv1.Datacenter, seedName string) (*apiv1.DatacenterSpec, error) {
 	p, err := provider.DatacenterCloudProviderName(dc.Spec.DeepCopy())
 	if err != nil {
 		return nil, err
 	}
 	return &apiv1.DatacenterSpec{
+		Seed:                     seedName,
 		Location:                 dc.Location,
 		Country:                  dc.Country,
 		Provider:                 p,
@@ -614,6 +728,61 @@ func DecodeUpdateDCReq(c context.Context, r *http.Request) (interface{}, error) 
 	req.DCToUpdate = mux.Vars(r)["dc"]
 	if req.DCToUpdate == "" {
 		return nil, fmt.Errorf("'dc' parameter is required but was not provided")
+	}
+
+	return req, nil
+}
+
+// patchDCReq defines HTTP request for PatchDC
+// swagger:parameters patchDC
+type patchDCReq struct {
+	// in: body
+	Patch json.RawMessage
+	// in: path
+	// required: true
+	DCToPatch string `json:"dc"`
+	// in: path
+	// required: true
+	Seed string `json:"seed_name"`
+}
+
+func (req patchDCReq) validate() error {
+	var seedValidator struct {
+		Spec struct {
+			Seed string `json:"seed"`
+		} `json:"spec"`
+	}
+
+	err := json.Unmarshal(req.Patch, &seedValidator)
+	if err != nil {
+		return errors.New(http.StatusBadRequest, fmt.Sprintf("failed to validate patch body seed: %v", err))
+	}
+
+	if seedValidator.Spec.Seed != "" && !strings.EqualFold(seedValidator.Spec.Seed, req.Seed) {
+		return errors.New(http.StatusBadRequest,
+			fmt.Sprintf("patched dc validation failed: path seed name %q has to be equal to patch seed name %q",
+				req.Seed, seedValidator.Spec.Seed))
+	}
+	return nil
+}
+
+// DecodePatchDCReq decodes http request into patchDCReq
+func DecodePatchDCReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchDCReq
+
+	var err error
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
+	req.DCToPatch = mux.Vars(r)["dc"]
+	if req.DCToPatch == "" {
+		return nil, fmt.Errorf("'dc' parameter is required but was not provided")
+	}
+
+	req.Seed = mux.Vars(r)["seed_name"]
+	if req.Seed == "" {
+		return nil, fmt.Errorf("'seed_name' parameter is required but was not provided")
 	}
 
 	return req, nil
