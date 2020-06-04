@@ -45,7 +45,7 @@ type ObjectMeta struct {
 
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
-	Seed         string                                   `json:"seed"`
+	Seed         string                                   `json:"seed,omitempty"`
 	Country      string                                   `json:"country,omitempty"`
 	Location     string                                   `json:"location,omitempty"`
 	Provider     string                                   `json:"provider,omitempty"`
@@ -86,8 +86,8 @@ type DatacenterList []Datacenter
 // Datacenter is the object representing a Kubernetes infra datacenter.
 // swagger:model Datacenter
 type Datacenter struct {
-	Metadata LegacyObjectMeta `json:"metadata"`
-	Spec     DatacenterSpec   `json:"spec"`
+	Metadata LegacyObjectMeta `json:"metadata,omitempty"`
+	Spec     DatacenterSpec   `json:"spec,omitempty"`
 	Seed     bool             `json:"seed,omitempty"`
 }
 
