@@ -1,6 +1,25 @@
 ### [v2.14.0]
 
 
+Supported Kubernetes versions:
+- `1.15.5`
+- `1.15.6`
+- `1.15.7`
+- `1.15.9`
+- `1.15.10`
+- `1.15.11`
+- `1.16.2`
+- `1.16.3`
+- `1.16.4`
+- `1.16.6`
+- `1.16.7`
+- `1.16.9`
+- `1.17.0`
+- `1.17.2`
+- `1.17.3`
+- `1.17.5`
+- `1.18.2`
+
 **Misc:**
 
 - ACTION REQUIRED: The most recent backup for user clusters is kept when the cluster is deleted. Adjust the cleanup-container to get the old behaviour (delete all backups) back. [#5262](https://github.com/kubermatic/kubermatic/issues/5262) ([xrstf](https://github.com/xrstf))
@@ -8,7 +27,6 @@
 - Added Flatcar Linux as an Operating System option
 - Add SLES as an Operating System option [#5040](https://github.com/kubermatic/kubermatic/issues/5040) ([kgroschoff](https://github.com/kgroschoff))
 - Audit logging can now be enforced in all clusters within a Datacenter. [#5045](https://github.com/kubermatic/kubermatic/issues/5045) ([kdomanski](https://github.com/kdomanski))
-- Added Kubernetes v1.15.10, v1.16.7, v1.17.3 [#5102](https://github.com/kubermatic/kubermatic/issues/5102) ([kdomanski](https://github.com/kdomanski))
 - Add support for Kubernetes 1.18, drop support for Kubernetes &lt; 1.15. [#5325](https://github.com/kubermatic/kubermatic/issues/5325) ([xrstf](https://github.com/xrstf))
 - Administrators can now manage all projects and clusters
 - Added admission plugins CRD support [#5047](https://github.com/kubermatic/kubermatic/issues/5047) ([zreigz](https://github.com/zreigz))
