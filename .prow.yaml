@@ -1065,6 +1065,8 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: ubuntu,centos,sles,rhel,flatcar
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: KUBERMATIC_USE_OPERATOR
