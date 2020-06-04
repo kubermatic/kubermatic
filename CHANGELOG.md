@@ -3,8 +3,7 @@
 
 **Misc:**
 
-- ACTION REQUIRED: The most recent backup for user clusters is kept when the cluster is deleted. Adjust the cleanup-container to get the old behaviour (delete all backups) back. [#5262](https://github.com/kubermatic/kubermatic/issues/5262) ([xrstf](https://github.com/xrs
-tf))
+- ACTION REQUIRED: The most recent backup for user clusters is kept when the cluster is deleted. Adjust the cleanup-container to get the old behaviour (delete all backups) back. [#5262](https://github.com/kubermatic/kubermatic/issues/5262) ([xrstf](https://github.com/xrstf))
 - ACTION REQUIRED: Addon manifest templating is now a stable API, but different to the old implicit data. Custom addons might need to be adjusted. [#5275](https://github.com/kubermatic/kubermatic/issues/5275) ([xrstf](https://github.com/xrstf))
 - Added Flatcar Linux as an Operating System option
 - Add SLES as an Operating System option [#5040](https://github.com/kubermatic/kubermatic/issues/5040) ([kgroschoff](https://github.com/kgroschoff))
