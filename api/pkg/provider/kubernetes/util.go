@@ -30,25 +30,12 @@ const (
 	NamespacePrefix = "cluster-"
 )
 
-// kubermaticImpersonationClient gives kubermatic client set that uses user impersonation
-type kubermaticImpersonationClient func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error)
-
 // impersonationClient gives runtime controller client that uses user impersonation
 type impersonationClient func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error)
 
 // NamespaceName returns the namespace name for a cluster
 func NamespaceName(clusterName string) string {
 	return NamespacePrefix + clusterName
-}
-
-// createKubermaticImpersonationClientWrapperFromUserInfo is a helper method that spits back kubermatic client that uses user impersonation
-func createKubermaticImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, createImpersonationClient kubermaticImpersonationClient) (kubermaticclientv1.KubermaticV1Interface, error) {
-	impersonationCfg := restclient.ImpersonationConfig{
-		UserName: userInfo.Email,
-		Groups:   []string{userInfo.Group},
-	}
-
-	return createImpersonationClient(impersonationCfg)
 }
 
 // createImpersonationClientWrapperFromUserInfo is a helper method that spits back controller runtime client that uses user impersonation
@@ -59,16 +46,6 @@ func createImpersonationClientWrapperFromUserInfo(userInfo *provider.UserInfo, c
 	}
 
 	return createImpersonationClient(impersonationCfg)
-}
-
-// NewKubermaticImpersonationClient creates a new default impersonation client
-// that knows how to create KubermaticV1Interface client for a impersonated user
-//
-// Note:
-// It is usually not desirable to create many RESTClient thus in the future we might
-// consider storing RESTClients in a pool for the given group name
-func NewKubermaticImpersonationClient(cfg *restclient.Config) *DefaultKubermaticImpersonationClient {
-	return &DefaultKubermaticImpersonationClient{cfg}
 }
 
 // DefaultKubermaticImpersonationClient knows how to create impersonated client set

@@ -249,7 +249,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 	eventRecorderProvider := kubernetesprovider.NewEventRecorder()
 
-	addonProviderGetter := kubernetesprovider.AddonProviderFactory(seedKubeconfigGetter, options.accessibleAddons)
+	addonProviderGetter := kubernetesprovider.AddonProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, options.accessibleAddons)
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
 	if err != nil {
