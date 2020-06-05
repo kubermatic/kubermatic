@@ -177,6 +177,7 @@ case "${DEPLOY_STACK}" in
 
         retry 3 helm upgrade --install --force --wait --timeout 300 \
           --set-file "kubermaticOperator.imagePullSecret=$DOCKER_CONFIG" \
+          --set-file "kubermaticOperator.image.repository=quay.io/kubermatic/kubermatic-ee" \
           --namespace kubermatic \
           --values ${VALUES_FILE} \
           kubermatic-operator \
