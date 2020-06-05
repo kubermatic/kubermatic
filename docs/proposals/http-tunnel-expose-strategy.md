@@ -33,8 +33,7 @@ The services to be exposed to user clusters are:
 
 ## **Implementation**
 
-
-### Bootstrap
+### Nodes Bootstrap
 
 
 When a user-cluster node is added, the Kubelet needs to communicate with the Kube Apiserver in order to obtain a certificate and register itself (i.e. the node).
@@ -51,10 +50,9 @@ The SNI load-balancer is exposed by a service of type LoadBalancer on port 443. 
 
 ### Accessing the Kube Apiserver through the Kubernetes service
 
-PODs that need to communicate with the Apiserver normally rely on the KUBERNETES_SERVICE environment variable that contains the cluster IP of the kubernetes service in the default namespace. As we already anticipated in this scenario, we cannot rely on SNI as the client will use the IP directly. In order to bypass this limitation, the TCP traffic is encapsulated in an HTTP tunnel based on CONNECT method, that can be routed based on the host header (HTTP1.x) or the authority header (HTTP2).
+PODs that need to communicate with the Apiserver normally rely on the KUBERNETES_SERVICE environment variable that contains the cluster IP of the kubernetes service in the default namespace. As we already anticipated in this scenario, we cannot rely on SNI as the client will use the IP directly. In order to bypass this limitation, the TCP traffic is encapsulated in an HTTP tunnel based on CONNECT method, that can be routed based on the host header ([HTTP1.x][http_upgrade_tls_rfc]) or the authority header ([HTTP2][http2_connect_rfc]).
 
 Two components are needed to achieve that:
-
 
 *   HTTP Tunneler: It receives the TCP connection and encapsulates the traffic using the HTTP CONNECT method. It is deployed as a DaemonSet on the user cluster and uses the host network.
 *   HTTP Proxy: It receives the traffic from the HTTP Tunneler and forwards it to the destination specified in the host/authority header. Basically, this will be the Apiserver ClusterIP service on the control plane namespace.
@@ -64,8 +62,6 @@ Note that the TLS connection is not terminated either by the HTTP Tunneler nor t
 Note that no service of type NodePort is required anymore with this strategy.
 
 In order to intercept the traffic from the PODs, we have two solutions:
-
-
 
 *   Iptables rules that redirect the traffic to the HTTP Tunneler. 
 *   IPVS (see [this][k8s_ipvs_deep_dive] document for more details about ipvs
@@ -83,9 +79,37 @@ Apiserver needs to communicate with the Kubelet on the user cluster nodes when u
   <img src="images/http-tunnel-expose-strategy-tunneling.png" width="100%" />
 </div>
 
+### Setup involving a corporate HTTP Proxy
+
+TBD
+
+### Security considerations
+
+> A generic TCP tunnel is fraught with security risks. First, such
+> authorization should be limited to a small number of known ports.
+> The Upgrade: mechanism defined here only requires onward tunneling at
+> port 80. Second, since tunneled data is opaque to the proxy, there
+> are additional risks to tunneling to other well-known or reserved
+> ports. A putative HTTP client CONNECTing to port 25 could relay spam
+> via SMTP, for example.
+> -- <cite>[rfc2817][http_upgrade_tls_rfc]</cite>
+
+The HTTP Proxy on seed cluster must only accept CONNECT requests addressed to
+the OpenVPN server and Kube Apiserver, all other requests should be dropped.
+
+We could also consider to put in place an authentication mechanism between the
+clients (i.e. HTTPTunneler and OpenVPN client) and the HTTP Proxy based on the
+general HTTP authentication framework.
+This would restrict the access, but note that OpenVPN is protected by mutual
+TLS authentication and the Kube Apiserver is also protected by authentication,
+apart from a few exceptions (e.g. healthz endpoint).
+
+Unless we establish a secure channel (i.e. TLS) between the CONNECT requests
+are in cleartext. This could disclose some information, like the internal host
+and port used for Kube Apiserver and OpenVPN server. This information does not
+seem to be sensitive though.
 
 ## **Alternatives considered**
-
 
 *   Using SNI everywhere: in this case, we would use the OpenVPN3 client instead of OpenVPN2 client. This one supports SNI. The problem we encounter is that OpenVPN uses the OpenVPN protocol which is based on TLS. In OpenVPN protocol the ClientHello is not the first packet exchanged after the TCP handshake, thus standard SNI routers cannot be used. This behaviour has been tested with Nginx ingress controller and Envoy.
 *   Making the nodePort expose strategy more robust by introducing a controller that randomly assigns a predefined public IP to one of the seed cluster nodes. In case the selected node fails, the controller will take care of assigning the IP to another node. This means that the controller should be able to perform health checks. The main downside of this approach is that it does not generalize very well, as the logic to attach the public IP to the seed cluster nodes is provider specific.  The other minor negative point is that each service still requires a node port.
@@ -102,3 +126,5 @@ Apiserver needs to communicate with the Kubelet on the user cluster nodes when u
 [k8c_expose_strategies]: https://docs.kubermatic.com/kubermatic/master/concepts/expose-strategy/expose_strategy/.
 [k8s_service_issue]: https://github.com/kubernetes/kubernetes/pull/47588
 [k8s_ipvs_deep_dive]: https://kubernetes.io/blog/2018/07/09/ipvs-based-in-cluster-load-balancing-deep-dive/
+[http2_connect_rfc]: https://tools.ietf.org/html/rfc7540#section-8.3
+[http_upgrade_tls_rfc]: https://www.ietf.org/rfc/rfc2817.txt
