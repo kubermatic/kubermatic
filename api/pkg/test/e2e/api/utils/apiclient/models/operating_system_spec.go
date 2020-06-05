@@ -22,6 +22,9 @@ type OperatingSystemSpec struct {
 	// container linux
 	ContainerLinux *ContainerLinuxSpec `json:"containerLinux,omitempty"`
 
+	// flatcar
+	Flatcar *FlatcarSpec `json:"flatcar,omitempty"`
+
 	// rhel
 	Rhel *RHELSpec `json:"rhel,omitempty"`
 
@@ -41,6 +44,10 @@ func (m *OperatingSystemSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateContainerLinux(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateFlatcar(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -90,6 +97,24 @@ func (m *OperatingSystemSpec) validateContainerLinux(formats strfmt.Registry) er
 		if err := m.ContainerLinux.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("containerLinux")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *OperatingSystemSpec) validateFlatcar(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Flatcar) { // not required
+		return nil
+	}
+
+	if m.Flatcar != nil {
+		if err := m.Flatcar.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("flatcar")
 			}
 			return err
 		}

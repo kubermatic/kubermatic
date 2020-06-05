@@ -265,6 +265,8 @@ presubmits:
           value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.15.11"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -302,6 +304,8 @@ presubmits:
           value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.16.9"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -339,6 +343,8 @@ presubmits:
           value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.17.5"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -376,6 +382,47 @@ presubmits:
           value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,flatcar,rhel"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
+        command:
+        - "./api/hack/ci/ci-kind-e2e.sh"
+        # docker-in-docker needs privileged mode
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 3.5
+          limits:
+            memory: 4Gi
+
+  - name: pre-kubermatic-e2e-aws-flatcar-1.18
+    decorate: true
+    run_if_changed: "(api/|config/kubermatic|addons/|.prow.yaml)"
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-vault: "true"
+      preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
+    spec:
+      containers:
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
+        env:
+        - name: KUBERMATIC_EDITION
+          value: ee
+        - name: VERSIONS_TO_TEST
+          value: "v1.18.2"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -417,6 +464,8 @@ presubmits:
           value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,flatcar,rhel"
         - name: PROVIDER
           value: "azure"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -461,6 +510,8 @@ presubmits:
           value: "v1.18.2"
         - name: PROVIDER
           value: "gcp"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -500,6 +551,8 @@ presubmits:
           value: "v1.18.2"
         - name: PROVIDER
           value: "gcp"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,flatcar,rhel"
         - name: KUBERMATIC_PSP_ENABLED
           value: "true"
         - name: ONLY_TEST_CREATION
@@ -543,7 +596,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "ubuntu,coreos"
+          value: "ubuntu,coreos,flatcar,rhel"
         - name: PROVIDER
           value: "digitalocean"
         - name: SERVICE_ACCOUNT_KEY
@@ -585,6 +638,8 @@ presubmits:
           value: "v1.18.2"
         - name: PROVIDER
           value: "packet"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -625,7 +680,7 @@ presubmits:
         - name: PROVIDER
           value: "kubevirt"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "ubuntu,coreos"
+          value: "ubuntu,coreos,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -667,7 +722,7 @@ presubmits:
           value: "hetzner"
         # Hetzner doesn't support coreos
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,coreos"
+          value: "centos,coreos,flatcar,rhel"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: SERVICE_ACCOUNT_KEY
@@ -709,6 +764,8 @@ presubmits:
           value: "v1.18.2"
         - name: PROVIDER
           value: "openstack"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,flatcar,rhel"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: SERVICE_ACCOUNT_KEY
@@ -753,7 +810,7 @@ presubmits:
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "coreos,ubuntu"
+          value: "coreos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -796,7 +853,7 @@ presubmits:
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "coreos,centos"
+          value: "coreos,centos,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -836,6 +893,8 @@ presubmits:
           value: "v1.18.2"
         - name: PROVIDER
           value: "vsphere"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -876,6 +935,8 @@ presubmits:
           value: "v1.18.2"
         - name: PROVIDER
           value: "vsphere"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,ubuntu,flatcar,rhel"
         - name: SCENARIO_OPTIONS
           value: "custom-folder"
         - name: SERVICE_ACCOUNT_KEY
@@ -1004,6 +1065,8 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: ubuntu,centos,sles,rhel,flatcar
         - name: VERSIONS_TO_TEST
           value: "v1.18.2"
         - name: KUBERMATIC_USE_OPERATOR
