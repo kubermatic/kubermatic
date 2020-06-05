@@ -9382,6 +9382,7 @@
           "$ref": "#/definitions/DatacenterSpecBringYourOwn"
         },
         "country": {
+          "description": "Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.\nIt is used for informational purposes.",
           "type": "string",
           "x-go-name": "Country"
         },
@@ -9398,6 +9399,9 @@
           "type": "boolean",
           "x-go-name": "EnforcePodSecurityPolicy"
         },
+        "fake": {
+          "$ref": "#/definitions/DatacenterSpecFake"
+        },
         "gcp": {
           "$ref": "#/definitions/DatacenterSpecGCP"
         },
@@ -9408,6 +9412,7 @@
           "$ref": "#/definitions/DatacenterSpecKubevirt"
         },
         "location": {
+          "description": "Optional: Detailed location of the cluster, like \"Hamburg\" or \"Datacenter 7\".\nIt is used for informational purposes.",
           "type": "string",
           "x-go-name": "Location"
         },
@@ -9421,6 +9426,7 @@
           "$ref": "#/definitions/DatacenterSpecPacket"
         },
         "provider": {
+          "description": "Name of the datacenter provider. Extracted based on which provider is defined in the spec.\nIt is used for informational purposes.",
           "type": "string",
           "x-go-name": "Provider"
         },
@@ -9437,6 +9443,7 @@
           "x-go-name": "RequiredEmailDomains"
         },
         "seed": {
+          "description": "Name of the seed this datacenter belongs to.",
           "type": "string",
           "x-go-name": "Seed"
         },
@@ -12048,7 +12055,7 @@
           "description": "Datacenters contains a map of the possible datacenters (DCs) in this seed.\nEach DC must have a globally unique identifier (i.e. names must be unique\nacross all seeds).",
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/SeedDatacenter"
+            "$ref": "#/definitions/Datacenter"
           },
           "x-go-name": "SeedDatacenters"
         },
@@ -12079,93 +12086,6 @@
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },
-    "SeedDatacenter": {
-      "type": "object",
-      "properties": {
-        "country": {
-          "description": "Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.\nFor informational purposes in the Kubermatic dashboard only.",
-          "type": "string",
-          "x-go-name": "Country"
-        },
-        "location": {
-          "description": "Optional: Detailed location of the cluster, like \"Hamburg\" or \"Datacenter 7\".\nFor informational purposes in the Kubermatic dashboard only.",
-          "type": "string",
-          "x-go-name": "Location"
-        },
-        "node": {
-          "$ref": "#/definitions/NodeSettings"
-        },
-        "spec": {
-          "$ref": "#/definitions/SeedDatacenterSpec"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
-    "SeedDatacenterSpec": {
-      "description": "SeedDatacenterSpec mutually points to provider datacenter spec",
-      "type": "object",
-      "properties": {
-        "alibaba": {
-          "$ref": "#/definitions/DatacenterSpecAlibaba"
-        },
-        "aws": {
-          "$ref": "#/definitions/DatacenterSpecAWS"
-        },
-        "azure": {
-          "$ref": "#/definitions/DatacenterSpecAzure"
-        },
-        "bringyourown": {
-          "$ref": "#/definitions/DatacenterSpecBringYourOwn"
-        },
-        "digitalocean": {
-          "$ref": "#/definitions/DatacenterSpecDigitalocean"
-        },
-        "enforceAuditLogging": {
-          "description": "EnforceAuditLogging enforces audit logging on every cluster within the DC,\nignoring cluster-specific settings.",
-          "type": "boolean",
-          "x-go-name": "EnforceAuditLogging"
-        },
-        "enforcePodSecurityPolicy": {
-          "description": "EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,\nignoring cluster-specific settings",
-          "type": "boolean",
-          "x-go-name": "EnforcePodSecurityPolicy"
-        },
-        "fake": {
-          "$ref": "#/definitions/DatacenterSpecFake"
-        },
-        "gcp": {
-          "$ref": "#/definitions/DatacenterSpecGCP"
-        },
-        "hetzner": {
-          "$ref": "#/definitions/DatacenterSpecHetzner"
-        },
-        "kubevirt": {
-          "$ref": "#/definitions/DatacenterSpecKubevirt"
-        },
-        "openstack": {
-          "$ref": "#/definitions/DatacenterSpecOpenstack"
-        },
-        "packet": {
-          "$ref": "#/definitions/DatacenterSpecPacket"
-        },
-        "requiredEmailDomain": {
-          "description": "Optional: When defined, only users with an e-mail address on the\ngiven domains can make use of this datacenter. You can define multiple\ndomains, e.g. \"example.com\", one of which must match the email domain\nexactly (i.e. \"example.com\" will not match \"user@test.example.com\").\nRequiredEmailDomain is deprecated. Automatically migrated to the RequiredEmailDomains field.",
-          "type": "string",
-          "x-go-name": "RequiredEmailDomain"
-        },
-        "requiredEmailDomains": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "RequiredEmailDomains"
-        },
-        "vsphere": {
-          "$ref": "#/definitions/DatacenterSpecVSphere"
-        }
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-    },
     "SeedSpec": {
       "description": "The spec for a seed data",
       "type": "object",
@@ -12179,7 +12099,7 @@
           "description": "Datacenters contains a map of the possible datacenters (DCs) in this seed.\nEach DC must have a globally unique identifier (i.e. names must be unique\nacross all seeds).",
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/definitions/SeedDatacenter"
+            "$ref": "#/definitions/Datacenter"
           },
           "x-go-name": "SeedDatacenters"
         },

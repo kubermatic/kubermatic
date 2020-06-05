@@ -16,7 +16,8 @@ import (
 // swagger:model DatacenterSpec
 type DatacenterSpec struct {
 
-	// country
+	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
+	// It is used for informational purposes.
 	Country string `json:"country,omitempty"`
 
 	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
@@ -27,10 +28,12 @@ type DatacenterSpec struct {
 	// ignoring cluster-specific settings
 	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy,omitempty"`
 
-	// location
+	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
+	// It is used for informational purposes.
 	Location string `json:"location,omitempty"`
 
-	// provider
+	// Name of the datacenter provider. Extracted based on which provider is defined in the spec.
+	// It is used for informational purposes.
 	Provider string `json:"provider,omitempty"`
 
 	// Deprecated. Automatically migrated to the RequiredEmailDomains field.
@@ -39,7 +42,7 @@ type DatacenterSpec struct {
 	// required email domains
 	RequiredEmailDomains []string `json:"requiredEmailDomains"`
 
-	// seed
+	// Name of the seed this datacenter belongs to.
 	Seed string `json:"seed,omitempty"`
 
 	// alibaba
@@ -56,6 +59,9 @@ type DatacenterSpec struct {
 
 	// digitalocean
 	Digitalocean *DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
+
+	// fake
+	Fake *DatacenterSpecFake `json:"fake,omitempty"`
 
 	// gcp
 	Gcp *DatacenterSpecGCP `json:"gcp,omitempty"`
@@ -96,6 +102,10 @@ func (m *DatacenterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateDigitalocean(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateFake(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -193,6 +203,24 @@ func (m *DatacenterSpec) validateDigitalocean(formats strfmt.Registry) error {
 		if err := m.Digitalocean.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("digitalocean")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *DatacenterSpec) validateFake(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Fake) { // not required
+		return nil
+	}
+
+	if m.Fake != nil {
+		if err := m.Fake.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("fake")
 			}
 			return err
 		}
