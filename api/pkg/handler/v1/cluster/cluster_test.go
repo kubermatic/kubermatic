@@ -1889,11 +1889,11 @@ func TestGetClusterMetrics(t *testing.T) {
 			},
 			ExistingNodeMetrics: []*v1beta1.NodeMetrics{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "venus"},
+					ObjectMeta: metav1.ObjectMeta{Name: "venus", Namespace: "cluster-defClusterID"},
 					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
 				},
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "mars"},
+					ObjectMeta: metav1.ObjectMeta{Name: "mars", Namespace: "cluster-defClusterID"},
 					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
 				},
 			},
@@ -1932,18 +1932,18 @@ func TestGetClusterMetrics(t *testing.T) {
 			},
 			ExistingNodeMetrics: []*v1beta1.NodeMetrics{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "venus"},
+					ObjectMeta: metav1.ObjectMeta{Name: "venus", Namespace: "cluster-defClusterID"},
 					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
 				},
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "mars"},
+					ObjectMeta: metav1.ObjectMeta{Name: "mars", Namespace: "cluster-defClusterID"},
 					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
 				},
 			},
 		},
-		// scenario 2
+		// scenario 3
 		{
-			Name:             "scenario 2: the user John can not get Bob's cluster metrics",
+			Name:             "scenario 3: the user John can not get Bob's cluster metrics",
 			Body:             ``,
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
@@ -1975,11 +1975,11 @@ func TestGetClusterMetrics(t *testing.T) {
 			},
 			ExistingNodeMetrics: []*v1beta1.NodeMetrics{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "venus"},
+					ObjectMeta: metav1.ObjectMeta{Name: "venus", Namespace: "cluster-defClusterID"},
 					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
 				},
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "mars"},
+					ObjectMeta: metav1.ObjectMeta{Name: "mars", Namespace: "cluster-defClusterID"},
 					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
 				},
 			},
