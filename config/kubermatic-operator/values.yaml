@@ -1,6 +1,6 @@
 kubermaticOperator:
   image:
-    repository: "quay.io/kubermatic/api"
+    repository: "quay.io/kubermatic/kubermatic"
     tag: "__KUBERMATIC_TAG__"
 
   imagePullSecret: |

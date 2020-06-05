@@ -46,7 +46,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.namespace
-        image: 'quay.io/kubermatic/api:'
+        image: 'quay.io/kubermatic/kubermatic:'
         name: usercluster-controller
         readinessProbe:
           failureThreshold: 5
