@@ -270,6 +270,11 @@ echodate "Deploying Kubermatic CRDs"
 
 retry 5 kubectl apply -f config/kubermatic/crd
 
+REPOSUFFIX=""
+if [ "$KUBERMATIC_EDITION" != "ce" ]; then
+  REPOSUFFIX="-$KUBERMATIC_EDITION"
+fi
+
 if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   # Build kubermatic binaries and push the image
   OLD_HEAD="$(git rev-parse HEAD)"
@@ -288,7 +293,7 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
     echodate "Building docker image"
     TEST_NAME="Build Kubermatic Docker image"
     cd api
-    IMAGE_NAME="quay.io/kubermatic/api:$KUBERMATIC_VERSION"
+    IMAGE_NAME="quay.io/kubermatic/kubermatic$REPOSUFFIX:$KUBERMATIC_VERSION"
     time retry 5 docker build -t "$IMAGE_NAME" .
     time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
   )
@@ -392,10 +397,16 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
   beforeDeployment=$(nowms)
 
   # --force is needed in case the first attempt at installing didn't succeed
-  # see https://github.com/helm/helm/pull/3597
+  # see https://github.com/helm/helm/pull/3597;
+  # we always override the quay repositories so we don't have to care if the
+  # Helm chart is made for CE or EE
   retry 3 helm upgrade --install --force --wait --timeout 300 \
     --set=kubermatic.isMaster=true \
     --set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
+    --set-string=kubermatic.controller.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
+    --set-string=kubermatic.masterController.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
+    --set-string=kubermatic.api.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
+    --set-string=kubermatic.ui.image.repository="quay.io/kubermatic/dashboard$REPOSUFFIX" \
     --set-string=kubermatic.controller.addons.kubernetes.image.tag="$KUBERMATIC_VERSION" \
     --set-string=kubermatic.controller.image.tag="$KUBERMATIC_VERSION" \
     --set-string=kubermatic.controller.addons.openshift.image.tag="$KUBERMATIC_VERSION" \
@@ -439,6 +450,7 @@ else
   # see https://github.com/helm/helm/pull/3597
   retry 3 helm upgrade --install --force --wait --timeout 300 \
     --set-file "kubermaticOperator.imagePullSecret=/config.json" \
+    --set-string "kubermaticOperator.image.repository=quay.io/kubermatic/kubermatic$REPOSUFFIX" \
     --set-string "kubermaticOperator.image.tag=$KUBERMATIC_VERSION" \
     --namespace kubermatic \
     --values ${VALUES_FILE} \
@@ -446,6 +458,9 @@ else
     ./config/kubermatic-operator/
 
   echodate "Kubermatic Operator is ready."
+
+  # No need to override any Docker repositories here, as the operator
+  # is already pinned to CE or EE and has the proper default values on board.
 
   KUBERMATIC_CONFIG="$(mktemp)"
   cat <<EOF >$KUBERMATIC_CONFIG

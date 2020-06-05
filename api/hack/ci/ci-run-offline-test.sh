@@ -132,7 +132,7 @@ echodate "Sucessfully finished building and pushing quay images"
 cd ./../../../config
 HELM_EXTRA_ARGS="--set kubermatic.controller.image.tag=${GIT_HEAD_HASH},kubermatic.api.image.tag=${GIT_HEAD_HASH},kubermatic.masterController.image.tag=${GIT_HEAD_HASH}"
 # We must not pull those images from remote. We build them on the fly
-helm template ${HELM_EXTRA_ARGS} kubermatic | grep -v quay.io/kubermatic/api |../api/hack/retag-images.sh
+helm template ${HELM_EXTRA_ARGS} kubermatic | grep -v quay.io/kubermatic/kubermatic |../api/hack/retag-images.sh
 
 # Push a tiller image
 docker pull gcr.io/kubernetes-helm/tiller:${HELM_VERSION}
