@@ -31,6 +31,7 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "http-metrics"
+        kubermatic.io/chart: loki
     spec:
       serviceAccountName: {{ template "loki.serviceAccountName" . }}
       securityContext:
@@ -38,7 +39,7 @@ spec:
         runAsGroup: 10001
         runAsNonRoot: true
         runAsUser: 10001
-      initContainers: [] 
+      initContainers: []
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.loki.image.repository }}:{{ .Values.loki.image.tag }}"
