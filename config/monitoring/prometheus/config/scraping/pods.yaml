@@ -32,7 +32,7 @@ relabel_configs:
   target_label: __metrics_path__
   regex: (.+)
 
-# Allow to overwrite the scrape port
+# allow to overwrite the scrape port
 - source_labels: [__address__, __meta_kubernetes_pod_annotation_kubermatic_scrape_port] # deprecated
   action: replace
   regex: '^([^:]+)(?::\d+)?;(\d+)$'
