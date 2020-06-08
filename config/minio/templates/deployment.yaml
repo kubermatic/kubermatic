@@ -15,7 +15,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "9000"
-        prometheus.io/metric_path: /minio/prometheus/metrics
+        prometheus.io/metrics_path: /minio/prometheus/metrics
         kubermatic.io/chart: minio
         {{- if .Values.minio.backup.enabled }}
         backup.velero.io/backup-volumes: minio-backup

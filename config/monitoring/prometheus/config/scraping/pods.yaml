@@ -19,22 +19,26 @@ relabel_configs:
   action: keep
 
 # allow to overwrite the metrics URL
-- source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_metric_path]
+- source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_metrics_path]
   action: replace
   target_label: __metrics_path__
   regex: (.+)
-- source_labels: [__meta_kubernetes_pod_annotation_kubermatic_metric_path]
+- source_labels: [__meta_kubernetes_pod_annotation_kubermatic_metrics_path] # deprecated
+  action: replace
+  target_label: __metrics_path__
+  regex: (.+)
+- source_labels: [__meta_kubernetes_pod_annotation_kubermatic_metric_path] # deprecated typo
   action: replace
   target_label: __metrics_path__
   regex: (.+)
 
 # Allow to overwrite the scrape port
-- source_labels: [__address__, __meta_kubernetes_pod_annotation_kubermatic_scrape_port] # deprecated names
+- source_labels: [__address__, __meta_kubernetes_pod_annotation_kubermatic_scrape_port] # deprecated
   action: replace
   regex: '^([^:]+)(?::\d+)?;(\d+)$'
   replacement: $1:$2
   target_label: __address__
-- source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_scrape_port] # deprecated names
+- source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_scrape_port] # deprecated variant
   action: replace
   regex: '^([^:]+)(?::\d+)?;(\d+)$'
   replacement: $1:$2

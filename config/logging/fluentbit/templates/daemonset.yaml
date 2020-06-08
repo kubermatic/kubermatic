@@ -28,7 +28,7 @@ spec:
       annotations:
         prometheus.io/scrape: "true"
         prometheus.io/port: "2020"
-        prometheus.io/metric_path: /api/v1/metrics/prometheus
+        prometheus.io/metrics_path: /api/v1/metrics/prometheus
         kubermatic.io/chart: fluentbit
         checksum/config: '{{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}'
     spec:
