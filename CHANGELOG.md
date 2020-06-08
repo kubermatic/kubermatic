@@ -93,7 +93,6 @@ Supported Kubernetes versions:
 - Added info about End-of-life of Container Linux [#2264](https://github.com/kubermatic/dashboard-v2/issues/2264) ([kgroschoff](https://github.com/kgroschoff))
 - Enforcing pod security policy by the datacenter is now allowed. [#2270](https://github.com/kubermatic/dashboard-v2/issues/2270) ([maciaszczykm](https://github.com/maciaszczykm))
 - Introduced a number of responsiveness fixes to improve user experience on the smaller screens. [#2279](https://github.com/kubermatic/dashboard-v2/issues/2279) ([maciaszczykm](https://github.com/maciaszczykm))
-- Added support for system-wide dark/light theme selection. [#2294](https://github.com/kubermatic/dashboard-v2/issues/2294) ([floreks](https://github.com/floreks))
 
 **Cloud providers**:
 - Added Alibaba cloud [#5107](https://github.com/kubermatic/kubermatic/issues/5107) ([kgroschoff](https://github.com/kgroschoff))
