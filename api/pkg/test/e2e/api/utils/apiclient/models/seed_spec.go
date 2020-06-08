@@ -32,7 +32,7 @@ type SeedSpec struct {
 	// Datacenters contains a map of the possible datacenters (DCs) in this seed.
 	// Each DC must have a globally unique identifier (i.e. names must be unique
 	// across all seeds).
-	SeedDatacenters map[string]SeedDatacenter `json:"datacenters,omitempty"`
+	SeedDatacenters map[string]Datacenter `json:"datacenters,omitempty"`
 
 	// expose strategy
 	ExposeStrategy ServiceType `json:"expose_strategy,omitempty"`

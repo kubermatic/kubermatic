@@ -236,7 +236,7 @@ func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacente
 		})
 
 		for datacenterName, datacenter := range seed.Spec.Datacenters {
-			spec, err := apiSpec(datacenter.DeepCopy(), seed.Name)
+			spec, err := ConvertInternalDCToExternalSpec(datacenter.DeepCopy(), seed.Name)
 			if err != nil {
 				log.Logger.Errorf("api spec error in dc %q: %v", datacenterName, err)
 				continue
@@ -289,7 +289,7 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		}
 
 		// Add DC, update seed
-		seed.Spec.Datacenters[req.Body.Name] = apiToKubermatic(&req.Body.Spec)
+		seed.Spec.Datacenters[req.Body.Name] = convertExternalDCToInternal(&req.Body.Spec)
 
 		seedClient, err := seedsClientGetter(seed)
 		if err != nil {
@@ -354,7 +354,7 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 			}
 			delete(seed.Spec.Datacenters, req.DCToUpdate)
 		}
-		seed.Spec.Datacenters[req.Body.Name] = apiToKubermatic(&req.Body.Spec)
+		seed.Spec.Datacenters[req.Body.Name] = convertExternalDCToInternal(&req.Body.Spec)
 
 		seedClient, err := seedsClientGetter(seed)
 		if err != nil {
@@ -411,7 +411,7 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 		}
 
 		// patch
-		currentAPIDC, err := kubermaticToAPI(&currentDC, req.DCToPatch, req.Seed)
+		currentAPIDC, err := convertInternalDCToExternal(&currentDC, req.DCToPatch, req.Seed)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current dc: %v", err))
 		}
@@ -436,7 +436,7 @@ func PatchEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Use
 		if err := validateProvider(&patched.Spec); err != nil {
 			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("patched dc validation failed: %v", err))
 		}
-		kubermaticPatched := apiToKubermatic(&patched.Spec)
+		kubermaticPatched := convertExternalDCToInternal(&patched.Spec)
 
 		// As provider field is extracted from providers, we need to make sure its set properly
 		providerName, err := provider.DatacenterCloudProviderName(kubermaticPatched.Spec.DeepCopy())
@@ -531,8 +531,8 @@ func validateUser(ctx context.Context, userInfoGetter provider.UserInfoGetter) e
 	return nil
 }
 
-func kubermaticToAPI(dc *kubermaticv1.Datacenter, dcName, seedName string) (*apiv1.Datacenter, error) {
-	dcSpec, err := apiSpec(dc, seedName)
+func convertInternalDCToExternal(dc *kubermaticv1.Datacenter, dcName, seedName string) (*apiv1.Datacenter, error) {
+	dcSpec, err := ConvertInternalDCToExternalSpec(dc, seedName)
 	if err != nil {
 		return nil, err
 	}
@@ -545,7 +545,7 @@ func kubermaticToAPI(dc *kubermaticv1.Datacenter, dcName, seedName string) (*api
 	}, nil
 }
 
-func apiSpec(dc *kubermaticv1.Datacenter, seedName string) (*apiv1.DatacenterSpec, error) {
+func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName string) (*apiv1.DatacenterSpec, error) {
 	p, err := provider.DatacenterCloudProviderName(dc.Spec.DeepCopy())
 	if err != nil {
 		return nil, err
@@ -567,6 +567,7 @@ func apiSpec(dc *kubermaticv1.Datacenter, seedName string) (*apiv1.DatacenterSpe
 		GCP:                      dc.Spec.GCP,
 		Kubevirt:                 dc.Spec.Kubevirt,
 		Alibaba:                  dc.Spec.Alibaba,
+		Fake:                     dc.Spec.Fake,
 		RequiredEmailDomain:      dc.Spec.RequiredEmailDomain,
 		RequiredEmailDomains:     dc.Spec.RequiredEmailDomains,
 		EnforceAuditLogging:      dc.Spec.EnforceAuditLogging,
@@ -574,7 +575,7 @@ func apiSpec(dc *kubermaticv1.Datacenter, seedName string) (*apiv1.DatacenterSpe
 	}, nil
 }
 
-func apiToKubermatic(datacenter *apiv1.DatacenterSpec) kubermaticv1.Datacenter {
+func convertExternalDCToInternal(datacenter *apiv1.DatacenterSpec) kubermaticv1.Datacenter {
 	return kubermaticv1.Datacenter{
 		Country:  datacenter.Country,
 		Location: datacenter.Location,
@@ -591,6 +592,7 @@ func apiToKubermatic(datacenter *apiv1.DatacenterSpec) kubermaticv1.Datacenter {
 			GCP:                      datacenter.GCP,
 			Kubevirt:                 datacenter.Kubevirt,
 			Alibaba:                  datacenter.Alibaba,
+			Fake:                     datacenter.Fake,
 			RequiredEmailDomain:      datacenter.RequiredEmailDomain,
 			RequiredEmailDomains:     datacenter.RequiredEmailDomains,
 			EnforceAuditLogging:      datacenter.EnforceAuditLogging,
