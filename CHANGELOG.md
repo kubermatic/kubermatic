@@ -70,7 +70,6 @@ Supported Kubernetes versions:
 - Added notification panel. [#1957](https://github.com/kubermatic/dashboard-v2/issues/1957) ([maciaszczykm](https://github.com/maciaszczykm))
 - Added Pod Node Selector field. [#1968](https://github.com/kubermatic/dashboard-v2/issues/1968) ([maciaszczykm](https://github.com/maciaszczykm))
 - Operation Systems on VSphere for which no template is specified in datacenters are now hidden. [#1981](https://github.com/kubermatic/dashboard-v2/issues/1981) ([kgroschoff](https://github.com/kgroschoff))
-- Added metrics for nodes. [#1982](https://github.com/kubermatic/dashboard-v2/issues/1982) ([maciaszczykm](https://github.com/maciaszczykm))
 - Fixes issue that prevented creating Addons which had no AddonConfig deployed. [#1985](https://github.com/kubermatic/dashboard-v2/issues/1985) ([maciaszczykm](https://github.com/maciaszczykm))
 - Added possibility to collapse the sidenav. [#2004](https://github.com/kubermatic/dashboard-v2/issues/2004) ([kgroschoff](https://github.com/kgroschoff))
 - We now use WebSocket to get global settings. [#2008](https://github.com/kubermatic/dashboard-v2/issues/2008) ([maciaszczykm](https://github.com/maciaszczykm))
