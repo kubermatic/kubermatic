@@ -17,33 +17,39 @@ limitations under the License.
 package kubernetes
 
 import (
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
+	"context"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // AddonConfigProvider struct that holds required components of the AddonConfigProvider
 type AddonConfigProvider struct {
-	client            kubermaticclientset.Interface
-	addonConfigLister kubermaticv1lister.AddonConfigLister
+	client ctrlruntimeclient.Client
 }
 
 // NewAddonConfigProvider returns a new AddonConfigProvider
-func NewAddonConfigProvider(client kubermaticclientset.Interface, addonConfigLister kubermaticv1lister.AddonConfigLister) *AddonConfigProvider {
+func NewAddonConfigProvider(client ctrlruntimeclient.Client) *AddonConfigProvider {
 	return &AddonConfigProvider{
-		client:            client,
-		addonConfigLister: addonConfigLister,
+		client: client,
 	}
 }
 
 // Get addon configuration
 func (p *AddonConfigProvider) Get(addonName string) (*kubermaticv1.AddonConfig, error) {
-	return p.client.KubermaticV1().AddonConfigs().Get(addonName, metav1.GetOptions{})
+	addonConfig := &kubermaticv1.AddonConfig{}
+	if err := p.client.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: addonName}, addonConfig); err != nil {
+		return nil, err
+	}
+	return addonConfig, nil
 }
 
 // List available addon configurations
 func (p *AddonConfigProvider) List() (*kubermaticv1.AddonConfigList, error) {
-	return p.client.KubermaticV1().AddonConfigs().List(metav1.ListOptions{})
+	addonConfigList := &kubermaticv1.AddonConfigList{}
+	if err := p.client.List(context.Background(), addonConfigList); err != nil {
+		return nil, err
+	}
+	return addonConfigList, nil
 }

@@ -210,16 +210,17 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		}
 	}()
 
-	userMasterLister := kubermaticMasterInformerFactory.Kubermatic().V1().Users().Lister()
+
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
 	privilegedSSHKeyProvider, err := kubernetesprovider.NewPrivilegedSSHKeyProvider(mgr.GetClient())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create privileged SSH key provider due to %v", err)
 	}
 	userProvider := kubernetesprovider.NewUserProvider(mgr.GetClient(), kubernetesprovider.IsServiceAccount)
-	settingsProvider := kubernetesprovider.NewSettingsProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
-	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(kubermaticMasterClient, kubermaticMasterInformerFactory.Kubermatic().V1().AddonConfigs().Lister())
-	adminProvider := kubernetesprovider.NewAdminProvider(kubermaticMasterClient, userMasterLister)
+	settingsProvider := kubernetesprovider.NewSettingsProvider(kubermaticMasterClient, mgr.GetClient())
+	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(mgr.GetClient())
+	adminProvider := kubernetesprovider.NewAdminProvider(mgr.GetClient())
+
 	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create service account token provider due to %v", err)
