@@ -164,16 +164,16 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 		return fakeClient, nil
 	}
-	userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
+
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeImpersonationClient, fakeClient)
 	privilegedSSHKeyProvider, err := kubernetes.NewPrivilegedSSHKeyProvider(fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
 	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount)
-	adminProvider := kubernetes.NewAdminProvider(kubermaticClient, userLister)
-	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
-	addonConfigProvider := kubernetes.NewAddonConfigProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().AddonConfigs().Lister())
+	adminProvider := kubernetes.NewAdminProvider(fakeClient)
+	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, fakeClient)
+	addonConfigProvider := kubernetes.NewAddonConfigProvider(fakeClient)
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
 	if err != nil {
 		return nil, nil, err
