@@ -16,6 +16,8 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/dc"
+	"github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
@@ -39,7 +41,7 @@ func ListSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provid
 		for key, value := range seedMap {
 			resultList = append(resultList, apiv1.Seed{
 				Name:     key,
-				SeedSpec: convertSeedSpec(value.Spec),
+				SeedSpec: convertSeedSpec(value.Spec, key),
 			})
 		}
 
@@ -60,7 +62,7 @@ func GetSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter provide
 		}
 		return apiv1.Seed{
 			Name:     req.Name,
-			SeedSpec: convertSeedSpec(seed.Spec),
+			SeedSpec: convertSeedSpec(seed.Spec, req.Name),
 		}, nil
 	}
 }
@@ -93,7 +95,7 @@ func UpdateSeedEndpoint(userInfoGetter provider.UserInfoGetter, seedsGetter prov
 
 		return apiv1.Seed{
 			Name:     req.Name,
-			SeedSpec: convertSeedSpec(req.Body.Spec),
+			SeedSpec: convertSeedSpec(req.Body.Spec, req.Name),
 		}, nil
 	}
 }
@@ -195,7 +197,7 @@ func (r updateSeedReq) Validate() error {
 	return nil
 }
 
-func convertSeedSpec(seedSpec kubermaticv1.SeedSpec) apiv1.SeedSpec {
+func convertSeedSpec(seedSpec kubermaticv1.SeedSpec, seedName string) apiv1.SeedSpec {
 	resultSeedSpec := apiv1.SeedSpec{
 		Country:  seedSpec.Country,
 		Location: seedSpec.Location,
@@ -213,28 +215,19 @@ func convertSeedSpec(seedSpec kubermaticv1.SeedSpec) apiv1.SeedSpec {
 		ExposeStrategy:   seedSpec.ExposeStrategy,
 	}
 	if seedSpec.Datacenters != nil {
-		resultSeedSpec.SeedDatacenters = make(map[string]apiv1.SeedDatacenter)
+		resultSeedSpec.SeedDatacenters = make(map[string]apiv1.Datacenter)
 		for name, datacenter := range seedSpec.Datacenters {
-			resultSeedSpec.SeedDatacenters[name] = apiv1.SeedDatacenter{
-				Country:  datacenter.Country,
-				Location: datacenter.Location,
-				Node:     datacenter.Node,
-				Spec: apiv1.SeedDatacenterSpec{
-					Digitalocean:         datacenter.Spec.Digitalocean,
-					BringYourOwn:         datacenter.Spec.BringYourOwn,
-					AWS:                  datacenter.Spec.AWS,
-					Azure:                datacenter.Spec.Azure,
-					Openstack:            datacenter.Spec.Openstack,
-					Packet:               datacenter.Spec.Packet,
-					Hetzner:              datacenter.Spec.Hetzner,
-					VSphere:              datacenter.Spec.VSphere,
-					GCP:                  datacenter.Spec.GCP,
-					Kubevirt:             datacenter.Spec.Kubevirt,
-					Fake:                 datacenter.Spec.Fake,
-					RequiredEmailDomain:  datacenter.Spec.RequiredEmailDomain,
-					RequiredEmailDomains: datacenter.Spec.RequiredEmailDomains,
-					EnforceAuditLogging:  datacenter.Spec.EnforceAuditLogging,
+			dcSpec, err := dc.ConvertInternalDCToExternalSpec(&datacenter, seedName)
+			if err != nil {
+				log.Logger.Errorf("api spec error in dc %q: %v", name, err)
+				continue
+			}
+			resultSeedSpec.SeedDatacenters[name] = apiv1.Datacenter{
+				Metadata: apiv1.LegacyObjectMeta{
+					Name: name,
 				},
+				Spec: *dcSpec,
+				Seed: false,
 			}
 		}
 	}

@@ -45,9 +45,16 @@ type ObjectMeta struct {
 
 // DatacenterSpec specifies the data for a datacenter.
 type DatacenterSpec struct {
-	Seed         string                                   `json:"seed,omitempty"`
-	Country      string                                   `json:"country,omitempty"`
-	Location     string                                   `json:"location,omitempty"`
+	// Name of the seed this datacenter belongs to.
+	Seed string `json:"seed,omitempty"`
+	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
+	// It is used for informational purposes.
+	Country string `json:"country,omitempty"`
+	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
+	// It is used for informational purposes.
+	Location string `json:"location,omitempty"`
+	// Name of the datacenter provider. Extracted based on which provider is defined in the spec.
+	// It is used for informational purposes.
 	Provider     string                                   `json:"provider,omitempty"`
 	Digitalocean *kubermaticv1.DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
 	BringYourOwn *kubermaticv1.DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
@@ -60,6 +67,10 @@ type DatacenterSpec struct {
 	VSphere      *kubermaticv1.DatacenterSpecVSphere      `json:"vsphere,omitempty"`
 	Kubevirt     *kubermaticv1.DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *kubermaticv1.DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
+
+	//nolint:staticcheck
+	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
+	Fake *kubermaticv1.DatacenterSpecFake `json:"fake,omitempty,omitgenyaml"`
 
 	// Node holds node-specific settings, like e.g. HTTP proxy, Docker
 	// registries and the like. Proxy settings are inherited from the seed if
@@ -1465,7 +1476,7 @@ type SeedSpec struct {
 	// Datacenters contains a map of the possible datacenters (DCs) in this seed.
 	// Each DC must have a globally unique identifier (i.e. names must be unique
 	// across all seeds).
-	SeedDatacenters map[string]SeedDatacenter `json:"datacenters,omitempty"`
+	SeedDatacenters map[string]Datacenter `json:"datacenters,omitempty"`
 	// Optional: This can be used to override the DNS name used for this seed.
 	// By default the seed name is used.
 	SeedDNSOverwrite string `json:"seed_dns_overwrite,omitempty"`
@@ -1474,59 +1485,6 @@ type SeedSpec struct {
 	ProxySettings *kubermaticv1.ProxySettings `json:"proxy_settings,omitempty"`
 	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
 	ExposeStrategy corev1.ServiceType `json:"expose_strategy,omitempty"`
-}
-
-type SeedDatacenter struct {
-	// Optional: Country of the seed as ISO-3166 two-letter code, e.g. DE or UK.
-	// For informational purposes in the Kubermatic dashboard only.
-	Country string `json:"country,omitempty"`
-	// Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
-	// For informational purposes in the Kubermatic dashboard only.
-	Location string `json:"location,omitempty"`
-	// Node holds node-specific settings, like e.g. HTTP proxy, Docker
-	// registries and the like. Proxy settings are inherited from the seed if
-	// not specified here.
-	Node kubermaticv1.NodeSettings `json:"node"`
-	// Spec describes the cloud provider settings used to manage resources
-	// in this datacenter. Exactly one cloud provider must be defined.
-	Spec SeedDatacenterSpec `json:"spec"`
-}
-
-// SeedDatacenterSpec mutually points to provider datacenter spec
-type SeedDatacenterSpec struct {
-	Digitalocean *kubermaticv1.DatacenterSpecDigitalocean `json:"digitalocean,omitempty"`
-	// BringYourOwn contains settings for clusters using manually created
-	// nodes via kubeadm.
-	BringYourOwn *kubermaticv1.DatacenterSpecBringYourOwn `json:"bringyourown,omitempty"`
-	AWS          *kubermaticv1.DatacenterSpecAWS          `json:"aws,omitempty"`
-	Azure        *kubermaticv1.DatacenterSpecAzure        `json:"azure,omitempty"`
-	Openstack    *kubermaticv1.DatacenterSpecOpenstack    `json:"openstack,omitempty"`
-	Packet       *kubermaticv1.DatacenterSpecPacket       `json:"packet,omitempty"`
-	Hetzner      *kubermaticv1.DatacenterSpecHetzner      `json:"hetzner,omitempty"`
-	VSphere      *kubermaticv1.DatacenterSpecVSphere      `json:"vsphere,omitempty"`
-	GCP          *kubermaticv1.DatacenterSpecGCP          `json:"gcp,omitempty"`
-	Kubevirt     *kubermaticv1.DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
-	Alibaba      *kubermaticv1.DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
-
-	//nolint:staticcheck
-	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
-	Fake *kubermaticv1.DatacenterSpecFake `json:"fake,omitempty,omitgenyaml"`
-
-	// Optional: When defined, only users with an e-mail address on the
-	// given domains can make use of this datacenter. You can define multiple
-	// domains, e.g. "example.com", one of which must match the email domain
-	// exactly (i.e. "example.com" will not match "user@test.example.com").
-	// RequiredEmailDomain is deprecated. Automatically migrated to the RequiredEmailDomains field.
-	RequiredEmailDomain  string   `json:"requiredEmailDomain,omitempty"`
-	RequiredEmailDomains []string `json:"requiredEmailDomains,omitempty"`
-
-	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
-	// ignoring cluster-specific settings.
-	EnforceAuditLogging bool `json:"enforceAuditLogging"`
-
-	// EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
-	// ignoring cluster-specific settings
-	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy"`
 }
 
 const (
