@@ -22,7 +22,7 @@ spec:
         thanos.io/store-api: 'true'
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/scrape_port: '10902'
+        prometheus.io/port: '10902'
         kubermatic.io/chart: prometheus
     spec:
       containers:

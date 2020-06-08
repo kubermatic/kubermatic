@@ -23,7 +23,7 @@ spec:
       annotations:
         fluentbit.io/parser: glog
         prometheus.io/scrape: 'true'
-        prometheus.io/scrape_port: '8942'
+        prometheus.io/port: '8942'
         kubermatic.io/chart: kubermatic
     spec:
       serviceAccountName: vpa-recommender

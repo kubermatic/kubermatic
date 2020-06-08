@@ -17,7 +17,7 @@ spec:
         app.kubernetes.io/name: velero
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/scrape_port: "8085"
+        prometheus.io/port: "8085"
         kubermatic.io/chart: velero
 {{- with .Values.velero.podAnnotations }}
 {{ toYaml . | indent 8 }}

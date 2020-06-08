@@ -25,7 +25,7 @@ spec:
         app.kubernetes.io/managed-by: helm
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/scrape_port: '9090'
+        prometheus.io/port: '9090'
         kubermatic.io/chart: kubernetes-dashboard
     spec:
       containers:

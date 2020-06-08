@@ -45,7 +45,7 @@ func EnvoyDeploymentCreator(seed *kubermaticv1.Seed, versions common.Versions) r
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			d.Spec.Template.Annotations = map[string]string{
 				"prometheus.io/scrape":       "true",
-				"prometheus.io/scrape_port":  strconv.Itoa(EnvoyPort),
+				"prometheus.io/port":         strconv.Itoa(EnvoyPort),
 				"prometheus.io/metrics_path": "/stats/prometheus",
 				"fluentbit.io/parser":        "json_iso",
 			}

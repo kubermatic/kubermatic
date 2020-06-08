@@ -21,7 +21,7 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/scrape_port: '9402'
+        prometheus.io/port: '9402'
         kubermatic.io/chart: cert-manager
         fluentbit.io/parser: glog
     spec:

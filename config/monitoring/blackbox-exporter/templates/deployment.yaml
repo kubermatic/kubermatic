@@ -15,7 +15,7 @@ spec:
         app: blackbox-exporter
       annotations:
         prometheus.io/scrape: "true"
-        prometheus.io/scrape_port: "9115"
+        prometheus.io/port: "9115"
         kubermatic.io/chart: blackbox-exporter
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
     spec:

@@ -13,7 +13,7 @@ spec:
         app: kube-state-metrics
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/scrape_port: '8080'
+        prometheus.io/port: '8080'
         kubermatic.io/chart: kube-state-metrics
         fluentbit.io/parser: glog
     spec:

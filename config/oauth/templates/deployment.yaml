@@ -15,7 +15,7 @@ spec:
         app: dex
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/scrape_port: '5558'
+        prometheus.io/port: '5558'
         kubermatic.io/chart: oauth
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}

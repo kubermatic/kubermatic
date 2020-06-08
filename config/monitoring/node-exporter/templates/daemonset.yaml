@@ -19,7 +19,7 @@ spec:
         app: node-exporter
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/scrape_port: '9100'
+        prometheus.io/port: '9100'
         kubermatic.io/chart: node-exporter
     spec:
       hostNetwork: true
