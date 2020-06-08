@@ -63,7 +63,7 @@ Supported Kubernetes versions:
 - Added a dark theme and a selector to the user settings. [#1867](https://github.com/kubermatic/dashboard-v2/issues/1867) ([maciaszczykm](https://github.com/maciaszczykm))
 - Added possibility to define a default project in user settings. When a default project is choosen, the user will be automatically redirected to this project after login. Attention: One initial log in might be needed for the feature to take effect. [#1895](https://github.com/kubermatic/dashboard-v2/issues/1895) ([kgroschoff](https://github.com/kgroschoff))
 - Added UI support for dynamic kubelet config option [#1923](https://github.com/kubermatic/dashboard-v2/issues/1923) ([floreks](https://github.com/floreks))
-- Added Paginators to all tables [#1932](https://github.com/kubermatic/dashboard-v2/issues/1932) ([kgroschoff](https://github.com/kgroschoff))
+- Added paginators to all tables [#1932](https://github.com/kubermatic/dashboard-v2/issues/1932) ([kgroschoff](https://github.com/kgroschoff))
 - Added cluster metrics. [#1940](https://github.com/kubermatic/dashboard-v2/issues/1940) ([maciaszczykm](https://github.com/maciaszczykm))
 - Increased cpu &amp; memory defaults on vSphere [#1952](https://github.com/kubermatic/dashboard-v2/issues/1952) ([kgroschoff](https://github.com/kgroschoff))
 - Custom Presets are filtered by datacenter now [#1955](https://github.com/kubermatic/dashboard-v2/issues/1955) ([kgroschoff](https://github.com/kgroschoff))
