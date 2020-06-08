@@ -12,65 +12,42 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# apiserver gets the auth-delegator role to delegate auth decisions to
-# the core apiserver
 apiVersion: rbac.authorization.k8s.io/v1beta1
-kind: ClusterRoleBinding
+kind: Role
 metadata:
-  name: cert-manager-webhook:auth-delegator
+  name: cert-manager-webhook:dynamic-serving
+  namespace: '{{ .Release.Namespace }}'
   labels:
     app: webhook
     app.kubernetes.io/name: webhook
-    app.kubernetes.io/instance: {{ .Release.Name }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: system:auth-delegator
-subjects:
-- apiGroup: ''
-  kind: ServiceAccount
-  name: webhook
-  namespace: '{{ .Release.Namespace }}'
-
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  resourceNames:
+  - 'webhook-ca'
+  verbs: ["get", "list", "watch", "update"]
+# It's not possible to grant CREATE permission on a single resourceName.
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["create"]
 ---
-# apiserver gets the ability to read authentication. This allows it to
-# read the specific configmap that has the requestheader-* entries to
-# api agg
+
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: RoleBinding
 metadata:
-  name: cert-manager-webhook:webhook-authentication-reader
-  namespace: kube-system
+  name: cert-manager-webhook:dynamic-serving
+  namespace: '{{ .Release.Namespace }}'
   labels:
     app: webhook
     app.kubernetes.io/name: webhook
-    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/instance: '{{ .Release.Name }}'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: Role
-  name: extension-apiserver-authentication-reader
+  name: cert-manager-webhook:dynamic-serving
 subjects:
-- apiGroup: ''
+- apiGroup: ""
   kind: ServiceAccount
   name: webhook
   namespace: '{{ .Release.Namespace }}'
-
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
-metadata:
-  name: cert-manager-webhook:webhook-requester
-  labels:
-    app: webhook
-    app.kubernetes.io/name: webhook
-    app.kubernetes.io/instance: {{ .Release.Name }}
-rules:
-- apiGroups:
-  - admission.cert-manager.io
-  resources:
-  - certificates
-  - certificaterequests
-  - issuers
-  - clusterissuers
-  verbs:
-  - create

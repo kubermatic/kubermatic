@@ -58,10 +58,6 @@ spec:
         - --default-issuer-group={{ .defaultIssuerGroup }}
         {{- end }}
         {{- end }}
-        - --webhook-namespace=$(POD_NAMESPACE)
-        - --webhook-ca-secret=webhook-ca
-        - --webhook-serving-secret=webhook-tls
-        - --webhook-dns-names=webhook,webhook.{{ .Release.Namespace }},webhook.{{ .Release.Namespace }}.svc
         {{- if .Values.certManager.controller.extraArgs }}
 {{ toYaml .Values.certManager.controller.extraArgs | indent 8 }}
         {{- end }}

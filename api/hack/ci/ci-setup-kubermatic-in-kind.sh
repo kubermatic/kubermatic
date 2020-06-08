@@ -383,7 +383,7 @@ function check_all_deployments_ready() {
 # to have the CRDs installed so we can at least create a Certificate resource.
 TEST_NAME="Deploy cert-manager CRDs"
 echodate "Deploying cert-manager CRDs"
-retry 5 kubectl apply -f config/cert-manager/templates/crd.yaml
+retry 5 kubectl apply -f config/cert-manager/crd/
 
 if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
   TEST_NAME="Deploy Kubermatic"
