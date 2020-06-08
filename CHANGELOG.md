@@ -274,6 +274,23 @@ Supported Kubernetes versions:
 
 
 
+### [v2.12.8]()
+
+
+- Updated machine-controller to `v1.8.4` to address issue in CNI plugins [#5442](https://github.com/kubermatic/kubermatic/issues/5442) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
+### [v2.12.7]()
+
+
+- Openstack: fixed a bug preventing the usage of pre-existing subnets connected to distributed routers [#5334](https://github.com/kubermatic/kubermatic/issues/5334) ([kdomanski](https://github.com/kdomanski))
+- Update machine-controller to v1.8.2 to fix the Docker daemon/CLI version incompatibility [#5426](https://github.com/kubermatic/kubermatic/issues/5426) ([xmudrii](https://github.com/xmudrii))
+
+
+
+
 ### [v2.12.6]()
 
 
