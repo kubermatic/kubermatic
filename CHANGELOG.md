@@ -117,6 +117,39 @@ Supported Kubernetes versions:
 
 
 
+### [v2.13.5]()
+
+
+- Updated machine-controller to `v1.10.4` to address issue in CNI plugins [#5443](https://github.com/kubermatic/kubermatic/issues/5443) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
+### [v2.13.4]()
+
+
+- ACTION REQUIRED: The most recent backup for user clusters is kept when the cluster is deleted. Adjust the cleanup-container to get the old behaviour (delete all backups) back. [#5262](https://github.com/kubermatic/kubermatic/issues/5262) ([xrstf](https://github.com/xrstf))
+- Updated machine-controller to v1.10.3 to fix the Docker daemon/CLI version incompatibility [#5427](https://github.com/kubermatic/kubermatic/issues/5427) ([xmudrii](https://github.com/xmudrii))
+
+
+
+
+### [v2.13.3]()
+
+
+This release contains only improvement to the image build process.
+
+
+
+
+### [v2.13.2]()
+
+
+- Openstack: include distributed routers in existing router search [#5334](https://github.com/kubermatic/kubermatic/issues/5334) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
 ### [v2.13.1]()
 
 
