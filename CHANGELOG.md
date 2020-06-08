@@ -89,7 +89,7 @@ Supported Kubernetes versions:
 - Fixed filter in combo dropdown [#2238](https://github.com/kubermatic/dashboard-v2/issues/2238) ([kgroschoff](https://github.com/kgroschoff))
 - Fixed node data dialog for vSphere clusters. [#2251](https://github.com/kubermatic/dashboard-v2/issues/2251) ([maciaszczykm](https://github.com/maciaszczykm))
 - Cluster creation time is now visible in the UI. [#2253](https://github.com/kubermatic/dashboard-v2/issues/2253) ([maciaszczykm](https://github.com/maciaszczykm))
-- Added info about End-of-life of Container Linux [#2264](https://github.com/kubermatic/dashboard-v2/issues/2264) ([kgroschoff](https://github.com/kgroschoff))
+- Added info about end-of-life of Container Linux [#2264](https://github.com/kubermatic/dashboard-v2/issues/2264) ([kgroschoff](https://github.com/kgroschoff))
 - Enforcing pod security policy by the datacenter is now allowed. [#2270](https://github.com/kubermatic/dashboard-v2/issues/2270) ([maciaszczykm](https://github.com/maciaszczykm))
 - Introduced a number of responsiveness fixes to improve user experience on the smaller screens. [#2279](https://github.com/kubermatic/dashboard-v2/issues/2279) ([maciaszczykm](https://github.com/maciaszczykm))
 
