@@ -9,4 +9,4 @@ spec:
     includedNamespaces:
     - '*'
     snapshotVolumes: false
-    ttl: 168h # 7 days  
+    ttl: 168h # 7 days
