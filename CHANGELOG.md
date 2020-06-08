@@ -73,7 +73,6 @@ Supported Kubernetes versions:
 - Fixes issue that prevented creating Addons which had no AddonConfig deployed. [#1985](https://github.com/kubermatic/dashboard-v2/issues/1985) ([maciaszczykm](https://github.com/maciaszczykm))
 - Added possibility to collapse the sidenav. [#2004](https://github.com/kubermatic/dashboard-v2/issues/2004) ([kgroschoff](https://github.com/kgroschoff))
 - We now use WebSocket to get global settings. [#2008](https://github.com/kubermatic/dashboard-v2/issues/2008) ([maciaszczykm](https://github.com/maciaszczykm))
-- We now set &#39;SameSite=Strict&#39; for all cookies. [#2019](https://github.com/kubermatic/dashboard-v2/issues/2019) ([maciaszczykm](https://github.com/maciaszczykm))
 - We now use `SameSite=Lax` [#2046](https://github.com/kubermatic/dashboard-v2/issues/2046) ([kgroschoff](https://github.com/kgroschoff))
 - AddonConfig&#39;s shortDescription field is now used in the accessible addons overview. [#2050](https://github.com/kubermatic/dashboard-v2/issues/2050) ([maciaszczykm](https://github.com/maciaszczykm))
 - Audit Logging will be enforced when specified in the datacenter. [#2070](https://github.com/kubermatic/dashboard-v2/issues/2070) ([kgroschoff](https://github.com/kgroschoff))
