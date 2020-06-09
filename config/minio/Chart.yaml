@@ -1,7 +1,7 @@
 apiVersion: v1
 name: minio
-version: 1.0.12
-appVersion: RELEASE.2019-10-12T01-39-57Z
+version: 1.0.13
+appVersion: RELEASE.2020-06-03T22-13-49Z
 description: minio
 keywords:
 - kubermatic
