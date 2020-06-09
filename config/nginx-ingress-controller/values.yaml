@@ -4,7 +4,7 @@ nginx:
   replicas: 3
   image:
     repository: quay.io/kubernetes-ingress-controller/nginx-ingress-controller
-    tag: 0.29.0
+    tag: 0.32.0
   config: {}
 #   load-balance: "least_conn"
   extraArgs: []
