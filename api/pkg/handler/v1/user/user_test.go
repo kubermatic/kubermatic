@@ -114,7 +114,7 @@ func TestGetUsersForProject(t *testing.T) {
 		{
 			Name:         "scenario 2: get a list of user for a project 'foo' for external user",
 			HTTPStatus:   http.StatusForbidden,
-			ProjectToGet: "foo2InternalName",
+			ProjectToGet: "foo2-ID",
 			ExistingKubermaticObjs: []runtime.Object{
 				/*add projects*/
 				test.GenProject("foo2", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
@@ -128,10 +128,10 @@ func TestGetUsersForProject(t *testing.T) {
 				genDefaultUser(), /*bob*/
 			},
 			ExistingAPIUser:        *genAPIUser("alice2", "alice2@acme.com"),
-			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"alice2@acme.com\" doesn't belong to the given project = foo2InternalName"}}`,
+			ExpectedResponseString: `{"error":{"code":403,"message":"forbidden: \"alice2@acme.com\" doesn't belong to the given project = foo2-ID"}}`,
 		},
 		{
-			Name:         "scenario 2: the admin can get a list of user for any project",
+			Name:         "scenario 3: the admin can get a list of user for any project",
 			HTTPStatus:   http.StatusOK,
 			ProjectToGet: "foo-ID",
 			ExistingKubermaticObjs: []runtime.Object{

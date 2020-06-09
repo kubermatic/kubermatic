@@ -109,7 +109,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 		{
 			Name:            "scenario 4: rename not existing project",
 			Body:            `{"Name": "Super-Project"}`,
-			HTTPStatus:      http.StatusForbidden,
+			HTTPStatus:      http.StatusNotFound,
 			ProjectToRename: "some-ID",
 			ExistingKubermaticObjects: []runtime.Object{
 				test.GenDefaultProject(),
@@ -117,7 +117,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 				test.GenDefaultOwnerBinding(),
 			},
 			ExistingAPIUser:  *test.GenDefaultAPIUser(),
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to the given project = some-ID"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"projects.kubermatic.k8s.io \"some-ID\" not found"}}`,
 		},
 		{
 			Name:            "scenario 5: rename a project with empty name",
