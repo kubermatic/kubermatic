@@ -8,11 +8,6 @@ scheme: http
 kubernetes_sd_configs:
 - role: endpoints
 relabel_configs:
-# drop everything within e2e test clusters
-- source_labels: [__meta_kubernetes_namespace]
-  separator: ;
-  regex: .*prow-e2e-.*
-  action: drop
 - source_labels: [__meta_kubernetes_service_label_cluster]
   separator: ;
   regex: user

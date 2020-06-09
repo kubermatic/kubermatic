@@ -17,8 +17,9 @@ spec:
       labels:
         app: elasticsearch-exporter
       annotations:
-        kubermatic/scrape: "true"
-        kubermatic/scrape_port: "9114"
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9114"
+        kubermatic.io/chart: elasticsearch
     spec:
       containers:
       - name: exporter

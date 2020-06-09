@@ -17,6 +17,8 @@ data:
         inCluster: true
     web:
       http: 0.0.0.0:5556
+    telemetry:
+      http: 0.0.0.0:5558
     # this is a requirement for static passwords, so we just enable it by default
     enablePasswordDB: true
 {{ if .Values.dex.expiry }}

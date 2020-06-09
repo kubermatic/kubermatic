@@ -16,7 +16,8 @@ spec:
         app.kubernetes.io/name: kubermatic-operator
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/scrape_port: '8085'
+        prometheus.io/port: '8085'
+        kubermatic.io/chart: kubermatic-operator
         fluentbit.io/parser: json_iso
     spec:
       serviceAccountName: kubermatic-operator

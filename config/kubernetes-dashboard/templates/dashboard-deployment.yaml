@@ -23,6 +23,10 @@ spec:
         app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/version: '{{ .Chart.Version }}'
         app.kubernetes.io/managed-by: helm
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9090'
+        kubermatic.io/chart: kubernetes-dashboard
     spec:
       containers:
         - name: kubernetes-dashboard

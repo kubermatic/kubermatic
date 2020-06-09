@@ -18,8 +18,9 @@ spec:
       labels:
         app: node-exporter
       annotations:
-        kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '9100'
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9100'
+        kubermatic.io/chart: node-exporter
     spec:
       hostNetwork: true
       hostPID: true

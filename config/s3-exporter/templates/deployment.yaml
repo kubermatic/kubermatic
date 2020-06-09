@@ -13,8 +13,9 @@ spec:
       labels:
         app: s3-exporter
       annotations:
-        kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '9340'
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9340'
+        kubermatic.io/chart: s3-exporter
         fluentbit.io/parser: json_iso
     spec:
       serviceAccountName: s3-exporter

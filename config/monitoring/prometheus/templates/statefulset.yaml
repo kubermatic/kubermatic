@@ -22,8 +22,9 @@ spec:
         thanos.io/store-api: 'true'
         {{- end }}
       annotations:
-        kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '9090'
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9090'
+        kubermatic.io/chart: prometheus
         {{- if .Values.prometheus.backup.enabled }}
         backup.velero.io/backup-volumes: backup
         pre.hook.backup.velero.io/container: backup

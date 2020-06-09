@@ -16,6 +16,9 @@ spec:
       annotations:
         checksum/tls: {{ include (print $.Template.BasePath "/vpa-tls.yaml") . | sha256sum }}
         fluentbit.io/parser: glog
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8944'
+        kubermatic.io/chart: kubermatic
     spec:
       serviceAccountName: vpa-admission-controller
       containers:

@@ -14,8 +14,10 @@ spec:
         role: controller-manager
         version: v1
       annotations:
-        kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '8085'
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8085'
+        kubermatic.io/chart: kubermatic
+        fluentbit.io/parser: glog
         checksum/tls: {{ include (print $.Template.BasePath "/seed-validating-webhook.yaml") . | sha256sum }}
         checksum/master-files: {{ include (print $.Template.BasePath "/master-files-secret.yaml") . | sha256sum }}
         checksum/datecenters: {{ include (print $.Template.BasePath "/datacenter-yaml-secret.yaml") . | sha256sum }}
@@ -27,7 +29,6 @@ spec:
         {{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
         checksum/prometheus-scraping-configs: {{ include (print $.Template.BasePath "/clusterns-prometheus-scraping-configs-configmap.yaml") . | sha256sum }}
         {{- end }}
-        fluentbit.io/parser: glog
     spec:
       serviceAccountName: kubermatic
       initContainers:
