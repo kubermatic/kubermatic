@@ -278,9 +278,15 @@ func GetProject(ctx context.Context, userInfoGetter provider.UserInfoGetter, pro
 		return nil, err
 	}
 
+	// check first if project exist
+	adminProject, err := privilegedProjectProvider.GetUnsecured(projectID, options)
+	if err != nil {
+		return nil, err
+	}
+
 	if adminUserInfo.IsAdmin {
 		// get any project for admin
-		return privilegedProjectProvider.GetUnsecured(projectID, options)
+		return adminProject, nil
 	}
 
 	userInfo, err := userInfoGetter(ctx, projectID)
