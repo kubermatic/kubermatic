@@ -5,13 +5,13 @@ grafana:
   replicas: 1
   image:
     repository: docker.io/grafana/grafana
-    tag: 6.7.1
+    tag: 7.0.3
   utilImage:
     repository: quay.io/kubermatic/util
     tag: 1.3.4
   pluginImage:
     repository: quay.io/kubermatic/grafana-plugins
-    tag: 1.0.0
+    tag: 1.1.0
   resources:
     requests:
       cpu: 100m
@@ -61,7 +61,7 @@ grafana:
 
       lokiServices: []
       # - loki
-      
+
       # read datasources from this path in the Helm chart; this is
       # evaluated during deployment, not during Grafana runtime!
       source: provisioning/datasources/*
