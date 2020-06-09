@@ -20,8 +20,9 @@ spec:
         app.kubernetes.io/name: cert-manager
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
-        kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '9402'
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9402'
+        kubermatic.io/chart: cert-manager
         fluentbit.io/parser: glog
     spec:
       serviceAccountName: cert-manager

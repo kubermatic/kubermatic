@@ -22,6 +22,10 @@ spec:
         app: vpa-updater
       annotations:
         fluentbit.io/parser: glog
+        # updater should provide metrics, but currently does not
+        # prometheus.io/scrape: 'true'
+        # prometheus.io/port: '8943'
+        kubermatic.io/chart: kubermatic
     spec:
       serviceAccountName: vpa-updater
       containers:

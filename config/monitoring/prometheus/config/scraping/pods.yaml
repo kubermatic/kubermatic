@@ -2,26 +2,54 @@ job_name: 'pods'
 kubernetes_sd_configs:
 - role: pod
 relabel_configs:
-# drop everything within test clusters
-- source_labels: [__meta_kubernetes_namespace]
-  regex: prow-kubermatic-.*
-  action: drop
 # drop node-exporters, as they need HTTPS scraping with credentials
 - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_app]
   regex: '{{ .Release.Namespace }};node-exporter'
   action: drop
-- source_labels: [__meta_kubernetes_pod_annotation_kubermatic_scrape]
+
+# do not scrape user-cluster namespaces
+- source_labels: [__meta_kubernetes_namespace]
+  regex: 'cluster-.*'
+  action: drop
+
+# only keep pods labelled with special annotations;
+# "kubermatic/" is supported for legacy reasons
+- source_labels: [__meta_kubernetes_pod_annotation_kubermatic_scrape, __meta_kubernetes_pod_annotation_prometheus_io_scrape]
+  regex: '.*true.*'
   action: keep
-  regex: true
-- source_labels: [__meta_kubernetes_pod_annotation_kubermatic_metric_path]
+
+# allow to overwrite the metrics URL
+- source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_metrics_path]
   action: replace
   target_label: __metrics_path__
   regex: (.+)
-- source_labels: [__address__, __meta_kubernetes_pod_annotation_kubermatic_scrape_port]
+- source_labels: [__meta_kubernetes_pod_annotation_kubermatic_metrics_path] # deprecated
   action: replace
-  regex: ([^:]+)(?::\d+)?;(\d+)
+  target_label: __metrics_path__
+  regex: (.+)
+- source_labels: [__meta_kubernetes_pod_annotation_kubermatic_metric_path] # deprecated typo
+  action: replace
+  target_label: __metrics_path__
+  regex: (.+)
+
+# allow to overwrite the scrape port
+- source_labels: [__address__, __meta_kubernetes_pod_annotation_kubermatic_scrape_port] # deprecated
+  action: replace
+  regex: '^([^:]+)(?::\d+)?;(\d+)$'
   replacement: $1:$2
   target_label: __address__
+- source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_scrape_port] # deprecated variant
+  action: replace
+  regex: '^([^:]+)(?::\d+)?;(\d+)$'
+  replacement: $1:$2
+  target_label: __address__
+- source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+  action: replace
+  regex: '^([^:]+)(?::\d+)?;(\d+)$'
+  replacement: $1:$2
+  target_label: __address__
+
+# refine labels further
 - action: labelmap
   regex: __meta_kubernetes_pod_label_(.+)
 - source_labels: [__meta_kubernetes_namespace]
@@ -34,7 +62,9 @@ relabel_configs:
   target_label: pod
   replacement: $1
   action: replace
+
 metric_relabel_configs:
+# turn namespace into a nice cluster ID label
 - source_labels: [namespace]
   regex: cluster-([a-z0-9]+)
   target_label: cluster

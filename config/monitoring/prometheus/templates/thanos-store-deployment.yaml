@@ -21,8 +21,9 @@ spec:
         app.kubernetes.io/instance: {{ template "name" . }}
         thanos.io/store-api: 'true'
       annotations:
-        kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '10902'
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '10902'
+        kubermatic.io/chart: prometheus
     spec:
       containers:
       - name: thanos

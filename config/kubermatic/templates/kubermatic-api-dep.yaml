@@ -15,12 +15,13 @@ spec:
         role: kubermatic-api
         version: v1
       annotations:
-        kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '8085'
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8085'
+        kubermatic.io/chart: kubermatic
+        fluentbit.io/parser: glog
         checksum/datecenters: {{ include (print $.Template.BasePath "/datacenter-yaml-secret.yaml") . | sha256sum }}
         checksum/kubeconfig: {{ include (print $.Template.BasePath "/kubeconfig-secret.yaml") . | sha256sum }}
         checksum/master-files: {{ include (print $.Template.BasePath "/master-files-secret.yaml") . | sha256sum }}
-        fluentbit.io/parser: glog
     spec:
       serviceAccountName: kubermatic
       containers:

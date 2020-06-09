@@ -14,6 +14,9 @@ spec:
       labels:
         app: dex
       annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '5558'
+        kubermatic.io/chart: oauth
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") . | sha256sum }}
     spec:
@@ -25,6 +28,8 @@ spec:
         ports:
         - name: https
           containerPort: 5556
+        - name: telemetry
+          containerPort: 5558
         volumeMounts:
         - name: config
           mountPath: /etc/dex/cfg

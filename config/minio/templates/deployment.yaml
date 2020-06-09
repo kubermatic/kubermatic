@@ -13,9 +13,10 @@ spec:
       labels:
         app: minio
       annotations:
-        kubermatic/scrape: "true"
-        kubermatic/scrape_port: "9000"
-        kubermatic/metric_path: /minio/prometheus/metrics
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9000"
+        prometheus.io/metrics_path: /minio/prometheus/metrics
+        kubermatic.io/chart: minio
         {{- if .Values.minio.backup.enabled }}
         backup.velero.io/backup-volumes: minio-backup
         pre.hook.backup.velero.io/container: backup

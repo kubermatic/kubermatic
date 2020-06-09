@@ -12,6 +12,9 @@ spec:
       labels:
         app: kube-state-metrics
       annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8080'
+        kubermatic.io/chart: kube-state-metrics
         fluentbit.io/parser: glog
     spec:
       serviceAccountName: kube-state-metrics

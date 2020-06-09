@@ -22,8 +22,9 @@ spec:
         app: vpa-recommender
       annotations:
         fluentbit.io/parser: glog
-        kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '8942'
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8942'
+        kubermatic.io/chart: kubermatic
     spec:
       serviceAccountName: vpa-recommender
       containers:

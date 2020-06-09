@@ -15,11 +15,12 @@ spec:
       labels:
         app: master-controller
       annotations:
-        kubermatic/scrape: 'true'
-        kubermatic/scrape_port: '8085'
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8085'
+        kubermatic.io/chart: kubermatic
+        fluentbit.io/parser: glog
         checksum/tls: {{ include (print $.Template.BasePath "/seed-validating-webhook.yaml") . | sha256sum }}
         checksum/kubeconfig: {{ include (print $.Template.BasePath "/kubeconfig-secret.yaml") . | sha256sum }}
-        fluentbit.io/parser: glog
     spec:
       containers:
       - name: master-controller
