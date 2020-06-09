@@ -1,7 +1,7 @@
 minio:
   image:
     repository: docker.io/minio/minio
-    tag: RELEASE.2019-10-12T01-39-57Z
+    tag: RELEASE.2020-06-03T22-13-49Z
   storeSize: 100Gi
   credentials:
     accessKey: wtupllWfpMg414ZM5YkzZiUmgjh1vZdk
