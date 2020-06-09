@@ -3,9 +3,11 @@ minio:
     repository: docker.io/minio/minio
     tag: RELEASE.2020-06-03T22-13-49Z
   storeSize: 100Gi
+
+  # These settings are required. Keys must be alphanumeric.
   credentials:
-    accessKey: wtupllWfpMg414ZM5YkzZiUmgjh1vZdk
-    secretKey: r89xkN9JvHJQppb5v7SEfkNkiC1vDcMySQFKxg6uDkE3gZfCeB7ZBfECyUOTywym
+    accessKey: '' # 32 byte long
+    secretKey: '' # 64 byte long
 
   flags:
     # Set to true to enable Minio's strict S3 compatibility mode.
