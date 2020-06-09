@@ -1,7 +1,7 @@
 dex:
   image:
     repository: "quay.io/dexidp/dex"
-    tag: "v2.22.0"
+    tag: "v2.24.0"
   replicas: 2
   ingress:
     # this option is required
