@@ -7558,6 +7558,48 @@
       }
     },
     "/api/v1/seed/{seed_name}/dc": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "datacenter"
+        ],
+        "summary": "Returns all datacenters for the specified seed.",
+        "operationId": "listDCForSeed",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Seed",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datacenter",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Datacenter"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
       "post": {
         "consumes": [
           "application/json"
@@ -7618,6 +7660,52 @@
       }
     },
     "/api/v1/seed/{seed_name}/dc/{dc}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "datacenter"
+        ],
+        "summary": "Returns the specified datacenter for the specified seed.",
+        "operationId": "getDCForSeed",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Seed",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datacenter",
+            "schema": {
+              "$ref": "#/definitions/Datacenter"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
       "put": {
         "consumes": [
           "application/json"

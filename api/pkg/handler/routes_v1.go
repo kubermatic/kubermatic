@@ -45,6 +45,14 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/dc/{dc}").
 		Handler(r.datacenterHandler())
 
+	mux.Methods(http.MethodGet).
+		Path("/seed/{seed_name}/dc").
+		Handler(r.listDCForSeed())
+
+	mux.Methods(http.MethodGet).
+		Path("/seed/{seed_name}/dc/{dc}").
+		Handler(r.getDCForSeed())
+
 	mux.Methods(http.MethodPost).
 		Path("/seed/{seed_name}/dc").
 		Handler(r.createDC())
@@ -1307,6 +1315,54 @@ func (r Routing) getDCForProvider() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.GetEndpointForProvider(r.seedsGetter, r.userInfoGetter)),
 		dc.DecodeForProviderDCGetReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/seed/{seed_name}/dc datacenter listDCForSeed
+//
+//     Returns all datacenters for the specified seed.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Datacenter
+//       401: empty
+//       403: empty
+func (r Routing) listDCForSeed() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(dc.ListEndpointForSeed(r.seedsGetter, r.userInfoGetter)),
+		dc.DecodeListDCForSeedReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/seed/{seed_name}/dc/{dc} datacenter getDCForSeed
+//
+//     Returns the specified datacenter for the specified seed.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Datacenter
+//       401: empty
+//       403: empty
+func (r Routing) getDCForSeed() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(dc.GetEndpointForSeed(r.seedsGetter, r.userInfoGetter)),
+		dc.DecodeGetDCForSeedReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
