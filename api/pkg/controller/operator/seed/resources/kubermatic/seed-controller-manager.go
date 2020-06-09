@@ -34,9 +34,9 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			d.Spec.Template.Annotations = map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   "8085",
-				"fluentbit.io/parser":  "json_iso",
+				"kubermatic/scrape":      "true",
+				"kubermatic/scrape_port": "8085",
+				"fluentbit.io/parser":    "json_iso",
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
