@@ -1,6 +1,9 @@
 grafana:
-  user: YWRtaW4= # admin
-  password: bG9vZHNlMTIz # loodse123
+  # Admin login credentials, only relevant if the `disable_login_form` option
+  # further down is set to false. Using an identity aware proxy like
+  # Keycloak-Gatekeeper (see iap chart) is strongly recommended though.
+  user: admin
+  password: '' # generate a strong random password
 
   replicas: 1
   image:
