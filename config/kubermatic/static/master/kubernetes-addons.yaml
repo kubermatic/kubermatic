@@ -44,12 +44,6 @@ items:
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
-    name: nodelocal-dns-cache
-    labels:
-      addons.kubermatic.io/ensure: true
-- apiVersion: kubermatic.k8s.io/v1
-  kind: Addon
-  metadata:
     name: pod-security-policy
     labels:
       addons.kubermatic.io/ensure: true

@@ -470,6 +470,12 @@ const (
 	CoreDNSPodDisruptionBudgetName = "coredns"
 )
 
+const (
+	NodeLocalDNSServiceAccountName = "node-local-dns"
+	NodeLocalDNSConfigMapName      = "node-local-dns"
+	NodeLocalDNSDaemonSetName      = "node-local-dns"
+)
+
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key
 type ECDSAKeyPair struct {
 	Key  *ecdsa.PrivateKey
