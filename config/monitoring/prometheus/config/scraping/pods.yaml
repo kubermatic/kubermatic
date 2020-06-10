@@ -7,6 +7,12 @@ relabel_configs:
   regex: '{{ .Release.Namespace }};node-exporter'
   action: drop
 
+# drop kube-state-metrics, as we have dedicated rules to properly map all the labels
+# to their original pods
+- source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_app]
+  regex: '{{ .Release.Namespace }};kube-state-metrics'
+  action: drop
+
 # do not scrape user-cluster namespaces
 - source_labels: [__meta_kubernetes_namespace]
   regex: 'cluster-.*'
