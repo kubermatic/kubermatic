@@ -37,9 +37,9 @@ func UpdaterDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, ver
 
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			d.Spec.Template.Annotations = map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   strconv.Itoa(updaterPort),
-				"fluentbit.io/parser":  "glog",
+				"kubermatic/scrape":      "true",
+				"kubermatic/scrape_port": strconv.Itoa(updaterPort),
+				"fluentbit.io/parser":    "glog",
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = UpdaterName

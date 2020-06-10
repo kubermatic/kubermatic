@@ -43,9 +43,9 @@ func RecommenderDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration,
 
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
 			d.Spec.Template.Annotations = map[string]string{
-				"prometheus.io/scrape": "true",
-				"prometheus.io/port":   strconv.Itoa(recommenderPort),
-				"fluentbit.io/parser":  "glog",
+				"kubermatic/scrape":      "true",
+				"kubermatic/scrape_port": strconv.Itoa(recommenderPort),
+				"fluentbit.io/parser":    "glog",
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = RecommenderName
