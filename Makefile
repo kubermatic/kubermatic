@@ -11,10 +11,10 @@ KUBERMATICCOMMIT?=$(shell git log -1 --format=%H)
 KUBERMATICDOCKERTAG?=$(KUBERMATICCOMMIT)
 UIDOCKERTAG?=NA
 LDFLAGS += -extldflags '-static' \
-  -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT) \
-  -X github.com/kubermatic/kubermatic/api/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
-  -X github.com/kubermatic/kubermatic/api/pkg/controller/operator/common.KUBERMATICDOCKERTAG=$(KUBERMATICDOCKERTAG) \
-  -X github.com/kubermatic/kubermatic/api/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
+  -X github.com/kubermatic/kubermatic/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT) \
+  -X github.com/kubermatic/kubermatic/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
+  -X github.com/kubermatic/kubermatic/pkg/controller/operator/common.KUBERMATICDOCKERTAG=$(KUBERMATICDOCKERTAG) \
+  -X github.com/kubermatic/kubermatic/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
 HAS_DEP:= $(shell command -v dep 2> /dev/null)
 HAS_GIT:= $(shell command -v git 2> /dev/null)
 BUILD_DEST?=_build
@@ -49,9 +49,9 @@ test: download-gocache
 	@# without actually running them by using `-run` with a non-existing test.
 	@# **Imortant:** Do not replace this with one `go test` with multiple tags,
 	@# as that doesn't properly reflect if each individual tag still builds
-	go test -tags "cloud,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
-	go test -tags "create,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
-	go test -tags "e2e,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
+	go test -tags "cloud,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/...
+	go test -tags "create,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/...
+	go test -tags "e2e,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/...
 	go test -tags "integration,$(KUBERMATIC_EDITION)" -run nope ./...
 
 test-integration : CGO_ENABLED = 1

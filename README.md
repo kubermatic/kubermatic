@@ -24,31 +24,34 @@ This covers the existing, developer focusing, documentation:
 
 ```
 ├── addons            # Default Kubernetes addons
-├── api 							# All the code. If you are a dev, you can initially ignore everything else
 ├── CHANGELOG.md      # The changelog
+├── cmd               # Various Kubermatic binaries for the API, controller-managers etc.
+├── codegen           # Helper programs to generate Go code and Helm charts
 ├── config            # The Helm charts we use to deploy, gets exported to https://github.com/kubermatic/kubermatic-installer
 ├── containers        # Various utility container images
 ├── docs              # Some basic docs
+├── hack              # scripts for development and CI
 ├── openshift_addons  # Default Openshift addons
 ├── OWNERS
 ├── OWNERS_ALIASES
+├── pkg               # most of the actual codebase
 ├── Procfile
 └── README.md
 ```
 
-Customer facing documentation can be found at https://github.com/kubermatic/docs which gets published at https://docs.kubermatic.io
+Customer facing documentation can be found at https://github.com/kubermatic/docs which gets published at https://docs.kubermatic.com/
 
 ## Development environment
 
 ```bash
 mkdir -p $(go env GOPATH)/src/github.com/kubermatic
 cd $(go env GOPATH)/src/github.com/kubermatic
-git clone git@github.com:kubermatic/api
+git clone git@github.com:kubermatic/kubermatic
 git clone git@github.com:kubermatic/secrets
-cd api
+cd kubermatic
 ```
 
-There are a couple of scripts in the `api/hacks` directory to aid in running the components locally
+There are a couple of scripts in the `hacks` directory to aid in running the components locally
 for testing purposes.
 
 You can create a cluster via the UI at `https://dev.kubermatic.io`, then use `kubectl` to add a
@@ -78,11 +81,13 @@ running controlers manage the cluster.
 ### Run linters
 
 Before every push, make sure you run:
+
 ```bash
 make check
 ```
 
 gofmt errors can be automatically fixed by running
+
 ```bash
 make fix
 ```
