@@ -4,10 +4,11 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api"
+KUBERMATIC_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic"
 SWAGGER_FILE="swagger.json"
 
-cd ${API_DIR}/vendor/github.com/go-swagger/go-swagger/cmd/swagger
+cd ${KUBERMATIC_DIR}/vendor/github.com/go-swagger/go-swagger/cmd/swagger
 go install
-cd ${API_DIR}/cmd/kubermatic-api/
+
+cd ${KUBERMATIC_DIR}/cmd/kubermatic-api/
 swagger generate spec --scan-models -o ${SWAGGER_FILE}

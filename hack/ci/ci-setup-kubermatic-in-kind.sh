@@ -42,7 +42,7 @@ if [[ -z ${PROW_JOB_ID} ]]; then
 fi
 
 cd "${GOPATH}/src/github.com/kubermatic/kubermatic"
-source ./api/hack/lib.sh
+source hack/lib.sh
 
 TEST_NAME="Get Vault token"
 echodate "Getting secrets from Vault"
@@ -153,10 +153,10 @@ else
   echodate "Starting clusterexposer"
 
   beforeGocache=$(nowms)
-  make -C api download-gocache
+  make download-gocache
   pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
-  CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./api/pkg/test/clusterexposer/cmd
+  CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./pkg/test/clusterexposer/cmd
   CGO_ENABLED=0 /tmp/clusterexposer \
     --kubeconfig-inner "$KUBECONFIG" \
     --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
@@ -233,7 +233,7 @@ fi
 TEST_NAME="Deploy Dex"
 echodate "Deploying Dex"
 
-export KUBERMATIC_DEX_VALUES_FILE=$(realpath api/hack/ci/testdata/oauth_values.yaml)
+export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
 
 if kubectl get namespace oauth; then
   echodate "Dex already deployed"
@@ -266,7 +266,7 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   TEST_NAME="Build Kubermatic binaries"
 
   beforeGoBuild=$(nowms)
-  time retry 1 make -C api build
+  time retry 1 make build
   pushElapsed kubermatic_go_build_duration_milliseconds $beforeGoBuild
 
   beforeDockerBuild=$(nowms)
@@ -274,7 +274,6 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   (
     echodate "Building docker image"
     TEST_NAME="Build Kubermatic Docker image"
-    cd api
     IMAGE_NAME="quay.io/kubermatic/kubermatic$REPOSUFFIX:$KUBERMATIC_VERSION"
     time retry 5 docker build -t "$IMAGE_NAME" .
     time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
@@ -301,7 +300,7 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
     if [[ "${KUBERMATIC_USE_OPERATOR}" = "true" ]]; then
       echodate "Building nodeport-proxy image"
       TEST_NAME="Build nodeport-proxy Docker image"
-      cd api/cmd/nodeport-proxy
+      cd cmd/nodeport-proxy
       make build
       IMAGE_NAME="quay.io/kubermatic/nodeport-proxy:$KUBERMATIC_VERSION"
       time retry 5 docker build -t "${IMAGE_NAME}" .
@@ -311,25 +310,21 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   (
     echodate "Building dnatcontroller image"
     TEST_NAME="Build dnatcontroller Docker image"
-    cd api/cmd/kubeletdnat-controller
+    cd cmd/kubeletdnat-controller
     make build
     IMAGE_NAME="quay.io/kubermatic/kubeletdnat-controller:$KUBERMATIC_VERSION"
     time retry 5 docker build -t "${IMAGE_NAME}" .
     time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
   )
   (
-    # This may not exist during upgrade tests.
-    # TODO @kdomanski after 2.13 release: remove this condition
-    if [[ -e api/cmd/user-ssh-keys-agent ]]; then
-      echodate "Building user-ssh-keys-agent image"
-      TEST_NAME="Build user-ssh-keys-agent Docker image"
-      cd api/cmd/user-ssh-keys-agent
-      make build
-      retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-      IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
-      time retry 5 docker build -t "${IMAGE_NAME}" .
-      time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
-    fi
+    echodate "Building user-ssh-keys-agent image"
+    TEST_NAME="Build user-ssh-keys-agent Docker image"
+    cd cmd/user-ssh-keys-agent
+    make build
+    retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
+    IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
+    time retry 5 docker build -t "${IMAGE_NAME}" .
+    time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
   )
 
   pushElapsed kubermatic_docker_build_duration_milliseconds $beforeDockerBuild

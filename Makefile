@@ -127,7 +127,7 @@ check-dependencies:
 	git diff --exit-code
 
 license-validation:
-	wwhrd check -f ../allowed_licensed.yaml
+	wwhrd check -f allowed_licensed.yaml
 
 gen-api-client:
 	./hack/gen-api-client.sh

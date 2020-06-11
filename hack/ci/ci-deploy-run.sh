@@ -3,12 +3,12 @@
 set -euo pipefail
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
-cd $(dirname $0)/../../..
+cd $(dirname $0)/../..
 
-source ./api/hack/lib.sh
+source hack/lib.sh
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
-  ./api/hack/ci/ci-push-images.sh
+  ./hack/ci/ci-push-images.sh
 fi
 
 echodate "Getting secrets from Vault"
@@ -26,5 +26,5 @@ vault kv get -field=values.yaml dev/seed-clusters/run.kubermatic.io > ${VALUES_F
 echodate "Successfully got secrets for run from Vault"
 
 echodate "Deploying ${DEPLOY_STACK} stack to run.kubermatic.io"
-TILLER_NAMESPACE=kube-system ./api/hack/deploy.sh master ${VALUES_FILE}
+TILLER_NAMESPACE=kube-system ./hack/deploy.sh master ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to run.kubermatic.io"

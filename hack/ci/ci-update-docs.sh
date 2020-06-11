@@ -2,9 +2,8 @@
 
 set -euo pipefail
 
-source $(dirname $0)/../lib.sh
-
-cd $(dirname $0)/../../..
+cd $(dirname $0)/../..
+source hack/lib.sh
 
 TARGET_DIR=docs_sync
 REVISION=$(git rev-parse --short HEAD)
@@ -25,7 +24,7 @@ mkdir -p content/kubermatic/master/data
 
 cp ../docs/zz_generated.seed.yaml data/kubermatic/master/seed.yaml
 cp ../docs/zz_generated.kubermaticConfiguration.yaml data/kubermatic/master/kubermaticConfiguration.yaml
-cp ../docs/zz_generated.addondata.go content/kubermatic/master/data/addondata.go
+cp ../docs/zz_generated.addondata.go.txt content/kubermatic/master/data/addondata.go
 
 # re-create Prometheus runbook
 make runbook

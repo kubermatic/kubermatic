@@ -12,7 +12,7 @@ EOF
 fi
 
 cd "$(dirname "$0")/../"
-source ./hack/lib.sh
+source hack/lib.sh
 
 REPOSUFFIX=""
 KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"

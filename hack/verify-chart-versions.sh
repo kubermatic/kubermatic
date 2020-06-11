@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/../..
+cd $(dirname $0)/..
 
 echo "Verifying Helm chart versions..."
 

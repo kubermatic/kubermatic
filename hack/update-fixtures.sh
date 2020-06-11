@@ -2,6 +2,8 @@
 
 set -euo pipefail
 
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+
 echo -e "\nUpdating fixtures...\n"
 make test-update &>/dev/null
 echo -e "\nUpdated fixtures, starting tests..."

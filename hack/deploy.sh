@@ -30,9 +30,8 @@ DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
 HELM_INIT_ARGS=${HELM_INIT_ARGS:-""}
 
-cd "$(dirname "$0")/../../"
-
-source ./api/hack/lib.sh
+cd "$(dirname "$0")/../"
+source hack/lib.sh
 
 deployment_disabled() {
   local release="$1"

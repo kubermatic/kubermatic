@@ -5,10 +5,10 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/../..
-source api/hack/lib.sh
+cd $(dirname $0)/..
+source hack/lib.sh
 
-./api/hack/update-kubermatic-chart.sh
+./hack/update-kubermatic-chart.sh
 
 echodate "Verifying Kubermatic Helm chart..."
 git diff --exit-code

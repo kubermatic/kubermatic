@@ -4,7 +4,7 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 make user-cluster-controller-manager
 
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
@@ -58,19 +58,19 @@ if echo $CLUSTER_RAW|grep -i aws -q; then
 fi
 
 ./_build/user-cluster-controller-manager \
-    -kubeconfig=${KUBECONFIG_USERCLUSTER_CONTROLLER_FILE} \
-    -metrics-listen-address=127.0.0.1:8087 \
-    -health-listen-address=127.0.0.1:8088 \
-    -namespace=${NAMESPACE} \
-    -openvpn-server-port=${OPENVPN_SERVER_NODEPORT} \
-    -cluster-url=${CLUSTER_URL} \
-    -version=${CLUSTER_VERSION} \
-    -openshift-console-callback-uri="${CONSOLE_CALLBACK_URI}" \
-    -log-debug=$KUBERMATIC_DEBUG \
-    -log-format=Console \
-    -logtostderr \
-    -v=4 \
-    -seed-kubeconfig=${SEED_KUBECONFIG} \
-    -owner-email=${OWNER_EMAIL} \
-    -dns-cluster-ip=10.240.16.10 \
-    ${ARGS}
+  -kubeconfig=${KUBECONFIG_USERCLUSTER_CONTROLLER_FILE} \
+  -metrics-listen-address=127.0.0.1:8087 \
+  -health-listen-address=127.0.0.1:8088 \
+  -namespace=${NAMESPACE} \
+  -openvpn-server-port=${OPENVPN_SERVER_NODEPORT} \
+  -cluster-url=${CLUSTER_URL} \
+  -version=${CLUSTER_VERSION} \
+  -openshift-console-callback-uri="${CONSOLE_CALLBACK_URI}" \
+  -log-debug=$KUBERMATIC_DEBUG \
+  -log-format=Console \
+  -logtostderr \
+  -v=4 \
+  -seed-kubeconfig=${SEED_KUBECONFIG} \
+  -owner-email=${OWNER_EMAIL} \
+  -dns-cluster-ip=10.240.16.10 \
+  ${ARGS}

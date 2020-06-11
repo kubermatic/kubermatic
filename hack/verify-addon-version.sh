@@ -10,7 +10,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cd $(dirname $0)/../..
+cd $(dirname $0)/..
 
 KUBERNETES_IMAGE=quay.io/kubermatic/addons
 KUBERNETES_TAG="$(cat config/kubermatic/values.yaml |grep $KUBERNETES_IMAGE -A2|grep tag|awk '{ print $2 }'|tr -d '"')"

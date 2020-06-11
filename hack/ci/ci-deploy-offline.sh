@@ -6,7 +6,7 @@ set -euo pipefail
 set -o monitor
 
 cd "$(dirname "$0")/"
-source ./../lib.sh
+source ../lib.sh
 
 # Build and push images
 ./ci-push-images.sh
@@ -49,38 +49,38 @@ function finish {
 trap finish EXIT
 
 # Ensure we have pushed all images from our helm chats in the local registry
-cd ../../../config
-helm template cert-manager | ../api/hack/retag-images.sh
-helm template nginx-ingress-controller | ../api/hack/retag-images.sh
-helm template oauth | ../api/hack/retag-images.sh
-helm template iap | ../api/hack/retag-images.sh
-helm template minio | ../api/hack/retag-images.sh
-helm template s3-exporter | ../api/hack/retag-images.sh
-helm template nodeport-proxy --set=nodePortProxy.image.tag=${GIT_HEAD_HASH} | ../api/hack/retag-images.sh
+cd ../../config
+helm template cert-manager | ../hack/retag-images.sh
+helm template nginx-ingress-controller | ../hack/retag-images.sh
+helm template oauth | ../hack/retag-images.sh
+helm template iap | ../hack/retag-images.sh
+helm template minio | ../hack/retag-images.sh
+helm template s3-exporter | ../hack/retag-images.sh
+helm template nodeport-proxy --set=nodePortProxy.image.tag=${GIT_HEAD_HASH} | ../hack/retag-images.sh
 
-helm template monitoring/prometheus | ../api/hack/retag-images.sh
-helm template monitoring/node-exporter | ../api/hack/retag-images.sh
-helm template monitoring/kube-state-metrics | ../api/hack/retag-images.sh
-helm template monitoring/grafana | ../api/hack/retag-images.sh
-helm template monitoring/helm-exporter | ../api/hack/retag-images.sh
-helm template monitoring/alertmanager | ../api/hack/retag-images.sh
+helm template monitoring/prometheus | ../hack/retag-images.sh
+helm template monitoring/node-exporter | ../hack/retag-images.sh
+helm template monitoring/kube-state-metrics | ../hack/retag-images.sh
+helm template monitoring/grafana | ../hack/retag-images.sh
+helm template monitoring/helm-exporter | ../hack/retag-images.sh
+helm template monitoring/alertmanager | ../hack/retag-images.sh
 
-helm template logging/promtail | ../api/hack/retag-images.sh
-helm template logging/loki | ../api/hack/retag-images.sh
+helm template logging/promtail | ../hack/retag-images.sh
+helm template logging/loki | ../hack/retag-images.sh
 
 # PULL_BASE_REF is the name of the current branch in case of a post-submit
 # or the name of the base branch in case of a PR.
 LATEST_DASHBOARD="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
 
 HELM_EXTRA_ARGS="--set kubermatic.controller.image.tag=${GIT_HEAD_HASH},kubermatic.api.image.tag=${GIT_HEAD_HASH},kubermatic.masterController.image.tag=${GIT_HEAD_HASH},kubermatic.controller.addons.kubernetes.image.tag=${GIT_HEAD_HASH},kubermatic.controller.addons.openshift.image.tag=${GIT_HEAD_HASH},kubermatic.ui.image.tag=${LATEST_DASHBOARD}"
-helm template ${HELM_EXTRA_ARGS} kubermatic | ../api/hack/retag-images.sh
+helm template ${HELM_EXTRA_ARGS} kubermatic | ../hack/retag-images.sh
 
 # Push a tiller image
 docker pull gcr.io/kubernetes-helm/tiller:${HELM_VERSION}
 docker tag gcr.io/kubernetes-helm/tiller:${HELM_VERSION} 127.0.0.1:5000/kubernetes-helm/tiller:${HELM_VERSION}
 docker push 127.0.0.1:5000/kubernetes-helm/tiller:${HELM_VERSION}
 
-cd ../api
+cd ..
 KUBERMATICCOMMIT=${GIT_HEAD_HASH} GITTAG=${GIT_HEAD_HASH} make image-loader
 retry 6 ./_build/image-loader \
   -versions ../config/kubermatic/static/master/versions.yaml \

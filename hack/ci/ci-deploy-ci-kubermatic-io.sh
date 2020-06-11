@@ -3,12 +3,12 @@
 set -euo pipefail
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
-cd $(dirname $0)/../../..
+cd $(dirname $0)/../..
 
-source ./api/hack/lib.sh
+source hack/lib.sh
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
-  ./api/hack/ci/ci-push-images.sh
+  ./hack/ci/ci-push-images.sh
 fi
 
 echodate "Getting secrets from Vault"
@@ -28,5 +28,5 @@ echodate "Deploying ${DEPLOY_STACK} stack to ci.kubermatic.io"
 TILLER_NAMESPACE=kubermatic \
 	DEPLOY_NODEPORT_PROXY=false \
 	DEPLOY_ALERTMANAGER=false \
-	DEPLOY_MINIO=false ./api/hack/deploy.sh master ${VALUES_FILE}
+	DEPLOY_MINIO=false ./hack/deploy.sh master ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to ci.kubermatic.io"

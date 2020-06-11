@@ -12,8 +12,8 @@ function cleanup() {
 trap cleanup EXIT SIGINT SIGTERM
 
 SCRIPT_ROOT=$(dirname "${BASH_SOURCE}")/..
-API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api"
-DIFFROOT="${API_DIR}/pkg/test/e2e/api/utils/apiclient"
+KUBERMATIC_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic"
+DIFFROOT="${KUBERMATIC_DIR}/pkg/test/e2e/api/utils/apiclient"
 
 TMP_DIFFROOT=$(mktemp -d)
 

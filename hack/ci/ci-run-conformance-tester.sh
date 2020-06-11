@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ## CI run conformance tester
-source ./api/hack/lib.sh
+source hack/lib.sh
 
 ### Defaults
 export VERSIONS=${VERSIONS_TO_TEST:-"v1.12.4"}
@@ -67,7 +67,7 @@ if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
   kubermatic_delete_cluster="false"
 fi
 
-timeout -s 9 90m ./api/_build/conformance-tests ${EXTRA_ARGS:-} \
+timeout -s 9 90m ./_build/conformance-tests ${EXTRA_ARGS:-} \
   -debug \
   -worker-name=${WORKER_NAME} \
   -kubeconfig=$KUBECONFIG \

@@ -8644,7 +8644,7 @@
           "x-go-name": "Username"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "AuthProviderConfig": {
       "type": "object",
@@ -8662,7 +8662,7 @@
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "AzureAvailabilityZonesList": {
       "description": "AzureAvailabilityZonesList is the object representing the availability zones for vms in azure cloud provider",
@@ -9221,7 +9221,7 @@
           "x-go-name": "AuthInfos"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "ContainerLinuxSpec": {
       "description": "ContainerLinuxSpec ubuntu linux specific settings",
@@ -9263,7 +9263,7 @@
           "x-go-name": "AuthInfo"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "ControlPlaneMetrics": {
       "description": "ControlPlaneMetrics defines a metric for the user cluster control plane resources",
@@ -9919,7 +9919,7 @@
           "x-go-name": "Env"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "ExecEnvVar": {
       "description": "ExecEnvVar is used for setting environment variables when executing an exec-based\ncredential plugin.",
@@ -9934,7 +9934,7 @@
           "x-go-name": "Value"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "FakeCloudSpec": {
       "type": "object",
@@ -10247,7 +10247,7 @@
           "$ref": "#/definitions/UID"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/github.com/kubermatic/machine-controller/pkg/providerconfig/types"
     },
     "GlobalSecretKeySelector": {
       "$ref": "#/definitions/GlobalObjectKeySelector"
@@ -10507,7 +10507,7 @@
           "x-go-name": "UpdatedReplicas"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
     },
     "MachineNetworkingConfig": {
       "type": "object",
@@ -10563,7 +10563,7 @@
           "$ref": "#/definitions/AuthInfo"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "NamedCluster": {
       "description": "NamedCluster relates nicknames to cluster information",
@@ -10578,7 +10578,7 @@
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "NamedContext": {
       "description": "NamedContext relates nicknames to context information",
@@ -10593,7 +10593,7 @@
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "NamedExtension": {
       "description": "NamedExtension relates nicknames to extension information",
@@ -10608,7 +10608,7 @@
           "x-go-name": "Name"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "Namespace": {
       "description": "Namespace defines namespace",
@@ -11130,7 +11130,7 @@
           "$ref": "#/definitions/UID"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/api/core/v1"
     },
     "ObjectReferenceResource": {
       "type": "object",
@@ -11586,7 +11586,7 @@
           "x-go-name": "Verbs"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/rbac/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/api/rbac/v1"
     },
     "Preferences": {
       "type": "object",
@@ -11605,7 +11605,7 @@
           "x-go-name": "Extensions"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/client-go/tools/clientcmd/api/v1"
     },
     "Project": {
       "description": "Project is a top-level container for a set of resources",
@@ -11868,7 +11868,7 @@
       "description": "To use this, make a field which has RawExtension as its type in your external, versioned\nstruct, and Object in your internal struct. You also need to register your\nvarious plugin types.\n\nInternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.Object `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nExternal package:\ntype MyAPIObject struct {\nruntime.TypeMeta `json:\",inline\"`\nMyPlugin runtime.RawExtension `json:\"myPlugin\"`\n}\ntype PluginA struct {\nAOption string `json:\"aOption\"`\n}\n\nOn the wire, the JSON will look something like this:\n{\n\"kind\":\"MyAPIObject\",\n\"apiVersion\":\"v1\",\n\"myPlugin\": {\n\"kind\":\"PluginA\",\n\"aOption\":\"foo\",\n},\n}\n\nSo what happens? Decode first uses json or yaml to unmarshal the serialized data into\nyour external MyAPIObject. That causes the raw JSON to be stored, but not unpacked.\nThe next step is to copy (using pkg/conversion) into the internal struct. The runtime\npackage's DefaultScheme has conversion functions installed which will unpack the\nJSON stored in RawExtension, turning it into the correct object type, and storing it\nin the Object. (TODO: In the case where the object is of an unknown type, a\nruntime.Unknown object will be created and stored.)\n\n+k8s:deepcopy-gen=true\n+protobuf=true\n+k8s:openapi-gen=true",
       "type": "object",
       "title": "RawExtension is used to hold extensions in external versions.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/runtime"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/apimachinery/pkg/runtime"
     },
     "ResourceLabelMap": {
       "type": "object",
@@ -12212,7 +12212,7 @@
     "ServiceType": {
       "description": "Service Type string describes ingress methods for a service",
       "type": "string",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/core/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/api/core/v1"
     },
     "SettingSpec": {
       "type": "object",
@@ -12280,7 +12280,7 @@
           "x-go-name": "Namespace"
         }
       },
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/api/rbac/v1"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/api/rbac/v1"
     },
     "TaintSpec": {
       "description": "TaintSpec defines a node taint",
@@ -12311,7 +12311,7 @@
     "UID": {
       "description": "UID is a type that holds unique ID values, including UUIDs.  Because we\ndon't ONLY use UUIDs, this is an alias to string.  Being a type captures\nintent and helps make sure that UIDs and names do not get conflated.",
       "type": "string",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/k8s.io/apimachinery/pkg/types"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/k8s.io/apimachinery/pkg/types"
     },
     "UbuntuSpec": {
       "description": "UbuntuSpec ubuntu specific settings",
@@ -12533,7 +12533,7 @@
     "Version": {
       "type": "object",
       "title": "Version represents a single semantic version.",
-      "x-go-package": "github.com/kubermatic/kubermatic/api/vendor/github.com/Masterminds/semver"
+      "x-go-package": "github.com/kubermatic/kubermatic/vendor/github.com/Masterminds/semver"
     },
     "errorResponse": {
       "description": "ErrorResponse is the default representation of an error",

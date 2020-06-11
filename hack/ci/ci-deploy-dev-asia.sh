@@ -3,12 +3,12 @@
 set -euo pipefail
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
-cd $(dirname $0)/../../..
+cd $(dirname $0)/../..
 
-source ./api/hack/lib.sh
+source hack/lib.sh
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
-  ./api/hack/ci/ci-push-images.sh
+  ./hack/ci/ci-push-images.sh
 fi
 
 echodate "Getting secrets from Vault"
@@ -28,5 +28,5 @@ kubectl config use-context asia-south1-c
 echodate "Successfully got secrets for dev-asia from Vault"
 
 echodate "Deploying ${DEPLOY_STACK} stack to dev-asia"
-TILLER_NAMESPACE=kubermatic-installer ./api/hack/deploy.sh seed ${VALUES_FILE}
+TILLER_NAMESPACE=kubermatic-installer ./hack/deploy.sh seed ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to dev-asia"
