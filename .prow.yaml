@@ -4,7 +4,7 @@ presubmits:
   #########################################################
 
   - name: pre-kubermatic-test
-    run_if_changed: "^api/"
+    run_if_changed: "^(cmd|codegen|hack|pkg|vendor)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
@@ -13,8 +13,6 @@ presubmits:
         command:
         - make
         args:
-        - -C
-        - api
         - test
         resources:
           requests:
@@ -25,7 +23,7 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-verify
-    run_if_changed: "^api/"
+    run_if_changed: "^(cmd|codegen|hack|pkg|vendor)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
@@ -34,8 +32,6 @@ presubmits:
         command:
         - make
         args:
-        - -C
-        - api
         - verify
         resources:
           requests:
@@ -56,7 +52,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/util:1.3.0
         command:
-        - "./api/hack/verify-chart-versions.sh"
+        - "./hack/verify-chart-versions.sh"
         resources:
           requests:
             memory: 128Mi
@@ -69,14 +65,14 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-verify-kubermatic-chart
-    run_if_changed: "^(api|config)/"
+    run_if_changed: "^(cmd|codegen|hack|pkg|vendor|config)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
       - image: quay.io/kubermatic/go-docker:14.2-1806-0
         command:
-        - "./api/hack/verify-kubermatic-chart.sh"
+        - "./hack/verify-kubermatic-chart.sh"
         resources:
           requests:
             memory: 512Mi
@@ -96,7 +92,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/util:1.3.0
         command:
-        - "./api/hack/verify-grafana-dashboards.sh"
+        - "./hack/verify-grafana-dashboards.sh"
         resources:
           requests:
             memory: 64Mi
@@ -109,14 +105,14 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-verify-docs
-    run_if_changed: "^(api|docs)/"
+    run_if_changed: "^(cmd|codegen|hack|pkg|vendor|docs)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
       - image: quay.io/kubermatic/go-docker:14.2-1806-0
         command:
-        - "./api/hack/verify-docs.sh"
+        - "./hack/verify-docs.sh"
         resources:
           requests:
             memory: 1Gi
@@ -126,7 +122,7 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-lint
-    run_if_changed: "^api/"
+    run_if_changed: "^(cmd|codegen|hack|pkg|vendor)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
@@ -135,8 +131,6 @@ presubmits:
         command:
         - make
         args:
-        - -C
-        - api
         - lint
         resources:
           requests:
@@ -147,7 +141,7 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-dependencies
-    run_if_changed: "^api/"
+    run_if_changed: "^(cmd|codegen|hack|pkg|vendor)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
@@ -156,8 +150,6 @@ presubmits:
         command:
         - make
         args:
-        - -C
-        - api
         - check-dependencies
         resources:
           requests:
@@ -200,8 +192,6 @@ presubmits:
         command:
         - make
         args:
-        - -C
-        - api
         - license-validation
         env:
         - name: KUBERMATIC_EDITION
@@ -227,14 +217,14 @@ presubmits:
       - name: quay
 
   - name: pre-kubermatic-user-cluster-prometheus-config-validation
-    run_if_changed: "api/pkg/resources/prometheus"
+    run_if_changed: "pkg/resources/prometheus"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
       - image: quay.io/kubermatic/promtool:2.7.0-3
         command:
-        - "./api/hack/verify-user-cluster-prometheus-configs.sh"
+        - "./hack/verify-user-cluster-prometheus-configs.sh"
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -273,7 +263,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -286,7 +276,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-coreos-1.16
     decorate: true
-    run_if_changed: "(api/|config/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|config/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -312,7 +302,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -325,7 +315,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-coreos-1.17
     decorate: true
-    run_if_changed: "(api/|config/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|config/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -351,7 +341,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -364,7 +354,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-coreos-1.18
     decorate: true
-    run_if_changed: "(api/|config/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|config/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -390,7 +380,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -403,7 +393,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-flatcar-1.18
     decorate: true
-    run_if_changed: "(api/|config/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|config/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -429,7 +419,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -476,7 +466,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -518,7 +508,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -563,7 +553,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -605,7 +595,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -646,7 +636,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -687,7 +677,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -731,7 +721,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -774,7 +764,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -817,7 +807,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -860,7 +850,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -873,7 +863,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-vsphere-coreos-1.18
     decorate: true
-    run_if_changed: "api/pkg/provider/cloud/vsphere"
+    run_if_changed: "pkg/provider/cloud/vsphere"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
@@ -901,7 +891,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -915,7 +905,7 @@ presubmits:
   - name: pre-kubermatic-e2e-vsphere-coreos-1.18-customfolder
     decorate: true
     optional: true
-    run_if_changed: "api/pkg/provider/cloud/vsphere"
+    run_if_changed: "pkg/provider/cloud/vsphere"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
@@ -945,7 +935,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -1003,11 +993,11 @@ presubmits:
             memory: 4Gi
 
   #########################################################
-  # API e2e tests
+  # REST API e2e tests
   #########################################################
 
   - name: pre-kubermatic-api-e2e
-    run_if_changed: "(api/|config/kubermatic|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|config/kubermatic|.prow.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -1025,7 +1015,7 @@ presubmits:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
         imagePullPolicy: Always
         command:
-        - "./api/hack/ci/ci_run_api_e2e.sh"
+        - "./hack/ci/ci_run_api_e2e.sh"
         securityContext:
           privileged: true
         resources:
@@ -1049,7 +1039,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-operator
     decorate: true
-    run_if_changed: "(api/|config/kubermatic|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|config/kubermatic|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -1079,7 +1069,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -1106,7 +1096,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/go-docker:14.2-1806-0
         command:
-        - "./api/hack/ci/ci-run-offline-test.sh"
+        - "./hack/ci/ci-run-offline-test.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -1121,12 +1111,12 @@ presubmits:
   - name: pre-kubermatic-canary-deployment-ci-kubermatic-io
     max_concurrency: 1
     decorate: true
-    # * api/hack: Contains all the deployment scripting
+    # * hack: Contains all the deployment scripting
     # * config/kubermatic: Contains the chart
-    # * api/pkg/crd/kubermatic/v1: Contains the Seed and Datacenter types, if
+    # * pkg/crd/kubermatic/v1: Contains the Seed and Datacenter types, if
     #   this gets out of sync with whats in the secrets repo, we fail because we use
     #   yaml.UnmarshalStrict
-    run_if_changed: "(api/hack|config/kubermatic|api/pkg/crd/kubermatic/v1)"
+    run_if_changed: "(hack|config/kubermatic|pkg/crd/kubermatic/v1)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     branches:
     - ^master$
@@ -1138,7 +1128,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/go-docker:14.2-1806-0
         command:
-        - ./api/hack/ci/ci-deploy-ci-kubermatic-io.sh
+        - ./hack/ci/ci-deploy-ci-kubermatic-io.sh
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -1155,7 +1145,7 @@ presubmits:
             memory: 3Gi
 
   - name: pre-kubermatic-test-integration
-    run_if_changed: "^api/"
+    run_if_changed: "^(cmd|codegen|hack|pkg|vendor)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -1166,8 +1156,6 @@ presubmits:
         command:
         - make
         args:
-        - -C
-        - api
         - test-integration
         resources:
           requests:
