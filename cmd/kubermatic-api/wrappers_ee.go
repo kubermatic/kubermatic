@@ -6,8 +6,8 @@ import (
 	"context"
 	"flag"
 
-	eeapi "github.com/kubermatic/kubermatic/api/pkg/ee/cmd/kubermatic-api"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	eeapi "github.com/kubermatic/kubermatic/pkg/ee/cmd/kubermatic-api"
+	"github.com/kubermatic/kubermatic/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

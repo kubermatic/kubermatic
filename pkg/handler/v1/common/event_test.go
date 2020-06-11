@@ -3,8 +3,8 @@ package common_test
 import (
 	"testing"
 
-	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
 
 	corev1 "k8s.io/api/core/v1"
 )

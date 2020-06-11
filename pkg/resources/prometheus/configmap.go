@@ -10,9 +10,9 @@ import (
 	"github.com/Masterminds/sprig"
 	"gopkg.in/yaml.v2"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/resources"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )

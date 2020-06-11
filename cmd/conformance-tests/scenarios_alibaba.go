@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
-	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/pkg/semver"
+	apimodels "github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 const alibabaDC = "alibaba-eu-central-1a"

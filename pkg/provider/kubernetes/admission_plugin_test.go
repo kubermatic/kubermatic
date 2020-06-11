@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/pkg/semver"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"

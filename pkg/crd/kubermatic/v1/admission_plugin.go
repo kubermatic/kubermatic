@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	"github.com/kubermatic/kubermatic/pkg/semver"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

@@ -7,9 +7,9 @@ import (
 
 	"go.uber.org/zap"
 
-	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
+	controllerutil "github.com/kubermatic/kubermatic/pkg/controller/util"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1/helper"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

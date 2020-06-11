@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-test/deep"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"

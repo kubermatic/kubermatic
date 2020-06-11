@@ -9,8 +9,8 @@ import (
 
 	"github.com/urfave/cli"
 
-	"github.com/kubermatic/kubermatic/api/pkg/ee/conversion"
-	yamlutil "github.com/kubermatic/kubermatic/api/pkg/util/yaml"
+	"github.com/kubermatic/kubermatic/pkg/ee/conversion"
+	yamlutil "github.com/kubermatic/kubermatic/pkg/util/yaml"
 )
 
 func ConvertAction(ctx *cli.Context) error {

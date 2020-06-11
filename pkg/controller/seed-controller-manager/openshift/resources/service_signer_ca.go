@@ -1,8 +1,8 @@
 package resources
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	"github.com/kubermatic/kubermatic/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
 )
 
 const ServiceSignerCASecretName = "service-signer-ca"

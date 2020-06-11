@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/rand"

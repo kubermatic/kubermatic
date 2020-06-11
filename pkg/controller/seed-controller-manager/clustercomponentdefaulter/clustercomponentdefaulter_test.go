@@ -3,7 +3,7 @@ package clustercomponentdefaulter
 import (
 	"testing"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-test/deep"

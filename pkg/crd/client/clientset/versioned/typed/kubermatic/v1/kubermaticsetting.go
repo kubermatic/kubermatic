@@ -5,8 +5,8 @@ package v1
 import (
 	"time"
 
-	scheme "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
-	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	scheme "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned/scheme"
+	v1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"

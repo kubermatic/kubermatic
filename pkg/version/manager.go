@@ -7,9 +7,9 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	v1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/validation/nodeupdate"
+	v1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
+	"github.com/kubermatic/kubermatic/pkg/validation/nodeupdate"
 )
 
 var (

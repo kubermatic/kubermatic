@@ -1,8 +1,8 @@
 package controllermanager
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	"github.com/kubermatic/kubermatic/pkg/resources"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
 )
 
 // RoleBindingAuthDelegator creates the RoleBinding which is needed for extension apiserver which do auth delegation

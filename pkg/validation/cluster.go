@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"net"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
-	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/pkg/provider"
+	"github.com/kubermatic/kubermatic/pkg/provider/cloud"
+	kubernetesprovider "github.com/kubermatic/kubermatic/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/pkg/resources"
 
 	"github.com/coreos/locksmith/pkg/timeutil"
 	"k8s.io/apimachinery/pkg/api/equality"

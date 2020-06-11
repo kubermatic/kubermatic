@@ -10,12 +10,12 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/cluster"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/pkg/provider"
+	k8cerrors "github.com/kubermatic/kubermatic/pkg/util/errors"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"

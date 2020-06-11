@@ -5,7 +5,7 @@ package main
 import (
 	"github.com/urfave/cli"
 
-	util "github.com/kubermatic/kubermatic/api/pkg/ee/cmd/kubermatic-operator-util"
+	util "github.com/kubermatic/kubermatic/pkg/ee/cmd/kubermatic-operator-util"
 )
 
 func extraCommands() []cli.Command {

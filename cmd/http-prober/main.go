@@ -18,8 +18,8 @@ import (
 
 	"go.uber.org/zap"
 
-	httpproberapi "github.com/kubermatic/kubermatic/api/cmd/http-prober/api"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	httpproberapi "github.com/kubermatic/kubermatic/cmd/http-prober/api"
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

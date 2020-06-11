@@ -10,8 +10,8 @@ import (
 
 	"gopkg.in/yaml.v2"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
-	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/pkg/controller/operator/common"
+	operatorv1alpha1 "github.com/kubermatic/kubermatic/pkg/crd/operator/v1alpha1"
 )
 
 func main() {

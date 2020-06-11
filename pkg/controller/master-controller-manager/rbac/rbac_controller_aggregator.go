@@ -7,10 +7,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
+	kubermaticclientset "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned"
+	"github.com/kubermatic/kubermatic/pkg/crd/client/informers/externalversions"
 	k8scorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"

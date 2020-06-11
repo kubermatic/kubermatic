@@ -13,12 +13,12 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/securecookie"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	kcerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/handler/auth"
+	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/pkg/provider"
+	kcerrors "github.com/kubermatic/kubermatic/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/clientcmd"

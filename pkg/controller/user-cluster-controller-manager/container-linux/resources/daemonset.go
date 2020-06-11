@@ -1,9 +1,9 @@
 package resources
 
 import (
-	nodelabelerapi "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler/api"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	nodelabelerapi "github.com/kubermatic/kubermatic/pkg/controller/user-cluster-controller-manager/node-labeler/api"
+	"github.com/kubermatic/kubermatic/pkg/resources"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

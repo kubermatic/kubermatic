@@ -5,7 +5,7 @@ import (
 	"flag"
 	"testing"
 
-	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
+	testhelper "github.com/kubermatic/kubermatic/pkg/test"
 )
 
 var update = flag.Bool("update", false, "update .golden files")

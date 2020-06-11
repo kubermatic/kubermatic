@@ -8,10 +8,10 @@ import (
 
 	"go.uber.org/zap"
 
-	cmdutil "github.com/kubermatic/kubermatic/api/cmd/util"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/kubeletdnat"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/pprof"
+	cmdutil "github.com/kubermatic/kubermatic/cmd/util"
+	"github.com/kubermatic/kubermatic/pkg/controller/kubeletdnat"
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
+	"github.com/kubermatic/kubermatic/pkg/pprof"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"

@@ -3,8 +3,8 @@ package resources
 import (
 	"context"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/provider"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"

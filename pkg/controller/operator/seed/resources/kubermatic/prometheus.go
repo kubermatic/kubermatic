@@ -1,8 +1,8 @@
 package kubermatic
 
 import (
-	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	operatorv1alpha1 "github.com/kubermatic/kubermatic/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )

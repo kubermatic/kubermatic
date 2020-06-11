@@ -7,7 +7,7 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	"github.com/kubermatic/kubermatic/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -6,9 +6,9 @@ import (
 
 	"go.uber.org/zap"
 
-	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	predicateutil "github.com/kubermatic/kubermatic/pkg/controller/util/predicate"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

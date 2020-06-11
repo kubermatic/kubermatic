@@ -9,12 +9,12 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/pkg/provider"
+	"github.com/kubermatic/kubermatic/pkg/util/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )

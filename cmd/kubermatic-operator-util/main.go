@@ -8,10 +8,10 @@ import (
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
-	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
-	"github.com/kubermatic/kubermatic/api/pkg/log"
-	yamlutil "github.com/kubermatic/kubermatic/api/pkg/util/yaml"
+	"github.com/kubermatic/kubermatic/pkg/controller/operator/common"
+	operatorv1alpha1 "github.com/kubermatic/kubermatic/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/pkg/log"
+	yamlutil "github.com/kubermatic/kubermatic/pkg/util/yaml"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"

@@ -6,10 +6,10 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/pkg/resources"
 )
 
 const (

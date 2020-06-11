@@ -15,7 +15,7 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // NewCreateRoleParams creates a new CreateRoleParams object

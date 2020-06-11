@@ -7,13 +7,13 @@ import (
 
 	"github.com/Masterminds/sprig"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/apiserver"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/controllermanager"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/resources"
+	"github.com/kubermatic/kubermatic/pkg/resources/apiserver"
+	"github.com/kubermatic/kubermatic/pkg/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/pkg/resources/controllermanager"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"github.com/kubermatic/kubermatic/pkg/resources/vpnsidecar"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	appsv1 "k8s.io/api/apps/v1"

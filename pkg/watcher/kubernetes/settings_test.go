@@ -5,8 +5,8 @@ import (
 
 	"code.cloudfoundry.org/go-pubsub"
 
-	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	kubermaticfakeclentset "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned/fake"
+	"github.com/kubermatic/kubermatic/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"

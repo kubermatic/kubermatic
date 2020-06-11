@@ -8,12 +8,12 @@ import (
 
 	"go.uber.org/zap"
 
-	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/api/pkg/clusterdeletion"
-	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	k8cuserclusterclient "github.com/kubermatic/kubermatic/pkg/cluster/client"
+	"github.com/kubermatic/kubermatic/pkg/clusterdeletion"
+	controllerutil "github.com/kubermatic/kubermatic/pkg/controller/util"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1/helper"
+	"github.com/kubermatic/kubermatic/pkg/provider"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"

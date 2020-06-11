@@ -12,11 +12,11 @@ import (
 	transporthttp "github.com/go-kit/kit/transport/http"
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	kubernetesdashboard "github.com/kubermatic/kubermatic/api/pkg/resources/kubernetes-dashboard"
-	kubermaticerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/cluster"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/pkg/provider"
+	kubernetesdashboard "github.com/kubermatic/kubermatic/pkg/resources/kubernetes-dashboard"
+	kubermaticerrors "github.com/kubermatic/kubermatic/pkg/util/errors"
 )
 
 // Minimal wrapper to implement the http.Handler interface

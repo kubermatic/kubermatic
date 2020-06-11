@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/dex"
+	"github.com/kubermatic/kubermatic/pkg/log"
+	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/dex"
 )
 
 // OIDCCredentials takes the login name and password from environment variables and

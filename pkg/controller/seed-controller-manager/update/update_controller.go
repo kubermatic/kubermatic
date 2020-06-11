@@ -7,12 +7,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
-	"github.com/kubermatic/kubermatic/api/pkg/version"
+	"github.com/kubermatic/kubermatic/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/pkg/cluster/client"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1/helper"
+	"github.com/kubermatic/kubermatic/pkg/semver"
+	"github.com/kubermatic/kubermatic/pkg/version"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"

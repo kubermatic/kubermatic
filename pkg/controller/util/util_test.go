@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )

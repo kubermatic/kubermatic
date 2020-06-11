@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
-	k8csemver "github.com/kubermatic/kubermatic/api/pkg/semver"
-	"github.com/kubermatic/kubermatic/api/pkg/version"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/pkg/handler/test/hack"
+	k8csemver "github.com/kubermatic/kubermatic/pkg/semver"
+	"github.com/kubermatic/kubermatic/pkg/version"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	"k8s.io/apimachinery/pkg/runtime"

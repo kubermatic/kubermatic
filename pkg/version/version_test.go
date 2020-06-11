@@ -6,7 +6,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 )
 
 func TestAutomaticUpdate(t *testing.T) {

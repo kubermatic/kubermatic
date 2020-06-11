@@ -15,9 +15,9 @@ import (
 	envoycache "github.com/envoyproxy/go-control-plane/pkg/cache"
 	xds "github.com/envoyproxy/go-control-plane/pkg/server"
 
-	cmdutil "github.com/kubermatic/kubermatic/api/cmd/util"
-	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	cmdutil "github.com/kubermatic/kubermatic/cmd/util"
+	controllerutil "github.com/kubermatic/kubermatic/pkg/controller/util"
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"

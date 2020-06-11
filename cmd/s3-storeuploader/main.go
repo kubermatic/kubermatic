@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/storeuploader"
+	"github.com/kubermatic/kubermatic/pkg/log"
+	"github.com/kubermatic/kubermatic/pkg/storeuploader"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
 )

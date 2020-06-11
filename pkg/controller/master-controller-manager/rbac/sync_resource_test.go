@@ -4,9 +4,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac/test"
-	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac/test/fake"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/rbac/test"
+	fakeInformerProvider "github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/rbac/test/fake"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"

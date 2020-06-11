@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	testhelper "github.com/kubermatic/kubermatic/api/pkg/test"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	testhelper "github.com/kubermatic/kubermatic/pkg/test"
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"

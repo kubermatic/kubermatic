@@ -1,7 +1,7 @@
 package systembasicuser
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 )

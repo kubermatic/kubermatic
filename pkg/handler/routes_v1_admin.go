@@ -7,8 +7,8 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/admin"
+	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/admin"
 )
 
 //RegisterV1Admin declares all router paths for the admin users

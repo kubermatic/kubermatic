@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/pkg/kubernetes"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	eviction "github.com/kubermatic/machine-controller/pkg/node/eviction/types"
 

@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/pkg/handler/test/hack"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 

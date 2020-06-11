@@ -16,12 +16,12 @@ import (
 	transporthttp "github.com/go-kit/kit/transport/http"
 	"go.uber.org/zap"
 
-	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	kubermaticerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	openshiftresources "github.com/kubermatic/kubermatic/pkg/controller/seed-controller-manager/openshift/resources"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/cluster"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/pkg/provider"
+	kubermaticerrors "github.com/kubermatic/kubermatic/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"

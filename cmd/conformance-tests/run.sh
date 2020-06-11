@@ -7,7 +7,7 @@ cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 docker build -t conformance-tester-image containers/conformance-tests
 cd -
 
-go build github.com/kubermatic/kubermatic/api/cmd/conformance-tests
+go build github.com/kubermatic/kubermatic/cmd/conformance-tests
 
 docker run --rm -it \
   -v $PWD:/bin/mounted \

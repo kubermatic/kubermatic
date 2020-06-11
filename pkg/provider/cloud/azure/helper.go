@@ -3,7 +3,7 @@ package azure
 import (
 	"fmt"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 )
 
 // For some reason, creting route table requires a subnetwork's full ID

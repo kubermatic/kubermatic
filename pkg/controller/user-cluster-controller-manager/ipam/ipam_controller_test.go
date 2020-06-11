@@ -9,7 +9,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 

@@ -6,12 +6,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/util"
-	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "github.com/kubermatic/kubermatic/api/pkg/crd/operator/v1alpha1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/pkg/controller/operator/common"
+	"github.com/kubermatic/kubermatic/pkg/controller/util"
+	predicateutil "github.com/kubermatic/kubermatic/pkg/controller/util/predicate"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "github.com/kubermatic/kubermatic/pkg/crd/operator/v1alpha1"
+	"github.com/kubermatic/kubermatic/pkg/provider"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"

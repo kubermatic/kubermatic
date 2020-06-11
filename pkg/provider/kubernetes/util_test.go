@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/pkg/provider/kubernetes"
 	"k8s.io/apimachinery/pkg/types"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/cloud"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
+	"github.com/kubermatic/kubermatic/pkg/controller/seed-controller-manager/cloud"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/serviceaccount"
 	"gopkg.in/square/go-jose.v2/jwt"
 
 	v1 "k8s.io/api/core/v1"

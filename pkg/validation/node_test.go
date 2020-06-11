@@ -2,11 +2,11 @@ package validation_test
 
 import (
 	"errors"
-	"github.com/kubermatic/kubermatic/api/pkg/validation"
+	"github.com/kubermatic/kubermatic/pkg/validation"
 	"testing"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 )
 
 // EqualError reports whether errors a and b are considered equal.

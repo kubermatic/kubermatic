@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	k8cerrors "github.com/kubermatic/kubermatic/pkg/util/errors"
 )
 
 // TokenClaims holds various claims extracted from the id_token

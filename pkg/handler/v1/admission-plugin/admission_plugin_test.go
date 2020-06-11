@@ -11,10 +11,10 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/pkg/handler/test/hack"
+	"github.com/kubermatic/kubermatic/pkg/semver"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

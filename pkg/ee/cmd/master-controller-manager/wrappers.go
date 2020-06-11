@@ -9,10 +9,10 @@ import (
 
 	"go.uber.org/zap"
 
-	eemigrations "github.com/kubermatic/kubermatic/api/pkg/ee/crd/migrations/master"
-	eeprovider "github.com/kubermatic/kubermatic/api/pkg/ee/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/validation/seed"
+	eemigrations "github.com/kubermatic/kubermatic/pkg/ee/crd/migrations/master"
+	eeprovider "github.com/kubermatic/kubermatic/pkg/ee/provider"
+	"github.com/kubermatic/kubermatic/pkg/provider"
+	"github.com/kubermatic/kubermatic/pkg/validation/seed"
 
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"

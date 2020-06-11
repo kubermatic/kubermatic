@@ -7,13 +7,13 @@ import (
 
 	"go.uber.org/zap"
 
-	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
-	predicateutil "github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
+	controllerutil "github.com/kubermatic/kubermatic/pkg/controller/util"
+	predicateutil "github.com/kubermatic/kubermatic/pkg/controller/util/predicate"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/pkg/resources"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"github.com/kubermatic/kubermatic/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"

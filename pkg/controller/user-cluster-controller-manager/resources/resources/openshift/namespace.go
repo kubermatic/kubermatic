@@ -1,8 +1,8 @@
 package openshift
 
 import (
-	openshiftresources "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/openshift/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	openshiftresources "github.com/kubermatic/kubermatic/pkg/controller/seed-controller-manager/openshift/resources"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 )

@@ -3,9 +3,9 @@ package kubernetes
 import (
 	"reflect"
 
-	"github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/log"
+	"github.com/kubermatic/kubermatic/pkg/provider"
 
 	"code.cloudfoundry.org/go-pubsub"
 	"k8s.io/apimachinery/pkg/watch"

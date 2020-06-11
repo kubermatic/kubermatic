@@ -3,10 +3,10 @@ package rbac
 import (
 	"fmt"
 
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	"github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-	kubermaticv1listers "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticclientset "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned"
+	"github.com/kubermatic/kubermatic/pkg/crd/client/informers/externalversions"
+	kubermaticv1listers "github.com/kubermatic/kubermatic/pkg/crd/client/listers/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"

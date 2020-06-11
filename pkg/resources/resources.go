@@ -12,10 +12,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	"github.com/kubermatic/kubermatic/pkg/semver"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/resources/certificates/triple"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"

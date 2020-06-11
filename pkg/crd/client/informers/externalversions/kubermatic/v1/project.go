@@ -5,10 +5,10 @@ package v1
 import (
 	time "time"
 
-	versioned "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	internalinterfaces "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/internalinterfaces"
-	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	versioned "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned"
+	internalinterfaces "github.com/kubermatic/kubermatic/pkg/crd/client/informers/externalversions/internalinterfaces"
+	v1 "github.com/kubermatic/kubermatic/pkg/crd/client/listers/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

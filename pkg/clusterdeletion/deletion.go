@@ -6,9 +6,9 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/pkg/kubernetes"
 
 	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

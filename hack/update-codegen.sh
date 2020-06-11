@@ -10,14 +10,14 @@ rm -rf "pkg/crd/client"
 echo "" > /tmp/headerfile
 
 GOPATH=$(go env GOPATH) ./vendor/k8s.io/code-generator/generate-groups.sh all \
-    github.com/kubermatic/kubermatic/api/pkg/crd/client \
-    github.com/kubermatic/kubermatic/api/pkg/crd \
+    github.com/kubermatic/kubermatic/pkg/crd/client \
+    github.com/kubermatic/kubermatic/pkg/crd \
     "kubermatic:v1" \
     --go-header-file /tmp/headerfile
 
 GOPATH=$(go env GOPATH) ./vendor/k8s.io/code-generator/generate-groups.sh deepcopy,lister,informer \
-    github.com/kubermatic/kubermatic/api/pkg/crd/client \
-    github.com/kubermatic/kubermatic/api/pkg/crd \
+    github.com/kubermatic/kubermatic/pkg/crd/client \
+    github.com/kubermatic/kubermatic/pkg/crd \
     "operator:v1alpha1" \
     --go-header-file /tmp/headerfile
 
@@ -27,7 +27,7 @@ sed -i s/usersshkeys/usersshkeies/g ${GENERIC_FILE}
 
 echo "Generating deepcopy funcs for other packages"
 GOPATH=$(go env GOPATH) $(go env GOPATH)/bin/deepcopy-gen \
-    --input-dirs github.com/kubermatic/kubermatic/api/pkg/semver \
+    --input-dirs github.com/kubermatic/kubermatic/pkg/semver \
     -O zz_generated.deepcopy \
     --go-header-file /tmp/headerfile
 

@@ -3,9 +3,9 @@ package machine_test
 import (
 	"testing"
 
-	"github.com/kubermatic/kubermatic/api/pkg/machine"
+	"github.com/kubermatic/kubermatic/pkg/machine"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 )
 
 func TestCredentialEndpoint(t *testing.T) {
