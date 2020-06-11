@@ -72,11 +72,11 @@ Note that we cannot configure Kubernetes service endpoint to send the traffic di
 
 ### Accessing the Kubelet from the Apiserver through the Openvpn tunnel
 
-Apiserver needs to communicate with the Kubelet on the user cluster nodes when using commands like “kubectl logs” or “kubectl exec”. Openvpn client supports natively HTTP proxy. The traffic will go directly to the HTTP Proxy on the seed cluster without the need of using the HTTP Tunneler. Traffic will be routed to the OpenVPN Server ClusterIP service in the control plane namespace. 
+Apiserver needs to communicate with the Kubelet on the user cluster nodes when using commands like “kubectl logs” or “kubectl exec”. Routing of traffic follows the same steps as the previous section. Openvpn will send the traffic to the HTTP Tunneler. This will get forwarded to the HTTP Proxy that routes it, thanks to the authority header, to the final Openvpn-server ClusterIP service.
 
 
 <div style="text-align:center">
-  <img src="images/http-tunnel-expose-strategy-tunneling.png" width="100%" />
+  <img src="images/http-tunnel-expose-strategy-full-tunneling.png" width="100%" />
 </div>
 
 ### Setup involving a corporate HTTP Proxy
@@ -97,17 +97,9 @@ TBD
 The HTTP Proxy on seed cluster must only accept CONNECT requests addressed to
 the OpenVPN server and Kube Apiserver, all other requests should be dropped.
 
-We could also consider to put in place an authentication mechanism between the
-clients (i.e. HTTPTunneler and OpenVPN client) and the HTTP Proxy based on the
-general HTTP authentication framework.
-This would restrict the access, but note that OpenVPN is protected by mutual
-TLS authentication and the Kube Apiserver is also protected by authentication,
-apart from a few exceptions (e.g. healthz endpoint).
-
-Unless we establish a secure channel (i.e. TLS) between the CONNECT requests
-are in cleartext. This could disclose some information, like the internal host
-and port used for Kube Apiserver and OpenVPN server. This information does not
-seem to be sensitive though.
+Moreover and to prevent disclosure of information sent in cleartext between the 
+CONNECT requests, we have implemented mTLS between the two Envoy pods 
+(HTTP Tunneler on the user cluster and HTTP Proxy on the seed cluster). 
 
 ## **Alternatives considered**
 
