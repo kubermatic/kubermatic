@@ -482,7 +482,7 @@ func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider, privile
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentMetricsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+
 		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
@@ -508,11 +508,14 @@ func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider, privile
 			}
 		}
 
-		seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+		dynamicCLient, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		nodeDeploymentNodesMetrics := make([]v1beta1.NodeMetrics, 0)
 		allNodeMetricsList := &v1beta1.NodeMetricsList{}
-		if err := seedAdminClient.List(ctx, allNodeMetricsList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+		if err := dynamicCLient.List(ctx, allNodeMetricsList); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
