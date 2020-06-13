@@ -143,17 +143,24 @@ func (c *projectController) ensureClusterRBACRoleForResources() error {
 		if len(projectResource.namespace) > 0 {
 			continue
 		}
+
+		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
+		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		if err != nil {
+			panic(err)
+		}
+
 		for _, groupPrefix := range AllGroupsPrefixes {
 
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
-					err := ensureClusterRBACRoleForResource(c.ctx, seedClusterRESTClient, groupPrefix, projectResource.gvr.Resource, projectResource.kind)
+					err := ensureClusterRBACRoleForResource(c.ctx, seedClusterRESTClient, groupPrefix, rmapping.Resource.Resource, projectResource.kind)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := ensureClusterRBACRoleForResource(c.ctx, c.client, groupPrefix, projectResource.gvr.Resource, projectResource.kind)
+				err := ensureClusterRBACRoleForResource(c.ctx, c.client, groupPrefix, rmapping.Resource.Resource, projectResource.kind)
 				if err != nil {
 					return err
 				}
@@ -164,14 +171,22 @@ func (c *projectController) ensureClusterRBACRoleForResources() error {
 }
 
 func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName string) error {
+	fmt.Printf("%+v\n", c.projectResources)
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) > 0 {
 			continue
 		}
+
+		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
+		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		if err != nil {
+			panic(err)
+		}
+
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
 
-			if skip, err := shouldSkipClusterRBACRoleBindingFor(groupName, projectResource.gvr.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, projectResource.kind); skip {
+			if skip, err := shouldSkipClusterRBACRoleBindingFor(groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, projectResource.kind); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -183,7 +198,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName
 						c.ctx,
 						seedClusterRESTClient,
 						groupName,
-						projectResource.gvr.Resource)
+						rmapping.Resource.Resource)
 					if err != nil {
 						return err
 					}
@@ -193,7 +208,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName
 					c.ctx,
 					c.client,
 					groupName,
-					projectResource.gvr.Resource)
+					rmapping.Resource.Resource)
 				if err != nil {
 					return err
 				}
@@ -274,6 +289,13 @@ func (c *projectController) ensureRBACRoleForResources() error {
 		if len(projectResource.namespace) == 0 {
 			continue
 		}
+
+		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
+		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		if err != nil {
+			panic(err)
+		}
+
 		for _, groupPrefix := range AllGroupsPrefixes {
 
 			if projectResource.destination == destinationSeed {
@@ -282,7 +304,7 @@ func (c *projectController) ensureRBACRoleForResources() error {
 						c.ctx,
 						seedClusterRESTClient,
 						groupPrefix,
-						projectResource.gvr,
+						rmapping.Resource,
 						projectResource.kind,
 						projectResource.namespace)
 					if err != nil {
@@ -294,7 +316,7 @@ func (c *projectController) ensureRBACRoleForResources() error {
 					c.ctx,
 					c.client,
 					groupPrefix,
-					projectResource.gvr,
+					rmapping.Resource,
 					projectResource.kind,
 					projectResource.namespace)
 				if err != nil {
@@ -337,10 +359,17 @@ func (c *projectController) ensureRBACRoleBindingForResources(projectName string
 		if len(projectResource.namespace) == 0 {
 			continue
 		}
+
+		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
+		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		if err != nil {
+			panic(err)
+		}
+
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(projectName, groupPrefix)
 
-			if skip, err := shouldSkipRBACRoleBindingFor(groupName, projectResource.gvr.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, projectResource.kind, projectResource.namespace); skip {
+			if skip, err := shouldSkipRBACRoleBindingFor(groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, projectName, projectResource.kind, projectResource.namespace); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -352,7 +381,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(projectName string
 						c.ctx,
 						seedClusterRESTClient,
 						groupName,
-						projectResource.gvr.Resource,
+						rmapping.Resource.Resource,
 						projectResource.namespace)
 					if err != nil {
 						return err
@@ -363,7 +392,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(projectName string
 					c.ctx,
 					c.client,
 					groupName,
-					projectResource.gvr.Resource,
+					rmapping.Resource.Resource,
 					projectResource.namespace)
 				if err != nil {
 					return err
@@ -438,9 +467,16 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 		if len(projectResource.namespace) > 0 {
 			continue
 		}
+
+		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
+		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		if err != nil {
+			panic(err)
+		}
+
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(project.Name, groupPrefix)
-			if skip, err := shouldSkipClusterRBACRoleBindingFor(groupName, projectResource.gvr.Resource, kubermaticv1.SchemeGroupVersion.Group, project.Name, projectResource.kind); skip {
+			if skip, err := shouldSkipClusterRBACRoleBindingFor(groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, project.Name, projectResource.kind); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -448,13 +484,13 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 
 			if projectResource.destination == destinationSeed {
 				for _, seedClient := range c.seedClientMap {
-					err := cleanUpClusterRBACRoleBindingFor(c.ctx, seedClient, groupName, projectResource.gvr.Resource)
+					err := cleanUpClusterRBACRoleBindingFor(c.ctx, seedClient, groupName, rmapping.Resource.Resource)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := cleanUpClusterRBACRoleBindingFor(c.ctx, c.client, groupName, projectResource.gvr.Resource)
+				err := cleanUpClusterRBACRoleBindingFor(c.ctx, c.client, groupName, rmapping.Resource.Resource)
 				if err != nil {
 					return err
 				}
@@ -467,9 +503,16 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 		if len(projectResource.namespace) == 0 {
 			continue
 		}
+
+		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
+		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		if err != nil {
+			panic(err)
+		}
+
 		for _, groupPrefix := range AllGroupsPrefixes {
 			groupName := GenerateActualGroupNameFor(project.Name, groupPrefix)
-			if skip, err := shouldSkipRBACRoleBindingFor(groupName, projectResource.gvr.Resource, kubermaticv1.SchemeGroupVersion.Group, project.Name, projectResource.kind, projectResource.namespace); skip {
+			if skip, err := shouldSkipRBACRoleBindingFor(groupName, rmapping.Resource.Resource, kubermaticv1.SchemeGroupVersion.Group, project.Name, projectResource.kind, projectResource.namespace); skip {
 				continue
 			} else if err != nil {
 				return err
@@ -477,13 +520,13 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 
 			if projectResource.destination == destinationSeed {
 				for _, seedClient := range c.seedClientMap {
-					err := cleanUpRBACRoleBindingFor(c.ctx, seedClient, groupName, projectResource.gvr.Resource, projectResource.namespace)
+					err := cleanUpRBACRoleBindingFor(c.ctx, seedClient, groupName, rmapping.Resource.Resource, projectResource.namespace)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := cleanUpRBACRoleBindingFor(c.ctx, c.client, groupName, projectResource.gvr.Resource, projectResource.namespace)
+				err := cleanUpRBACRoleBindingFor(c.ctx, c.client, groupName, rmapping.Resource.Resource, projectResource.namespace)
 				if err != nil {
 					return err
 				}

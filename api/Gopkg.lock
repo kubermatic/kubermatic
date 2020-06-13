@@ -1728,12 +1728,13 @@
 
 [[projects]]
   branch = "release-1.16"
-  digest = "1:da89689cccce5495c1df2cd33800535a7c5d223783d3a0f33016bfc7a7038f3f"
+  digest = "1:43258b5c2f46a38df88cc64002f3d5ed2e5b2f7820928023de07e19c19ed71cf"
   name = "k8s.io/apimachinery"
   packages = [
     "pkg/api/equality",
     "pkg/api/errors",
     "pkg/api/meta",
+    "pkg/api/meta/testrestmapper",
     "pkg/api/resource",
     "pkg/apis/meta/internalversion",
     "pkg/apis/meta/v1",
@@ -2330,6 +2331,7 @@
     "k8s.io/apimachinery/pkg/api/equality",
     "k8s.io/apimachinery/pkg/api/errors",
     "k8s.io/apimachinery/pkg/api/meta",
+    "k8s.io/apimachinery/pkg/api/meta/testrestmapper",
     "k8s.io/apimachinery/pkg/api/resource",
     "k8s.io/apimachinery/pkg/apis/meta/v1",
     "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured",

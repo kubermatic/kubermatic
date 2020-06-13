@@ -5,6 +5,7 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/util/workqueue"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,6 +30,7 @@ type projectController struct {
 
 	projectResources []projectResource
 	client           client.Client
+	restMapper       meta.RESTMapper
 	seedClientMap    map[string]client.Client
 	ctx              context.Context
 }
@@ -50,6 +52,7 @@ func newProjectRBACController(metrics *Metrics, mgr manager.Manager, seedManager
 		projectResources:      resources,
 		masterClusterProvider: masterClusterProvider,
 		client:                mgr.GetClient(),
+		restMapper:            mgr.GetRESTMapper(),
 		seedClientMap:         seedClientMap,
 		ctx:                   context.TODO(),
 	}
