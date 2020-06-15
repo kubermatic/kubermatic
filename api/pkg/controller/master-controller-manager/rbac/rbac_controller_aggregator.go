@@ -56,7 +56,6 @@ type ControllerAggregator struct {
 
 type projectResource struct {
 	object      runtime.Object
-	kind        string
 	destination string
 	namespace   string
 
@@ -109,24 +108,40 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 
 	projectResources := []projectResource{
 		{
-			object:      &kubermaticv1.Cluster{},
-			kind:        kubermaticv1.ClusterKindName,
+			object: &kubermaticv1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.ClusterKindName,
+				},
+			},
 			destination: destinationSeed,
 		},
 
 		{
-			object: &kubermaticv1.UserSSHKey{},
-			kind:   kubermaticv1.SSHKeyKind,
+			object: &kubermaticv1.UserSSHKey{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.SSHKeyKind,
+				},
+			},
 		},
 
 		{
-			object: &kubermaticv1.UserProjectBinding{},
-			kind:   kubermaticv1.UserProjectBindingKind,
+			object: &kubermaticv1.UserProjectBinding{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.UserProjectBindingKind,
+				},
+			},
 		},
 
 		{
-			object:    &k8scorev1.Secret{},
-			kind:      "Secret",
+			object: &k8scorev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
+			},
 			namespace: "kubermatic",
 			shouldEnqueue: func(obj metav1.Object) bool {
 				// do not reconcile secrets without "sa-token" and "credential" prefix
@@ -134,8 +149,12 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 			},
 		},
 		{
-			object: &kubermaticv1.User{},
-			kind:   kubermaticv1.UserKindName,
+			object: &kubermaticv1.User{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.UserKindName,
+				},
+			},
 			shouldEnqueue: func(obj metav1.Object) bool {
 				// do not reconcile resources without "serviceaccount" prefix
 				return strings.HasPrefix(obj.GetName(), "serviceaccount")
