@@ -617,7 +617,7 @@ func createProject(client *apiclient.Kubermatic, bearerToken runtime.ClientAuthI
 
 	getProjectParams := &project.GetProjectParams{ProjectID: projectID}
 	getProjectParams.WithTimeout(15 * time.Second)
-	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+	if err := wait.PollImmediate(10*time.Second, 15*time.Minute, func() (bool, error) {
 		response, err := client.Project.GetProject(getProjectParams, bearerToken)
 		if err != nil {
 			log.Errorw("Failed to get project", "error", fmtSwaggerError(err))
