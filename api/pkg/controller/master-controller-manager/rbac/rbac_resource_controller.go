@@ -64,12 +64,8 @@ func newResourcesControllers(metrics *Metrics, mgr manager.Manager, seedManagerM
 	klog.V(4).Infof("considering %s master cluster provider for resources", masterClusterProvider.providerName)
 	for _, resource := range mc.projectResources {
 		gvk := resource.object.GetObjectKind().GroupVersionKind()
-		rmapping, err := mgr.GetRESTMapper().RESTMapping(gvk.GroupKind())
-		if err != nil {
-			panic(err)
-		}
 		if resource.destination == destinationSeed {
-			klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", rmapping.Resource.String(), masterClusterProvider.providerName)
+			klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", resource.object.GetObjectKind().GroupVersionKind().String(), masterClusterProvider.providerName)
 			continue
 		}
 		if gvk.Group == kubermaticv1.GroupName {
@@ -80,7 +76,7 @@ func newResourcesControllers(metrics *Metrics, mgr manager.Manager, seedManagerM
 			masterClusterProvider.AddIndexerFor(indexer, gvk)
 			continue
 		}
-		err = mc.registerInformerForKubeResource(masterClusterProvider.kubeInformerProvider, resource)
+		err := mc.registerInformerForKubeResource(masterClusterProvider.kubeInformerProvider, resource)
 		if err != nil {
 			return nil, err
 		}
