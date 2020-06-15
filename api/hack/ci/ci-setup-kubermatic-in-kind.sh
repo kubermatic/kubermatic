@@ -185,6 +185,10 @@ echodate "Cluster exposer is running"
 
 echodate "Setting up iptables rules for to make nodeports available"
 iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.17.0.2
+# By default all traffic gets dropped unless specified (tested with docker
+# server 18.09.1) 
+iptables -t filter -I DOCKER-USER -d 172.17.0.2/32 ! -i docker0 -o docker0 -p tcp -m multiport --dports=30000:33000 -j ACCEPT
+
 # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
 echodate "Successfully set up iptables rules for nodeports"
 
