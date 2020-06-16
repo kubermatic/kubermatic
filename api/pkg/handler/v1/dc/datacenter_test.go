@@ -252,6 +252,136 @@ func TestDatacenterGetForProviderEndpoint(t *testing.T) {
 	}
 }
 
+func TestDatacenterListForSeedEndpoint(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name             string
+		seed             string
+		expectedResponse string
+		httpStatus       int
+		existingAPIUser  *apiv1.User
+	}{
+		{
+			name:             "admin should be able to list dc per seed without email filtering",
+			seed:             "us-central1",
+			expectedResponse: `[{"metadata":{"name":"audited-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Germany","location":"Henriks basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"http_proxy":"HTTPProxy","insecure_registries":["incsecure-registry"],"pause_image":"pause-image","hyperkube_image":"hyperkube-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"private-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pause_image":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"psp-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"regular-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"restricted-fake-dc2","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomains":["23f67weuc.com","example.com","12noifsdsd.org"],"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"us-central1","resourceVersion":"1"},"spec":{"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false},"seed":true}]`,
+			httpStatus:       200,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name:             "regular user should be able to list dc per seed with email filtering",
+			seed:             "us-central1",
+			expectedResponse: `[{"metadata":{"name":"audited-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Germany","location":"Finanzamt Castle","provider":"fake","fake":{},"node":{},"enforceAuditLogging":true,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Germany","location":"Henriks basement","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"node-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Chile","location":"Santiago","provider":"fake","fake":{},"node":{"http_proxy":"HTTPProxy","insecure_registries":["incsecure-registry"],"pause_image":"pause-image","hyperkube_image":"hyperkube-image"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"private-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"US ","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{"pause_image":"image-pause"},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"psp-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"Egypt","location":"Alexandria","provider":"fake","fake":{},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":true}},{"metadata":{"name":"regular-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}},{"metadata":{"name":"us-central1","resourceVersion":"1"},"spec":{"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false},"seed":true}]`,
+			httpStatus:       200,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "should receive 404 for non-existing seed",
+			seed:             "idontexist",
+			expectedResponse: `{"error":{"code":404,"message":"seed \"idontexist\" not found"}}`,
+			httpStatus:       404,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/seed/%s/dc", tc.seed), nil)
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []runtime.Object{},
+				[]runtime.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser)}, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected route to return code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
+
+func TestDatacenterGetForSeedEndpoint(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name             string
+		seed             string
+		dc               string
+		expectedResponse string
+		httpStatus       int
+		existingAPIUser  *apiv1.User
+	}{
+		{
+			name:             "admin should be able to get email restricted dc",
+			seed:             "us-central1",
+			dc:               "restricted-fake-dc",
+			expectedResponse: `{"metadata":{"name":"restricted-fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			httpStatus:       200,
+			existingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			name:             "regular user should not be able to get restricted dc if his email domain is restricted",
+			seed:             "us-central1",
+			dc:               "restricted-fake-dc",
+			expectedResponse: `{"error":{"code":404,"message":"datacenter \"restricted-fake-dc\" not found"}}`,
+			httpStatus:       404,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "regular user should be able to get restricted dc if his email domain is allowed",
+			seed:             "us-central1",
+			dc:               "restricted-fake-dc",
+			expectedResponse: `{"metadata":{"name":"restricted-fake-dc","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"fake","fake":{},"node":{},"requiredEmailDomain":"example.com","enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			httpStatus:       200,
+			existingAPIUser:  test.GenAPIUser(test.UserName2, test.UserEmail2),
+		},
+		{
+			name:             "should get 404 for non-existent dc",
+			seed:             "us-central1",
+			dc:               "idontexist",
+			expectedResponse: `{"error":{"code":404,"message":"datacenter \"idontexist\" not found"}}`,
+			httpStatus:       404,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "should get 404 for non-existent provider",
+			seed:             "idontexist",
+			dc:               "regular-do1",
+			expectedResponse: `{"error":{"code":404,"message":"seed \"idontexist\" not found"}}`,
+			httpStatus:       404,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			name:             "should find dc",
+			seed:             "us-central1",
+			dc:               "regular-do1",
+			expectedResponse: `{"metadata":{"name":"regular-do1","resourceVersion":"1"},"spec":{"seed":"us-central1","country":"NL","location":"Amsterdam","provider":"digitalocean","digitalocean":{"region":"ams2"},"node":{},"enforceAuditLogging":false,"enforcePodSecurityPolicy":false}}`,
+			httpStatus:       200,
+			existingAPIUser:  test.GenDefaultAPIUser(),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/seed/%s/dc/%s", tc.seed, tc.dc), nil)
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.existingAPIUser, []runtime.Object{},
+				[]runtime.Object{test.APIUserToKubermaticUser(*tc.existingAPIUser)}, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("Expected route to return code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
+
 func TestDatacenterCreateEndpoint(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {

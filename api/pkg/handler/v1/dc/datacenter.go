@@ -227,30 +227,36 @@ iterateOverDCs:
 func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacenter {
 	var foundDCs []apiv1.Datacenter
 	for _, seed := range seeds {
+		foundDCs = append(foundDCs, getAPIDCsFromSeed(seed)...)
+	}
+	return foundDCs
+}
+
+// TODO(lsviben) - check if a "seed" dc is needed + if whole metadata is needed for DC, maybe we only need the name
+func getAPIDCsFromSeed(seed *kubermaticv1.Seed) []apiv1.Datacenter {
+	var foundDCs []apiv1.Datacenter
+	foundDCs = append(foundDCs, apiv1.Datacenter{
+		Metadata: apiv1.LegacyObjectMeta{
+			Name:            seed.Name,
+			ResourceVersion: "1",
+		},
+		Seed: true,
+	})
+
+	for datacenterName, datacenter := range seed.Spec.Datacenters {
+		spec, err := ConvertInternalDCToExternalSpec(datacenter.DeepCopy(), seed.Name)
+		if err != nil {
+			log.Logger.Errorf("api spec error in dc %q: %v", datacenterName, err)
+			continue
+		}
 		foundDCs = append(foundDCs, apiv1.Datacenter{
 			Metadata: apiv1.LegacyObjectMeta{
-				Name:            seed.Name,
+				Name:            datacenterName,
 				ResourceVersion: "1",
 			},
-			Seed: true,
+			Spec: *spec,
 		})
-
-		for datacenterName, datacenter := range seed.Spec.Datacenters {
-			spec, err := ConvertInternalDCToExternalSpec(datacenter.DeepCopy(), seed.Name)
-			if err != nil {
-				log.Logger.Errorf("api spec error in dc %q: %v", datacenterName, err)
-				continue
-			}
-			foundDCs = append(foundDCs, apiv1.Datacenter{
-				Metadata: apiv1.LegacyObjectMeta{
-					Name:            datacenterName,
-					ResourceVersion: "1",
-				},
-				Spec: *spec,
-			})
-		}
 	}
-
 	return foundDCs
 }
 
@@ -518,6 +524,85 @@ func DeleteEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 	}
 }
 
+// ListEndpointForSeed an HTTP endpoint that returns a list of apiv1.Datacenter for the specified seed
+func ListEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(listDCForSeedReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		seed, ok := seeds[req.Seed]
+		if !ok {
+			return nil, errors.NewNotFound("seed", req.Seed)
+		}
+
+		// Get the DCs and immediately filter out the ones restricted by e-mail domain if user is not admin
+		dcs := getAPIDCsFromSeed(seed)
+		if !userInfo.IsAdmin {
+			dcs, err = filterDCsByEmail(userInfo, dcs)
+			if err != nil {
+				return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+					fmt.Sprintf("failed to filter datacenters by email: %v", err))
+			}
+		}
+
+		// Maintain a stable order. We do not check for duplicate names here
+		sort.SliceStable(dcs, func(i, j int) bool {
+			return dcs[i].Metadata.Name < dcs[j].Metadata.Name
+		})
+
+		return dcs, nil
+	}
+}
+
+// GetEndpointForSeed an HTTP endpoint that returns a specified apiv1.Datacenter in the specified seed
+func GetEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(getDCForSeedReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		seeds, err := seedsGetter()
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list seeds: %v", err))
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		seed, ok := seeds[req.Seed]
+		if !ok {
+			return nil, errors.NewNotFound("seed", req.Seed)
+		}
+
+		// Get the DCs and immediately filter out the ones restricted by e-mail domain if user is not admin
+		dcs := getAPIDCsFromSeed(seed)
+		if !userInfo.IsAdmin {
+			dcs, err = filterDCsByEmail(userInfo, dcs)
+			if err != nil {
+				return apiv1.Datacenter{}, errors.New(http.StatusInternalServerError,
+					fmt.Sprintf("failed to filter datacenters by email: %v", err))
+			}
+		}
+
+		return filterDCsByName(dcs, req.DC)
+	}
+}
+
 func validateUser(ctx context.Context, userInfoGetter provider.UserInfoGetter) error {
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
@@ -619,6 +704,52 @@ func DecodeLegacyDcReq(c context.Context, r *http.Request) (interface{}, error) 
 	var req LegacyDCReq
 
 	req.DC = mux.Vars(r)["dc"]
+	return req, nil
+}
+
+// listDCForSeedReq represents a request for datacenters list in the specified seed
+// swagger:parameters listDCForSeed
+type listDCForSeedReq struct {
+	// in: path
+	// required: true
+	Seed string `json:"seed_name"`
+}
+
+// DecodeListDCForSeedReq decodes http request into listDCForSeedReq
+func DecodeListDCForSeedReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req listDCForSeedReq
+
+	req.Seed = mux.Vars(r)["seed_name"]
+	if req.Seed == "" {
+		return nil, fmt.Errorf("'seed_name' parameter is required but was not provided")
+	}
+	return req, nil
+}
+
+// getDCForSeedReq represents a request for a datacenter in the specified seed
+// swagger:parameters getDCForSeed
+type getDCForSeedReq struct {
+	// in: path
+	// required: true
+	Seed string `json:"seed_name"`
+	// in: path
+	// required: true
+	DC string `json:"dc"`
+}
+
+// DecodeGetDCForSeedReq decodes http request into getDCForSeedReq
+func DecodeGetDCForSeedReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req getDCForSeedReq
+
+	req.Seed = mux.Vars(r)["seed_name"]
+	if req.Seed == "" {
+		return nil, fmt.Errorf("'seed_name' parameter is required but was not provided")
+	}
+	req.DC = mux.Vars(r)["dc"]
+	if req.DC == "" {
+		return nil, fmt.Errorf("'dc' parameter is required but was not provided")
+	}
+
 	return req, nil
 }
 

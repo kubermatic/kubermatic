@@ -31,9 +31,13 @@ type ClientService interface {
 
 	GetDCForProvider(params *GetDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForProviderOK, error)
 
+	GetDCForSeed(params *GetDCForSeedParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForSeedOK, error)
+
 	GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter) (*GetDatacenterOK, error)
 
 	ListDCForProvider(params *ListDCForProviderParams, authInfo runtime.ClientAuthInfoWriter) (*ListDCForProviderOK, error)
+
+	ListDCForSeed(params *ListDCForSeedParams, authInfo runtime.ClientAuthInfoWriter) (*ListDCForSeedOK, error)
 
 	ListDatacenters(params *ListDatacentersParams, authInfo runtime.ClientAuthInfoWriter) (*ListDatacentersOK, error)
 
@@ -147,6 +151,40 @@ func (a *Client) GetDCForProvider(params *GetDCForProviderParams, authInfo runti
 }
 
 /*
+  GetDCForSeed returns the specified datacenter for the specified seed
+*/
+func (a *Client) GetDCForSeed(params *GetDCForSeedParams, authInfo runtime.ClientAuthInfoWriter) (*GetDCForSeedOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetDCForSeedParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getDCForSeed",
+		Method:             "GET",
+		PathPattern:        "/api/v1/seed/{seed_name}/dc/{dc}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetDCForSeedReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetDCForSeedOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetDCForSeedDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetDatacenter get datacenter API
 */
 func (a *Client) GetDatacenter(params *GetDatacenterParams, authInfo runtime.ClientAuthInfoWriter) (*GetDatacenterOK, error) {
@@ -211,6 +249,40 @@ func (a *Client) ListDCForProvider(params *ListDCForProviderParams, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListDCForProviderDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListDCForSeed returns all datacenters for the specified seed
+*/
+func (a *Client) ListDCForSeed(params *ListDCForSeedParams, authInfo runtime.ClientAuthInfoWriter) (*ListDCForSeedOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListDCForSeedParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listDCForSeed",
+		Method:             "GET",
+		PathPattern:        "/api/v1/seed/{seed_name}/dc",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListDCForSeedReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListDCForSeedOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListDCForSeedDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
