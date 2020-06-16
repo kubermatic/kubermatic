@@ -848,6 +848,13 @@ func newPublicAWSCloudSpec(internal *kubermaticv1.AWSCloudSpec) (public *PublicA
 // PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.
 type PublicOpenstackCloudSpec struct {
 	FloatingIPPool string `json:"floatingIpPool"`
+	Tenant         string `json:"tenant,omitempty"`
+	TenantID       string `json:"tenantID,omitempty"`
+	Domain         string `json:"domain,omitempty"`
+	Network        string `json:"network"`
+	SecurityGroups string `json:"securityGroups"`
+	RouterID       string `json:"routerID"`
+	SubnetID       string `json:"subnetID"`
 }
 
 func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (public *PublicOpenstackCloudSpec) {
@@ -857,6 +864,13 @@ func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (pub
 
 	return &PublicOpenstackCloudSpec{
 		FloatingIPPool: internal.FloatingIPPool,
+		Tenant:         internal.Tenant,
+		TenantID:       internal.TenantID,
+		Domain:         internal.Domain,
+		Network:        internal.Network,
+		SecurityGroups: internal.SecurityGroups,
+		RouterID:       internal.RouterID,
+		SubnetID:       internal.SubnetID,
 	}
 }
 

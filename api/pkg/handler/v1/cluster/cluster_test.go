@@ -1259,7 +1259,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 2: gets cluster for Openstack and no sensitive data (credentials) are returned",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool"}},"version":"9.9.9","oidc":{}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1272,7 +1272,7 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 3: the admin John can get Bob's cluster",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool"}},"version":"9.9.9","oidc":{}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -1382,6 +1382,12 @@ func TestListClusters(t *testing.T) {
 							DatacenterName: "OpenstackDatacenter",
 							Openstack: &kubermaticv1.OpenstackCloudSpec{
 								FloatingIPPool: "floatingIPPool",
+								SubnetID:       "subnetID",
+								Domain:         "domain",
+								Network:        "network",
+								RouterID:       "routerID",
+								SecurityGroups: "securityGroups",
+								Tenant:         "tenant",
 							},
 						},
 						Version: *semver.NewSemverOrDie("9.9.9"),
@@ -1454,6 +1460,12 @@ func TestListClusters(t *testing.T) {
 							DatacenterName: "OpenstackDatacenter",
 							Openstack: &kubermaticv1.OpenstackCloudSpec{
 								FloatingIPPool: "floatingIPPool",
+								SubnetID:       "subnetID",
+								Domain:         "domain",
+								Network:        "network",
+								RouterID:       "routerID",
+								SecurityGroups: "securityGroups",
+								Tenant:         "tenant",
 							},
 						},
 						Version: *semver.NewSemverOrDie("9.9.9"),
@@ -1547,6 +1559,12 @@ func TestListClustersForProject(t *testing.T) {
 							DatacenterName: "OpenstackDatacenter",
 							Openstack: &kubermaticv1.OpenstackCloudSpec{
 								FloatingIPPool: "floatingIPPool",
+								SubnetID:       "subnetID",
+								Domain:         "domain",
+								Network:        "network",
+								RouterID:       "routerID",
+								SecurityGroups: "securityGroups",
+								Tenant:         "tenant",
 							},
 						},
 						Version: *semver.NewSemverOrDie("9.9.9"),
@@ -1599,6 +1617,12 @@ func TestListClustersForProject(t *testing.T) {
 							DatacenterName: "OpenstackDatacenter",
 							Openstack: &kubermaticv1.OpenstackCloudSpec{
 								FloatingIPPool: "floatingIPPool",
+								SubnetID:       "subnetID",
+								Domain:         "domain",
+								Network:        "network",
+								RouterID:       "routerID",
+								SecurityGroups: "securityGroups",
+								Tenant:         "tenant",
 							},
 						},
 						Version: *semver.NewSemverOrDie("9.9.9"),
