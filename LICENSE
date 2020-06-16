@@ -7,17 +7,14 @@
       Apache License Version 2.0. The same applies to all files that 
       reference the Apache License Version 2.0. 
    2.	All other files contained in Software, in particular those in the 
-      api/pkg/ee directory, are licensed under the 
-      Kubermatic Enterprise v 1.0 ("KERO-1.0”). The same applies to all files 
+      api/pkg/ee directory, are licensed under the Kubermatic Enterprise 
+      Read-Only License v 1.0 ("KERO-1.0”). The same applies to all files 
       that reference the KERO-1.0 license. Users who have acquired the Software 
       by way of an individual agreement under an enterprise license 
       (“Enterprise License”) may use the files and the Software in accordance 
       with the terms of such Enterprise License. However, users that do not 
       hold an Enterprise License may only view the files in accordance with 
       the terms KERO-1.0 license.
-   1.	All files contained in the [●● please specify ●●] directory are licensed 
-      under the Apache License Version 2.0. The same applies to all files that 
-      reference the Apache License Version 2.0. 
    3.	Unless otherwise stated, third-party components are licensed under the 
       license specified in the respective subdirectory, in the respective 
       source files or elsewhere within the third-party component.
