@@ -110,6 +110,22 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							Name:  "ETCDCTL_API",
 							Value: "3",
 						},
+						{
+							Name:  "ETCDCTL_CACERT",
+							Value: "/etc/etcd/pki/ca/ca.crt",
+						},
+						{
+							Name:  "ETCDCTL_CERT",
+							Value: "/etc/etcd/pki/client/apiserver-etcd-client.crt",
+						},
+						{
+							Name:  "ETCDCTL_KEY",
+							Value: "/etc/etcd/pki/client/apiserver-etcd-client.key",
+						},
+						{
+							Name:  "ETCDCTL_ENDPOINTS",
+							Value: "https://127.0.0.1:2379",
+						},
 					},
 					Ports: []corev1.ContainerPort{
 						{
