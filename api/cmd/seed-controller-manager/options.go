@@ -225,6 +225,14 @@ func (o controllerRunOptions) validate() error {
 		return fmt.Errorf("failed to parse nodePortRange: %v", err)
 	}
 
+	// Validate the metrics-server addon is disabled, otherwise it creates conflicts with the resources
+	// we create for the metrics-server running in the seed and will render the latter unusable
+	for _, addon := range o.kubernetesAddons.Items {
+		if addon.Name == "metrics-server" {
+			return errors.New("the metrics-server addon must be disabled, it is now deployed inside the seed cluster")
+		}
+	}
+
 	return nil
 }
 
