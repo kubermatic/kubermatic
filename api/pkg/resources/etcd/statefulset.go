@@ -3,6 +3,7 @@ package etcd
 import (
 	"bytes"
 	"fmt"
+	"strconv"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
@@ -105,6 +106,27 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 									FieldPath:  "status.podIP",
 								},
 							},
+						},
+						{
+							Name: "NAMESPACE",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									APIVersion: "v1",
+									FieldPath:  "metadata.namespace",
+								},
+							},
+						},
+						{
+							Name:  "TOKEN",
+							Value: data.Cluster().Name,
+						},
+						{
+							Name:  "ECTD_CLUSTER_SIZE",
+							Value: strconv.Itoa(resources.EtcdClusterSize),
+						},
+						{
+							Name:  "ENABLE_CORRUPTION_CHECK",
+							Value: strconv.FormatBool(enableDataCorruptionChecks),
 						},
 						{
 							Name:  "ETCDCTL_API",
