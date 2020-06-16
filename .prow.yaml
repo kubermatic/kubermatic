@@ -196,16 +196,17 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
-      - image: quay.io/kubermatic/wwhrd:0.2.1-1
+      - image: frapposelli/wwhrd:v0.3.0
         command:
         - make
         args:
         - -C
         - api
         - license-validation
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: 1
 
   - name: pre-kubermatic-prometheus-rules-validation
     run_if_changed: "config/monitoring"
