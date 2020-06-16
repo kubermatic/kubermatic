@@ -78,16 +78,19 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				Labels: podLabels,
 			}
 
-			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks)
-			if err != nil {
-				return nil, err
-			}
+			// etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks)
+			// if err != nil {
+			// 	return nil, err
+			// }
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    resources.EtcdStatefulSetName,
-					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
-					Command: etcdStartCmd,
+					Name: resources.EtcdStatefulSetName,
+
+					//FIXME: use proper image!
+					Image:           "melsayed/etcd-launcher:b40178cd",
+					ImagePullPolicy: corev1.PullAlways,
+					Command:         []string{"/usr/local/bin/etcd-launcher"},
 					Env: []corev1.EnvVar{
 						{
 							Name: "POD_NAME",
