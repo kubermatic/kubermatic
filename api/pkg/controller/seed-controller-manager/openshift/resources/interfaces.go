@@ -28,7 +28,6 @@ type openshiftData interface {
 	GetRootCA() (*triple.KeyPair, error)
 	GetRootCAWithContext(context.Context) (*triple.KeyPair, error)
 	DC() *kubermaticv1.Datacenter
-	HasEtcdOperatorService() (bool, error)
 	EtcdDiskSize() resource.Quantity
 	NodeLocalDNSCacheEnabled() bool
 	KubermaticAPIImage() string

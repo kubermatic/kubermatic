@@ -43,7 +43,6 @@ var (
 type etcdStatefulSetCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	HasEtcdOperatorService() (bool, error)
 	ImageRegistry(string) string
 	EtcdDiskSize() resource.Quantity
 	GetClusterRef() metav1.OwnerReference
@@ -78,14 +77,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				Labels: podLabels,
 			}
 
-			// For migration purpose.
-			// We switched from the etcd-operator to a simple etcd-StatefulSet. Therefore we need to migrate the data.
-			migrate, err := data.HasEtcdOperatorService()
-			if err != nil {
-				return nil, fmt.Errorf("failed to check if we need to include the etcd-operator migration code: %v", err)
-			}
-
-			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, migrate, enableDataCorruptionChecks)
+			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks)
 			if err != nil {
 				return nil, err
 			}
@@ -258,11 +250,10 @@ type commandTplData struct {
 	Namespace             string
 	Token                 string
 	DataDir               string
-	Migrate               bool
 	EnableCorruptionCheck bool
 }
 
-func getEtcdCommand(name, namespace string, migrate, enableCorruptionCheck bool) ([]string, error) {
+func getEtcdCommand(name, namespace string, enableCorruptionCheck bool) ([]string, error) {
 	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(etcdStartCommandTpl)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
@@ -273,7 +264,6 @@ func getEtcdCommand(name, namespace string, migrate, enableCorruptionCheck bool)
 		Token:                 name,
 		Namespace:             namespace,
 		DataDir:               dataDir,
-		Migrate:               migrate,
 		EnableCorruptionCheck: enableCorruptionCheck,
 	}
 
@@ -290,60 +280,9 @@ func getEtcdCommand(name, namespace string, migrate, enableCorruptionCheck bool)
 }
 
 const (
-	etcdStartCommandTpl = `export MASTER_ENDPOINT="https://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379"
-
-{{ if .Migrate }}
-# If we're already initialized
-if [ -d "{{ .DataDir }}" ]; then
-    echo "we're already initialized"
-    export INITIAL_STATE="existing"
-    if [ "${POD_NAME}" = "etcd-0" ]; then
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-    if [ "${POD_NAME}" = "etcd-1" ]; then
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-    if [ "${POD_NAME}" = "etcd-2" ]; then
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-else
-    if [ "${POD_NAME}" = "etcd-0" ]; then
-        echo "i'm etcd-0. I do the restore"
-        etcdctl --endpoints http://etcd-cluster-client:2379 snapshot save snapshot.db
-        etcdctl snapshot restore snapshot.db \
-            --name etcd-0 \
-            --data-dir="{{ .DataDir }}" \
-            --initial-cluster="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
-            --initial-cluster-token="{{ .Token }}" \
-            --initial-advertise-peer-urls http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380
-        echo "restored from snapshot"
-        export INITIAL_STATE="new"
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-
-    export ETCD_CERT_ARGS="--cacert /etc/etcd/pki/ca/ca.crt --cert /etc/etcd/pki/client/apiserver-etcd-client.crt --key /etc/etcd/pki/client/apiserver-etcd-client.key"
-    if [ "${POD_NAME}" = "etcd-1" ]; then
-        echo "i'm etcd-1. I join as new member as soon as etcd-0 comes up"
-        etcdctl ${ETCD_CERT_ARGS} --endpoints ${MASTER_ENDPOINT} member add etcd-1 --peer-urls=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380
-        echo "added etcd-1 to members"
-        export INITIAL_STATE="existing"
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-
-    if [ "${POD_NAME}" = "etcd-2" ]; then
-        echo "i'm etcd-2. I join as new member as soon as we have 2 existing & healthy members"
-        until etcdctl ${ETCD_CERT_ARGS} --endpoints ${MASTER_ENDPOINT} member list | grep -q etcd-1; do sleep 1; echo "Waiting for etcd-1"; done
-        etcdctl ${ETCD_CERT_ARGS} --endpoints ${MASTER_ENDPOINT} member add etcd-2 --peer-urls=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380
-        echo "added etcd-2 to members"
-        export INITIAL_STATE="existing"
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-fi
-
-{{ else }}
+	etcdStartCommandTpl = `
 export INITIAL_STATE="new"
 export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-{{ end }}
 
 echo "initial-state: ${INITIAL_STATE}"
 echo "initial-cluster: ${INITIAL_CLUSTER}"
