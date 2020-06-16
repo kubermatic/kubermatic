@@ -81,7 +81,22 @@ Apiserver needs to communicate with the Kubelet on the user cluster nodes when u
 
 ### Setup involving a corporate HTTP Proxy
 
-TBD
+In case worker nodes do not have direct internet access but have to pass
+through a corporate HTTP proxy (we will call it middle HTTP proxy in the rest
+of the document), we need to configure the HTTP tunneler to send traffic to the
+middle HTTP proxy first.
+
+There are two ways of achieving this:
+
+* Configuring the middle HTTP proxy to forward the connect requests addressed
+    to the seed HTTP proxy. This strategy is not transparent to the middle HTTP
+    proxy and requires some specific configuration.
+* Having double CONNECT encapsulation like depicted below:
+    ```
+    Pod-->[HTTPS]-->HTTP Tunneler--[HTTPS tunneled over HTTP/2 tunneled over HTTP/1.1]-->Middle HTTP Proxy-->[HTTPS tunneled over HTTP/2]-->Seed HTTP Proxy--[HTTPS]-->Kube Apiserver/Openvpn
+    ```
+    The advantage of this solution is that it does not need specific
+    configuration in the middle HTTP proxy.
 
 ### Security considerations
 
