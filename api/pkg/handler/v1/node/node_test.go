@@ -1790,7 +1790,7 @@ func TestNodeDeploymentMetrics(t *testing.T) {
 			},
 			ExistingMetrics: []*v1beta1.NodeMetrics{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "venus-1", Namespace: "cluster-defClusterID"},
+					ObjectMeta: metav1.ObjectMeta{Name: "venus-1"},
 					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
 				},
 			},
@@ -1818,7 +1818,7 @@ func TestNodeDeploymentMetrics(t *testing.T) {
 			},
 			ExistingMetrics: []*v1beta1.NodeMetrics{
 				{
-					ObjectMeta: metav1.ObjectMeta{Name: "venus-1", Namespace: "cluster-defClusterID"},
+					ObjectMeta: metav1.ObjectMeta{Name: "venus-1"},
 					Usage:      map[corev1.ResourceName]resource.Quantity{"cpu": cpuQuantity, "memory": memoryQuantity},
 				},
 			},

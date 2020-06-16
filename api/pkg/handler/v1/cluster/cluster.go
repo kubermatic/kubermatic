@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"net/http"
 	"strconv"
 	"strings"
@@ -955,13 +954,17 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 			availableResources[n.Name] = n.Status.Allocatable
 		}
 
-		seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
-
-		allNodeMetricsList := &v1beta1.NodeMetricsList{}
-		if err := seedAdminClient.List(ctx, allNodeMetricsList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
+		dynamicClient, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
+		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		allNodeMetricsList := &v1beta1.NodeMetricsList{}
+		if err := dynamicClient.List(ctx, allNodeMetricsList); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
 		podMetricsList := &v1beta1.PodMetricsList{}
 		if err := seedAdminClient.List(ctx, podMetricsList, &ctrlruntimeclient.ListOptions{Namespace: fmt.Sprintf("cluster-%s", cluster.Name)}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -1009,13 +1012,9 @@ func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1b
 		}
 	}
 	fractionCPU := float64(clusterMetrics.NodesMetrics.CPUTotalMillicores) / float64(clusterMetrics.NodesMetrics.CPUAvailableMillicores) * 100
-	if !math.IsNaN(fractionCPU) {
-		clusterMetrics.NodesMetrics.CPUUsedPercentage += int64(fractionCPU)
-	}
+	clusterMetrics.NodesMetrics.CPUUsedPercentage += int64(fractionCPU)
 	fractionMemory := float64(clusterMetrics.NodesMetrics.MemoryTotalBytes) / float64(clusterMetrics.NodesMetrics.MemoryAvailableBytes) * 100
-	if !math.IsNaN(fractionMemory) {
-		clusterMetrics.NodesMetrics.MemoryUsedPercentage += int64(fractionMemory)
-	}
+	clusterMetrics.NodesMetrics.MemoryUsedPercentage += int64(fractionMemory)
 
 	for _, podMetrics := range podMetrics.Items {
 		for _, container := range podMetrics.Containers {
