@@ -45,10 +45,10 @@ func (c *projectController) sync(key client.ObjectKey) error {
 	if err := c.ensureProjectOwner(project); err != nil {
 		return fmt.Errorf("failed to ensure that the project owner exists in the owners group: %v", err)
 	}
-	if err := ensureClusterRBACRoleForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
+	if err := ensureClusterRBACRoleForNamedResource(c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %v", err)
 	}
-	if err := ensureClusterRBACRoleBindingForNamedResource(project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta(), c.masterClusterProvider.kubeClient, c.masterClusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
+	if err := ensureClusterRBACRoleBindingForNamedResource(c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %v", err)
 	}
 	if err := c.ensureClusterRBACRoleForResources(); err != nil {

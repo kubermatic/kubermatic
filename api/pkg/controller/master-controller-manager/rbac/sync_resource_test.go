@@ -1,12 +1,16 @@
 package rbac
 
 import (
+	"context"
+	"reflect"
 	"testing"
-	"time"
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac/test"
 	fakeInformerProvider "github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac/test/fake"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/stretchr/testify/assert"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	fakeruntime "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -17,7 +21,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/fake"
-	rbaclister "k8s.io/client-go/listers/rbac/v1"
 	clienttesting "k8s.io/client-go/testing"
 	"k8s.io/client-go/tools/cache"
 )
@@ -511,7 +514,6 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 				objs = append(objs, existingClusterRole)
 			}
 
-			clusterRoleBindingIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, existingClusterRoleBinding := range test.existingClusterRoleBindings {
 				err := clusterRoleIndexer.Add(existingClusterRoleBinding)
 				if err != nil {
@@ -520,21 +522,14 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 				objs = append(objs, existingClusterRoleBinding)
 			}
 
-			fakeKubeClient := fake.NewSimpleClientset(objs...)
-			// manually set lister as we don't want to start informers in the tests
-			fakeKubeInformerProvider := NewInformerProvider(fakeKubeClient, time.Minute*5)
-			fakeInformerFactoryForClusterRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, metav1.NamespaceAll)
-			fakeInformerFactoryForClusterRole.AddFakeClusterRoleBindingInformer(clusterRoleBindingIndexer)
-			fakeInformerFactoryForClusterRole.AddFakeClusterRoleInformer(clusterRoleIndexer)
-
-			fakeClusterProvider := &ClusterProvider{
-				kubeClient:           fakeKubeClient,
-				kubeInformerProvider: fakeKubeInformerProvider,
-			}
-
+			fakeMasterClusterClient := fakeruntime.NewFakeClient(objs...)
 			// act
-			target := resourcesController{clusterProvider: fakeClusterProvider}
-			err := target.syncProjectResource(test.dependantToSync)
+			target := resourcesController{
+				client:     fakeMasterClusterClient,
+				restMapper: getFakeRestMapper(t),
+			}
+			key := client.ObjectKey{Name: test.dependantToSync.metaObject.GetName(), Namespace: test.dependantToSync.metaObject.GetNamespace()}
+			err := target.syncProjectResource(key)
 
 			// validate
 			if err != nil && !test.expectError {
@@ -547,49 +542,51 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 				return
 			}
 
-			if len(test.expectedClusterRoles) == 0 && len(test.expectedClusterRoleBindings) == 0 {
-				if len(fakeKubeClient.Actions()) != 0 {
-					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
+			{
+				var clusterRoleBindings rbacv1.ClusterRoleBindingList
+				err = fakeMasterClusterClient.List(context.Background(), &clusterRoleBindings)
+				assert.NoError(t, err)
+
+				assert.Len(t, clusterRoleBindings.Items, len(test.existingClusterRoleBindings),
+					"cluster contains an different number of ClusterRoleBindings than expected (%d != %d)", len(clusterRoleBindings.Items), len(test.expectedClusterRoleBindings))
+
+			expectedClusterRoleBindingsLoop:
+				for _, expectedClusterRoleBinding := range test.existingClusterRoleBindings {
+					// double-iterating over both slices might not be the most efficient way
+					// but it spares the trouble of converting pointers to values
+					// and then sorting everything for the comparison.
+
+					for _, existingClusterRoleBinding := range clusterRoleBindings.Items {
+						if reflect.DeepEqual(*expectedClusterRoleBinding, existingClusterRoleBinding) {
+							continue expectedClusterRoleBindingsLoop
+						}
+					}
+					t.Fatalf("expected ClusterRoleBinding %q not found in cluster", expectedClusterRoleBinding.Name)
 				}
 			}
 
-			if len(fakeKubeClient.Actions()) != len(test.expectedActions) {
-				t.Fatalf("unexpected actions expected to get %d, but got %d, actions = %#v", len(test.expectedActions), len(fakeKubeClient.Actions()), fakeKubeClient.Actions())
-			}
+			{
+				var clusterRoles rbacv1.ClusterRoleList
+				err = fakeMasterClusterClient.List(context.Background(), &clusterRoles)
+				assert.NoError(t, err)
 
-			allActions := fakeKubeClient.Actions()
-			clusterRolesActions := allActions[0:len(test.expectedClusterRoles)]
-			offset := 0
-			for index, action := range clusterRolesActions {
-				offset++
-				if !action.Matches(test.expectedActions[index], "clusterroles") {
-					t.Fatalf("unexpected action %#v", action)
-				}
-				// TODO: figure out why action.(clienttesting.GenericAction) does not work
-				createaction, ok := action.(clienttesting.CreateAction)
-				if !ok {
-					t.Fatalf("unexpected action %#v", action)
-				}
-				if !equality.Semantic.DeepEqual(createaction.GetObject().(*rbacv1.ClusterRole), test.expectedClusterRoles[index]) {
-					t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRoles[index], createaction.GetObject().(*rbacv1.ClusterRole)))
-				}
-			}
+				assert.Len(t, clusterRoles.Items, len(test.existingClusterRoles),
+					"cluster contains an different number of ClusterRoles than expected (%d != %d)", len(clusterRoles.Items), len(test.existingClusterRoles))
 
-			clusterRoleBindingActions := allActions[offset:(2 * offset)]
-			for index, action := range clusterRoleBindingActions {
-				if !action.Matches(test.expectedActions[index+offset], "clusterrolebindings") {
-					t.Fatalf("unexpected action %#v", action)
-				}
-				// TODO: figure out why action.(clienttesting.GenericAction) does not work
-				createAction, ok := action.(clienttesting.CreateAction)
-				if !ok {
-					t.Fatalf("unexpected action %#v", action)
-				}
-				if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRoleBinding), test.expectedClusterRoleBindings[index]) {
-					t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRoleBindings[index], createAction.GetObject().(*rbacv1.ClusterRoleBinding)))
+			expectedClusterRolesLoop:
+				for _, expectedClusterRole := range test.existingClusterRoles {
+					// double-iterating over both slices might not be the most efficient way
+					// but it spares the trouble of converting pointers to values
+					// and then sorting everything for the comparison.
+
+					for _, existingClusterRole := range clusterRoles.Items {
+						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
+							continue expectedClusterRolesLoop
+						}
+					}
+					t.Fatalf("expected ClusterRole %q not found in cluster", expectedClusterRole.Name)
 				}
 			}
-
 		})
 	}
 }
@@ -713,19 +710,18 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
 			// manually set lister as we don't want to start informers in the tests
-			fakeKubeInformerProvider := NewInformerProvider(fakeKubeClient, time.Minute*5)
 			fakeInformerFactoryForClusterRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, metav1.NamespaceAll)
 			fakeInformerFactoryForClusterRole.AddFakeRoleBindingInformer(roleBindingIndexer)
 			fakeInformerFactoryForClusterRole.AddFakeRoleInformer(roleIndexer)
 
-			fakeClusterProvider := &ClusterProvider{
-				kubeClient:           fakeKubeClient,
-				kubeInformerProvider: fakeKubeInformerProvider,
-			}
-
+			fakeMasterClusterClient := fakeruntime.NewFakeClient(objs...)
 			// act
-			target := resourcesController{clusterProvider: fakeClusterProvider}
-			err := target.syncProjectResource(test.dependantToSync)
+			target := resourcesController{
+				client:     fakeMasterClusterClient,
+				restMapper: getFakeRestMapper(t),
+			}
+			key := client.ObjectKey{Name: test.dependantToSync.metaObject.GetName(), Namespace: test.dependantToSync.metaObject.GetNamespace()}
+			err := target.syncProjectResource(key)
 
 			// validate
 			if err != nil && !test.expectError {
@@ -1108,38 +1104,32 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 				}
 				objs = append(objs, existingClusterRoleBinding)
 			}
-			fakeKubeClient := fake.NewSimpleClientset(objs...)
-			clusterRoleBindingLister := rbaclister.NewClusterRoleBindingLister(clusterRoleBindingIndexer)
+			fakeMasterClusterClient := fakeruntime.NewFakeClient(objs...)
 
 			// act
-			err := ensureClusterRBACRoleBindingForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta(), fakeKubeClient, clusterRoleBindingLister)
+			err := ensureClusterRBACRoleBindingForNamedResource(fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			assert.NoError(t, err)
 
-			// validate
-			if err != nil {
-				t.Fatal(err)
-			}
+			{
+				var clusterRoleBindings rbacv1.ClusterRoleBindingList
+				err = fakeMasterClusterClient.List(context.Background(), &clusterRoleBindings)
+				assert.NoError(t, err)
 
-			if len(test.expectedClusterRoleBindings) == 0 {
-				if len(fakeKubeClient.Actions()) != 0 {
-					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
-				}
-				return
-			}
+				assert.Len(t, clusterRoleBindings.Items, len(test.existingClusterRoleBindings),
+					"cluster contains an different number of ClusterRoleBindings than expected (%d != %d)", len(clusterRoleBindings.Items), len(test.expectedClusterRoleBindings))
 
-			if len(fakeKubeClient.Actions()) != len(test.expectedClusterRoleBindings) {
-				t.Fatalf("unexpected actions %v", fakeKubeClient.Actions())
-			}
-			for index, action := range fakeKubeClient.Actions() {
-				if !action.Matches(test.expectedActions[index], "clusterrolebindings") {
-					t.Fatalf("unexpected action %#v", action)
-				}
-				// TODO: figure out why action.(clienttesting.GenericAction) does not work
-				createAction, ok := action.(clienttesting.CreateAction)
-				if !ok {
-					t.Fatalf("unexpected action %#v", action)
-				}
-				if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRoleBinding), test.expectedClusterRoleBindings[index]) {
-					t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRoleBindings[index], createAction.GetObject().(*rbacv1.ClusterRoleBinding)))
+			expectedClusterRoleBindingsLoop:
+				for _, expectedClusterRoleBinding := range test.existingClusterRoleBindings {
+					// double-iterating over both slices might not be the most efficient way
+					// but it spares the trouble of converting pointers to values
+					// and then sorting everything for the comparison.
+
+					for _, existingClusterRoleBinding := range clusterRoleBindings.Items {
+						if reflect.DeepEqual(*expectedClusterRoleBinding, existingClusterRoleBinding) {
+							continue expectedClusterRoleBindingsLoop
+						}
+					}
+					t.Fatalf("expected ClusterRoleBinding %q not found in cluster", expectedClusterRoleBinding.Name)
 				}
 			}
 		})
@@ -1408,39 +1398,32 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 				}
 				objs = append(objs, existingClusterRole)
 			}
-			fakeKubeClient := fake.NewSimpleClientset(objs...)
-			clusterRoleLister := rbaclister.NewClusterRoleLister(clusterRoleIndexer)
+			fakeMasterClusterClient := fakeruntime.NewFakeClient(objs...)
 
 			// act
-			err := ensureClusterRBACRoleForNamedResource(test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta(), fakeKubeClient, clusterRoleLister)
+			err := ensureClusterRBACRoleForNamedResource(fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			assert.NoError(t, err)
 
-			// validate
-			if err != nil {
-				t.Fatal(err)
-			}
+			{
+				var clusterRoles rbacv1.ClusterRoleList
+				err = fakeMasterClusterClient.List(context.Background(), &clusterRoles)
+				assert.NoError(t, err)
 
-			if len(test.expectedClusterRoles) == 0 {
-				if len(fakeKubeClient.Actions()) != 0 {
-					t.Fatalf("unexpected actions %#v", fakeKubeClient.Actions())
-				}
-				return
-			}
+				assert.Len(t, clusterRoles.Items, len(test.existingClusterRoles),
+					"cluster contains an different number of ClusterRole than expected (%d != %d)", len(clusterRoles.Items), len(test.existingClusterRoles))
 
-			if len(fakeKubeClient.Actions()) != len(test.expectedClusterRoles) {
-				t.Fatalf("unexpected actions %#v ", fakeKubeClient.Actions())
-			}
+			expectedClusterRolesLoop:
+				for _, expectedClusterRole := range test.existingClusterRoles {
+					// double-iterating over both slices might not be the most efficient way
+					// but it spares the trouble of converting pointers to values
+					// and then sorting everything for the comparison.
 
-			for index, action := range fakeKubeClient.Actions() {
-				if !action.Matches(test.expectedActions[index], "clusterroles") {
-					t.Fatalf("unexpected action %#v", action)
-				}
-				// TODO: figure out why action.(clienttesting.GenericAction) does not work
-				createAction, ok := action.(clienttesting.CreateAction)
-				if !ok {
-					t.Fatalf("unexpected action %#v", action)
-				}
-				if !equality.Semantic.DeepEqual(createAction.GetObject().(*rbacv1.ClusterRole), test.expectedClusterRoles[index]) {
-					t.Fatalf("%v", diff.ObjectDiff(test.expectedClusterRoles[index], createAction.GetObject().(*rbacv1.ClusterRole)))
+					for _, existingClusterRole := range clusterRoles.Items {
+						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
+							continue expectedClusterRolesLoop
+						}
+					}
+					t.Fatalf("expected ClusterRole %q not found in cluster", expectedClusterRole.Name)
 				}
 			}
 		})
