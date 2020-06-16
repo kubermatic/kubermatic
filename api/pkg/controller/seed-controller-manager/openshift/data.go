@@ -233,14 +233,6 @@ func (od *openshiftData) GetDexCA() ([]*x509.Certificate, error) {
 	return kubernetesresources.GetDexCAFromFile(od.oidc.CAFile)
 }
 
-// We didn't have openshift at the time we used the Etcd operator so
-// we can safely assume it doesn't exist
-// We must keep this in the etcd creators data for eternity thought, thats
-// why its implemented here
-func (od *openshiftData) HasEtcdOperatorService() (bool, error) {
-	return false, nil
-}
-
 func (od *openshiftData) EtcdDiskSize() resource.Quantity {
 	return od.etcdDiskSize
 }
