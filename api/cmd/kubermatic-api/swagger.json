@@ -11876,9 +11876,37 @@
       "type": "object",
       "title": "PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.",
       "properties": {
+        "domain": {
+          "type": "string",
+          "x-go-name": "Domain"
+        },
         "floatingIpPool": {
           "type": "string",
           "x-go-name": "FloatingIPPool"
+        },
+        "network": {
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "routerID": {
+          "type": "string",
+          "x-go-name": "RouterID"
+        },
+        "securityGroups": {
+          "type": "string",
+          "x-go-name": "SecurityGroups"
+        },
+        "subnetID": {
+          "type": "string",
+          "x-go-name": "SubnetID"
+        },
+        "tenant": {
+          "type": "string",
+          "x-go-name": "Tenant"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
