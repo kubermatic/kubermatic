@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -34,6 +35,7 @@ import (
 	apiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/admin"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/credentials"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/datacenter"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/gcp"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/serviceaccounts"
@@ -1145,5 +1147,178 @@ func convertSSHKey(key *models.SSHKey) *apiv1.SSHKey {
 			Fingerprint: key.Spec.Fingerprint,
 			PublicKey:   key.Spec.PublicKey,
 		},
+	}
+}
+
+// DC
+
+func (r *runner) ListDCForProvider(provider string) ([]*models.Datacenter, error) {
+	params := &datacenter.ListDCForProviderParams{
+		Provider: provider,
+	}
+	params.WithTimeout(timeout)
+
+	list, err := r.client.Datacenter.ListDCForProvider(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return list.GetPayload(), nil
+}
+
+func (r *runner) GetDCForProvider(provider, dc string) (*models.Datacenter, error) {
+	params := &datacenter.GetDCForProviderParams{
+		Provider:   provider,
+		Datacenter: dc,
+	}
+	params.WithTimeout(timeout)
+
+	receivedDC, err := r.client.Datacenter.GetDCForProvider(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return receivedDC.GetPayload(), nil
+}
+
+func (r *runner) CreateDC(seed string, dc *models.Datacenter) (*models.Datacenter, error) {
+	params := &datacenter.CreateDCParams{
+		Body: datacenter.CreateDCBody{
+			Name: dc.Metadata.Name,
+			Spec: dc.Spec,
+		},
+		Seed: seed,
+	}
+	params.WithTimeout(timeout)
+
+	createdDC, err := r.client.Datacenter.CreateDC(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return createdDC.GetPayload(), nil
+}
+
+func (r *runner) DeleteDC(seed, dc string) error {
+	params := &datacenter.DeleteDCParams{
+		Seed: seed,
+		DC:   dc,
+	}
+	params.WithTimeout(timeout)
+
+	_, err := r.client.Datacenter.DeleteDC(params, r.bearerToken)
+	return err
+}
+
+func (r *runner) UpdateDC(seed, dcToUpdate string, dc *models.Datacenter) (*models.Datacenter, error) {
+	params := &datacenter.UpdateDCParams{
+		Body: datacenter.UpdateDCBody{
+			Name: dc.Metadata.Name,
+			Spec: dc.Spec,
+		},
+		DCToUpdate: dcToUpdate,
+		Seed:       seed,
+	}
+	params.WithTimeout(timeout)
+
+	updatedDC, err := r.client.Datacenter.UpdateDC(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedDC.GetPayload(), nil
+}
+
+func (r *runner) PatchDC(seed, dcToPatch, patch string) (*models.Datacenter, error) {
+	params := &datacenter.PatchDCParams{
+		Patch:     strings.NewReader(patch),
+		DCToPatch: dcToPatch,
+		Seed:      seed,
+	}
+	params.WithTimeout(timeout)
+
+	updatedDC, err := r.client.Datacenter.PatchDC(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return updatedDC.GetPayload(), nil
+}
+
+func (r *runner) GetDCForSeed(seed, dc string) (*models.Datacenter, error) {
+	params := &datacenter.GetDCForSeedParams{
+		Seed: seed,
+		DC:   dc,
+	}
+	params.WithTimeout(timeout)
+
+	receivedDC, err := r.client.Datacenter.GetDCForSeed(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return receivedDC.GetPayload(), nil
+}
+
+func (r *runner) ListDCForSeed(seed string) ([]*models.Datacenter, error) {
+	params := &datacenter.ListDCForSeedParams{
+		Seed: seed,
+	}
+	params.WithTimeout(timeout)
+
+	list, err := r.client.Datacenter.ListDCForSeed(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return list.GetPayload(), nil
+}
+
+func (r *runner) GetDC(dc string) (*models.Datacenter, error) {
+	params := &datacenter.GetDatacenterParams{
+		DC: dc,
+	}
+	params.WithTimeout(timeout)
+
+	receivedDC, err := r.client.Datacenter.GetDatacenter(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return receivedDC.GetPayload(), nil
+}
+
+func (r *runner) ListDC() ([]*models.Datacenter, error) {
+	params := &datacenter.ListDatacentersParams{}
+	params.WithTimeout(timeout)
+
+	list, err := r.client.Datacenter.ListDatacenters(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return list.GetPayload(), nil
+}
+
+func cleanUpDC(seed, dc string) func(t *testing.T) {
+	return func(t *testing.T) {
+		adminMasterToken, err := retrieveAdminMasterToken()
+		if err != nil {
+			t.Fatalf("can not get admin master token: %v", err)
+		}
+		runner := createRunner(adminMasterToken, t)
+
+		t.Logf("deleting dc %s...", dc)
+		_, err = runner.GetDC(dc)
+		if err != nil {
+			t.Logf("dc %s already deleted, skipping cleanup", dc)
+			return
+		}
+
+		if err := runner.DeleteDC(seed, dc); err != nil {
+			t.Fatalf("can not delete dc %s : %v", dc, err)
+		}
+
+		t.Logf("dc %s deleted successfully", dc)
 	}
 }
