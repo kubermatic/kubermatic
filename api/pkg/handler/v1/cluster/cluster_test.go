@@ -908,6 +908,16 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			ProjectToSync:          test.GenDefaultProject().Name,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
+		// scenario 14
+		{
+			Name:                   "scenario 14: a cluster without version",
+			Body:                   `{"cluster":{"name":"keen-snyder","spec":{"cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
+			ExpectedResponse:       `{"error":{"code":400,"message":"invalid cluster: invalid cloud spec \"Version\" is required but was not specified"}}`,
+			HTTPStatus:             http.StatusBadRequest,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			ProjectToSync:          test.GenDefaultProject().Name,
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
