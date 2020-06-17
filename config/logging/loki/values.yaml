@@ -1,3 +1,17 @@
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 loki:
   affinity: {}
   # podAntiAffinity:
@@ -9,11 +23,11 @@ loki:
   #         values:
   #         - loki
   #     topologyKey: "kubernetes.io/hostname"
-  
+
   # enable tracing for debug, need install jaeger and specify right jaeger_agent_host
   tracing:
     jaegerAgentHost:
-  
+
   config:
     auth_enabled: false
     ingester:
@@ -25,7 +39,7 @@ loki:
           kvstore:
             store: inmemory
           replication_factor: 1
-  
+
     limits_config:
       enforce_metric_name: false
       reject_old_samples: true
@@ -51,42 +65,42 @@ loki:
     table_manager:
       retention_deletes_enabled: true
       retention_period: 720h
-  
+
   image:
     repository: docker.io/grafana/loki
     tag: v1.3.0
     pullPolicy: IfNotPresent
-  
+
   ## The app name of loki clients
   client: {}
     # name:
-  
+
   nodeSelector: {}
-  
+
   persistence:
     size: 15Gi
     storageClassName: kubermatic-fast
-  
+
   podLabels: {}
-  
+
   replicas: 1
-  
-  resources: 
+
+  resources:
    limits:
      cpu: "1"
      memory: 700Mi
    requests:
      cpu: 300m
      memory: 256Mi
-  
+
   service:
     type: ClusterIP
     nodePort:
     port: 3100
     annotations: {}
     labels: {}
-  
+
   tolerations: []
-  
+
   updateStrategy:
     type: RollingUpdate
