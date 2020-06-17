@@ -25,7 +25,7 @@ import (
 
 	"github.com/kubermatic/kubermatic/api/pkg/controller/util/predicate"
 
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -186,22 +186,22 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 	return nil
 }
 
-func (r *reconciler) createOuterService(targetServiceName string) (*v1.Service, error) {
-	newService := &v1.Service{
+func (r *reconciler) createOuterService(targetServiceName string) (*corev1.Service, error) {
+	newService := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			GenerateName: "cluster-exposer-",
 			Namespace:    "default",
 			Labels:       map[string]string{labelKey: r.jobID},
 			Annotations:  map[string]string{serviceIdentifyerAnnotationKey: targetServiceName},
 		},
-		Spec: v1.ServiceSpec{
+		Spec: corev1.ServiceSpec{
 			Selector: map[string]string{labelKey: r.jobID},
-			Type:     v1.ServiceTypeNodePort,
-			Ports: []v1.ServicePort{
+			Type:     corev1.ServiceTypeNodePort,
+			Ports: []corev1.ServicePort{
 				{
 					Name:     "secure",
 					Port:     80,
-					Protocol: v1.ProtocolTCP,
+					Protocol: corev1.ProtocolTCP,
 				},
 			},
 		},
