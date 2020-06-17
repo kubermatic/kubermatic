@@ -30,6 +30,7 @@ import (
 	"testing"
 	"time"
 
+	ver "github.com/Masterminds/semver"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -952,6 +953,31 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 			DisplayTermsOfService: false,
 			EnableDashboard:       true,
 			EnableOIDCKubeconfig:  false,
+		},
+	}
+}
+
+func GenDefaultVersions() []*version.Version {
+	return []*version.Version{
+		{
+			Version: ver.MustParse("1.15.0"),
+			Default: false,
+			Type:    apiv1.KubernetesClusterType,
+		},
+		{
+			Version: ver.MustParse("1.15.1"),
+			Default: false,
+			Type:    apiv1.KubernetesClusterType,
+		},
+		{
+			Version: ver.MustParse("1.17.0"),
+			Default: false,
+			Type:    apiv1.KubernetesClusterType,
+		},
+		{
+			Version: ver.MustParse("4.1.0"),
+			Default: false,
+			Type:    apiv1.OpenShiftClusterType,
 		},
 	}
 }
