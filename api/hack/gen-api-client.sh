@@ -1,34 +1,30 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-set -o errexit
-set -o nounset
-set -o pipefail
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+set -euo pipefail
 
 function cleanup() {
-    rm -f $TMP_SWAGGER
+  rm -f $TMP_SWAGGER
 
-    cd ${API_DIR}/cmd/kubermatic-api/
-    sed -i -e '1,16d' ../../pkg/handler/routes_v1.go
+  cd ${API_DIR}/cmd/kubermatic-api/
+  # disable swagger:meta comment
+  perl -0777 -i -p -e 's/(package handler)/\n\1/' ../../pkg/handler/routes_v1.go
 }
 trap cleanup EXIT SIGINT SIGTERM
 
-SWAGGER_META="// Kubermatic API.
-// Kubermatic API. This describes possible operations which can be made against the Kubermatic API.
-//
-//     Schemes: https
-//     Host: dev.kubermatic.io
-//
-//     Security:
-//     - api_key:
-//
-//     SecurityDefinitions:
-//     api_key:
-//          type: apiKey
-//          name: Authorization
-//          in: header
-//
-// swagger:meta
-"
 API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api"
 SWAGGER_FILE="swagger.json"
 TMP_SWAGGER="${SWAGGER_FILE}.tmp"
@@ -42,7 +38,11 @@ env "GOBIN=${TMP_DIR}/bin" go install
 export PATH="${TMP_DIR}/bin:${PATH}"
 cd ${API_DIR}/cmd/kubermatic-api/
 
-echo "${SWAGGER_META}$(cat ../../pkg/handler/routes_v1.go)" > ../../pkg/handler/routes_v1.go
+# enable the package-level swagger:meta comment
+perl -0777 -i -p -e 's/\n(package handler)/\1/' ../../pkg/handler/routes_v1.go
+
 swagger generate spec --scan-models -o ${TMP_SWAGGER}
+
+rm -r ../../pkg/test/e2e/api/utils/apiclient/
 mkdir -p ../../pkg/test/e2e/api/utils/apiclient/
 swagger generate client -q --skip-validation -f ${TMP_SWAGGER} -t ../../pkg/test/e2e/api/utils/apiclient/
