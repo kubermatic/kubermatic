@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- if ne .Values.dex.ingress.class "non-existent" }}
+{{ if ne .Values.dex.ingress.class "non-existent" }}
 apiVersion: extensions/v1beta1
 kind: Ingress
 metadata:
@@ -37,4 +37,4 @@ spec:
           servicePort: 5556
 {{ if .Values.dex.grpc }}{{ toYaml .Values.dex.grpc.ingress | trim | indent 6 }}
 {{- end }}
-{{- end }}
+{{ end }}

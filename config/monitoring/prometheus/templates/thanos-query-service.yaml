@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- if .Values.prometheus.thanos.enabled }}
+{{ if .Values.prometheus.thanos.enabled }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -32,4 +32,4 @@ spec:
   selector:
     app.kubernetes.io/name: thanos-query
     app.kubernetes.io/instance: {{ template "name" . }}
-{{- end }}
+{{ end }}

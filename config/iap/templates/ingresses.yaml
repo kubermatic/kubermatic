@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- range .Values.iap.deployments }}
+{{ range .Values.iap.deployments }}
 ---
 apiVersion: extensions/v1beta1
 kind: Ingress
@@ -50,4 +50,4 @@ spec:
         backend:
           serviceName: {{ .name }}-iap
           servicePort: {{ $.Values.iap.port }}
-{{- end -}}
+{{ end }}

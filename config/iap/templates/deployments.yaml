@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- range .Values.iap.deployments }}
+{{ range .Values.iap.deployments }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -86,4 +86,4 @@ spec:
 {{ (tpl (toYaml $.Values.iap.affinity) (merge $ .)) | fromYaml | toYaml | indent 8 }}
       tolerations:
 {{ toYaml $.Values.iap.tolerations | indent 8 }}
-{{- end }}
+{{ end }}

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- if .Values.alertmanager.migration.enabled }}
+{{ if .Values.alertmanager.migration.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:

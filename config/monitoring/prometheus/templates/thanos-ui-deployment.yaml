@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- if .Values.prometheus.thanos.enabled }}
+{{ if .Values.prometheus.thanos.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -64,4 +64,4 @@ spec:
 {{ (tpl (toYaml .Values.prometheus.thanos.ui.affinity) .) | fromYaml | toYaml | indent 8 }}
       tolerations:
 {{ toYaml .Values.prometheus.thanos.ui.tolerations | indent 8 }}
-{{- end }}
+{{ end }}

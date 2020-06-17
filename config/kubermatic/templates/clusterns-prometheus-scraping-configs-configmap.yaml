@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
+{{ if .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -20,4 +20,4 @@ metadata:
 data:
   _custom-scraping-configs.yaml: |
 {{ toYaml .Values.kubermatic.clusterNamespacePrometheus.scrapingConfigs | indent 4 }}
-{{- end}}
+{{ end}}

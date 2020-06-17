@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- if .Values.prometheus.thanos.enabled }}
+{{ if .Values.prometheus.thanos.enabled }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -98,4 +98,4 @@ spec:
     matchLabels:
       app.kubernetes.io/name: thanos-store
       app.kubernetes.io/instance: {{ template "name" . }}
-{{- end }}
+{{ end }}

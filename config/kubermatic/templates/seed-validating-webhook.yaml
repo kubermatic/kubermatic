@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{- $seedAdmissionControllerCA := genCA "seed-admission-controller" 3650 -}}
+{{ $seedAdmissionControllerCA := genCA "seed-admission-controller" 3650 -}}
 {{- $seedAdmissionControllerServingCN := "seed-webhook" -}}
 {{- $seedAdmissionControllerServingAlt1 := (printf "seed-webhook.%s" .Release.Namespace) -}}
 {{- $seedAdmissionControllerServingAlt2 := (printf "seed-webhook.%s.svc" .Release.Namespace) -}}
