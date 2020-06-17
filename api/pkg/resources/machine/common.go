@@ -209,11 +209,9 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 		config.TrustDevicePath = providerconfig.ConfigVarBool{Value: *dc.Spec.Openstack.TrustDevicePath}
 	}
 
-	if multiAZ := c.Spec.Features[kubermaticv1.ClusterFeatureOpenstackMultiAZ]; multiAZ {
-		// Use the nodeDeployment spec AvailabilityZone if set, otherwise we stick to the default from the datacenter
-		if nodeSpec.Cloud.Openstack.AvailabilityZone != "" {
-			config.AvailabilityZone = providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.AvailabilityZone}
-		}
+	// Use the nodeDeployment spec AvailabilityZone if set, otherwise we stick to the default from the datacenter
+	if nodeSpec.Cloud.Openstack.AvailabilityZone != "" {
+		config.AvailabilityZone = providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Openstack.AvailabilityZone}
 	}
 
 	config.Tags = map[string]string{}
