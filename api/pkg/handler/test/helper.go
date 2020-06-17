@@ -30,6 +30,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
 	ver "github.com/Masterminds/semver"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
@@ -37,12 +39,12 @@ import (
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac"
 	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
@@ -55,6 +57,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/informers"
 	kubernetesclientset "k8s.io/client-go/kubernetes"
 	fakerestclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -173,7 +177,9 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	allObjects = append(allObjects, kubermaticObjects...)
 	fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, allObjects...)
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
+	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 	kubernetesClient := fakerestclient.NewSimpleClientset(kubeObjects...)
+	kubernetesInformerFactory := informers.NewSharedInformerFactory(kubernetesClient, 10*time.Millisecond)
 	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 		return fakeClient, nil
 	}
@@ -279,6 +285,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	seedClientGetter := func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 		return fakeClient, nil
 	}
+
+	kubernetesInformerFactory.Start(wait.NeverStop)
+	kubernetesInformerFactory.WaitForCacheSync(wait.NeverStop)
+	kubermaticInformerFactory.Start(wait.NeverStop)
+	kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
@@ -463,9 +474,10 @@ func APIUserToKubermaticUser(user apiv1.User) *kubermaticv1.User {
 			DeletionTimestamp: deletionTimestamp,
 		},
 		Spec: kubermaticv1.UserSpec{
-			Name:  user.Name,
-			Email: user.Email,
-			ID:    user.ID,
+			Name:    user.Name,
+			Email:   user.Email,
+			ID:      user.ID,
+			IsAdmin: user.IsAdmin,
 		},
 	}
 }
@@ -568,6 +580,13 @@ func GenDefaultAPIUser() *apiv1.User {
 		},
 		Email: GenDefaultUser().Spec.Email,
 	}
+}
+
+// GenDefaultAdminAPIUser generates a default admin API user
+func GenDefaultAdminAPIUser() *apiv1.User {
+	user := GenDefaultAPIUser()
+	user.IsAdmin = true
+	return user
 }
 
 // GenDefaultUser generates a default user

@@ -210,7 +210,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		}
 	}()
 
-
 	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
 	privilegedSSHKeyProvider, err := kubernetesprovider.NewPrivilegedSSHKeyProvider(mgr.GetClient())
 	if err != nil {
