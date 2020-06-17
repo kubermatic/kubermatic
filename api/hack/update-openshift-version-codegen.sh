@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
@@ -21,8 +21,9 @@
 #
 # Also, executing this script requires access to the ocp quay repo.
 
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
+
+cd $(dirname $0)/..
+source hack/lib.sh
 
 go generate pkg/controller/openshift/resources/const.go

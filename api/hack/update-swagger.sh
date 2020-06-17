@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
@@ -14,14 +14,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
 
-API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api"
+cd $(dirname $0)/..
+source hack/lib.sh
+
+API_DIR="$(realpath .)"
 SWAGGER_FILE="swagger.json"
 
-cd ${API_DIR}/vendor/github.com/go-swagger/go-swagger/cmd/swagger
+echodate "Installing go-swagger"
+cd vendor/github.com/go-swagger/go-swagger/cmd/swagger
 go install
-cd ${API_DIR}/cmd/kubermatic-api/
+
+echodate "Generating swagger spec"
+cd "${API_DIR}/cmd/kubermatic-api/"
 swagger generate spec --scan-models -o ${SWAGGER_FILE}

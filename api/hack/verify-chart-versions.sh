@@ -21,15 +21,16 @@
 set -euo pipefail
 
 cd $(dirname $0)/../..
+source api/hack/lib.sh
 
-echo "Verifying Helm chart versions..."
+echodate "Verifying Helm chart versions..."
 
 charts=$(find config/ -name Chart.yaml | sort)
 exitCode=0
 
 [ -n "$charts" ] && while read -r chartYAML; do
   name="$(dirname $(echo "$chartYAML" | cut -d/ -f2-))"
-  echo "Verifying $name chart..."
+  echodate "Verifying $name chart..."
 
   # if this chart was touched in this PR
   if ! git diff --exit-code --no-patch "$PULL_BASE_SHA..." "$(dirname "$chartYAML")"; then
@@ -45,7 +46,7 @@ exitCode=0
     fi
 
     if [ "$oldVersion" = "$newVersion" ]; then
-      echo "Chart $name was modified but its version ($oldVersion) was not changed. Please adjust $chartYAML."
+      echodate "Chart $name was modified but its version ($oldVersion) was not changed. Please adjust $chartYAML."
       exitCode=1
     fi
   fi

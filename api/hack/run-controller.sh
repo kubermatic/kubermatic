@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -o errexit
-set -o nounset
-set -o pipefail
-set -x
+set -exuo pipefail
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
 # Deploy a user-cluster/ipam-controller for which we actuallly

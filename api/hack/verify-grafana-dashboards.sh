@@ -17,7 +17,7 @@
 set -euo pipefail
 
 cd $(dirname $0)/../..
-source ./api/hack/lib.sh
+source api/hack/lib.sh
 
 cd config/monitoring/grafana
 

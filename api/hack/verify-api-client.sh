@@ -14,37 +14,37 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -o errexit
-set -o nounset
-set -o pipefail
+set -euo pipefail
+
+cd $(dirname $0)/..
+source hack/lib.sh
 
 function cleanup() {
-    if [[ -n "${TMP_DIFFROOT:-}" ]]; then
-        rm -rf "${TMP_DIFFROOT}"
-    fi
+  if [[ -n "${TMP_DIFFROOT:-}" ]]; then
+    rm -rf "${TMP_DIFFROOT}"
+  fi
 }
 trap cleanup EXIT SIGINT SIGTERM
 
-SCRIPT_ROOT=$(dirname "${BASH_SOURCE}")/..
-API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api"
+API_DIR="$(realpath .)"
 DIFFROOT="${API_DIR}/pkg/test/e2e/api/utils/apiclient"
 
 TMP_DIFFROOT=$(mktemp -d)
 
 cp -a "${DIFFROOT}"/* "${TMP_DIFFROOT}"
 
-"${SCRIPT_ROOT}/hack/gen-api-client.sh" &>/dev/null
+echodate "Generating API client"
+./hack/gen-api-client.sh &>/dev/null
 
-echo "diffing ${DIFFROOT} against freshly generated api client"
+echodate "Diffing ${DIFFROOT} against freshly generated api client"
 ret=0
 diff -Naupr "${DIFFROOT}" "${TMP_DIFFROOT}" || ret=$?
 cp -a "${TMP_DIFFROOT}"/client "${DIFFROOT}"
 cp -a "${TMP_DIFFROOT}"/models "${DIFFROOT}"
 
-if [[ $ret -eq 0 ]]
-then
-    echo "${DIFFROOT} up to date."
+if [[ $ret -eq 0 ]]; then
+  echodate "${DIFFROOT} up to date."
 else
-    echo "${DIFFROOT} is out of date. Please run hack/gen-api-client.sh"
-    exit 1
+  echodate "${DIFFROOT} is out of date. Please run hack/gen-api-client.sh"
+  exit 1
 fi
