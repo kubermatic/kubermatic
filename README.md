@@ -1,27 +1,51 @@
-# Kubermatic | Container Engine
+# Kubermatic Kubernetes Platform
 
-Scale apps one click in cloud or your own datacenter.
-Deploy, manage and run multiple Kubernetes clusters with our production-proven platform.
-On your preferred infrastructure.
 
-# Documentation
+## Overview / User Guides
 
-This covers the existing, developer focusing, documentation:
+Kubermatic Kubernetes Platform is in an open source project to centrally manage the global automation of thousands of Kubernetes clusters across multicloud, on-prem and edge with unparalleled density and resilience.
 
-- General
-  - [API docs](docs/api-docs.md)
-  - [Releasing kubermatic](docs/release-process.md)
-  - [datacenters.yaml](docs/datacenters.md)
-- Development guidelines
-  - [Code style](docs/code-style.md)
-  - [Logging guideline](docs/logging.md)
-  - [Events guideline](docs/events.md)
-- [Proposals](docs/proposals)
-- [Things that break](docs/things-that-break.md)
-- [Resource handling](docs/resource-handling.md)
+All user documentation is available at the [Kubermatic Kubernetes Platform docs website][21].
 
-# Repository layout
+## Editions
+There are two editions of Kubermatic Kubernetes Platform:
 
+Kubermatic Kubernetes Platform Community Edition (CE) is available freely under the Apache License, Version 2.0.
+Kubermatic Kubernetes Platform Enterprise Edition (EE) includes premium features that are most useful for organizations with large-scale Kubernetes installations with more than 50 clusters. To access the Enterprise Edition and get official support please become a subscriber.
+
+## Licensing
+See the [LICENSE](LICENSE) file for licensing information as it pertains to files in this repository.
+
+## Installation
+
+We strongly recommend that you use an official release of Kubermatic Kubernetes Platform. Follow the instructions under the **Installation** section of [our documentation][21] to get started.
+
+_The code and sample YAML files in the master branch of the kubermatic repository are under active development and are not guaranteed to be stable. Use them at your own risk!_
+
+## More information
+
+[The documentation][21] provides a getting started guide, plus information about building from source, architecture, extending kubermatic, and more.
+
+Please use the version selector at the top of the site to ensure you are using the appropriate documentation for your version of kubermatic.
+
+## Troubleshooting
+
+If you encounter issues [file an issue][1] or talk to us on the [#kubermatic channel][12] on the [Kubermatic Slack][15].
+
+## Contributing
+
+Thanks for taking the time to join our community and start contributing!
+
+Feedback and discussion are available on [the mailing list][11].
+
+### Before you start
+
+* Please familiarize yourself with the [Code of Conduct][4] before contributing.
+* See [CONTRIBUTING.md][2] for instructions on the developer certificate of origin that we require.
+* Read how [we're using ZenHub][13] for project and roadmap planning
+
+
+#### Repository layout
 ```
 ├── addons            # Default Kubernetes addons
 ├── api 							# All the code. If you are a dev, you can initially ignore everything else
@@ -33,8 +57,25 @@ This covers the existing, developer focusing, documentation:
 ├── OWNERS
 ├── OWNERS_ALIASES
 ├── Procfile
-└── README.md
+└── README.md 
 ```
 
+### Pull requests
 
-Customer facing documentation can be found at https://github.com/kubermatic/docs which gets published at https://docs.kubermatic.io
+* We welcome pull requests. Feel free to dig through the [issues][1] and jump in.
+
+## Changelog
+
+See [the list of releases][3] to find out about feature changes.
+
+[1]: https://github.com/kubermatic/kubermatic/issues
+[2]: https://github.com/kubermatic/kubermatic/blob/master/CONTRIBUTING.md
+[3]: https://github.com/kubermatic/kubermatic/releases
+[4]: https://github.com/kubermatic/kubermatic/blob/master/CODE_OF_CONDUCT.md
+
+[11]: https://groups.google.com/forum/#!forum/kubermatic-dev
+[12]: https://kubermatic.slack.com/messages/kubermatic
+[13]: https://github.com/kubermatic/kubermatic/blob/master/Zenhub.md
+[15]: http://slack.kubermatic.io/
+
+[21]: https://docs.kubermatic.com/kubermatic/
