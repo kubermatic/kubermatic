@@ -1,4 +1,4 @@
-# Copyright YEAR The Kubermatic Kubernetes Platform contributors.
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -139,9 +139,6 @@ check-dependencies:
 	dep version || go get -u github.com/golang/dep/cmd/dep
 	dep check
 	git diff --exit-code
-
-license-validation:
-	wwhrd check -f ../allowed_licensed.yaml
 
 gen-api-client:
 	./hack/gen-api-client.sh
