@@ -24,6 +24,7 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
+	osavailabilityzones "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/availabilityzones"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
 	ostokens "github.com/gophercloud/gophercloud/openstack/identity/v3/tokens"
@@ -491,4 +492,18 @@ func getAllNetworkPorts(netClient *gophercloud.ServiceClient, networkID string) 
 	}
 
 	return allPorts, nil
+}
+
+func getAvailabilityZones(computeClient *gophercloud.ServiceClient) ([]osavailabilityzones.AvailabilityZone, error) {
+	allPages, err := osavailabilityzones.List(computeClient).AllPages()
+	if err != nil {
+		return nil, err
+	}
+
+	availabilityZones, err := osavailabilityzones.ExtractAvailabilityZones(allPages)
+	if err != nil {
+		return nil, err
+	}
+
+	return availabilityZones, nil
 }

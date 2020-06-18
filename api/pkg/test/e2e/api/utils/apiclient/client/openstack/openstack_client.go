@@ -25,6 +25,10 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ListOpenstackAvailabilityZones(params *ListOpenstackAvailabilityZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackAvailabilityZonesOK, error)
+
+	ListOpenstackAvailabilityZonesNoCredentials(params *ListOpenstackAvailabilityZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackAvailabilityZonesNoCredentialsOK, error)
+
 	ListOpenstackNetworks(params *ListOpenstackNetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackNetworksOK, error)
 
 	ListOpenstackNetworksNoCredentials(params *ListOpenstackNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackNetworksNoCredentialsOK, error)
@@ -46,6 +50,74 @@ type ClientService interface {
 	ListOpenstackTenantsNoCredentials(params *ListOpenstackTenantsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackTenantsNoCredentialsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  ListOpenstackAvailabilityZones Lists availability zones from openstack
+*/
+func (a *Client) ListOpenstackAvailabilityZones(params *ListOpenstackAvailabilityZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackAvailabilityZonesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListOpenstackAvailabilityZonesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listOpenstackAvailabilityZones",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/openstack/availabilityzones",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListOpenstackAvailabilityZonesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListOpenstackAvailabilityZonesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListOpenstackAvailabilityZonesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListOpenstackAvailabilityZonesNoCredentials Lists availability zones from openstack
+*/
+func (a *Client) ListOpenstackAvailabilityZonesNoCredentials(params *ListOpenstackAvailabilityZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackAvailabilityZonesNoCredentialsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListOpenstackAvailabilityZonesNoCredentialsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listOpenstackAvailabilityZonesNoCredentials",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/availabilityzones",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListOpenstackAvailabilityZonesNoCredentialsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListOpenstackAvailabilityZonesNoCredentialsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListOpenstackAvailabilityZonesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
