@@ -56,6 +56,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -409,6 +410,10 @@ func main() {
 
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
 		log.Fatalw("Failed to add clusterv1alpha1 to scheme", zap.Error(err))
+	}
+
+	if err := metricsv1beta1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		log.Fatalw("Failed to add metrics v1beta1 to scheme", zap.Error(err))
 	}
 
 	seedClusterClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
