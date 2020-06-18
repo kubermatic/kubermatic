@@ -17,12 +17,9 @@ limitations under the License.
 package etcd
 
 import (
-	"bytes"
+	"errors"
 	"fmt"
 	"strconv"
-	"text/template"
-
-	"github.com/Masterminds/sprig"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -38,11 +35,16 @@ const (
 	name    = "etcd"
 	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
 	// ImageTag defines the image tag to use for the etcd image
-	imageTagV33 = "v3.3.18"
-	imageTagV34 = "v3.4.3"
+	etcdImageTagV33 = "v3.3.18"
+	etcdImageTagV34 = "v3.4.3"
 )
 
 var (
+	baseTags = map[string]string{
+		etcdImageTagV33: "v33",
+		etcdImageTagV34: "v34",
+	}
+
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
 		name: {
 			Requests: corev1.ResourceList{
@@ -93,17 +95,17 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				Name:   name,
 				Labels: podLabels,
 			}
-
-			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks)
+			image, err := getLauncherImage(data)
 			if err != nil {
 				return nil, err
 			}
-
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    resources.EtcdStatefulSetName,
-					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
-					Command: etcdStartCmd,
+					Name: resources.EtcdStatefulSetName,
+
+					Image:           image,
+					ImagePullPolicy: corev1.PullAlways,
+					Command:         []string{"/usr/local/bin/etcd-launcher"},
 					Env: []corev1.EnvVar{
 						{
 							Name: "POD_NAME",
@@ -299,74 +301,19 @@ func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 	return resources.BaseAppLabels(resources.EtcdStatefulSetName, additionalLabels)
 }
 
-type commandTplData struct {
-	ServiceName           string
-	Namespace             string
-	Token                 string
-	DataDir               string
-	EnableCorruptionCheck bool
-}
-
-func getEtcdCommand(name, namespace string, enableCorruptionCheck bool) ([]string, error) {
-	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(etcdStartCommandTpl)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
-	}
-
-	tplData := commandTplData{
-		ServiceName:           resources.EtcdServiceName,
-		Token:                 name,
-		Namespace:             namespace,
-		DataDir:               dataDir,
-		EnableCorruptionCheck: enableCorruptionCheck,
-	}
-
-	buf := bytes.Buffer{}
-	if err := tpl.Execute(&buf, tplData); err != nil {
-		return nil, err
-	}
-
-	return []string{
-		"/bin/sh",
-		"-ec",
-		buf.String(),
-	}, nil
-}
-
-const (
-	etcdStartCommandTpl = `
-export INITIAL_STATE="new"
-export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-
-echo "initial-state: ${INITIAL_STATE}"
-echo "initial-cluster: ${INITIAL_CLUSTER}"
-
-exec /usr/local/bin/etcd \
-    --name=${POD_NAME} \
-    --data-dir="{{ .DataDir }}" \
-    --initial-cluster=${INITIAL_CLUSTER} \
-    --initial-cluster-token="{{ .Token }}" \
-    --initial-cluster-state=${INITIAL_STATE} \
-    --advertise-client-urls "https://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379,https://${POD_IP}:2379" \
-    --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
-    --listen-peer-urls "http://${POD_IP}:2380" \
-    --initial-advertise-peer-urls "http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
-    --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
-    --client-cert-auth \
-    --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
-    --key-file /etc/etcd/pki/tls/etcd-tls.key \
-{{- if .EnableCorruptionCheck }}
-    --experimental-initial-corrupt-check=true \
-    --experimental-corrupt-check-time=10m \
-{{- end }}
-    --auto-compaction-retention=8
-`
-)
-
 // ImageTag returns the correct etcd image tag for a given Cluster
 func ImageTag(c *kubermaticv1.Cluster) string {
 	if c.IsOpenshift() || c.Spec.Version.Minor() < 17 {
-		return imageTagV33
+		return etcdImageTagV33
 	}
-	return imageTagV34
+	return etcdImageTagV34
+}
+
+func getLauncherImage(data etcdStatefulSetCreatorData) (string, error) {
+	tag := ImageTag(data.Cluster())
+	baseTag, ok := baseTags[tag]
+	if !ok {
+		return "", errors.New("unknown etcd tag")
+	}
+	return data.ImageRegistry(resources.RegistryQuay) + "/etcd-launcher-" + baseTag + ":" + tag, nil
 }
