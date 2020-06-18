@@ -2468,6 +2468,11 @@ func (in *UserSpec) DeepCopyInto(out *UserSpec) {
 		*out = new(UserSettings)
 		**out = **in
 	}
+	if in.TokenBlackListReference != nil {
+		in, out := &in.TokenBlackListReference, &out.TokenBlackListReference
+		*out = new(types.GlobalSecretKeySelector)
+		**out = **in
+	}
 	return
 }
 
