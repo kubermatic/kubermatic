@@ -210,17 +210,13 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
-      - image: frapposelli/wwhrd:v0.3.0
+      - image: quay.io/kubermatic/wwhrd:0.3.0-0
         command:
-        - make
-        args:
-        - -C
-        - api
-        - license-validation
-      resources:
-        requests:
-          memory: 512Mi
-          cpu: 1
+        - ./api/hack/verify-licenses.sh
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 1
 
   - name: pre-kubermatic-prometheus-rules-validation
     run_if_changed: "config/monitoring"
