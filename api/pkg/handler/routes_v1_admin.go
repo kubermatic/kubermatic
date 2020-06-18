@@ -101,7 +101,7 @@ func (r Routing) RegisterV1Admin(mux *mux.Router) {
 func (r Routing) getKubermaticSettings() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.KubermaticSettingsEndpoint(r.settingsProvider)),
 		decodeEmptyReq,
@@ -146,7 +146,7 @@ func (r Routing) getKubermaticCustomLinks() http.Handler {
 func (r Routing) patchKubermaticSettings() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.UpdateKubermaticSettingsEndpoint(r.userInfoGetter, r.settingsProvider)),
 		admin.DecodePatchKubermaticSettingsReq,
@@ -170,7 +170,7 @@ func (r Routing) patchKubermaticSettings() http.Handler {
 func (r Routing) getAdmins() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.GetAdminEndpoint(r.userInfoGetter, r.adminProvider)),
 		decodeEmptyReq,
@@ -198,7 +198,7 @@ func (r Routing) getAdmins() http.Handler {
 func (r Routing) setAdmin() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.SetAdminEndpoint(r.userInfoGetter, r.adminProvider)),
 		admin.DecodeSetAdminReq,
@@ -222,7 +222,7 @@ func (r Routing) setAdmin() http.Handler {
 func (r Routing) listAdmissionPlugins() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.ListAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
 		decodeEmptyReq,
@@ -246,7 +246,7 @@ func (r Routing) listAdmissionPlugins() http.Handler {
 func (r Routing) getAdmissionPlugin() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.GetAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
 		admin.DecodeAdmissionPluginReq,
@@ -270,7 +270,7 @@ func (r Routing) getAdmissionPlugin() http.Handler {
 func (r Routing) deleteAdmissionPlugin() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.DeleteAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
 		admin.DecodeAdmissionPluginReq,
@@ -297,7 +297,7 @@ func (r Routing) deleteAdmissionPlugin() http.Handler {
 func (r Routing) updateAdmissionPlugin() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.UpdateAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
 		admin.DecodeUpdateAdmissionPluginReq,
@@ -321,7 +321,7 @@ func (r Routing) updateAdmissionPlugin() http.Handler {
 func (r Routing) listSeeds() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.ListSeedEndpoint(r.userInfoGetter, r.seedsGetter)),
 		decodeEmptyReq,
@@ -345,7 +345,7 @@ func (r Routing) listSeeds() http.Handler {
 func (r Routing) getSeed() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.GetSeedEndpoint(r.userInfoGetter, r.seedsGetter)),
 		admin.DecodeSeedReq,
@@ -372,7 +372,7 @@ func (r Routing) getSeed() http.Handler {
 func (r Routing) updateSeed() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.UpdateSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		admin.DecodeUpdateSeedReq,
@@ -396,7 +396,7 @@ func (r Routing) updateSeed() http.Handler {
 func (r Routing) deleteSeed() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.DeleteSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		admin.DecodeSeedReq,
