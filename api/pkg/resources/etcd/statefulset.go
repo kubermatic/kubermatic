@@ -302,6 +302,7 @@ func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 }
 
 // ImageTag returns the correct etcd image tag for a given Cluster
+// TODO: Other functions use this function, swtich them to getLauncherImage
 func ImageTag(c *kubermaticv1.Cluster) string {
 	if c.IsOpenshift() || c.Spec.Version.Minor() < 17 {
 		return etcdImageTagV33
@@ -310,10 +311,10 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 }
 
 func getLauncherImage(data etcdStatefulSetCreatorData) (string, error) {
-	tag := ImageTag(data.Cluster())
-	baseTag, ok := baseTags[tag]
+	etcdTag := ImageTag(data.Cluster())
+	baseTag, ok := baseTags[etcdTag]
 	if !ok {
 		return "", errors.New("unknown etcd tag")
 	}
-	return data.ImageRegistry(resources.RegistryQuay) + "/etcd-launcher-" + baseTag + ":" + tag, nil
+	return data.ImageRegistry(resources.RegistryQuay) + "/etcd-launcher-" + baseTag + ":" + resources.KUBERMATICCOMMIT, nil
 }
