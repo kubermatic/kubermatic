@@ -17,6 +17,9 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -42,11 +45,12 @@ type User struct {
 
 // UserSpec specifies a user
 type UserSpec struct {
-	ID       string        `json:"id"`
-	Name     string        `json:"name"`
-	Email    string        `json:"email"`
-	IsAdmin  bool          `json:"admin"`
-	Settings *UserSettings `json:"settings,omitempty"`
+	ID                      string                                  `json:"id"`
+	Name                    string                                  `json:"name"`
+	Email                   string                                  `json:"email"`
+	IsAdmin                 bool                                    `json:"admin"`
+	Settings                *UserSettings                           `json:"settings,omitempty"`
+	TokenBlackListReference *providerconfig.GlobalSecretKeySelector `json:"tokenBlackListReference,omitempty"`
 }
 
 // UserSettings represent an user settings
@@ -74,4 +78,8 @@ type UserList struct {
 type ProjectGroup struct {
 	Name  string `json:"name"`
 	Group string `json:"group"`
+}
+
+func (u *User) GetTokenBlackListSecretName() string {
+	return fmt.Sprintf("token-blacklist-%s", u.Name)
 }
