@@ -592,6 +592,13 @@ type OpenstackSecurityGroup struct {
 	Name string `json:"name"`
 }
 
+// OpenstackAvailabilityZone is the object representing a openstack availability zone.
+// swagger:model OpenstackAvailabilityZone
+type OpenstackAvailabilityZone struct {
+	// Name is the name of the availability zone
+	Name string `json:"name"`
+}
+
 // VSphereNetwork is the object representing a vsphere network.
 // swagger:model VSphereNetwork
 type VSphereNetwork struct {

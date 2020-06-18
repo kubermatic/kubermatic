@@ -24,6 +24,7 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	goopenstack "github.com/gophercloud/gophercloud/openstack"
+	osavailabilityzones "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/availabilityzones"
 	osflavors "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors"
 	osprojects "github.com/gophercloud/gophercloud/openstack/identity/v3/projects"
 	ossecuritygroups "github.com/gophercloud/gophercloud/openstack/networking/v2/extensions/security/groups"
@@ -438,6 +439,20 @@ func GetSecurityGroups(username, password, domain, tenant, tenantID, authURL, re
 	return secGroups, nil
 }
 
+// GetAvailabilityZones lists availability zones for the given CloudSpec.DatacenterName and OpenstackSpec.Region
+func GetAvailabilityZones(username, password, domain, tenant, tenantID, authURL, region string) ([]osavailabilityzones.AvailabilityZone, error) {
+	computeClient, err := getComputeClient(username, password, domain, tenant, tenantID, authURL, region)
+	if err != nil {
+		return nil, err
+	}
+	availabilityZones, err := getAvailabilityZones(computeClient)
+	if err != nil {
+		return nil, err
+	}
+
+	return availabilityZones, nil
+}
+
 func getAuthClient(username, password, domain, tenant, tenantID, authURL string) (*gophercloud.ProviderClient, error) {
 	opts := gophercloud.AuthOptions{
 		IdentityEndpoint: authURL,
@@ -468,6 +483,29 @@ func getNetClient(username, password, domain, tenant, tenantID, authURL, region 
 		//lint:ignore S1020 false positive, we must do the errcheck regardless of if its an ErrEndpointNotFound
 		if _, ok := err.(*gophercloud.ErrEndpointNotFound); ok {
 			serviceClient, err = goopenstack.NewNetworkV2(authClient, gophercloud.EndpointOpts{})
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	}
+	return serviceClient, err
+}
+
+func getComputeClient(username, password, domain, tenant, tenantID, authURL, region string) (*gophercloud.ServiceClient, error) {
+	authClient, err := getAuthClient(username, password, domain, tenant, tenantID, authURL)
+	if err != nil {
+		return nil, err
+	}
+
+	serviceClient, err := goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{Region: region})
+	if err != nil {
+		// this is special case for  services that span only one region.
+		//nolint:gosimple
+		//lint:ignore S1020 false positive, we must do the errcheck regardless of if its an ErrEndpointNotFound
+		if _, ok := err.(*gophercloud.ErrEndpointNotFound); ok {
+			serviceClient, err = goopenstack.NewComputeV2(authClient, gophercloud.EndpointOpts{})
 			if err != nil {
 				return nil, err
 			}

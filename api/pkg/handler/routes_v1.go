@@ -151,6 +151,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listOpenstackSubnets())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/openstack/availabilityzones").
+		Handler(r.listOpenstackAvailabilityZones())
+
+	mux.Methods(http.MethodGet).
 		Path("/version").
 		Handler(r.getKubermaticVersion())
 
@@ -508,6 +512,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/subnets").
 		Handler(r.listOpenstackSubnetsNoCredentials())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/availabilityzones").
+		Handler(r.listOpenstackAvailabilityZonesNoCredentials())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/vsphere/networks").
@@ -1169,6 +1177,28 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackSecurityGroupEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeOpenstackReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/openstack/availabilityzones openstack listOpenstackAvailabilityZones
+//
+// Lists availability zones from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackAvailabilityZone
+func (r Routing) listOpenstackAvailabilityZones() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+		)(provider.OpenstackAvailabilityZoneEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeOpenstackReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
@@ -2750,6 +2780,30 @@ func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.OpenstackSubnetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackSubnetNoCredentialsReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/openstack/availabilityzones openstack listOpenstackAvailabilityZonesNoCredentials
+//
+// Lists availability zones from openstack
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []OpenstackAvailabilityZone
+func (r Routing) listOpenstackAvailabilityZonesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.OpenstackAvailabilityZoneWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeOpenstackNoCredentialsReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)
