@@ -36,6 +36,8 @@ if [ "$KUBERMATIC_EDITION" != "ce" ]; then
   REPOSUFFIX="-$KUBERMATIC_EDITION"
 fi
 
+ETCD_TAGS=$(getEtcdTags)
+
 make build
 docker build -t quay.io/kubermatic/kubermatic${REPOSUFFIX}:${1} .
 cd cmd/nodeport-proxy && export TAG=${1} && make docker && unset TAG && cd -
@@ -43,6 +45,11 @@ cd cmd/kubeletdnat-controller && export TAG=${1} && make docker && unset TAG && 
 docker build -t "quay.io/kubermatic/addons:${1}" ../addons
 docker build -t "quay.io/kubermatic/openshift-addons:${1}" ../openshift_addons
 cd cmd/user-ssh-keys-agent && export TAG=${1} && make docker && unset TAG && cd -
+
+for ETCD_TAG in $ETCD_TAGS; do
+  BASE_TAG=$(echo ${ETCD_TAG} | cut -d\. -f 1,2| tr -d .)
+  docker build --build-arg ECTD_VERSION=${ETCD_TAG} -t quay.io/kubermatic/etcd-launcher-${BASE_TAG}:${1} -f ./cmd/etcd-launcher/Dockerfile .
+done
 
 # keep a mirror of the EE version in the old repo
 if [ "$KUBERMATIC_EDITION" == "ee" ]; then
@@ -62,6 +69,7 @@ for TAG in "$@"; do
   docker tag quay.io/kubermatic/openshift-addons:${1} quay.io/kubermatic/openshift-addons:${TAG}
   docker tag quay.io/kubermatic/user-ssh-keys-agent:${1} quay.io/kubermatic/user-ssh-keys-agent:${TAG}
 
+
   docker push quay.io/kubermatic/kubermatic${REPOSUFFIX}:${TAG}
   docker push quay.io/kubermatic/nodeport-proxy:${TAG}
   docker push quay.io/kubermatic/kubeletdnat-controller:${TAG}
@@ -69,8 +77,16 @@ for TAG in "$@"; do
   docker push quay.io/kubermatic/openshift-addons:${TAG}
   docker push quay.io/kubermatic/user-ssh-keys-agent:${TAG}
 
+  for ETCD_TAG in $ETCD_TAGS; do
+    BASE_TAG=$(echo ${ETCD_TAG} | cut -d\. -f 1,2| tr -d .)
+    docker tag quay.io/kubermatic/etcd-launcher-${BASE_TAG}:${1} quay.io/kubermatic/etcd-launcher-${BASE_TAG}:${TAG}
+    docker push quay.io/kubermatic/etcd-launcher-${BASE_TAG}:${TAG} 
+  done
+
   if [ "$KUBERMATIC_EDITION" == "ee" ]; then
     docker tag quay.io/kubermatic/api:${1} quay.io/kubermatic/api:${TAG}
     docker push quay.io/kubermatic/api:${TAG}
   fi
+
+
 done

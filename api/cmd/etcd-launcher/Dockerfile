@@ -1,5 +1,5 @@
-# TODO: Other etcd versions
-FROM gcr.io/etcd-development/etcd:v3.4.3
+ARG ECTD_VERSION=v3.4.3
+FROM gcr.io/etcd-development/etcd:$ECTD_VERSION
 LABEL maintainer="support@loodse.com"
 
-COPY etcd-launcher /usr/local/bin/
+COPY ./_build/etcd-launcher /usr/local/bin/
