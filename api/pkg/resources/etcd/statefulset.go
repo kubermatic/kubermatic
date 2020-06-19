@@ -32,8 +32,7 @@ import (
 )
 
 const (
-	name    = "etcd"
-	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
+	name = "etcd"
 	// ImageTag defines the image tag to use for the etcd image
 	etcdImageTagV33 = "v3.3.18"
 	etcdImageTagV34 = "v3.4.3"
@@ -316,5 +315,5 @@ func getLauncherImage(data etcdStatefulSetCreatorData) (string, error) {
 	if !ok {
 		return "", errors.New("unknown etcd tag")
 	}
-	return data.ImageRegistry(resources.RegistryQuay) + "/etcd-launcher-" + baseTag + ":" + resources.KUBERMATICCOMMIT, nil
+	return data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/etcd-launcher-" + baseTag + ":" + resources.KUBERMATICCOMMIT, nil
 }
