@@ -189,10 +189,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 								Command: []string{
 									"/usr/local/bin/etcdctl",
 									"--command-timeout", "10s",
-									"--cacert", "/etc/etcd/pki/ca/ca.crt",
-									"--cert", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
-									"--key", "/etc/etcd/pki/client/apiserver-etcd-client.key",
-									"--endpoints", "https://127.0.0.1:2379", "endpoint", "health",
+									"endpoint", "health",
 								},
 							},
 						},
