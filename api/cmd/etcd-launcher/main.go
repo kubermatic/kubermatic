@@ -62,14 +62,14 @@ func initialMemberList(n int, namespace string) string {
 }
 
 func getConfigFromEnv() (*envConfig, error) {
+	var err error
+	var ok bool
+
 	config := &envConfig{}
-	if n := os.Getenv("NAMESPACE"); n != "" {
-		config.namespace = n
-	} else {
+	if config.namespace, ok = os.LookupEnv("NAMESPACE"); !ok || config.namespace == "" {
 		return nil, errors.New("NAMESPACE is not set")
 	}
 
-	var err error
 	config.clusterSize = defaultClusterSize
 	if s := os.Getenv("ECTD_CLUSTER_SIZE"); s != "" {
 		if config.clusterSize, err = strconv.Atoi(s); err != nil {
@@ -80,24 +80,20 @@ func getConfigFromEnv() (*envConfig, error) {
 		}
 	}
 
-	if p := os.Getenv("POD_NAME"); p != "" {
-		config.podName = p
-	} else {
+	if config.podName, ok = os.LookupEnv("POD_NAME"); !ok || config.podName == "" {
 		return nil, errors.New("POD_NAME is not set")
 	}
 
-	if i := os.Getenv("POD_IP"); i != "" {
-		config.podIP = i
-	} else {
+	if config.podIP, ok = os.LookupEnv("POD_IP"); !ok || config.podIP == "" {
 		return nil, errors.New("POD_IP is not set")
 	}
+
 	config.etcdctlAPIVersion = defaultEtcdctlAPIVersion
 	if v := os.Getenv("ETCDCTL_API"); v == "2" || v == "3" {
 		config.etcdctlAPIVersion = v
 	}
-	if t := os.Getenv("TOKEN"); t != "" {
-		config.token = t
-	} else {
+
+	if config.token, ok = os.LookupEnv("TOKEN"); !ok || config.token == "" {
 		return nil, errors.New("TOEKN is not set")
 	}
 
