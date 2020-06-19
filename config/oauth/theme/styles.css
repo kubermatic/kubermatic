@@ -149,6 +149,7 @@
 .dex-btn-icon--oidc {
 	background-color: white;
 	background-image: url('../static/img/google-icon.svg');
+	background-size: 24px;
 }
 
 .dex-btn-text {
