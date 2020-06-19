@@ -17,11 +17,9 @@ limitations under the License.
 package etcd
 
 import (
-	"bytes"
+	"errors"
 	"fmt"
-	"text/template"
-
-	"github.com/Masterminds/sprig"
+	"strconv"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
@@ -34,14 +32,18 @@ import (
 )
 
 const (
-	name    = "etcd"
-	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
+	name = "etcd"
 	// ImageTag defines the image tag to use for the etcd image
-	imageTagV33 = "v3.3.18"
-	imageTagV34 = "v3.4.3"
+	etcdImageTagV33 = "v3.3.18"
+	etcdImageTagV34 = "v3.4.3"
 )
 
 var (
+	baseTags = map[string]string{
+		etcdImageTagV33: "v33",
+		etcdImageTagV34: "v34",
+	}
+
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
 		name: {
 			Requests: corev1.ResourceList{
@@ -59,7 +61,6 @@ var (
 type etcdStatefulSetCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	HasEtcdOperatorService() (bool, error)
 	ImageRegistry(string) string
 	EtcdDiskSize() resource.Quantity
 	GetClusterRef() metav1.OwnerReference
@@ -93,24 +94,17 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				Name:   name,
 				Labels: podLabels,
 			}
-
-			// For migration purpose.
-			// We switched from the etcd-operator to a simple etcd-StatefulSet. Therefore we need to migrate the data.
-			migrate, err := data.HasEtcdOperatorService()
-			if err != nil {
-				return nil, fmt.Errorf("failed to check if we need to include the etcd-operator migration code: %v", err)
-			}
-
-			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, migrate, enableDataCorruptionChecks)
+			image, err := getLauncherImage(data)
 			if err != nil {
 				return nil, err
 			}
-
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
-					Name:    resources.EtcdStatefulSetName,
-					Image:   data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
-					Command: etcdStartCmd,
+					Name: resources.EtcdStatefulSetName,
+
+					Image:           image,
+					ImagePullPolicy: corev1.PullAlways,
+					Command:         []string{"/usr/local/bin/etcd-launcher"},
 					Env: []corev1.EnvVar{
 						{
 							Name: "POD_NAME",
@@ -131,8 +125,45 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							},
 						},
 						{
+							Name: "NAMESPACE",
+							ValueFrom: &corev1.EnvVarSource{
+								FieldRef: &corev1.ObjectFieldSelector{
+									APIVersion: "v1",
+									FieldPath:  "metadata.namespace",
+								},
+							},
+						},
+						{
+							Name:  "TOKEN",
+							Value: data.Cluster().Name,
+						},
+						{
+							Name:  "ECTD_CLUSTER_SIZE",
+							Value: strconv.Itoa(resources.EtcdClusterSize),
+						},
+						{
+							Name:  "ENABLE_CORRUPTION_CHECK",
+							Value: strconv.FormatBool(enableDataCorruptionChecks),
+						},
+						{
 							Name:  "ETCDCTL_API",
 							Value: "3",
+						},
+						{
+							Name:  "ETCDCTL_CACERT",
+							Value: "/etc/etcd/pki/ca/ca.crt",
+						},
+						{
+							Name:  "ETCDCTL_CERT",
+							Value: "/etc/etcd/pki/client/apiserver-etcd-client.crt",
+						},
+						{
+							Name:  "ETCDCTL_KEY",
+							Value: "/etc/etcd/pki/client/apiserver-etcd-client.key",
+						},
+						{
+							Name:  "ETCDCTL_ENDPOINTS",
+							Value: "https://127.0.0.1:2379",
 						},
 					},
 					Ports: []corev1.ContainerPort{
@@ -158,10 +189,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 								Command: []string{
 									"/usr/local/bin/etcdctl",
 									"--command-timeout", "10s",
-									"--cacert", "/etc/etcd/pki/ca/ca.crt",
-									"--cert", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
-									"--key", "/etc/etcd/pki/client/apiserver-etcd-client.key",
-									"--endpoints", "https://127.0.0.1:2379", "endpoint", "health",
+									"endpoint", "health",
 								},
 							},
 						},
@@ -269,127 +297,20 @@ func getBasePodLabels(cluster *kubermaticv1.Cluster) map[string]string {
 	return resources.BaseAppLabels(resources.EtcdStatefulSetName, additionalLabels)
 }
 
-type commandTplData struct {
-	ServiceName           string
-	Namespace             string
-	Token                 string
-	DataDir               string
-	Migrate               bool
-	EnableCorruptionCheck bool
-}
-
-func getEtcdCommand(name, namespace string, migrate, enableCorruptionCheck bool) ([]string, error) {
-	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(etcdStartCommandTpl)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
-	}
-
-	tplData := commandTplData{
-		ServiceName:           resources.EtcdServiceName,
-		Token:                 name,
-		Namespace:             namespace,
-		DataDir:               dataDir,
-		Migrate:               migrate,
-		EnableCorruptionCheck: enableCorruptionCheck,
-	}
-
-	buf := bytes.Buffer{}
-	if err := tpl.Execute(&buf, tplData); err != nil {
-		return nil, err
-	}
-
-	return []string{
-		"/bin/sh",
-		"-ec",
-		buf.String(),
-	}, nil
-}
-
-const (
-	etcdStartCommandTpl = `export MASTER_ENDPOINT="https://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379"
-
-{{ if .Migrate }}
-# If we're already initialized
-if [ -d "{{ .DataDir }}" ]; then
-    echo "we're already initialized"
-    export INITIAL_STATE="existing"
-    if [ "${POD_NAME}" = "etcd-0" ]; then
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-    if [ "${POD_NAME}" = "etcd-1" ]; then
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-    if [ "${POD_NAME}" = "etcd-2" ]; then
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-else
-    if [ "${POD_NAME}" = "etcd-0" ]; then
-        echo "i'm etcd-0. I do the restore"
-        etcdctl --endpoints http://etcd-cluster-client:2379 snapshot save snapshot.db
-        etcdctl snapshot restore snapshot.db \
-            --name etcd-0 \
-            --data-dir="{{ .DataDir }}" \
-            --initial-cluster="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
-            --initial-cluster-token="{{ .Token }}" \
-            --initial-advertise-peer-urls http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380
-        echo "restored from snapshot"
-        export INITIAL_STATE="new"
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-
-    export ETCD_CERT_ARGS="--cacert /etc/etcd/pki/ca/ca.crt --cert /etc/etcd/pki/client/apiserver-etcd-client.crt --key /etc/etcd/pki/client/apiserver-etcd-client.key"
-    if [ "${POD_NAME}" = "etcd-1" ]; then
-        echo "i'm etcd-1. I join as new member as soon as etcd-0 comes up"
-        etcdctl ${ETCD_CERT_ARGS} --endpoints ${MASTER_ENDPOINT} member add etcd-1 --peer-urls=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380
-        echo "added etcd-1 to members"
-        export INITIAL_STATE="existing"
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-
-    if [ "${POD_NAME}" = "etcd-2" ]; then
-        echo "i'm etcd-2. I join as new member as soon as we have 2 existing & healthy members"
-        until etcdctl ${ETCD_CERT_ARGS} --endpoints ${MASTER_ENDPOINT} member list | grep -q etcd-1; do sleep 1; echo "Waiting for etcd-1"; done
-        etcdctl ${ETCD_CERT_ARGS} --endpoints ${MASTER_ENDPOINT} member add etcd-2 --peer-urls=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380
-        echo "added etcd-2 to members"
-        export INITIAL_STATE="existing"
-        export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-    fi
-fi
-
-{{ else }}
-export INITIAL_STATE="new"
-export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
-{{ end }}
-
-echo "initial-state: ${INITIAL_STATE}"
-echo "initial-cluster: ${INITIAL_CLUSTER}"
-
-exec /usr/local/bin/etcd \
-    --name=${POD_NAME} \
-    --data-dir="{{ .DataDir }}" \
-    --initial-cluster=${INITIAL_CLUSTER} \
-    --initial-cluster-token="{{ .Token }}" \
-    --initial-cluster-state=${INITIAL_STATE} \
-    --advertise-client-urls "https://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379,https://${POD_IP}:2379" \
-    --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
-    --listen-peer-urls "http://${POD_IP}:2380" \
-    --initial-advertise-peer-urls "http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
-    --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
-    --client-cert-auth \
-    --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
-    --key-file /etc/etcd/pki/tls/etcd-tls.key \
-{{- if .EnableCorruptionCheck }}
-    --experimental-initial-corrupt-check=true \
-    --experimental-corrupt-check-time=10m \
-{{- end }}
-    --auto-compaction-retention=8
-`
-)
-
 // ImageTag returns the correct etcd image tag for a given Cluster
+// TODO: Other functions use this function, swtich them to getLauncherImage
 func ImageTag(c *kubermaticv1.Cluster) string {
 	if c.IsOpenshift() || c.Spec.Version.Minor() < 17 {
-		return imageTagV33
+		return etcdImageTagV33
 	}
-	return imageTagV34
+	return etcdImageTagV34
+}
+
+func getLauncherImage(data etcdStatefulSetCreatorData) (string, error) {
+	etcdTag := ImageTag(data.Cluster())
+	baseTag, ok := baseTags[etcdTag]
+	if !ok {
+		return "", errors.New("unknown etcd tag")
+	}
+	return data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/etcd-launcher-" + baseTag + ":" + resources.KUBERMATICCOMMIT, nil
 }
