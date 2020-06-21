@@ -581,6 +581,7 @@ func TestLoadFiles(t *testing.T) {
 					true,
 					"quay.io/kubermatic/kubermatic",
 					"quay.io/kubermatic/kubeletdnat-controller",
+					"quay.io/kubermatic/etcd-launcher-",
 					false)
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter

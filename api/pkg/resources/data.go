@@ -58,6 +58,7 @@ type TemplateData struct {
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
 	dnatControllerImage                              string
+	etcdLauncherImageBase                            string
 	supportsFailureDomainZoneAntiAffinity            bool
 }
 
@@ -83,6 +84,7 @@ func NewTemplateData(
 	nodeLocalDNSCacheEnabled bool,
 	kubermaticImage string,
 	dnatControllerImage string,
+	etcdLauncherImageBase string,
 	supportsFailureDomainZoneAntiAffinity bool) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
@@ -105,6 +107,7 @@ func NewTemplateData(
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
 		dnatControllerImage:                              dnatControllerImage,
+		etcdLauncherImageBase:                            etcdLauncherImageBase,
 		supportsFailureDomainZoneAntiAffinity:            supportsFailureDomainZoneAntiAffinity,
 	}
 }
@@ -277,7 +280,7 @@ func (d *TemplateData) KubermaticAPIImage() string {
 	apiImageSplit := strings.Split(d.kubermaticImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(apiImageSplit) != 3 {
-		registry = "docker.io"
+		registry = RegistryDocker
 		imageWithoutRegistry = strings.Join(apiImageSplit, "/")
 	} else {
 		registry = apiImageSplit[0]
@@ -290,11 +293,24 @@ func (d *TemplateData) DNATControllerImage() string {
 	dnatControllerImageSplit := strings.Split(d.dnatControllerImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(dnatControllerImageSplit) != 3 {
-		registry = "docker.io"
+		registry = RegistryDocker
 		imageWithoutRegistry = strings.Join(dnatControllerImageSplit, "/")
 	} else {
 		registry = dnatControllerImageSplit[0]
 		imageWithoutRegistry = strings.Join(dnatControllerImageSplit[1:], "/")
+	}
+	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
+}
+
+func (d *TemplateData) EtcdLauncherImageBase() string {
+	etcdImageSplit := strings.Split(d.etcdLauncherImageBase, "/")
+	var registry, imageWithoutRegistry string
+	if len(etcdImageSplit) != 3 {
+		registry = RegistryDocker
+		imageWithoutRegistry = strings.Join(etcdImageSplit, "/")
+	} else {
+		registry = etcdImageSplit[0]
+		imageWithoutRegistry = strings.Join(etcdImageSplit[1:], "/")
 	}
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }

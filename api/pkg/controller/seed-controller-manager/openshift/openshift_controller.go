@@ -102,6 +102,7 @@ type Reconciler struct {
 	oidc                     OIDCConfig
 	kubermaticImage          string
 	dnatControllerImage      string
+	etcdLauncherImageBase    string
 	features                 Features
 	concurrentClusterUpdates int
 }
@@ -120,6 +121,7 @@ func Add(
 	externalURL string,
 	kubermaticImage string,
 	dnatControllerImage string,
+	etcdLauncherImage string,
 	features Features,
 	concurrentClusterUpdates int,
 ) error {
@@ -138,6 +140,7 @@ func Add(
 		externalURL:              externalURL,
 		kubermaticImage:          kubermaticImage,
 		dnatControllerImage:      dnatControllerImage,
+		etcdLauncherImageBase:    etcdLauncherImage,
 		features:                 features,
 		concurrentClusterUpdates: concurrentClusterUpdates,
 	}

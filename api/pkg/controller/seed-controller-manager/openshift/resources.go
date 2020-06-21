@@ -53,6 +53,7 @@ func (r *Reconciler) getOSData(ctx context.Context, cluster *kubermaticv1.Cluste
 		etcdDiskSize:                          r.etcdDiskSize,
 		kubermaticImage:                       r.kubermaticImage,
 		dnatControllerImage:                   r.dnatControllerImage,
+		etcdLauncherImageBase:                 r.etcdLauncherImageBase,
 		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
 		externalURL:                           r.externalURL,
 		seed:                                  seed.DeepCopy(),

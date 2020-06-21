@@ -90,6 +90,7 @@ type Reconciler struct {
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
 	dnatControllerImage                              string
+	etcdLauncherImageBase                            string
 	concurrentClusterUpdates                         int
 
 	oidcCAFile         string
@@ -126,6 +127,7 @@ func Add(
 	oidcIssuerClientID string,
 	kubermaticImage string,
 	dnatControllerImage string,
+	etcdLauncherImageBase string,
 	features Features) error {
 
 	reconciler := &Reconciler{
@@ -149,6 +151,7 @@ func Add(
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
 		dnatControllerImage:                              dnatControllerImage,
+		etcdLauncherImageBase:                            etcdLauncherImageBase,
 		concurrentClusterUpdates:                         concurrentClusterUpdates,
 
 		externalURL: externalURL,
