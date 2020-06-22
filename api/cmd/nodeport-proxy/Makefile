@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+DOCKER_REPO="quay.io/kubermatic"
+
 default: test build
 
 lb-updater:
@@ -26,7 +28,7 @@ clean:
 	rm -f envoy-manager lb-updater
 
 docker: build
-	docker build -t quay.io/kubermatic/nodeport-proxy:$(TAG) .
+	docker build -t $(DOCKER_REPO)/nodeport-proxy:$(TAG) .
 
 test:
 	go test ./...
