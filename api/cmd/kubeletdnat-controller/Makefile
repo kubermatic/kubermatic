@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+DOCKER_REPO="quay.io/kubermatic"
+
 build:
 	CGO_ENABLED=0 go build -o ./_build/kubeletdnat-controller .
 
 docker: build
-	docker build -t quay.io/kubermatic/kubeletdnat-controller:$(TAG) .
+	docker build -t $(DOCKER_REPO)/kubeletdnat-controller:$(TAG) .
 
 .PHONY: build docker
