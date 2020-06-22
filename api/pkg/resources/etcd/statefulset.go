@@ -103,7 +103,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 					Name: resources.EtcdStatefulSetName,
 
 					Image:           image,
-					ImagePullPolicy: corev1.PullAlways,
+					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/usr/local/bin/etcd-launcher"},
 					Env: []corev1.EnvVar{
 						{
