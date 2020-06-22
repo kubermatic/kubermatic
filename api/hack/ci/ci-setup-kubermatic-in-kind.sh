@@ -346,8 +346,21 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
       retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
       IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
       time retry 5 docker build -t "${IMAGE_NAME}" .
-      time retry 5 docker push "quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION"
+      time retry 5 docker push "${IMAGE_NAME}"
     fi
+  )
+  (
+    echodate "Building etcd-launcher images"
+    TEST_NAME="Build etcd-launcher Docker images"
+
+    cd api
+
+    for ETCD_TAG in $(getEtcdTags); do
+      BASE_TAG=$(echo ${ETCD_TAG} | cut -d\. -f 1,2| tr -d .)
+      IMAGE_NAME="quay.io/kubermatic/etcd-launcher-${BASE_TAG}:${KUBERMATIC_VERSION}"
+      time retry 5 docker build --build-arg ECTD_VERSION=${ETCD_TAG} -t "${IMAGE_NAME}" -f cmd/etcd-launcher/Dockerfile .
+      time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
+    done
   )
 
   pushElapsed kubermatic_docker_build_duration_milliseconds $beforeDockerBuild
