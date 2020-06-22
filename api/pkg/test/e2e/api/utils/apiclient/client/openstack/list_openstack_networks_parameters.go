@@ -19,7 +19,7 @@ import (
 // NewListOpenstackNetworksParams creates a new ListOpenstackNetworksParams object
 // with the default values initialized.
 func NewListOpenstackNetworksParams() *ListOpenstackNetworksParams {
-
+	var ()
 	return &ListOpenstackNetworksParams{
 
 		timeout: cr.DefaultTimeout,
@@ -29,7 +29,7 @@ func NewListOpenstackNetworksParams() *ListOpenstackNetworksParams {
 // NewListOpenstackNetworksParamsWithTimeout creates a new ListOpenstackNetworksParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListOpenstackNetworksParamsWithTimeout(timeout time.Duration) *ListOpenstackNetworksParams {
-
+	var ()
 	return &ListOpenstackNetworksParams{
 
 		timeout: timeout,
@@ -39,7 +39,7 @@ func NewListOpenstackNetworksParamsWithTimeout(timeout time.Duration) *ListOpens
 // NewListOpenstackNetworksParamsWithContext creates a new ListOpenstackNetworksParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListOpenstackNetworksParamsWithContext(ctx context.Context) *ListOpenstackNetworksParams {
-
+	var ()
 	return &ListOpenstackNetworksParams{
 
 		Context: ctx,
@@ -49,7 +49,7 @@ func NewListOpenstackNetworksParamsWithContext(ctx context.Context) *ListOpensta
 // NewListOpenstackNetworksParamsWithHTTPClient creates a new ListOpenstackNetworksParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListOpenstackNetworksParamsWithHTTPClient(client *http.Client) *ListOpenstackNetworksParams {
-
+	var ()
 	return &ListOpenstackNetworksParams{
 		HTTPClient: client,
 	}
@@ -59,6 +59,22 @@ func NewListOpenstackNetworksParamsWithHTTPClient(client *http.Client) *ListOpen
 for the list openstack networks operation typically these are written to a http.Request
 */
 type ListOpenstackNetworksParams struct {
+
+	/*Credential*/
+	Credential *string
+	/*DatacenterName*/
+	DatacenterName *string
+	/*Domain*/
+	Domain *string
+	/*Password*/
+	Password *string
+	/*Tenant*/
+	Tenant *string
+	/*TenantID*/
+	TenantID *string
+	/*Username*/
+	Username *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -97,6 +113,83 @@ func (o *ListOpenstackNetworksParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list openstack networks params
+func (o *ListOpenstackNetworksParams) WithCredential(credential *string) *ListOpenstackNetworksParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list openstack networks params
+func (o *ListOpenstackNetworksParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithDatacenterName adds the datacenterName to the list openstack networks params
+func (o *ListOpenstackNetworksParams) WithDatacenterName(datacenterName *string) *ListOpenstackNetworksParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list openstack networks params
+func (o *ListOpenstackNetworksParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
+// WithDomain adds the domain to the list openstack networks params
+func (o *ListOpenstackNetworksParams) WithDomain(domain *string) *ListOpenstackNetworksParams {
+	o.SetDomain(domain)
+	return o
+}
+
+// SetDomain adds the domain to the list openstack networks params
+func (o *ListOpenstackNetworksParams) SetDomain(domain *string) {
+	o.Domain = domain
+}
+
+// WithPassword adds the password to the list openstack networks params
+func (o *ListOpenstackNetworksParams) WithPassword(password *string) *ListOpenstackNetworksParams {
+	o.SetPassword(password)
+	return o
+}
+
+// SetPassword adds the password to the list openstack networks params
+func (o *ListOpenstackNetworksParams) SetPassword(password *string) {
+	o.Password = password
+}
+
+// WithTenant adds the tenant to the list openstack networks params
+func (o *ListOpenstackNetworksParams) WithTenant(tenant *string) *ListOpenstackNetworksParams {
+	o.SetTenant(tenant)
+	return o
+}
+
+// SetTenant adds the tenant to the list openstack networks params
+func (o *ListOpenstackNetworksParams) SetTenant(tenant *string) {
+	o.Tenant = tenant
+}
+
+// WithTenantID adds the tenantID to the list openstack networks params
+func (o *ListOpenstackNetworksParams) WithTenantID(tenantID *string) *ListOpenstackNetworksParams {
+	o.SetTenantID(tenantID)
+	return o
+}
+
+// SetTenantID adds the tenantId to the list openstack networks params
+func (o *ListOpenstackNetworksParams) SetTenantID(tenantID *string) {
+	o.TenantID = tenantID
+}
+
+// WithUsername adds the username to the list openstack networks params
+func (o *ListOpenstackNetworksParams) WithUsername(username *string) *ListOpenstackNetworksParams {
+	o.SetUsername(username)
+	return o
+}
+
+// SetUsername adds the username to the list openstack networks params
+func (o *ListOpenstackNetworksParams) SetUsername(username *string) {
+	o.Username = username
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListOpenstackNetworksParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -104,6 +197,69 @@ func (o *ListOpenstackNetworksParams) WriteToRequest(r runtime.ClientRequest, re
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+
+	}
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Domain != nil {
+
+		// header param Domain
+		if err := r.SetHeaderParam("Domain", *o.Domain); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Password != nil {
+
+		// header param Password
+		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Tenant != nil {
+
+		// header param Tenant
+		if err := r.SetHeaderParam("Tenant", *o.Tenant); err != nil {
+			return err
+		}
+
+	}
+
+	if o.TenantID != nil {
+
+		// header param TenantID
+		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Username != nil {
+
+		// header param Username
+		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
+			return err
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

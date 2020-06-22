@@ -633,12 +633,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8309ba48bdbffedeff08ed79d41728a8370eff42f7b9c13d3b326b4b0dc87bca"
+  digest = "1:8a0e3cf069a92e17d252e80a3d6f988a3501e87f10db14e271ec6f0346b447e2"
   name = "github.com/gophercloud/gophercloud"
   packages = [
     ".",
     "internal",
     "openstack",
+    "openstack/compute/v2/extensions/availabilityzones",
     "openstack/compute/v2/flavors",
     "openstack/identity/v2/tenants",
     "openstack/identity/v2/tokens",
@@ -2075,7 +2076,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c8e4d640c29a9fd9e5c7cde908fad0bd7662066916ddcd47922f9c6d40cb53b5"
+  digest = "1:8ea4b9692e447e091dda8d2ae75da4378a3509e032c77a15ed77d863b580668f"
   name = "k8s.io/test-infra"
   packages = ["pkg/genyaml"]
   pruneopts = "NUT"
@@ -2220,6 +2221,7 @@
     "github.com/golang/protobuf/ptypes/wrappers",
     "github.com/gophercloud/gophercloud",
     "github.com/gophercloud/gophercloud/openstack",
+    "github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/availabilityzones",
     "github.com/gophercloud/gophercloud/openstack/compute/v2/flavors",
     "github.com/gophercloud/gophercloud/openstack/identity/v3/projects",
     "github.com/gophercloud/gophercloud/openstack/identity/v3/tokens",
