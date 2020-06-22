@@ -245,5 +245,5 @@ pushElapsed() {
 }
 
 getEtcdTags() {
-  echo $(git grep -h etcdImageTag pkg/resources/etcd/statefulset.go | grep -v return |cut -d\  -f 3| tr -d "\"" | xargs echo -n)
+  echo $(git grep -h etcdImageTag $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api/pkg/resources/etcd/statefulset.go | grep -v return | cut -d\  -f 3| tr -d "\"" | xargs echo -n)
 }
