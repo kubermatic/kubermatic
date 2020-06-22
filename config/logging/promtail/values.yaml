@@ -1,27 +1,41 @@
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 promtail:
   deploymentStrategy: RollingUpdate
-  
+
   image:
     repository: docker.io/grafana/promtail
     tag: v1.3.0
     pullPolicy: IfNotPresent
-  
+
   loki:
-    serviceName: "loki"  
+    serviceName: "loki"
     servicePort: 3100
     serviceScheme: http
-  
+
   nodeSelector: {}
   affinity: {}
-  
-  resources: 
+
+  resources:
     limits:
       cpu: 200m
       memory: 128Mi
     requests:
       cpu: 50m
       memory: 64Mi
-  
+
   scrapeConfigs:
     - job_name: kubernetes-pods-name
       kubernetes_sd_configs:
@@ -264,17 +278,17 @@ promtail:
   - key: node-role.kubernetes.io/master
     operator: Exists
     effect: NoSchedule
-  
+
   config:
     client:
       # Maximum wait period before sending batch
       batchwait: 1s
       # Maximum batch size to accrue before sending, unit is byte
       batchsize: 102400
-  
+
       # Maximum time to wait for server to respond to a request
       timeout: 10s
-  
+
       backoff_config:
         # Initial backoff time between retries
         minbackoff: 100ms
@@ -282,10 +296,10 @@ promtail:
         maxbackoff: 5s
         # Maximum number of retries when sending batches, 0 means infinite retries
         maxretries: 20
-  
+
       # The labels to add to any time series or alerts when communicating with loki
       external_labels: {}
-  
+
     server:
       http_listen_port: 3101
     positions:
@@ -293,4 +307,4 @@ promtail:
     target_config:
       # Period to resync directories being watched and files being tailed
       sync_period: 10s
-  
+
