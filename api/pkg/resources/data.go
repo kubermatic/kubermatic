@@ -58,7 +58,7 @@ type TemplateData struct {
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
 	dnatControllerImage                              string
-	etcdLauncherImageBase                            string
+	etcdLauncherImage                                string
 	supportsFailureDomainZoneAntiAffinity            bool
 }
 
@@ -84,7 +84,7 @@ func NewTemplateData(
 	nodeLocalDNSCacheEnabled bool,
 	kubermaticImage string,
 	dnatControllerImage string,
-	etcdLauncherImageBase string,
+	etcdLauncherImage string,
 	supportsFailureDomainZoneAntiAffinity bool) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
@@ -107,7 +107,7 @@ func NewTemplateData(
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
 		dnatControllerImage:                              dnatControllerImage,
-		etcdLauncherImageBase:                            etcdLauncherImageBase,
+		etcdLauncherImage:                                etcdLauncherImage,
 		supportsFailureDomainZoneAntiAffinity:            supportsFailureDomainZoneAntiAffinity,
 	}
 }
@@ -302,8 +302,14 @@ func (d *TemplateData) DNATControllerImage() string {
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
 
-func (d *TemplateData) EtcdLauncherImageBase() string {
-	etcdImageSplit := strings.Split(d.etcdLauncherImageBase, "/")
+func (d *TemplateData) EtcdLauncherImage(baseTag string) string {
+	var imageName string
+	if d.etcdLauncherImage != "" {
+		imageName = d.etcdLauncherImage
+	} else {
+		imageName = RegistryQuay + "/kubermatic/etcd-launcher-" + baseTag
+	}
+	etcdImageSplit := strings.Split(imageName, "/")
 	var registry, imageWithoutRegistry string
 	if len(etcdImageSplit) != 3 {
 		registry = RegistryDocker

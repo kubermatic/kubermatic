@@ -130,7 +130,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.externalURL,
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.dnatControllerImage,
-		ctrlCtx.runOptions.etcdLauncherImageBase,
+		ctrlCtx.runOptions.etcdLauncherImage,
 		openshiftcontroller.Features{
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
 			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
@@ -168,7 +168,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.oidcIssuerClientID,
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.dnatControllerImage,
-		ctrlCtx.runOptions.etcdLauncherImageBase,
+		ctrlCtx.runOptions.etcdLauncherImage,
 		kubernetescontroller.Features{
 			VPA:                          ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
 			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),

@@ -62,7 +62,7 @@ type etcdStatefulSetCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
-	EtcdLauncherImageBase() string
+	EtcdLauncherImage(string) string
 	EtcdDiskSize() resource.Quantity
 	GetClusterRef() metav1.OwnerReference
 	SupportsFailureDomainZoneAntiAffinity() bool
@@ -313,5 +313,5 @@ func getLauncherImage(data etcdStatefulSetCreatorData) (string, error) {
 	if !ok {
 		return "", errors.New("unknown etcd tag")
 	}
-	return data.EtcdLauncherImageBase() + baseTag + ":" + resources.KUBERMATICCOMMIT, nil
+	return data.EtcdLauncherImage(baseTag) + ":" + resources.KUBERMATICCOMMIT, nil
 }

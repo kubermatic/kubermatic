@@ -53,7 +53,7 @@ type openshiftData struct {
 	etcdDiskSize                          resource.Quantity
 	kubermaticImage                       string
 	dnatControllerImage                   string
-	etcdLauncherImageBase                 string
+	etcdLauncherImage                     string
 	supportsFailureDomainZoneAntiAffinity bool
 	externalURL                           string
 	seed                                  *kubermaticv1.Seed
@@ -273,8 +273,14 @@ func (od *openshiftData) DNATControllerImage() string {
 	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
 
-func (od *openshiftData) EtcdLauncherImageBase() string {
-	etcdImageSplit := strings.Split(od.etcdLauncherImageBase, "/")
+func (od *openshiftData) EtcdLauncherImage(baseTag string) string {
+	var imageName string
+	if od.etcdLauncherImage != "" {
+		imageName = od.etcdLauncherImage
+	} else {
+		imageName = kubernetesresources.RegistryQuay + "/kubermatic/etcd-launcher-" + baseTag
+	}
+	etcdImageSplit := strings.Split(imageName, "/")
 	var registry, imageWithoutRegistry string
 	if len(etcdImageSplit) != 3 {
 		registry = kubernetesresources.RegistryDocker

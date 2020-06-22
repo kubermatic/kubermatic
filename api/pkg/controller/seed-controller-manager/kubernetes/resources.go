@@ -169,7 +169,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r.nodeLocalDNSCacheEnabled,
 		r.kubermaticImage,
 		r.dnatControllerImage,
-		r.etcdLauncherImageBase,
+		r.etcdLauncherImage,
 		supportsFailureDomainZoneAntiAffinity,
 	), nil
 }
