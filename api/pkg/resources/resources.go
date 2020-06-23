@@ -492,6 +492,10 @@ const (
 	NodeLocalDNSDaemonSetName      = "node-local-dns"
 )
 
+const (
+	TokenBlacklist = "token-blacklist"
+)
+
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key
 type ECDSAKeyPair struct {
 	Key  *ecdsa.PrivateKey
