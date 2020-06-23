@@ -24,6 +24,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	corev1 "k8s.io/api/core/v1"
+
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
@@ -938,6 +942,102 @@ func TestNewUser(t *testing.T) {
 			// validate
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
+func TestLogoutCurrentUser(t *testing.T) {
+	testcases := []struct {
+		Name                   string
+		ExpectedResponse       string
+		ExpectedStatus         int
+		ExistingKubermaticObjs []runtime.Object
+		ExistingKubernetesObjs []runtime.Object
+		ExistingAPIUser        apiv1.User
+	}{
+		{
+			Name: "scenario 1: logout user first time",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add users*/
+				genUser("", "john", "john@acme.com"),
+			},
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedStatus:   http.StatusOK,
+			ExpectedResponse: `{}`,
+		},
+		{
+			Name: "scenario 2: logout user with empty blacklist token secret",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add users*/
+				func() *kubermaticapiv1.User {
+					user := genUser("", "john", "john@acme.com")
+					user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
+						ObjectReference: corev1.ObjectReference{
+							Name:      user.GetTokenBlackListSecretName(),
+							Namespace: resources.KubermaticNamespace,
+						},
+					}
+
+					return user
+				}(),
+			},
+			ExistingKubernetesObjs: []runtime.Object{
+				func() *corev1.Secret {
+					user := genUser("", "john", "john@acme.com")
+					return test.GenBlacklistTokenSecret(user.GetTokenBlackListSecretName(), []byte{})
+				}(),
+			},
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedStatus:   http.StatusOK,
+			ExpectedResponse: `{}`,
+		},
+		{
+			Name: "scenario 2: logout user when token is on blacklist",
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add users*/
+				func() *kubermaticapiv1.User {
+					user := genUser("", "john", "john@acme.com")
+					user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
+						ObjectReference: corev1.ObjectReference{
+							Name:      user.GetTokenBlackListSecretName(),
+							Namespace: resources.KubermaticNamespace,
+						},
+					}
+
+					return user
+				}(),
+			},
+			ExistingKubernetesObjs: []runtime.Object{
+				func() *corev1.Secret {
+					user := genUser("", "john", "john@acme.com")
+					return test.GenBlacklistTokenSecret(user.GetTokenBlackListSecretName(), []byte(`[{"token":"fakeTokenId","expiry":"2222-06-20T12:04:00Z"}]`))
+				}(),
+			},
+			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
+			ExpectedStatus:   http.StatusUnauthorized,
+			ExpectedResponse: `{"error":{"code":401,"message":"not authorized"}}`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			kubermaticObj := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			kubernetesObj = append(kubernetesObj, tc.ExistingKubernetesObjs...)
+			ep, err := test.CreateTestEndpoint(tc.ExistingAPIUser, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			req := httptest.NewRequest("POST", "/api/v1/me/logout", nil)
+			res := httptest.NewRecorder()
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.ExpectedStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedStatus, res.Code, res.Body.String())
 			}
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
 		})

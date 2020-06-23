@@ -35,13 +35,17 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/util/hash"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
 	datacenterContextKey kubermaticcontext.Key = "datacenter"
 
 	// RawTokenContextKey key under which the current token (OpenID ID Token) is kept in the ctx
-	rawTokenContextKey kubermaticcontext.Key = "raw-auth-token"
+	RawTokenContextKey kubermaticcontext.Key = "raw-auth-token"
+
+	// TokenExpiryContextKey key under which the current token expiry (OpenID ID Token) is kept in the ctx
+	TokenExpiryContextKey kubermaticcontext.Key = "auth-token-expiry"
 
 	// noTokenFoundKey key under which an error is kept when no suitable token has been found in a request
 	noTokenFoundKey kubermaticcontext.Key = "no-token-found"
@@ -170,7 +174,7 @@ func UserInfoUnauthorized(userProjectMapper provider.ProjectMemberMapper, userPr
 }
 
 // TokenVerifier knows how to verify a token from the incoming request
-func TokenVerifier(tokenVerifier auth.TokenVerifier) endpoint.Middleware {
+func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserProvider) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			if rawTokenNotFoundErr := ctx.Value(noTokenFoundKey); rawTokenNotFoundErr != nil {
@@ -181,7 +185,7 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier) endpoint.Middleware {
 				return nil, k8cerrors.NewWithDetails(http.StatusUnauthorized, "not authorized", []string{tokenNotFoundErr.Error()})
 			}
 
-			t := ctx.Value(rawTokenContextKey)
+			t := ctx.Value(RawTokenContextKey)
 			token, ok := t.(string)
 			if !ok || token == "" {
 				return nil, k8cerrors.NewNotAuthorized()
@@ -215,6 +219,11 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier) endpoint.Middleware {
 				return nil, k8cerrors.NewNotAuthorized()
 			}
 
+			if err := checkBlockedTokens(claims.Email, token, userProvider); err != nil {
+				return nil, err
+			}
+
+			ctx = context.WithValue(ctx, TokenExpiryContextKey, claims.Expiry)
 			return next(context.WithValue(ctx, AuthenticatedUserContextKey, user), request)
 		}
 	}
@@ -272,7 +281,7 @@ func TokenExtractor(o auth.TokenExtractor) transporthttp.RequestFunc {
 		if err != nil {
 			return context.WithValue(ctx, noTokenFoundKey, err)
 		}
-		return context.WithValue(ctx, rawTokenContextKey, token)
+		return context.WithValue(ctx, RawTokenContextKey, token)
 	}
 }
 
@@ -310,4 +319,24 @@ func getClusterProvider(ctx context.Context, request interface{}, seedsGetter pr
 	}
 
 	return clusterProvider, ctx, nil
+}
+
+func checkBlockedTokens(email, token string, userProvider provider.UserProvider) error {
+	user, err := userProvider.UserByEmail(email)
+	if err != nil {
+		if err != provider.ErrNotFound {
+			return common.KubernetesErrorToHTTPError(err)
+		}
+		return nil
+	}
+	blockedTokens, err := userProvider.GetUserBlacklistTokens(user)
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+	tokenSet := sets.NewString(blockedTokens...)
+	if tokenSet.Has(token) {
+		return k8cerrors.NewNotAuthorized()
+	}
+
+	return nil
 }

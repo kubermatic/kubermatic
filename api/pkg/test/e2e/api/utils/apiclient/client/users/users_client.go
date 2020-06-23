@@ -35,6 +35,8 @@ type ClientService interface {
 
 	GetUsersForProject(params *GetUsersForProjectParams, authInfo runtime.ClientAuthInfoWriter) (*GetUsersForProjectOK, error)
 
+	LogoutCurrentUser(params *LogoutCurrentUserParams, authInfo runtime.ClientAuthInfoWriter) (*LogoutCurrentUserOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -205,6 +207,42 @@ func (a *Client) GetUsersForProject(params *GetUsersForProjectParams, authInfo r
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetUsersForProjectDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  LogoutCurrentUser adds current authorization bearer token to the blacklist
+
+  Enforces user to login again with the new token.
+*/
+func (a *Client) LogoutCurrentUser(params *LogoutCurrentUserParams, authInfo runtime.ClientAuthInfoWriter) (*LogoutCurrentUserOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewLogoutCurrentUserParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "logoutCurrentUser",
+		Method:             "POST",
+		PathPattern:        "/api/v1/me/logout",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &LogoutCurrentUserReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*LogoutCurrentUserOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*LogoutCurrentUserDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
