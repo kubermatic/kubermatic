@@ -22,6 +22,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	"net"
 	"net/http"
 	"time"
@@ -167,6 +168,12 @@ func (o *OpenIDClient) Verify(ctx context.Context, token string) (TokenClaims, e
 				oidcClaims.Groups = append(oidcClaims.Groups, group)
 			}
 		}
+	}
+	if rawExp, found := claims["exp"]; found {
+		exp := rawExp.(float64)
+		secs := int64(exp)
+		nsecs := int64((exp - float64(secs)) * 1e9)
+		oidcClaims.Expiry = apiv1.NewTime(time.Unix(secs, nsecs))
 	}
 
 	return oidcClaims, nil

@@ -19,15 +19,29 @@ package kubernetes
 import (
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+type blacklistToken struct {
+	Token  string     `json:"token"`
+	Expiry apiv1.Time `json:"expiry"`
+}
 
 // NewUserProvider returns a user provider
 func NewUserProvider(client ctrlruntimeclient.Client, isServiceAccountFunc func(email string) bool) *UserProvider {
@@ -111,4 +125,133 @@ func (p *UserProvider) UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, 
 		return nil, err
 	}
 	return user, nil
+}
+
+func (p *UserProvider) AddUserTokenToBlacklist(user *kubermaticv1.User, token string, expiry apiv1.Time) error {
+	if user == nil {
+		return kerrors.NewBadRequest("user cannot be nil")
+	}
+	if token == "" {
+		return kerrors.NewBadRequest("token cannot be empty")
+	}
+
+	ctx := context.Background()
+	secret, err := ensureTokenBlacklistSecret(ctx, p.client, user)
+	if err != nil {
+		return err
+	}
+	tokenList, ok := secret.Data[resources.TokenBlacklist]
+	if !ok {
+		return fmt.Errorf("secret %s has no key %s", secret.Name, resources.TokenBlacklist)
+	}
+
+	blockedTokens := make([]blacklistToken, 0)
+	if len(tokenList) > 0 {
+		if err := json.Unmarshal(tokenList, &blockedTokens); err != nil {
+			return err
+		}
+	}
+
+	blockedTokens = append(blockedTokens, blacklistToken{
+		Token:  token,
+		Expiry: expiry,
+	})
+
+	blockedTokens = clearExpiredTokens(blockedTokens)
+
+	tokenJSON, err := json.Marshal(&blockedTokens)
+	if err != nil {
+		return err
+	}
+
+	secret.Data = map[string][]byte{
+		resources.TokenBlacklist: tokenJSON,
+	}
+
+	if err := p.client.Update(ctx, secret); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (p *UserProvider) GetUserBlacklistTokens(user *kubermaticv1.User) ([]string, error) {
+	result := make([]string, 0)
+	if user == nil {
+		return nil, kerrors.NewBadRequest("user cannot be nil")
+	}
+	if user.Spec.TokenBlackListReference == nil {
+		return result, nil
+	}
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.client)
+	tokenList, err := secretKeyGetter(user.Spec.TokenBlackListReference, resources.TokenBlacklist)
+	if err != nil {
+		return nil, err
+	}
+	blockedTokens := make([]blacklistToken, 0)
+	if len(tokenList) > 0 {
+		if err := json.Unmarshal([]byte(tokenList), &blockedTokens); err != nil {
+			return nil, err
+		}
+	}
+
+	for _, token := range blockedTokens {
+		result = append(result, token.Token)
+	}
+
+	return result, nil
+
+}
+
+func ensureTokenBlacklistSecret(ctx context.Context, client ctrlruntimeclient.Client, user *kubermaticv1.User) (*corev1.Secret, error) {
+	name := user.GetTokenBlackListSecretName()
+
+	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
+	existingSecret := &corev1.Secret{}
+	if err := client.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
+		return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
+	}
+
+	if existingSecret.Name == "" {
+		existingSecret = &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: resources.KubermaticNamespace,
+			},
+			Type: corev1.SecretTypeOpaque,
+			Data: map[string][]byte{
+				resources.TokenBlacklist: {},
+			},
+		}
+
+		if err := client.Create(ctx, existingSecret); err != nil {
+			return nil, fmt.Errorf("failed to create token blacklist secret: %v", err)
+		}
+	}
+
+	if user.Spec.TokenBlackListReference == nil {
+		user.Spec.TokenBlackListReference = &providerconfig.GlobalSecretKeySelector{
+			ObjectReference: corev1.ObjectReference{
+				Name:      name,
+				Namespace: resources.KubermaticNamespace,
+			},
+		}
+		if err := client.Update(ctx, user); err != nil {
+			return nil, fmt.Errorf("failed to update user: %v", err)
+		}
+	}
+
+	return existingSecret, nil
+}
+
+func clearExpiredTokens(tokens []blacklistToken) []blacklistToken {
+	blockedTokens := make([]blacklistToken, 0)
+
+	for _, blockedToken := range tokens {
+		if blockedToken.Expiry.After(time.Now()) {
+			blockedTokens = append(blockedTokens, blockedToken)
+		}
+	}
+
+	return blockedTokens
 }
