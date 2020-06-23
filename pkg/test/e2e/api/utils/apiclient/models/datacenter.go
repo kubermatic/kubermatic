@@ -16,11 +16,8 @@ import (
 // swagger:model Datacenter
 type Datacenter struct {
 
-	// seed
-	Seed bool `json:"seed,omitempty"`
-
 	// metadata
-	Metadata *LegacyObjectMeta `json:"metadata,omitempty"`
+	Metadata *DatacenterMeta `json:"metadata,omitempty"`
 
 	// spec
 	Spec *DatacenterSpec `json:"spec,omitempty"`

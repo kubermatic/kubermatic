@@ -258,9 +258,8 @@ func getAPIDCsFromSeed(seed *kubermaticv1.Seed) []apiv1.Datacenter {
 			continue
 		}
 		foundDCs = append(foundDCs, apiv1.Datacenter{
-			Metadata: apiv1.LegacyObjectMeta{
-				Name:            datacenterName,
-				ResourceVersion: "1",
+			Metadata: apiv1.DatacenterMeta{
+				Name: datacenterName,
 			},
 			Spec: *spec,
 		})
@@ -316,7 +315,7 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		}
 
 		return &apiv1.Datacenter{
-			Metadata: apiv1.LegacyObjectMeta{
+			Metadata: apiv1.DatacenterMeta{
 				Name: req.Body.Name,
 			},
 			Spec: req.Body.Spec,
@@ -381,7 +380,7 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		}
 
 		return &apiv1.Datacenter{
-			Metadata: apiv1.LegacyObjectMeta{
+			Metadata: apiv1.DatacenterMeta{
 				Name: req.Body.Name,
 			},
 			Spec: req.Body.Spec,
@@ -631,7 +630,7 @@ func convertInternalDCToExternal(dc *kubermaticv1.Datacenter, dcName, seedName s
 	}
 
 	return &apiv1.Datacenter{
-		Metadata: apiv1.LegacyObjectMeta{
+		Metadata: apiv1.DatacenterMeta{
 			Name: dcName,
 		},
 		Spec: *dcSpec,
