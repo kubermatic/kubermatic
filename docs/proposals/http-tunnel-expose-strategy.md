@@ -14,6 +14,18 @@ The main goal of this proposal is to provide a new strategy that routes the traf
 
 ## **Motivation and Background**
 
+There are two main points we want to address with this proposal:
+
+*   Reduce cost by using only one Load Balancer.
+*   AWS default quota: 50 Load Balancer per region and 50 listener per Load Balancer.
+
+
+There are two main points we want to address with this proposal:
+
+*   Reduce cost by using only one Load Balancer.
+*   AWS default quota: 50 Load Balancer per region and 50 listener per Load Balancer.
+
+
 User clusters rely on kubernetes default service to access the API server. Moreover services of type externalName are not currently supported (see [this][k8s_service_issue] issue), thus we have to rely on an IP address.
 
 Depending on the expose strategy in Kubermatic, we can either set up an endpoint IP to be hitting a Load balancer or a seed cluster node directly. The latter is called “NodePort strategy” and brings limitations: Usually those IPs are not static and if a node fails, there is no guarantee that it will be replaced by a new one having the same IP. Hence breaking the communications between the user clusters and their control plane. 
