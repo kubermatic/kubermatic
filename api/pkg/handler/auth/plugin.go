@@ -21,6 +21,7 @@ import (
 	"errors"
 	"net/http"
 
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	k8cerrors "github.com/kubermatic/kubermatic/api/pkg/util/errors"
 )
 
@@ -30,6 +31,7 @@ type TokenClaims struct {
 	Email   string
 	Subject string
 	Groups  []string
+	Expiry  apiv1.Time
 }
 
 // TokenExtractorVerifier combines TokenVerifier and TokenExtractor interfaces

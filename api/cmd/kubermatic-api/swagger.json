@@ -818,6 +818,33 @@
         }
       }
     },
+    "/api/v1/me/logout": {
+      "post": {
+        "description": "Enforces user to login again with the new token.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "users"
+        ],
+        "summary": "Adds current authorization bearer token to the blacklist.",
+        "operationId": "logoutCurrentUser",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/settings": {
       "get": {
         "produces": [
@@ -6118,7 +6145,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "description": "SSHKey",
             "schema": {
               "$ref": "#/definitions/SSHKey"
