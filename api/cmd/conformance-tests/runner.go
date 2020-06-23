@@ -732,6 +732,16 @@ func (r *testRunner) testCluster(
 		log.Errorf("Failed to verify that prometheus metrics are available: %v", err)
 	}
 
+	// Do pod and node metrics availability test - with retries
+	if err := junitReporterWrapper(
+		"[Kubermatic] Test pod and node metrics availability", report, func() error {
+			return retryNAttempts(maxTestAttempts, func(attempt int) error {
+				return r.testUserClusterPodAndNodeMetrics(log, cluster, userClusterClient)
+			})
+		}); err != nil {
+		log.Errorf("Failed to verify that pod and node metrics are available: %v", err)
+	}
+
 	return nil
 }
 
