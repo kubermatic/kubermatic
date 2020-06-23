@@ -115,7 +115,6 @@ type DatacenterList []Datacenter
 type Datacenter struct {
 	Metadata LegacyObjectMeta `json:"metadata,omitempty"`
 	Spec     DatacenterSpec   `json:"spec,omitempty"`
-	Seed     bool             `json:"seed,omitempty"`
 }
 
 // AWSSize represents a object of AWS size.

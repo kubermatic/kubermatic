@@ -251,14 +251,6 @@ func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacente
 // TODO(lsviben) - check if a "seed" dc is needed + if whole metadata is needed for DC, maybe we only need the name
 func getAPIDCsFromSeed(seed *kubermaticv1.Seed) []apiv1.Datacenter {
 	var foundDCs []apiv1.Datacenter
-	foundDCs = append(foundDCs, apiv1.Datacenter{
-		Metadata: apiv1.LegacyObjectMeta{
-			Name:            seed.Name,
-			ResourceVersion: "1",
-		},
-		Seed: true,
-	})
-
 	for datacenterName, datacenter := range seed.Spec.Datacenters {
 		spec, err := ConvertInternalDCToExternalSpec(datacenter.DeepCopy(), seed.Name)
 		if err != nil {

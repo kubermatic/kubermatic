@@ -243,7 +243,6 @@ func convertSeedSpec(seedSpec kubermaticv1.SeedSpec, seedName string) apiv1.Seed
 					Name: name,
 				},
 				Spec: *dcSpec,
-				Seed: false,
 			}
 		}
 	}
