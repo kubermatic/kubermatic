@@ -61,6 +61,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/presets"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/project"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/seed"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/serviceaccount"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/ssh"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/user"
@@ -114,6 +115,12 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/dc/{dc}").
 		Handler(r.getDCForProvider())
+
+	//
+	// Defines endpoints for interacting with seeds
+	mux.Methods(http.MethodGet).
+		Path("/seed").
+		Handler(r.listSeedNames())
 
 	//
 	// Defines a set of HTTP endpoint for interacting with
@@ -1540,6 +1547,26 @@ func (r Routing) deleteDC() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.DeleteEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
 		dc.DecodeDeleteDCReq,
+		encodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/seed seed listSeedNames
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: SeedNamesList
+func (r Routing) listSeedNames() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(seed.ListSeedNamesEndpoint(r.seedsGetter)),
+		decodeEmptyReq,
 		encodeJSON,
 		r.defaultServerOptions()...,
 	)

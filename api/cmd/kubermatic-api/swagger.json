@@ -7702,6 +7702,31 @@
         }
       }
     },
+    "/api/v1/seed": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "seed"
+        ],
+        "operationId": "listSeedNames",
+        "responses": {
+          "200": {
+            "description": "SeedNamesList",
+            "schema": {
+              "$ref": "#/definitions/SeedNamesList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/seed/{seed_name}/dc": {
       "get": {
         "produces": [
@@ -12356,6 +12381,13 @@
           "type": "string",
           "x-go-name": "SeedDNSOverwrite"
         }
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+    },
+    "SeedNamesList": {
+      "type": "array",
+      "items": {
+        "type": "string"
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"
     },

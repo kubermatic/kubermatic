@@ -25,6 +25,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/operations"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/packet"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/project"
+	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/seed"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/serviceaccounts"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/settings"
 	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/tokens"
@@ -90,6 +91,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Operations = operations.New(transport, formats)
 	cli.Packet = packet.New(transport, formats)
 	cli.Project = project.New(transport, formats)
+	cli.Seed = seed.New(transport, formats)
 	cli.Serviceaccounts = serviceaccounts.New(transport, formats)
 	cli.Settings = settings.New(transport, formats)
 	cli.Tokens = tokens.New(transport, formats)
@@ -170,6 +172,8 @@ type Kubermatic struct {
 
 	Project project.ClientService
 
+	Seed seed.ClientService
+
 	Serviceaccounts serviceaccounts.ClientService
 
 	Settings settings.ClientService
@@ -203,6 +207,7 @@ func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
 	c.Operations.SetTransport(transport)
 	c.Packet.SetTransport(transport)
 	c.Project.SetTransport(transport)
+	c.Seed.SetTransport(transport)
 	c.Serviceaccounts.SetTransport(transport)
 	c.Settings.SetTransport(transport)
 	c.Tokens.SetTransport(transport)

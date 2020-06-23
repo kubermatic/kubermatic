@@ -1524,6 +1524,9 @@ type SeedSpec struct {
 	ExposeStrategy corev1.ServiceType `json:"expose_strategy,omitempty"`
 }
 
+// swagger:model SeedNamesList
+type SeedNamesList []string
+
 const (
 	// NodeDeletionFinalizer indicates that the nodes still need cleanup
 	NodeDeletionFinalizer = "kubermatic.io/delete-nodes"
