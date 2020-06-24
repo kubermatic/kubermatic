@@ -22,6 +22,8 @@ import (
 	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
@@ -262,6 +264,21 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	// already migrated
 	if spec.Username == "" && spec.Password == "" && spec.Tenant == "" && spec.TenantID == "" && spec.Domain == "" {
 		return nil
+	}
+
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
+	oldCred, err := openstack.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+	if err != nil {
+		return err
+	}
+	if spec.Tenant == "" {
+		spec.Tenant = oldCred.Tenant
+	}
+	if spec.TenantID == "" {
+		spec.TenantID = oldCred.TenantID
+	}
+	if spec.Domain == "" {
+		spec.Domain = oldCred.Domain
 	}
 
 	// move credentials into dedicated Secret
