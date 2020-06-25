@@ -148,7 +148,7 @@ case "${DEPLOY_STACK}" in
   kubermatic)
     initTiller
 
-    echodate "Deploying the CRD's..."
+    echodate "Deploying the Kubermatic CRDs..."
     retry 5 kubectl apply -f ./config/kubermatic/crd/
 
     # PULL_BASE_REF is the name of the current branch in case of a post-submit
@@ -161,9 +161,13 @@ case "${DEPLOY_STACK}" in
     sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/nodeport-proxy/*.yaml
 
     if [[ "${1}" = "master" ]]; then
+      echodate "Deploying the cert-manager CRDs..."
+      retry 5 kubectl apply -f ./config/cert-manager/crd/
+
       deploy "nginx-ingress-controller" "nginx-ingress-controller" ./config/nginx-ingress-controller/
-      deploy "cert-manager" "cert-manager" ./config/cert-manager/
       deploy "oauth" "oauth" ./config/oauth/
+      deploy "cert-manager" "cert-manager" ./config/cert-manager/
+
       # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed
       # We hack around this by grepping for a string that is mandatory in the values file of IAP
       # to determine if its configured, because am empty chart leads to Helm doing weird things

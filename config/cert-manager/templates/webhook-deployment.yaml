@@ -43,32 +43,30 @@ spec:
         imagePullPolicy: {{ .Values.certManager.webhook.image.pullPolicy }}
         args:
         - --secure-port={{ .Values.certManager.webhook.securePort }}
-        - --tls-cert-file=/certs/tls.crt
-        - --tls-private-key-file=/certs/tls.key
+        - --dynamic-serving-ca-secret-namespace=$(POD_NAMESPACE)
+        - --dynamic-serving-ca-secret-name=webhook-ca
+        - --dynamic-serving-dns-names=webhook,webhook.{{ .Release.Namespace }},webhook.{{ .Release.Namespace }}.svc
         livenessProbe:
           httpGet:
             path: /livez
             port: 6080
             scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 10
         readinessProbe:
           httpGet:
             path: /healthz
             port: 6080
             scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
         env:
         - name: POD_NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
-        volumeMounts:
-        - name: certs
-          mountPath: /certs
         resources:
 {{ toYaml .Values.certManager.webhook.resources | indent 10 }}
-      volumes:
-      - name: certs
-        secret:
-          secretName: webhook-tls
       nodeSelector:
 {{ toYaml .Values.certManager.webhook.nodeSelector | indent 8 }}
       affinity:
