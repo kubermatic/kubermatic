@@ -82,6 +82,21 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 	if err != nil {
 		return err
 	}
+	// set ClusterConditionEtcdClusterInitialized, this should be don't only once
+	// when etcd becomes healthy for the first time.
+	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) && extendedHealth.Etcd == kubermaticv1.HealthStatusUp {
+		if err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			kubermaticv1helper.SetClusterCondition(
+				c,
+				kubermaticv1.ClusterConditionEtcdClusterInitialized,
+				corev1.ConditionTrue,
+				"",
+				"Etcd Cluster has been initialized successfully",
+			)
+		}); err != nil {
+			return fmt.Errorf("failed to sec cluster %s condition: %v", kubermaticv1.ClusterConditionEtcdClusterInitialized, err)
+		}
+	}
 
 	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && kubermaticv1helper.IsClusterInitialized(cluster) {
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {

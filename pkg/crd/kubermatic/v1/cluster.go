@@ -50,6 +50,8 @@ const (
 	WorkerNameLabelKey   = "worker-name"
 	ProjectIDLabelKey    = "project-id"
 	UpdatedByVPALabelKey = "updated-by-vpa"
+
+	DefaultEtcdClusterSize = 3
 )
 
 // ProtectedClusterLabels is a set of labels that must not be set by users on clusters,
@@ -98,6 +100,7 @@ type ClusterSpec struct {
 	// or via a dedicated LoadBalancer
 	ExposeStrategy corev1.ServiceType `json:"exposeStrategy"`
 
+	EtcdClusterSize int `json:"etcdClusterSize`
 	// Pause tells that this cluster is currently not managed by the controller.
 	// It indicates that the user needs to do some action to resolve the pause.
 	Pause bool `json:"pause"`
@@ -166,6 +169,8 @@ const (
 
 	ClusterConditionRancherInitialized     ClusterConditionType = "RancherInitializedSuccessfully"
 	ClusterConditionRancherClusterImported ClusterConditionType = "RancherClusterImportedSuccessfully"
+
+	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpdateInProgress = "ClusterUpdateInProgress"

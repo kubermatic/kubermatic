@@ -36,6 +36,9 @@ const (
 	// ImageTag defines the image tag to use for the etcd image
 	etcdImageTagV33 = "v3.3.18"
 	etcdImageTagV34 = "v3.4.3"
+
+	initialStateExisting = "existing"
+	initialStateNew      = "new"
 )
 
 var (
@@ -71,9 +74,10 @@ type etcdStatefulSetCreatorData interface {
 func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-			set.Name = resources.EtcdStatefulSetName
 
-			set.Spec.Replicas = resources.Int32(resources.EtcdClusterSize)
+			replicas := computeReplicas(data, set)
+			set.Name = resources.EtcdStatefulSetName
+			set.Spec.Replicas = resources.Int32(int32(replicas))
 			set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 			set.Spec.ServiceName = resources.EtcdServiceName
@@ -90,6 +94,11 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				return nil, fmt.Errorf("failed to create pod labels: %v", err)
 			}
 
+			initialState := initialStateNew
+
+			if data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
+				initialState = initialStateExisting
+			}
 			set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 				Name:   name,
 				Labels: podLabels,
@@ -139,7 +148,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 						},
 						{
 							Name:  "ECTD_CLUSTER_SIZE",
-							Value: strconv.Itoa(resources.EtcdClusterSize),
+							Value: strconv.Itoa(replicas),
 						},
 						{
 							Name:  "ENABLE_CORRUPTION_CHECK",
@@ -162,9 +171,13 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							Value: "/etc/etcd/pki/client/apiserver-etcd-client.key",
 						},
 						{
-							Name:  "ETCDCTL_ENDPOINTS",
-							Value: "https://127.0.0.1:2379",
+							Name:  "INITIAL_STATE",
+							Value: initialState,
 						},
+						// {
+						// 	Name:  "ETCDCTL_ENDPOINTS",
+						// 	Value: "https://127.0.0.1:2379",
+						// },
 					},
 					Ports: []corev1.ContainerPort{
 						{
@@ -313,4 +326,25 @@ func getLauncherImage(data etcdStatefulSetCreatorData) (string, error) {
 		return "", errors.New("unknown etcd tag")
 	}
 	return data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/etcd-launcher-" + baseTag + ":" + resources.KUBERMATICCOMMIT, nil
+}
+
+func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int {
+	etcdClusterSize := data.Cluster().Spec.EtcdClusterSize
+	if set.Spec.Replicas == nil { // new replicaset
+		return etcdClusterSize
+	}
+	replicas := int(*set.Spec.Replicas)
+	isEtcdHealthy := data.Cluster().Status.ExtendedHealth.Etcd == kubermaticv1.HealthStatusUp
+	// at required size. do nothing
+	if etcdClusterSize == replicas {
+		return replicas
+	}
+	if isEtcdHealthy { // no scaling until we are healthy
+		if etcdClusterSize > replicas {
+			return replicas + 1
+		} else {
+			return replicas - 1
+		}
+	}
+	return replicas
 }
