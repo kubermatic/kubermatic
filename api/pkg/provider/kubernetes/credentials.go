@@ -1,120 +1,161 @@
 package kubernetes
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // CreateCredentialSecretForCluster creates a new secret for a credential
-func CreateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
+func CreateOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Cloud.AWS != nil {
-		return createAWSSecret(ctx, seedClient, cluster, projectID)
+		return createOrUpdateAWSSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.Azure != nil {
-		return createAzureSecret(ctx, seedClient, cluster, projectID)
+		return createOrUpdateAzureSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.Digitalocean != nil {
-		return createDigitaloceanSecret(ctx, seedClient, cluster, projectID)
+		return createOrUpdateDigitaloceanSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.GCP != nil {
-		return createGCPSecret(ctx, seedClient, cluster, projectID)
+		return createOrUpdateGCPSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.Hetzner != nil {
-		return createHetznerSecret(ctx, seedClient, cluster, projectID)
+		return createOrUpdateHetznerSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.Openstack != nil {
-		return createOpenstackSecret(ctx, seedClient, cluster, projectID)
+		return createOrUpdateOpenstackSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.Packet != nil {
-		return createPacketSecret(ctx, seedClient, cluster, projectID)
+		return createOrUpdatePacketSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.Kubevirt != nil {
-		return createKubevirtSecret(ctx, seedClient, cluster, projectID)
+		return createOrUpdateKubevirtSecret(ctx, seedClient, cluster)
 	}
 	if cluster.Spec.Cloud.VSphere != nil {
-		return createVSphereSecret(ctx, seedClient, cluster, projectID)
+		return createVSphereSecret(ctx, seedClient, cluster)
 	}
 	return nil
 }
 
-func createAWSSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
-	// create secret for storing credentials
+func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
 	name := cluster.GetSecretName()
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-				"name":                         name,
-			},
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			resources.AWSAccessKeyID:     []byte(cluster.Spec.Cloud.AWS.AccessKeyID),
-			resources.AWSSecretAccessKey: []byte(cluster.Spec.Cloud.AWS.SecretAccessKey),
-		},
+
+	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
+	existingSecret := &corev1.Secret{}
+	if err := seedClient.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
+		return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
 	}
 
-	if err := seedClient.Create(ctx, secret); err != nil {
+	if existingSecret.Name == "" {
+		secret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      name,
+				Namespace: resources.KubermaticNamespace,
+				Labels: map[string]string{
+					"name":                         name,
+					kubermaticv1.ProjectIDLabelKey: cluster.Labels[kubermaticv1.ProjectIDLabelKey],
+				},
+			},
+			Type: corev1.SecretTypeOpaque,
+			Data: secretData,
+		}
+
+		if err := seedClient.Create(ctx, secret); err != nil {
+			return nil, fmt.Errorf("failed to create credential secret: %v", err)
+		}
+	} else {
+		if existingSecret.Data == nil {
+			existingSecret.Data = map[string][]byte{}
+		}
+
+		requiresUpdate := false
+
+		for k, v := range secretData {
+			if !bytes.Equal(v, existingSecret.Data[k]) {
+				requiresUpdate = true
+				break
+			}
+		}
+
+		if requiresUpdate {
+			existingSecret.Data = secretData
+			if err := seedClient.Update(ctx, existingSecret); err != nil {
+				return nil, fmt.Errorf("failed to update credential secret: %v", err)
+			}
+		}
+	}
+
+	return &providerconfig.GlobalSecretKeySelector{
+		ObjectReference: corev1.ObjectReference{
+			Name:      name,
+			Namespace: resources.KubermaticNamespace,
+		},
+	}, nil
+}
+
+func createOrUpdateAWSSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.AWS
+
+	// already migrated
+	if spec.AccessKeyID == "" && spec.SecretAccessKey == "" {
+		return nil
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.AWSAccessKeyID:     []byte(spec.AccessKeyID),
+		resources.AWSSecretAccessKey: []byte(spec.SecretAccessKey),
+	})
+	if err != nil {
 		return err
 	}
 
 	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.AWS.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		},
-	}
+	cluster.Spec.Cloud.AWS.CredentialsReference = credentialRef
 
-	// remove credentials from cluster object
+	// clean old inline credentials
 	cluster.Spec.Cloud.AWS.AccessKeyID = ""
 	cluster.Spec.Cloud.AWS.SecretAccessKey = ""
 
 	return nil
 }
 
-func createAzureSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
-	name := cluster.GetSecretName()
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-				"name":                         name,
-			},
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			resources.AzureTenantID:       []byte(cluster.Spec.Cloud.Azure.TenantID),
-			resources.AzureSubscriptionID: []byte(cluster.Spec.Cloud.Azure.SubscriptionID),
-			resources.AzureClientID:       []byte(cluster.Spec.Cloud.Azure.ClientID),
-			resources.AzureClientSecret:   []byte(cluster.Spec.Cloud.Azure.ClientSecret),
-		},
+func createOrUpdateAzureSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.Azure
+
+	// already migrated
+	if spec.TenantID == "" && spec.SubscriptionID == "" && spec.ClientID == "" && spec.ClientSecret == "" {
+		return nil
 	}
 
-	if err := seedClient.Create(ctx, secret); err != nil {
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.AzureTenantID:       []byte(spec.TenantID),
+		resources.AzureSubscriptionID: []byte(spec.SubscriptionID),
+		resources.AzureClientID:       []byte(spec.ClientID),
+		resources.AzureClientSecret:   []byte(spec.ClientSecret),
+	})
+	if err != nil {
 		return err
 	}
 
 	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.Azure.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		},
-	}
+	cluster.Spec.Cloud.Azure.CredentialsReference = credentialRef
 
-	// remove credentials from cluster object
+	// clean old inline credentials
 	cluster.Spec.Cloud.Azure.TenantID = ""
 	cluster.Spec.Cloud.Azure.SubscriptionID = ""
 	cluster.Spec.Cloud.Azure.ClientID = ""
@@ -123,145 +164,120 @@ func createAzureSecret(ctx context.Context, seedClient ctrlruntimeclient.Client,
 	return nil
 }
 
-func createDigitaloceanSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
-	name := cluster.GetSecretName()
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-				"name":                         name,
-			},
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			resources.DigitaloceanToken: []byte(cluster.Spec.Cloud.Digitalocean.Token),
-		},
+func createOrUpdateDigitaloceanSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.Digitalocean
+
+	// already migrated
+	if spec.Token == "" {
+		return nil
 	}
 
-	if err := seedClient.Create(ctx, secret); err != nil {
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.DigitaloceanToken: []byte(spec.Token),
+	})
+	if err != nil {
 		return err
 	}
 
 	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.Digitalocean.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		},
-	}
+	cluster.Spec.Cloud.Digitalocean.CredentialsReference = credentialRef
 
-	// remove credentials from cluster object
+	// clean old inline credentials
 	cluster.Spec.Cloud.Digitalocean.Token = ""
 
 	return nil
 }
 
-func createGCPSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
-	name := cluster.GetSecretName()
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-				"name":                         name,
-			},
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			resources.GCPServiceAccount: []byte(cluster.Spec.Cloud.GCP.ServiceAccount),
-		},
+func createOrUpdateGCPSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.GCP
+
+	// already migrated
+	if spec.ServiceAccount == "" {
+		return nil
 	}
 
-	if err := seedClient.Create(ctx, secret); err != nil {
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.GCPServiceAccount: []byte(spec.ServiceAccount),
+	})
+	if err != nil {
 		return err
 	}
 
 	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.GCP.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		},
-	}
+	cluster.Spec.Cloud.GCP.CredentialsReference = credentialRef
 
-	// remove credentials from cluster object
+	// clean old inline credentials
 	cluster.Spec.Cloud.GCP.ServiceAccount = ""
 
 	return nil
 }
 
-func createHetznerSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
-	name := cluster.GetSecretName()
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-				"name":                         name,
-			},
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			resources.HetznerToken: []byte(cluster.Spec.Cloud.Hetzner.Token),
-		},
+func createOrUpdateHetznerSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.Hetzner
+
+	// already migrated
+	if spec.Token == "" {
+		return nil
 	}
 
-	if err := seedClient.Create(ctx, secret); err != nil {
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.HetznerToken: []byte(spec.Token),
+	})
+	if err != nil {
 		return err
 	}
 
 	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.Hetzner.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		},
-	}
+	cluster.Spec.Cloud.Hetzner.CredentialsReference = credentialRef
 
-	// remove credentials from cluster object
+	// clean old inline credentials
 	cluster.Spec.Cloud.Hetzner.Token = ""
 
 	return nil
 }
 
-func createOpenstackSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
-	name := cluster.GetSecretName()
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-				"name":                         name,
-			},
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			resources.OpenstackUsername: []byte(cluster.Spec.Cloud.Openstack.Username),
-			resources.OpenstackPassword: []byte(cluster.Spec.Cloud.Openstack.Password),
-			resources.OpenstackTenant:   []byte(cluster.Spec.Cloud.Openstack.Tenant),
-			resources.OpenstackTenantID: []byte(cluster.Spec.Cloud.Openstack.TenantID),
-			resources.OpenstackDomain:   []byte(cluster.Spec.Cloud.Openstack.Domain),
-		},
+func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.Openstack
+
+	// already migrated
+	if spec.Username == "" && spec.Password == "" && spec.Tenant == "" && spec.TenantID == "" && spec.Domain == "" {
+		return nil
 	}
 
-	if err := seedClient.Create(ctx, secret); err != nil {
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
+	oldCred, err := openstack.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+	if err != nil {
+		return err
+	}
+	if spec.Tenant == "" {
+		spec.Tenant = oldCred.Tenant
+	}
+	if spec.TenantID == "" {
+		spec.TenantID = oldCred.TenantID
+	}
+	if spec.Domain == "" {
+		spec.Domain = oldCred.Domain
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.OpenstackUsername: []byte(spec.Username),
+		resources.OpenstackPassword: []byte(spec.Password),
+		resources.OpenstackTenant:   []byte(spec.Tenant),
+		resources.OpenstackTenantID: []byte(spec.TenantID),
+		resources.OpenstackDomain:   []byte(spec.Domain),
+	})
+	if err != nil {
 		return err
 	}
 
 	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.Openstack.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		},
-	}
+	cluster.Spec.Cloud.Openstack.CredentialsReference = credentialRef
 
-	// remove credentials from cluster object
+	// clean old inline credentials
 	cluster.Spec.Cloud.Openstack.Username = ""
 	cluster.Spec.Cloud.Openstack.Password = ""
 	cluster.Spec.Cloud.Openstack.Tenant = ""
@@ -271,114 +287,81 @@ func createOpenstackSecret(ctx context.Context, seedClient ctrlruntimeclient.Cli
 	return nil
 }
 
-func createPacketSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
-	// create secret for storing credentials
-	name := cluster.GetSecretName()
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-				"name":                         name,
-			},
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			resources.PacketAPIKey:    []byte(cluster.Spec.Cloud.Packet.APIKey),
-			resources.PacketProjectID: []byte(cluster.Spec.Cloud.Packet.ProjectID),
-		},
+func createOrUpdatePacketSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.Packet
+
+	// already migrated
+	if spec.APIKey == "" && spec.ProjectID == "" {
+		return nil
 	}
 
-	if err := seedClient.Create(ctx, secret); err != nil {
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.PacketAPIKey:    []byte(spec.APIKey),
+		resources.PacketProjectID: []byte(spec.ProjectID),
+	})
+	if err != nil {
 		return err
 	}
 
 	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.Packet.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		},
-	}
+	cluster.Spec.Cloud.Packet.CredentialsReference = credentialRef
 
-	// remove credentials from cluster object
+	// clean old inline credentials
 	cluster.Spec.Cloud.Packet.APIKey = ""
 	cluster.Spec.Cloud.Packet.ProjectID = ""
 
 	return nil
 }
 
-func createKubevirtSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
-	// create secret for storing credentials
-	name := cluster.GetSecretName()
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-				"name":                         name,
-			},
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			resources.KubevirtKubeConfig: []byte(cluster.Spec.Cloud.Kubevirt.Kubeconfig),
-		},
+func createOrUpdateKubevirtSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.Kubevirt
+
+	// already migrated
+	if spec.Kubeconfig == "" {
+		return nil
 	}
 
-	if err := seedClient.Create(ctx, secret); err != nil {
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.KubevirtKubeConfig: []byte(spec.Kubeconfig),
+	})
+	if err != nil {
 		return err
 	}
 
 	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.Kubevirt.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		},
-	}
+	cluster.Spec.Cloud.Kubevirt.CredentialsReference = credentialRef
 
-	// remove credentials from cluster object
+	// clean old inline credentials
 	cluster.Spec.Cloud.Kubevirt.Kubeconfig = ""
 
 	return nil
 }
 
-func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, projectID string) error {
+func createVSphereSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	spec := cluster.Spec.Cloud.VSphere
-	name := cluster.GetSecretName()
-	secret := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: resources.KubermaticNamespace,
-			Labels: map[string]string{
-				kubermaticv1.ProjectIDLabelKey: projectID,
-				"name":                         name,
-			},
-		},
-		Type: corev1.SecretTypeOpaque,
-		Data: map[string][]byte{
-			resources.VsphereUsername:                    []byte(spec.Username),
-			resources.VspherePassword:                    []byte(spec.Password),
-			resources.VsphereInfraManagementUserUsername: []byte(spec.InfraManagementUser.Username),
-			resources.VsphereInfraManagementUserPassword: []byte(spec.InfraManagementUser.Password),
-		},
+
+	// already migrated
+	if spec.Username == "" && spec.Password == "" && spec.InfraManagementUser.Username == "" && spec.InfraManagementUser.Password == "" {
+		return nil
 	}
 
-	if err := seedClient.Create(ctx, secret); err != nil {
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.VsphereUsername:                    []byte(spec.Username),
+		resources.VspherePassword:                    []byte(spec.Password),
+		resources.VsphereInfraManagementUserUsername: []byte(spec.InfraManagementUser.Username),
+		resources.VsphereInfraManagementUserPassword: []byte(spec.InfraManagementUser.Password),
+	})
+	if err != nil {
 		return err
 	}
 
 	// add secret key selectors to cluster object
-	cluster.Spec.Cloud.VSphere.CredentialsReference = &providerconfig.GlobalSecretKeySelector{
-		ObjectReference: corev1.ObjectReference{
-			Name:      secret.Name,
-			Namespace: secret.Namespace,
-		},
-	}
+	cluster.Spec.Cloud.VSphere.CredentialsReference = credentialRef
 
-	// remove credentials from cluster object
+	// clean old inline credentials
 	cluster.Spec.Cloud.VSphere.Username = ""
 	cluster.Spec.Cloud.VSphere.Password = ""
 	cluster.Spec.Cloud.VSphere.InfraManagementUser.Username = ""
