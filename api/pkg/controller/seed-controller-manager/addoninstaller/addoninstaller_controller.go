@@ -3,6 +3,7 @@ package addoninstaller
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
 	"go.uber.org/zap"
@@ -150,16 +151,29 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 	for _, addon := range addons.Items {
 		name := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: addon.Name}
 		addonLog := log.With("addon", name)
-		err := r.Get(ctx, name, &kubermaticv1.Addon{})
-		if err == nil {
+		existingAddon := &kubermaticv1.Addon{}
+		err := r.Get(ctx, name, existingAddon)
+		if err != nil {
+			if !kerrors.IsNotFound(err) {
+				return fmt.Errorf("failed to get addon %q: %v", addon.Name, err)
+			}
+			if err := r.createAddon(ctx, addonLog, addon, cluster); err != nil {
+				return fmt.Errorf("failed to create addon %q: %v", addon.Name, err)
+			}
+		} else {
 			addonLog.Debug("Addon already exists")
-			continue
-		}
-		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get addon %q: %v", addon.Name, err)
-		}
-		if err := r.createAddon(ctx, addonLog, addon, cluster); err != nil {
-			return fmt.Errorf("failed to create addon %q: %v", addon.Name, err)
+			if !reflect.DeepEqual(addon.Labels, existingAddon.Labels) || !reflect.DeepEqual(addon.Annotations, existingAddon.Annotations) || !reflect.DeepEqual(addon.Spec.Variables, existingAddon.Spec.Variables) || !reflect.DeepEqual(addon.Spec.RequiredResourceTypes, existingAddon.Spec.RequiredResourceTypes) {
+				updatedAddon := existingAddon.DeepCopy()
+				updatedAddon.Labels = addon.Labels
+				updatedAddon.Annotations = addon.Annotations
+				updatedAddon.Spec.Name = addon.Name
+				updatedAddon.Spec.Variables = addon.Spec.Variables
+				updatedAddon.Spec.RequiredResourceTypes = addon.Spec.RequiredResourceTypes
+				updatedAddon.Spec.IsDefault = true
+				if err := r.Patch(ctx, updatedAddon, ctrlruntimeclient.MergeFrom(existingAddon)); err != nil {
+					return fmt.Errorf("failed to update addon %q: %v", addon.Name, err)
+				}
+			}
 		}
 	}
 	return nil
