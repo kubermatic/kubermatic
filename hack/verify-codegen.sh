@@ -24,7 +24,7 @@ DIFFROOT=pkg
 TMP_DIFFROOT="$TEMPDIR/pkg"
 
 cleanup() {
-    rm -rf "$TEMPDIR"
+  rm -rf "$TEMPDIR"
 }
 trap "cleanup" EXIT SIGINT
 

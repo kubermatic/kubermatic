@@ -29,8 +29,8 @@ import (
 
 func TestRetagImageForAllVersions(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
-	masterResources := "../../../config/kubermatic/static/master/versions.yaml"
-	addonPath := "../../../addons"
+	masterResources := "../../charts/kubermatic/static/master/versions.yaml"
+	addonPath := "../../addons"
 
 	versions, err := version.LoadVersions(masterResources)
 	if err != nil {

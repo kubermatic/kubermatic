@@ -15,14 +15,15 @@
 # limitations under the License.
 
 set -euo pipefail
+
+cd $(dirname $0)/../..
+source hack/lib.sh
+
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
-cd $(dirname $0)/../../..
-
-source ./api/hack/lib.sh
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
-  ./api/hack/ci/ci-push-images.sh
+  ./hack/ci/ci-push-images.sh
 fi
 
 echodate "Getting secrets from Vault"
@@ -48,5 +49,5 @@ echodate "Successfully got secrets for dev from Vault"
 export DEPLOY_LOKI=true
 
 echodate "Deploying ${DEPLOY_STACK} stack to dev"
-TILLER_NAMESPACE=kubermatic-installer ./api/hack/deploy.sh master ${VALUES_FILE}
+TILLER_NAMESPACE=kubermatic-installer ./hack/deploy.sh master ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to dev"

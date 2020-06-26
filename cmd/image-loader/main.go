@@ -79,7 +79,7 @@ func main() {
 	logOpts.AddFlags(flag.CommandLine)
 
 	o := opts{}
-	flag.StringVar(&o.versionsFile, "versions", "../config/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
+	flag.StringVar(&o.versionsFile, "versions", "charts/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&o.versionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
 	flag.StringVar(&o.registry, "registry", "registry.corp.local", "Address of the registry to push to")
 	flag.BoolVar(&o.dryRun, "dry-run", false, "Only print the names of found images")

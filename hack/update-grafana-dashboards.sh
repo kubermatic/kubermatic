@@ -16,10 +16,10 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/../..
-source api/hack/lib.sh
+cd $(dirname $0)/..
+source hack/lib.sh
 
-for dashboard in config/monitoring/grafana/dashboards/*/*.json; do
+for dashboard in charts/monitoring/grafana/dashboards/*/*.json; do
   echodate "$dashboard"
   format_dashboard "$dashboard"
 done

@@ -19,13 +19,13 @@ set -euo pipefail
 function cleanup() {
   rm -f $TMP_SWAGGER
 
-  cd ${API_DIR}/cmd/kubermatic-api/
+  cd ${ROOT_DIR}/cmd/kubermatic-api/
   # disable swagger:meta comment
   perl -0777 -i -p -e 's/(package handler)/\n\1/' ../../pkg/handler/routes_v1.go
 }
 trap cleanup EXIT SIGINT SIGTERM
 
-API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic"
+ROOT_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic"
 SWAGGER_FILE="swagger.json"
 TMP_SWAGGER="${SWAGGER_FILE}.tmp"
 
@@ -33,10 +33,10 @@ TMP_SWAGGER="${SWAGGER_FILE}.tmp"
 TMP_DIR=$(mktemp -d)
 mkdir -p "${TMP_DIR}/bin"
 
-cd ${API_DIR}/vendor/github.com/go-swagger/go-swagger/cmd/swagger
+cd ${ROOT_DIR}/vendor/github.com/go-swagger/go-swagger/cmd/swagger
 env "GOBIN=${TMP_DIR}/bin" go install
 export PATH="${TMP_DIR}/bin:${PATH}"
-cd ${API_DIR}/cmd/kubermatic-api/
+cd ${ROOT_DIR}/cmd/kubermatic-api/
 
 # enable the package-level swagger:meta comment
 perl -0777 -i -p -e 's/\n(package handler)/\1/' ../../pkg/handler/routes_v1.go

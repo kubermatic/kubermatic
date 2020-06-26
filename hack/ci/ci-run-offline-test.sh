@@ -21,7 +21,7 @@ set -euo pipefail
 set -o monitor
 
 cd "$(dirname "$0")/"
-source ./../lib.sh
+source ../lib.sh
 
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
@@ -129,10 +129,10 @@ retry 5 ./../push_image.sh ${GIT_HEAD_HASH} $(git tag -l --points-at HEAD)
 echodate "Sucessfully finished building and pushing quay images"
 
 # Ensure we have pushed the kubermatic chart
-cd ./../../../config
+cd ../../charts
 HELM_EXTRA_ARGS="--set kubermatic.controller.image.tag=${GIT_HEAD_HASH},kubermatic.api.image.tag=${GIT_HEAD_HASH},kubermatic.masterController.image.tag=${GIT_HEAD_HASH}"
 # We must not pull those images from remote. We build them on the fly
-helm template ${HELM_EXTRA_ARGS} kubermatic | grep -v quay.io/kubermatic/kubermatic |../api/hack/retag-images.sh
+helm template ${HELM_EXTRA_ARGS} kubermatic | grep -v quay.io/kubermatic/kubermatic |../hack/retag-images.sh
 
 # Push a tiller image
 docker pull gcr.io/kubernetes-helm/tiller:${HELM_VERSION}
@@ -145,27 +145,25 @@ docker pull k8s.gcr.io/pause:3.1
 docker tag k8s.gcr.io/pause:3.1 127.0.0.1:5000/kubernetes/pause:3.1
 docker push 127.0.0.1:5000/kubernetes/pause:3.1
 
-for VERSION in $(echo ${VERSIONS} | sed "s/,/ /g")
-do
-    docker pull k8s.gcr.io/hyperkube-amd64:${VERSION}
-    docker tag k8s.gcr.io/hyperkube-amd64:${VERSION} 127.0.0.1:5000/kubernetes/hyperkube-amd64:${VERSION}
-    docker push 127.0.0.1:5000/kubernetes/hyperkube-amd64:${VERSION}
+for VERSION in $(echo ${VERSIONS} | sed "s/,/ /g"); do
+  docker pull k8s.gcr.io/hyperkube-amd64:${VERSION}
+  docker tag k8s.gcr.io/hyperkube-amd64:${VERSION} 127.0.0.1:5000/kubernetes/hyperkube-amd64:${VERSION}
+  docker push 127.0.0.1:5000/kubernetes/hyperkube-amd64:${VERSION}
 done
 
 # Push all kubermatic images
-cd ../api
+cd ..
 KUBERMATICCOMMIT=${GIT_HEAD_HASH} GITTAG=${GIT_HEAD_HASH} make image-loader
 ./_build/image-loader \
-  -versions ../config/kubermatic/static/master/versions.yaml \
-  -addons-path ../addons \
+  -versions charts/kubermatic/static/master/versions.yaml \
+  -addons-path addons \
   -registry 127.0.0.1:5000 \
   -log-format=Console
 
 # Build kubermatic binaries and push the image
 if ! curl -Ss --fail "http://127.0.0.1:5000/v2/kubermatic/api/tags/list"|grep -q ${GIT_HEAD_HASH}; then
   echodate "Building binaries"
-  time make -C api build
-  cd api
+  time make build
   echodate "Building docker image"
   time docker build -t 127.0.0.1:5000/kubermatic/api:${GIT_HEAD_HASH} .
   echodate "Pushing docker image"
@@ -243,7 +241,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
   --set=kubermatic.checks.crd.disable=true \
   --values ${VALUES_FILE} \
   --namespace ${NAMESPACE} \
-  kubermatic-${BUILD_ID} ./../config/kubermatic/
+  kubermatic-${BUILD_ID} charts/kubermatic/
 
 go build --tags "$KUBERMATIC_EDITION" github.com/kubermatic/kubermatic/cmd/conformance-tests
 

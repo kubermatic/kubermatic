@@ -26,15 +26,15 @@ function cleanup() {
 }
 trap cleanup EXIT SIGINT SIGTERM
 
-API_DIR="$(realpath .)"
-DIFFROOT="${API_DIR}/pkg/test/e2e/api/utils/apiclient"
+ROOT_DIR="$(realpath .)"
+DIFFROOT="${ROOT_DIR}/pkg/test/e2e/api/utils/apiclient"
 
 TMP_DIFFROOT=$(mktemp -d)
 
 cp -a "${DIFFROOT}"/* "${TMP_DIFFROOT}"
 
 echodate "Generating API client"
-./hack/gen-api-client.sh &>/dev/null
+./hack/gen-api-client.sh
 
 echodate "Diffing ${DIFFROOT} against freshly generated api client"
 ret=0

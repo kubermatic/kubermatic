@@ -22,7 +22,6 @@ KUBECONFIG_MACHINE_CONTROLLER=$(mktemp)
 kubectl get secret admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' \
   | base64 -d > $KUBECONFIG_MACHINE_CONTROLLER
 
-
 make machine-controller
 ./machine-controller \
   -kubeconfig=$KUBECONFIG_MACHINE_CONTROLLER \

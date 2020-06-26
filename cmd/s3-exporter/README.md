@@ -39,7 +39,7 @@ vim hack/publish-s3-exporter.sh
 ./hack/publish-s3-exporter.sh
 
 # Optional: Set the new version in the chart
-vim ../config/kubermatic/values.yaml
+vim charts/kubermatic/values.yaml
 ```
 
 Avaiable metrics:

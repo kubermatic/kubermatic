@@ -16,9 +16,10 @@
 
 set -euo pipefail
 
+cd $(dirname $0)/../..
+source hack/lib.sh
+
 apk add --no-cache -U git bash openssh
-source $(dirname $0)/../lib.sh
-cd $(dirname $0)/../../..
 git fetch --tags
 
 # we only synchronize charts for the master branch and tagged versions
@@ -48,8 +49,8 @@ else
   exit 1
 fi
 
-sed -i "s/__KUBERMATIC_TAG__/$KUBERMATIC_VERSION/g" config/*/*.yaml
-sed -i "s/__DASHBOARD_TAG__/$DASHBOARD_VERSION/g" config/*/*.yaml
+sed -i "s/__KUBERMATIC_TAG__/$KUBERMATIC_VERSION/g" charts/*/*.yaml
+sed -i "s/__DASHBOARD_TAG__/$DASHBOARD_VERSION/g" charts/*/*.yaml
 
 git config --global user.email "dev@loodse.com"
 git config --global user.name "Prow CI Robot"
@@ -60,7 +61,7 @@ export CHARTS='kubermatic kubermatic-operator cert-manager certs nginx-ingress-c
 export MONITORING_CHARTS='alertmanager blackbox-exporter grafana kube-state-metrics node-exporter prometheus'
 export LOGGING_CHARTS='loki promtail elasticsearch kibana fluentbit'
 export BACKUP_CHARTS='velero'
-export CHARTS_DIR=$(pwd)/config
+export CHARTS_DIR=$(pwd)/charts
 export TARGET_DIR='sync_target'
 export TARGET_VALUES_FILE=${TARGET_DIR}/values.example.yaml
 export TARGET_VALUES_SEED_FILE=${TARGET_DIR}/values.seed.example.yaml

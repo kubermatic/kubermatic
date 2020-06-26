@@ -15,14 +15,15 @@
 # limitations under the License.
 
 set -euo pipefail
+
+cd $(dirname $0)/../..
+source hack/lib.sh
+
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
-cd $(dirname $0)/../../..
-
-source ./api/hack/lib.sh
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
-  ./api/hack/ci/ci-push-images.sh
+  ./hack/ci/ci-push-images.sh
 fi
 
 echodate "Getting secrets from Vault"
@@ -40,5 +41,5 @@ vault kv get -field=values.yaml dev/seed-clusters/run.lab.kubermatic.io > ${VALU
 echodate "Successfully got secrets for run from Vault"
 
 echodate "Deploying ${DEPLOY_STACK} stack to run.lab.kubermatic.io"
-TILLER_NAMESPACE=kubermatic ./api/hack/deploy.sh master ${VALUES_FILE}
+TILLER_NAMESPACE=kubermatic ./hack/deploy.sh master ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to run.lab.kubermatic.io"

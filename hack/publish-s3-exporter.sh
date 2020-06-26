@@ -14,14 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -euo pipefail
+
+cd $(dirname $0)/..
+
 export REGISTRY=quay.io/kubermatic/s3-exporter
 export TAG=v0.4
 
-GOOS=linux GOARCH=amd64 make -C $(dirname $0)/../ s3-exporter
+GOOS=linux GOARCH=amd64 make s3-exporter
 
-mv $(dirname $0)/../_build/s3-exporter $(dirname $0)/../cmd/s3-exporter/
-
-cd $(dirname $0)/../cmd/s3-exporter/
+mv _build/s3-exporter cmd/s3-exporter/
+cd cmd/s3-exporter/
 
 docker build -t $REGISTRY:$TAG .
 docker push $REGISTRY:$TAG

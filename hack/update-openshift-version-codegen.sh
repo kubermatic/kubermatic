@@ -26,4 +26,4 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-go generate pkg/controller/openshift/resources/const.go
+go generate pkg/controller/seed-controller-manager/openshift/resources/const.go

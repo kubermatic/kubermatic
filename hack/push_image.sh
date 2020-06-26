@@ -26,8 +26,8 @@ EOF
   exit 0
 fi
 
-cd "$(dirname "$0")/../"
-source ./hack/lib.sh
+cd $(dirname "$0")/..
+source hack/lib.sh
 
 DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 
@@ -44,13 +44,13 @@ make build
 docker build -t ${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${1} .
 cd cmd/nodeport-proxy && export TAG=${1} && make DOCKER_REPO=${DOCKER_REPO} docker && unset TAG && cd -
 cd cmd/kubeletdnat-controller && export TAG=${1} && make DOCKER_REPO=${DOCKER_REPO} docker && unset TAG && cd -
-docker build -t "${DOCKER_REPO}/addons:${1}" ../addons
-docker build -t "${DOCKER_REPO}/openshift-addons:${1}" ../openshift_addons
+docker build -t "${DOCKER_REPO}/addons:${1}" addons
+docker build -t "${DOCKER_REPO}/openshift-addons:${1}" openshift_addons
 cd cmd/user-ssh-keys-agent && export TAG=${1} && make DOCKER_REPO=${DOCKER_REPO} docker && unset TAG && cd -
 
 for ETCD_TAG in $ETCD_TAGS; do
   BASE_TAG=$(echo ${ETCD_TAG} | cut -d\. -f 1,2| tr -d .)
-  docker build --build-arg ECTD_VERSION=${ETCD_TAG} -t ${DOCKER_REPO}/etcd-launcher-${BASE_TAG}:${1} -f ./cmd/etcd-launcher/Dockerfile .
+  docker build --build-arg ECTD_VERSION=${ETCD_TAG} -t ${DOCKER_REPO}/etcd-launcher-${BASE_TAG}:${1} -f cmd/etcd-launcher/Dockerfile .
 done
 
 # keep a mirror of the EE version in the old repo
@@ -71,7 +71,6 @@ for TAG in "$@"; do
   docker tag ${DOCKER_REPO}/openshift-addons:${1} ${DOCKER_REPO}/openshift-addons:${TAG}
   docker tag ${DOCKER_REPO}/user-ssh-keys-agent:${1} ${DOCKER_REPO}/user-ssh-keys-agent:${TAG}
 
-
   docker push ${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}
   docker push ${DOCKER_REPO}/nodeport-proxy:${TAG}
   docker push ${DOCKER_REPO}/kubeletdnat-controller:${TAG}
@@ -89,6 +88,4 @@ for TAG in "$@"; do
     docker tag ${DOCKER_REPO}/api:${1} ${DOCKER_REPO}/api:${TAG}
     docker push ${DOCKER_REPO}/api:${TAG}
   fi
-
-
 done

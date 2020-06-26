@@ -3,11 +3,11 @@
    other parts of the Software, are licensed under proprietary or other
    licences, subject to the following principles:
 
-   1.	All files outside of the api/pkg/ee directory are licensed under the
+   1.	All files outside of the pkg/ee directory are licensed under the
       Apache License Version 2.0. The same applies to all files that
       reference the Apache License Version 2.0.
    2.	All other files contained in Software, in particular those in the
-      api/pkg/ee directory, are licensed under the Kubermatic Enterprise
+      pkg/ee directory, are licensed under the Kubermatic Enterprise
       Read-Only License v 1.0 ("KERO-1.0”). The same applies to all files
       that reference the KERO-1.0 license. Users who have acquired the Software
       by way of an individual agreement under an enterprise license

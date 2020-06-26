@@ -24,8 +24,8 @@ EOF
 fi
 
 if [[ ! -f ${2} ]]; then
-    echo "File not found!"
-    exit 1
+  echo "File not found!"
+  exit 1
 fi
 
 HELM_EXTRA_ARGS=${@:3}
@@ -45,9 +45,8 @@ DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
 HELM_INIT_ARGS=${HELM_INIT_ARGS:-""}
 
-cd "$(dirname "$0")/../../"
-
-source ./api/hack/lib.sh
+cd $(dirname "$0")/..
+source hack/lib.sh
 
 deployment_disabled() {
   local release="$1"
@@ -115,33 +114,33 @@ echodate "Deploying ${DEPLOY_STACK} stack..."
 case "${DEPLOY_STACK}" in
   monitoring)
     initTiller
-    deploy "node-exporter" "monitoring" ./config/monitoring/node-exporter/
-    deploy "kube-state-metrics" "monitoring" ./config/monitoring/kube-state-metrics/
-    deploy "grafana" "monitoring" ./config/monitoring/grafana/
-    deploy "helm-exporter" "monitoring" ./config/monitoring/helm-exporter/
+    deploy "node-exporter" "monitoring" charts/monitoring/node-exporter/
+    deploy "kube-state-metrics" "monitoring" charts/monitoring/kube-state-metrics/
+    deploy "grafana" "monitoring" charts/monitoring/grafana/
+    deploy "helm-exporter" "monitoring" charts/monitoring/helm-exporter/
     if [[ "${DEPLOY_ALERTMANAGER}" = true ]]; then
-      deploy "alertmanager" "monitoring" ./config/monitoring/alertmanager/
+      deploy "alertmanager" "monitoring" charts/monitoring/alertmanager/
 
       if [[ "${1}" = "master" ]]; then
-        deploy "karma" "monitoring" ./config/monitoring/karma/
+        deploy "karma" "monitoring" charts/monitoring/karma/
       fi
     fi
 
     # Prometheus can take a long time to become ready, depending on the WAL size.
     # We try to accomodate by waiting for 15 instead of 5 minutes.
-    deploy "prometheus" "monitoring" ./config/monitoring/prometheus/ 900
+    deploy "prometheus" "monitoring" charts/monitoring/prometheus/ 900
     ;;
 
   logging)
     initTiller
     if [[ "${DEPLOY_ELASTIC}" = true ]]; then
-      deploy "elasticsearch" "logging" ./config/logging/elasticsearch/
-      deploy "fluentbit" "logging" ./config/logging/fluentbit/
-      deploy "kibana" "logging" ./config/logging/kibana/
+      deploy "elasticsearch" "logging" charts/logging/elasticsearch/
+      deploy "fluentbit" "logging" charts/logging/fluentbit/
+      deploy "kibana" "logging" charts/logging/kibana/
     fi
     if [[ "${DEPLOY_LOKI}" = true ]]; then
-      deploy "loki" "logging" ./config/logging/loki/
-      deploy "promtail" "logging" ./config/logging/promtail/
+      deploy "loki" "logging" charts/logging/loki/
+      deploy "promtail" "logging" charts/logging/promtail/
     fi
     ;;
 
@@ -149,30 +148,30 @@ case "${DEPLOY_STACK}" in
     initTiller
 
     echodate "Deploying the Kubermatic CRDs..."
-    retry 5 kubectl apply -f ./config/kubermatic/crd/
+    retry 5 kubectl apply -f charts/kubermatic/crd/
 
     # PULL_BASE_REF is the name of the current branch in case of a post-submit
     # or the name of the base branch in case of a PR.
     LATEST_DASHBOARD="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
 
-    sed -i "s/__DASHBOARD_TAG__/$LATEST_DASHBOARD/g" ./config/kubermatic/*.yaml
-    sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic/*.yaml
-    sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/kubermatic-operator/*.yaml
-    sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" ./config/nodeport-proxy/*.yaml
+    sed -i "s/__DASHBOARD_TAG__/$LATEST_DASHBOARD/g" charts/kubermatic/*.yaml
+    sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" charts/kubermatic/*.yaml
+    sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" charts/kubermatic-operator/*.yaml
+    sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" charts/nodeport-proxy/*.yaml
 
     if [[ "${1}" = "master" ]]; then
       echodate "Deploying the cert-manager CRDs..."
-      retry 5 kubectl apply -f ./config/cert-manager/crd/
+      retry 5 kubectl apply -f charts/cert-manager/crd/
 
-      deploy "nginx-ingress-controller" "nginx-ingress-controller" ./config/nginx-ingress-controller/
-      deploy "oauth" "oauth" ./config/oauth/
-      deploy "cert-manager" "cert-manager" ./config/cert-manager/
+      deploy "nginx-ingress-controller" "nginx-ingress-controller" charts/nginx-ingress-controller/
+      deploy "oauth" "oauth" charts/oauth/
+      deploy "cert-manager" "cert-manager" charts/cert-manager/
 
       # We might have not configured IAP which results in nothing being deployed. This triggers https://github.com/helm/helm/issues/4295 and marks this as failed
       # We hack around this by grepping for a string that is mandatory in the values file of IAP
       # to determine if its configured, because am empty chart leads to Helm doing weird things
       if grep -q discovery_url ${VALUES_FILE}; then
-        deploy "iap" "iap" ./config/iap/
+        deploy "iap" "iap" charts/iap/
       else
         echodate "Skipping IAP deployment because discovery_url is unset in values file"
       fi
@@ -180,13 +179,13 @@ case "${DEPLOY_STACK}" in
 
     # CI has its own Minio deployment as a proxy for GCS, so we do not install the default Helm chart here.
     if [[ "${DEPLOY_MINIO}" = true ]]; then
-      deploy "minio" "minio" ./config/minio/
-      deploy "s3-exporter" "kube-system" ./config/s3-exporter/
+      deploy "minio" "minio" charts/minio/
+      deploy "s3-exporter" "kube-system" charts/s3-exporter/
     fi
 
     # The NodePort proxy is only relevant in cloud environments (Where LB services can be used)
     if [[ "${DEPLOY_NODEPORT_PROXY}" = true ]]; then
-      deploy "nodeport-proxy" "nodeport-proxy" ./config/nodeport-proxy/
+      deploy "nodeport-proxy" "nodeport-proxy" charts/nodeport-proxy/
     fi
 
     # Kubermatic
@@ -200,7 +199,7 @@ case "${DEPLOY_STACK}" in
           --namespace kubermatic \
           --values ${VALUES_FILE} \
           kubermatic-operator \
-          ./config/kubermatic-operator/
+          charts/kubermatic-operator/
 
         # only deploy KubermaticConfigurations on masters, on seed clusters
         # the relevant Seed CR is copied by Kubermatic itself
@@ -212,7 +211,7 @@ case "${DEPLOY_STACK}" in
         echodate "Not deploying Kubermatic, as this is not a master cluster."
       fi
     else
-      deploy "kubermatic" "kubermatic" ./config/kubermatic/
+      deploy "kubermatic" "kubermatic" charts/kubermatic/
     fi
     ;;
 esac

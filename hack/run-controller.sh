@@ -30,20 +30,20 @@ PPROF_PORT=${PPROF_PORT:-6600}
   -dynamic-datacenters=true \
   -namespace=kubermatic \
   -datacenter-name=europe-west3-c \
-  -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
-  -versions=../config/kubermatic/static/master/versions.yaml \
-  -updates=../config/kubermatic/static/master/updates.yaml \
-  -kubernetes-addons-path=../addons \
-  -kubernetes-addons-file=../config/kubermatic/static/master/kubernetes-addons.yaml \
-  -openshift-addons-path=../openshift_addons \
-  -openshift-addons-file=../config/kubermatic/static/master/openshift-addons.yaml \
+  -kubeconfig=../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
+  -versions=charts/kubermatic/static/master/versions.yaml \
+  -updates=charts/kubermatic/static/master/updates.yaml \
+  -kubernetes-addons-path=addons \
+  -kubernetes-addons-file=charts/kubermatic/static/master/kubernetes-addons.yaml \
+  -openshift-addons-path=openshift_addons \
+  -openshift-addons-file=charts/kubermatic/static/master/openshift-addons.yaml \
   -feature-gates=OpenIDAuthPlugin=true \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
   -external-url=dev.kubermatic.io \
-  -backup-container=../config/kubermatic/static/store-container.yaml \
-  -cleanup-container=../config/kubermatic/static/cleanup-container.yaml \
-  -docker-pull-config-json-file=../../secrets/seed-clusters/dev.kubermatic.io/.dockerconfigjson \
-  -oidc-ca-file=../../secrets/seed-clusters/dev.kubermatic.io/caBundle.pem \
+  -backup-container=charts/kubermatic/static/store-container.yaml \
+  -cleanup-container=charts/kubermatic/static/cleanup-container.yaml \
+  -docker-pull-config-json-file=../secrets/seed-clusters/dev.kubermatic.io/.dockerconfigjson \
+  -oidc-ca-file=../secrets/seed-clusters/dev.kubermatic.io/caBundle.pem \
   -oidc-issuer-url=$(vault kv get -field=oidc-issuer-url dev/seed-clusters/dev.kubermatic.io) \
   -oidc-issuer-client-id=$(vault kv get -field=oidc-issuer-client-id dev/seed-clusters/dev.kubermatic.io) \
   -oidc-issuer-client-secret=$(vault kv get -field=oidc-issuer-client-secret dev/seed-clusters/dev.kubermatic.io) \

@@ -21,7 +21,8 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
-source $(dirname $0)/../lib.sh
+cd $(dirname $0)/../..
+source hack/lib.sh
 
 if [ -z ${GOCACHE_MINIO_ADDRESS:-} ]; then
   echodate "Fatal: env var GOCACHE_MINIO_ADDRESS unset"
@@ -31,9 +32,7 @@ fi
 GOCACHE_DIR=$(mktemp -d)
 export GOCACHE="${GOCACHE_DIR}"
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
-
 export CGO_ENABLED=0
-cd $(dirname $0)/../..
 
 for editionTag in ee ce; do
   edition="${editionTag^^}"

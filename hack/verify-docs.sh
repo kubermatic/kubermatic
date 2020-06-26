@@ -16,8 +16,8 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/../..
-source api/hack/lib.sh
+cd $(dirname $0)/..
+source hack/lib.sh
 
 tmpdir=docs-old
 
@@ -32,7 +32,7 @@ echodate "Recreating documentation..."
 
 cp -ar docs $tmpdir
 rm -f docs/zz_generated.*.yaml
-./api/hack/update-docs.sh
+./hack/update-docs.sh
 diff -rdu docs $tmpdir
 
 echodate "Documentation is in-sync with Go code."

@@ -16,16 +16,16 @@
 
 set -euo pipefail
 
-make -C $(dirname $0)/.. master-controller-manager
+cd $(dirname $0)/..
+make master-controller-manager
 
 KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
 PPROF_PORT=${PPROF_PORT:-6600}
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 ./_build/master-controller-manager \
   -dynamic-datacenters=true \
-  -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
+  -kubeconfig=../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -internal-address=127.0.0.1:8086 \
   -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
   -log-debug=$KUBERMATIC_DEBUG \

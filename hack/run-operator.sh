@@ -16,6 +16,8 @@
 
 set -euo pipefail
 
+cd $(dirname $0)/..
+
 export KUBERMATICDOCKERTAG="${KUBERMATICDOCKERTAG:-}"
 export UIDOCKERTAG="${UIDOCKERTAG:-}"
 export NAMESPACE="${NAMESPACE:-}"
@@ -48,13 +50,12 @@ echo "  Kubermatic: $KUBERMATICDOCKERTAG (KUBERMATICDOCKERTAG variable)"
 echo "  Dashboard : $UIDOCKERTAG (UIDOCKERTAG variable)"
 echo
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 make kubermatic-operator
 echo
 
 set -x
 ./_build/kubermatic-operator \
-  -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
+  -kubeconfig=../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -namespace="$NAMESPACE" \
   -worker-name="$KUBERMATIC_WORKERNAME" \
   -log-debug=$KUBERMATIC_DEBUG \

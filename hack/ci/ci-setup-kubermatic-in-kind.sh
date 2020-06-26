@@ -56,7 +56,7 @@ if [[ -z ${PROW_JOB_ID} ]]; then
 fi
 
 cd "${GOPATH}/src/github.com/kubermatic/kubermatic"
-source ./api/hack/lib.sh
+source hack/lib.sh
 
 TEST_NAME="Get Vault token"
 echodate "Getting secrets from Vault"
@@ -167,10 +167,10 @@ else
   echodate "Starting clusterexposer"
 
   beforeGocache=$(nowms)
-  make -C api download-gocache
+  make download-gocache
   pushElapsed gocache_download_duration_milliseconds $beforeGocache
 
-  CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./api/pkg/test/clusterexposer/cmd
+  CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./pkg/test/clusterexposer/cmd
   CGO_ENABLED=0 /tmp/clusterexposer \
     --kubeconfig-inner "$KUBECONFIG" \
     --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
@@ -251,7 +251,7 @@ fi
 TEST_NAME="Deploy Dex"
 echodate "Deploying Dex"
 
-export KUBERMATIC_DEX_VALUES_FILE=$(realpath api/hack/ci/testdata/oauth_values.yaml)
+export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
 
 if kubectl get namespace oauth; then
   echodate "Dex already deployed"
@@ -259,7 +259,7 @@ else
   retry 5 helm install --wait --timeout 180 \
     --values $KUBERMATIC_DEX_VALUES_FILE \
     --namespace oauth \
-    --name oauth ./config/oauth
+    --name oauth charts/oauth/
 fi
 
 export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
@@ -268,7 +268,7 @@ export KUBERMATIC_OIDC_PASSWORD="password"
 TEST_NAME="Deploy Kubermatic CRDs"
 echodate "Deploying Kubermatic CRDs"
 
-retry 5 kubectl apply -f config/kubermatic/crd
+retry 5 kubectl apply -f charts/kubermatic/crd/
 
 REPOSUFFIX=""
 if [ "$KUBERMATIC_EDITION" != "ce" ]; then
@@ -284,7 +284,7 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   TEST_NAME="Build Kubermatic binaries"
 
   beforeGoBuild=$(nowms)
-  time retry 1 make -C api build
+  time retry 1 make build
   pushElapsed kubermatic_go_build_duration_milliseconds $beforeGoBuild
 
   beforeDockerBuild=$(nowms)
@@ -292,7 +292,6 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   (
     echodate "Building docker image"
     TEST_NAME="Build Kubermatic Docker image"
-    cd api
     IMAGE_NAME="quay.io/kubermatic/kubermatic$REPOSUFFIX:$KUBERMATIC_VERSION"
     time retry 5 docker build -t "$IMAGE_NAME" .
     time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
@@ -319,7 +318,7 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
     if [[ "${KUBERMATIC_USE_OPERATOR}" = "true" ]]; then
       echodate "Building nodeport-proxy image"
       TEST_NAME="Build nodeport-proxy Docker image"
-      cd api/cmd/nodeport-proxy
+      cd cmd/nodeport-proxy
       make build
       IMAGE_NAME="quay.io/kubermatic/nodeport-proxy:$KUBERMATIC_VERSION"
       time retry 5 docker build -t "${IMAGE_NAME}" .
@@ -329,31 +328,25 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   (
     echodate "Building dnatcontroller image"
     TEST_NAME="Build dnatcontroller Docker image"
-    cd api/cmd/kubeletdnat-controller
+    cd cmd/kubeletdnat-controller
     make build
     IMAGE_NAME="quay.io/kubermatic/kubeletdnat-controller:$KUBERMATIC_VERSION"
     time retry 5 docker build -t "${IMAGE_NAME}" .
     time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
   )
   (
-    # This may not exist during upgrade tests.
-    # TODO @kdomanski after 2.13 release: remove this condition
-    if [[ -e api/cmd/user-ssh-keys-agent ]]; then
-      echodate "Building user-ssh-keys-agent image"
-      TEST_NAME="Build user-ssh-keys-agent Docker image"
-      cd api/cmd/user-ssh-keys-agent
-      make build
-      retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
-      IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
-      time retry 5 docker build -t "${IMAGE_NAME}" .
-      time retry 5 docker push "${IMAGE_NAME}"
-    fi
+    echodate "Building user-ssh-keys-agent image"
+    TEST_NAME="Build user-ssh-keys-agent Docker image"
+    cd cmd/user-ssh-keys-agent
+    make build
+    retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
+    IMAGE_NAME=quay.io/kubermatic/user-ssh-keys-agent:$KUBERMATIC_VERSION
+    time retry 5 docker build -t "${IMAGE_NAME}" .
+    time retry 5 docker push "${IMAGE_NAME}"
   )
   (
     echodate "Building etcd-launcher images"
     TEST_NAME="Build etcd-launcher Docker images"
-
-    cd api
 
     for ETCD_TAG in $(getEtcdTags); do
       BASE_TAG=$(echo ${ETCD_TAG} | cut -d\. -f 1,2| tr -d .)
@@ -396,7 +389,7 @@ function check_all_deployments_ready() {
 # to have the CRDs installed so we can at least create a Certificate resource.
 TEST_NAME="Deploy cert-manager CRDs"
 echodate "Deploying cert-manager CRDs"
-retry 5 kubectl apply -f config/cert-manager/crd/
+retry 5 kubectl apply -f charts/cert-manager/crd/
 
 if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
   TEST_NAME="Deploy Kubermatic"
@@ -445,7 +438,7 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
     ${OPENSHIFT_HELM_ARGS:-} \
     --values ${VALUES_FILE} \
     kubermatic \
-    ./config/kubermatic/
+    charts/kubermatic/
 
   pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment 'method="helm"'
 
@@ -468,7 +461,7 @@ else
     --namespace kubermatic \
     --values ${VALUES_FILE} \
     kubermatic-operator \
-    ./config/kubermatic-operator/
+    charts/kubermatic-operator/
 
   echodate "Kubermatic Operator is ready."
 

@@ -24,12 +24,12 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cd $(dirname $0)/../..
+cd $(dirname $0)/..
 
 KUBERNETES_IMAGE=quay.io/kubermatic/addons
-KUBERNETES_TAG="$(cat config/kubermatic/values.yaml |grep $KUBERNETES_IMAGE -A2|grep tag|awk '{ print $2 }'|tr -d '"')"
+KUBERNETES_TAG="$(cat charts/kubermatic/values.yaml | grep $KUBERNETES_IMAGE -A2 | grep tag | awk '{ print $2 }' | tr -d '"')"
 OPENSHIFT_IMAGE=quay.io/kubermatic/openshift-addons
-OPENSHIFT_TAG="$(cat config/kubermatic/values.yaml |grep $OPENSHIFT_IMAGE -A2|grep tag|awk '{ print $2 }'|tr -d '"')"
+OPENSHIFT_TAG="$(cat charts/kubermatic/values.yaml | grep $OPENSHIFT_IMAGE -A2 | grep tag | awk '{ print $2 }' | tr -d '"')"
 
 KUBERNETES_CONTAINER_NAME=$(docker create $KUBERNETES_IMAGE:$KUBERNETES_TAG)
 OPENSHIFT_CONTAINER_NAME=$(docker create $OPENSHIFT_IMAGE:$OPENSHIFT_TAG)

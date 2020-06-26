@@ -20,9 +20,8 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
-. $(dirname $0)/lib.sh
-
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/hack/ci
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/
+source hack/lib.sh
 
 export UPGRADE_TEST_BASE_HASH=${UPGRADE_TEST_BASE_HASH:-"master"}
 
@@ -39,4 +38,4 @@ git checkout origin/${UPGRADE_TEST_BASE_HASH}
 export UPGRADE_TEST_BASE_HASH="$(git rev-parse HEAD)"
 git checkout -
 
-exec ./ci-kind-e2e.sh
+exec ./hack/ci/ci-kind-e2e.sh

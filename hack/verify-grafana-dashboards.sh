@@ -16,10 +16,10 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/../..
-source api/hack/lib.sh
+cd $(dirname $0)/..
+source hack/lib.sh
 
-cd config/monitoring/grafana
+cd charts/monitoring/grafana
 
 tmpdir=tmp-dashboards
 
