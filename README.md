@@ -1,6 +1,5 @@
 # Kubermatic Kubernetes Platform
 
-
 ## Overview / User Guides
 
 Kubermatic Kubernetes Platform is in an open source project to centrally manage the global automation of thousands of Kubernetes clusters across multicloud, on-prem and edge with unparalleled density and resilience.
@@ -44,20 +43,93 @@ Feedback and discussion are available on [the mailing list][11].
 * See [CONTRIBUTING.md][2] for instructions on the developer certificate of origin that we require.
 * Read how [we're using ZenHub][13] for project and roadmap planning
 
+### Repository layout
 
-#### Repository layout
 ```
 ├── addons            # Default Kubernetes addons
-├── api 							# All the code. If you are a dev, you can initially ignore everything else
 ├── CHANGELOG.md      # The changelog
-├── config            # The Helm charts we use to deploy, gets exported to https://github.com/kubermatic/kubermatic-installer
+├── cmd               # Various Kubermatic binaries for the API, controller-managers etc.
+├── codegen           # Helper programs to generate Go code and Helm charts
+├── charts            # The Helm charts we use to deploy, gets exported to https://github.com/kubermatic/kubermatic-installer
 ├── containers        # Various utility container images
 ├── docs              # Some basic docs
+├── hack              # scripts for development and CI
 ├── openshift_addons  # Default Openshift addons
 ├── OWNERS
 ├── OWNERS_ALIASES
+├── pkg               # most of the actual codebase
 ├── Procfile
-└── README.md 
+└── README.md
+```
+
+### Development environment
+
+```bash
+mkdir -p $(go env GOPATH)/src/github.com/kubermatic
+cd $(go env GOPATH)/src/github.com/kubermatic
+git clone git@github.com:kubermatic/kubermatic
+cd kubermatic
+```
+
+There are a couple of scripts in the `hacks` directory to aid in running the components locally
+for testing purposes.
+
+You can create a cluster via the UI at `https://dev.kubermatic.io`, then use `kubectl` to add a
+`worker-name=<<hostname-of-your-laptop>>` label to the cluster. This will make your locally
+running controlers manage the cluster.
+
+#### Running locally
+
+##### kubermatic-api
+
+```bash
+./hack/run-api.sh
+```
+
+##### seed-controller-manager
+
+```bash
+./hack/run-controller.sh
+```
+
+##### master-controller-manager
+
+```bash
+./hack/run-master-controller-manager.sh
+```
+
+#### Run linters
+
+Before every push, make sure you run:
+
+```bash
+make check
+```
+
+gofmt errors can be automatically fixed by running
+
+```bash
+make fix
+```
+
+#### Run tests
+
+```bash
+make test
+```
+
+#### Update dependencies
+
+Sure that you want to update? And not just install dependencies?
+
+```bash
+dep ensure -update
+```
+
+#### Update code generation
+
+```bash
+./hack/update-codegen.sh
 ```
 
 ### Pull requests

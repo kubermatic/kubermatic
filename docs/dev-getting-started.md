@@ -10,9 +10,9 @@ The basic steps to get started on this are these:
     * Note: This requires `git-crypt` to be installed on your computer
 * Clone the dashboard repo onto your `GOPATH`: `git clone git@github.com:kubermatic/dashboard.git $(go env GOPATH)/src/github.com/kubermatic/dashboard`
 * Start all the components via the respective scripts. All of them are blocking so it is suggested to start a termial instance for each:
-    * API: `$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api/hack/run-api.sh`
+    * API: `$(go env GOPATH)/src/github.com/kubermatic/kubermatic/hack/run-api.sh`
     * Dashboard: `$(go env GOPATH)/src/github.com/kubermatic/dashboard/hack/run-local-dashboard.sh`
-    * Controller-Manager: `$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api/hack/run-controller.sh`
+    * Controller-Manager: `$(go env GOPATH)/src/github.com/kubermatic/kubermatic/hack/run-controller.sh`
 
 Now you can visit http://localhost:8000 in your webbrowser, log in and create a cluster at a provider of your choice. The result can then be viewed by looking into the respective seed cluster:
 

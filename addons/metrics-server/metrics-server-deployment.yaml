@@ -51,4 +51,3 @@ spec:
         volumeMounts:
         - name: tmp-dir
           mountPath: /tmp
-
