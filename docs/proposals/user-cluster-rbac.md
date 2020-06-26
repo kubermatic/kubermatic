@@ -48,11 +48,3 @@ DELETE /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/roles/{namesp
 ```
 
 For the ClusterRoles we have similar endpoints but without `{namespace}` path parameter.
-
-
-
-
-
-
-
-

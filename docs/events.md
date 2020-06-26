@@ -7,4 +7,4 @@ We're following the [guidelines from Kubernetes](https://github.com/kubernetes/c
 ## Handling old code
 
 We've not followed that guidelines in the past, thus we might encounter code which does not apply to the above mentioned guidelines.
-As code which handles event's might be more complex(Compared with logs), dedicated PR's should be issued to change old code. 
+As code which handles event's might be more complex(Compared with logs), dedicated PR's should be issued to change old code.

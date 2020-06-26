@@ -29,10 +29,10 @@ This might be replaced by openvpn in the future.
 
 As we want to switch to another DNS, we can not use the seed cluster's DNS anymore. Currently we rely on using that DNS in the following places:
 
-apiserver deployment: `--etcd-servers=http://etcd-cluster-client:2379`  
-controller-manager deployment: `--master=http://apiserver:8080`  
-machine-controller: `-master=http://apiserver:8080`  
-scheduler: `--master=http://apiserver:8080`  
+apiserver deployment: `--etcd-servers=http://etcd-cluster-client:2379`
+controller-manager deployment: `--master=http://apiserver:8080`
+machine-controller: `-master=http://apiserver:8080`
+scheduler: `--master=http://apiserver:8080`
 openvpn sidecar in apiserver deployment
 
 Instead of relying on the seed clusters DNS, we use the cluster-ips to circumvent the usage of DNS. This works due to the fact, that we have CIDRs in the seed and user clusters that don’t overlap.

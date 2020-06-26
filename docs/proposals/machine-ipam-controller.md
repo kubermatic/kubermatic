@@ -41,11 +41,11 @@ spec:
       dns:
         servers:
         - "192.168.1.1"
-``` 
+```
 
 The machine-controller will use this information when generating the cloud-init/ignition data to configure the network of the instance.
 `machine.Spec.ProviderConfig.Network` will be a pointer to express the network configuration is optional. Following the kubernetes documentation on `Optional vs. Required` https://github.com/kubernetes/community/blob/master/contributors/devel/api-conventions.md#optional-vs-required
- 
+
 ### cluster-controller
 
 The cluster object will be extended to include a property to set the required CIDR for the machines.
@@ -56,7 +56,7 @@ kind: Cluster
 metadata:
   name: 8scc6wc6wb
 spec:
-  # explicitly not part of clusterNetwork as that is a upstream type we should not modify. 
+  # explicitly not part of clusterNetwork as that is a upstream type we should not modify.
   # Otherwise migration to the cluster-api will get really tricky
   machineNetwork:
     cidrBlocks:

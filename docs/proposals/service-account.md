@@ -28,7 +28,7 @@ user-26xq2                                                         311d
 ```
 
 A service account is linked to the project automatically by service account binding controller. The controller creates
-`UserProjectBinding` which specifies a binding between a service account and a project. A `UserProjectBinding` uses a 
+`UserProjectBinding` which specifies a binding between a service account and a project. A `UserProjectBinding` uses a
 `OwnerRef` to create connection with the project. A service account will be automatically deleted after project removal.
 
 The `yaml` example of service account object:
@@ -49,14 +49,14 @@ spec:
   email: serviceaccount-xxxxxxxxxx@localhost
   id: 3fa771ea25b4a2065ace5f3d508b2335d450402f0d73d5e59fa84b41_KUBE
   name: test
-``` 
- 
+```
+
 Service accounts are tied to a set of credentials stored as Secrets. Because a `Secret` is namespaced resource the
 system needs predefined namespace for it: `kubermatic`.
 
 Secret label `project-id` is used to create link between secret and project. The `OwnerRef` links the secret with the
 service account. A secret will be automatically deleted after service account removal.
- 
+
 ```yaml
  apiVersion: v1
  data:
@@ -76,19 +76,19 @@ service account. A secret will be automatically deleted after service account re
  type: Opaque
 
 ```
- 
+
 A service account is an automatically enabled authenticator that uses signed bearer tokens to verify requests. The Kubermatic API takes a flag:
- 
+
    - service-account-signing-key A signing key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 bytes or longer.
 
- 
+
  ### API endpoints
  #### Add SA
 ```
 POST /api/v1/projects/{project_id}/serviceaccounts
  Consumes:
   - application/json
- 
+
  Produces:
   - application/json
 ```
@@ -99,7 +99,7 @@ Body json example:
 ```
 A service account can belongs to the one the following group: `viewers` or `editors`
 
-  
+
 #### List SA
 ```
 GET /api/v1/projects/{project_id}/serviceaccounts
@@ -113,7 +113,7 @@ GET /api/v1/projects/{project_id}/serviceaccounts
 PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}
  Consumes:
   - application/json
-   
+
  Produces:
   - application/json
 ```
@@ -130,14 +130,14 @@ Delete /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}
  Produces:
   - application/json
 ```
-  
+
 #### Create token
- 
+
 ```
 POST /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens
  Consumes:
   - application/json
-  
+
  Produces:
   - application/json
 ```
@@ -148,14 +148,14 @@ Body json example:
 ```json
   {"name":"test"}
 ```
- 
+
 #### Update token
 If user lost token or forget then must call this endpoint to revoke the old one and generate/display the new one.
 ```
 PUT /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}
  Consumes:
   - application/json
-  
+
  Produces:
   - application/json
 ```
@@ -165,8 +165,8 @@ User can regenerate token and change internal token name:
   {"name":"new name","id":"token_id"}
 ```
 
-Empty `body` request only regenerates the token. 
-  
+Empty `body` request only regenerates the token.
+
 #### Patch token
 
 This endpoint is generally used to change the token name.
@@ -175,7 +175,7 @@ This endpoint is generally used to change the token name.
 PATCH /api/v1/projects/{project_id}/serviceaccounts/{serviceaccount_id}/tokens/{token_id}
  Consumes:
   - application/json
-  
+
  Produces:
   - application/json
 ```
