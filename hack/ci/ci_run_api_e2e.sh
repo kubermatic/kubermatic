@@ -109,3 +109,4 @@ echodate "Running API E2E tests..."
 export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
 go test -tags="create,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
 go test -tags="e2e,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
+go test -tags="logout,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v

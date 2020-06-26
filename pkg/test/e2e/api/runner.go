@@ -1300,6 +1300,17 @@ func (r *runner) ListDC() ([]*models.Datacenter, error) {
 	return list.GetPayload(), nil
 }
 
+func (r *runner) Logout() error {
+	params := &users.LogoutCurrentUserParams{}
+	params.WithTimeout(timeout)
+
+	_, err := r.client.Users.LogoutCurrentUser(params, r.bearerToken)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func cleanUpDC(seed, dc string) func(t *testing.T) {
 	return func(t *testing.T) {
 		adminMasterToken, err := retrieveAdminMasterToken()
