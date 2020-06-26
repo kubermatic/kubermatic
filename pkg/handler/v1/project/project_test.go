@@ -29,6 +29,7 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/rbac"
+	kubermaticfakeclentset "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned/fake"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/pkg/handler/test"
@@ -465,13 +466,13 @@ func TestListProjectMethod(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-
+			kubermaticClient := kubermaticfakeclentset.NewSimpleClientset()
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.ExistingKubermaticObjects...)
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}
 			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
-			userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount)
+			userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount, kubermaticClient)
 
 			userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 			if err != nil {

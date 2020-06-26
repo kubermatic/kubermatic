@@ -72,6 +72,7 @@ type Routing struct {
 	adminProvider                         provider.AdminProvider
 	admissionPluginProvider               provider.AdmissionPluginsProvider
 	settingsWatcher                       watcher.SettingsWatcher
+	userWatcher                           watcher.UserWatcher
 }
 
 // NewRouting creates a new Routing.
@@ -110,6 +111,7 @@ func NewRouting(
 	adminProvider provider.AdminProvider,
 	admissionPluginProvider provider.AdmissionPluginsProvider,
 	settingsWatcher watcher.SettingsWatcher,
+	userWatcher watcher.UserWatcher,
 ) Routing {
 	return Routing{
 		log:                                   logger,
@@ -147,6 +149,7 @@ func NewRouting(
 		adminProvider:                         adminProvider,
 		admissionPluginProvider:               admissionPluginProvider,
 		settingsWatcher:                       settingsWatcher,
+		userWatcher:                           userWatcher,
 	}
 }
 

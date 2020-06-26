@@ -215,7 +215,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create privileged SSH key provider due to %v", err)
 	}
-	userProvider := kubernetesprovider.NewUserProvider(mgr.GetClient(), kubernetesprovider.IsServiceAccount)
+	userProvider := kubernetesprovider.NewUserProvider(mgr.GetClient(), kubernetesprovider.IsServiceAccount, kubermaticMasterClient)
 	settingsProvider := kubernetesprovider.NewSettingsProvider(kubermaticMasterClient, mgr.GetClient())
 	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(mgr.GetClient())
 	adminProvider := kubernetesprovider.NewAdminProvider(mgr.GetClient())
@@ -256,6 +256,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create settings watcher due to %v", err)
 	}
 
+	userWatcher, err := kuberneteswatcher.NewUserWatcher(userProvider)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create user watcher due to %v", err)
+	}
+
 	return providers{
 		sshKey:                                sshKeyProvider,
 		privilegedSSHKeyProvider:              privilegedSSHKeyProvider,
@@ -281,6 +286,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		presetProvider:                        presetsProvider,
 		admissionPluginProvider:               admissionPluginProvider,
 		settingsWatcher:                       settingsWatcher,
+		userWatcher:                           userWatcher,
 	}, nil
 }
 
@@ -381,6 +387,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		prov.adminProvider,
 		prov.admissionPluginProvider,
 		prov.settingsWatcher,
+		prov.userWatcher,
 	)
 
 	registerMetrics()
