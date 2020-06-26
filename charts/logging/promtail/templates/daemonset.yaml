@@ -109,4 +109,3 @@ spec:
         - name: pods
           hostPath:
             path: /var/log/pods
-

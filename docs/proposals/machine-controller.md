@@ -4,7 +4,7 @@
 
 **Status**: Done
 
-The machine-controller uses the machine-api discussed in https://github.com/kubernetes/kube-deploy. 
+The machine-controller uses the machine-api discussed in https://github.com/kubernetes/kube-deploy.
 It offers a simple and stable solution to machine-management.
 The approach the machine-controller takes, differs from the node-controller.
 
@@ -14,9 +14,9 @@ The current way we manage nodes has some downsides:
 
 *   Theres a new "official" api definition for machine-management
 *   We extended the core node object via annotations
-*   Node.spec.providerID is read-only. Currently we do a buffered deletion when a node comes up 
+*   Node.spec.providerID is read-only. Currently we do a buffered deletion when a node comes up
 *   We used docker-machine which is poorly written and was not flexible enough
-*   Uses ssh to provision nodes 
+*   Uses ssh to provision nodes
 
 With the machine-controller, we have a more cloud-native way and more flexibility:
 
@@ -42,4 +42,3 @@ kubermatic-controller:
 *   Handle wrapped machine&node type via the api - 1d
 *   Add machine-controller to cluster-deployment - 0.5d
 *   Add new version & update for rollout - 0.5d
-

@@ -8,14 +8,14 @@ A kubernetes controller regularly checks the desired state & actual state. While
 While this concept was already implemented for the kubermatic cluster controller in terms of Manifests and cluster properties, it is still lacking support for the cloud infrastructure.
 During each cluster creation the controller might create resources at a cloud provider - despite the machines/instances.
 Those resources are currently only being created during the initial cluster bootstrap. After this they stay as they are.
-As it might be necessary (just reached that point) to change resources at the cloud provider we need to implement this actual/desired state behaviour for the cloud provider resources as well.  
+As it might be necessary (just reached that point) to change resources at the cloud provider we need to implement this actual/desired state behaviour for the cloud provider resources as well.
 
 ## Motivation and Background
 
 The current way we manage cloud provider resource (despite from machines/instances):
 
 *   Gets created during initial cluster bootstrap
-*   Won't get updated 
+*   Won't get updated
 
 With the new approach the controller will automatically detect when it need to update.
 

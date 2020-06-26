@@ -58,13 +58,13 @@ The number of nodes, each cluster will have can be set via `-kubermatic-nodes=3`
 
 **Keep clusters after test**
 
-To be able to debug clusters, they must remain after a test has been run. 
+To be able to debug clusters, they must remain after a test has been run.
 For this `-kubermatic-delete-cluster=false` can be specified, which will simply not delete the cluster after testing.
 
 **Delete existing clusters from a previous run**
 
-In case a previous run left some clusters behind - maybe due to the use of `-kubermatic-delete-cluster=false` - 
-they can be deleting during the next execution by setting `-cleanup-on-start=true`.  
+In case a previous run left some clusters behind - maybe due to the use of `-kubermatic-delete-cluster=false` -
+they can be deleting during the next execution by setting `-cleanup-on-start=true`.
 
 ### Docker
 

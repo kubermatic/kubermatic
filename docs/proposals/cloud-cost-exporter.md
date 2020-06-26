@@ -6,8 +6,8 @@
 
 ## Motivation and Background
 
-Billing in Cloud Environments is hard and sometimes almost obscure.  
-We want to improve this situation for our customers.  
+Billing in Cloud Environments is hard and sometimes almost obscure.
+We want to improve this situation for our customers.
 For this reason, we want to create a Cloud Cost Exporter for Prometheus, which
 allows Prometheus to scrape the cost of the Kubermatic managed infrastructure.
 
@@ -15,7 +15,7 @@ In the end we want to show the current cost of the cluster in the Kubermatic Das
 
 ## Implementation
 
-Create a new Prometheus Exporter in Go.  
+Create a new Prometheus Exporter in Go.
 This Exporter uses SDKs of various Cloud Providers:
 
 * https://github.com/aws/aws-sdk-go

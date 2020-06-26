@@ -1,22 +1,22 @@
-   Kubermatic Kubernetes Platform (“Software”) is an open-core software. 
+   Kubermatic Kubernetes Platform (“Software”) is an open-core software.
    While the core of the Software is released under an open source licence,
-   other parts of the Software, are licensed under proprietary or other 
-   licences, subject to the following principles: 
+   other parts of the Software, are licensed under proprietary or other
+   licences, subject to the following principles:
 
-   1.	All files outside of the api/pkg/ee directory are licensed under the 
-      Apache License Version 2.0. The same applies to all files that 
-      reference the Apache License Version 2.0. 
-   2.	All other files contained in Software, in particular those in the 
-      api/pkg/ee directory, are licensed under the Kubermatic Enterprise 
-      Read-Only License v 1.0 ("KERO-1.0”). The same applies to all files 
-      that reference the KERO-1.0 license. Users who have acquired the Software 
-      by way of an individual agreement under an enterprise license 
-      (“Enterprise License”) may use the files and the Software in accordance 
-      with the terms of such Enterprise License. However, users that do not 
-      hold an Enterprise License may only view the files in accordance with 
+   1.	All files outside of the api/pkg/ee directory are licensed under the
+      Apache License Version 2.0. The same applies to all files that
+      reference the Apache License Version 2.0.
+   2.	All other files contained in Software, in particular those in the
+      api/pkg/ee directory, are licensed under the Kubermatic Enterprise
+      Read-Only License v 1.0 ("KERO-1.0”). The same applies to all files
+      that reference the KERO-1.0 license. Users who have acquired the Software
+      by way of an individual agreement under an enterprise license
+      (“Enterprise License”) may use the files and the Software in accordance
+      with the terms of such Enterprise License. However, users that do not
+      hold an Enterprise License may only view the files in accordance with
       the terms KERO-1.0 license.
-   3.	Unless otherwise stated, third-party components are licensed under the 
-      license specified in the respective subdirectory, in the respective 
+   3.	Unless otherwise stated, third-party components are licensed under the
+      license specified in the respective subdirectory, in the respective
       source files or elsewhere within the third-party component.
 
 
@@ -25,18 +25,18 @@
                          Version 1.0 ("KERO-1.0”)
                      Copyright © 2020 Loodse GmbH
 
-   1.	You may only view, read and display for studying purposes the source 
-      code of the software licensed under this license, and, to the extent 
+   1.	You may only view, read and display for studying purposes the source
+      code of the software licensed under this license, and, to the extent
       explicitly provided under this license, the binary code.
-   2.	Any use of the software which exceeds the foregoing right, including, 
-      without limitation, its execution, compilation, copying, modification 
+   2.	Any use of the software which exceeds the foregoing right, including,
+      without limitation, its execution, compilation, copying, modification
       and distribution, is expressly prohibited.
-   3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, 
-      EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
-      MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-      IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+   3.	THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND,
+      EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+      MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+      IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+      CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+      TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
       SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 

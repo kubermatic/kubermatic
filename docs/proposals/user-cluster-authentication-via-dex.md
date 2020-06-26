@@ -10,21 +10,21 @@ This proposal aims to describe all needed tasks that need to be done, so users c
 ## Motivation and Background
 
 To enable some degree of multi tenancy for user clusters, it must be possible to login via different identities against the same cluster.
-This is not possible at the moment as each user cluster only offers a single Kubeconfig which contains a token with a predefined admin identity.   
+This is not possible at the moment as each user cluster only offers a single Kubeconfig which contains a token with a predefined admin identity.
 As kubernetes supports openid-connect providers for authentication, we will configure it to use the Dex instance we have in each master cluster.
 
 ## User flow
 
 A user(`Henrik`) creates a new project called `testing`. Within the project `testing` a new cluster(`test-A`) will be created.
-The user(`Henrik`) wants to share a specific cluster with his coworkers. 
+The user(`Henrik`) wants to share a specific cluster with his coworkers.
 The coworkers though should not have admin access to the cluster - thus sharing the admin kubeconfig is not an option.
- 
+
 Instead each coworker should receive a URL which they can use to retrieve a kubeconfig for the cluster.
 When accessing the URL, the coworkers need to login via Dex and after successful authentication, the kubeconfig will be downloaded.
 With this kubeconfig the user can access the cluster `test-A`.
 
-When the coworkers access the cluster, they will have no permission to read anything in the cluster. 
-`Henrik` must manually manage RBAC objects which will grant the coworkers permission.  
+When the coworkers access the cluster, they will have no permission to read anything in the cluster.
+`Henrik` must manually manage RBAC objects which will grant the coworkers permission.
 
 ## Implementation
 
@@ -54,7 +54,7 @@ As sharing a cluster works by sharing a unique URL, the dashboard should offer a
 As we implement this via a feature flag, a new config option must be introduced in the dashboard config.
 
 ### Client side
-As `kubectl` has no way of doing the initial OpenID-Connect flow(Refreshing works), the retrieval of the initial token must be done by a dedicated tool.  
+As `kubectl` has no way of doing the initial OpenID-Connect flow(Refreshing works), the retrieval of the initial token must be done by a dedicated tool.
 
 In our case we'll implement the initial retrieval on the kubermatic API.
 A dedicated endpoint which takes the cluster name, redirect to Dex, accept the callback and builds the kubeconfig.
@@ -88,7 +88,7 @@ users:
       name: oidc
 ```
 
-#### Example code via a CLI tool:  
+#### Example code via a CLI tool:
 Dex provides a CLI tool to execute the initial flow: https://github.com/coreos/dex/tree/master/cmd/example-app
 It must be called via:
 ```bash
@@ -104,4 +104,4 @@ It must be called via:
 * Configure dex - 0.5d
 * Write relevant documentation describing on how to create basic RBAC manifests to grant others permission - 0.5d
 * Implement modal in Dashboard + feature flag(config variable) - 1d
-* Conduct a manual test to verify the feature - 1.5 d 
+* Conduct a manual test to verify the feature - 1.5 d

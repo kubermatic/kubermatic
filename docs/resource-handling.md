@@ -19,14 +19,14 @@ The following will describe how we structure the code in Kubermatic to achieve a
         1. [ObjectModifier](#objectmodifier)
         2. [Wrap the typed creator](#wrap-the-typed-creator)
     7. [Extend the codegen / add new typed reconcile functions](#extend-the-codegen)
-    
+
 ## Introduction
 
 Our reconciling is designed in a way, that we got notified whenever an object change, compare it to a desired state and if there is a diff update it.
 The desired state comes from the [creators](#objectcreator) we define.
 
 Kubermatic is currently going through some heavy refactoring which moves all resource handling to the `Named*Creator` functions.
-Additionally we're migrating our code to use the [controller-runtime libraries](https://github.com/kubernetes-sigs/controller-runtime). 
+Additionally we're migrating our code to use the [controller-runtime libraries](https://github.com/kubernetes-sigs/controller-runtime).
 
 ## General function definitions
 
@@ -43,15 +43,15 @@ type ObjectCreator = func(existing runtime.Object) (runtime.Object, error)
 ### EnsureNamedObject
 
 `EnsureNamedObject` is a generic "reconcile" function which will update the existing object or create it.
-If the existing object does not differ from the "wanted" object, `EnsureNamedObject` will not issue any API call. 
+If the existing object does not differ from the "wanted" object, `EnsureNamedObject` will not issue any API call.
 ```go
 func EnsureNamedObject(name string, namespace string, rawcreate ObjectCreator, store informerStore, client ctrlruntimeclient.Client) error
 ```
 
 The signature of `EnsureNamedObject` will change in the future to be more convenient for controller-runtime controllers:
 ```go
-func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName, rawcreate ObjectCreator, client ctrlruntimeclient.Client, emptyObject runtime.Object) error 
-``` 
+func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName, rawcreate ObjectCreator, client ctrlruntimeclient.Client, emptyObject runtime.Object) error
+```
 
 Though its to be noted that it's not recommended to use `EnsureNamedObject` directly. Instead prefer the [Reconcile* functions](#reconcilesecrets-aka-reduce-the-type-casting)
 
@@ -69,7 +69,7 @@ func MyWonderfulConfigMap(existing runtime.Object) (runtime.Object, error) {
 		// We case for better usability here
 		cm = existing.(*corev1.ConfigMap)
 	}
-	
+
 	cm.Name = "wonderful-config"
 	cm.Data = map[string]string{
 		"config.yaml": "some-config",
@@ -80,9 +80,9 @@ func MyWonderfulConfigMap(existing runtime.Object) (runtime.Object, error) {
 ```
 
 When having to maintain multiple resources the first 7 lines start to become an error prone & annoying boilerplate code.
-For this we created the typed `Reconcile*` functions.  
+For this we created the typed `Reconcile*` functions.
 
-## ReconcileSecrets aka "Reduce the type casting" 
+## ReconcileSecrets aka "Reduce the type casting"
 
 To avoid certain boilerplate code we introduced typed `Reconcile*` functions.
 Those functions are being generated using `go generate`: https://github.com/kubermatic/kubermatic/tree/master/api/codegen/reconcile
@@ -93,21 +93,21 @@ It offers:
 - Typed creator functions `SecretCreator` (`func(existing *corev1.Secret) (*corev1.Secret, error)`)
 - Automatic nil checks & struct initialization
 - Informer allocation from a passed in `InformerFactory`
-- Unified modifier functions to allow to apply certain modifications to all passed in `SecretCreator` functions 
-- Sets resource name based the name coming from the `NamedSecretCreatorGetter` 
+- Unified modifier functions to allow to apply certain modifications to all passed in `SecretCreator` functions
+- Sets resource name based the name coming from the `NamedSecretCreatorGetter`
 
 ```go
-func ReconcileSecrets(namedGetters []NamedSecretCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error 
+func ReconcileSecrets(namedGetters []NamedSecretCreatorGetter, namespace string, client ctrlruntimeclient.Client, informerFactory ctrlruntimecache.Cache, objectModifiers ...ObjectModifier) error
 ```
 
 The signature of all `Reconcile*` functions will change in the future to be more convenient for controller-runtime controllers:
 ```go
-func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretCreatorGetter, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error 
-``` 
+func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretCreatorGetter, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error
+```
 
 ### SecretCreator
 
-A typed creator function. Prefer the [NamedSecretCreatorGetter](#namedsecretcreatorgetter) instead. 
+A typed creator function. Prefer the [NamedSecretCreatorGetter](#namedsecretcreatorgetter) instead.
 ```go
 type SecretCreator = func(existing *corev1.Secret) (*corev1.Secret, error)
 ```
@@ -230,17 +230,17 @@ func WrappedMyWonderfulMyNewTypeCreator(create MyNewTypeCreator) MyNewTypeCreato
     if err != nil {
       return nil, err
     }
-    
+
     existing.Foo = "baz"
     return existing, nil
 	}
 }
-``` 
+```
 
 ### Extend the codegen
 
 As mentioned [above](#reconcilesecrets-aka-reduce-the-type-casting), all typed reconcile functions are being created using code generation.
-To add a new type, the type must be added to the code generation first. 
+To add a new type, the type must be added to the code generation first.
 
 Extend the `Resources` slice with the additional item in the [code](https://github.com/kubermatic/kubermatic/blob/master/codegen/reconcile/main.go):
 ```go

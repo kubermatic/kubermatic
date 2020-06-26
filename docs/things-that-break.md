@@ -62,7 +62,7 @@ On Kubernetes v1.11
 
 ### Mitigation
 
-In case of differences between the controllers & kubernetes defaulting, 
+In case of differences between the controllers & kubernetes defaulting,
 we created an alert for dev.kubermatic.io which gets triggered on excessive update actions. `KubermaticControllerManagerHighPutRate`
 
 To figure out which fields of an object are affected by the defaulting, increase the loglevel of the Kubermatic controller manager to 4 (`-v=4`).
@@ -72,4 +72,4 @@ Object *v1.Deployment cluster-sdj8g66xcv/openvpn-server differs from the one, ge
 ```
 
 Based on that information the fields can be set in the code.
-If the field is not specific to a certain resource, a [defaulting wrapper can be introduced/updated](https://github.com/kubermatic/kubermatic/blob/master/pkg/resources/reconciling/wrapper.go#L44) 
+If the field is not specific to a certain resource, a [defaulting wrapper can be introduced/updated](https://github.com/kubermatic/kubermatic/blob/master/pkg/resources/reconciling/wrapper.go#L44)

@@ -1,6 +1,6 @@
 # user-cluster-controller-manager
 
-The controller is designed to monitor user cluster resources. It watches the shared state of the cluster through the 
+The controller is designed to monitor user cluster resources. It watches the shared state of the cluster through the
 apiserver and makes changes attempting to move the current state towards the desired state.
 
 ## Controllers

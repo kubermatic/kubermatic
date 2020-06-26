@@ -57,7 +57,7 @@ Feedback and discussion are available on [the mailing list][11].
 ├── OWNERS
 ├── OWNERS_ALIASES
 ├── Procfile
-└── README.md 
+└── README.md
 ```
 
 ### Pull requests
