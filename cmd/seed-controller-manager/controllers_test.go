@@ -24,7 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 )
 
 func TestGetBackupContainer(t *testing.T) {

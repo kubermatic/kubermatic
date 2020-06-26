@@ -19,11 +19,11 @@ package cloudcontroller
 import (
 	"fmt"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/vpnsidecar"
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/resources"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"github.com/kubermatic/kubermatic/pkg/resources/vpnsidecar"
+	"github.com/kubermatic/kubermatic/pkg/semver"
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	appsv1 "k8s.io/api/apps/v1"

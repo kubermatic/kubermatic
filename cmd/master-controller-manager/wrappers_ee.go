@@ -24,8 +24,8 @@ import (
 
 	"go.uber.org/zap"
 
-	eemasterctrlmgr "github.com/kubermatic/kubermatic/api/pkg/ee/cmd/master-controller-manager"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	eemasterctrlmgr "github.com/kubermatic/kubermatic/pkg/ee/cmd/master-controller-manager"
+	"github.com/kubermatic/kubermatic/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"

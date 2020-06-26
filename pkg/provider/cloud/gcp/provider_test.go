@@ -21,7 +21,7 @@ import (
 
 	"google.golang.org/api/compute/v1"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 )
 
 func TestIsClusterRoute(t *testing.T) {

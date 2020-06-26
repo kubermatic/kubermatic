@@ -21,8 +21,8 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticcrdv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticcrdv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 )
 
 const (

@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
-	"github.com/kubermatic/kubermatic/api/pkg/serviceaccount"
+	"github.com/kubermatic/kubermatic/pkg/handler/test"
+	"github.com/kubermatic/kubermatic/pkg/serviceaccount"
 )
 
 func TestServiceAccountIssuer(t *testing.T) {

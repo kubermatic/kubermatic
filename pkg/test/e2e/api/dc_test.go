@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 func TestListDCForProvider(t *testing.T) {

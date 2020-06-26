@@ -25,9 +25,9 @@ import (
 	"github.com/minio/minio-go"
 	"go.uber.org/zap"
 
-	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	"github.com/kubermatic/kubermatic/api/pkg/exporters/s3"
-	"github.com/kubermatic/kubermatic/api/pkg/log"
+	kubermaticclientset "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned"
+	"github.com/kubermatic/kubermatic/pkg/exporters/s3"
+	"github.com/kubermatic/kubermatic/pkg/log"
 
 	"k8s.io/client-go/tools/clientcmd"
 )

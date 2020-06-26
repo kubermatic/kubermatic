@@ -25,14 +25,14 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/hetznercloud/hcloud-go/hcloud"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/hetzner"
-	kubernetesprovider "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/cluster"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/pkg/provider"
+	"github.com/kubermatic/kubermatic/pkg/provider/cloud/hetzner"
+	kubernetesprovider "github.com/kubermatic/kubermatic/pkg/provider/kubernetes"
+	"github.com/kubermatic/kubermatic/pkg/util/errors"
 )
 
 var reStandardSize = regexp.MustCompile("(^cx)")

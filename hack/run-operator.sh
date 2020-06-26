@@ -48,7 +48,7 @@ echo "  Kubermatic: $KUBERMATICDOCKERTAG (KUBERMATICDOCKERTAG variable)"
 echo "  Dashboard : $UIDOCKERTAG (UIDOCKERTAG variable)"
 echo
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 make kubermatic-operator
 echo
 

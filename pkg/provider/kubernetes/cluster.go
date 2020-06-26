@@ -25,13 +25,13 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
-	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/cloud"
-	openshiftuserclusterresources "github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/api/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
+	k8cuserclusterclient "github.com/kubermatic/kubermatic/pkg/cluster/client"
+	"github.com/kubermatic/kubermatic/pkg/controller/seed-controller-manager/cloud"
+	openshiftuserclusterresources "github.com/kubermatic/kubermatic/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/pkg/provider"
+	"github.com/kubermatic/kubermatic/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"

@@ -17,8 +17,8 @@ limitations under the License.
 package kubernetes
 
 import (
-	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	kubermaticclientv1 "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/provider"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	restclient "k8s.io/client-go/rest"

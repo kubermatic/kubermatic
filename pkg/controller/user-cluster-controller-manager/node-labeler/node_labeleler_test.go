@@ -22,8 +22,8 @@ import (
 
 	"github.com/go-test/deep"
 
-	"github.com/kubermatic/kubermatic/api/pkg/controller/user-cluster-controller-manager/node-labeler/api"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	"github.com/kubermatic/kubermatic/pkg/controller/user-cluster-controller-manager/node-labeler/api"
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

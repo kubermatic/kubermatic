@@ -23,7 +23,7 @@ import (
 	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -24,14 +24,14 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1/helper"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/aws"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/azure"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/cloud/openstack"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1/helper"
+	"github.com/kubermatic/kubermatic/pkg/provider"
+	"github.com/kubermatic/kubermatic/pkg/provider/cloud"
+	"github.com/kubermatic/kubermatic/pkg/provider/cloud/aws"
+	"github.com/kubermatic/kubermatic/pkg/provider/cloud/azure"
+	"github.com/kubermatic/kubermatic/pkg/provider/cloud/openstack"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"

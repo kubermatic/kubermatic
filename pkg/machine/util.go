@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"reflect"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 )
 
 var userNameMap = map[string]string{

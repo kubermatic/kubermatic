@@ -21,8 +21,8 @@ import (
 	"net/http"
 	"strings"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/util/errors"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/util/errors"
 )
 
 // Needed because the cloud providers are initialized once during startup and get all

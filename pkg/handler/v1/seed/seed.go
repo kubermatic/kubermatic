@@ -21,8 +21,8 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/pkg/provider"
 )
 
 // ListSeedNamesEndpoint returns a list of all seed names

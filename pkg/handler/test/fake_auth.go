@@ -23,8 +23,8 @@ import (
 
 	"golang.org/x/oauth2"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/auth"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/pkg/handler/auth"
 )
 
 const (

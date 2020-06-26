@@ -20,8 +20,8 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	kubermaticcontext "github.com/kubermatic/kubermatic/api/pkg/util/context"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kubermaticcontext "github.com/kubermatic/kubermatic/pkg/util/context"
 )
 
 // UserInfoGetter is a function to retrieve a UserInfo

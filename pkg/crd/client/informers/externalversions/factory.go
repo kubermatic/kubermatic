@@ -7,9 +7,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	internalinterfaces "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/internalinterfaces"
-	kubermatic "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions/kubermatic"
+	versioned "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned"
+	internalinterfaces "github.com/kubermatic/kubermatic/pkg/crd/client/informers/externalversions/internalinterfaces"
+	kubermatic "github.com/kubermatic/kubermatic/pkg/crd/client/informers/externalversions/kubermatic"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

@@ -16,7 +16,7 @@
 
 set -exuo pipefail
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 # Deploy a user-cluster/ipam-controller for which we actuallly
 # have a pushed image
 export KUBERMATICCOMMIT="${KUBERMATICCOMMIT:-$(git rev-parse origin/master)}"

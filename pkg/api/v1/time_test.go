@@ -21,7 +21,7 @@ import (
 	"testing"
 	"time"
 
-	. "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	. "github.com/kubermatic/kubermatic/pkg/api/v1"
 )
 
 type TimeHolder struct {

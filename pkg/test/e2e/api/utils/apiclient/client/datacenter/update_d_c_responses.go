@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // UpdateDCReader is a Reader for the UpdateDC structure.

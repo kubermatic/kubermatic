@@ -24,12 +24,12 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/cloudconfig"
-	"github.com/kubermatic/kubermatic/api/pkg/validation"
-	"github.com/kubermatic/kubermatic/api/pkg/validation/nodeupdate"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/resources"
+	"github.com/kubermatic/kubermatic/pkg/resources/cloudconfig"
+	"github.com/kubermatic/kubermatic/pkg/validation"
+	"github.com/kubermatic/kubermatic/pkg/validation/nodeupdate"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 

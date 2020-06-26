@@ -19,7 +19,7 @@ package main
 import (
 	"flag"
 
-	"github.com/kubermatic/kubermatic/api/pkg/userdata/openshift"
+	"github.com/kubermatic/kubermatic/pkg/userdata/openshift"
 	"github.com/kubermatic/machine-controller/pkg/userdata/plugin"
 
 	"k8s.io/klog"

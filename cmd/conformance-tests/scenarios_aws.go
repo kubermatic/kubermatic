@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
-	awsapiclient "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/client/aws"
-	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/pkg/semver"
+	awsapiclient "github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/client/aws"
+	apimodels "github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	utilpointer "k8s.io/utils/pointer"

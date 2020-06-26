@@ -21,9 +21,9 @@ import (
 	"sort"
 	"testing"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/handler/v1/cluster"
-	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/cluster"
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"

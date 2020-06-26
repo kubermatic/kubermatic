@@ -17,10 +17,10 @@ limitations under the License.
 package apiserver
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates/triple"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	"github.com/kubermatic/kubermatic/pkg/resources"
+	"github.com/kubermatic/kubermatic/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/pkg/resources/certificates/triple"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
 )
 
 type frontProxyClientCertificateCreatorData interface {

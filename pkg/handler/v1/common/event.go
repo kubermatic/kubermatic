@@ -24,7 +24,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 )
 
 // FilterEventsByType filters Kubernetes Events based on their type. Empty type string will return all of them.

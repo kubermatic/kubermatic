@@ -20,12 +20,12 @@ import (
 	"context"
 	"fmt"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/certificates"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/kubestatemetrics"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/prometheus"
-	"github.com/kubermatic/kubermatic/api/pkg/resources/reconciling"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/resources"
+	"github.com/kubermatic/kubermatic/pkg/resources/certificates"
+	"github.com/kubermatic/kubermatic/pkg/resources/kubestatemetrics"
+	"github.com/kubermatic/kubermatic/pkg/resources/prometheus"
+	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
 	"k8s.io/apimachinery/pkg/api/resource"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"

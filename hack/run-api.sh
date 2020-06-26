@@ -27,7 +27,7 @@ PPROF_PORT=${PPROF_PORT:-6600}
 # Please make sure to set -feature-gates=OIDCKubeCfgEndpoint=true if you want to use that endpoint.
 # Note that you would have to pass a few additional flags as well.
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 ./_build/kubermatic-api \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
   -dynamic-datacenters=true \

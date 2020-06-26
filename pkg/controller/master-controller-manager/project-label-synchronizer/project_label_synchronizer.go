@@ -23,9 +23,9 @@ import (
 
 	"go.uber.org/zap"
 
-	controllerutil "github.com/kubermatic/kubermatic/api/pkg/controller/util"
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
+	controllerutil "github.com/kubermatic/kubermatic/pkg/controller/util"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/util/workerlabel"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"

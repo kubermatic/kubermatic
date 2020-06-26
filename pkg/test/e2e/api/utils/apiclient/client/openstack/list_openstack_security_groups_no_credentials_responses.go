@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // ListOpenstackSecurityGroupsNoCredentialsReader is a Reader for the ListOpenstackSecurityGroupsNoCredentials structure.

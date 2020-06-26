@@ -3,8 +3,8 @@
 package v1
 
 import (
-	"github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/scheme"
-	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned/scheme"
+	v1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	rest "k8s.io/client-go/rest"
 )
 

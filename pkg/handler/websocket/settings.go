@@ -19,10 +19,10 @@ package websocket
 import (
 	"encoding/json"
 
-	api "github.com/kubermatic/kubermatic/api/pkg/api/v1"
-	v1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/log"
-	"github.com/kubermatic/kubermatic/api/pkg/watcher"
+	api "github.com/kubermatic/kubermatic/pkg/api/v1"
+	v1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/log"
+	"github.com/kubermatic/kubermatic/pkg/watcher"
 
 	"github.com/gorilla/websocket"
 )

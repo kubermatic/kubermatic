@@ -19,7 +19,7 @@ package rbac
 import (
 	"context"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 
 	"k8s.io/client-go/util/workqueue"
 

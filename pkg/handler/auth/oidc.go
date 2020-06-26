@@ -22,7 +22,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 	"net"
 	"net/http"
 	"time"

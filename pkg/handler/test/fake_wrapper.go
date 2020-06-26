@@ -24,7 +24,7 @@ import (
 
 	"github.com/go-test/deep"
 
-	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 )
 
 // NewSSHKeyV1SliceWrapper wraps []apiv1.SSHKey

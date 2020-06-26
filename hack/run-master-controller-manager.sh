@@ -22,7 +22,7 @@ KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
 PPROF_PORT=${PPROF_PORT:-6600}
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic/api
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 ./_build/master-controller-manager \
   -dynamic-datacenters=true \
   -kubeconfig=../../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \

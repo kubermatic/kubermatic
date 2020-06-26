@@ -65,7 +65,7 @@ GIT_SSH_COMMAND="ssh -o CheckHostIP=no -i /ssh/id_rsa" git clone "$URL" "$tempdi
 
 # rewrite all the import paths
 echo "Rewriting import paths"
-sed_expression="s#github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient#github.com/kubermatic/go-kubermatic#g"
+sed_expression="s#github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient#github.com/kubermatic/go-kubermatic#g"
 time find api/pkg/test/e2e/api/utils/apiclient/ -type f -exec sed "$sed_expression" -i {} \;
 
 # sync the files

@@ -19,8 +19,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/api/pkg/semver"
-	apimodels "github.com/kubermatic/kubermatic/api/pkg/test/e2e/api/utils/apiclient/models"
+	"github.com/kubermatic/kubermatic/pkg/semver"
+	apimodels "github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
 
 	"go.uber.org/zap"
 	utilpointer "k8s.io/utils/pointer"

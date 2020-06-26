@@ -25,7 +25,7 @@ function cleanup() {
 }
 trap cleanup EXIT SIGINT SIGTERM
 
-API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic/api"
+API_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic"
 SWAGGER_FILE="swagger.json"
 TMP_SWAGGER="${SWAGGER_FILE}.tmp"
 
