@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
@@ -14,9 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -eu
+set -euo pipefail
 
-. $(dirname $0)/../lib.sh
+cd $(dirname $0)/../..
+source hack/lib.sh
 
 URL="git@github.com:kubermatic/go-kubermatic.git"
 
