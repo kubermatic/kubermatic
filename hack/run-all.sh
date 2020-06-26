@@ -16,8 +16,7 @@
 
 set -euo pipefail
 
-go get github.com/DarthSim/hivemind
-
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
 
+go get github.com/DarthSim/hivemind
 hivemind

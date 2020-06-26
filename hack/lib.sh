@@ -17,6 +17,10 @@
 # receives a SIGINT
 set -o monitor
 
+worker_name() {
+  tr -cd '[:alnum:]' <<< "${KUBERMATIC_WORKERNAME:-$(uname -n)}" | tr '[:upper:]' '[:lower:]'
+}
+
 retry() {
   # Works only with bash but doesn't fail on other shells
   start_time=$(date +%s)
