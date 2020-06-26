@@ -14,40 +14,68 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -exuo pipefail
+set -euo pipefail
 
 cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
-make kubermatic-api
+source hack/lib.sh
 
-KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
+# Please make sure to set -feature-gates=PrometheusEndpoint=true if you want to use that endpoint.
+# Please make sure to set -feature-gates=OIDCKubeCfgEndpoint=true if you want to use that endpoint.
+
+FEATURE_GATES="${FEATURE_GATES:-}"
+KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
 PPROF_PORT=${PPROF_PORT:-6600}
 
-# Please make sure to set -feature-gates=PrometheusEndpoint=true if you want to use that endpoint.
+echodate "Compiling API..."
+make kubermatic-api
 
-# Please make sure to set -feature-gates=OIDCKubeCfgEndpoint=true if you want to use that endpoint.
-# Note that you would have to pass a few additional flags as well.
+API_EXTRA_ARGS=""
+if [ "$KUBERMATIC_EDITION" == "ee" ]; then
+  API_EXTRA_ARGS="-dynamic-datacenters -dynamic-presets"
+fi
 
-./_build/kubermatic-api \
-  -kubeconfig=../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
-  -dynamic-datacenters=true \
-  -dynamic-presets=true \
+if [ -z "${VAULT_ADDR:-}" ]; then
+  export VAULT_ADDR=https://vault.loodse.com/
+fi
+
+if [ -z "${KUBECONFIG:-}" ]; then
+  KUBECONFIG=dev.kubeconfig
+  vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > $KUBECONFIG
+fi
+
+SERVICE_ACCOUNT_SIGNING_KEY="${SERVICE_ACCOUNT_SIGNING_KEY:-$(vault kv get -field=service-account-signing-key dev/seed-clusters/dev.kubermatic.io)}"
+
+if [[ "$FEATURE_GATES" =~ "OIDCKubeCfgEndpoint=true" ]]; then
+  echodate "Preparing OIDCKubeCfgEndpoint feature..."
+
+  OIDC_ISSUER_CLIENT_ID="${OIDC_ISSUER_CLIENT_ID:-$(vault kv get -field=oidc-issuer-client-id dev/seed-clusters/dev.kubermatic.io)}"
+  OIDC_ISSUER_CLIENT_SECRET="${OIDC_ISSUER_CLIENT_SECRET:-$(vault kv get -field=oidc-issuer-client-secret dev/seed-clusters/dev.kubermatic.io)}"
+  OIDC_ISSUER_REDIRECT_URI="${OIDC_ISSUER_REDIRECT_URI:-$(vault kv get -field=oidc-issuer-redirect-uri dev/seed-clusters/dev.kubermatic.io)}"
+  OIDC_ISSUER_COOKIE_HASH_KEY="${OIDC_ISSUER_COOKIE_HASH_KEY:-$(vault kv get -field=oidc-issuer-cookie-hash-key dev/seed-clusters/dev.kubermatic.io)}"
+
+  API_EXTRA_ARGS="$API_EXTRA_ARGS -oidc-issuer-client-id=$OIDC_ISSUER_CLIENT_ID"
+  API_EXTRA_ARGS="$API_EXTRA_ARGS -oidc-issuer-client-secret=$OIDC_ISSUER_CLIENT_SECRET"
+  API_EXTRA_ARGS="$API_EXTRA_ARGS -oidc-issuer-redirect-uri=$OIDC_ISSUER_REDIRECT_URI"
+  API_EXTRA_ARGS="$API_EXTRA_ARGS -oidc-issuer-cookie-hash-key=$OIDC_ISSUER_COOKIE_HASH_KEY"
+fi
+
+echodate "Starting API..."
+set -x
+./_build/kubermatic-api $API_EXTRA_ARGS \
+  -kubeconfig=$KUBECONFIG \
   -versions=charts/kubermatic/static/master/versions.yaml \
   -updates=charts/kubermatic/static/master/updates.yaml \
   -master-resources=charts/kubermatic/static/master \
-  -worker-name="$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')" \
+  -worker-name="$(worker_name)" \
   -internal-address=127.0.0.1:18085 \
   -prometheus-url=http://localhost:9090 \
   -address=127.0.0.1:8080 \
   -oidc-url=https://dev.kubermatic.io/dex \
   -oidc-authenticator-client-id=kubermatic \
-  -oidc-issuer-client-id="$(vault kv get -field=oidc-issuer-client-id dev/seed-clusters/dev.kubermatic.io)" \
-  -oidc-issuer-client-secret="$(vault kv get -field=oidc-issuer-client-secret dev/seed-clusters/dev.kubermatic.io)" \
-  -oidc-issuer-redirect-uri="$(vault kv get -field=oidc-issuer-redirect-uri dev/seed-clusters/dev.kubermatic.io)" \
-  -oidc-issuer-cookie-hash-key="$(vault kv get -field=oidc-issuer-cookie-hash-key dev/seed-clusters/dev.kubermatic.io)" \
-  -service-account-signing-key="$(vault kv get -field=service-account-signing-key dev/seed-clusters/dev.kubermatic.io)" \
+  -service-account-signing-key="$SERVICE_ACCOUNT_SIGNING_KEY" \
   -log-debug=$KUBERMATIC_DEBUG \
-  -pprof-listen-address=":${PPROF_PORT}" \
+  -pprof-listen-address=":$PPROF_PORT" \
   -log-format=Console \
   -logtostderr \
   -v=4 $@

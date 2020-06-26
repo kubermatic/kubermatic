@@ -16,20 +16,21 @@
 
 set -exuo pipefail
 
-cd $(dirname $0)
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+source hack/lib.sh
 
 function cleanup {
   set +e
-  MAIN_PID=$(jobs -l|grep run-api.sh|awk '{print $2}')
+  MAIN_PID=$(jobs -l | grep run-api.sh | awk '{print $2}')
   # There is no `kill job and all its children` :(
   kill $(pgrep -P $MAIN_PID)
   kill $MAIN_PID
 }
 trap cleanup EXIT
 
-echo "starting api"
+echodate "Starting API"
 ./run-api.sh &
-echo "finished starting api"
+echodate "Finished starting API"
 
-echo "Starting dashboard"
+echodate "Starting dashboard"
 $(go env GOPATH)/src/github.com/kubermatic/dashboard/hack/run-local-dashboard.sh
