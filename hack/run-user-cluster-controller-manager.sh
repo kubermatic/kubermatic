@@ -16,19 +16,21 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/..
-make user-cluster-controller-manager
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+source hack/lib.sh
 
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
 
+echodate "Compiling user-cluster-controller-manager..."
+make user-cluster-controller-manager
+
 # Getting everything we need from the api
 # This script assumes you are in your cluster namespace, which you can configure via `kubectl config set-context $(kubectl config current-context) --namespace=<<cluster-namespace>>`
-NAMESPACE="${NAMESPACE:-$(kubectl config view --minify|grep namespace |awk '{ print $2 }')}"
-CLUSTER_NAME="$(echo $NAMESPACE|sed 's/cluster-//')"
+NAMESPACE="${NAMESPACE:-$(kubectl config view --minify | grep namespace |awk '{ print $2 }')}"
+CLUSTER_NAME="$(echo $NAMESPACE | sed 's/cluster-//')"
 CLUSTER_RAW="$(kubectl get cluster $CLUSTER_NAME -o json)"
-CLUSTER_URL="$(echo $CLUSTER_RAW|jq -r '.address.url')"
+CLUSTER_URL="$(echo $CLUSTER_RAW | jq -r '.address.url')"
 
-# You must set the email address of the cluster owner, otherwise the controller will fail to start
 if [ -z "${OWNER_EMAIL:-}" ]; then
   echo "You must set the email address of the cluster owner \"\$OWNER_EMAIL\", otherwise the controller will fail to start"
   exit 1
@@ -69,6 +71,8 @@ if echo $CLUSTER_RAW | grep -i aws -q; then
   ARGS="$ARGS -cloud-provider-name=aws"
 fi
 
+echodate "Starting user-cluster-controller-manager..."
+set -x
 ./_build/user-cluster-controller-manager \
   -kubeconfig=${KUBECONFIG_USERCLUSTER_CONTROLLER_FILE} \
   -metrics-listen-address=127.0.0.1:8087 \

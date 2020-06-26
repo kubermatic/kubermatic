@@ -16,22 +16,31 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/..
+cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+source hack/lib.sh
 
-export KUBERMATICDOCKERTAG="${KUBERMATICDOCKERTAG:-}"
-export UIDOCKERTAG="${UIDOCKERTAG:-}"
-export NAMESPACE="${NAMESPACE:-}"
-
-export KUBERMATIC_WORKERNAME=${KUBERMATIC_WORKERNAME:-$(uname -n)}
-KUBERMATIC_WORKERNAME=$(tr -cd '[:alnum:]' <<< $KUBERMATIC_WORKERNAME | tr '[:upper:]' '[:lower:]')
+KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
+NAMESPACE="${NAMESPACE:-}"
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
 
 if [ -z "$NAMESPACE" ]; then
   echo "You must specify a NAMESPACE environment variable to run the operator in."
   echo "Do not use a namespace where another operator is already running."
-  echo "Example: NAMESPACE=$KUBERMATIC_WORKERNAME ./hack/run-operator.sh"
+  echo "Example: NAMESPACE=kubermatic ./hack/run-operator.sh"
   exit 2
 fi
+
+if [ -z "${VAULT_ADDR:-}" ]; then
+  export VAULT_ADDR=https://vault.loodse.com/
+fi
+
+if [ -z "${KUBECONFIG:-}" ]; then
+  KUBECONFIG=dev.kubeconfig
+  vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > $KUBECONFIG
+fi
+
+export KUBERMATICDOCKERTAG="${KUBERMATICDOCKERTAG:-}"
+export UIDOCKERTAG="${UIDOCKERTAG:-}"
 
 if [ -z "$KUBERMATICDOCKERTAG" ]; then
   KUBERMATICDOCKERTAG=$(git rev-parse master)
@@ -39,7 +48,7 @@ fi
 
 if [ -z "$UIDOCKERTAG" ]; then
   echo "Finding latest dashboard master revision..."
-  UIDOCKERTAG=$(git ls-remote git@github.com:kubermatic/dashboard.git refs/heads/master | awk '{print $1}')
+  UIDOCKERTAG=$(git ls-remote https://github.com/kubermatic/dashboard refs/heads/master | awk '{print $1}')
   echo
 fi
 
@@ -50,14 +59,16 @@ echo "  Kubermatic: $KUBERMATICDOCKERTAG (KUBERMATICDOCKERTAG variable)"
 echo "  Dashboard : $UIDOCKERTAG (UIDOCKERTAG variable)"
 echo
 
+echodate "Compiling operator..."
 make kubermatic-operator
 echo
 
+echodate "Starting operator..."
 set -x
 ./_build/kubermatic-operator \
-  -kubeconfig=../secrets/seed-clusters/dev.kubermatic.io/kubeconfig \
+  -kubeconfig=$KUBECONFIG \
   -namespace="$NAMESPACE" \
-  -worker-name="$KUBERMATIC_WORKERNAME" \
+  -worker-name="$(worker_name)" \
   -log-debug=$KUBERMATIC_DEBUG \
   -log-format=Console \
   -logtostderr \
