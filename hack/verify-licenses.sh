@@ -20,4 +20,4 @@ cd $(dirname $0)/..
 . hack/lib.sh
 
 echodate "Checking licenses..."
-wwhrd check -f allowed_licensed.yaml
+wwhrd check
