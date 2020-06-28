@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
@@ -14,20 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd $(dirname $0)
+set -euo pipefail
 
-# Install yq if not installed
-if ! [ -x "$(command -v yq)" ]; then
-	echo "yq not installed / vailable in PATH!"
-	echo "Executing go get on github.com/mikefarah/yq ..."
-	go get github.com/mikefarah/yq
-	echo "Done!"
-fi
+cd $(dirname $0)/..
+source hack/lib.sh
 
-comment="# This file has been generated, do not edit."
+cd charts/monitoring/prometheus/rules/
+
+# remove old files
+rm -f *.yaml
+
+cd src/
 
 for file in */*.yaml; do
   newfile=$(dirname $file)-$(basename $file)
   echo "$file => $newfile"
-  yq r $file --tojson | jq 'del(.groups[].rules[].runbook)' | (echo "$comment"; yq r --prettyPrint -) > ../$newfile
+
+  echo -e "# This file has been generated, DO NOT EDIT.\n" > ../$newfile
+  yq d $file 'groups.*.rules.*.runbook' >> ../$newfile
 done
+
+cd ..
+promtool check rules *.yaml

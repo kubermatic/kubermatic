@@ -1,55 +1,73 @@
-# This file has been generated, do not edit.
+# This file has been generated, DO NOT EDIT.
+
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 groups:
 - name: kube-state-metrics
   rules:
-  - expr: |
+  - record: ':kube_pod_info_node_count:'
+    expr: |
       sum(min(kube_pod_info) by (node))
-    record: ':kube_pod_info_node_count:'
-  - expr: |
+  - record: 'node_namespace_pod:kube_pod_info:'
+    expr: |
       max(kube_pod_info{job="kube-state-metrics"}) by (node, namespace, pod)
-    record: 'node_namespace_pod:kube_pod_info:'
-  - expr: |
+  - record: namespace:container_cpu_usage_seconds_total:sum_rate
+    expr: |
       sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])) by (namespace)
-    record: namespace:container_cpu_usage_seconds_total:sum_rate
-  - expr: |
+  - record: namespace_pod_container:container_cpu_usage_seconds_total:sum_rate
+    expr: |
       sum by (namespace, pod, container) (
         rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])
       )
-    record: namespace_pod_container:container_cpu_usage_seconds_total:sum_rate
-  - expr: |
+  - record: namespace:container_memory_usage_bytes:sum
+    expr: |
       sum by (namespace) (
         container_memory_usage_bytes{job="cadvisor", image!="", container!=""}
       )
-    record: namespace:container_memory_usage_bytes:sum
-  - expr: |
+  - record: namespace_name:container_cpu_usage_seconds_total:sum_rate
+    expr: |
       sum by (namespace, label_name) (
           sum(rate(container_cpu_usage_seconds_total{job="cadvisor", image!="", container!=""}[5m])) by (namespace, pod)
         * on (namespace, pod) group_left (label_name)
           kube_pod_labels{job="kube-state-metrics"}
       )
-    record: namespace_name:container_cpu_usage_seconds_total:sum_rate
-  - expr: |
+  - record: namespace_name:container_memory_usage_bytes:sum
+    expr: |
       sum by (namespace, label_name) (
           sum(container_memory_usage_bytes{job="cadvisor",image!="", container!=""}) by (pod, namespace)
         * on (namespace, pod) group_left (label_name)
           kube_pod_labels{job="kube-state-metrics"}
       )
-    record: namespace_name:container_memory_usage_bytes:sum
-  - expr: |
+  - record: namespace_name:kube_pod_container_resource_requests_memory_bytes:sum
+    expr: |
       sum by (namespace, label_name) (
           sum(kube_pod_container_resource_requests_memory_bytes{job="kube-state-metrics"}) by (namespace, pod)
         * on (namespace, pod) group_left (label_name)
           kube_pod_labels{job="kube-state-metrics"}
       )
-    record: namespace_name:kube_pod_container_resource_requests_memory_bytes:sum
-  - expr: |
+  - record: namespace_name:kube_pod_container_resource_requests_cpu_cores:sum
+    expr: |
       sum by (namespace, label_name) (
           sum(kube_pod_container_resource_requests_cpu_cores{job="kube-state-metrics"} and on(pod) kube_pod_status_scheduled{condition="true"}) by (namespace, pod)
         * on (namespace, pod) group_left (label_name)
           kube_pod_labels{job="kube-state-metrics"}
       )
-    record: namespace_name:kube_pod_container_resource_requests_cpu_cores:sum
-  - alert: KubeStateMetricsDown
+  - ############################################################
+    # alerts
+    ############################################################
+    alert: KubeStateMetricsDown
     annotations:
       message: KubeStateMetrics has disappeared from Prometheus target discovery.
       runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubestatemetricsdown
