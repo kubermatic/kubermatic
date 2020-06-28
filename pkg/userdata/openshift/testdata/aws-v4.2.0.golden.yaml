@@ -1,3 +1,5 @@
+# This file has been generated, DO NOT EDIT.
+
 #cloud-config
 
 ssh_pwauth: no
