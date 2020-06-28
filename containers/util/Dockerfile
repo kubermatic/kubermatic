@@ -18,7 +18,8 @@ ENV MC_VERSION=RELEASE.2020-07-17T02-52-20Z \
     KUBECTL_VERSION=v1.18.6 \
     HELM_VERSION=v2.16.9 \
     VAULT_VERSION=1.4.3 \
-    YQ_VERSION=3.3.2
+    YQ_VERSION=3.3.2 \
+    WWHRD_VERSION=0.3.0
 
 RUN apk add --no-cache -U \
     bash \
@@ -58,3 +59,7 @@ RUN curl -Lo vault.zip https://releases.hashicorp.com/vault/${VAULT_VERSION}/vau
     rm vault.zip && \
     mv vault /usr/bin/vault && \
     vault version
+
+RUN curl -L https://github.com/frapposelli/wwhrd/releases/download/v{$WWHRD_VERSION}/wwhrd_{$WWHRD_VERSION}_linux_amd64.tar.gz | tar -xvz wwhrd && \
+    mv wwhrd /usr/bin/wwhrd && \
+    wwhrd -v
