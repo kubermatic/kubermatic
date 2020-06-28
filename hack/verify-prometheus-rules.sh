@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
@@ -19,6 +19,21 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-echodate "Checking licenses..."
-wwhrd check -q
-echodate "Check successful."
+if ! [ -x "$(command -v promtool)" ]; then
+  version=2.19.2
+
+	echodate "Downloading promtool v$version..."
+
+  curl -L https://github.com/prometheus/prometheus/releases/download/v$version/prometheus-$version.linux-amd64.tar.gz | tar -xz
+  mv prometheus-$version.linux-amd64/promtool /usr/local/bin/
+  rm -rf prometheus-$version.linux-amd64
+
+	echodate "Done!"
+fi
+
+echodate "Rebuilding rules..."
+./hack/update-prometheus-rules.sh
+
+echodate "Diffing..."
+git diff --exit-code
+echodate "No changes detected."

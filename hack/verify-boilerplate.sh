@@ -14,11 +14,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
+set -e
 
 cd $(dirname $0)/..
-source hack/lib.sh
+. hack/lib.sh
 
-echodate "Checking licenses..."
-wwhrd check -q
-echodate "Check successful."
+echodate "Checking Kubermatic CE licenses..."
+boilerplate \
+  -boilerplates hack/boilerplate/ce \
+  -exclude addons/canal/canal.yaml \
+  -exclude pkg/controller/seed-controller-manager/addon/testdata/istio \
+  -exclude containers/startup-script/manage-startup-script.sh \
+  -exclude pkg/resources/certificates/triple/triple.go \
+  -exclude pkg/ee
+
+echodate "Checking Kubermatic EE licenses..."
+boilerplate \
+  -boilerplates hack/boilerplate/ee \
+  pkg/ee
