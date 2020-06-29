@@ -22,4 +22,4 @@ const (
 	openshiftVersion4118 = "4.1.18"
 )
 
-//go:generate go run ../../../../../codegen/openshift_versions/main.go
+//go:generate go run ../../../../../hack/cmd/openshift-versions/main.go

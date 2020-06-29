@@ -620,7 +620,7 @@ func shuffle(vals []testScenario) []testScenario {
 }
 
 func createProject(client *apiclient.Kubermatic, bearerToken runtime.ClientAuthInfoWriter, log *zap.SugaredLogger) (string, error) {
-	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: "kubermatic-conformance-tester"}}
+	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: "kubermatic-conformance-tests"}}
 	params.WithTimeout(15 * time.Second)
 
 	var projectID string

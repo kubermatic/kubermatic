@@ -37,7 +37,7 @@ if [[ -n ${UPGRADE_TEST_BASE_HASH:-} ]]; then
 fi
 
 echodate "Running conformance tests"
-CHARTS_VERSION="$KUBERMATIC_VERSION" ./hack/ci/ci-run-conformance-tester.sh
+CHARTS_VERSION="$KUBERMATIC_VERSION" ./hack/ci/ci-run-conformance-tests.sh
 
 # No upgradetest, just exit
 if [[ -z ${UPGRADE_TEST_BASE_HASH:-} ]]; then
@@ -59,4 +59,4 @@ export KUBERMATIC_PROJECT_ID="$(cat /tmp/project_id | cut -d '/' -f2)"
 echodate "Using existing project with id \"${KUBERMATIC_PROJECT_ID}\""
 
 echodate "Running conformance tests a second time"
-./hack/ci/ci-run-conformance-tester.sh
+./hack/ci/ci-run-conformance-tests.sh

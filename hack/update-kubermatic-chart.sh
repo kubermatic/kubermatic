@@ -20,5 +20,5 @@ cd $(dirname $0)/..
 source hack/lib.sh
 
 echodate "Updating static files in Kubermatic Helm chart..."
-go run codegen/kubermatic_operator/main.go
+go run hack/cmd/kubermatic-chart-generator/main.go
 echodate "Done."

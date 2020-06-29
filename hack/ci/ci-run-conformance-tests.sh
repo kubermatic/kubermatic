@@ -81,7 +81,9 @@ if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
   kubermatic_delete_cluster="false"
 fi
 
-timeout -s 9 90m ./_build/conformance-tests ${EXTRA_ARGS:-} \
+go build --tags "$KUBERMATIC_EDITION" github.com/kubermatic/kubermatic/hack/cmd/conformance-tests
+
+timeout -s 9 90m ./conformance-tests ${EXTRA_ARGS:-} \
   -debug \
   -worker-name=${WORKER_NAME} \
   -kubeconfig=$KUBECONFIG \

@@ -31,7 +31,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//go:generate go run ../../../codegen/reconcile/main.go
+//go:generate go run ../../../hack/cmd/reconcile-generator/main.go
 
 // ObjectCreator defines an interface to create/update a runtime.Object
 type ObjectCreator = func(existing runtime.Object) (runtime.Object, error)
