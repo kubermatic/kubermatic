@@ -75,7 +75,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	}
 	crdInstallOpts := envtest.CRDInstallOptions{
 		// Results in timeouts, maybe a controller-runtime bug?
-		// Paths: []string{"../../../../../charts/kubermatic/crd"},
+		// Paths: []string{"../../../../../charts/kubermatic/crds"},
 		CRDs: []*apiextensionsv1beta1.CustomResourceDefinition{
 			{
 				ObjectMeta: metav1.ObjectMeta{

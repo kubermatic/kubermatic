@@ -268,7 +268,7 @@ export KUBERMATIC_OIDC_PASSWORD="password"
 TEST_NAME="Deploy Kubermatic CRDs"
 echodate "Deploying Kubermatic CRDs"
 
-retry 5 kubectl apply -f charts/kubermatic/crd/
+retry 5 kubectl apply -f charts/kubermatic/crds/
 
 REPOSUFFIX=""
 if [ "$KUBERMATIC_EDITION" != "ce" ]; then
