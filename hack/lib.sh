@@ -18,7 +18,7 @@
 set -o monitor
 
 worker_name() {
-  tr -cd '[:alnum:]' <<< "${KUBERMATIC_WORKERNAME:-$(uname -n)}" | tr '[:upper:]' '[:lower:]'
+  echo "${KUBERMATIC_WORKERNAME:-$(uname -n)}" | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]'
 }
 
 retry() {
