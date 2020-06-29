@@ -1,24 +1,18 @@
-# **Exposing control-plane services using SNI and HTTP tunneling**
+# Exposing control-plane services using SNI and HTTP tunneling
 
 Author: Youssef Azrak (@youssefazrak), Iacopo Rozzo (@irozzo-1A)
 
 Status: Draft proposal.
 
 
-## **Goals**
+## Goals
 
 Currently the control plane services running on the seed clusters can be exposed to the worker nodes relying on the strategies described in [this][k8c_expose_strategies] document.
 
 The main goal of this proposal is to provide a new strategy that routes the traffic to the target service based on SNI and HTTP Tunneling.
 
 
-## **Motivation and Background**
-
-There are two main points we want to address with this proposal:
-
-*   Reduce cost by using only one Load Balancer.
-*   AWS default quota: 50 Load Balancer per region and 50 listener per Load Balancer.
-
+## Motivation and Background
 
 There are two main points we want to address with this proposal:
 
@@ -43,7 +37,7 @@ The services to be exposed to user clusters are:
 *   Kube Apiserver: HTTPS without the ability to always rely on SNI since pods use the clusterIP of the kubernetes service in the default namespace to access the control plane.
 *   OpenVPN server: OpenVPN protocol based on TLS and as the previous one, we can’t rely on SNI.
 
-## **Implementation**
+## Implementation
 
 ### Nodes Bootstrap
 
@@ -62,7 +56,7 @@ The SNI load-balancer is exposed by a service of type LoadBalancer on port 443. 
 
 ### Accessing the Kube Apiserver through the Kubernetes service
 
-PODs that need to communicate with the Apiserver normally rely on the KUBERNETES_SERVICE environment variable that contains the cluster IP of the kubernetes service in the default namespace. As we already anticipated in this scenario, we cannot rely on SNI as the client will use the IP directly. In order to bypass this limitation, the TCP traffic is encapsulated in an HTTP tunnel based on CONNECT method, that can be routed based on the host header ([HTTP1.x][http_upgrade_tls_rfc]) or the authority header ([HTTP2][http2_connect_rfc]).
+Pods that need to communicate with the Apiserver normally rely on the KUBERNETES_SERVICE environment variable that contains the cluster IP of the kubernetes service in the default namespace. As we already anticipated in this scenario, we cannot rely on SNI as the client will use the IP directly. In order to bypass this limitation, the TCP traffic is encapsulated in an HTTP tunnel based on CONNECT method, that can be routed based on the host header ([HTTP1.x][http_upgrade_tls_rfc]) or the authority header ([HTTP2][http2_connect_rfc]).
 
 Two components are needed to achieve that:
 
@@ -128,12 +122,12 @@ Moreover and to prevent disclosure of information sent in cleartext between the
 CONNECT requests, we have implemented mTLS between the two Envoy pods 
 (HTTP Tunneler on the user cluster and HTTP Proxy on the seed cluster). 
 
-## **Alternatives considered**
+## Alternatives considered
 
 *   Using SNI everywhere: in this case, we would use the OpenVPN3 client instead of OpenVPN2 client. This one supports SNI. The problem we encounter is that OpenVPN uses the OpenVPN protocol which is based on TLS. In OpenVPN protocol the ClientHello is not the first packet exchanged after the TCP handshake, thus standard SNI routers cannot be used. This behaviour has been tested with Nginx ingress controller and Envoy.
 *   Making the nodePort expose strategy more robust by introducing a controller that randomly assigns a predefined public IP to one of the seed cluster nodes. In case the selected node fails, the controller will take care of assigning the IP to another node. This means that the controller should be able to perform health checks. The main downside of this approach is that it does not generalize very well, as the logic to attach the public IP to the seed cluster nodes is provider specific.  The other minor negative point is that each service still requires a node port.
 
-## **Task & effort:**
+## Task & effort:
 
 *   HTTP Tunneler (including controller) - O(10d)
 *   HTTP Proxy (including controller) - O(10d)
