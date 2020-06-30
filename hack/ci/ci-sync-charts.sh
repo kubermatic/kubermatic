@@ -174,7 +174,7 @@ cat << EOF > ${CRDS_MANIFEST}
 
 EOF
 
-for file in ${CHARTS_DIR}/kubermatic/crd/*.yaml; do
+for file in ${CHARTS_DIR}/kubermatic/crds/*.yaml; do
   cat "$file" >> ${CRDS_MANIFEST}
   echo -e "\n---" >> ${CRDS_MANIFEST}
 done
