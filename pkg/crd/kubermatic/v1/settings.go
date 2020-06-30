@@ -52,6 +52,7 @@ type SettingSpec struct {
 	DisplayTermsOfService bool           `json:"displayTermsOfService"`
 	EnableDashboard       bool           `json:"enableDashboard"`
 	EnableOIDCKubeconfig  bool           `json:"enableOIDCKubeconfig"`
+	UserProjectsLimit     int64          `json:"userProjectsLimit"`
 
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
