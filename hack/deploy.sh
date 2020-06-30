@@ -161,7 +161,7 @@ case "${DEPLOY_STACK}" in
 
     if [[ "${1}" = "master" ]]; then
       echodate "Deploying the cert-manager CRDs..."
-      retry 5 kubectl apply -f charts/cert-manager/crd/
+      retry 5 kubectl apply -f charts/cert-manager/crds/
 
       deploy "nginx-ingress-controller" "nginx-ingress-controller" charts/nginx-ingress-controller/
       deploy "oauth" "oauth" charts/oauth/
