@@ -663,6 +663,22 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(),
 			ExistingAPIUser:           test.GenDefaultAPIUser(),
 		},
+
+		{
+			Name:             "scenario 3: user reached maximum number of projects",
+			Body:             fmt.Sprintf(`{"name":"%s"}`, test.GenDefaultProject().Spec.Name),
+			RewriteProjectID: false,
+			ExpectedResponse: `{"error":{"code":403,"message":"reached maximum number of projects"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				func() *kubermaticapiv1.KubermaticSetting {
+					settings := test.GenDefaultSettings()
+					settings.Spec.UserProjectsLimit = 1
+					return settings
+				}(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
