@@ -203,6 +203,7 @@ func etcdCmd(config *envConfig) []string {
 		fmt.Sprintf("--initial-cluster-state=%s", config.initialState),
 		fmt.Sprintf("--advertise-client-urls=https://%s.etcd.%s.svc.cluster.local:2379,https://%s:2379", config.podName, config.namespace, config.podIP),
 		fmt.Sprintf("--listen-client-urls=https://%s:2379,https://127.0.0.1:2379", config.podIP),
+		fmt.Sprintf("--listen-metrics-urls=http://%s:2378,http://127.0.0.1:2378", config.podIP),
 		fmt.Sprintf("--listen-peer-urls=http://%s:2380", config.podIP),
 		fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380", config.podName, config.namespace),
 		"--trusted-ca-file=/etc/etcd/pki/ca/ca.crt",

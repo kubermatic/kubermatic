@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -174,10 +175,6 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							Name:  "INITIAL_STATE",
 							Value: initialState,
 						},
-						// {
-						// 	Name:  "ETCDCTL_ENDPOINTS",
-						// 	Value: "https://127.0.0.1:2379",
-						// },
 					},
 					Ports: []corev1.ContainerPort{
 						{
@@ -193,7 +190,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 					},
 					ReadinessProbe: &corev1.Probe{
 						TimeoutSeconds:      10,
-						PeriodSeconds:       30,
+						PeriodSeconds:       15,
 						SuccessThreshold:    1,
 						FailureThreshold:    3,
 						InitialDelaySeconds: 15,
@@ -206,6 +203,20 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 								},
 							},
 						},
+					},
+					LivenessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/health",
+								Port:   intstr.FromInt(2378),
+								Scheme: corev1.URISchemeHTTP,
+							},
+						},
+						InitialDelaySeconds: 5,
+						FailureThreshold:    3,
+						PeriodSeconds:       30,
+						SuccessThreshold:    1,
+						TimeoutSeconds:      10,
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
