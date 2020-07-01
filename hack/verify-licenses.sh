@@ -20,4 +20,5 @@ cd $(dirname $0)/..
 . hack/lib.sh
 
 echodate "Checking licenses..."
-wwhrd check
+wwhrd check -q
+echodate "Check successful."
