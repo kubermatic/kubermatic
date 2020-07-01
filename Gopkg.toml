@@ -194,7 +194,7 @@ required = [
 
 [[constraint]]
   name = "google.golang.org/grpc"
-  version = "v1.17.0"
+  version = "v1.26.0"
 
 [[constraint]]
   name = "github.com/envoyproxy/go-control-plane"
@@ -219,3 +219,7 @@ required = [
 [[constraint]]
   name = "github.com/coreos/locksmith"
   version = "v0.6.2"
+
+[[constraint]]
+  name = "go.etcd.io/etcd"
+  version = "3.4.9"
