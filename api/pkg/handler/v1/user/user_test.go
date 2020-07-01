@@ -1043,7 +1043,7 @@ func TestNewUser(t *testing.T) {
 			Name:             "scenario 1: successfully creates a new user resource",
 			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}`,
 			HTTPStatus:       http.StatusOK,
-			ExistingAPIUser: genDefaultAPIUser(),
+			ExistingAPIUser:  genDefaultAPIUser(),
 		},
 
 		{
