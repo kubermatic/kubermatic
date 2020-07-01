@@ -22,9 +22,9 @@ Now you can visit http://localhost:8000 in your webbrowser, log in and create a 
 ```
 $ kubectl get cluster
 NAME                  AGE       HUMANREADABLENAME            OWNER
-745rswfsn7            2h        stoic-mccarthy               lukasz.zajaczkowski@loodse.com
-9j4q7xh96t            3h        nervous-pasteur              alvaro@loodse.com
-fp5lzdp6kx            3h        objective-hopper             lukasz@loodse.com
+745rswfsn7            2h        stoic-mccarthy               user1@example.com
+9j4q7xh96t            42d       nervous-pasteur              user2@example.com
+fp5lzdp6kx            8h        objective-hopper             user3@example.com
 ```
 
 * Every time you use the `dev` alias in your terminal, your `kubectl` command will now be configured to point at the `dev.kubermatic.io` seed cluster :)

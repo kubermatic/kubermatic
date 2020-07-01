@@ -5,7 +5,7 @@ groups:
   - alert: KubeletDown
     annotations:
       message: Kubelet has disappeared from Prometheus target discovery.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeletdown
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeletdown
     expr: absent(up{job="kubelet"} == 1)
     for: 15m
     labels:
@@ -15,7 +15,7 @@ groups:
       message: The PersistentVolume claimed by {{ $labels.persistentvolumeclaim }}
         in namespace {{ $labels.namespace }} is only {{ printf "%0.0f" $value }}%
         free.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubepersistentvolumeusagecritical
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubepersistentvolumeusagecritical
     expr: |
       100 * kubelet_volume_stats_available_bytes{job="kubelet"}
         /
@@ -29,7 +29,7 @@ groups:
       message: Based on recent sampling, the PersistentVolume claimed by {{ $labels.persistentvolumeclaim
         }} in namespace {{ $labels.namespace }} is expected to fill up within four
         days. Currently {{ $value }} bytes are available.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubepersistentvolumefullinfourdays
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubepersistentvolumefullinfourdays
     expr: |
       (
         kubelet_volume_stats_used_bytes{job="kubelet"}
@@ -45,7 +45,7 @@ groups:
     annotations:
       message: Kubelet {{ $labels.instance }} is running {{ $value }} pods, close
         to the limit of 110.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubelettoomanypods
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubelettoomanypods
     expr: kubelet_running_pod_count{job="kubelet"} > 110 * 0.9
     for: 15m
     labels:
@@ -54,7 +54,7 @@ groups:
     annotations:
       message: The kubelet on {{ $labels.instance }} is experiencing {{ printf "%0.0f"
         $value }}% errors.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeclienterrors
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeclienterrors
     expr: |
       (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="kubelet"}[5m])) by (instance)
         /
@@ -67,7 +67,7 @@ groups:
     annotations:
       message: The pod {{ $labels.namespace }}/{{ $labels.pod }} is experiencing {{
         printf "%0.0f" $value }}% errors.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeclienterrors
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeclienterrors
     expr: |
       (sum(rate(rest_client_requests_total{code=~"(5..|<error>)",job="pods"}[5m])) by (namespace, pod)
         /
@@ -80,7 +80,7 @@ groups:
     annotations:
       message: The kubelet on {{ $labels.instance }} is having an elevated error rate
         for container runtime oprations.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeletruntimeerrors
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeletruntimeerrors
     expr: |
       sum(rate(kubelet_runtime_operations_errors_total{job="kubelet"}[5m])) by (instance) > 0.1
     for: 15m
@@ -90,7 +90,7 @@ groups:
     annotations:
       message: The kubelet's cgroup manager duration on {{ $labels.instance }} has
         been elevated ({{ printf "%0.2f" $value }}ms) for more than 15 minutes.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeletcgroupmanagerlatencyhigh
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeletcgroupmanagerlatencyhigh
     expr: |
       sum(rate(kubelet_cgroup_manager_duration_seconds{quantile="0.9"}[5m])) by (instance) * 1000 > 1
     for: 15m
@@ -101,7 +101,7 @@ groups:
       message: The kubelet's pod worker duration for {{ $labels.operation_type }}
         operations on {{ $labels.instance }} has been elevated ({{ printf "%0.2f"
         $value }}ms) for more than 15 minutes.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeletpodworkerdurationhigh
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeletpodworkerdurationhigh
     expr: |
       sum(rate(kubelet_pod_worker_duration_seconds{quantile="0.9"}[5m])) by (instance, operation_type) * 1000 > 250
     for: 15m
@@ -111,7 +111,7 @@ groups:
     annotations:
       message: There are {{ $value }} different versions of Kubernetes components
         running.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubeversionmismatch
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeversionmismatch
     expr: count(count(kubernetes_build_info{job!="dns"}) by (gitVersion)) > 1
     for: 1h
     labels:

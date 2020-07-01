@@ -18,7 +18,7 @@ groups:
   - alert: CadvisorDown
     annotations:
       message: Cadvisor has disappeared from Prometheus target discovery.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-cadvisordown
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-cadvisordown
     expr: absent(up{job="cadvisor"} == 1)
     for: 15m
     labels:
@@ -29,7 +29,7 @@ groups:
   # - alert: CPUThrottlingHigh
   #   annotations:
   #     message: '{{ printf "%0.0f" $value }}% throttling of CPU in namespace {{ $labels.namespace }} for {{ $labels.container }}.'
-  #     runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-cputhrottlinghigh
+  #     runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-cputhrottlinghigh
   #   expr: |
   #     100 * sum(increase(container_cpu_cfs_throttled_periods_total[5m])) by (container, pod, namespace)
   #       /

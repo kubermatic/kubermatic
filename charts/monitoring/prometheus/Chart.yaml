@@ -28,4 +28,4 @@ sources:
 - https://github.com/improbable-eng/thanos/tree/master/tutorials/kubernetes-demo/manifests
 maintainers:
 - name: Loodse GmbH
-  email: support@loodse.com
+  email: support@kubermatic.com

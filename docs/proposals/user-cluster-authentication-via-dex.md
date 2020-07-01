@@ -70,13 +70,13 @@ clusters:
 contexts:
 - context:
     cluster: 2jmwjskgzn
-    user: henrik@loodse.com
+    user: user@example.com
   name: default
 current-context: default
 kind: Config
 preferences: {}
 users:
-- name: henrik@loodse.com
+- name: user@example.com
   user:
     auth-provider:
       config:

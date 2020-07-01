@@ -20,7 +20,7 @@ certificates:
   - "alertmanager.kubermatic.example.com"
   - "kibana.kubermatic.example.com"
   issuer:
-    email: dev@loodse.com
+    email: dev@kubermatic.com
 
   dnsValidation:
     enabled: false

@@ -27,4 +27,4 @@ sources:
 - https://github.com/helm/charts/tree/master/stable/prometheus-node-exporter
 maintainers:
 - name: Loodse GmbH
-  email: support@loodse.com
+  email: support@kubermatic.com
