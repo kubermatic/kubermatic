@@ -30,7 +30,9 @@ import (
 	"testing"
 	"time"
 
-	ver "github.com/Masterminds/semver"
+	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/resources"
+
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
@@ -178,30 +180,33 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
 	kubernetesClient := fakerestclient.NewSimpleClientset(kubeObjects...)
 	kubernetesInformerFactory := informers.NewSharedInformerFactory(kubernetesClient, 10*time.Millisecond)
-	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
-		return fakeClient, nil
+	fakeKubermaticImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
+		return kubermaticClient.KubermaticV1(), nil
 	}
-
-	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeImpersonationClient, fakeClient)
+	fakeKubernetesImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubernetesclientset.Interface, error) {
+		return kubernetesClient, nil
+	}
+	userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
+	sshKeyProvider := kubernetes.NewSSHKeyProvider(fakeKubermaticImpersonationClient, fakeClient)
 	privilegedSSHKeyProvider, err := kubernetes.NewPrivilegedSSHKeyProvider(fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
 	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount)
-	adminProvider := kubernetes.NewAdminProvider(fakeClient)
-	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, fakeClient)
-	addonConfigProvider := kubernetes.NewAddonConfigProvider(fakeClient)
+	adminProvider := kubernetes.NewAdminProvider(kubermaticClient, userLister)
+	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
+	addonConfigProvider := kubernetes.NewAddonConfigProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().AddonConfigs().Lister())
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
 	if err != nil {
 		return nil, nil, err
 	}
 	tokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(TestServiceAccountHashKey))
-	serviceAccountTokenProvider, err := kubernetes.NewServiceAccountTokenProvider(fakeImpersonationClient, fakeClient)
+	serviceAccountTokenProvider, err := kubernetes.NewServiceAccountTokenProvider(fakeKubernetesImpersonationClient, kubernetesInformerFactory.Core().V1().Secrets().Lister())
 	if err != nil {
 		return nil, nil, err
 	}
-	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
-	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
+	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeKubermaticImpersonationClient, userLister, "localhost")
+	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister(), userLister, kubernetes.IsServiceAccount)
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 	if err != nil {
 		return nil, nil, err
@@ -233,11 +238,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	tokenExtractors := auth.NewTokenExtractorPlugins(extractors)
 	fakeOIDCClient := NewFakeOIDCClient(user)
 
-	projectProvider, err := kubernetes.NewProjectProvider(fakeImpersonationClient, fakeClient)
+	projectProvider, err := kubernetes.NewProjectProvider(fakeKubermaticImpersonationClient, kubermaticInformerFactory.Kubermatic().V1().Projects().Lister())
 	if err != nil {
 		return nil, nil, err
 	}
-	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeClient)
+	privilegedProjectProvider, err := kubernetes.NewPrivilegedProjectProvider(fakeKubermaticImpersonationClient)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -245,7 +250,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
 	clusterProvider := kubernetes.NewClusterProvider(
 		&restclient.Config{},
-		fakeImpersonationClient,
+		fakeKubermaticImpersonationClient,
 		fUserClusterConnection,
 		"",
 		rbac.ExtractGroupPrefix,
@@ -262,8 +267,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	}
 
 	addonProvider := kubernetes.NewAddonProvider(
-		fakeClient,
-		fakeImpersonationClient,
+		fakeKubermaticImpersonationClient,
 		sets.NewString("addon1", "addon2"),
 	)
 	addonProviders := map[string]provider.AddonProvider{"us-central1": addonProvider}
@@ -935,53 +939,6 @@ func GenDefaultPreset() *kubermaticv1.Preset {
 	}
 }
 
-func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
-	return &kubermaticv1.KubermaticSetting{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: kubermaticv1.GlobalSettingsName,
-		},
-		Spec: kubermaticv1.SettingSpec{
-			CustomLinks: []kubermaticv1.CustomLink{},
-			CleanupOptions: kubermaticv1.CleanupOptions{
-				Enabled:  false,
-				Enforced: false,
-			},
-			DefaultNodeCount:      10,
-			ClusterTypeOptions:    kubermaticv1.ClusterTypeAll,
-			DisplayDemoInfo:       false,
-			DisplayAPIDocs:        false,
-			DisplayTermsOfService: false,
-			EnableDashboard:       true,
-			EnableOIDCKubeconfig:  false,
-		},
-	}
-}
-
-func GenDefaultVersions() []*version.Version {
-	return []*version.Version{
-		{
-			Version: ver.MustParse("1.15.0"),
-			Default: false,
-			Type:    apiv1.KubernetesClusterType,
-		},
-		{
-			Version: ver.MustParse("1.15.1"),
-			Default: false,
-			Type:    apiv1.KubernetesClusterType,
-		},
-		{
-			Version: ver.MustParse("1.17.0"),
-			Default: false,
-			Type:    apiv1.KubernetesClusterType,
-		},
-		{
-			Version: ver.MustParse("4.1.0"),
-			Default: false,
-			Type:    apiv1.OpenShiftClusterType,
-		},
-	}
-}
-
 func GenBlacklistTokenSecret(name string, tokens []byte) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
@@ -994,4 +951,3 @@ func GenBlacklistTokenSecret(name string, tokens []byte) *corev1.Secret {
 		},
 	}
 }
-

@@ -1036,7 +1036,6 @@ func TestNewUser(t *testing.T) {
 		Name                      string
 		HTTPStatus                int
 		ExpectedResponse          string
-		ExpectedKubermaticUser    *kubermaticapiv1.User
 		ExistingKubermaticObjects []runtime.Object
 		ExistingAPIUser           *apiv1.User
 	}{
@@ -1044,12 +1043,7 @@ func TestNewUser(t *testing.T) {
 			Name:             "scenario 1: successfully creates a new user resource",
 			ExpectedResponse: `{"id":"405ac8384fa984f787f9486daf34d84d98f20c4d6a12e2cc4ed89be3bcb06ad6","name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}`,
 			HTTPStatus:       http.StatusOK,
-			ExpectedKubermaticUser: func() *kubermaticapiv1.User {
-				expectedKubermaticUser := test.GenDefaultUser()
-				expectedKubermaticUser.UID = ""
-				return expectedKubermaticUser
-			}(),
-			ExistingAPIUser: genDefaultAPIUser(),
+			ExistingAPIUser:  genDefaultAPIUser(),
 		},
 
 		{
@@ -1077,7 +1071,7 @@ func TestNewUser(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 
-			ep, clientSet, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -1092,22 +1086,6 @@ func TestNewUser(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
-
-			for _, action := range clientSet.FakeKubermaticClient.Actions() {
-				if action.Matches("create", "users") {
-					createAction, ok := action.(clienttesting.CreateAction)
-					if !ok {
-						t.Fatalf("unexpected action %#v", action)
-					}
-					if !equality.Semantic.DeepEqual(createAction.GetObject().(*kubermaticapiv1.User), tc.ExpectedKubermaticUser) {
-						t.Fatalf("%v", diff.ObjectDiff(tc.ExpectedKubermaticUser, createAction.GetObject().(*kubermaticapiv1.User)))
-					}
-					return /*pass*/
-				}
-			}
-			if tc.ExpectedKubermaticUser != nil {
-				t.Fatal("expected to find create action (fake client) but haven't received one.")
-			}
 		})
 	}
 }
