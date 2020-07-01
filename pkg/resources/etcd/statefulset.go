@@ -353,9 +353,8 @@ func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) i
 	if isEtcdHealthy { // no scaling until we are healthy
 		if etcdClusterSize > replicas {
 			return replicas + 1
-		} else {
-			return replicas - 1
 		}
+		return replicas - 1
 	}
 	return replicas
 }

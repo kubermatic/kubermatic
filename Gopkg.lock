@@ -1463,12 +1463,9 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a2fc247e64b5dafd3251f12d396ec85f163d5bb38763c4997856addddf6e78d8"
+  digest = "1:382bb5a7fb4034db3b6a2d19e5a4a6bcf52f4750530603c01ca18a172fa3089b"
   name = "golang.org/x/sync"
-  packages = [
-    "errgroup",
-    "semaphore",
-  ]
+  packages = ["semaphore"]
   pruneopts = "NUT"
   revision = "112230192c580c3556b8cee6403af37a4fc5f28c"
 
@@ -2375,7 +2372,6 @@
     "golang.org/x/crypto/ssh",
     "golang.org/x/oauth2",
     "golang.org/x/oauth2/google",
-    "golang.org/x/sync/errgroup",
     "golang.org/x/tools/go/packages",
     "google.golang.org/api/compute/v1",
     "google.golang.org/api/googleapi",
