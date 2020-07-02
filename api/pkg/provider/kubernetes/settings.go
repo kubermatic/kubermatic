@@ -17,35 +17,37 @@ limitations under the License.
 package kubernetes
 
 import (
+	"context"
 	"fmt"
-	"k8s.io/apimachinery/pkg/watch"
 
 	kubermaticclientset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/watch"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // UserProvider manages user resources
 type SettingsProvider struct {
-	client         kubermaticclientset.Interface
-	settingsLister kubermaticv1lister.KubermaticSettingLister
+	client        kubermaticclientset.Interface
+	runtimeClient ctrlruntimeclient.Client
 }
 
 // NewUserProvider returns a user provider
-func NewSettingsProvider(client kubermaticclientset.Interface, settingsLister kubermaticv1lister.KubermaticSettingLister) *SettingsProvider {
+func NewSettingsProvider(client kubermaticclientset.Interface, runtimeClient ctrlruntimeclient.Client) *SettingsProvider {
 	return &SettingsProvider{
-		client:         client,
-		settingsLister: settingsLister,
+		client:        client,
+		runtimeClient: runtimeClient,
 	}
 }
 
 func (s *SettingsProvider) GetGlobalSettings() (*kubermaticv1.KubermaticSetting, error) {
-	settings, err := s.settingsLister.Get(kubermaticv1.GlobalSettingsName)
+	settings := &kubermaticv1.KubermaticSetting{}
+	err := s.runtimeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: kubermaticv1.GlobalSettingsName}, settings)
 	if err != nil {
 		if kerrors.IsNotFound(err) {
 			return s.createDefaultGlobalSettings()
@@ -63,7 +65,10 @@ func (s *SettingsProvider) UpdateGlobalSettings(userInfo *provider.UserInfo, set
 	if !userInfo.IsAdmin {
 		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("%q doesn't have admin rights", userInfo.Email))
 	}
-	return s.client.KubermaticV1().KubermaticSettings().Update(settings)
+	if err := s.runtimeClient.Update(context.Background(), settings); err != nil {
+		return nil, err
+	}
+	return settings, nil
 }
 
 func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.KubermaticSetting, error) {
@@ -78,7 +83,7 @@ func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.Kubermat
 				Enforced: false,
 			},
 			DefaultNodeCount:      10,
-			ClusterTypeOptions:    kubermaticv1.ClusterTypeAll,
+			ClusterTypeOptions:    kubermaticv1.ClusterTypeKubernetes,
 			DisplayDemoInfo:       false,
 			DisplayAPIDocs:        false,
 			DisplayTermsOfService: false,
@@ -86,5 +91,8 @@ func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.Kubermat
 			EnableOIDCKubeconfig:  false,
 		},
 	}
-	return s.client.KubermaticV1().KubermaticSettings().Create(defaultSettings)
+	if err := s.runtimeClient.Create(context.Background(), defaultSettings); err != nil {
+		return nil, err
+	}
+	return defaultSettings, nil
 }

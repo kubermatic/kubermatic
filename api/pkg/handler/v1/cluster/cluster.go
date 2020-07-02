@@ -75,14 +75,14 @@ var clusterTypes = sets.NewString(apiv1.OpenShiftClusterType, apiv1.KubernetesCl
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter,
 	initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager provider.PresetProvider,
-	exposeStrategy corev1.ServiceType, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
+	exposeStrategy corev1.ServiceType, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider, updateManager common.UpdateManager) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(CreateReq)
 		globalSettings, err := settingsProvider.GetGlobalSettings()
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		err = req.Validate(globalSettings.Spec.ClusterTypeOptions)
+		err = req.Validate(globalSettings.Spec.ClusterTypeOptions, updateManager)
 		if err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
@@ -224,14 +224,14 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	if adminUserInfo.IsAdmin {
 		return privilegedClusterProvider.NewUnsecured(project, cluster, adminUserInfo.Email)
 	}
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	return clusterProvider.New(project, userInfo, cluster)
 }
@@ -346,7 +346,7 @@ func GetCluster(ctx context.Context, projectProvider provider.ProjectProvider, p
 func getInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	if adminUserInfo.IsAdmin {
 		cluster, err := privilegedClusterProvider.GetUnsecured(project, clusterID, options)
@@ -362,7 +362,7 @@ func getInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGet
 func getClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	cluster, err := clusterProvider.Get(userInfo, clusterID, options)
 	if err != nil {
@@ -1077,7 +1077,7 @@ type CreateReq struct {
 }
 
 // Validate validates DeleteEndpoint request
-func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType) error {
+func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
 	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
 		return fmt.Errorf("the service account ID and datacenter cannot be empty")
 	}
@@ -1093,7 +1093,21 @@ func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType) error {
 		return fmt.Errorf("disabled cluster type %s", r.Body.Cluster.Type)
 	}
 
-	return nil
+	if r.Body.Cluster.Spec.Version.Version == nil {
+		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
+	}
+
+	versions, err := updateManager.GetVersions(r.Body.Cluster.Type)
+	if err != nil {
+		return fmt.Errorf("failed to get available cluster versions: %v", err)
+	}
+	for _, availableVersion := range versions {
+		if r.Body.Cluster.Spec.Version.Version.Equal(availableVersion.Version) {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("invalid cluster: invalid cloud spec: unsupported version %v", r.Body.Cluster.Spec.Version.Version)
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -1290,10 +1304,14 @@ func RevokeViewerTokenEndpoint(projectProvider provider.ProjectProvider, privile
 	}
 }
 
+// DeleteReq defines HTTP request for deleteCluster endpoints
+// swagger:parameters deleteCluster
 type DeleteReq struct {
 	common.GetClusterReq
+	// in: header
 	// DeleteVolumes if true all cluster PV's and PVC's will be deleted from cluster
 	DeleteVolumes bool
+	// in: header
 	// DeleteLoadBalancers if true all load balancers will be deleted from cluster
 	DeleteLoadBalancers bool
 }

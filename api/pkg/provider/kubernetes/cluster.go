@@ -60,7 +60,7 @@ type extractGroupPrefixFunc func(groupName string) string
 // it uses createSeedImpersonatedClient to create a connection that uses user impersonation
 func NewClusterProvider(
 	cfg *restclient.Config,
-	createSeedImpersonatedClient kubermaticImpersonationClient,
+	createSeedImpersonatedClient impersonationClient,
 	userClusterConnProvider UserClusterConnectionProvider,
 	workerName string,
 	extractGroupPrefix extractGroupPrefixFunc,
@@ -84,7 +84,7 @@ func NewClusterProvider(
 type ClusterProvider struct {
 	// createSeedImpersonatedClient is used as a ground for impersonation
 	// whenever a connection to Seed API server is required
-	createSeedImpersonatedClient kubermaticImpersonationClient
+	createSeedImpersonatedClient impersonationClient
 
 	// userClusterConnProvider used for obtaining a connection to the client's cluster
 	userClusterConnProvider UserClusterConnectionProvider
@@ -109,15 +109,13 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 
 	newCluster := genAPICluster(project, cluster, userInfo.Email, p.workerName)
 
-	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	newCluster, err = seedImpersonatedClient.Clusters().Create(newCluster)
-	if err != nil {
+	if err := seedImpersonatedClient.Create(context.Background(), newCluster); err != nil {
 		return nil, err
 	}
-
 	return newCluster, nil
 }
 
@@ -234,13 +232,13 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 	if options == nil {
 		options = &provider.ClusterGetOptions{}
 	}
-	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
-	cluster, err := seedImpersonatedClient.Clusters().Get(clusterName, metav1.GetOptions{})
-	if err != nil {
+	cluster := &kubermaticv1.Cluster{}
+	if err := seedImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: clusterName}, cluster); err != nil {
 		return nil, err
 	}
 	if options.CheckInitStatus {
@@ -254,7 +252,7 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 
 // Delete deletes the given cluster
 func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string) error {
-	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err
 	}
@@ -262,20 +260,25 @@ func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string
 	// Will delete all child's after the object is gone - otherwise the etcd might be deleted before all machines are gone
 	// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents
 	policy := metav1.DeletePropagationBackground
-	opts := metav1.DeleteOptions{PropagationPolicy: &policy}
-	return seedImpersonatedClient.Clusters().Delete(clusterName, &opts)
+	delOpts := &ctrlruntimeclient.DeleteOptions{
+		PropagationPolicy: &policy,
+	}
+	return seedImpersonatedClient.Delete(context.Background(), &kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{Name: clusterName}}, delOpts)
 }
 
 // Update updates a cluster
 func (p *ClusterProvider) Update(project *kubermaticv1.Project, userInfo *provider.UserInfo, newCluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	seedImpersonatedClient, err := createKubermaticImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
 
 	newCluster.Status.KubermaticVersion = resources.KUBERMATICCOMMIT
 	newCluster.Labels = getClusterLabels(newCluster.Labels, project.Name, "") // Do not update worker name.
-	return seedImpersonatedClient.Clusters().Update(newCluster)
+	if err := seedImpersonatedClient.Update(context.Background(), newCluster); err != nil {
+		return nil, err
+	}
+	return newCluster, nil
 }
 
 // GetAdminKubeconfigForCustomerCluster returns the admin kubeconfig for the given cluster

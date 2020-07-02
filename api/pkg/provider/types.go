@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
@@ -278,8 +279,10 @@ type PrivilegedSSHKeyProvider interface {
 type UserProvider interface {
 	UserByEmail(email string) (*kubermaticv1.User, error)
 	CreateUser(id, name, email string) (*kubermaticv1.User, error)
-	UpdateUser(user kubermaticv1.User) (*kubermaticv1.User, error)
+	UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, error)
 	UserByID(id string) (*kubermaticv1.User, error)
+	AddUserTokenToBlacklist(user *kubermaticv1.User, token string, expiry apiv1.Time) error
+	GetUserBlacklistTokens(user *kubermaticv1.User) ([]string, error)
 }
 
 // PrivilegedProjectProvider declares the set of method for interacting with kubermatic's project and uses privileged account for it

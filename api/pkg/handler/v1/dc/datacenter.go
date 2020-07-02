@@ -256,20 +256,11 @@ func apiSpec(dc *kubermaticv1.Datacenter) (*apiv1.DatacenterSpec, error) {
 	return spec, nil
 }
 
-// DCsReq represent a request for datacenters specific data
-type DCsReq struct{}
-
-// DecodeDatacentersReq decodes HTTP request into DCsReq
-func DecodeDatacentersReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req DCsReq
-
-	return req, nil
-}
-
 // LegacyDCReq represent a request for datacenter specific data
 // swagger:parameters getDatacenter
 type LegacyDCReq struct {
 	// in: path
+	// required: true
 	DC string `json:"dc"`
 }
 

@@ -19,7 +19,7 @@ import (
 // NewListVSphereNetworksParams creates a new ListVSphereNetworksParams object
 // with the default values initialized.
 func NewListVSphereNetworksParams() *ListVSphereNetworksParams {
-
+	var ()
 	return &ListVSphereNetworksParams{
 
 		timeout: cr.DefaultTimeout,
@@ -29,7 +29,7 @@ func NewListVSphereNetworksParams() *ListVSphereNetworksParams {
 // NewListVSphereNetworksParamsWithTimeout creates a new ListVSphereNetworksParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewListVSphereNetworksParamsWithTimeout(timeout time.Duration) *ListVSphereNetworksParams {
-
+	var ()
 	return &ListVSphereNetworksParams{
 
 		timeout: timeout,
@@ -39,7 +39,7 @@ func NewListVSphereNetworksParamsWithTimeout(timeout time.Duration) *ListVSphere
 // NewListVSphereNetworksParamsWithContext creates a new ListVSphereNetworksParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewListVSphereNetworksParamsWithContext(ctx context.Context) *ListVSphereNetworksParams {
-
+	var ()
 	return &ListVSphereNetworksParams{
 
 		Context: ctx,
@@ -49,7 +49,7 @@ func NewListVSphereNetworksParamsWithContext(ctx context.Context) *ListVSphereNe
 // NewListVSphereNetworksParamsWithHTTPClient creates a new ListVSphereNetworksParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewListVSphereNetworksParamsWithHTTPClient(client *http.Client) *ListVSphereNetworksParams {
-
+	var ()
 	return &ListVSphereNetworksParams{
 		HTTPClient: client,
 	}
@@ -59,6 +59,16 @@ func NewListVSphereNetworksParamsWithHTTPClient(client *http.Client) *ListVSpher
 for the list v sphere networks operation typically these are written to a http.Request
 */
 type ListVSphereNetworksParams struct {
+
+	/*Credential*/
+	Credential *string
+	/*DatacenterName*/
+	DatacenterName *string
+	/*Password*/
+	Password *string
+	/*Username*/
+	Username *string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -97,6 +107,50 @@ func (o *ListVSphereNetworksParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithCredential adds the credential to the list v sphere networks params
+func (o *ListVSphereNetworksParams) WithCredential(credential *string) *ListVSphereNetworksParams {
+	o.SetCredential(credential)
+	return o
+}
+
+// SetCredential adds the credential to the list v sphere networks params
+func (o *ListVSphereNetworksParams) SetCredential(credential *string) {
+	o.Credential = credential
+}
+
+// WithDatacenterName adds the datacenterName to the list v sphere networks params
+func (o *ListVSphereNetworksParams) WithDatacenterName(datacenterName *string) *ListVSphereNetworksParams {
+	o.SetDatacenterName(datacenterName)
+	return o
+}
+
+// SetDatacenterName adds the datacenterName to the list v sphere networks params
+func (o *ListVSphereNetworksParams) SetDatacenterName(datacenterName *string) {
+	o.DatacenterName = datacenterName
+}
+
+// WithPassword adds the password to the list v sphere networks params
+func (o *ListVSphereNetworksParams) WithPassword(password *string) *ListVSphereNetworksParams {
+	o.SetPassword(password)
+	return o
+}
+
+// SetPassword adds the password to the list v sphere networks params
+func (o *ListVSphereNetworksParams) SetPassword(password *string) {
+	o.Password = password
+}
+
+// WithUsername adds the username to the list v sphere networks params
+func (o *ListVSphereNetworksParams) WithUsername(username *string) *ListVSphereNetworksParams {
+	o.SetUsername(username)
+	return o
+}
+
+// SetUsername adds the username to the list v sphere networks params
+func (o *ListVSphereNetworksParams) SetUsername(username *string) {
+	o.Username = username
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListVSphereNetworksParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -104,6 +158,42 @@ func (o *ListVSphereNetworksParams) WriteToRequest(r runtime.ClientRequest, reg 
 		return err
 	}
 	var res []error
+
+	if o.Credential != nil {
+
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
+		}
+
+	}
+
+	if o.DatacenterName != nil {
+
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Password != nil {
+
+		// header param Password
+		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
+			return err
+		}
+
+	}
+
+	if o.Username != nil {
+
+		// header param Username
+		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
+			return err
+		}
+
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

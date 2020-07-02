@@ -19,14 +19,18 @@ package kubernetes_test
 import (
 	"testing"
 
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
+	restclient "k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
-	"k8s.io/apimachinery/pkg/util/diff"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
+	"k8s.io/client-go/kubernetes/scheme"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCreateServiceAccount(t *testing.T) {
@@ -51,25 +55,23 @@ func TestCreateServiceAccount(t *testing.T) {
 				createAuthenitactedUser(),
 				genDefaultProject(),
 			},
-			expectedSA:     createSANoPrefix("test", "my-first-project-ID", "editors", "1"),
+			expectedSA: func() *kubermaticv1.User {
+				sa := createSANoPrefix("test", "my-first-project-ID", "editors", "1")
+				sa.ResourceVersion = "1"
+				return sa
+			}(),
 			expectedSAName: "1",
 		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
-			if err != nil {
-				t.Fatalf("unable to create fake clients, err = %v", err)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return fakeClient, nil
 			}
-
-			saLister := kubermaticv1lister.NewUserLister(indexer)
-
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, saLister, "localhost")
-			if err != nil {
-				t.Fatal(err)
-			}
+			target := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 
 			sa, err := target.Create(tc.userInfo, tc.project, tc.saName, tc.saGroup)
 
@@ -84,7 +86,7 @@ func TestCreateServiceAccount(t *testing.T) {
 			sa.Spec.ID = ""
 
 			if !equality.Semantic.DeepEqual(sa, tc.expectedSA) {
-				t.Fatalf("%v", diff.ObjectDiff(tc.expectedSA, sa))
+				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, sa))
 			}
 		})
 	}
@@ -130,17 +132,12 @@ func TestList(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
-			if err != nil {
-				t.Fatalf("unable to create fake clients, err = %v", err)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return fakeClient, nil
 			}
-			saLister := kubermaticv1lister.NewUserLister(indexer)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, saLister, "localhost")
-			if err != nil {
-				t.Fatal(err)
-			}
+			target := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 
 			saList, err := target.List(tc.userInfo, tc.project, &provider.ServiceAccountListOptions{ServiceAccountName: tc.saName})
 			// validate
@@ -148,7 +145,7 @@ func TestList(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !equality.Semantic.DeepEqual(saList, tc.expectedSA) {
-				t.Fatalf("%v", diff.ObjectDiff(tc.expectedSA, saList))
+				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, saList))
 			}
 		})
 	}
@@ -175,22 +172,22 @@ func TestGet(t *testing.T) {
 				createSA("test-2", "abcd", "viewers", "2"),
 				createSA("test-1", "dcba", "viewers", "3"),
 			},
-			expectedSA: createSANoPrefix("test-1", "my-first-project-ID", "editors", "1"),
+			expectedSA: func() *kubermaticv1.User {
+				sa := createSANoPrefix("test-1", "my-first-project-ID", "editors", "1")
+				sa.Kind = "User"
+				sa.APIVersion = "kubermatic.k8s.io/v1"
+				return sa
+			}(),
 		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
-			if err != nil {
-				t.Fatalf("unable to create fake clients, err = %v", err)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return fakeClient, nil
 			}
-			saLister := kubermaticv1lister.NewUserLister(indexer)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, saLister, "localhost")
-			if err != nil {
-				t.Fatal(err)
-			}
+			target := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 
 			sa, err := target.Get(tc.userInfo, tc.saName, nil)
 			// validate
@@ -198,7 +195,7 @@ func TestGet(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !equality.Semantic.DeepEqual(sa, tc.expectedSA) {
-				t.Fatalf("expected %v got %v", tc.expectedSA, sa)
+				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, sa))
 			}
 		})
 	}
@@ -226,23 +223,24 @@ func TestUpdate(t *testing.T) {
 				createSA("test-2", "abcd", "viewers", "2"),
 				createSA("test-1", "dcba", "viewers", "3"),
 			},
-			newName:    "new-name",
-			expectedSA: createSANoPrefix("new-name", "my-first-project-ID", "viewers", "1"),
+			newName: "new-name",
+			expectedSA: func() *kubermaticv1.User {
+				sa := createSANoPrefix("new-name", "my-first-project-ID", "viewers", "1")
+				sa.Kind = "User"
+				sa.APIVersion = "kubermatic.k8s.io/v1"
+				sa.ResourceVersion = "1"
+				return sa
+			}(),
 		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
-			if err != nil {
-				t.Fatalf("unable to create fake clients, err = %v", err)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return fakeClient, nil
 			}
-			saLister := kubermaticv1lister.NewUserLister(indexer)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, saLister, "localhost")
-			if err != nil {
-				t.Fatal(err)
-			}
+			target := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 
 			sa, err := target.Get(tc.userInfo, tc.saName, nil)
 			if err != nil {
@@ -256,7 +254,7 @@ func TestUpdate(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !equality.Semantic.DeepEqual(expectedSA, tc.expectedSA) {
-				t.Fatalf("expected %v got %v", tc.expectedSA, expectedSA)
+				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, expectedSA))
 			}
 		})
 	}
@@ -285,18 +283,14 @@ func TestDelete(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			impersonationClient, _, indexer, err := createFakeKubermaticClients(tc.existingKubermaticObjects)
-			if err != nil {
-				t.Fatalf("unable to create fake clients, err = %v", err)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return fakeClient, nil
 			}
-			saLister := kubermaticv1lister.NewUserLister(indexer)
 			// act
-			target := kubernetes.NewServiceAccountProvider(impersonationClient.CreateFakeImpersonatedClientSet, saLister, "localhost")
-			if err != nil {
-				t.Fatal(err)
-			}
+			target := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
 
-			err = target.Delete(tc.userInfo, tc.saName)
+			err := target.Delete(tc.userInfo, tc.saName)
 			if err != nil {
 				t.Fatal(err)
 			}

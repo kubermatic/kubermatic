@@ -204,6 +204,9 @@ func UpdateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 
 		newGroup := rbac.GenerateActualGroupNameFor(project.Name, saFromRequest.Group)
 		if newGroup != currentGroup {
+			if sa.Labels == nil {
+				sa.Labels = map[string]string{}
+			}
 			sa.Labels[serviceaccount.ServiceAccountLabelGroup] = newGroup
 		}
 

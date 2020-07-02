@@ -213,112 +213,63 @@ func (o *ListOpenstackSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg
 
 	if o.Credential != nil {
 
-		// query param Credential
-		var qrCredential string
-		if o.Credential != nil {
-			qrCredential = *o.Credential
-		}
-		qCredential := qrCredential
-		if qCredential != "" {
-			if err := r.SetQueryParam("Credential", qCredential); err != nil {
-				return err
-			}
+		// header param Credential
+		if err := r.SetHeaderParam("Credential", *o.Credential); err != nil {
+			return err
 		}
 
 	}
 
 	if o.DatacenterName != nil {
 
-		// query param DatacenterName
-		var qrDatacenterName string
-		if o.DatacenterName != nil {
-			qrDatacenterName = *o.DatacenterName
-		}
-		qDatacenterName := qrDatacenterName
-		if qDatacenterName != "" {
-			if err := r.SetQueryParam("DatacenterName", qDatacenterName); err != nil {
-				return err
-			}
+		// header param DatacenterName
+		if err := r.SetHeaderParam("DatacenterName", *o.DatacenterName); err != nil {
+			return err
 		}
 
 	}
 
 	if o.Domain != nil {
 
-		// query param Domain
-		var qrDomain string
-		if o.Domain != nil {
-			qrDomain = *o.Domain
-		}
-		qDomain := qrDomain
-		if qDomain != "" {
-			if err := r.SetQueryParam("Domain", qDomain); err != nil {
-				return err
-			}
+		// header param Domain
+		if err := r.SetHeaderParam("Domain", *o.Domain); err != nil {
+			return err
 		}
 
 	}
 
 	if o.Password != nil {
 
-		// query param Password
-		var qrPassword string
-		if o.Password != nil {
-			qrPassword = *o.Password
-		}
-		qPassword := qrPassword
-		if qPassword != "" {
-			if err := r.SetQueryParam("Password", qPassword); err != nil {
-				return err
-			}
+		// header param Password
+		if err := r.SetHeaderParam("Password", *o.Password); err != nil {
+			return err
 		}
 
 	}
 
 	if o.Tenant != nil {
 
-		// query param Tenant
-		var qrTenant string
-		if o.Tenant != nil {
-			qrTenant = *o.Tenant
-		}
-		qTenant := qrTenant
-		if qTenant != "" {
-			if err := r.SetQueryParam("Tenant", qTenant); err != nil {
-				return err
-			}
+		// header param Tenant
+		if err := r.SetHeaderParam("Tenant", *o.Tenant); err != nil {
+			return err
 		}
 
 	}
 
 	if o.TenantID != nil {
 
-		// query param TenantID
-		var qrTenantID string
-		if o.TenantID != nil {
-			qrTenantID = *o.TenantID
-		}
-		qTenantID := qrTenantID
-		if qTenantID != "" {
-			if err := r.SetQueryParam("TenantID", qTenantID); err != nil {
-				return err
-			}
+		// header param TenantID
+		if err := r.SetHeaderParam("TenantID", *o.TenantID); err != nil {
+			return err
 		}
 
 	}
 
 	if o.Username != nil {
 
-		// query param Username
-		var qrUsername string
-		if o.Username != nil {
-			qrUsername = *o.Username
-		}
-		qUsername := qrUsername
-		if qUsername != "" {
-			if err := r.SetQueryParam("Username", qUsername); err != nil {
-				return err
-			}
+		// header param Username
+		if err := r.SetHeaderParam("Username", *o.Username); err != nil {
+			return err
 		}
 
 	}

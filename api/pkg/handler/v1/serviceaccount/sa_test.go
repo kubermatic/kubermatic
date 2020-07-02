@@ -17,6 +17,7 @@ limitations under the License.
 package serviceaccount_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -30,8 +31,8 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test/hack"
 	serviceaccount "github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestCreateServiceAccountProject(t *testing.T) {
@@ -192,10 +193,13 @@ func TestCreateServiceAccountProject(t *testing.T) {
 					t.Fatalf("expected Inactive state got %s", sa.Status)
 				}
 
-				expectedSA, err := client.FakeKubermaticClient.KubermaticV1().Users().Get(fmt.Sprintf("serviceaccount-%s", sa.ID), metav1.GetOptions{})
+				saName := fmt.Sprintf("serviceaccount-%s", sa.ID)
+				expectedSA := &kubermaticapiv1.User{}
+				err = client.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: saName}, expectedSA)
 				if err != nil {
 					t.Fatalf("expected SA object got error %v", err)
 				}
+
 				if expectedSA.Spec.Name != tc.expectedSAName {
 					t.Fatalf("expected name %s got %s", tc.expectedSAName, expectedSA.Spec.Name)
 				}
@@ -481,10 +485,13 @@ func TestEdit(t *testing.T) {
 					t.Fatalf("expected name %s got %s", tc.expectedSAName, sa.Name)
 				}
 
-				expectedSA, err := client.FakeKubermaticClient.KubermaticV1().Users().Get(fmt.Sprintf("serviceaccount-%s", sa.ID), metav1.GetOptions{})
+				saName := fmt.Sprintf("serviceaccount-%s", sa.ID)
+				expectedSA := &kubermaticapiv1.User{}
+				err = client.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: saName}, expectedSA)
 				if err != nil {
 					t.Fatalf("expected SA object got error %v", err)
 				}
+
 				if expectedSA.Spec.Name != tc.expectedSAName {
 					t.Fatalf("expected name %s got %s", tc.expectedSAName, expectedSA.Spec.Name)
 				}

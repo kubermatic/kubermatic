@@ -429,14 +429,29 @@ func getClusterForOpenstack(ctx context.Context, projectProvider provider.Projec
 }
 
 // OpenstackReq represent a request for openstack
+// swagger:parameters listOpenstackSizes listOpenstackNetworks listOpenstackSecurityGroups
 type OpenstackReq struct {
-	Username       string
-	Password       string
-	Domain         string
-	Tenant         string
-	TenantID       string
+	// in: header
+	// Username OpenStack user name
+	Username string
+	// in: header
+	// Password OpenStack user password
+	Password string
+	// in: header
+	// Domain OpenStack domain name
+	Domain string
+	// in: header
+	// Tenant OpenStack tenant name
+	Tenant string
+	// in: header
+	// TenantID OpenStack tenant ID
+	TenantID string
+	// in: header
+	// DatacenterName Openstack datacenter name
 	DatacenterName string
-	Credential     string
+	// in: header
+	// Credential predefined Kubermatic credential name from the presets
+	Credential string
 }
 
 func DecodeOpenstackReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -518,12 +533,23 @@ func DecodeOpenstackSubnetNoCredentialsReq(c context.Context, r *http.Request) (
 }
 
 // OpenstackTenantReq represent a request for openstack tenants
+// swagger:parameters listOpenstackTenants
 type OpenstackTenantReq struct {
-	Username       string
-	Password       string
-	Domain         string
+	// in: header
+	// Username OpenStack user name
+	Username string
+	// in: header
+	// Password OpenStack user password
+	Password string
+	// in: header
+	// Domain OpenStack domain name
+	Domain string
+	// in: header
+	// DatacenterName Openstack datacenter na
 	DatacenterName string
-	Credential     string
+	// in: header
+	// Credential predefined Kubermatic credential name from the presets
+	Credential string
 }
 
 func DecodeOpenstackTenantReq(c context.Context, r *http.Request) (interface{}, error) {

@@ -22,30 +22,30 @@ import (
 
 	"github.com/go-test/deep"
 
-	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/api/pkg/crd/client/listers/kubermatic/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	restclient "k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestCreateBinding(t *testing.T) {
 	// test data
 	kubermaticObjects := []runtime.Object{}
-	impersonationClient, _, indexer, err := createFakeKubermaticClients(kubermaticObjects)
-	if err != nil {
-		t.Fatalf("unable to create fake clients, err = %v", err)
-	}
+	fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubermaticObjects...)
 	authenticatedUser := createAuthenitactedUser()
 	existingProject := genDefaultProject()
 	memberEmail := ""
 	groupName := fmt.Sprintf("owners-%s", existingProject.Name)
-	bindingLister := kubermaticv1lister.NewUserProjectBindingLister(indexer)
-	userLister := kubermaticv1lister.NewUserLister(indexer)
+	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+		return fakeClient, nil
+	}
 	// act
-	target := kubernetes.NewProjectMemberProvider(impersonationClient.CreateFakeImpersonatedClientSet, bindingLister, userLister, kubernetes.IsServiceAccount)
+	target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
 	result, err := target.Create(&provider.UserInfo{Email: authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", existingProject.Name)}, existingProject, memberEmail, groupName)
 
 	// validate
@@ -116,32 +116,18 @@ func TestListBinding(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			kubermaticObjects := []runtime.Object{}
-			bindingObjects := []runtime.Object{}
-			saObjects := []runtime.Object{}
 			for _, binding := range tc.existingBindings {
 				kubermaticObjects = append(kubermaticObjects, binding)
-				bindingObjects = append(bindingObjects, binding)
 			}
 			for _, sa := range tc.existingSA {
 				kubermaticObjects = append(kubermaticObjects, sa)
-				saObjects = append(saObjects, sa)
 			}
-			kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
-			impersonationClient := &fakeKubermaticImpersonationClient{kubermaticClient}
-
-			bindingIndexer, err := createIndexer(bindingObjects)
-			if err != nil {
-				t.Fatal(err)
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubermaticObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return fakeClient, nil
 			}
-			saIndexer, err := createIndexer(saObjects)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			bindingLister := kubermaticv1lister.NewUserProjectBindingLister(bindingIndexer)
-			userLister := kubermaticv1lister.NewUserLister(saIndexer)
 			// act
-			target := kubernetes.NewProjectMemberProvider(impersonationClient.CreateFakeImpersonatedClientSet, bindingLister, userLister, kubernetes.IsServiceAccount)
+			target := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
 			result, err := target.List(&provider.UserInfo{Email: tc.authenticatedUser.Spec.Email, Group: fmt.Sprintf("owners-%s", tc.projectToSync.Name)}, tc.projectToSync, nil)
 
 			// validate

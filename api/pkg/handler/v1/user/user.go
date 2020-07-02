@@ -281,6 +281,25 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 	}
 }
 
+// LogoutEndpoint
+func LogoutEndpoint(userProvider provider.UserProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		authenticatedUser := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
+
+		t := ctx.Value(middleware.RawTokenContextKey)
+		token, ok := t.(string)
+		if !ok || token == "" {
+			return nil, k8cerrors.NewNotAuthorized()
+		}
+		e := ctx.Value(middleware.TokenExpiryContextKey)
+		expiry, ok := e.(apiv1.Time)
+		if !ok {
+			return nil, k8cerrors.NewNotAuthorized()
+		}
+		return nil, userProvider.AddUserTokenToBlacklist(authenticatedUser, token, expiry)
+	}
+}
+
 func createBinding(ctx context.Context, userInfoGetter provider.UserInfoGetter, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, project *kubermaticapiv1.Project, email, group string) (*kubermaticapiv1.UserProjectBinding, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
@@ -347,7 +366,7 @@ func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint
 		}
 
 		existingUser.Spec.Settings = patchedSettings
-		updatedUser, err := userProvider.UpdateUser(*existingUser)
+		updatedUser, err := userProvider.UpdateUser(existingUser)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

@@ -18,19 +18,21 @@ package kubernetes
 
 import (
 	"testing"
-	"time"
-
-	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
-	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
 
 	"code.cloudfoundry.org/go-pubsub"
+
+	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
+	"github.com/kubermatic/kubermatic/api/pkg/provider/kubernetes"
+
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes/scheme"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestNewSettingsWatcher(t *testing.T) {
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset()
-	kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
-	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().KubermaticSettings().Lister())
+	runtimeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, []runtime.Object{}...)
+	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, runtimeClient)
 	settingsWatcher, err := NewSettingsWatcher(settingsProvider)
 	if err != nil {
 		t.Fatal("cannot create settings watcher")

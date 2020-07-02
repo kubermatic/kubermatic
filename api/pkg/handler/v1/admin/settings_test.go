@@ -44,7 +44,7 @@ func TestGetGlobalSettings(t *testing.T) {
 		// scenario 1
 		{
 			name:                   "scenario 1: user gets settings first time",
-			expectedResponse:       `{"customLinks":[],"cleanupOptions":{"Enabled":false,"Enforced":false},"defaultNodeCount":10,"clusterTypeOptions":0,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":false,"enableDashboard":true,"enableOIDCKubeconfig":false}`,
+			expectedResponse:       `{"customLinks":[],"cleanupOptions":{"Enabled":false,"Enforced":false},"defaultNodeCount":10,"clusterTypeOptions":1,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":false,"enableDashboard":true,"enableOIDCKubeconfig":false}`,
 			httpStatus:             http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true)},
 			existingAPIUser:        test.GenDefaultAPIUser(),

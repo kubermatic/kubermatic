@@ -818,6 +818,33 @@
         }
       }
     },
+    "/api/v1/me/logout": {
+      "post": {
+        "description": "Enforces user to login again with the new token.",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "users"
+        ],
+        "summary": "Adds current authorization bearer token to the blacklist.",
+        "operationId": "logoutCurrentUser",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/settings": {
       "get": {
         "produces": [
@@ -1343,6 +1370,16 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "name": "DeleteVolumes",
+            "in": "header"
+          },
+          {
+            "type": "boolean",
+            "name": "DeleteLoadBalancers",
+            "in": "header"
           }
         ],
         "responses": {
@@ -6066,7 +6103,7 @@
           }
         ],
         "responses": {
-          "200": {
+          "201": {
             "description": "SSHKey",
             "schema": {
               "$ref": "#/definitions/SSHKey"
@@ -6445,7 +6482,7 @@
           {
             "type": "string",
             "name": "Region",
-            "in": "query"
+            "in": "header"
           }
         ],
         "responses": {
@@ -6606,6 +6643,38 @@
           "azure"
         ],
         "operationId": "listAzureSizes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "SubscriptionID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientSecret",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Location",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "AzureSizeList",
@@ -6632,6 +6701,18 @@
           "digitalocean"
         ],
         "operationId": "listDigitaloceanSizes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "DoToken",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "DigitaloceanSizeList",
@@ -6865,6 +6946,18 @@
           "hetzner"
         ],
         "operationId": "listHetznerSizes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "HetznerToken",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "HetznerSizeList",
@@ -6891,6 +6984,43 @@
           "openstack"
         ],
         "operationId": "listOpenstackNetworks",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Domain",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Tenant",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OpenstackNetwork",
@@ -6920,6 +7050,43 @@
           "openstack"
         ],
         "operationId": "listOpenstackSecurityGroups",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Domain",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Tenant",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OpenstackSecurityGroup",
@@ -6949,6 +7116,43 @@
           "openstack"
         ],
         "operationId": "listOpenstackSizes",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Domain",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Tenant",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OpenstackSize",
@@ -6982,37 +7186,37 @@
           {
             "type": "string",
             "name": "Username",
-            "in": "query"
+            "in": "header"
           },
           {
             "type": "string",
             "name": "Password",
-            "in": "query"
+            "in": "header"
           },
           {
             "type": "string",
             "name": "Domain",
-            "in": "query"
+            "in": "header"
           },
           {
             "type": "string",
             "name": "Tenant",
-            "in": "query"
+            "in": "header"
           },
           {
             "type": "string",
             "name": "TenantID",
-            "in": "query"
+            "in": "header"
           },
           {
             "type": "string",
             "name": "DatacenterName",
-            "in": "query"
+            "in": "header"
           },
           {
             "type": "string",
             "name": "Credential",
-            "in": "query"
+            "in": "header"
           },
           {
             "type": "string",
@@ -7050,6 +7254,33 @@
           "openstack"
         ],
         "operationId": "listOpenstackTenants",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Domain",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "OpenstackTenant",
@@ -7128,6 +7359,28 @@
           "vsphere"
         ],
         "operationId": "listVSphereFolders",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "VSphereFolder",
@@ -7157,6 +7410,28 @@
           "vsphere"
         ],
         "operationId": "listVSphereNetworks",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
         "responses": {
           "200": {
             "description": "VSphereNetwork",
@@ -11338,9 +11613,37 @@
       "type": "object",
       "title": "PublicOpenstackCloudSpec is a public counterpart of apiv1.OpenstackCloudSpec.",
       "properties": {
+        "domain": {
+          "type": "string",
+          "x-go-name": "Domain"
+        },
         "floatingIpPool": {
           "type": "string",
           "x-go-name": "FloatingIPPool"
+        },
+        "network": {
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "routerID": {
+          "type": "string",
+          "x-go-name": "RouterID"
+        },
+        "securityGroups": {
+          "type": "string",
+          "x-go-name": "SecurityGroups"
+        },
+        "subnetID": {
+          "type": "string",
+          "x-go-name": "SubnetID"
+        },
+        "tenant": {
+          "type": "string",
+          "x-go-name": "Tenant"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/api/pkg/api/v1"

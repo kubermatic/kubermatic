@@ -28,6 +28,8 @@ import (
 
 	"github.com/coreos/go-oidc"
 	"golang.org/x/oauth2"
+
+	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 )
 
 // OIDCToken represents the credentials used to authorize
@@ -167,6 +169,12 @@ func (o *OpenIDClient) Verify(ctx context.Context, token string) (TokenClaims, e
 				oidcClaims.Groups = append(oidcClaims.Groups, group)
 			}
 		}
+	}
+	if rawExp, found := claims["exp"]; found {
+		exp := rawExp.(float64)
+		secs := int64(exp)
+		nsecs := int64((exp - float64(secs)) * 1e9)
+		oidcClaims.Expiry = apiv1.NewTime(time.Unix(secs, nsecs))
 	}
 
 	return oidcClaims, nil

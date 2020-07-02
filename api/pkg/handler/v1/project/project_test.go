@@ -29,9 +29,6 @@ import (
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	k8cuserclusterclient "github.com/kubermatic/kubermatic/api/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/master-controller-manager/rbac"
-	kubermaticfakeclentset "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/fake"
-	kubermaticclientv1 "github.com/kubermatic/kubermatic/api/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
-	kubermaticinformers "github.com/kubermatic/kubermatic/api/pkg/crd/client/informers/externalversions"
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/api/pkg/handler/test"
@@ -44,7 +41,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/wait"
 	fakerestclient "k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
@@ -129,7 +125,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 		{
 			Name:            "scenario 4: rename not existing project",
 			Body:            `{"Name": "Super-Project"}`,
-			HTTPStatus:      http.StatusForbidden,
+			HTTPStatus:      http.StatusNotFound,
 			ProjectToRename: "some-ID",
 			ExistingKubermaticObjects: []runtime.Object{
 				test.GenDefaultProject(),
@@ -137,7 +133,7 @@ func TestRenameProjectEndpoint(t *testing.T) {
 				test.GenDefaultOwnerBinding(),
 			},
 			ExistingAPIUser:  *test.GenDefaultAPIUser(),
-			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't belong to the given project = some-ID"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"projects.kubermatic.k8s.io \"some-ID\" not found"}}`,
 		},
 		{
 			Name:            "scenario 5: rename a project with empty name",
@@ -470,23 +466,18 @@ func TestListProjectMethod(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 
-			kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(tc.ExistingKubermaticObjects...)
-			kubermaticInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticClient, 10*time.Millisecond)
-
-			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (kubermaticclientv1.KubermaticV1Interface, error) {
-				return kubermaticClient.KubermaticV1(), nil
+			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.ExistingKubermaticObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return fakeClient, nil
 			}
-
-			userLister := kubermaticInformerFactory.Kubermatic().V1().Users().Lister()
-			projectBindingLister := kubermaticInformerFactory.Kubermatic().V1().UserProjectBindings().Lister()
-			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, projectBindingLister, userLister, kubernetes.IsServiceAccount)
-			userProvider := kubernetes.NewUserProvider(kubermaticClient, kubermaticInformerFactory.Kubermatic().V1().Users().Lister(), kubernetes.IsServiceAccount)
+			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
+			userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount)
 
 			userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 			if err != nil {
 				t.Fatal(err)
 			}
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, []runtime.Object{}...)
+
 			fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
 			kubernetesClient := fakerestclient.NewSimpleClientset([]runtime.Object{}...)
 			clusterProvider := kubernetes.NewClusterProvider(
@@ -506,9 +497,6 @@ func TestListProjectMethod(t *testing.T) {
 				}
 				return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seed.Name)
 			}
-
-			kubermaticInformerFactory.Start(wait.NeverStop)
-			kubermaticInformerFactory.WaitForCacheSync(wait.NeverStop)
 
 			endpointFun := project.ListEndpoint(userInfoGetter, test.NewFakeProjectProvider(), test.NewFakePrivilegedProjectProvider(), projectMemberProvider, projectMemberProvider, userProvider, clusterProviderGetter, test.BuildSeeds())
 
