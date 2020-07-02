@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -e
+set -euo pipefail
 
 cd $(dirname $0)/..
-. hack/lib.sh
+source hack/lib.sh
 
 echodate "Checking Kubermatic CE licenses..."
 boilerplate \

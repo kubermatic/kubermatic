@@ -216,7 +216,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
-      - image: quay.io/kubermatic-labs/boilerplate:v0.1.0
+      - image: quay.io/kubermatic-labs/boilerplate:v0.1.1
         command:
         - ./hack/verify-boilerplate.sh
         resources:
