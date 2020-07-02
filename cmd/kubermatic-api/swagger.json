@@ -12555,6 +12555,11 @@
         "enableOIDCKubeconfig": {
           "type": "boolean",
           "x-go-name": "EnableOIDCKubeconfig"
+        },
+        "userProjectsLimit": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "UserProjectsLimit"
         }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"

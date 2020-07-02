@@ -89,6 +89,7 @@ func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.Kubermat
 			DisplayTermsOfService: false,
 			EnableDashboard:       true,
 			EnableOIDCKubeconfig:  false,
+			UserProjectsLimit:     0,
 		},
 	}
 	if err := s.runtimeClient.Create(context.Background(), defaultSettings); err != nil {

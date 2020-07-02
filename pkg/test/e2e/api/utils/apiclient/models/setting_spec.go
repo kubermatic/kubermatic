@@ -34,6 +34,9 @@ type SettingSpec struct {
 	// enable o ID c kubeconfig
 	EnableOIDCKubeconfig bool `json:"enableOIDCKubeconfig,omitempty"`
 
+	// user projects limit
+	UserProjectsLimit int64 `json:"userProjectsLimit,omitempty"`
+
 	// cleanup options
 	CleanupOptions *CleanupOptions `json:"cleanupOptions,omitempty"`
 

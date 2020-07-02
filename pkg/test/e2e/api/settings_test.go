@@ -48,6 +48,7 @@ func TestGetDefaultGlobalSettings(t *testing.T) {
 				DisplayTermsOfService: false,
 				EnableDashboard:       true,
 				EnableOIDCKubeconfig:  false,
+				UserProjectsLimit:     0,
 			},
 		},
 	}
