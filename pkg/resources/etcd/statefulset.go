@@ -341,6 +341,10 @@ func getLauncherImage(data etcdStatefulSetCreatorData) (string, error) {
 
 func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int {
 	etcdClusterSize := data.Cluster().Spec.EtcdClusterSize
+	// handle existing clusters that don't have a configured size
+	if etcdClusterSize < kubermaticv1.DefaultEtcdClusterSize {
+		etcdClusterSize = kubermaticv1.DefaultEtcdClusterSize
+	}
 	if set.Spec.Replicas == nil { // new replicaset
 		return etcdClusterSize
 	}
