@@ -457,7 +457,7 @@ presubmits:
       preset-kind-volume-mounts: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
         env:
         - name: KUBERMATIC_EDITION
           value: "ce"
