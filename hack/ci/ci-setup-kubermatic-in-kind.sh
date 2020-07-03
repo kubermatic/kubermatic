@@ -42,8 +42,8 @@ export ADDITIONAL_HELM_ARGS="${ADDITIONAL_HELM_ARGS:-}"
 # Consider self-installed go installations
 export PATH=$PATH:/usr/local/go/bin
 
-# This is just used as a const
-export SEED_NAME=prow-build-cluster
+# This is just used as a const (NB: The CE requires Seeds to be named this way)
+export SEED_NAME=kubermatic
 
 if [[ -z ${JOB_NAME} ]]; then
 	echo "This script should only be running in a CI environment."
