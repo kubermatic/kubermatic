@@ -138,7 +138,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 			partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
 		}
 
-		if err := kubernetesprovider.CreateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster, req.ProjectID); err != nil {
+		if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster); err != nil {
 			return nil, err
 		}
 		kuberneteshelper.AddFinalizer(partialCluster, apiv1.CredentialsSecretsCleanupFinalizer)
@@ -337,6 +337,7 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 		userInfo, err := userInfoGetter(ctx, req.ProjectID)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, "no userInfo in request")
@@ -402,6 +403,10 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, seedsGetter provide
 		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, newInternalCluster.Spec.Cloud.DatacenterName)
 		if err != nil {
 			return nil, fmt.Errorf("error getting dc: %v", err)
+		}
+
+		if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), newInternalCluster); err != nil {
+			return nil, err
 		}
 
 		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
