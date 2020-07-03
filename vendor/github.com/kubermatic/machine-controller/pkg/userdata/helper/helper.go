@@ -140,3 +140,32 @@ https_proxy=%s
 NO_PROXY=%s
 no_proxy=%s`, proxy, proxy, proxy, proxy, noProxy, noProxy)
 }
+
+func SetupNodeIPEnvScript() string {
+	return `#!/usr/bin/env bash
+echodate() {
+  echo "[$(date -Is)]" "$@"
+}
+
+# get the default interface IP address
+DEFAULT_IFC_IP=$(ip -o  route get 1 | grep -oP "src \K\S+")
+
+if [ -z "${DEFAULT_IFC_IP}" ]
+then
+	echodate "Failed to get IP address for the default route interface"
+	exit 1
+fi
+
+# write the nodeip_env file
+if grep -q coreos /etc/os-release
+then
+  echo "KUBELET_NODE_IP=${DEFAULT_IFC_IP}" > /etc/kubernetes/nodeip.conf
+elif [ ! -d /etc/systemd/system/kubelet.service.d ]
+then
+	echodate "Can't find kubelet service extras directory"
+	exit 1
+else
+  echo -e "[Service]\nEnvironment=\"KUBELET_NODE_IP=${DEFAULT_IFC_IP}\"" > /etc/systemd/system/kubelet.service.d/nodeip.conf
+fi
+	`
+}

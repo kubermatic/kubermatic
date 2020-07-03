@@ -59,7 +59,8 @@ const (
 {{- if .InitialTaints }}
 --register-with-taints={{- .InitialTaints }} \
 {{- end }}
---volume-plugin-dir=/var/lib/kubelet/volumeplugins`
+--volume-plugin-dir=/var/lib/kubelet/volumeplugins \
+--node-ip ${KUBELET_NODE_IP}`
 
 	kubeletSystemdUnitTpl = `[Unit]
 After=docker.service
@@ -79,6 +80,7 @@ Environment="PATH=/opt/bin:/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bi
 EnvironmentFile=-/etc/environment
 
 ExecStartPre=/bin/bash /opt/load-kernel-modules.sh
+ExecStartPre=/bin/bash /opt/bin/setup_net_env.sh
 ExecStart=/opt/bin/kubelet $KUBELET_EXTRA_ARGS \
 {{ kubeletFlags .KubeletVersion .CloudProvider .Hostname .ClusterDNSIPs .IsExternal .PauseImage .InitialTaints | indent 2 }}
 
