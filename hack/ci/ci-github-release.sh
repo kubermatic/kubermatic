@@ -82,79 +82,54 @@ sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/kubermatic/*.yaml
 sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/kubermatic-operator/*.yaml
 sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/nodeport-proxy/*.yaml
 
-echodate "Uploading kubermatic CE main archive..."
+echodate "Uploading kubermatic CE archive..."
 
 archive="kubermatic-ce-$tag.tar.gz"
 tar czf "$archive" \
+  charts/backup \
   charts/cert-manager \
-  charts/kubermatic/crd \
+  charts/iap \
   charts/kubermatic-operator \
+  charts/kubermatic/crd \
+  charts/kubernetes-dashboard \
+  charts/logging/loki \
+  charts/logging/promtail \
   charts/minio \
+  charts/monitoring \
   charts/nginx-ingress-controller \
   charts/nodeport-proxy \
   charts/oauth \
+  charts/s3-exporter \
   LICENSE \
   README.md \
   CHANGELOG.md
 
 upload "$archive"
 
-echodate "Uploading kubermatic EE main archive..."
+echodate "Uploading kubermatic EE archive..."
+
+yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
 
 archive="kubermatic-ee-$tag.tar.gz"
 tar czf "$archive" \
+  charts/backup \
   charts/cert-manager \
-  charts/kubermatic \
+  charts/iap \
   charts/kubermatic-operator \
+  charts/kubermatic \
+  charts/kubernetes-dashboard \
+  charts/logging \
   charts/minio \
+  charts/monitoring \
   charts/nginx-ingress-controller \
   charts/nodeport-proxy \
   charts/oauth \
+  charts/s3-exporter \
   LICENSE \
   README.md \
   CHANGELOG.md
 
-upload "$archive"
-
-echodate "Uploading monitoring stack archive..."
-
-archive="monitoring-stack-$tag.tar.gz"
-tar czf "$archive" \
-  charts/cert-manager \
-  charts/iap \
-  charts/minio \
-  charts/monitoring \
-  charts/oauth \
-  LICENSE \
-  README.md \
-  CHANGELOG.md
-
-upload "$archive"
-
-echodate "Uploading logging stack archive..."
-
-archive="logging-stack-$tag.tar.gz"
-tar czf "$archive" \
-  charts/cert-manager \
-  charts/iap \
-  charts/minio \
-  charts/logging \
-  charts/monitoring/grafana \
-  charts/oauth \
-  LICENSE \
-  README.md \
-  CHANGELOG.md
-
-upload "$archive"
-
-echodate "Uploading backup stack archive..."
-
-archive="backup-stack-$tag.tar.gz"
-tar czf "$archive" \
-  charts/backup \
-  LICENSE \
-  README.md \
-  CHANGELOG.md
+git checkout -- charts/kubermatic-operator/values.yaml
 
 upload "$archive"
 
