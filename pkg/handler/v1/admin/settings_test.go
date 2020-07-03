@@ -27,8 +27,6 @@ import (
 	"github.com/kubermatic/kubermatic/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/pkg/handler/test/hack"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestGetGlobalSettings(t *testing.T) {
@@ -55,7 +53,7 @@ func TestGetGlobalSettings(t *testing.T) {
 			expectedResponse: `{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":5,"clusterTypeOptions":5,"displayDemoInfo":true,"displayAPIDocs":true,"displayTermsOfService":true,"enableDashboard":false,"enableOIDCKubeconfig":false,"userProjectsLimit":0}`,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true),
-				genDefaultGlobalSettings()},
+				test.GenDefaultGlobalSettings()},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
 	}
@@ -120,7 +118,7 @@ func TestUpdateGlobalSettings(t *testing.T) {
 			expectedResponse: `{"customLinks":[],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true,"enableDashboard":false,"enableOIDCKubeconfig":false,"userProjectsLimit":10}`,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true),
-				genDefaultGlobalSettings()},
+				test.GenDefaultGlobalSettings()},
 			existingAPIUser: test.GenDefaultAPIUser(),
 		},
 	}
@@ -153,31 +151,4 @@ func genUser(name, email string, isAdmin bool) *kubermaticv1.User {
 	user := test.GenUser("", name, email)
 	user.Spec.IsAdmin = isAdmin
 	return user
-}
-
-func genDefaultGlobalSettings() *kubermaticv1.KubermaticSetting {
-	return &kubermaticv1.KubermaticSetting{
-		ObjectMeta: v1.ObjectMeta{
-			Name: kubermaticv1.GlobalSettingsName,
-		},
-		Spec: kubermaticv1.SettingSpec{
-			CustomLinks: []kubermaticv1.CustomLink{
-				{
-					Label:    "label",
-					URL:      "url:label",
-					Icon:     "icon",
-					Location: "EU",
-				},
-			},
-			CleanupOptions: kubermaticv1.CleanupOptions{
-				Enabled:  true,
-				Enforced: true,
-			},
-			DefaultNodeCount:      5,
-			ClusterTypeOptions:    5,
-			DisplayDemoInfo:       true,
-			DisplayAPIDocs:        true,
-			DisplayTermsOfService: true,
-		},
-	}
 }
