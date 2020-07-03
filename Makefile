@@ -17,6 +17,7 @@ export KUBERMATIC_EDITION?=ce
 REPO=quay.io/kubermatic/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
 CMD=$(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS?=-v
+GOOS ?= $(shell go env GOOS)
 GITTAG=$(shell git describe --tags --always)
 TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
@@ -42,7 +43,7 @@ all: check vendor build test
 build: $(CMD)
 
 $(CMD): download-gocache
-	go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
+	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
 
 install:
 	go install $(GOTOOLFLAGS) ./cmd/...
