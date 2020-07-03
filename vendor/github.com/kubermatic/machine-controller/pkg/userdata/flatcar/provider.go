@@ -94,6 +94,7 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		KubernetesCACert       string
 		KubeletVersion         string
 		InsecureHyperkubeImage bool
+		NodeIPScript           string
 	}{
 		UserDataRequest:        req,
 		ProviderSpec:           pconfig,
@@ -102,6 +103,7 @@ func (p Provider) UserData(req plugin.UserDataRequest) (string, error) {
 		KubernetesCACert:       kubernetesCACert,
 		KubeletVersion:         kubeletVersion.String(),
 		InsecureHyperkubeImage: insecureHyperkubeImage,
+		NodeIPScript:           userdatahelper.SetupNodeIPEnvScript(),
 	}
 	b := &bytes.Buffer{}
 	err = tmpl.Execute(b, data)
@@ -197,6 +199,21 @@ systemd:
       contents: |
 {{ kubeletHealthCheckSystemdUnit | indent 10 }}
 
+    - name: nodeip.service
+      enabled: true
+      contents: |
+        [Unit]
+        Description=Setup Kubelet Node IP Env
+        Requires=network-online.target
+        After=network-online.target
+
+        [Service]
+        ExecStart=/opt/bin/setup_net_env.sh
+        RemainAfterExit=yes
+        Type=oneshot
+        [Install]
+        WantedBy=multi-user.target
+
     - name: kubelet.service
       enabled: true
       contents: |
@@ -209,6 +226,7 @@ systemd:
         CPUAccounting=true
         MemoryAccounting=true
         EnvironmentFile=-/etc/environment
+        EnvironmentFile=/etc/kubernetes/nodeip.conf
 {{- if .HTTPProxy }}
         Environment=KUBELET_IMAGE=docker://{{ .HyperkubeImage }}:v{{ .KubeletVersion }}
 {{- else }}
@@ -229,6 +247,7 @@ systemd:
           --mount volume=var-log,target=/var/log \
           --volume var-lib-calico,kind=host,source=/var/lib/calico \
           --mount volume=var-lib-calico,target=/var/lib/calico"
+        ExecStartPre=/bin/bash /opt/bin/setup_net_env.sh
         ExecStartPre=/bin/mkdir -p /var/lib/calico
         ExecStartPre=/bin/mkdir -p /etc/kubernetes/manifests
         ExecStartPre=/bin/mkdir -p /etc/cni/net.d
@@ -270,7 +289,7 @@ storage:
       contents:
         inline: |
 {{ journalDConfig | indent 10 }}
-    
+
     - path: "/etc/kubernetes/kubelet.conf"
       filesystem: root
       mode: 0644
@@ -312,6 +331,13 @@ storage:
       contents:
         inline: |
           1
+
+    - path: "/opt/bin/setup_net_env.sh"
+      filesystem: root
+      mode: 0755
+      contents:
+        inline: |
+{{ .NodeIPScript | indent 10 }}
 
     - path: /etc/kubernetes/bootstrap-kubelet.conf
       filesystem: root
