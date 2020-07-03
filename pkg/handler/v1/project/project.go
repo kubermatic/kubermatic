@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -36,7 +37,7 @@ import (
 )
 
 // CreateEndpoint defines an HTTP endpoint that creates a new project in the system
-func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
+func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		projectRq, ok := request.(projectReq)
 		if !ok {
@@ -53,7 +54,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		if !user.Spec.IsAdmin && settings.Spec.UserProjectsLimit != 0 {
+		if !user.Spec.IsAdmin && settings.Spec.UserProjectsLimit > 0 {
 			userMappings, err := memberMapper.MappingsFor(user.Spec.Email)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
@@ -62,7 +63,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			var projectsCounter int64
 			for _, mapping := range userMappings {
 				userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
-				_, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
+				projectInternal, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 				if err != nil {
 					// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
 					// Next request with privileged user checks if the project doesn't exist or some other error occurred.
@@ -77,11 +78,21 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 					}
 					continue
 				}
-				projectsCounter++
+				// get only owned projects
+				projectOwners, err := common.GetOwnersForProject(userInfo, projectInternal, memberProvider, userProvider)
+				if err != nil {
+					return nil, common.KubernetesErrorToHTTPError(err)
+				}
+				for _, owner := range projectOwners {
+					if strings.EqualFold(owner.Email, user.Spec.Email) {
+						projectsCounter++
+					}
+				}
 			}
 			if len(errorList) > 0 {
 				return nil, errors.NewWithDetails(http.StatusInternalServerError, "failed to get some projects, please examine details field for more info", errorList)
 			}
+
 			if projectsCounter >= settings.Spec.UserProjectsLimit {
 				return nil, errors.New(http.StatusForbidden, "reached maximum number of projects")
 			}

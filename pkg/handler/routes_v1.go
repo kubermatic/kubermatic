@@ -1687,7 +1687,7 @@ func (r Routing) createProject() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(project.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.settingsProvider, r.userProjectMapper)),
+		)(project.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.settingsProvider, r.userProjectMapper, r.projectMemberProvider, r.userProvider)),
 		project.DecodeCreate,
 		setStatusCreatedHeader(encodeJSON),
 		r.defaultServerOptions()...,

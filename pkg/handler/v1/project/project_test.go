@@ -679,6 +679,30 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
+
+		{
+			Name:             "scenario 4: user has not owned project and doesn't reach maximum number of projects",
+			Body:             fmt.Sprintf(`{"name":"%s"}`, test.GenDefaultProject().Spec.Name),
+			RewriteProjectID: true,
+			ExpectedResponse: `{"id":"%s","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":"Inactive","owners":[{"name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}]}`,
+			HTTPStatus:       http.StatusCreated,
+			ExistingKubermaticObjects: []runtime.Object{
+				// add some projects
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
+				// add John
+				test.GenUser("JohnID", "John", "john@acme.com"),
+
+				test.GenBinding("my-first-project-ID", "john@acme.com", "editors"),
+				test.GenBinding("my-third-project-ID", "john@acme.com", "viewers"),
+				func() *kubermaticapiv1.KubermaticSetting {
+					settings := test.GenDefaultSettings()
+					settings.Spec.UserProjectsLimit = 1
+					return settings
+				}(),
+			},
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
