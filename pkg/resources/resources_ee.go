@@ -19,8 +19,6 @@ limitations under the License.
 package resources
 
 const (
-	KubermaticEdition = "Enterprise Edition"
-
 	// DefaultKubermaticImage defines the default Docker repository containing the Kubermatic API image.
 	DefaultKubermaticImage = "quay.io/kubermatic/kubermatic-ee"
 
