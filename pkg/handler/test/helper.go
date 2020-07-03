@@ -985,3 +985,30 @@ func GenBlacklistTokenSecret(name string, tokens []byte) *corev1.Secret {
 		},
 	}
 }
+
+func GenDefaultGlobalSettings() *kubermaticv1.KubermaticSetting {
+	return &kubermaticv1.KubermaticSetting{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: kubermaticv1.GlobalSettingsName,
+		},
+		Spec: kubermaticv1.SettingSpec{
+			CustomLinks: []kubermaticv1.CustomLink{
+				{
+					Label:    "label",
+					URL:      "url:label",
+					Icon:     "icon",
+					Location: "EU",
+				},
+			},
+			CleanupOptions: kubermaticv1.CleanupOptions{
+				Enabled:  true,
+				Enforced: true,
+			},
+			DefaultNodeCount:      5,
+			ClusterTypeOptions:    5,
+			DisplayDemoInfo:       true,
+			DisplayAPIDocs:        true,
+			DisplayTermsOfService: true,
+		},
+	}
+}
