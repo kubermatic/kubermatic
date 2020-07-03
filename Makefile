@@ -13,7 +13,7 @@
 # limitations under the License.
 
 export CGO_ENABLED?=0
-KUBERMATIC_EDITION?=ce
+export KUBERMATIC_EDITION?=ce
 REPO=quay.io/kubermatic/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
 CMD=$(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS?=-v
