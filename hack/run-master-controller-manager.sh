@@ -44,6 +44,7 @@ echodate "Starting master-controller-manager..."
 set -x
 ./_build/master-controller-manager $CTRL_EXTRA_ARGS \
   -kubeconfig=$KUBECONFIG \
+  -enable-leader-election=false \
   -internal-address=127.0.0.1:8086 \
   -worker-name="$(worker_name)" \
   -log-debug=$KUBERMATIC_DEBUG \

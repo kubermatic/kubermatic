@@ -37,8 +37,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlrconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/yaml"
 )
 
@@ -210,27 +210,14 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, dc
 
 type EESeedKubeconfigGetter = func(seed *kubermaticv1.Seed) (*rest.Config, error)
 
-// SeedKubeconfigGetterFactory returns a provider.SeedKubeconfigGetter
-// compatible implementation that returns kubeconfigs based on the given master
-// --kubeconfig file, which has to contain a context for every configured seed.
-func SeedKubeconfigGetterFactory(kubeconfigFilePath string) (EESeedKubeconfigGetter, error) {
-	if kubeconfigFilePath == "" {
-		return nil, errors.New("--kubeconfig is required when --dynamic-datacenters=false")
-	}
+// Ensures that SeedKubeconfigGetter implements EESeedKubeconfigGetter
+var _ EESeedKubeconfigGetter = SeedKubeconfigGetter
 
-	kubeconfig, err := clientcmd.LoadFromFile(kubeconfigFilePath)
+// SeedKubeconfigGetter implements provider.SeedKubeconfigGetter.
+func SeedKubeconfigGetter(seed *kubermaticv1.Seed) (*rest.Config, error) {
+	cfg, err := ctrlrconfig.GetConfigWithContext(seed.Name)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read kubeconfig from %q: %v", kubeconfigFilePath, err)
+		return nil, fmt.Errorf("failed to get restConfig for seed %q: %v", seed.Name, err)
 	}
-
-	return func(seed *kubermaticv1.Seed) (*rest.Config, error) {
-		if _, exists := kubeconfig.Contexts[seed.Name]; !exists {
-			return nil, fmt.Errorf("found no context with name %q in kubeconfig", seed.Name)
-		}
-		cfg, err := clientcmd.NewNonInteractiveClientConfig(*kubeconfig, seed.Name, &clientcmd.ConfigOverrides{}, nil).ClientConfig()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get restConfig for seed %q: %v", seed.Name, err)
-		}
-		return cfg, nil
-	}, nil
+	return cfg, nil
 }
