@@ -62,3 +62,7 @@ minio:
   nodeSelector: {}
   affinity: {}
   tolerations: []
+
+s3Exporter:
+  # namespace to store the secret for s3-exporter chart
+  namespace: s3-exporter

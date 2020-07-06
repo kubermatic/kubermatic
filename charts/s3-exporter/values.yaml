@@ -13,6 +13,7 @@
 # limitations under the License.
 
 s3Exporter:
+  namespace: s3-exporter
   image:
     repository: quay.io/kubermatic/s3-exporter
     tag: v0.4
