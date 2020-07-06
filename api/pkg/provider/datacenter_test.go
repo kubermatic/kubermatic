@@ -18,6 +18,7 @@ package provider
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
@@ -88,5 +89,22 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 	if seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy.String() != "seed-proxy" {
 		t.Errorf("expected the datacenters http proxy setting to get set but was %v",
 			seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy)
+	}
+}
+
+func TestSeedsGetterFactoryNoSeed(t *testing.T) {
+	t.Parallel()
+	// No seed is returned by the fake client
+	client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme)
+	seedsGetter, err := SeedsGetterFactory(context.Background(), client, "my-ns")
+	if err != nil {
+		t.Fatalf("failed getting seedsGetter: %v", err)
+	}
+	seeds, err := seedsGetter()
+	if err != nil {
+		t.Fatalf("error occurred while calling seedsGetter: %v", err)
+	}
+	if !reflect.DeepEqual(seeds, emptySeedMap) {
+		t.Errorf("Expected no seed, but got %d: %v", len(seeds), seeds)
 	}
 }
