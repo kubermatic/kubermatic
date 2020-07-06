@@ -12556,6 +12556,10 @@
           "type": "boolean",
           "x-go-name": "EnableOIDCKubeconfig"
         },
+        "restrictProjectCreation": {
+          "type": "boolean",
+          "x-go-name": "RestrictProjectCreation"
+        },
         "userProjectsLimit": {
           "type": "integer",
           "format": "int64",
