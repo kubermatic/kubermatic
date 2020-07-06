@@ -1,3 +1,13 @@
+### [v2.14.1]
+
+
+- Added missing Flatcar Linux handling in API [#5368](https://github.com/kubermatic/kubermatic/issues/5368) ([kdomanski](https://github.com/kdomanski))
+- Fixed nodes sometimes not having the correct distribution label applied. [#5437](https://github.com/kubermatic/kubermatic/issues/5437) ([xrstf](https://github.com/xrstf))
+- Fixed missing Kubermatic Prometheus metrics. [#5505](https://github.com/kubermatic/kubermatic/issues/5505) ([xrstf](https://github.com/xrstf))
+
+
+
+
 ### [v2.14.0]
 
 
