@@ -117,6 +117,14 @@ Supported Kubernetes versions:
 
 
 
+### [v2.13.6]()
+
+
+- Fixed a bug preventing editing of existing cluster credential secrets [#5569](https://github.com/kubermatic/kubermatic/issues/5569) ([zreigz](https://github.com/zreigz))
+
+
+
+
 ### [v2.13.5]()
 
 
