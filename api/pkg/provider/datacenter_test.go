@@ -31,7 +31,7 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 	t.Parallel()
 	initSeed := &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultSeedName,
+			Name:      DefaultSeedName,
 			Namespace: "my-ns",
 		},
 		Spec: kubermaticv1.SeedSpec{
@@ -43,7 +43,7 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 	}
 	client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, initSeed)
 
-	seedGetter, err := SeedGetterFactory(context.Background(), client, defaultSeedName, "my-ns")
+	seedGetter, err := SeedGetterFactory(context.Background(), client, DefaultSeedName, "my-ns")
 	if err != nil {
 		t.Fatalf("failed getting seedGetter: %v", err)
 	}
@@ -61,7 +61,7 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 	t.Parallel()
 	initSeed := &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      defaultSeedName,
+			Name:      DefaultSeedName,
 			Namespace: "my-ns",
 		},
 		Spec: kubermaticv1.SeedSpec{
@@ -81,10 +81,10 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed calling seedsGetter: %v", err)
 	}
-	if _, exists := seeds[defaultSeedName]; !exists || len(seeds) != 1 {
+	if _, exists := seeds[DefaultSeedName]; !exists || len(seeds) != 1 {
 		t.Fatalf("expceted to get a map with exactly one key `my-seed`, got %v", seeds)
 	}
-	seed := seeds[defaultSeedName]
+	seed := seeds[DefaultSeedName]
 	if seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy.String() != "seed-proxy" {
 		t.Errorf("expected the datacenters http proxy setting to get set but was %v",
 			seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy)

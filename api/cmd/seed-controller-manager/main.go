@@ -40,6 +40,7 @@ import (
 	"github.com/kubermatic/kubermatic/api/pkg/pprof"
 	"github.com/kubermatic/kubermatic/api/pkg/signals"
 	"github.com/kubermatic/kubermatic/api/pkg/util/restmapper"
+	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -148,10 +149,8 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 	if options.seedValidationHook.CertFile != "" && options.seedValidationHook.KeyFile != "" {
 		restMapperCache := restmapper.New()
-		seedValidationWebhookServer, err := options.seedValidationHook.Server(
-			rootCtx,
-			log,
-			options.namespace,
+		// Creates a new default validator
+		validator, err := seedvalidation.NewDefaultSeedValidator(
 			options.workerName,
 			// We only have a SeedGetter and not a SeedsGetter, so construct a little
 			// wrapper
@@ -181,6 +180,15 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 				}
 				return restMapperCache.Client(mgr.GetConfig())
 			},
+		)
+		if err != nil {
+			log.Fatalw("failed to create seed validator webhook server: %v", zap.Error(err))
+		}
+		seedValidationWebhookServer, err := options.seedValidationHook.Server(
+			rootCtx,
+			log,
+			options.namespace,
+			validator.Validate,
 			false)
 		if err != nil {
 			log.Fatalw("Failed to get seedValidationWebhookServer", zap.Error(err))
