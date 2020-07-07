@@ -98,7 +98,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				"-logtostderr",
 				"-address=0.0.0.0:8080",
 				"-internal-address=0.0.0.0:8085",
-				"-dynamic-datacenters=true",
 				"-dynamic-presets=true",
 				"-swagger=/opt/swagger.json",
 				"-master-resources=/opt/extra-files",
@@ -114,6 +113,11 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				fmt.Sprintf("-feature-gates=%s", featureGates(cfg)),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.API.PProfEndpoint),
 				fmt.Sprintf("-accessible-addons=%s", strings.Join(cfg.Spec.API.AccessibleAddons, ",")),
+			}
+
+			// Only EE does support dynamic-datacenters
+			if versions.KubermaticEdition.IsEE() {
+				args = append(args, "-dynamic-datacenters=true")
 			}
 
 			if cfg.Spec.API.DebugLog {
