@@ -16,6 +16,10 @@ limitations under the License.
 
 package common
 
+import (
+	"github.com/kubermatic/kubermatic/api/pkg/util/edition"
+)
+
 // UIDOCKERTAG is a magic variable containing the tag / git commit hash
 // of the dashboard-v2 Docker image to deploy. It gets fed by the
 // Makefile as an ldflag.
@@ -27,17 +31,19 @@ var UIDOCKERTAG string
 var KUBERMATICDOCKERTAG string
 
 type Versions struct {
-	Kubermatic string
-	UI         string
-	VPA        string
-	Envoy      string
+	Kubermatic        string
+	UI                string
+	VPA               string
+	Envoy             string
+	KubermaticEdition edition.Type
 }
 
 func NewDefaultVersions() Versions {
 	return Versions{
-		Kubermatic: KUBERMATICDOCKERTAG,
-		UI:         UIDOCKERTAG,
-		VPA:        "0.5.0",
-		Envoy:      "v1.13.0",
+		Kubermatic:        KUBERMATICDOCKERTAG,
+		UI:                UIDOCKERTAG,
+		VPA:               "0.5.0",
+		Envoy:             "v1.13.0",
+		KubermaticEdition: edition.KubermaticEdition,
 	}
 }

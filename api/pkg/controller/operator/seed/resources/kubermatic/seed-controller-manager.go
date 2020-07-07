@@ -64,7 +64,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 
 			args := []string{
 				"-logtostderr",
-				"-dynamic-datacenters=true",
 				"-internal-address=0.0.0.0:8085",
 				"-kubernetes-addons-path=/opt/addons/kubernetes",
 				"-openshift-addons-path=/opt/addons/openshift",
@@ -92,6 +91,11 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
 				fmt.Sprintf("-in-cluster-prometheus-disable-default-rules=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultRules),
 				fmt.Sprintf("-in-cluster-prometheus-disable-default-scraping-configs=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultScrapingConfigs),
+			}
+
+			// Only EE does support dynamic-datacenters
+			if versions.KubermaticEdition.IsEE() {
+				args = append(args, "-dynamic-datacenters=true")
 			}
 
 			if cfg.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix != "" {

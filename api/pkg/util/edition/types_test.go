@@ -13,21 +13,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
-package util
+package edition
 
 import (
-	"go.uber.org/zap"
-
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/util/edition"
+	"fmt"
+	"testing"
 )
 
-func Hello(log *zap.SugaredLogger, app string, verbose bool) {
-	log = log.With("version", resources.KUBERMATICGITTAG)
-	if verbose {
-		log = log.With("commit", resources.KUBERMATICCOMMIT)
+func TestEditionString(t *testing.T) {
+	if got, exp := fmt.Sprintf("Edition: %s", CE), "Edition: Community Edition"; got != exp {
+		t.Errorf("Expected %s but got %s", exp, got)
 	}
-
-	log.Infof("Starting Kubermatic %s (%s)...", app, edition.KubermaticEdition)
+	if got, exp := fmt.Sprintf("Edition: %s", EE), "Edition: Enterprise Edition"; got != exp {
+		t.Errorf("Expected %s but got %s", exp, got)
+	}
 }
