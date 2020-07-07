@@ -91,7 +91,7 @@ spec:
       # DryRun makes the migrator only log the actions it would take.
       dryRun: false
     # Replicas sets the number of pod replicas for the master-controller-manager.
-    replicas: 2
+    replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
       # Limits describes the maximum amount of compute resources allowed.
@@ -191,7 +191,7 @@ spec:
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600
     # Replicas sets the number of pod replicas for the seed-controller-manager.
-    replicas: 2
+    replicas: 1
     # Resources describes the requested and maximum allowed CPU/memory usage.
     resources:
       # Limits describes the maximum amount of compute resources allowed.
