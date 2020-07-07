@@ -100,7 +100,6 @@ type ClusterSpec struct {
 	// or via a dedicated LoadBalancer
 	ExposeStrategy corev1.ServiceType `json:"exposeStrategy"`
 
-	EtcdClusterSize int `json:"etcdClusterSize"`
 	// Pause tells that this cluster is currently not managed by the controller.
 	// It indicates that the user needs to do some action to resolve the pause.
 	Pause bool `json:"pause"`
@@ -292,11 +291,11 @@ type AuditLoggingSettings struct {
 }
 
 type ComponentSettings struct {
-	Apiserver         APIServerSettings   `json:"apiserver"`
-	ControllerManager DeploymentSettings  `json:"controllerManager"`
-	Scheduler         DeploymentSettings  `json:"scheduler"`
-	Etcd              StatefulSetSettings `json:"etcd"`
-	Prometheus        StatefulSetSettings `json:"prometheus"`
+	Apiserver         APIServerSettings       `json:"apiserver"`
+	ControllerManager DeploymentSettings      `json:"controllerManager"`
+	Scheduler         DeploymentSettings      `json:"scheduler"`
+	Etcd              EtcdStatefulSetSettings `json:"etcd"`
+	Prometheus        StatefulSetSettings     `json:"prometheus"`
 }
 
 type APIServerSettings struct {
@@ -312,6 +311,11 @@ type DeploymentSettings struct {
 
 type StatefulSetSettings struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+type EtcdStatefulSetSettings struct {
+	ClusterSize int                          `json:"clusterSize,omitempty"`
+	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // ClusterNetworkingConfig specifies the different networking
