@@ -16,6 +16,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: {{ .Release.Namespace }}:s3exporter:clusters:reader
+  namespace: {{ .Values.s3Exporter.namespace}}
 rules:
 - apiGroups:
   - kubermatic.k8s.io
