@@ -16,7 +16,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: s3-exporter
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Values.s3Exporter.namespace}}
 spec:
   replicas: 2
   selector:
