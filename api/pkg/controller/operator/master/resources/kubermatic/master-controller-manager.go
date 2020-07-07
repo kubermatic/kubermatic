@@ -73,12 +73,16 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 			args := []string{
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
-				"-dynamic-datacenters=true",
 				"-worker-count=20",
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.MasterController.PProfEndpoint),
 				fmt.Sprintf("-seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertSecretKey),
 				fmt.Sprintf("-seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertKeySecretKey),
+			}
+
+			// Only EE does support dynamic-datacenters
+			if versions.KubermaticEdition.IsEE() {
+				args = append(args, "-dynamic-datacenters=true")
 			}
 
 			if cfg.Spec.MasterController.DebugLog {

@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+GOOS ?= $(shell go env GOOS)
+
 build:
-	CGO_ENABLED=0 go build -o ./_build/kubeletdnat-controller .
+	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/kubeletdnat-controller .
 
 docker: build
 	docker build -t quay.io/kubermatic/kubeletdnat-controller:$(TAG) .

@@ -1,3 +1,5 @@
+// +build !ee
+
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 
@@ -14,20 +16,6 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package util
+package edition
 
-import (
-	"go.uber.org/zap"
-
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/util/edition"
-)
-
-func Hello(log *zap.SugaredLogger, app string, verbose bool) {
-	log = log.With("version", resources.KUBERMATICGITTAG)
-	if verbose {
-		log = log.With("commit", resources.KUBERMATICCOMMIT)
-	}
-
-	log.Infof("Starting Kubermatic %s (%s)...", app, edition.KubermaticEdition)
-}
+const KubermaticEdition = CE

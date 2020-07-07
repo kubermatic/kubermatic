@@ -13,21 +13,30 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+package edition
 
-package util
+type Type int
 
-import (
-	"go.uber.org/zap"
-
-	"github.com/kubermatic/kubermatic/api/pkg/resources"
-	"github.com/kubermatic/kubermatic/api/pkg/util/edition"
+const (
+	CE Type = iota
+	EE
 )
 
-func Hello(log *zap.SugaredLogger, app string, verbose bool) {
-	log = log.With("version", resources.KUBERMATICGITTAG)
-	if verbose {
-		log = log.With("commit", resources.KUBERMATICCOMMIT)
+func (e Type) String() string {
+	switch e {
+	case CE:
+		return "Community Edition"
+	case EE:
+		return "Enterprise Edition"
+	default:
+		return ""
 	}
+}
 
-	log.Infof("Starting Kubermatic %s (%s)...", app, edition.KubermaticEdition)
+func (e Type) IsEE() bool {
+	return e == EE
+}
+
+func (e Type) IsCE() bool {
+	return e == CE
 }
