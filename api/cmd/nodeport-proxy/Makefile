@@ -14,11 +14,13 @@
 
 default: test build
 
+GOOS ?= $(shell go env GOOS)
+
 lb-updater:
-	CGO_ENABLED=0 go build -o ./_build/lb-updater github.com/kubermatic/kubermatic/api/cmd/nodeport-proxy/lb-updater
+	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/lb-updater github.com/kubermatic/kubermatic/api/cmd/nodeport-proxy/lb-updater
 
 envoy-manager:
-	CGO_ENABLED=0 go build -o ./_build/envoy-manager github.com/kubermatic/kubermatic/api/cmd/nodeport-proxy/envoy-manager
+	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/envoy-manager github.com/kubermatic/kubermatic/api/cmd/nodeport-proxy/envoy-manager
 
 build: envoy-manager lb-updater
 
