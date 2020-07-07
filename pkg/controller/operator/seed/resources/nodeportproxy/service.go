@@ -40,7 +40,7 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 
 			s.Spec.Type = corev1.ServiceTypeLoadBalancer
 			s.Spec.Selector = map[string]string{
-				common.NameLabel: ServiceName,
+				common.NameLabel: EnvoyDeploymentName,
 			}
 
 			// Services need at least one port to be valid, so create it initially.
