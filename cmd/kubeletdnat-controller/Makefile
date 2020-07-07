@@ -13,9 +13,10 @@
 # limitations under the License.
 
 DOCKER_REPO="quay.io/kubermatic"
+GOOS ?= $(shell go env GOOS)
 
 build:
-	CGO_ENABLED=0 go build -o ./_build/kubeletdnat-controller .
+	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/kubeletdnat-controller .
 
 docker: build
 	docker build -t $(DOCKER_REPO)/kubeletdnat-controller:$(TAG) .
