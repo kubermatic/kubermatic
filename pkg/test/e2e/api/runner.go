@@ -804,9 +804,9 @@ func (r *runner) GetGlobalSettings() (*apiv1.GlobalSettings, error) {
 	return convertGlobalSettings(responseSettings.Payload), nil
 }
 
-func (r *runner) UpdateGlobalSettings(s string) (*apiv1.GlobalSettings, error) {
+func (r *runner) UpdateGlobalSettings(patch json.RawMessage) (*apiv1.GlobalSettings, error) {
 	params := &admin.PatchKubermaticSettingsParams{
-		Patch: []uint8(s),
+		Patch: &patch,
 	}
 	params.WithTimeout(timeout)
 	responseSettings, err := r.client.Admin.PatchKubermaticSettings(params, r.bearerToken)
