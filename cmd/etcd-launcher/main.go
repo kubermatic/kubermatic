@@ -3,28 +3,30 @@ package main
 import (
 	"context"
 	"errors"
+	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"path"
-	"strconv"
 	"strings"
 	"time"
 
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 	"go.etcd.io/etcd/clientv3"
 	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
 	"go.etcd.io/etcd/etcdserver/etcdserverpb"
+	"go.uber.org/zap"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
-	initialStateEnvName      = "INITIAL_STATE"
-	initialClusterEnvName    = "INITIAL_CLUSTER"
 	defaultClusterSize       = 3
 	defaultEtcdctlAPIVersion = "3"
+	etcdCommandPath          = "/usr/local/bin/etcd"
 )
 
-type envConfig struct {
+type config struct {
 	namespace             string
 	clusterSize           int
 	podName               string
@@ -37,7 +39,7 @@ type envConfig struct {
 }
 
 type etcdCluster struct {
-	config      *envConfig
+	config      *config
 	client      *clientv3.Client
 	localClient *clientv3.Client
 }
@@ -45,37 +47,36 @@ type etcdCluster struct {
 func main() {
 	// normal workflow, we don't do migrations anymore
 	e := &etcdCluster{}
-	err := e.getConfigFromEnv()
+	err := e.parseConfigFlags()
 	if err != nil {
 		log.Fatalf("failed to get launcher configuration: %v", err)
 	}
 
+	logOpts := kubermaticlog.NewDefaultOptions()
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
+	log := rawLog.Sugar()
+	log = log.With("member-name", e.config.podName)
+
 	initialMembers := initialMemberList(e.config.clusterSize, e.config.namespace)
-	// not required, will leave it for now.
-	os.Setenv(initialStateEnvName, e.config.initialState)
-	os.Setenv(initialClusterEnvName, strings.Join(initialMembers, ","))
 
-	log.Print("initializing etcd..")
-	log.Printf("initial-state: %s", os.Getenv(initialStateEnvName))
-	log.Printf("initial-cluster: %s", os.Getenv(initialClusterEnvName))
+	log.Info("initializing etcd..")
+	log.Infof("initial-state: %s", e.config.initialState)
+	log.Infof("initial-cluster: %s", strings.Join(initialMembers, ","))
 
+	if _, err := os.Stat(etcdCommandPath); os.IsNotExist(err) {
+		log.Fatalf("can't find etcd command [%s]: %v", etcdCommandPath, err)
+	}
 	// setup and start etcd command
-	cmd := exec.Command("/usr/local/bin/etcd", etcdCmd(e.config)...)
+	cmd := exec.Command(etcdCommandPath, etcdCmd(e.config)...)
 	cmd.Env = os.Environ()
 	cmd.Stderr = os.Stderr
 	cmd.Stdout = os.Stdout
+	log.Infof("starting etcd command: %s", cmd.String())
 	if err = cmd.Start(); err != nil {
 		log.Fatalf("failed to start etcd: %v", err)
 	}
 
-	// if existing, we need to reconcile
-	var healthy bool
-	for i := 0; i < 5; i++ {
-		if healthy, err = e.isHealthy(); healthy {
-			break
-		}
-	}
-	if err != nil {
+	if err = wait.Poll(1*time.Second, 30*time.Second, e.isHealthy); err != nil {
 		log.Fatalf("manager thread failed to connect to cluster: %v", err)
 	}
 
@@ -88,30 +89,40 @@ func main() {
 		for { // reconcile dead members
 			members, err := e.listMembers()
 			if err != nil {
+				log.Warnf("failed to list memebers: %v ", err)
 				time.Sleep(10 * time.Second)
 				continue
 			}
 			// we only need to reconcile if we have more members than we should
 			if len(members) <= e.config.clusterSize {
+				log.Info("cluster members reconciled..")
 				break
 			}
 			// to avoide race conditions, we will run only on the cluster leader
 			leader, err := e.isLeader()
 			if err != nil || !leader {
+				if err != nil {
+					log.Warnf("failed leader check: %v", err)
+				}
 				time.Sleep(10 * time.Second)
 				continue
 			}
-			if err := e.removeDeadMembers(); err != nil {
+			if err := e.removeDeadMembers(log); err != nil {
+				log.Warnf("failed to remove member: %v", err)
 				continue
 			}
 		}
-	} else { // new etcd member, need to join hte cluster
+	} else { // new etcd member, need to join the cluster
+		log.Info("pod is not a cluster member, trying to join..")
 		// remove possibly stale member data dir..
+		log.Info("removing possibly stale data dir")
 		_ = os.RemoveAll(path.Join(e.config.dataDir, "member"))
 		// join the cluster
+
 		if _, err := e.client.MemberAdd(context.Background(), []string{fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace)}); err != nil {
 			log.Fatalf("failed to join cluster: %v", err)
 		}
+		log.Info("joined etcd cluster succcessfully.")
 	}
 
 	if err = cmd.Wait(); err != nil {
@@ -139,57 +150,58 @@ func (e *etcdCluster) endpoint() string {
 	return fmt.Sprintf("%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace)
 }
 
-func (e *etcdCluster) getConfigFromEnv() error {
-	var err error
-	var ok bool
-	config := &envConfig{}
+func (e *etcdCluster) parseConfigFlags() error {
+	config := &config{}
 
-	if config.namespace, ok = os.LookupEnv("NAMESPACE"); !ok || config.namespace == "" {
-		return errors.New("NAMESPACE is not set")
+	flag.StringVar(&config.namespace, "namespace", "", "namespace of the user cluster")
+	flag.IntVar(&config.clusterSize, "etcd-cluster-size", defaultClusterSize, "number of replicas in the etcd cluster")
+	flag.StringVar(&config.podName, "pod-name", "", "name of this etcd pod")
+	flag.StringVar(&config.podIP, "pod-ip", "", "IP address of this etcd pod")
+	flag.StringVar(&config.etcdctlAPIVersion, "api-version", defaultEtcdctlAPIVersion, "etcdctl API version")
+	flag.StringVar(&config.token, "token", "", "etcd database token")
+	flag.BoolVar(&config.enableCorruptionCheck, "enable-corruption-check", false, "enable etcd experimental corruption check")
+	flag.StringVar(&config.initialState, "initial-state", "", "etcd cluster initial state")
+	flag.Parse()
+
+	if config.namespace == "" {
+		return errors.New("-namespace is not set")
 	}
 
-	config.clusterSize = defaultClusterSize
-	if s := os.Getenv("ECTD_CLUSTER_SIZE"); s != "" {
-		if config.clusterSize, err = strconv.Atoi(s); err != nil {
-			return fmt.Errorf("failed to read ECTD_CLUSTER_SIZE: %v", err)
-		}
-		if config.clusterSize < defaultClusterSize {
-			return fmt.Errorf("ECTD_CLUSTER_SIZE is smaller then %d", defaultClusterSize)
-		}
+	if config.clusterSize < defaultClusterSize {
+		return fmt.Errorf("-etcd-cluster-size is smaller than %d", defaultClusterSize)
 	}
 
-	if config.podName, ok = os.LookupEnv("POD_NAME"); !ok || config.podName == "" {
-		return errors.New("POD_NAME is not set")
+	if config.podName == "" {
+		return errors.New("-pod-name is not set")
 	}
 
-	if config.podIP, ok = os.LookupEnv("POD_IP"); !ok || config.podIP == "" {
-		return errors.New("POD_IP is not set")
+	if config.podIP == "" {
+		return errors.New("-pod-ip is not set")
 	}
 
-	config.etcdctlAPIVersion = defaultEtcdctlAPIVersion
-	if v := os.Getenv("ETCDCTL_API"); v == "2" || v == "3" {
-		config.etcdctlAPIVersion = v
+	if config.etcdctlAPIVersion != "2" && config.etcdctlAPIVersion != "3" {
+		return errors.New("-api-version is either 2 or 3")
 	}
 
-	if config.token, ok = os.LookupEnv("TOKEN"); !ok || config.token == "" {
-		return errors.New("TOEKN is not set")
+	if config.token == "" {
+		return errors.New("-token is not set")
 	}
 
-	if c := os.Getenv("ENABLE_CORRUPTION_CHECK"); strings.ToLower(c) == "true" {
-		config.enableCorruptionCheck = true
+	if config.initialState == "" {
+		return errors.New("-initial-state is not set")
 	}
 
-	if config.initialState, ok = os.LookupEnv(initialStateEnvName); !ok || config.initialState == "" {
-		return errors.New("INITIAL_STATE is not set")
+	if config.initialState != "new" && config.initialState != "existing" {
+		return fmt.Errorf("invalid initial state: %s", config.initialState)
 	}
+
 	config.dataDir = fmt.Sprintf("/var/run/etcd/pod_%s/", config.podName)
 
 	e.config = config
 	return nil
-
 }
 
-func etcdCmd(config *envConfig) []string {
+func etcdCmd(config *config) []string {
 	cmd := []string{
 		fmt.Sprintf("--name=%s", config.podName),
 		fmt.Sprintf("--data-dir=%s", config.dataDir),
@@ -287,7 +299,7 @@ func (e *etcdCluster) isHealthy() (bool, error) {
 	// just get a key from etcd, this is how `etcdctl endpoint health` works!
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	_, err := e.client.Get(ctx, "healthy")
-	cancel()
+	defer cancel()
 	if err != nil && err != rpctypes.ErrPermissionDenied {
 		return false, nil
 	}
@@ -302,7 +314,7 @@ func (e *etcdCluster) isEndpointHealthy(endpoint string) (bool, error) {
 	// just get a key from etcd, this is how `etcdctl endpoint health` works!
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	_, err = client.Get(ctx, "healthy")
-	cancel()
+	defer cancel()
 	if err != nil && err != rpctypes.ErrPermissionDenied {
 		return false, nil
 	}
@@ -315,9 +327,8 @@ func (e *etcdCluster) isLeader() (bool, error) {
 	if err = e.getLocalClient(); err != nil {
 		return false, err
 	}
-	var resp *clientv3.StatusResponse
 	for i := 0; i < 10; i++ {
-		resp, err = e.localClient.Status(context.Background(), e.endpoint())
+		resp, err := e.localClient.Status(context.Background(), e.endpoint())
 		if err != nil || resp.Leader == 0 {
 			time.Sleep(2 * time.Second)
 			continue
@@ -329,7 +340,7 @@ func (e *etcdCluster) isLeader() (bool, error) {
 	return false, nil
 }
 
-func (e *etcdCluster) removeDeadMembers() error {
+func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger) error {
 	members, err := e.listMembers()
 	if err != nil {
 		return err
@@ -338,14 +349,13 @@ func (e *etcdCluster) removeDeadMembers() error {
 		if member.Name == e.config.podName {
 			continue
 		}
-		healthy, err := e.isEndpointHealthy(member.PeerURLs[0])
-		if err != nil {
-			continue
-		}
-		if !healthy {
-			if _, err := e.client.MemberRemove(context.Background(), member.ID); err != nil {
-				return err
-			}
+
+		if err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
+			return e.isEndpointHealthy(member.PeerURLs[0])
+		}); err != nil {
+			log.Infof("member [%s] is not responding, removing from cluster", member.Name)
+			_, err = e.client.MemberRemove(context.Background(), member.ID)
+			return err
 		}
 	}
 	return nil

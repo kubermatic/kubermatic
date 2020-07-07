@@ -50,7 +50,7 @@ cd cmd/user-ssh-keys-agent && export TAG=${1} && make DOCKER_REPO=${DOCKER_REPO}
 
 for ETCD_TAG in $ETCD_TAGS; do
   BASE_TAG=$(echo ${ETCD_TAG} | cut -d\. -f 1,2| tr -d .)
-  docker build --build-arg ECTD_VERSION=${ETCD_TAG} -t ${DOCKER_REPO}/etcd-launcher-${BASE_TAG}:${1} -f cmd/etcd-launcher/Dockerfile .
+  docker build --build-arg ETCD_VERSION=${ETCD_TAG} -t ${DOCKER_REPO}/etcd-launcher-${BASE_TAG}:${1} -f cmd/etcd-launcher/Dockerfile .
 done
 
 # keep a mirror of the EE version in the old repo

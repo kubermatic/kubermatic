@@ -108,13 +108,14 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			if err != nil {
 				return nil, err
 			}
+
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name: resources.EtcdStatefulSetName,
 
 					Image:           image,
 					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/usr/local/bin/etcd-launcher"},
+					Command:         []string{"/usr/local/bin/etcd-launcher"}, Args: getLauncherArgs(enableDataCorruptionChecks),
 					Env: []corev1.EnvVar{
 						{
 							Name: "POD_NAME",
@@ -148,7 +149,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							Value: data.Cluster().Name,
 						},
 						{
-							Name:  "ECTD_CLUSTER_SIZE",
+							Name:  "ETCD_CLUSTER_SIZE",
 							Value: strconv.Itoa(replicas),
 						},
 						{
@@ -361,4 +362,19 @@ func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) i
 		return replicas - 1
 	}
 	return replicas
+}
+
+func getLauncherArgs(enableCorruptionCheck bool) []string {
+	command := []string{"-namespace", "$(NAMESPACE)",
+		"-etcd-cluster-size", "$(ETCD_CLUSTER_SIZE)",
+		"-pod-name", "$(POD_NAME)",
+		"-pod-ip", "$(POD_IP)",
+		"-api-version", "$(ETCDCTL_API)",
+		"-token", "$(TOKEN)",
+		"-initial-state", "$(INITIAL_STATE)",
+	}
+	if enableCorruptionCheck {
+		command = append(command, "-enable-corruption-check")
+	}
+	return command
 }

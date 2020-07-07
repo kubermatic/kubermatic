@@ -351,7 +351,7 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
     for ETCD_TAG in $(getEtcdTags); do
       BASE_TAG=$(echo ${ETCD_TAG} | cut -d\. -f 1,2| tr -d .)
       IMAGE_NAME="quay.io/kubermatic/etcd-launcher-${BASE_TAG}:${KUBERMATIC_VERSION}"
-      time retry 5 docker build --build-arg ECTD_VERSION=${ETCD_TAG} -t "${IMAGE_NAME}" -f cmd/etcd-launcher/Dockerfile .
+      time retry 5 docker build --build-arg ETCD_VERSION=${ETCD_TAG} -t "${IMAGE_NAME}" -f cmd/etcd-launcher/Dockerfile .
       time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
     done
   )
