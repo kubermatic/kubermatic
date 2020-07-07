@@ -54,6 +54,10 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		if err := checkProjectRestriction(user, settings); err != nil {
+			return nil, err
+		}
+
 		if err := validateUserProjectsLimit(user, settings, projectProvider, privilegedProjectProvider, memberMapper, memberProvider, userProvider); err != nil {
 			return nil, err
 		}
@@ -74,6 +78,16 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 
 		return common.ConvertInternalProjectToExternal(kubermaticProject, owners, 0), nil
 	}
+}
+
+func checkProjectRestriction(user *kubermaticapiv1.User, settings *kubermaticapiv1.KubermaticSetting) error {
+	if user.Spec.IsAdmin {
+		return nil
+	}
+	if settings.Spec.RestrictProjectCreation {
+		return errors.New(http.StatusForbidden, "project creation restricted")
+	}
+	return nil
 }
 
 func validateUserProjectsLimit(user *kubermaticapiv1.User, settings *kubermaticapiv1.KubermaticSetting, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) error {

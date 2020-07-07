@@ -21,10 +21,12 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"testing"
 
 	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/client/project"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -157,6 +159,66 @@ func TestAdminUserProjectsLimit(t *testing.T) {
 				}
 			}
 			_, err = adminAPIRunner.UpdateGlobalSettings(json.RawMessage(fmt.Sprintf(`{"userProjectsLimit":%d}`, 0)))
+			if err != nil {
+				t.Fatalf("can not update global settings: %v", GetErrorResponse(err))
+			}
+		})
+	}
+}
+
+func TestRestrictProjectCreation(t *testing.T) {
+	tests := []struct {
+		name          string
+		projectsLimit int
+	}{
+		{
+			name: "test, user can not create any project, admin can create projects",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			var masterToken string
+
+			masterToken, err := retrieveMasterToken()
+			if err != nil {
+				t.Fatalf("can not get master token due error: %v", err)
+			}
+			apiRunner := createRunner(masterToken, t)
+			// change for admin user
+			adminMasterToken, err := retrieveAdminMasterToken()
+			if err != nil {
+				t.Fatalf("can not get admin master token due error: %v", err)
+			}
+
+			adminAPIRunner := createRunner(adminMasterToken, t)
+			_, err = adminAPIRunner.UpdateGlobalSettings(json.RawMessage(`{"restrictProjectCreation":true}`))
+			if err != nil {
+				t.Fatalf("can not update global settings: %v", GetErrorResponse(err))
+			}
+
+			// regular user can't create projects
+			_, err = apiRunner.CreateProject(rand.String(10))
+			if err == nil {
+				t.Fatalf("expected error during cluster creation")
+			}
+			createProjectDefaultErr, ok := err.(*project.CreateProjectDefault)
+			if !ok {
+				t.Fatalf("create project: expected error")
+			}
+			if createProjectDefaultErr.Code() != http.StatusForbidden {
+				t.Fatalf("create project: expected forbidden error")
+			}
+
+			// admin can create projects
+			project, err := adminAPIRunner.CreateProject(rand.String(10))
+			if err != nil {
+				t.Fatalf("admin can not creat eproject: %v", GetErrorResponse(err))
+			}
+			if err := adminAPIRunner.DeleteProject(project.ID); err != nil {
+				t.Fatalf("admin can not delete project: %v", GetErrorResponse(err))
+			}
+
+			_, err = adminAPIRunner.UpdateGlobalSettings(json.RawMessage(`{"restrictProjectCreation":false}`))
 			if err != nil {
 				t.Fatalf("can not update global settings: %v", GetErrorResponse(err))
 			}
