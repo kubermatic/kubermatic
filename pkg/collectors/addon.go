@@ -83,6 +83,7 @@ func (cc AddonCollector) Collect(ch chan<- prometheus.Metric) {
 func (cc *AddonCollector) collectAddon(ch chan<- prometheus.Metric, addon *kubermaticv1.Addon) {
 	if len(addon.OwnerReferences) < 1 || addon.OwnerReferences[0].Kind != kubermaticv1.ClusterKindName {
 		utilruntime.HandleError(fmt.Errorf("No owning cluster for addon %v/%v", addon.Namespace, addon.Name))
+		return
 	}
 
 	clusterName := addon.OwnerReferences[0].Name
