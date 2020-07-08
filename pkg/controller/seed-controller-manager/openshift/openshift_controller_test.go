@@ -143,7 +143,7 @@ func TestResources(t *testing.T) {
 				},
 				&corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "apiserver",
+						Name:      "apiserver-external",
 						Namespace: "test-cluster-ns",
 					},
 					Spec: corev1.ServiceSpec{
