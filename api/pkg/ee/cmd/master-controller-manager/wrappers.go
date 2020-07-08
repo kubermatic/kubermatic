@@ -35,6 +35,7 @@ import (
 	eeprovider "github.com/kubermatic/kubermatic/api/pkg/ee/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
 	"github.com/kubermatic/kubermatic/api/pkg/validation/seed"
+	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -79,14 +80,21 @@ func SetupSeedValidationWebhook(
 	if err != nil {
 		return err
 	}
+	// Creates a new default validator
+	validator, err := seedvalidation.NewDefaultSeedValidator(
+		workerName,
+		seedsGetter,
+		provider.SeedClientGetterFactory(seedKubeconfigGetter),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create seed validator webhook server: %v", err)
+	}
 
 	server, err := webhookOpt.Server(
 		ctx,
 		log,
 		namespace,
-		workerName,
-		seedsGetter,
-		provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		validator.Validate,
 		migrationOptions.SeedMigrationEnabled())
 	if err != nil {
 		return fmt.Errorf("failed to create server: %v", err)

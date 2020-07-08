@@ -26,6 +26,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	seedvalidation "github.com/kubermatic/kubermatic/api/pkg/validation/seed"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -44,13 +45,27 @@ func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 }
 
 func setupSeedValidationWebhook(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger, opt controllerRunOptions, ctrlCtx *controllerContext) error {
+	// Creates a new default validator
+	validator, err := seedvalidation.NewDefaultSeedValidator(
+		opt.workerName,
+		ctrlCtx.seedsGetter,
+		provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter),
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create seed validator webhook server: %v", err)
+	}
 	server, err := opt.seedvalidationHook.Server(
 		ctx,
 		log,
 		ctrlCtx.namespace,
-		opt.workerName,
-		ctrlCtx.seedsGetter,
-		provider.SeedClientGetterFactory(ctrlCtx.seedKubeconfigGetter),
+		seedvalidation.CombineSeedValidateFuncs(
+			// Combine the default validator with the one ensuring a single
+			// seed can be created.
+			// TODO(irozzo) add the test in the controlle, otherwise the check
+			// can be easily bypassed without recompiling the code.
+			seedvalidation.SingleSeedValidateFunc(ctrlCtx.namespace),
+			validator.Validate,
+		),
 		false)
 	if err != nil {
 		return fmt.Errorf("failed to create seed validation webhook server: %v", err)

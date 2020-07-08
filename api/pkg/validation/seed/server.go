@@ -28,13 +28,10 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/api/pkg/provider"
-	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -57,16 +54,8 @@ func (opts *WebhookOpts) Server(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	namespace string,
-	workerName string,
-	seedsGetter provider.SeedsGetter,
-	seedClientGetter provider.SeedClientGetter,
+	validateFunc ValidateFunc,
 	migrationModeEnabled bool) (*Server, error) {
-
-	labelSelector, err := workerlabel.LabelSelector(workerName)
-	if err != nil {
-		return nil, err
-	}
-	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}
 
 	if opts.CertFile == "" || opts.KeyFile == "" {
 		return nil, fmt.Errorf("seed-admissionwebhook-cert-file or seed-admissionwebhook-key-file cannot be empty")
@@ -80,7 +69,7 @@ func (opts *WebhookOpts) Server(
 		listenAddress:        opts.ListenAddress,
 		certFile:             opts.CertFile,
 		keyFile:              opts.KeyFile,
-		validator:            newValidator(ctx, seedsGetter, seedClientGetter, listOpts),
+		validateFunc:         validateFunc,
 		namespace:            namespace,
 		migrationModeEnabled: migrationModeEnabled,
 	}
@@ -93,11 +82,12 @@ func (opts *WebhookOpts) Server(
 
 type Server struct {
 	*http.Server
+	ctx                  context.Context
 	log                  *zap.SugaredLogger
 	listenAddress        string
 	certFile             string
 	keyFile              string
-	validator            *seedValidator
+	validateFunc         ValidateFunc
 	namespace            string
 	migrationModeEnabled bool
 }
@@ -186,17 +176,8 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 	// On DELETE, the admissionReview.Request.Object is unset
 	// Ref: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#webhook-request-and-response
 	if admissionReview.Request.Operation == admissionv1beta1.Delete {
-		seeds, err := s.validator.seedsGetter()
-		if err != nil {
-			return nil, fmt.Errorf("failed to get seeds: %v", err)
-		}
-		// when a namespace is deleted, a DELETE call for all seeds in the namespace
-		// is issued; this request has no .Request.Name set, so this check will make
-		// sure that we exit cleanly and allow deleting namespaces without seeds
-		if _, exists := seeds[admissionReview.Request.Name]; !exists {
-			return admissionReview.Request, nil
-		}
-		seed = seeds[admissionReview.Request.Name]
+		seed.Name = admissionReview.Request.Name
+		seed.Namespace = admissionReview.Request.Namespace
 	} else if err := json.Unmarshal(admissionReview.Request.Object.Raw, seed); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal object from request into a Seed: %v", err)
 	}
@@ -208,7 +189,7 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 		return admissionReview.Request, errors.New("migration is enabled, changes to Seed resources are forbidden; disable migration by removing either -datacenters or -dynamic-datacenters flags from the master-controller-manager")
 	}
 
-	validationErr := s.validator.Validate(seed, admissionReview.Request.Operation == admissionv1beta1.Delete)
+	validationErr := s.validateFunc(s.ctx, seed, admissionReview.Request.Operation)
 	if validationErr != nil {
 		s.log.Errorw("Seed failed validation", "seed", seed.Name, "validationError", validationErr.Error())
 	}

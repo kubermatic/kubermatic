@@ -23,28 +23,38 @@ import (
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/provider"
+	"github.com/kubermatic/kubermatic/api/pkg/util/workerlabel"
 
+	admissionv1beta1 "k8s.io/api/admission/v1beta1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func newValidator(
-	ctx context.Context,
+// ValidateFunc validates a Seed resource
+type ValidateFunc func(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error
+
+func NewDefaultSeedValidator(
+	workerName string,
 	seedsGetter provider.SeedsGetter,
 	seedClientGetter provider.SeedClientGetter,
-	listOpts *ctrlruntimeclient.ListOptions) *seedValidator {
-
-	return &seedValidator{
-		ctx:              ctx,
+) (*Validator, error) {
+	labelSelector, err := workerlabel.LabelSelector(workerName)
+	if err != nil {
+		return nil, err
+	}
+	listOpts := &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}
+	return &Validator{
 		seedsGetter:      seedsGetter,
 		seedClientGetter: seedClientGetter,
 		lock:             &sync.Mutex{},
 		listOpts:         listOpts,
-	}
+	}, nil
 }
 
-type seedValidator struct {
-	ctx              context.Context
+// Ensure that Validator.Validate implements ValidateFunc
+var _ ValidateFunc = (&Validator{}).Validate
+
+type Validator struct {
 	seedsGetter      provider.SeedsGetter
 	seedClientGetter provider.SeedClientGetter
 	lock             *sync.Mutex
@@ -53,8 +63,10 @@ type seedValidator struct {
 }
 
 // Validate returns an error if the given seed does not pass all validation steps.
-func (sv *seedValidator) Validate(seed *kubermaticv1.Seed, isDelete bool) error {
+func (sv *Validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error {
 	// We need locking to make the validation concurrency-safe
+	// (irozzo): this is acceptable as request rate is low, but is it
+	// required?
 	sv.lock.Lock()
 	defer sv.lock.Unlock()
 
@@ -63,15 +75,23 @@ func (sv *seedValidator) Validate(seed *kubermaticv1.Seed, isDelete bool) error 
 		return fmt.Errorf("failed to get client for seed %q: %v", seed.Name, err)
 	}
 
+	// (irozzo): Double check why we do need this getter and we cannot rely on
+	// the controller-runtime client only.
 	seeds, err := sv.seedsGetter()
 	if err != nil {
 		return fmt.Errorf("failed to get seeds: %v", err)
 	}
+	// when a namespace is deleted, a DELETE call for all seeds in the namespace
+	// is issued; this request has no .Request.Name set, so this check will make
+	// sure that we exit cleanly and allow deleting namespaces without seeds
+	if _, exists := seeds[seed.Name]; !exists && op == admissionv1beta1.Delete {
+		return nil
+	}
 
-	return sv.validate(seed, client, seeds, isDelete)
+	return sv.validate(ctx, seed, client, seeds, op == admissionv1beta1.Delete)
 }
 
-func (sv *seedValidator) validate(subject *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, existingSeeds map[string]*kubermaticv1.Seed, isDelete bool) error {
+func (sv *Validator) validate(ctx context.Context, subject *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, existingSeeds map[string]*kubermaticv1.Seed, isDelete bool) error {
 	// this can be nil on new seed clusters
 	existingSeed := existingSeeds[subject.Name]
 
@@ -127,7 +147,7 @@ func (sv *seedValidator) validate(subject *kubermaticv1.Seed, seedClient ctrlrun
 
 	// check if there are still clusters using DCs not defined anymore
 	clusters := &kubermaticv1.ClusterList{}
-	if err := seedClient.List(sv.ctx, clusters, sv.listOpts); err != nil {
+	if err := seedClient.List(ctx, clusters, sv.listOpts); err != nil {
 		return fmt.Errorf("failed to list clusters: %v", err)
 	}
 
@@ -141,4 +161,47 @@ func (sv *seedValidator) validate(subject *kubermaticv1.Seed, seedClient ctrlrun
 	}
 
 	return nil
+}
+
+//EnsureSingleSeedValidator ensures that only the seed with the given Name and
+//Namespace can be created.
+type EnsureSingleSeedValidator struct {
+	Name      string
+	Namespace string
+}
+
+// Ensure that SeedValidator.Validate implements ValidateFunc
+var _ ValidateFunc = EnsureSingleSeedValidator{}.Validate
+
+func (e EnsureSingleSeedValidator) Validate(_ context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error {
+	switch op {
+	case admissionv1beta1.Create:
+		if seed.Name != e.Name || seed.Namespace != e.Namespace {
+			return fmt.Errorf("cannot create Seed %s/%s. It must be named %s and installed in the %s namespace", seed.Name, seed.Namespace, e.Name, e.Namespace)
+		}
+		return nil
+	default:
+		return nil
+	}
+}
+
+// SingleSeedValidateFunc returns a SeedValidateFunc which ensures that a
+// single Seed named with the default seed name in the given namespace is created.
+// This validator is used for Kubermatic Community Edition.
+func SingleSeedValidateFunc(namespace string) ValidateFunc {
+	return EnsureSingleSeedValidator{Name: provider.DefaultSeedName, Namespace: namespace}.Validate
+}
+
+// CombineSeedValidateFuncs combines two or more SeedValidateFunc by running
+// them sequentially in the order they are given and returning an error at the
+// first validation failure.
+func CombineSeedValidateFuncs(funcs ...ValidateFunc) ValidateFunc {
+	return func(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error {
+		for _, f := range funcs {
+			if err := f(ctx, seed, op); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 }
