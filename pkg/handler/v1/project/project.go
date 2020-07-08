@@ -85,7 +85,7 @@ func checkProjectRestriction(user *kubermaticapiv1.User, settings *kubermaticapi
 		return nil
 	}
 	if settings.Spec.RestrictProjectCreation {
-		return errors.New(http.StatusForbidden, "project creation restricted")
+		return errors.New(http.StatusForbidden, "project creation is restricted")
 	}
 	return nil
 }

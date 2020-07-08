@@ -708,7 +708,7 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			Name:             "scenario 5: project creation is restricted for the users",
 			Body:             fmt.Sprintf(`{"name":"%s"}`, test.GenDefaultProject().Spec.Name),
 			RewriteProjectID: false,
-			ExpectedResponse: `{"error":{"code":403,"message":"project creation restricted"}}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"project creation is restricted"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				func() *kubermaticapiv1.KubermaticSetting {
