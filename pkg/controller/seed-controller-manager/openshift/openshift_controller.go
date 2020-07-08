@@ -640,8 +640,7 @@ func (r *Reconciler) networkDefaults(ctx context.Context, cluster *kubermaticv1.
 // GetServiceCreators returns all service creators that are currently in use
 func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCreatorGetter {
 	creators := []reconciling.NamedServiceCreatorGetter{
-		apiserver.InternalServiceCreator(),
-		apiserver.ExternalServiceCreator(osData.Cluster().Spec.ExposeStrategy),
+		apiserver.ServiceCreator(osData.Cluster().Spec.ExposeStrategy),
 		openshiftresources.OpenshiftAPIServiceCreator,
 		openvpn.ServiceCreator(osData.Cluster().Spec.ExposeStrategy),
 		etcd.ServiceCreator(osData),

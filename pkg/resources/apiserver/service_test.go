@@ -23,7 +23,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestExternalServiceCreatorRequiresExposeStrategy(t *testing.T) {
+func TestServiceCreatorRequiresExposeStrategy(t *testing.T) {
 	testCases := []struct {
 		name           string
 		exposeStrategy corev1.ServiceType
@@ -45,7 +45,7 @@ func TestExternalServiceCreatorRequiresExposeStrategy(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, creator := ExternalServiceCreator(tc.exposeStrategy)()
+			_, creator := ServiceCreator(tc.exposeStrategy)()
 			_, err := creator(&corev1.Service{})
 			if (err != nil) != tc.errExpected {
 				t.Errorf("Expected err: %t, but got err %v", tc.errExpected, err)
@@ -54,7 +54,7 @@ func TestExternalServiceCreatorRequiresExposeStrategy(t *testing.T) {
 	}
 }
 
-func TestExternalServiceCreatorSetsPort(t *testing.T) {
+func TestServiceCreatorSetsPort(t *testing.T) {
 	testCases := []struct {
 		name               string
 		inService          *corev1.Service
@@ -69,7 +69,7 @@ func TestExternalServiceCreatorSetsPort(t *testing.T) {
 				},
 			},
 			expectedPort:       int32(443),
-			expectedTargetPort: intstr.FromInt(443),
+			expectedTargetPort: intstr.FromInt(6443),
 		},
 		{
 			name: "Empty NodePort service, port 443",
@@ -79,7 +79,7 @@ func TestExternalServiceCreatorSetsPort(t *testing.T) {
 				},
 			},
 			expectedPort:       int32(443),
-			expectedTargetPort: intstr.FromInt(443),
+			expectedTargetPort: intstr.FromInt(6443),
 		},
 		{
 			name: "NodePort service with allocation, allocation is used everywhere",
@@ -97,14 +97,14 @@ func TestExternalServiceCreatorSetsPort(t *testing.T) {
 					},
 				},
 			},
-			expectedPort:       int32(32000),
+			expectedPort:       int32(443),
 			expectedTargetPort: intstr.FromInt(32000),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, creator := ExternalServiceCreator(tc.inService.Spec.Type)()
+			_, creator := ServiceCreator(tc.inService.Spec.Type)()
 			svc, err := creator(tc.inService)
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err)

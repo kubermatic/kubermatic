@@ -61,6 +61,9 @@ const (
 	RancherServerIngressName            = "rancher-server-ingress"
 )
 
+// ApiServer secure port
+const APIServerSecurePort = 6443
+
 const (
 	// ApiserverDeploymentName is the name of the apiserver deployment
 	ApiserverDeploymentName = "apiserver"
@@ -102,10 +105,8 @@ const (
 	//EtcdStatefulSetName is the name for the etcd StatefulSet
 	EtcdStatefulSetName = "etcd"
 
-	//ApiserverExternalServiceName is the name for the external apiserver service
-	ApiserverExternalServiceName = "apiserver-external"
-	//ApiserverInternalServiceName is the name for the internal apiserver service
-	ApiserverInternalServiceName = "apiserver"
+	//ApiserverServiceName is the name for the apiserver service
+	ApiserverServiceName = "apiserver-external"
 	// FrontLoadBalancerServiceName is the name of the LoadBalancer service that fronts everything
 	// when using exposeStrategy "LoadBalancer"
 	FrontLoadBalancerServiceName = "front-loadbalancer"
