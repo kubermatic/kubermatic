@@ -59,9 +59,8 @@ func TestGetDCForProvider(t *testing.T) {
 			provider: "digitalocean",
 			dc:       "do-ams3",
 			expected: &models.Datacenter{
-				Metadata: &models.LegacyObjectMeta{
-					Name:            "do-ams3",
-					ResourceVersion: "1",
+				Metadata: &models.DatacenterMeta{
+					Name: "do-ams3",
 				},
 				Spec: &models.DatacenterSpec{
 					Seed:     "prow-build-cluster",
@@ -108,7 +107,7 @@ func TestCreateDC(t *testing.T) {
 			name: "create DC",
 			seed: "prow-build-cluster",
 			dc: &models.Datacenter{
-				Metadata: &models.LegacyObjectMeta{
+				Metadata: &models.DatacenterMeta{
 					Name: "created-dc",
 				},
 				Spec: &models.DatacenterSpec{
@@ -163,7 +162,7 @@ func TestDeleteDC(t *testing.T) {
 			name: "delete DC",
 			seed: "prow-build-cluster",
 			dc: &models.Datacenter{
-				Metadata: &models.LegacyObjectMeta{
+				Metadata: &models.DatacenterMeta{
 					Name: "dc-to-delete",
 				},
 				Spec: &models.DatacenterSpec{
@@ -212,8 +211,7 @@ func TestUpdateDC(t *testing.T) {
 			name: "update DC",
 			seed: "prow-build-cluster",
 			originalDC: &models.Datacenter{
-				Seed: false,
-				Metadata: &models.LegacyObjectMeta{
+				Metadata: &models.DatacenterMeta{
 					Name: "to-update-dc",
 				},
 				Spec: &models.DatacenterSpec{
@@ -228,8 +226,7 @@ func TestUpdateDC(t *testing.T) {
 				},
 			},
 			updatedDC: &models.Datacenter{
-				Seed: false,
-				Metadata: &models.LegacyObjectMeta{
+				Metadata: &models.DatacenterMeta{
 					Name: "updated-dc",
 				},
 				Spec: &models.DatacenterSpec{
@@ -291,8 +288,7 @@ func TestPatchDC(t *testing.T) {
 			name: "patch DC",
 			seed: "prow-build-cluster",
 			originalDC: &models.Datacenter{
-				Seed: false,
-				Metadata: &models.LegacyObjectMeta{
+				Metadata: &models.DatacenterMeta{
 					Name: "to-patch-dc",
 				},
 				Spec: &models.DatacenterSpec{
@@ -308,8 +304,7 @@ func TestPatchDC(t *testing.T) {
 			},
 			patch: `{"metadata":{"name":"patched-dc"},"spec":{"location":"Frankfurt","aws":{"region":"fra2"},"digitalocean":null}}`,
 			expectedDC: &models.Datacenter{
-				Seed: false,
-				Metadata: &models.LegacyObjectMeta{
+				Metadata: &models.DatacenterMeta{
 					Name: "patched-dc",
 				},
 				Spec: &models.DatacenterSpec{
@@ -371,9 +366,8 @@ func TestGetDCForSeed(t *testing.T) {
 			seed: "prow-build-cluster",
 			dc:   "do-ams3",
 			expected: &models.Datacenter{
-				Metadata: &models.LegacyObjectMeta{
-					Name:            "do-ams3",
-					ResourceVersion: "1",
+				Metadata: &models.DatacenterMeta{
+					Name: "do-ams3",
 				},
 				Spec: &models.DatacenterSpec{
 					Seed:     "prow-build-cluster",
@@ -460,9 +454,8 @@ func TestGetDC(t *testing.T) {
 			name: "get DC do-ams3",
 			dc:   "do-ams3",
 			expected: &models.Datacenter{
-				Metadata: &models.LegacyObjectMeta{
-					Name:            "do-ams3",
-					ResourceVersion: "1",
+				Metadata: &models.DatacenterMeta{
+					Name: "do-ams3",
 				},
 				Spec: &models.DatacenterSpec{
 					Seed:     "prow-build-cluster",

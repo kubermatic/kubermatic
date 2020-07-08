@@ -251,14 +251,6 @@ func getAPIDCsFromSeedMap(seeds map[string]*kubermaticv1.Seed) []apiv1.Datacente
 // TODO(lsviben) - check if a "seed" dc is needed + if whole metadata is needed for DC, maybe we only need the name
 func getAPIDCsFromSeed(seed *kubermaticv1.Seed) []apiv1.Datacenter {
 	var foundDCs []apiv1.Datacenter
-	foundDCs = append(foundDCs, apiv1.Datacenter{
-		Metadata: apiv1.LegacyObjectMeta{
-			Name:            seed.Name,
-			ResourceVersion: "1",
-		},
-		Seed: true,
-	})
-
 	for datacenterName, datacenter := range seed.Spec.Datacenters {
 		spec, err := ConvertInternalDCToExternalSpec(datacenter.DeepCopy(), seed.Name)
 		if err != nil {
@@ -266,9 +258,8 @@ func getAPIDCsFromSeed(seed *kubermaticv1.Seed) []apiv1.Datacenter {
 			continue
 		}
 		foundDCs = append(foundDCs, apiv1.Datacenter{
-			Metadata: apiv1.LegacyObjectMeta{
-				Name:            datacenterName,
-				ResourceVersion: "1",
+			Metadata: apiv1.DatacenterMeta{
+				Name: datacenterName,
 			},
 			Spec: *spec,
 		})
@@ -324,7 +315,7 @@ func CreateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		}
 
 		return &apiv1.Datacenter{
-			Metadata: apiv1.LegacyObjectMeta{
+			Metadata: apiv1.DatacenterMeta{
 				Name: req.Body.Name,
 			},
 			Spec: req.Body.Spec,
@@ -389,7 +380,7 @@ func UpdateEndpoint(seedsGetter provider.SeedsGetter, userInfoGetter provider.Us
 		}
 
 		return &apiv1.Datacenter{
-			Metadata: apiv1.LegacyObjectMeta{
+			Metadata: apiv1.DatacenterMeta{
 				Name: req.Body.Name,
 			},
 			Spec: req.Body.Spec,
@@ -639,7 +630,7 @@ func convertInternalDCToExternal(dc *kubermaticv1.Datacenter, dcName, seedName s
 	}
 
 	return &apiv1.Datacenter{
-		Metadata: apiv1.LegacyObjectMeta{
+		Metadata: apiv1.DatacenterMeta{
 			Name: dcName,
 		},
 		Spec: *dcSpec,

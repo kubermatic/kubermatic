@@ -9603,11 +9603,7 @@
       "title": "Datacenter is the object representing a Kubernetes infra datacenter.",
       "properties": {
         "metadata": {
-          "$ref": "#/definitions/LegacyObjectMeta"
-        },
-        "seed": {
-          "type": "boolean",
-          "x-go-name": "Seed"
+          "$ref": "#/definitions/DatacenterMeta"
         },
         "spec": {
           "$ref": "#/definitions/DatacenterSpec"
@@ -9620,6 +9616,17 @@
       "type": "array",
       "items": {
         "$ref": "#/definitions/Datacenter"
+      },
+      "x-go-package": "github.com/kubermatic/kubermatic/pkg/api/v1"
+    },
+    "DatacenterMeta": {
+      "type": "object",
+      "title": "DatacenterMeta holds datacenter metadata information.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/pkg/api/v1"
     },
@@ -10687,40 +10694,6 @@
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "x-go-package": "github.com/kubermatic/kubermatic/pkg/api/v1"
-    },
-    "LegacyObjectMeta": {
-      "description": "Deprecated: LegacyObjectMeta is deprecated use ObjectMeta instead.",
-      "type": "object",
-      "title": "LegacyObjectMeta is an object storing common metadata for persistable objects.",
-      "properties": {
-        "annotations": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Annotations"
-        },
-        "labels": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          },
-          "x-go-name": "Labels"
-        },
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "resourceVersion": {
-          "type": "string",
-          "x-go-name": "ResourceVersion"
-        },
-        "uid": {
-          "type": "string",
-          "x-go-name": "UID"
-        }
       },
       "x-go-package": "github.com/kubermatic/kubermatic/pkg/api/v1"
     },
