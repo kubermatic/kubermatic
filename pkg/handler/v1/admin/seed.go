@@ -239,11 +239,10 @@ func convertSeedSpec(seedSpec kubermaticv1.SeedSpec, seedName string) apiv1.Seed
 				continue
 			}
 			resultSeedSpec.SeedDatacenters[name] = apiv1.Datacenter{
-				Metadata: apiv1.LegacyObjectMeta{
+				Metadata: apiv1.DatacenterMeta{
 					Name: name,
 				},
 				Spec: *dcSpec,
-				Seed: false,
 			}
 		}
 	}

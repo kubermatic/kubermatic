@@ -30,17 +30,6 @@ import (
 	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
-// LegacyObjectMeta is an object storing common metadata for persistable objects.
-// Deprecated: LegacyObjectMeta is deprecated use ObjectMeta instead.
-type LegacyObjectMeta struct {
-	Name            string `json:"name"`
-	ResourceVersion string `json:"resourceVersion,omitempty"`
-	UID             string `json:"uid,omitempty"`
-
-	Annotations map[string]string `json:"annotations,omitempty"`
-	Labels      map[string]string `json:"labels,omitempty"`
-}
-
 // ObjectMeta defines the set of fields that objects returned from the API have
 // swagger:model ObjectMeta
 type ObjectMeta struct {
@@ -113,9 +102,13 @@ type DatacenterList []Datacenter
 // Datacenter is the object representing a Kubernetes infra datacenter.
 // swagger:model Datacenter
 type Datacenter struct {
-	Metadata LegacyObjectMeta `json:"metadata,omitempty"`
-	Spec     DatacenterSpec   `json:"spec,omitempty"`
-	Seed     bool             `json:"seed,omitempty"`
+	Metadata DatacenterMeta `json:"metadata,omitempty"`
+	Spec     DatacenterSpec `json:"spec,omitempty"`
+}
+
+// DatacenterMeta holds datacenter metadata information.
+type DatacenterMeta struct {
+	Name string `json:"name"`
 }
 
 // AWSSize represents a object of AWS size.
