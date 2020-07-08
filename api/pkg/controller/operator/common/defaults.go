@@ -46,8 +46,8 @@ const (
 	DefaultIngressClass                           = "nginx"
 	DefaultAPIReplicas                            = 2
 	DefaultUIReplicas                             = 2
-	DefaultSeedControllerMgrReplicas              = 2
-	DefaultMasterControllerMgrReplicas            = 2
+	DefaultSeedControllerMgrReplicas              = 1
+	DefaultMasterControllerMgrReplicas            = 1
 	DefaultAPIServerReplicas                      = 2
 	DefaultExposeStrategy                         = operatorv1alpha1.NodePortStrategy
 	DefaultVPARecommenderDockerRepository         = "gcr.io/google_containers/vpa-recommender"
