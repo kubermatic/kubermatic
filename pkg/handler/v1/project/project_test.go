@@ -703,6 +703,46 @@ func TestCreateProjectEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
+
+		{
+			Name:             "scenario 5: project creation is restricted for the users",
+			Body:             fmt.Sprintf(`{"name":"%s"}`, test.GenDefaultProject().Spec.Name),
+			RewriteProjectID: false,
+			ExpectedResponse: `{"error":{"code":403,"message":"project creation is restricted"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				func() *kubermaticapiv1.KubermaticSetting {
+					settings := test.GenDefaultSettings()
+					settings.Spec.RestrictProjectCreation = true
+					return settings
+				}(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			Name:             "scenario 6: project creation is not restricted for the admin",
+			Body:             fmt.Sprintf(`{"name":"%s"}`, test.GenDefaultProject().Spec.Name),
+			RewriteProjectID: true,
+			ExpectedResponse: `{"id":"%s","name":"my-first-project","creationTimestamp":"0001-01-01T00:00:00Z","status":"Inactive","owners":[{"name":"Bob","creationTimestamp":"0001-01-01T00:00:00Z","email":"bob@acme.com"}]}`,
+			HTTPStatus:       http.StatusCreated,
+			ExistingKubermaticObjects: []runtime.Object{
+				// add some projects
+				test.GenProject("my-first-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				test.GenProject("my-third-project", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp().Add(2*time.Minute)),
+				// add John
+				test.GenUser("JohnID", "John", "john@acme.com"),
+				genUser("Bob", "bob@acme.com", true),
+				// make John the owner of the first project and the editor of the second
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				test.GenBinding("my-third-project-ID", "bob@acme.com", "owners"),
+				func() *kubermaticapiv1.KubermaticSetting {
+					settings := test.GenDefaultSettings()
+					settings.Spec.RestrictProjectCreation = true
+					return settings
+				}(),
+			},
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
