@@ -31,6 +31,8 @@ import (
 )
 
 // ValidateFunc validates a Seed resource
+// On DELETE, the only set fields of seed are Name and Namespace as
+// admissionReview.Request.Object is unset
 type ValidateFunc func(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error
 
 func NewDefaultSeedValidator(
@@ -70,22 +72,26 @@ func (sv *Validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op a
 	sv.lock.Lock()
 	defer sv.lock.Unlock()
 
-	client, err := sv.seedClientGetter(seed)
-	if err != nil {
-		return fmt.Errorf("failed to get client for seed %q: %v", seed.Name, err)
-	}
-
 	// (irozzo): Double check why we do need this getter and we cannot rely on
 	// the controller-runtime client only.
 	seeds, err := sv.seedsGetter()
 	if err != nil {
 		return fmt.Errorf("failed to get seeds: %v", err)
 	}
-	// when a namespace is deleted, a DELETE call for all seeds in the namespace
-	// is issued; this request has no .Request.Name set, so this check will make
-	// sure that we exit cleanly and allow deleting namespaces without seeds
-	if _, exists := seeds[seed.Name]; !exists && op == admissionv1beta1.Delete {
-		return nil
+	if op == admissionv1beta1.Delete {
+		// when a namespace is deleted, a DELETE call for all seeds in the namespace
+		// is issued; this request has no .Request.Name set, so this check will make
+		// sure that we exit cleanly and allow deleting namespaces without seeds
+		if _, exists := seeds[seed.Name]; !exists && op == admissionv1beta1.Delete {
+			return nil
+		}
+		// in case of delete request the seed is empty
+		seed = seeds[seed.Name]
+	}
+
+	client, err := sv.seedClientGetter(seed)
+	if err != nil {
+		return fmt.Errorf("failed to get client for seed %q: %v", seed.Name, err)
 	}
 
 	return sv.validate(ctx, seed, client, seeds, op == admissionv1beta1.Delete)
