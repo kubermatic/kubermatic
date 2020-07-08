@@ -19,6 +19,8 @@ package hack
 import (
 	"net/http"
 
+	v2 "github.com/kubermatic/kubermatic/pkg/handler/v2"
+
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"github.com/prometheus/client_golang/prometheus"
@@ -75,46 +77,51 @@ func NewTestRouting(
 	userWatcher watcher.UserWatcher) http.Handler {
 
 	updateManager := version.New(versions, updates)
-	r := handler.NewRouting(
-		kubermaticlog.Logger,
-		presetsProvider,
-		seedsGetter,
-		seedClientGetter,
-		clusterProvidersGetter,
-		addonProviderGetter,
-		addonConfigProvider,
-		sshKeyProvider,
-		privilegedSSHKeyProvider,
-		userProvider,
-		serviceAccountProvider,
-		privilegedServiceAccountProvider,
-		serviceAccountTokenProvider,
-		privilegedServiceAccountTokenProvider,
-		projectProvider,
-		privilegedProjectProvider,
-		issuerVerifier,
-		tokenVerifiers,
-		tokenExtractors,
-		updateManager,
-		prometheusClient,
-		projectMemberProvider,
-		privilegedProjectMemberProvider,
-		projectMemberProvider, /*satisfies also a different interface*/
-		saTokenAuthenticator,
-		saTokenGenerator,
-		eventRecorderProvider,
-		corev1.ServiceTypeNodePort,
-		sets.String{},
-		userInfoGetter,
-		settingsProvider,
-		adminProvider,
-		admissionPluginProvider,
-		settingsWatcher,
-		userWatcher,
-	)
+
+	routingParams := handler.RoutingParams{
+		Log:                                   kubermaticlog.Logger,
+		PresetsProvider:                       presetsProvider,
+		SeedsGetter:                           seedsGetter,
+		SeedsClientGetter:                     seedClientGetter,
+		SSHKeyProvider:                        sshKeyProvider,
+		PrivilegedSSHKeyProvider:              privilegedSSHKeyProvider,
+		UserProvider:                          userProvider,
+		ServiceAccountProvider:                serviceAccountProvider,
+		PrivilegedServiceAccountProvider:      privilegedServiceAccountProvider,
+		ServiceAccountTokenProvider:           serviceAccountTokenProvider,
+		PrivilegedServiceAccountTokenProvider: privilegedServiceAccountTokenProvider,
+		ProjectProvider:                       projectProvider,
+		PrivilegedProjectProvider:             privilegedProjectProvider,
+		OIDCIssuerVerifier:                    issuerVerifier,
+		TokenVerifiers:                        tokenVerifiers,
+		TokenExtractors:                       tokenExtractors,
+		ClusterProviderGetter:                 clusterProvidersGetter,
+		AddonProviderGetter:                   addonProviderGetter,
+		AddonConfigProvider:                   addonConfigProvider,
+		UpdateManager:                         updateManager,
+		PrometheusClient:                      prometheusClient,
+		ProjectMemberProvider:                 projectMemberProvider,
+		PrivilegedProjectMemberProvider:       privilegedProjectMemberProvider,
+		UserProjectMapper:                     projectMemberProvider, /*satisfies also a different interface*/
+		SATokenAuthenticator:                  saTokenAuthenticator,
+		SATokenGenerator:                      saTokenGenerator,
+		EventRecorderProvider:                 eventRecorderProvider,
+		ExposeStrategy:                        corev1.ServiceTypeNodePort,
+		AccessibleAddons:                      sets.String{},
+		UserInfoGetter:                        userInfoGetter,
+		SettingsProvider:                      settingsProvider,
+		AdminProvider:                         adminProvider,
+		AdmissionPluginProvider:               admissionPluginProvider,
+		SettingsWatcher:                       settingsWatcher,
+		UserWatcher:                           userWatcher,
+	}
+
+	r := handler.NewRouting(routingParams)
+	rv2 := v2.NewV2Routing(routingParams)
 
 	mainRouter := mux.NewRouter()
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
+	v2Router := mainRouter.PathPrefix("/api/v2").Subrouter()
 	r.RegisterV1(v1Router, generateDefaultMetrics())
 	r.RegisterV1Legacy(v1Router)
 	r.RegisterV1Optional(v1Router,
@@ -124,6 +131,7 @@ func NewTestRouting(
 	)
 	r.RegisterV1Admin(v1Router)
 	r.RegisterV1Websocket(v1Router)
+	rv2.RegisterV2(v2Router, generateDefaultMetrics())
 	return mainRouter
 }
 

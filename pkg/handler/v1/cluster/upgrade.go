@@ -26,6 +26,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	handlercommon "github.com/kubermatic/kubermatic/pkg/handler/common"
 	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/pkg/provider"
@@ -270,7 +271,7 @@ type TypeReq struct {
 }
 
 func (r TypeReq) Validate() error {
-	if clusterTypes.Has(r.Type) {
+	if handlercommon.ClusterTypes.Has(r.Type) {
 		return nil
 	}
 	return fmt.Errorf("invalid cluster type %s", r.Type)

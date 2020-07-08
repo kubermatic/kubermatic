@@ -702,7 +702,7 @@ func (r Routing) listSSHKeys() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(ssh.ListEndpoint(r.sshKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		ssh.DecodeListReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -729,7 +729,7 @@ func (r Routing) createSSHKey() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(ssh.CreateEndpoint(r.sshKeyProvider, r.privilegedSSHKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		ssh.DecodeCreateReq,
-		setStatusCreatedHeader(encodeJSON),
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -753,7 +753,7 @@ func (r Routing) deleteSSHKey() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(ssh.DeleteEndpoint(r.sshKeyProvider, r.privilegedSSHKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		ssh.DecodeDeleteReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -775,7 +775,7 @@ func (r Routing) listCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(presets.CredentialEndpoint(r.presetsProvider, r.userInfoGetter)),
 		presets.DecodeProviderReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -797,7 +797,7 @@ func (r Routing) listAWSSizes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AWSSizeEndpoint()),
 		provider.DecodeAWSSizesReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -819,7 +819,7 @@ func (r Routing) listAWSSubnets() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AWSSubnetEndpoint(r.presetsProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAWSSubnetReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -841,7 +841,7 @@ func (r Routing) listAWSVPCS() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AWSVPCEndpoint(r.presetsProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAWSVPCReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -863,7 +863,7 @@ func (r Routing) listGCPDiskTypes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.GCPDiskTypesEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeGCPTypesReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -885,7 +885,7 @@ func (r Routing) listGCPSizes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.GCPSizeEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeGCPTypesReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -907,7 +907,7 @@ func (r Routing) listGCPZones() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.GCPZoneEndpoint(r.presetsProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeGCPZoneReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -929,7 +929,7 @@ func (r Routing) listGCPNetworks() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.GCPNetworkEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeGCPCommonReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -951,7 +951,7 @@ func (r Routing) listGCPSubnetworks() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.GCPSubnetworkEndpoint(r.presetsProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeGCPSubnetworksReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -973,7 +973,7 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.DigitaloceanSizeEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeDoSizesReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -995,7 +995,7 @@ func (r Routing) listAzureSizes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AzureSizeEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAzureSizesReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1017,7 +1017,7 @@ func (r Routing) listAzureSKUAvailabilityZones() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AzureAvailabilityZonesEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAzureAvailabilityZonesReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1039,7 +1039,7 @@ func (r Routing) listOpenstackSizes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackSizeEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeOpenstackReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1061,7 +1061,7 @@ func (r Routing) listVSphereNetworks() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.VsphereNetworksEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeVSphereNetworksReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1083,7 +1083,7 @@ func (r Routing) listVSphereFolders() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.VsphereFoldersEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeVSphereFoldersReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1105,7 +1105,7 @@ func (r Routing) listPacketSizes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.PacketSizesEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodePacketSizesReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1129,7 +1129,7 @@ func (r Routing) listPacketSizesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.PacketSizesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		provider.DecodePacketSizesNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1151,7 +1151,7 @@ func (r Routing) listOpenstackTenants() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackTenantEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeOpenstackTenantReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1173,7 +1173,7 @@ func (r Routing) listOpenstackNetworks() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackNetworkEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeOpenstackReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1195,7 +1195,7 @@ func (r Routing) listOpenstackSubnets() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackSubnetsEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeOpenstackSubnetReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1217,7 +1217,7 @@ func (r Routing) listOpenstackSecurityGroups() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackSecurityGroupEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeOpenstackReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1239,7 +1239,7 @@ func (r Routing) listOpenstackAvailabilityZones() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.OpenstackAvailabilityZoneEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeOpenstackReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1261,7 +1261,7 @@ func (r Routing) listHetznerSizes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.HetznerSizeEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeHetznerSizesReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1283,7 +1283,7 @@ func (r Routing) listAlibabaInstanceTypes() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AlibabaInstanceTypesEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAlibabaReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1305,7 +1305,7 @@ func (r Routing) listAlibabaZones() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AlibabaZonesEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAlibabaReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1325,7 +1325,7 @@ func (r Routing) datacentersHandler() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.ListEndpoint(r.seedsGetter, r.userInfoGetter)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1346,7 +1346,7 @@ func (r Routing) datacenterHandler() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.GetEndpoint(r.seedsGetter, r.userInfoGetter)),
 		dc.DecodeLegacyDcReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1370,7 +1370,7 @@ func (r Routing) listDCForProvider() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.ListEndpointForProvider(r.seedsGetter, r.userInfoGetter)),
 		dc.DecodeForProviderDCListReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1394,7 +1394,7 @@ func (r Routing) getDCForProvider() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.GetEndpointForProvider(r.seedsGetter, r.userInfoGetter)),
 		dc.DecodeForProviderDCGetReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1418,7 +1418,7 @@ func (r Routing) listDCForSeed() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.ListEndpointForSeed(r.seedsGetter, r.userInfoGetter)),
 		dc.DecodeListDCForSeedReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1442,7 +1442,7 @@ func (r Routing) getDCForSeed() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.GetEndpointForSeed(r.seedsGetter, r.userInfoGetter)),
 		dc.DecodeGetDCForSeedReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1469,7 +1469,7 @@ func (r Routing) createDC() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.CreateEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
 		dc.DecodeCreateDCReq,
-		setStatusCreatedHeader(encodeJSON),
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -1496,7 +1496,7 @@ func (r Routing) updateDC() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.UpdateEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
 		dc.DecodeUpdateDCReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1523,7 +1523,7 @@ func (r Routing) patchDC() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.PatchEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
 		dc.DecodePatchDCReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1547,7 +1547,7 @@ func (r Routing) deleteDC() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(dc.DeleteEndpoint(r.seedsGetter, r.userInfoGetter, r.seedsClientGetter)),
 		dc.DecodeDeleteDCReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1567,7 +1567,7 @@ func (r Routing) listSeedNames() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(seed.ListSeedNamesEndpoint(r.seedsGetter)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1590,7 +1590,7 @@ func (r Routing) getMasterVersions() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(cluster.GetMasterVersionsEndpoint(r.updateManager)),
 		cluster.DecodeClusterTypeReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1612,7 +1612,7 @@ func (r Routing) getKubermaticVersion() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(v1.GetKubermaticVersion()),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1636,7 +1636,7 @@ func (r Routing) listProjects() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(project.ListEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.userProjectMapper, r.projectMemberProvider, r.userProvider, r.clusterProviderGetter, r.seedsGetter)),
 		project.DecodeList,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1660,7 +1660,7 @@ func (r Routing) getProject() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(project.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter, r.clusterProviderGetter, r.seedsGetter)),
 		common.DecodeGetProject,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1689,7 +1689,7 @@ func (r Routing) createProject() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(project.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.settingsProvider, r.userProjectMapper, r.projectMemberProvider, r.userProvider)),
 		project.DecodeCreate,
-		setStatusCreatedHeader(encodeJSON),
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -1715,7 +1715,7 @@ func (r Routing) updateProject() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(project.UpdateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.projectMemberProvider, r.userProvider, r.userInfoGetter, r.clusterProviderGetter, r.seedsGetter)),
 		project.DecodeUpdateRq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1740,7 +1740,7 @@ func (r Routing) deleteProject() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(project.DeleteEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		project.DecodeDelete,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1769,7 +1769,7 @@ func (r Routing) createCluster(initNodeDeploymentFailures *prometheus.CounterVec
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.CreateEndpoint(r.sshKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, initNodeDeploymentFailures, r.eventRecorderProvider, r.presetsProvider, r.exposeStrategy, r.userInfoGetter, r.settingsProvider, r.updateManager)),
 		cluster.DecodeCreateReq,
-		setStatusCreatedHeader(encodeJSON),
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -1794,7 +1794,7 @@ func (r Routing) listClusters() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeListReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1818,7 +1818,7 @@ func (r Routing) listClustersForProject() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(cluster.ListAllEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.clusterProviderGetter, r.userInfoGetter)),
 		common.DecodeGetProject,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1844,7 +1844,7 @@ func (r Routing) getCluster() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1870,7 +1870,7 @@ func (r Routing) patchCluster() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.PatchEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		cluster.DecodePatchReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1897,7 +1897,7 @@ func (r Routing) getClusterEvents() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.GetClusterEventsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeGetClusterEvents,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -1978,7 +1978,7 @@ func (r Routing) deleteCluster() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.DeleteEndpoint(r.sshKeyProvider, r.privilegedSSHKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeDeleteReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2004,7 +2004,7 @@ func (r Routing) getClusterHealth() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.HealthEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2033,7 +2033,7 @@ func (r Routing) assignSSHKeyToCluster() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.AssignSSHKeyEndpoint(r.sshKeyProvider, r.privilegedSSHKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeAssignSSHKeyReq,
-		setStatusCreatedHeader(encodeJSON),
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -2063,7 +2063,7 @@ func (r Routing) listSSHKeysAssignedToCluster() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListSSHKeysEndpoint(r.sshKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeListSSHKeysReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2092,7 +2092,7 @@ func (r Routing) detachSSHKeyFromCluster() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.DetachSSHKeyEndpoint(r.sshKeyProvider, r.privilegedSSHKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeDetachSSHKeysReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2118,7 +2118,7 @@ func (r Routing) revokeClusterAdminToken() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.RevokeAdminTokenEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeAdminTokenReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2144,7 +2144,7 @@ func (r Routing) revokeClusterViewerToken() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.RevokeViewerTokenEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeAdminTokenReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2170,7 +2170,7 @@ func (r Routing) getClusterUpgrades() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.GetUpgradesEndpoint(r.updateManager, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2194,7 +2194,7 @@ func (r Routing) getNodeUpgrades() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(cluster.GetNodeUpgrades(r.updateManager)),
 		cluster.DecodeNodeUpgradesReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2220,7 +2220,7 @@ func (r Routing) upgradeClusterNodeDeployments() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.UpgradeNodeDeploymentsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeUpgradeNodeDeploymentsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2247,7 +2247,7 @@ func (r Routing) addUserToProject() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.AddEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userProvider, r.projectMemberProvider, r.privilegedProjectMemberProvider, r.userInfoGetter)),
 		user.DecodeAddReq,
-		setStatusCreatedHeader(encodeJSON),
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -2274,7 +2274,7 @@ func (r Routing) getUsersForProject() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userProvider, r.projectMemberProvider, r.userInfoGetter)),
 		common.DecodeGetProject,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2301,7 +2301,7 @@ func (r Routing) editUserInProject() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.EditEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userProvider, r.projectMemberProvider, r.privilegedProjectMemberProvider, r.userInfoGetter)),
 		user.DecodeEditReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2328,7 +2328,7 @@ func (r Routing) deleteUserFromProject() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.DeleteEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userProvider, r.projectMemberProvider, r.privilegedProjectMemberProvider, r.userInfoGetter)),
 		user.DecodeDeleteReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2351,7 +2351,7 @@ func (r Routing) getCurrentUser() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.GetEndpoint(r.userProjectMapper)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2375,7 +2375,7 @@ func (r Routing) logoutCurrentUser() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.LogoutEndpoint(r.userProvider)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2398,7 +2398,7 @@ func (r Routing) getCurrentUserSettings() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.GetSettingsEndpoint(r.userProjectMapper)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2424,7 +2424,7 @@ func (r Routing) patchCurrentUserSettings() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(user.PatchSettingsEndpoint(r.userProvider)),
 		user.DecodePatchSettingsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2451,7 +2451,7 @@ func (r Routing) addServiceAccountToProject() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(serviceaccount.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.userInfoGetter)),
 		serviceaccount.DecodeAddReq,
-		setStatusCreatedHeader(encodeJSON),
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -2475,7 +2475,7 @@ func (r Routing) listServiceAccounts() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(serviceaccount.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.userProjectMapper, r.userInfoGetter)),
 		common.DecodeGetProject,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2502,7 +2502,7 @@ func (r Routing) updateServiceAccount() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(serviceaccount.UpdateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.userProjectMapper, r.userInfoGetter)),
 		serviceaccount.DecodeUpdateReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2527,7 +2527,7 @@ func (r Routing) deleteServiceAccount() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		serviceaccount.DecodeDeleteReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2554,7 +2554,7 @@ func (r Routing) addTokenToServiceAccount() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(serviceaccount.CreateTokenEndpoint(r.projectProvider, r.privilegedProjectProvider, r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.serviceAccountTokenProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodeAddTokenReq,
-		setStatusCreatedHeader(encodeJSON),
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -2578,7 +2578,7 @@ func (r Routing) listServiceAccountTokens() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(serviceaccount.ListTokenEndpoint(r.projectProvider, r.privilegedProjectProvider, r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.serviceAccountTokenProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.userInfoGetter)),
 		serviceaccount.DecodeTokenReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2605,7 +2605,7 @@ func (r Routing) updateServiceAccountToken() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(serviceaccount.UpdateTokenEndpoint(r.projectProvider, r.privilegedProjectProvider, r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.serviceAccountTokenProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodeUpdateTokenReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2632,7 +2632,7 @@ func (r Routing) patchServiceAccountToken() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(serviceaccount.PatchTokenEndpoint(r.projectProvider, r.privilegedProjectProvider, r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.serviceAccountTokenProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodePatchTokenReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2656,7 +2656,7 @@ func (r Routing) deleteServiceAccountToken() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(serviceaccount.DeleteTokenEndpoint(r.projectProvider, r.privilegedProjectProvider, r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.serviceAccountTokenProvider, r.privilegedServiceAccountTokenProvider, r.userInfoGetter)),
 		serviceaccount.DecodeDeleteTokenReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2680,7 +2680,7 @@ func (r Routing) listAWSSizesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.AWSSizeNoCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2704,7 +2704,7 @@ func (r Routing) listAWSSubnetsNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.AWSSubnetWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2728,7 +2728,7 @@ func (r Routing) listGCPSizesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.GCPSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		provider.DecodeGCPTypesNoCredentialReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2752,7 +2752,7 @@ func (r Routing) listGCPDiskTypesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.GCPDiskTypesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		provider.DecodeGCPTypesNoCredentialReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2776,7 +2776,7 @@ func (r Routing) listGCPZonesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.GCPZoneWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2800,7 +2800,7 @@ func (r Routing) listGCPNetworksNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.GCPNetworkWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2824,7 +2824,7 @@ func (r Routing) listGCPSubnetworksNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.GCPSubnetworkWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeGCPSubnetworksNoCredentialReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2848,7 +2848,7 @@ func (r Routing) listHetznerSizesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.HetznerSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		provider.DecodeHetznerSizesNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2872,7 +2872,7 @@ func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.DigitaloceanSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		provider.DecodeDoSizesNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2896,7 +2896,7 @@ func (r Routing) listAzureSizesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.AzureSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAzureSizesNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2920,7 +2920,7 @@ func (r Routing) listAzureAvailabilityZonesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.AzureAvailabilityZonesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAzureAvailabilityZonesNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2944,7 +2944,7 @@ func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.OpenstackSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2968,7 +2968,7 @@ func (r Routing) listOpenstackTenantsNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.OpenstackTenantWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -2992,7 +2992,7 @@ func (r Routing) listOpenstackNetworksNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.OpenstackNetworkWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3016,7 +3016,7 @@ func (r Routing) listOpenstackSecurityGroupsNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.OpenstackSecurityGroupWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3040,7 +3040,7 @@ func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.OpenstackSubnetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackSubnetNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3064,7 +3064,7 @@ func (r Routing) listOpenstackAvailabilityZonesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.OpenstackAvailabilityZoneWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeOpenstackNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3088,7 +3088,7 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.VsphereNetworksWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeVSphereNetworksNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3112,7 +3112,7 @@ func (r Routing) listVSphereFoldersNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.VsphereFoldersWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeVSphereFoldersNoCredentialsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3136,7 +3136,7 @@ func (r Routing) listAlibabaInstanceTypesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.AlibabaInstanceTypesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAlibabaNoCredentialReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3160,7 +3160,7 @@ func (r Routing) listAlibabaZonesNoCredentials() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.AlibabaZonesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAlibabaNoCredentialReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3189,7 +3189,7 @@ func (r Routing) createNodeDeployment() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.CreateNodeDeployment(r.sshKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		node.DecodeCreateNodeDeployment,
-		setStatusCreatedHeader(encodeJSON),
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -3215,7 +3215,7 @@ func (r Routing) listNodeDeployments() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.ListNodeDeployments(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		node.DecodeListNodeDeployments,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3241,7 +3241,7 @@ func (r Routing) getNodeDeployment() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.GetNodeDeployment(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		node.DecodeGetNodeDeployment,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3267,7 +3267,7 @@ func (r Routing) listNodeDeploymentNodes() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.ListNodeDeploymentNodes(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		node.DecodeListNodeDeploymentNodes,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3293,7 +3293,7 @@ func (r Routing) listNodeDeploymentMetrics() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.ListNodeDeploymentMetrics(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		node.DecodeListNodeDeploymentMetrics,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3320,7 +3320,7 @@ func (r Routing) listNodeDeploymentNodesEvents() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.ListNodeDeploymentNodesEvents(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		node.DecodeListNodeDeploymentNodesEvents,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3350,7 +3350,7 @@ func (r Routing) patchNodeDeployment() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.PatchNodeDeployment(r.sshKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		node.DecodePatchNodeDeployment,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3376,7 +3376,7 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.DeleteNodeDeployment(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		node.DecodeDeleteNodeDeployment,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3403,7 +3403,7 @@ func (r Routing) listAccessibleAddons() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(addon.ListAccessibleAddons(r.accessibleAddons)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3431,7 +3431,7 @@ func (r Routing) listInstallableAddons() http.Handler {
 			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
 		)(addon.ListInstallableAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.accessibleAddons)),
 		addon.DecodeListAddons,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3462,7 +3462,7 @@ func (r Routing) createAddon() http.Handler {
 			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
 		)(addon.CreateAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		addon.DecodeCreateAddon,
-		setStatusCreatedHeader(encodeJSON),
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -3490,7 +3490,7 @@ func (r Routing) listAddons() http.Handler {
 			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
 		)(addon.ListAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		addon.DecodeListAddons,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3518,7 +3518,7 @@ func (r Routing) getAddon() http.Handler {
 			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
 		)(addon.GetAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		addon.DecodeGetAddon,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3549,7 +3549,7 @@ func (r Routing) patchAddon() http.Handler {
 			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
 		)(addon.PatchAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		addon.DecodePatchAddon,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3577,7 +3577,7 @@ func (r Routing) deleteAddon() http.Handler {
 			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
 		)(addon.DeleteAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		addon.DecodeGetAddon,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3603,7 +3603,7 @@ func (r Routing) getClusterMetrics() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.GetMetricsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3631,7 +3631,7 @@ func (r Routing) createClusterRole() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.CreateClusterRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeCreateClusterRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3742,7 +3742,7 @@ func (r Routing) createRole() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.CreateRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeCreateRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3767,7 +3767,7 @@ func (r Routing) listClusterRole() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListClusterRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeListClusterRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3792,7 +3792,7 @@ func (r Routing) listClusterRoleNames() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListClusterRoleNamesEndpoint(r.userInfoGetter)),
 		cluster.DecodeListClusterRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3817,7 +3817,7 @@ func (r Routing) listRole() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeListClusterRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3842,7 +3842,7 @@ func (r Routing) listRoleNames() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListRoleNamesEndpoint(r.userInfoGetter)),
 		cluster.DecodeListClusterRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3867,7 +3867,7 @@ func (r Routing) getClusterRole() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.GetClusterRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeGetClusterRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3892,7 +3892,7 @@ func (r Routing) getRole() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.GetRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeGetRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3917,7 +3917,7 @@ func (r Routing) deleteClusterRole() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.DeleteClusterRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeGetClusterRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3942,7 +3942,7 @@ func (r Routing) deleteRole() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.DeleteRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodeGetRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3968,7 +3968,7 @@ func (r Routing) listNamespace() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListNamespaceEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -3993,7 +3993,7 @@ func (r Routing) patchRole() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.PatchRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodePatchRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -4018,7 +4018,7 @@ func (r Routing) patchClusterRole() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.PatchClusterRoleEndpoint(r.userInfoGetter)),
 		cluster.DecodePatchClusterRoleReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -4047,7 +4047,7 @@ func (r Routing) bindUserToRole() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.BindUserToRoleEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeRoleUserReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -4076,7 +4076,7 @@ func (r Routing) unbindUserFromRoleBinding() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.UnbindUserFromRoleBindingEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeRoleUserReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -4103,7 +4103,7 @@ func (r Routing) listRoleBinding() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListRoleBindingEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeListBindingReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -4132,7 +4132,7 @@ func (r Routing) bindUserToClusterRole() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.BindUserToClusterRoleEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeClusterRoleUserReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -4161,7 +4161,7 @@ func (r Routing) unbindUserFromClusterRoleBinding() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.UnbindUserFromClusterRoleBindingEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeClusterRoleUserReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -4188,7 +4188,7 @@ func (r Routing) listClusterRoleBinding() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListClusterRoleBindingEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeListBindingReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -4212,7 +4212,7 @@ func (r Routing) listSystemLabels() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 		)(label.ListSystemLabels()),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -4235,7 +4235,7 @@ func (r Routing) getAddonConfig() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(addon.GetAddonConfigEndpoint(r.addonConfigProvider)),
 		addon.DecodeGetConfig,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -4258,7 +4258,7 @@ func (r Routing) listAddonConfigs() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(addon.ListAddonConfigsEndpoint(r.addonConfigProvider)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -4281,7 +4281,7 @@ func (r Routing) getAdmissionPlugins() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admissionplugin.GetAdmissionPluginEndpoint(r.admissionPluginProvider)),
 		admissionplugin.DecodeGetAdmissionPlugin,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
