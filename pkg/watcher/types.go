@@ -25,8 +25,15 @@ import (
 type Providers struct {
 	SettingsProvider provider.SettingsProvider
 	SettingsWatcher  SettingsWatcher
+	UserProvider     provider.UserProvider
+	UserWatcher      UserWatcher
 }
 
 type SettingsWatcher interface {
 	Subscribe(subscription pubsub.Subscription)
+}
+
+type UserWatcher interface {
+	Subscribe(subscription pubsub.Subscription, opts ...pubsub.SubscribeOption)
+	CalculateHash(id string) (uint64, error)
 }
