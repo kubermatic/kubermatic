@@ -283,6 +283,7 @@ type UserProvider interface {
 	UserByID(id string) (*kubermaticv1.User, error)
 	AddUserTokenToBlacklist(user *kubermaticv1.User, token string, expiry apiv1.Time) error
 	GetUserBlacklistTokens(user *kubermaticv1.User) ([]string, error)
+	WatchUser() (watch.Interface, error)
 }
 
 // PrivilegedProjectProvider declares the set of method for interacting with kubermatic's project and uses privileged account for it
