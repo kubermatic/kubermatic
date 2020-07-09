@@ -162,7 +162,8 @@ type newRoutingFunc func(
 	eventRecorderProvider provider.EventRecorderProvider,
 	presetsProvider provider.PresetProvider,
 	admissionPluginProvider provider.AdmissionPluginsProvider,
-	settingsWatcher watcher.SettingsWatcher) http.Handler
+	settingsWatcher watcher.SettingsWatcher,
+	userWatcher watcher.UserWatcher) http.Handler
 
 func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	if seedsGetter == nil {
@@ -183,7 +184,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
-	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount)
+	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount, kubermaticClient)
 	adminProvider := kubernetes.NewAdminProvider(fakeClient)
 	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, fakeClient)
 	addonConfigProvider := kubernetes.NewAddonConfigProvider(fakeClient)
@@ -287,6 +288,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, nil, err
 	}
 
+	userWatcher, err := kuberneteswatcher.NewUserWatcher(userProvider)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	// Disable the metrics endpoint in tests
 	var prometheusClient prometheusapi.Client
 
@@ -323,6 +329,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		credentialsManager,
 		admissionPluginProvider,
 		settingsWatcher,
+		userWatcher,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

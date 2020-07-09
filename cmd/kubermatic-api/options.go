@@ -198,4 +198,5 @@ type providers struct {
 	presetProvider                        provider.PresetProvider
 	admissionPluginProvider               provider.AdmissionPluginsProvider
 	settingsWatcher                       watcher.SettingsWatcher
+	userWatcher                           watcher.UserWatcher
 }

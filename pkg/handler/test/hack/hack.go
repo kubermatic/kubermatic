@@ -71,7 +71,8 @@ func NewTestRouting(
 	eventRecorderProvider provider.EventRecorderProvider,
 	presetsProvider provider.PresetProvider,
 	admissionPluginProvider provider.AdmissionPluginsProvider,
-	settingsWatcher watcher.SettingsWatcher) http.Handler {
+	settingsWatcher watcher.SettingsWatcher,
+	userWatcher watcher.UserWatcher) http.Handler {
 
 	updateManager := version.New(versions, updates)
 	r := handler.NewRouting(
@@ -109,6 +110,7 @@ func NewTestRouting(
 		adminProvider,
 		admissionPluginProvider,
 		settingsWatcher,
+		userWatcher,
 	)
 
 	mainRouter := mux.NewRouter()
@@ -121,6 +123,7 @@ func NewTestRouting(
 		mainRouter,
 	)
 	r.RegisterV1Admin(v1Router)
+	r.RegisterV1Websocket(v1Router)
 	return mainRouter
 }
 

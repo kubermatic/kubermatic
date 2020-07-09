@@ -25,6 +25,7 @@ import (
 	"time"
 
 	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticclientset "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned"
 	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/pkg/provider"
 	"github.com/kubermatic/kubermatic/pkg/resources"
@@ -35,6 +36,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/watch"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,8 +46,10 @@ type blacklistToken struct {
 }
 
 // NewUserProvider returns a user provider
-func NewUserProvider(client ctrlruntimeclient.Client, isServiceAccountFunc func(email string) bool) *UserProvider {
+func NewUserProvider(runtimeClient ctrlruntimeclient.Client, isServiceAccountFunc func(email string) bool,
+	client kubermaticclientset.Interface) *UserProvider {
 	return &UserProvider{
+		runtimeClient:        runtimeClient,
 		client:               client,
 		isServiceAccountFunc: isServiceAccountFunc,
 	}
@@ -53,7 +57,8 @@ func NewUserProvider(client ctrlruntimeclient.Client, isServiceAccountFunc func(
 
 // UserProvider manages user resources
 type UserProvider struct {
-	client ctrlruntimeclient.Client
+	runtimeClient ctrlruntimeclient.Client
+	client        kubermaticclientset.Interface
 	// since service account are special type of user this functions
 	// helps to determine if the given email address belongs to a service account
 	isServiceAccountFunc func(email string) bool
@@ -62,7 +67,7 @@ type UserProvider struct {
 // UserByID returns a user by the given ID
 func (p *UserProvider) UserByID(id string) (*kubermaticv1.User, error) {
 	user := &kubermaticv1.User{}
-	if err := p.client.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: id}, user); err != nil {
+	if err := p.runtimeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: id}, user); err != nil {
 		return nil, err
 	}
 	return user, nil
@@ -71,7 +76,7 @@ func (p *UserProvider) UserByID(id string) (*kubermaticv1.User, error) {
 // UserByEmail returns a user by the given email
 func (p *UserProvider) UserByEmail(email string) (*kubermaticv1.User, error) {
 	users := &kubermaticv1.UserList{}
-	if err := p.client.List(context.Background(), users); err != nil {
+	if err := p.runtimeClient.List(context.Background(), users); err != nil {
 		return nil, err
 	}
 
@@ -113,7 +118,7 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 		},
 	}
 
-	if err := p.client.Create(context.Background(), user); err != nil {
+	if err := p.runtimeClient.Create(context.Background(), user); err != nil {
 		return nil, err
 	}
 	return user, nil
@@ -121,7 +126,7 @@ func (p *UserProvider) CreateUser(id, name, email string) (*kubermaticv1.User, e
 
 // UpdateUser updates user.
 func (p *UserProvider) UpdateUser(user *kubermaticv1.User) (*kubermaticv1.User, error) {
-	if err := p.client.Update(context.Background(), user); err != nil {
+	if err := p.runtimeClient.Update(context.Background(), user); err != nil {
 		return nil, err
 	}
 	return user, nil
@@ -136,7 +141,7 @@ func (p *UserProvider) AddUserTokenToBlacklist(user *kubermaticv1.User, token st
 	}
 
 	ctx := context.Background()
-	secret, err := ensureTokenBlacklistSecret(ctx, p.client, user)
+	secret, err := ensureTokenBlacklistSecret(ctx, p.runtimeClient, user)
 	if err != nil {
 		return err
 	}
@@ -168,11 +173,15 @@ func (p *UserProvider) AddUserTokenToBlacklist(user *kubermaticv1.User, token st
 		resources.TokenBlacklist: tokenJSON,
 	}
 
-	if err := p.client.Update(ctx, secret); err != nil {
+	if err := p.runtimeClient.Update(ctx, secret); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (p *UserProvider) WatchUser() (watch.Interface, error) {
+	return p.client.KubermaticV1().Users().Watch(v1.ListOptions{})
 }
 
 func (p *UserProvider) GetUserBlacklistTokens(user *kubermaticv1.User) ([]string, error) {
@@ -183,7 +192,7 @@ func (p *UserProvider) GetUserBlacklistTokens(user *kubermaticv1.User) ([]string
 	if user.Spec.TokenBlackListReference == nil {
 		return result, nil
 	}
-	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.client)
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.runtimeClient)
 	tokenList, err := secretKeyGetter(user.Spec.TokenBlackListReference, resources.TokenBlacklist)
 	if err != nil {
 		return nil, err
