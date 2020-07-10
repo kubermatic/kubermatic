@@ -577,11 +577,9 @@ func listGCPSubnetworks(ctx context.Context, userInfo *provider.UserInfo, datace
 	err = req.Pages(ctx, func(page *compute.SubnetworkList) error {
 		for _, subnetwork := range page.Items {
 			// subnetworks.Network are a url e.g. https://www.googleapis.com/compute/v1/[...]/networks/default"
-			// we just get the name of the network, instead of the url
+			// we just get the path of the network, instead of the url
 			// therefor we can't use regular Filter function and need to check on our own
-			networkRegex := regexp.MustCompile(`^(.+\/networks\/)`)
-			network := networkRegex.ReplaceAllString(subnetwork.Network, "")
-			if network == networkName {
+			if strings.Contains(subnetwork.Network, networkName) {
 				net := apiv1.GCPSubnetwork{
 					ID:                    subnetwork.Id,
 					Name:                  subnetwork.Name,
