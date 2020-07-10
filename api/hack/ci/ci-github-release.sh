@@ -19,8 +19,8 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/../..
-source hack/lib.sh
+cd $(dirname $0)/../../..
+source api/hack/lib.sh
 
 GITHUB_TOKEN="${GITHUB_TOKEN:-$(cat /etc/github/oauth | tr -d '\n')}"
 
@@ -128,33 +128,34 @@ fi
 releaseID=$(echo "$releasedata" | jq -r '.id')
 
 # prepare source for archiving
-sed -i "s/__DASHBOARD_TAG__/$tag/g" charts/kubermatic/*.yaml
-sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/kubermatic/*.yaml
-sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/kubermatic-operator/*.yaml
+sed -i "s/__DASHBOARD_TAG__/$tag/g" config/kubermatic/*.yaml
+sed -i "s/__KUBERMATIC_TAG__/$tag/g" config/kubermatic/*.yaml
+sed -i "s/__KUBERMATIC_TAG__/$tag/g" config/kubermatic-operator/*.yaml
 
 echodate "Uploading kubermatic CE archive..."
 
 archive="kubermatic-ce-$tag.tar.gz"
 # Gnu tar is required
 tar czf "$archive" \
-  --transform='flags=r;s|charts/values.example.ce.yaml|examples/values.example.yaml|' \
-  --transform='flags=r;s|charts/test/|examples/|' \
-  charts/backup \
-  charts/cert-manager \
-  charts/iap \
-  charts/kubermatic-operator \
-  charts/kubermatic/crd \
-  charts/kubernetes-dashboard \
-  charts/logging/loki \
-  charts/logging/promtail \
-  charts/minio \
-  charts/monitoring \
-  charts/nginx-ingress-controller \
-  charts/oauth \
-  charts/s3-exporter \
-  charts/values.example.ce.yaml \
-  charts/test/kubermatic.example.ce.yaml \
-  charts/test/seed.example.yaml \
+  --transform='flags=r;s|config/values.example.ce.yaml|examples/values.example.yaml|' \
+  --transform='flags=r;s|config/test/|examples/|' \
+  --transform='flags=r;s|config/|charts/|' \
+  config/backup \
+  config/cert-manager \
+  config/iap \
+  config/kubermatic-operator \
+  config/kubermatic/crd \
+  config/kubernetes-dashboard \
+  config/logging/loki \
+  config/logging/promtail \
+  config/minio \
+  config/monitoring \
+  config/nginx-ingress-controller \
+  config/oauth \
+  config/s3-exporter \
+  config/values.example.ce.yaml \
+  config/test/kubermatic.example.ce.yaml \
+  config/test/seed.example.yaml \
   LICENSE \
   CHANGELOG.md
 
@@ -163,34 +164,35 @@ rm -- "${archive}"
 
 echodate "Uploading kubermatic EE archive..."
 
-yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
+yq w -i config/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
 
 archive="kubermatic-ee-$tag.tar.gz"
 # Gnu tar is required
 tar czf "$archive" \
-  --transform='flags=r;s|charts/values.example.ee.yaml|examples/values.example.yaml|' \
-  --transform='flags=r;s|charts/test/|examples/|' \
-  --transform='flags=r;s|pkg/ee/LICENSE|LICENSE.ee|' \
-  charts/backup \
-  charts/cert-manager \
-  charts/iap \
-  charts/kubermatic-operator \
-  charts/kubermatic \
-  charts/kubernetes-dashboard \
-  charts/logging \
-  charts/minio \
-  charts/monitoring \
-  charts/nginx-ingress-controller \
-  charts/oauth \
-  charts/s3-exporter \
-  charts/values.example.ee.yaml \
-  charts/test/kubermatic.example.ee.yaml \
-  charts/test/seed.example.yaml \
+  --transform='flags=r;s|config/values.example.ee.yaml|examples/values.example.yaml|' \
+  --transform='flags=r;s|config/test/|examples/|' \
+  --transform='flags=r;s|config/|charts/|' \
+  --transform='flags=r;s|api/pkg/ee/LICENSE|LICENSE.ee|' \
+  config/backup \
+  config/cert-manager \
+  config/iap \
+  config/kubermatic-operator \
+  config/kubermatic \
+  config/kubernetes-dashboard \
+  config/logging \
+  config/minio \
+  config/monitoring \
+  config/nginx-ingress-controller \
+  config/oauth \
+  config/s3-exporter \
+  config/values.example.ee.yaml \
+  config/test/kubermatic.example.ee.yaml \
+  config/test/seed.example.yaml \
   LICENSE \
-  pkg/ee/LICENSE \
+  api/pkg/ee/LICENSE \
   CHANGELOG.md
 
-git checkout -- charts
+git checkout -- config
 
 upload_archive "$archive"
 rm -- "${archive}"
