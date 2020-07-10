@@ -1,3 +1,23 @@
+
+### [v2.14.2]()
+
+
+**Bugfix:**
+
+- Fix Kubermatic operator not to specify unsupported &#39;dynamic-datacenter&#39; flag in CE mode. [#5615](https://github.com/kubermatic/kubermatic/issues/5615) ([irozzo-1A](https://github.com/irozzo-1A))
+- Fix Seed validation for Community Edition. [#5619](https://github.com/kubermatic/kubermatic/issues/5619) ([irozzo-1A](https://github.com/irozzo-1A))
+- Fix Subnetworks for GCP, because the network filtering was wrong. [#5632](https://github.com/kubermatic/kubermatic/pull/5632) ([kgroschoff](https://github.com/kgroschoff))
+- Fix label for nodeport-proxy when deployed with the operator. [#5612](https://github.com/kubermatic/kubermatic/pull/5612) ([youssefazrak](https://github.com/youssefazrak))
+
+
+**Misc:**
+
+- Change default number of replicas for seed and master controller manager to one. [#5620](https://github.com/kubermatic/kubermatic/issues/5620) ([irozzo-1A](https://github.com/irozzo-1A))
+- Remove empty Docker secret for Kubermatic Operator CE Helm chart. [#5618](https://github.com/kubermatic/kubermatic/pull/5618) ([youssefazrak](https://github.com/youssefazrak))
+
+
+
+
 ### [v2.13.1]()
 
 
