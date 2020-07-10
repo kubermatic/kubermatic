@@ -27,6 +27,7 @@ type Providers struct {
 	SettingsWatcher  SettingsWatcher
 	UserProvider     provider.UserProvider
 	UserWatcher      UserWatcher
+	MemberMapper     provider.ProjectMemberMapper
 }
 
 type SettingsWatcher interface {
