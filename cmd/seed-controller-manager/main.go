@@ -256,26 +256,32 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		leaderCtx, stopLeaderElection := context.WithCancel(rootCtx)
 		defer stopLeaderElection()
 
+		runner := func(ctx context.Context) error {
+			log.Info("Executing migrations...")
+			if err := seedmigrations.RunAll(leaderCtx, ctrlCtx.mgr.GetConfig(), options.workerName); err != nil {
+				return fmt.Errorf("failed to run migrations: %v", err)
+			}
+			log.Info("Migrations executed successfully")
+
+			log.Info("Starting the controller-manager...")
+			if err := mgr.Start(ctx.Done()); err != nil {
+				return fmt.Errorf("the controller-manager stopped with an error: %v", err)
+			}
+
+			return nil
+		}
+
 		g.Add(func() error {
+			if options.disableLeaderElection {
+				return runner(leaderCtx)
+			}
+
 			electionName := controllerName
 			if options.workerName != "" {
 				electionName += "-" + options.workerName
 			}
 
-			return leaderelection.RunAsLeader(leaderCtx, log, config, mgr.GetEventRecorderFor(controllerName), electionName, func(ctx context.Context) error {
-				log.Info("Executing migrations...")
-				if err := seedmigrations.RunAll(leaderCtx, ctrlCtx.mgr.GetConfig(), options.workerName); err != nil {
-					return fmt.Errorf("failed to run migrations: %v", err)
-				}
-				log.Info("Migrations executed successfully")
-
-				log.Info("Starting the controller-manager...")
-				if err := mgr.Start(ctx.Done()); err != nil {
-					return fmt.Errorf("the controller-manager stopped with an error: %v", err)
-				}
-
-				return nil
-			})
+			return leaderelection.RunAsLeader(leaderCtx, log, config, mgr.GetEventRecorderFor(controllerName), electionName, runner)
 		}, func(err error) {
 			stopLeaderElection()
 		})
