@@ -24,15 +24,78 @@ source hack/lib.sh
 
 GITHUB_TOKEN="${GITHUB_TOKEN:-$(cat /etc/github/oauth | tr -d '\n')}"
 
+# err can be used to print logs to stderr
+err(){
+    echo "E: $*" >>/dev/stderr
+}
+
+# utility function setting some curl default values for calling the github API
+# first argument is the URL, the rest of the arguments is used as curl
+# arguments.
+function github_cli {
+    local url=${1}
+    curl \
+        --retry 5 \
+        --connect-timeout 10 \
+        -H "Authorization: token ${GITHUB_TOKEN}" \
+        "${@:2}" "${url}"
+}
+
+# creates a new github release
+function create_release {
+  local tag="${1}"
+  local name="${2}"
+  local prerelease="${3}"
+  data=$(cat << EOF
+{
+  "tag_name": "$tag",
+  "name": "$name",
+  "prerelease": $prerelease
+}
+EOF
+)
+  github_cli \
+      "https://api.github.com/repos/${repo}/releases" \
+      -f --data "${data}"
+}
+
+# upload an archive from a file
+function upload_archive {
+  local file="${1}"
+  res=$(github_cli \
+    "https://uploads.github.com/repos/$repo/releases/$releaseID/assets?name=${file}" \
+    -H "Accept: application/json" \
+    -H 'Content-Type: application/gzip' \
+    -s --data-binary "@${file}")
+  if echo "${res}" | jq -e; then
+      # it the response contain errors
+      if echo "${res}" | jq -e '.errors[0]'; then
+        for err in $(echo "${res}" | jq -r '.errors[0].code'); do
+          # if the error code is 'already_exists' do not fail to make this call
+          # idempotent. To make it better we should alse check that the content
+          # match.
+          [[ "${err}" == "already_exists" ]] && return 0
+        done
+         err "Response contains unexpected errors: ${res}"
+        return 1
+      fi
+      return 0
+  else
+      err "Response did not contain valid JSON: ${res}"
+      return 1
+  fi
+}
+
+
 # this stops execution when we are not on a tagged revision
 tag="$(git describe --tags --exact-match)"
 branch=$(git rev-parse --abbrev-ref HEAD)
 head="$(git rev-parse HEAD)"
-repo="kubermatic/kubermatic"
+repo="${repo:-kubermatic/kubermatic}"
 auth="Authorization: token $GITHUB_TOKEN"
 
 # ensure the tag has already been pushed
-if [ -z "$(curl -s -H "$auth" "https://api.github.com/repos/$repo/tags" | jq ".[] | select(.name==\"$tag\")")" ]; then
+if [ -z "$(github_cli "https://api.github.com/repos/$repo/tags" -s | jq ".[] | select(.name==\"$tag\")")" ]; then
   echodate "Tag $tag has not been pushed to $repo yet."
   exit 1
 fi
@@ -52,40 +115,30 @@ echodate "Pre-Release : $prerelease"
 
 # retrieve release info
 echodate "Checking release existence..."
-releasedata="$(curl -sf -H "$auth" "https://api.github.com/repos/$repo/releases/tags/$tag" || true)"
+releasedata="$(github_cli "https://api.github.com/repos/$repo/releases/tags/$tag" -sf || true)"
 
 if [ -z "$releasedata" ]; then
   echodate "Creating release..."
 
-  curl -s -H "$auth" "https://api.github.com/repos/$repo/releases" --data @- > /dev/null << EOF
-{
-  "tag_name": "$tag",
-  "name": "$name",
-  "prerelease": $prerelease
-}
-EOF
+  create_release "$tag" "$name" "$prerelease"
 
-  releasedata="$(curl -sf -H "$auth" "https://api.github.com/repos/$repo/releases/tags/$tag")"
+  releasedata="$(github_cli "https://api.github.com/repos/$repo/releases/tags/$tag" -sf)"
 fi
 
 releaseID=$(echo "$releasedata" | jq -r '.id')
-
-upload() {
-  curl -s -H "$auth" -H 'Content-Type: application/gzip' --data-binary "@$1" \
-       "https://uploads.github.com/repos/$repo/releases/$releaseID/assets?name=$1" > /dev/null
-  rm -- "$1"
-}
 
 # prepare source for archiving
 sed -i "s/__DASHBOARD_TAG__/$tag/g" charts/kubermatic/*.yaml
 sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/kubermatic/*.yaml
 sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/kubermatic-operator/*.yaml
-sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/nodeport-proxy/*.yaml
 
 echodate "Uploading kubermatic CE archive..."
 
 archive="kubermatic-ce-$tag.tar.gz"
+# Gnu tar is required
 tar czf "$archive" \
+  --transform='flags=r;s|charts/values.example.ce.yaml|examples/values.example.yaml|' \
+  --transform='flags=r;s|charts/test/|examples/|' \
   charts/backup \
   charts/cert-manager \
   charts/iap \
@@ -97,22 +150,27 @@ tar czf "$archive" \
   charts/minio \
   charts/monitoring \
   charts/nginx-ingress-controller \
-  charts/nodeport-proxy \
   charts/oauth \
   charts/s3-exporter \
+  charts/values.example.ce.yaml \
+  charts/test/kubermatic.example.ce.yaml \
+  charts/test/seed.example.yaml \
   LICENSE \
-  README.md \
   CHANGELOG.md
 
-upload "$archive"
+upload_archive "$archive"
+rm -- "${archive}"
 
 echodate "Uploading kubermatic EE archive..."
 
 yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
-cp pkg/ee/LICENSE LICENSE.ee
 
 archive="kubermatic-ee-$tag.tar.gz"
+# Gnu tar is required
 tar czf "$archive" \
+  --transform='flags=r;s|charts/values.example.ee.yaml|examples/values.example.yaml|' \
+  --transform='flags=r;s|charts/test/|examples/|' \
+  --transform='flags=r;s|pkg/ee/LICENSE|LICENSE.ee|' \
   charts/backup \
   charts/cert-manager \
   charts/iap \
@@ -123,17 +181,18 @@ tar czf "$archive" \
   charts/minio \
   charts/monitoring \
   charts/nginx-ingress-controller \
-  charts/nodeport-proxy \
   charts/oauth \
   charts/s3-exporter \
+  charts/values.example.ee.yaml \
+  charts/test/kubermatic.example.ee.yaml \
+  charts/test/seed.example.yaml \
   LICENSE \
-  LICENSE.ee \
-  README.md \
+  pkg/ee/LICENSE \
   CHANGELOG.md
 
 git checkout -- charts
-rm LICENSE.ee
 
-upload "$archive"
+upload_archive "$archive"
+rm -- "${archive}"
 
 echodate "Done."
