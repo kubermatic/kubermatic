@@ -36,6 +36,7 @@ import (
 )
 
 func TestUserWatchEndpoint(t *testing.T) {
+	t.Skip("skipping until the reason for flakiness is found")
 	t.Parallel()
 	testcases := []struct {
 		name                string
