@@ -76,7 +76,7 @@ function upload_archive {
         # match.
         [[ "${err}" == "already_exists" ]] && return 0
       done
-       err "Response contains unexpected errors: ${res}"
+      err "Response contains unexpected errors: ${res}"
       return 1
     fi
     return 0
@@ -151,6 +151,7 @@ tar czf "$archive" \
   config/minio \
   config/monitoring \
   config/nginx-ingress-controller \
+  config/nodeport-proxy \
   config/oauth \
   config/s3-exporter \
   config/values.example.ce.yaml \
@@ -183,6 +184,7 @@ tar czf "$archive" \
   config/minio \
   config/monitoring \
   config/nginx-ingress-controller \
+  config/nodeport-proxy \
   config/oauth \
   config/s3-exporter \
   config/values.example.ee.yaml \
