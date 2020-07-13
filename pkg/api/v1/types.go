@@ -21,6 +21,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
+	"github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	ksemver "github.com/kubermatic/kubermatic/pkg/semver"
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -404,6 +405,38 @@ type User struct {
 	Projects []ProjectGroup `json:"projects,omitempty"`
 
 	Settings *kubermaticv1.UserSettings `json:"userSettings,omitempty"`
+}
+
+func ConvertInternalUserToExternal(internalUser *kubermaticv1.User, includeSettings bool, bindings ...*kubermaticv1.UserProjectBinding) *User {
+	apiUser := &User{
+		ObjectMeta: ObjectMeta{
+			ID:                internalUser.Name,
+			Name:              internalUser.Spec.Name,
+			CreationTimestamp: NewTime(internalUser.CreationTimestamp.Time),
+		},
+		Email:   internalUser.Spec.Email,
+		IsAdmin: internalUser.Spec.IsAdmin,
+	}
+
+	if includeSettings {
+		apiUser.Settings = internalUser.Spec.Settings
+	}
+
+	for _, binding := range bindings {
+		bindingAlreadyExists := false
+		for _, pg := range apiUser.Projects {
+			if pg.ID == binding.Spec.ProjectID && pg.GroupPrefix == binding.Spec.Group {
+				bindingAlreadyExists = true
+				break
+			}
+		}
+		if !bindingAlreadyExists {
+			groupPrefix := rbac.ExtractGroupPrefix(binding.Spec.Group)
+			apiUser.Projects = append(apiUser.Projects, ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix})
+		}
+	}
+
+	return apiUser
 }
 
 // Admin represents admin user

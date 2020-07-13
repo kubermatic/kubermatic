@@ -81,6 +81,7 @@ func getProviders(r Routing) watcher.Providers {
 		SettingsWatcher:  r.settingsWatcher,
 		UserProvider:     r.userProvider,
 		UserWatcher:      r.userWatcher,
+		MemberMapper:     r.userProjectMapper,
 	}
 }
 
