@@ -76,7 +76,7 @@ func (r Routing) getNodeForClusterLegacy() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.GetNodeForClusterLegacyEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		node.DecodeGetNodeForClusterLegacy,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -108,7 +108,7 @@ func (r Routing) createNodeForClusterLegacy() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.CreateNodeForClusterLegacyEndpoint()),
 		node.DecodeCreateNodeForClusterLegacy,
-		setStatusCreatedHeader(encodeJSON),
+		SetStatusCreatedHeader(EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
@@ -137,7 +137,7 @@ func (r Routing) listNodesForClusterLegacy() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.ListNodesForClusterLegacyEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		node.DecodeListNodesForClusterLegacy,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -166,7 +166,7 @@ func (r Routing) deleteNodeForClusterLegacy() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(node.DeleteNodeForClusterLegacyEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		node.DecodeDeleteNodeForClusterLegacy,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

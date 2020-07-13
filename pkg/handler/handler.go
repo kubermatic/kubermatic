@@ -65,7 +65,7 @@ func decodeEmptyReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
+func ErrorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	var additional []string
 	errorCode := http.StatusInternalServerError
 	msg := err.Error()
@@ -84,14 +84,14 @@ func errorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 
 	w.Header().Set(headerContentType, contentTypeJSON)
 	w.WriteHeader(errorCode)
-	err = encodeJSON(ctx, w, e)
+	err = EncodeJSON(ctx, w, e)
 	if err != nil {
 		log.Logger.Error(err)
 	}
 }
 
-// encodeJSON writes the JSON encoding of response to the http response writer
-func encodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
+// EncodeJSON writes the JSON encoding of response to the http response writer
+func EncodeJSON(c context.Context, w http.ResponseWriter, response interface{}) (err error) {
 	w.Header().Set(headerContentType, contentTypeJSON)
 
 	// As long as we pipe the response from the listers we need this.
@@ -121,7 +121,7 @@ func statusOK(res http.ResponseWriter, _ *http.Request) {
 	res.WriteHeader(http.StatusOK)
 }
 
-func setStatusCreatedHeader(f func(context.Context, http.ResponseWriter, interface{}) error) func(context.Context, http.ResponseWriter, interface{}) error {
+func SetStatusCreatedHeader(f func(context.Context, http.ResponseWriter, interface{}) error) func(context.Context, http.ResponseWriter, interface{}) error {
 	return func(ctx context.Context, r http.ResponseWriter, i interface{}) error {
 		r.Header().Set(headerContentType, contentTypeJSON)
 		r.WriteHeader(http.StatusCreated)

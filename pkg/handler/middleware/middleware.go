@@ -68,7 +68,8 @@ const (
 	// PrivilegedAddonProviderContextKey key under which the current PrivilegedAddonProvider is kept in the ctx
 	PrivilegedAddonProviderContextKey kubermaticcontext.Key = "privileged-addon-provider"
 
-	UserCRContextKey = kubermaticcontext.UserCRContextKey
+	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
+	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
 
 //DCGetter defines functionality to retrieve a datacenter name
@@ -339,4 +340,11 @@ func checkBlockedTokens(email, token string, userProvider provider.UserProvider)
 	}
 
 	return nil
+}
+
+// SetSeedsGetter injects the current SeedsGetter into the ctx
+func SetSeedsGetter(seedsGetter provider.SeedsGetter) transporthttp.RequestFunc {
+	return func(ctx context.Context, r *http.Request) context.Context {
+		return context.WithValue(ctx, SeedsGetterContextKey, seedsGetter)
+	}
 }

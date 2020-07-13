@@ -35,6 +35,8 @@ type ClientService interface {
 
 	CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterRoleCreated, error)
 
+	CreateClusterV2(params *CreateClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterV2Created, error)
+
 	CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeDeploymentCreated, error)
 
 	CreateNodeForClusterLegacy(params *CreateNodeForClusterLegacyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeForClusterLegacyCreated, error)
@@ -307,6 +309,40 @@ func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  CreateClusterV2 creates a cluster for the given project
+*/
+func (a *Client) CreateClusterV2(params *CreateClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterV2Created, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateClusterV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "createClusterV2",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateClusterV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateClusterV2Created)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateClusterV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -105,7 +105,7 @@ func (r Routing) getKubermaticSettings() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.KubermaticSettingsEndpoint(r.settingsProvider)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -126,7 +126,7 @@ func (r Routing) getKubermaticCustomLinks() http.Handler {
 	return httptransport.NewServer(
 		admin.KubermaticCustomLinksEndpoint(r.settingsProvider),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -150,7 +150,7 @@ func (r Routing) patchKubermaticSettings() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.UpdateKubermaticSettingsEndpoint(r.userInfoGetter, r.settingsProvider)),
 		admin.DecodePatchKubermaticSettingsReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -174,7 +174,7 @@ func (r Routing) getAdmins() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.GetAdminEndpoint(r.userInfoGetter, r.adminProvider)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -202,7 +202,7 @@ func (r Routing) setAdmin() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.SetAdminEndpoint(r.userInfoGetter, r.adminProvider)),
 		admin.DecodeSetAdminReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -226,7 +226,7 @@ func (r Routing) listAdmissionPlugins() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.ListAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -250,7 +250,7 @@ func (r Routing) getAdmissionPlugin() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.GetAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
 		admin.DecodeAdmissionPluginReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -274,7 +274,7 @@ func (r Routing) deleteAdmissionPlugin() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.DeleteAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
 		admin.DecodeAdmissionPluginReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -301,7 +301,7 @@ func (r Routing) updateAdmissionPlugin() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.UpdateAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
 		admin.DecodeUpdateAdmissionPluginReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -325,7 +325,7 @@ func (r Routing) listSeeds() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.ListSeedEndpoint(r.userInfoGetter, r.seedsGetter)),
 		decodeEmptyReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -349,7 +349,7 @@ func (r Routing) getSeed() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.GetSeedEndpoint(r.userInfoGetter, r.seedsGetter)),
 		admin.DecodeSeedReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -376,7 +376,7 @@ func (r Routing) updateSeed() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.UpdateSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		admin.DecodeUpdateSeedReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
@@ -400,7 +400,7 @@ func (r Routing) deleteSeed() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admin.DeleteSeedEndpoint(r.userInfoGetter, r.seedsGetter, r.seedsClientGetter)),
 		admin.DecodeSeedReq,
-		encodeJSON,
+		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

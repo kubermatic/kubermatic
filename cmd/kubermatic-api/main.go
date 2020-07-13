@@ -58,6 +58,7 @@ import (
 	"github.com/kubermatic/kubermatic/pkg/handler"
 	"github.com/kubermatic/kubermatic/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
+	v2 "github.com/kubermatic/kubermatic/pkg/handler/v2"
 	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 	metricspkg "github.com/kubermatic/kubermatic/pkg/metrics"
 	"github.com/kubermatic/kubermatic/pkg/pprof"
@@ -352,49 +353,53 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 	}
 	serviceAccountTokenAuth := serviceaccount.JWTTokenAuthenticator([]byte(options.serviceAccountSigningKey))
 
-	r := handler.NewRouting(
-		kubermaticlog.New(options.log.Debug, options.log.Format).Sugar(),
-		prov.presetProvider,
-		prov.seedsGetter,
-		prov.seedClientGetter,
-		prov.clusterProviderGetter,
-		prov.addons,
-		prov.addonConfigProvider,
-		prov.sshKey,
-		prov.privilegedSSHKeyProvider,
-		prov.user,
-		prov.serviceAccountProvider,
-		prov.privilegedServiceAccountProvider,
-		prov.serviceAccountTokenProvider,
-		prov.privilegedServiceAccountTokenProvider,
-		prov.project,
-		prov.privilegedProject,
-		oidcIssuerVerifier,
-		tokenVerifiers,
-		tokenExtractors,
-		updateManager,
-		prometheusClient,
-		prov.projectMember,
-		prov.privilegedProjectMemberProvider,
-		prov.memberMapper,
-		serviceAccountTokenAuth,
-		serviceAccountTokenGenerator,
-		prov.eventRecorderProvider,
-		options.exposeStrategy,
-		options.accessibleAddons,
-		prov.userInfoGetter,
-		prov.settingsProvider,
-		prov.adminProvider,
-		prov.admissionPluginProvider,
-		prov.settingsWatcher,
-		prov.userWatcher,
-	)
+	routingParams := handler.RoutingParams{
+		Log:                                   kubermaticlog.New(options.log.Debug, options.log.Format).Sugar(),
+		PresetsProvider:                       prov.presetProvider,
+		SeedsGetter:                           prov.seedsGetter,
+		SeedsClientGetter:                     prov.seedClientGetter,
+		SSHKeyProvider:                        prov.sshKey,
+		PrivilegedSSHKeyProvider:              prov.privilegedSSHKeyProvider,
+		UserProvider:                          prov.user,
+		ServiceAccountProvider:                prov.serviceAccountProvider,
+		PrivilegedServiceAccountProvider:      prov.privilegedServiceAccountProvider,
+		ServiceAccountTokenProvider:           prov.serviceAccountTokenProvider,
+		PrivilegedServiceAccountTokenProvider: prov.privilegedServiceAccountTokenProvider,
+		ProjectProvider:                       prov.project,
+		PrivilegedProjectProvider:             prov.privilegedProject,
+		OIDCIssuerVerifier:                    oidcIssuerVerifier,
+		TokenVerifiers:                        tokenVerifiers,
+		TokenExtractors:                       tokenExtractors,
+		ClusterProviderGetter:                 prov.clusterProviderGetter,
+		AddonProviderGetter:                   prov.addons,
+		AddonConfigProvider:                   prov.addonConfigProvider,
+		UpdateManager:                         updateManager,
+		PrometheusClient:                      prometheusClient,
+		ProjectMemberProvider:                 prov.projectMember,
+		PrivilegedProjectMemberProvider:       prov.privilegedProjectMemberProvider,
+		UserProjectMapper:                     prov.memberMapper,
+		SATokenAuthenticator:                  serviceAccountTokenAuth,
+		SATokenGenerator:                      serviceAccountTokenGenerator,
+		EventRecorderProvider:                 prov.eventRecorderProvider,
+		ExposeStrategy:                        options.exposeStrategy,
+		AccessibleAddons:                      options.accessibleAddons,
+		UserInfoGetter:                        prov.userInfoGetter,
+		SettingsProvider:                      prov.settingsProvider,
+		AdminProvider:                         prov.adminProvider,
+		AdmissionPluginProvider:               prov.admissionPluginProvider,
+		SettingsWatcher:                       prov.settingsWatcher,
+		UserWatcher:                           prov.userWatcher,
+	}
+
+	r := handler.NewRouting(routingParams)
+	rv2 := v2.NewV2Routing(routingParams)
 
 	registerMetrics()
 
 	mainRouter := mux.NewRouter()
 	mainRouter.Use(setSecureHeaders)
 	v1Router := mainRouter.PathPrefix("/api/v1").Subrouter()
+	v2Router := mainRouter.PathPrefix("/api/v2").Subrouter()
 	r.RegisterV1(v1Router, metrics)
 	r.RegisterV1Legacy(v1Router)
 	r.RegisterV1Optional(v1Router,
@@ -410,6 +415,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		mainRouter)
 	r.RegisterV1Admin(v1Router)
 	r.RegisterV1Websocket(v1Router)
+	rv2.RegisterV2(v2Router, metrics)
 
 	mainRouter.Methods(http.MethodGet).
 		Path("/api/swagger.json").

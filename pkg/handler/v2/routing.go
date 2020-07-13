@@ -14,23 +14,24 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package handler
+package v2
 
 import (
 	"os"
 
-	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
-	prometheusapi "github.com/prometheus/client_golang/api"
-	"go.uber.org/zap"
-
+	"github.com/kubermatic/kubermatic/pkg/handler"
 	"github.com/kubermatic/kubermatic/pkg/handler/auth"
 	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/pkg/provider"
 	"github.com/kubermatic/kubermatic/pkg/serviceaccount"
 	"github.com/kubermatic/kubermatic/pkg/watcher"
+	prometheusapi "github.com/prometheus/client_golang/api"
 
+	"github.com/go-kit/kit/log"
+	"go.uber.org/zap"
+
+	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
+	"github.com/kubermatic/kubermatic/pkg/provider"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -75,8 +76,8 @@ type Routing struct {
 	userWatcher                           watcher.UserWatcher
 }
 
-// NewRouting creates a new Routing.
-func NewRouting(routingParams RoutingParams) Routing {
+// NewV2Routing creates a new Routing.
+func NewV2Routing(routingParams handler.RoutingParams) Routing {
 	return Routing{
 		log:                                   routingParams.Log,
 		presetsProvider:                       routingParams.PresetsProvider,
@@ -120,45 +121,8 @@ func NewRouting(routingParams RoutingParams) Routing {
 func (r Routing) defaultServerOptions() []httptransport.ServerOption {
 	return []httptransport.ServerOption{
 		httptransport.ServerErrorLogger(r.logger),
-		httptransport.ServerErrorEncoder(ErrorEncoder),
+		httptransport.ServerErrorEncoder(handler.ErrorEncoder),
 		httptransport.ServerBefore(middleware.TokenExtractor(r.tokenExtractors)),
+		httptransport.ServerBefore(middleware.SetSeedsGetter(r.seedsGetter)),
 	}
-}
-
-type RoutingParams struct {
-	Log                                   *zap.SugaredLogger
-	PresetsProvider                       provider.PresetProvider
-	SeedsGetter                           provider.SeedsGetter
-	SeedsClientGetter                     provider.SeedClientGetter
-	SSHKeyProvider                        provider.SSHKeyProvider
-	PrivilegedSSHKeyProvider              provider.PrivilegedSSHKeyProvider
-	UserProvider                          provider.UserProvider
-	ServiceAccountProvider                provider.ServiceAccountProvider
-	PrivilegedServiceAccountProvider      provider.PrivilegedServiceAccountProvider
-	ServiceAccountTokenProvider           provider.ServiceAccountTokenProvider
-	PrivilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider
-	ProjectProvider                       provider.ProjectProvider
-	PrivilegedProjectProvider             provider.PrivilegedProjectProvider
-	OIDCIssuerVerifier                    auth.OIDCIssuerVerifier
-	TokenVerifiers                        auth.TokenVerifier
-	TokenExtractors                       auth.TokenExtractor
-	ClusterProviderGetter                 provider.ClusterProviderGetter
-	AddonProviderGetter                   provider.AddonProviderGetter
-	AddonConfigProvider                   provider.AddonConfigProvider
-	UpdateManager                         common.UpdateManager
-	PrometheusClient                      prometheusapi.Client
-	ProjectMemberProvider                 provider.ProjectMemberProvider
-	PrivilegedProjectMemberProvider       provider.PrivilegedProjectMemberProvider
-	UserProjectMapper                     provider.ProjectMemberMapper
-	SATokenAuthenticator                  serviceaccount.TokenAuthenticator
-	SATokenGenerator                      serviceaccount.TokenGenerator
-	EventRecorderProvider                 provider.EventRecorderProvider
-	ExposeStrategy                        corev1.ServiceType
-	AccessibleAddons                      sets.String
-	UserInfoGetter                        provider.UserInfoGetter
-	SettingsProvider                      provider.SettingsProvider
-	AdminProvider                         provider.AdminProvider
-	AdmissionPluginProvider               provider.AdmissionPluginsProvider
-	SettingsWatcher                       watcher.SettingsWatcher
-	UserWatcher                           watcher.UserWatcher
 }
