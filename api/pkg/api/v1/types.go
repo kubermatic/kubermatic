@@ -333,6 +333,7 @@ type GCPSubnetwork struct {
 	SelfLink              string `json:"selfLink"`
 	PrivateIPGoogleAccess bool   `json:"privateIpGoogleAccess"`
 	Kind                  string `json:"kind"`
+	Path                  string `json:"path"`
 }
 
 // DigitaloceanSizeList represents a object of digitalocean sizes.
