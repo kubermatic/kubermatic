@@ -91,7 +91,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 
 			var wsMsg wsMessage
 			select {
-			case <-time.After(time.Second * 5):
+			case <-time.After(time.Second * 10):
 				t.Fatalf("timeout waiting for ws message")
 			case wsMsg = <-ch:
 			}
@@ -122,7 +122,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 
 			// get the update notification
 			select {
-			case <-time.After(time.Second * 5):
+			case <-time.After(time.Second * 10):
 				if !tc.updateShouldTimeout {
 					t.Fatal("Watch update notification didnt arrive in time")
 				}
