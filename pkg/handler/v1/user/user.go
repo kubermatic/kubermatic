@@ -177,7 +177,7 @@ func EditEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		externalUser := convertInternalUserToExternal(memberToUpdate, false, updatedMemberBinding)
+		externalUser := apiv1.ConvertInternalUserToExternal(memberToUpdate, false, updatedMemberBinding)
 		externalUser = filterExternalUser(externalUser, project.Name)
 		return externalUser, nil
 	}
@@ -226,7 +226,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			externalUser := convertInternalUserToExternal(user, false, memberOfProjectBinding)
+			externalUser := apiv1.ConvertInternalUserToExternal(user, false, memberOfProjectBinding)
 			externalUser = filterExternalUser(externalUser, project.Name)
 			externalUsers = append(externalUsers, externalUser)
 		}
@@ -275,7 +275,7 @@ func AddEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		externalUser := convertInternalUserToExternal(userToInvite, false, generatedBinding)
+		externalUser := apiv1.ConvertInternalUserToExternal(userToInvite, false, generatedBinding)
 		externalUser = filterExternalUser(externalUser, project.Name)
 		return externalUser, nil
 	}
@@ -326,7 +326,7 @@ func GetEndpoint(memberMapper provider.ProjectMemberMapper) endpoint.Endpoint {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalUserToExternal(authenticatedUser, true, bindings...), nil
+		return apiv1.ConvertInternalUserToExternal(authenticatedUser, true, bindings...), nil
 	}
 }
 
@@ -373,38 +373,6 @@ func PatchSettingsEndpoint(userProvider provider.UserProvider) endpoint.Endpoint
 
 		return updatedUser.Spec.Settings, nil
 	}
-}
-
-func convertInternalUserToExternal(internalUser *kubermaticapiv1.User, includeSettings bool, bindings ...*kubermaticapiv1.UserProjectBinding) *apiv1.User {
-	apiUser := &apiv1.User{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                internalUser.Name,
-			Name:              internalUser.Spec.Name,
-			CreationTimestamp: apiv1.NewTime(internalUser.CreationTimestamp.Time),
-		},
-		Email:   internalUser.Spec.Email,
-		IsAdmin: internalUser.Spec.IsAdmin,
-	}
-
-	if includeSettings {
-		apiUser.Settings = internalUser.Spec.Settings
-	}
-
-	for _, binding := range bindings {
-		bindingAlreadyExists := false
-		for _, pg := range apiUser.Projects {
-			if pg.ID == binding.Spec.ProjectID && pg.GroupPrefix == binding.Spec.Group {
-				bindingAlreadyExists = true
-				break
-			}
-		}
-		if !bindingAlreadyExists {
-			groupPrefix := rbac.ExtractGroupPrefix(binding.Spec.Group)
-			apiUser.Projects = append(apiUser.Projects, apiv1.ProjectGroup{ID: binding.Spec.ProjectID, GroupPrefix: groupPrefix})
-		}
-	}
-
-	return apiUser
 }
 
 func filterExternalUser(externalUser *apiv1.User, projectID string) *apiv1.User {

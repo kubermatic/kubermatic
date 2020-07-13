@@ -99,7 +99,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 				t.Fatalf("error reading ws message: %v", err)
 			}
 
-			var user *v1.User
+			var user *apiv1.User
 			err = json.Unmarshal(wsMsg.p, &user)
 			if err != nil {
 				t.Fatalf("failed unmarshalling user: %v", err)
@@ -133,14 +133,14 @@ func TestUserWatchEndpoint(t *testing.T) {
 			}
 
 			if !tc.updateShouldTimeout {
-				var userUpdate *v1.User
+				var userUpdate *apiv1.User
 				err = json.Unmarshal(wsMsg.p, &userUpdate)
 				if err != nil {
 					t.Fatalf("failed unmarshalling user: %v", err)
 				}
 
-				if !reflect.DeepEqual(userUpdate.Spec.Settings, tc.userSettingsUpdate) {
-					t.Fatalf("expected settings %v, got %v", tc.userSettingsUpdate, userUpdate.Spec.Settings)
+				if !reflect.DeepEqual(userUpdate.Settings, tc.userSettingsUpdate) {
+					t.Fatalf("expected settings %v, got %v", tc.userSettingsUpdate, userUpdate.Settings)
 				}
 			}
 		})

@@ -18,7 +18,7 @@ package websocket
 
 import (
 	"encoding/json"
-
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 	v1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/pkg/log"
 	"github.com/kubermatic/kubermatic/pkg/watcher"
@@ -34,7 +34,14 @@ func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string
 		return
 	}
 
-	initialResponse, err := json.Marshal(initialUser)
+	bindings, err := providers.MemberMapper.MappingsFor(initialUser.Spec.Email)
+	if err != nil {
+		log.Logger.Debug("cannot get project mappings for user %s: %v", initialUser.Name, err)
+		return
+	}
+	initialExtUser := apiv1.ConvertInternalUserToExternal(initialUser, true, bindings...)
+
+	initialResponse, err := json.Marshal(initialExtUser)
 	if err != nil {
 		log.Logger.Debug(err)
 		return
@@ -60,7 +67,14 @@ func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string
 				return
 			}
 
-			response, err = json.Marshal(user)
+			bindings, err := providers.MemberMapper.MappingsFor(user.Spec.Email)
+			if err != nil {
+				log.Logger.Debug("cannot get project mappings for user %s: %v", user.Name, err)
+				return
+			}
+			externalUser := apiv1.ConvertInternalUserToExternal(user, true, bindings...)
+
+			response, err = json.Marshal(externalUser)
 			if err != nil {
 				log.Logger.Debug(err)
 				return
