@@ -1,0 +1,57 @@
+# Dex Is the OpenID Provider for Kubermatic.
+dex:
+  ingress:
+    # configure your base domain, under which the Kubermatic dashboard shall be available
+    host: cluster.example.dev
+
+  clients:
+  # The "kubermatic" client is used for logging into the Kubermatic dashboard. It always
+  # needs to be configured.
+  - id: kubermatic
+    name: Kubermatic
+    # Generate a secure secret key
+    # Those can be generated on the shell using:
+    # cat /dev/urandom | tr -dc A-Za-z0-9 | head -c32
+    secret: <a-random-key>
+    RedirectURIs:
+    # ensure the URLs below use the dex.ingress.host configured above
+    - https://cluster.example.dev
+    - https://cluster.example.dev/projects
+
+  # Depending on your chosen login method, you need to configure either an OAuth provider like
+  # Google or GitHub, or configure a set of static passwords. Check the `charts/oauth/values.yaml`
+  # for an overview over all available connectors.
+
+  # For testing purposes, we configure a single static user/password combination.
+  staticPasswords:
+  - email: kubermatic@example.com
+    # bcrypt hash of the string "password", can be created using recent versions of htpasswd:
+    # `htpasswd -bnBC 10 "" PASSWORD_HERE | tr -d ':\n' | sed 's/$2y/$2a/'`
+    hash: "$2a$10$zMJhg/3axbm/m0KmoVxJiO1eO5gtNrgKDysy5GafQFrXY93OE9LsK"
+
+    # these are used within Kubermatic to identify the user
+    username: admin
+    userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
+
+  # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
+  certIssuer:
+    # For generating a certificate signed by a trusted root authority replace
+    # with "letsencrypt-prod".
+    name: letsencrypt-staging
+    kind: ClusterIssuer
+
+kubermaticOperator:
+  # insert the Docker authentication JSON provided by Loodse here
+  imagePullSecret: |
+    {
+      "auths": {
+        "quay.io": {
+          "auth": "<your-auth-token>",
+          "email": ""
+        }
+      }
+    }
+
+minio:
+  storeSize: '500Gi'
+  storageClass: minio-hdd

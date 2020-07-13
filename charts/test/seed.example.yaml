@@ -1,0 +1,36 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubeconfig-cluster-example
+  namespace: kubermatic
+type: Opaque
+data:
+  kubeconfig: <base64 encoded kubeconfig>
+---
+apiVersion: kubermatic.k8s.io/v1
+kind: Seed
+metadata:
+  name: kubermatic
+  namespace: kubermatic
+spec:
+  # these two fields are only informational
+  country: FR
+  location: Paris
+
+  # List of datacenters where this seed cluster is allowed to create clusters in
+  # In this example, user cluster will be deployed in eu-central-1 on AWS.
+  datacenters:
+    aws-eu-central-1a:
+      country: DE
+      location: EU (Frankfurt)
+      spec:
+        aws:
+          images: null
+          region: eu-central-1
+        enforceAuditLogging: false
+        enforcePodSecurityPolicy: false
+
+  # reference to the kubeconfig to use when connecting to this seed cluster
+  kubeconfig:
+    name: kubeconfig-cluster-example
+    namespace: kubermatic
