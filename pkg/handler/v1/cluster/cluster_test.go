@@ -1284,7 +1284,7 @@ func TestGetCluster(t *testing.T) {
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				genClusterWithOpenstack(test.GenDefaultCluster()),
+				test.GenClusterWithOpenstack(test.GenDefaultCluster()),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
@@ -1298,7 +1298,7 @@ func TestGetCluster(t *testing.T) {
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				genUser("John", "john@acme.com", true),
-				genClusterWithOpenstack(test.GenDefaultCluster()),
+				test.GenClusterWithOpenstack(test.GenDefaultCluster()),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -1312,7 +1312,7 @@ func TestGetCluster(t *testing.T) {
 			HTTPStatus:       http.StatusForbidden,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				genUser("John", "john@acme.com", false),
-				genClusterWithOpenstack(test.GenDefaultCluster()),
+				test.GenClusterWithOpenstack(test.GenDefaultCluster()),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -1424,7 +1424,7 @@ func TestListClusters(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 				test.GenCluster("clusterDefID", "clusterDef", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC)),
-				genClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
+				test.GenClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -1503,7 +1503,7 @@ func TestListClusters(t *testing.T) {
 				genUser("John", "john@acme.com", true),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 				test.GenCluster("clusterDefID", "clusterDef", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC)),
-				genClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
+				test.GenClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
@@ -1600,7 +1600,7 @@ func TestListClustersForProject(t *testing.T) {
 			HTTPStatus: http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
-				genClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
+				test.GenClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -1659,7 +1659,7 @@ func TestListClustersForProject(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				genUser("John", "john@acme.com", true),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
-				genClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
+				test.GenClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
@@ -2177,24 +2177,6 @@ func TestListNamespace(t *testing.T) {
 			test.CompareWithResult(t, res, tc.expectedResponse)
 		})
 	}
-}
-
-func genClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
-	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
-		DatacenterName: "OpenstackDatacenter",
-		Openstack: &kubermaticv1.OpenstackCloudSpec{
-			Username:       "username",
-			Password:       "password",
-			SubnetID:       "subnetID",
-			Domain:         "domain",
-			FloatingIPPool: "floatingIPPool",
-			Network:        "network",
-			RouterID:       "routerID",
-			SecurityGroups: "securityGroups",
-			Tenant:         "tenant",
-		},
-	}
-	return cluster
 }
 
 func genUser(name, email string, isAdmin bool) *kubermaticv1.User {
