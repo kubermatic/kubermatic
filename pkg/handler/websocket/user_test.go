@@ -36,7 +36,6 @@ import (
 )
 
 func TestUserWatchEndpoint(t *testing.T) {
-	t.Skip("skipping until the reason for flakiness is found")
 	t.Parallel()
 	testcases := []struct {
 		name                string
@@ -54,7 +53,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 				CollapseSidenav: true,
 			},
 			existingAPIUser:     test.GenDefaultAPIUser(),
-			existingUsers:       []*apiv1.User{test.GenDefaultAPIUser(), test.GenAPIUser("john", "john@acme.com")},
+			existingUsers:       []*apiv1.User{test.GenDefaultAPIUser()},
 			updateShouldTimeout: false,
 		},
 		{
@@ -85,14 +84,14 @@ func TestUserWatchEndpoint(t *testing.T) {
 
 			// setup ws client
 			wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/api/v1/ws/me"
-			ch, err := createWSClient(wsURL)
+			ch, err := createWSClient(t, wsURL)
 			if err != nil {
 				t.Fatalf("failed to initialize websocket client: %v", err)
 			}
 
 			var wsMsg wsMessage
 			select {
-			case <-time.After(time.Second * 5):
+			case <-time.After(time.Second):
 				t.Fatalf("timeout waiting for ws message")
 			case wsMsg = <-ch:
 			}
@@ -116,6 +115,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 			}
 			userToUpdate.Spec.Settings = tc.userSettingsUpdate
 
+			time.Sleep(time.Second)
 			_, err = cli.FakeKubermaticClient.KubermaticV1().Users().Update(userToUpdate)
 			if err != nil {
 				t.Fatalf("error updating user: %v", err)
@@ -123,7 +123,7 @@ func TestUserWatchEndpoint(t *testing.T) {
 
 			// get the update notification
 			select {
-			case <-time.After(time.Second * 5):
+			case <-time.After(time.Second):
 				if !tc.updateShouldTimeout {
 					t.Fatal("Watch update notification didnt arrive in time")
 				}
@@ -154,7 +154,7 @@ type wsMessage struct {
 	err         error
 }
 
-func createWSClient(url string) (chan wsMessage, error) {
+func createWSClient(t *testing.T, url string) (chan wsMessage, error) {
 	ws, _, err := websocket.DefaultDialer.Dial(url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize websocket dialer: %v", err)
@@ -164,13 +164,15 @@ func createWSClient(url string) (chan wsMessage, error) {
 
 	go func() {
 		for {
-			t, p, err := ws.ReadMessage()
+			ty, p, err := ws.ReadMessage()
 			ch <- wsMessage{
-				messageType: t,
+				messageType: ty,
 				p:           p,
 				err:         err,
 			}
+			t.Logf("Read a message from WS, type: %d, contents: %s", ty, string(p))
 			if err != nil {
+				t.Logf("error reading ws message, closing ws channel: %v", err)
 				close(ch)
 				ws.Close()
 				break

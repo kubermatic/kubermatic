@@ -108,13 +108,13 @@ func getUserWatchHandler(writer WebsocketUserWriter, providers watcher.Providers
 	return func(w http.ResponseWriter, req *http.Request) {
 		user, err := verifyAuthorizationToken(req, routing.tokenVerifiers, routing.tokenExtractors)
 		if err != nil {
-			log.Logger.Debug(err)
+			log.Logger.Error(err)
 			return
 		}
 
 		ws, err := upgrader.Upgrade(w, req, nil)
 		if err != nil {
-			log.Logger.Debug(err)
+			log.Logger.Error(err)
 			return
 		}
 

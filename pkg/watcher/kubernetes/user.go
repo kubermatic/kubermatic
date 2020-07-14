@@ -55,7 +55,7 @@ func NewUserWatcher(provider provider.UserProvider) (*UserWatcher, error) {
 // run and publish information about user updates. Watch will restart itself if any error occurs.
 func (watcher *UserWatcher) run() {
 	defer func() {
-		log.Logger.Debug("restarting user watcher")
+		log.Logger.Errorf("restarting user watcher")
 		watcher.watcher.Stop()
 		watcher.watcher = nil
 		watcher.run()
@@ -64,7 +64,7 @@ func (watcher *UserWatcher) run() {
 	if watcher.watcher == nil {
 		var err error
 		if watcher.watcher, err = watcher.provider.WatchUser(); err != nil {
-			log.Logger.Debug("could not recreate user watcher")
+			log.Logger.Error("could not recreate user watcher")
 			return
 		}
 	}
@@ -74,6 +74,8 @@ func (watcher *UserWatcher) run() {
 		if !ok {
 			log.Logger.Debugf("expected user got %s", reflect.TypeOf(event.Object))
 		}
+
+		log.Logger.Errorf("Watch chan got a new notification for user %q, event type: %s", user.Name, event.Type)
 
 		if user != nil {
 			idHash, err := watcher.CalculateHash(user.Spec.Email)
@@ -101,6 +103,6 @@ func (watcher *UserWatcher) CalculateHash(id string) (uint64, error) {
 }
 
 // Subscribe allows to register subscription handler which will be invoked on each user change.
-func (watcher *UserWatcher) Subscribe(subscription pubsub.Subscription, opts ...pubsub.SubscribeOption) {
-	watcher.publisher.Subscribe(subscription, opts...)
+func (watcher *UserWatcher) Subscribe(subscription pubsub.Subscription, opts ...pubsub.SubscribeOption) pubsub.Unsubscriber {
+	return watcher.publisher.Subscribe(subscription, opts...)
 }

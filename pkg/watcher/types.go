@@ -35,6 +35,6 @@ type SettingsWatcher interface {
 }
 
 type UserWatcher interface {
-	Subscribe(subscription pubsub.Subscription, opts ...pubsub.SubscribeOption)
+	Subscribe(subscription pubsub.Subscription, opts ...pubsub.SubscribeOption) pubsub.Unsubscriber
 	CalculateHash(id string) (uint64, error)
 }

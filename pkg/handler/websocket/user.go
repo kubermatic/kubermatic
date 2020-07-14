@@ -18,6 +18,7 @@ package websocket
 
 import (
 	"encoding/json"
+
 	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 	v1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/pkg/log"
@@ -30,31 +31,31 @@ import (
 func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string) {
 	initialUser, err := providers.UserProvider.UserByEmail(userEmail)
 	if err != nil {
-		log.Logger.Debug(err)
+		log.Logger.Error(err)
 		return
 	}
 
 	bindings, err := providers.MemberMapper.MappingsFor(initialUser.Spec.Email)
 	if err != nil {
-		log.Logger.Debug("cannot get project mappings for user %s: %v", initialUser.Name, err)
+		log.Logger.Error("cannot get project mappings for user %s: %v", initialUser.Name, err)
 		return
 	}
 	initialExtUser := apiv1.ConvertInternalUserToExternal(initialUser, true, bindings...)
 
 	initialResponse, err := json.Marshal(initialExtUser)
 	if err != nil {
-		log.Logger.Debug(err)
+		log.Logger.Error(err)
 		return
 	}
 
 	if err := ws.WriteMessage(websocket.TextMessage, initialResponse); err != nil {
-		log.Logger.Debug(err)
+		log.Logger.Error(err)
 		return
 	}
 
 	hashID, err := providers.UserWatcher.CalculateHash(userEmail)
 	if err != nil {
-		log.Logger.Debug(err)
+		log.Logger.Error(err)
 		return
 	}
 
@@ -63,34 +64,36 @@ func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string
 		if rawUser != nil {
 			user, ok := rawUser.(*v1.User)
 			if !ok {
-				log.Logger.Warn("cannot convert user for user watch: %v", rawUser)
+				log.Logger.Error("cannot convert user for user watch: %v", rawUser)
 				return
 			}
+			log.Logger.Errorf("Subscription event: Got a new subscription event for user: %s", user.Name)
 
 			bindings, err := providers.MemberMapper.MappingsFor(user.Spec.Email)
 			if err != nil {
-				log.Logger.Debug("cannot get project mappings for user %s: %v", user.Name, err)
+				log.Logger.Error("cannot get project mappings for user %s: %v", user.Name, err)
 				return
 			}
 			externalUser := apiv1.ConvertInternalUserToExternal(user, true, bindings...)
 
 			response, err = json.Marshal(externalUser)
 			if err != nil {
-				log.Logger.Debug(err)
+				log.Logger.Error(err)
 				return
 			}
 		} else {
+			log.Logger.Error("Subscription event: got a null event")
 			// Explicitly set null response instead returning defaulted user structure.
 			// It allows clients to distinct null response and default or empty user.
 			response, err = json.Marshal(nil)
 			if err != nil {
-				log.Logger.Debug(err)
+				log.Logger.Error(err)
 				return
 			}
 		}
 
 		if err := ws.WriteMessage(websocket.TextMessage, response); err != nil {
-			log.Logger.Debug(err)
+			log.Logger.Error(err)
 			return
 		}
 	}, pubsub.WithPath([]uint64{hashID}))

@@ -59,7 +59,7 @@ download-gocache:
 	@touch download-gocache
 
 test: download-gocache
-	CGO_ENABLED=1 go test -tags "unit,$(KUBERMATIC_EDITION)" -race ./...
+	CGO_ENABLED=1 go test -tags "unit,$(KUBERMATIC_EDITION)" -race -v -count=1000 ./pkg/handler/websocket/user_test.go
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
 	@# **Imortant:** Do not replace this with one `go test` with multiple tags,
