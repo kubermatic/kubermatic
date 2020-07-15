@@ -29,8 +29,10 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/securecookie"
 
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/pkg/handler/auth"
+	handlercommon "github.com/kubermatic/kubermatic/pkg/handler/common"
 	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/pkg/provider"
@@ -52,7 +54,7 @@ func GetAdminKubeconfigEndpoint(projectProvider provider.ProjectProvider, privil
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -95,7 +97,7 @@ func GetOidcKubeconfigEndpoint(projectProvider provider.ProjectProvider, privile
 		req := request.(common.GetClusterReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -466,9 +468,11 @@ func (r CreateOIDCKubeconfigReq) GetUserID() string {
 	return r.UserID
 }
 
-// GetDC implements DCGetter interface
-func (r CreateOIDCKubeconfigReq) GetDC() string {
-	return r.Datacenter
+// GetSeedCluster returns the SeedCluster object
+func (r CreateOIDCKubeconfigReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: r.Datacenter,
+	}
 }
 
 // GetProjectID implements ProjectGetter interface

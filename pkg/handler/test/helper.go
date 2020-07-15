@@ -1019,3 +1019,21 @@ func GenDefaultGlobalSettings() *kubermaticv1.KubermaticSetting {
 		},
 	}
 }
+
+func GenClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluster {
+	cluster.Spec.Cloud = kubermaticv1.CloudSpec{
+		DatacenterName: "OpenstackDatacenter",
+		Openstack: &kubermaticv1.OpenstackCloudSpec{
+			Username:       "username",
+			Password:       "password",
+			SubnetID:       "subnetID",
+			Domain:         "domain",
+			FloatingIPPool: "floatingIPPool",
+			Network:        "network",
+			RouterID:       "routerID",
+			SecurityGroups: "securityGroups",
+			Tenant:         "tenant",
+		},
+	}
+	return cluster
+}
