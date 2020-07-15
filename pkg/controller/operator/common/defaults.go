@@ -186,7 +186,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
-		Default: semver.MustParse("v1.17.5"),
+		Default: semver.MustParse("v1.17.9"),
 		Versions: []*semver.Version{
 			// Kubernetes 1.15
 			semver.MustParse("v1.15.5"),
@@ -199,10 +199,7 @@ var (
 			// Kubernetes 1.16
 			semver.MustParse("v1.16.13"),
 			// Kubernetes 1.17
-			semver.MustParse("v1.17.0"),
-			semver.MustParse("v1.17.2"),
-			semver.MustParse("v1.17.3"),
-			semver.MustParse("v1.17.5"),
+			semver.MustParse("v1.17.9"),
 			// Kubernetes 1.18
 			semver.MustParse("v1.18.2"),
 		},
@@ -262,12 +259,6 @@ var (
 				Automatic: pointer.BoolPtr(true),
 			},
 			{
-				// Released with broken Anago
-				From:      "1.16.5",
-				To:        "1.16.6",
-				Automatic: pointer.BoolPtr(true),
-			},
-			{
 				// Allow to next minor release
 				From: "1.16.*",
 				To:   "1.17.*",
@@ -280,9 +271,9 @@ var (
 				To:   "1.17.*",
 			},
 			{
-				// Released with broken Anago
-				From:      "1.17.1",
-				To:        "1.17.2",
+				// CVE-2020-8559
+				From:      "<= 1.17.8, >= 1.17.0",
+				To:        "1.17.9",
 				Automatic: pointer.BoolPtr(true),
 			},
 			{
