@@ -33,6 +33,9 @@ type GCPSubnetwork struct {
 	// network
 	Network string `json:"network,omitempty"`
 
+	// path
+	Path string `json:"path,omitempty"`
+
 	// private IP google access
 	PrivateIPGoogleAccess bool `json:"privateIpGoogleAccess,omitempty"`
 
