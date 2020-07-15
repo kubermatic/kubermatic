@@ -414,7 +414,7 @@ func getCentOSOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtensio
 
 func getCoreosOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
 	config := coreos.Config{
-		DisableUpdateEngine: nodeSpec.OperatingSystem.ContainerLinux.DisableAutoUpdate,
+		DisableAutoUpdate: nodeSpec.OperatingSystem.ContainerLinux.DisableAutoUpdate,
 		// We manage CoreOS updates via the CoreOS update operator which requires locksmithd
 		// to be disabled: https://github.com/coreos/container-linux-update-operator#design
 		DisableLocksmithD: true,
