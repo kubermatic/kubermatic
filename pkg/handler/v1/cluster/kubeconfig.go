@@ -26,11 +26,10 @@ import (
 	"net/url"
 	"strings"
 
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/securecookie"
 
+	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/pkg/handler/auth"
 	handlercommon "github.com/kubermatic/kubermatic/pkg/handler/common"

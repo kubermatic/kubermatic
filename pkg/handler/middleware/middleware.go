@@ -315,7 +315,7 @@ func getClusterProvider(ctx context.Context, request interface{}, seedsGetter pr
 
 	seed, exists := seeds[getter.GetSeedCluster().SeedName]
 	if !exists {
-		return nil, ctx, k8cerrors.NewNotFound("datacenter", getter.GetSeedCluster().SeedName)
+		return nil, ctx, k8cerrors.NewNotFound("seed", getter.GetSeedCluster().SeedName)
 	}
 	ctx = context.WithValue(ctx, datacenterContextKey, seed)
 
@@ -344,10 +344,9 @@ func getClusterProviderByClusterID(ctx context.Context, seeds map[string]*kuberm
 		}
 
 		cluster, err := clusterProvider.Get(userInfo, clusterID, nil)
-		if err != nil {
-			if !kerrors.IsNotFound(err) {
-				return nil, ctx, err
-			}
+		if err != nil && !kerrors.IsNotFound(err) {
+			return nil, ctx, err
+
 		}
 		if cluster != nil {
 			return clusterProvider, ctx, nil
