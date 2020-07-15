@@ -350,11 +350,11 @@ func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) i
 		return etcdClusterSize
 	}
 	replicas := int(*set.Spec.Replicas)
-	isEtcdHealthy := data.Cluster().Status.ExtendedHealth.Etcd == kubermaticv1.HealthStatusUp
 	// at required size. do nothing
 	if etcdClusterSize == replicas {
 		return replicas
 	}
+	isEtcdHealthy := data.Cluster().Status.ExtendedHealth.Etcd == kubermaticv1.HealthStatusUp
 	if isEtcdHealthy { // no scaling until we are healthy
 		if etcdClusterSize > replicas {
 			return replicas + 1

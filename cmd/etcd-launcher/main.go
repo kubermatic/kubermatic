@@ -12,11 +12,13 @@ import (
 	"strings"
 	"time"
 
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 	"go.etcd.io/etcd/clientv3"
 	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
 	"go.etcd.io/etcd/etcdserver/etcdserverpb"
 	"go.uber.org/zap"
+
+	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -64,7 +66,7 @@ func main() {
 	log.Infof("initial-cluster: %s", strings.Join(initialMembers, ","))
 
 	if _, err := os.Stat(etcdCommandPath); os.IsNotExist(err) {
-		log.Fatalf("can't find etcd command [%s]: %v", etcdCommandPath, err)
+		log.Fatalw("can't find command", "command-path", etcdCommandPath, zap.Error(err))
 	}
 	// setup and start etcd command
 	cmd := exec.Command(etcdCommandPath, etcdCmd(e.config)...)
@@ -89,7 +91,7 @@ func main() {
 		for { // reconcile dead members
 			members, err := e.listMembers()
 			if err != nil {
-				log.Warnf("failed to list memebers: %v ", err)
+				log.Warnw("failed to list memebers ", zap.Error(err))
 				time.Sleep(10 * time.Second)
 				continue
 			}
@@ -101,14 +103,12 @@ func main() {
 			// to avoide race conditions, we will run only on the cluster leader
 			leader, err := e.isLeader()
 			if err != nil || !leader {
-				if err != nil {
-					log.Warnf("failed leader check: %v", err)
-				}
+				log.Warnw("failed to remove member, error occurred or didn't get the current leader", zap.Error(err))
 				time.Sleep(10 * time.Second)
 				continue
 			}
 			if err := e.removeDeadMembers(log); err != nil {
-				log.Warnf("failed to remove member: %v", err)
+				log.Warnw("failed to remove member", zap.Error(err))
 				continue
 			}
 		}
@@ -353,7 +353,7 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger) error {
 		if err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
 			return e.isEndpointHealthy(member.PeerURLs[0])
 		}); err != nil {
-			log.Infof("member [%s] is not responding, removing from cluster", member.Name)
+			log.Infow("member is not responding, removing from cluster", "member-name", member.Name)
 			_, err = e.client.MemberRemove(context.Background(), member.ID)
 			return err
 		}

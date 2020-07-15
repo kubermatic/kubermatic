@@ -82,7 +82,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 	if err != nil {
 		return err
 	}
-	// set ClusterConditionEtcdClusterInitialized, this should be don't only once
+	// set ClusterConditionEtcdClusterInitialized, this should be done only once
 	// when etcd becomes healthy for the first time.
 	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) && extendedHealth.Etcd == kubermaticv1.HealthStatusUp {
 		if err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
