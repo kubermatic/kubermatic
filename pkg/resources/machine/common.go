@@ -480,7 +480,7 @@ func getRHELOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension,
 
 func getFlatcarOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
 	config := flatcar.Config{
-		DisableUpdateEngine: nodeSpec.OperatingSystem.Flatcar.DisableAutoUpdate,
+		DisableAutoUpdate: nodeSpec.OperatingSystem.Flatcar.DisableAutoUpdate,
 		// We manage Flatcar updates via the CoreOS update operator which requires locksmithd
 		// to be disabled: https://github.com/coreos/container-linux-update-operator#design
 		DisableLocksmithD: true,
