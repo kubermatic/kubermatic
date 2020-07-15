@@ -34,7 +34,6 @@ import (
 	handlercommon "github.com/kubermatic/kubermatic/pkg/handler/common"
 	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
-	kuberneteshelper "github.com/kubermatic/kubermatic/pkg/kubernetes"
 	"github.com/kubermatic/kubermatic/pkg/provider"
 	kubernetesprovider "github.com/kubermatic/kubermatic/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/pkg/util/errors"
@@ -264,44 +263,7 @@ func ListAllEndpoint(projectProvider provider.ProjectProvider, privilegedProject
 func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(DeleteReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		clusterSSHKeys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		for _, clusterSSHKey := range clusterSSHKeys {
-			clusterSSHKey.RemoveFromCluster(req.ClusterID)
-			if err := updateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, clusterSSHKey, req.ProjectID); err != nil {
-				return nil, err
-			}
-		}
-
-		existingCluster, err := handlercommon.GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, err
-		}
-
-		// Use the NodeDeletionFinalizer to determine if the cluster was ever up, the LB and PV finalizers
-		// will prevent cluster deletion if the APIserver was never created
-		wasUpOnce := kuberneteshelper.HasFinalizer(existingCluster, apiv1.NodeDeletionFinalizer)
-		if wasUpOnce && (req.DeleteVolumes || req.DeleteLoadBalancers) {
-			if req.DeleteLoadBalancers {
-				kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterLBCleanupFinalizer)
-			}
-			if req.DeleteVolumes {
-				kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterPVCleanupFinalizer)
-			}
-		}
-
-		return nil, updateAndDeleteCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, existingCluster)
+		return handlercommon.DeleteEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.DeleteVolumes, req.DeleteLoadBalancers, sshKeyProvider, privilegedSSHKeyProvider, projectProvider, privilegedProjectProvider)
 	}
 }
 
@@ -321,44 +283,6 @@ func updateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGe
 		return errors.New(http.StatusInternalServerError, err.Error())
 	}
 	if _, err = sshKeyProvider.Update(userInfo, clusterSSHKey); err != nil {
-		return common.KubernetesErrorToHTTPError(err)
-	}
-	return nil
-}
-
-func updateAndDeleteCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
-
-	adminUserInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return errors.New(http.StatusInternalServerError, err.Error())
-	}
-	if adminUserInfo.IsAdmin {
-		cluster, err := privilegedClusterProvider.UpdateUnsecured(project, cluster)
-		if err != nil {
-			return common.KubernetesErrorToHTTPError(err)
-		}
-		err = privilegedClusterProvider.DeleteUnsecured(cluster)
-		if err != nil {
-			return common.KubernetesErrorToHTTPError(err)
-		}
-		return nil
-	}
-
-	return updateAndDeleteClusterForRegularUser(ctx, userInfoGetter, clusterProvider, project, cluster)
-}
-
-func updateAndDeleteClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
-
-	userInfo, err := userInfoGetter(ctx, project.Name)
-	if err != nil {
-		return errors.New(http.StatusInternalServerError, err.Error())
-	}
-	if _, err = clusterProvider.Update(project, userInfo, cluster); err != nil {
-		return common.KubernetesErrorToHTTPError(err)
-	}
-
-	err = clusterProvider.Delete(userInfo, cluster.Name)
-	if err != nil {
 		return common.KubernetesErrorToHTTPError(err)
 	}
 	return nil
@@ -417,9 +341,6 @@ func HealthEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 		return apiv1.ClusterHealth{
 			Apiserver:                    existingCluster.Status.ExtendedHealth.Apiserver,
 			Scheduler:                    existingCluster.Status.ExtendedHealth.Scheduler,

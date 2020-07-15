@@ -218,6 +218,106 @@ func GetCluster(ctx context.Context, projectProvider provider.ProjectProvider, p
 	return GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, options)
 }
 
+func DeleteEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, deleteVolumes, deleteLoadBalancers bool, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	clusterSSHKeys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	for _, clusterSSHKey := range clusterSSHKeys {
+		clusterSSHKey.RemoveFromCluster(clusterID)
+		if err := updateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, clusterSSHKey, projectID); err != nil {
+			return nil, err
+		}
+	}
+
+	existingCluster, err := GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, &provider.ClusterGetOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Use the NodeDeletionFinalizer to determine if the cluster was ever up, the LB and PV finalizers
+	// will prevent cluster deletion if the APIserver was never created
+	wasUpOnce := kuberneteshelper.HasFinalizer(existingCluster, apiv1.NodeDeletionFinalizer)
+	if wasUpOnce && (deleteVolumes || deleteLoadBalancers) {
+		if deleteLoadBalancers {
+			kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterLBCleanupFinalizer)
+		}
+		if deleteVolumes {
+			kuberneteshelper.AddFinalizer(existingCluster, apiv1.InClusterPVCleanupFinalizer)
+		}
+	}
+
+	return nil, updateAndDeleteCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, existingCluster)
+}
+
+func updateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, clusterSSHKey *kubermaticv1.UserSSHKey, projectID string) error {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return errors.New(http.StatusInternalServerError, err.Error())
+	}
+	if adminUserInfo.IsAdmin {
+		if _, err := privilegedSSHKeyProvider.UpdateUnsecured(clusterSSHKey); err != nil {
+			return common.KubernetesErrorToHTTPError(err)
+		}
+		return nil
+	}
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return errors.New(http.StatusInternalServerError, err.Error())
+	}
+	if _, err = sshKeyProvider.Update(userInfo, clusterSSHKey); err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+	return nil
+}
+
+func updateAndDeleteCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
+
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return errors.New(http.StatusInternalServerError, err.Error())
+	}
+	if adminUserInfo.IsAdmin {
+		cluster, err := privilegedClusterProvider.UpdateUnsecured(project, cluster)
+		if err != nil {
+			return common.KubernetesErrorToHTTPError(err)
+		}
+		err = privilegedClusterProvider.DeleteUnsecured(cluster)
+		if err != nil {
+			return common.KubernetesErrorToHTTPError(err)
+		}
+		return nil
+	}
+
+	return updateAndDeleteClusterForRegularUser(ctx, userInfoGetter, clusterProvider, project, cluster)
+}
+
+func updateAndDeleteClusterForRegularUser(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) error {
+
+	userInfo, err := userInfoGetter(ctx, project.Name)
+	if err != nil {
+		return errors.New(http.StatusInternalServerError, err.Error())
+	}
+	if _, err = clusterProvider.Update(project, userInfo, cluster); err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+
+	err = clusterProvider.Delete(userInfo, cluster.Name)
+	if err != nil {
+		return common.KubernetesErrorToHTTPError(err)
+	}
+	return nil
+}
+
 func convertInternalClustersToExternal(internalClusters []kubermaticv1.Cluster) []*apiv1.Cluster {
 	apiClusters := make([]*apiv1.Cluster, len(internalClusters))
 	for index, cluster := range internalClusters {
