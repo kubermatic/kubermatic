@@ -26,19 +26,19 @@ GITHUB_TOKEN="${GITHUB_TOKEN:-$(cat /etc/github/oauth | tr -d '\n')}"
 
 # err can be used to print logs to stderr
 err(){
-    echo "E: $*" >>/dev/stderr
+  echo "E: $*" >>/dev/stderr
 }
 
 # utility function setting some curl default values for calling the github API
 # first argument is the URL, the rest of the arguments is used as curl
 # arguments.
 function github_cli {
-    local url=${1}
-    curl \
-        --retry 5 \
-        --connect-timeout 10 \
-        -H "Authorization: token ${GITHUB_TOKEN}" \
-        "${@:2}" "${url}"
+  local url=${1}
+  curl \
+    --retry 5 \
+    --connect-timeout 10 \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    "${@:2}" "${url}"
 }
 
 # creates a new github release
@@ -55,8 +55,8 @@ function create_release {
 EOF
 )
   github_cli \
-      "https://api.github.com/repos/${repo}/releases" \
-      -f --data "${data}"
+    "https://api.github.com/repos/${repo}/releases" \
+    -f --data "${data}"
 }
 
 # upload an archive from a file
@@ -68,21 +68,21 @@ function upload_archive {
     -H 'Content-Type: application/gzip' \
     -s --data-binary "@${file}")
   if echo "${res}" | jq -e; then
-      # it the response contain errors
-      if echo "${res}" | jq -e '.errors[0]'; then
-        for err in $(echo "${res}" | jq -r '.errors[0].code'); do
-          # if the error code is 'already_exists' do not fail to make this call
-          # idempotent. To make it better we should alse check that the content
-          # match.
-          [[ "${err}" == "already_exists" ]] && return 0
-        done
-         err "Response contains unexpected errors: ${res}"
-        return 1
-      fi
-      return 0
-  else
-      err "Response did not contain valid JSON: ${res}"
+    # it the response contain errors
+    if echo "${res}" | jq -e '.errors[0]'; then
+      for err in $(echo "${res}" | jq -r '.errors[0].code'); do
+        # if the error code is 'already_exists' do not fail to make this call
+        # idempotent. To make it better we should alse check that the content
+        # match.
+        [[ "${err}" == "already_exists" ]] && return 0
+      done
+      err "Response contains unexpected errors: ${res}"
       return 1
+    fi
+    return 0
+  else
+    err "Response did not contain valid JSON: ${res}"
+    return 1
   fi
 }
 
@@ -150,6 +150,7 @@ tar czf "$archive" \
   charts/minio \
   charts/monitoring \
   charts/nginx-ingress-controller \
+  charts/nodeport-proxy \
   charts/oauth \
   charts/s3-exporter \
   charts/values.example.ce.yaml \
@@ -181,6 +182,7 @@ tar czf "$archive" \
   charts/minio \
   charts/monitoring \
   charts/nginx-ingress-controller \
+  charts/nodeport-proxy \
   charts/oauth \
   charts/s3-exporter \
   charts/values.example.ee.yaml \
