@@ -25,8 +25,8 @@ import (
 
 	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	handlercommon "github.com/kubermatic/kubermatic/pkg/handler/common"
 	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/pkg/provider"
 	"github.com/kubermatic/kubermatic/pkg/provider/cloud/openstack"
@@ -495,7 +495,7 @@ func getOpenstackAvailabilityZones(username, password, tenant, tenantID, domain,
 }
 
 func getClusterForOpenstack(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, projectID string, clusterID string) (*kubermaticv1.Cluster, error) {
-	cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
 		return nil, err
 	}

@@ -174,7 +174,7 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 	// Block for up to 10 seconds to give the rbac controller time to create the bindings.
 	// During that time we swallow all errors
 	if err := wait.PollImmediate(time.Second, 10*time.Second, func() (bool, error) {
-		_, err := getInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, newCluster.Name, &provider.ClusterGetOptions{})
+		_, err := GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, newCluster.Name, &provider.ClusterGetOptions{})
 		if err != nil {
 			log.Debugw("Error when waiting for cluster to become ready after creation", zap.Error(err))
 			return false, nil
@@ -182,10 +182,48 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 		return true, nil
 	}); err != nil {
 		log.Error("Timed out waiting for cluster to become ready")
-		return convertInternalClusterToExternal(newCluster, true), errors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
+		return ConvertInternalClusterToExternal(newCluster, true), errors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
 	}
 
-	return convertInternalClusterToExternal(newCluster, true), nil
+	return ConvertInternalClusterToExternal(newCluster, true), nil
+}
+
+func GetExternalClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) ([]*apiv1.Cluster, error) {
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	clusters, err := clusterProvider.List(project, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	apiClusters := convertInternalClustersToExternal(clusters.Items)
+	return apiClusters, nil
+}
+
+// GetCluster returns the cluster for a given request
+func GetCluster(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
+	clusterProvider, ok := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, "no cluster in request")
+	}
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, options)
+}
+
+func convertInternalClustersToExternal(internalClusters []kubermaticv1.Cluster) []*apiv1.Cluster {
+	apiClusters := make([]*apiv1.Cluster, len(internalClusters))
+	for index, cluster := range internalClusters {
+		apiClusters[index] = ConvertInternalClusterToExternal(cluster.DeepCopy(), true)
+	}
+	return apiClusters
 }
 
 func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
@@ -233,7 +271,7 @@ func createInitialNodeDeployment(endpointContext context.Context, nodeDeployment
 		return fmt.Errorf("node deployment is not valid: %v", err)
 	}
 
-	cluster, err = getInternalCluster(endpointContext, userInfoGetter, clusterProvider, privilegedClusterProvider, project, project.Name, cluster.Name, &provider.ClusterGetOptions{CheckInitStatus: true})
+	cluster, err = GetInternalCluster(endpointContext, userInfoGetter, clusterProvider, privilegedClusterProvider, project, project.Name, cluster.Name, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
 		return err
 	}
@@ -282,7 +320,7 @@ func getNodeDeploymentDisplayName(nd *apiv1.NodeDeployment) string {
 	return ""
 }
 
-func getInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
+func GetInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -326,7 +364,7 @@ func isStatus(err error, status int32) bool {
 	return ok && status == kubernetesError.Status().Code
 }
 
-func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, filterSystemLabels bool) *apiv1.Cluster {
+func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, filterSystemLabels bool) *apiv1.Cluster {
 	cluster := &apiv1.Cluster{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalCluster.Name,

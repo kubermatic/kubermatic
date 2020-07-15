@@ -24,8 +24,8 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	handlercommon "github.com/kubermatic/kubermatic/pkg/handler/common"
 	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/cluster"
 	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/pkg/provider"
 	"github.com/kubermatic/kubermatic/pkg/provider/cloud/vsphere"
@@ -66,7 +66,7 @@ func VsphereNetworksWithClusterCredentialsEndpoint(projectProvider provider.Proj
 		req := request.(VSphereNetworksNoCredentialsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}
@@ -156,7 +156,7 @@ func VsphereFoldersWithClusterCredentialsEndpoint(projectProvider provider.Proje
 		req := request.(VSphereFoldersNoCredentialsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
-		cluster, err := cluster.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 		if err != nil {
 			return nil, err
 		}

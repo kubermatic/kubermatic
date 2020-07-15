@@ -56,6 +56,84 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 	}
 }
 
+// ListEndpoint list clusters for the given project
+func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(ListReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+		apiClusters, err := handlercommon.GetExternalClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return apiClusters, nil
+	}
+}
+
+func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetClusterReq)
+
+		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		return handlercommon.ConvertInternalClusterToExternal(cluster, true), nil
+	}
+}
+
+// GetClusterReq defines HTTP request for getCluster endpoint.
+// swagger:parameters getClusterV2
+type GetClusterReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+}
+
+func DecodeGetClusterReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req GetClusterReq
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ClusterID = clusterID
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	return req, nil
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req GetClusterReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+// ListReq defines HTTP request for listClusters endpoint
+// swagger:parameters listClustersV2
+type ListReq struct {
+	common.ProjectReq
+}
+
+func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req ListReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	return req, nil
+}
+
 // CreateClusterReq defines HTTP request for createCluster
 // swagger:parameters createClusterV2
 type CreateClusterReq struct {
@@ -67,9 +145,11 @@ type CreateClusterReq struct {
 	seedName string
 }
 
-// GetDC returns the name of the datacenter seed in the request
-func (req CreateClusterReq) GetDC() string {
-	return req.seedName
+// GetSeedCluster returns the SeedCluster object
+func (req CreateClusterReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: req.seedName,
+	}
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {

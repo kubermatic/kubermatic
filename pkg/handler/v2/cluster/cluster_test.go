@@ -23,11 +23,13 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/pkg/handler/test"
 	"github.com/kubermatic/kubermatic/pkg/handler/test/hack"
+	"github.com/kubermatic/kubermatic/pkg/semver"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -296,6 +298,291 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			}
 
 			test.CompareWithResult(t, res, expectedResponse)
+		})
+	}
+}
+
+func TestListClusters(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		ExpectedClusters       []apiv1.Cluster
+		HTTPStatus             int
+		ExistingAPIUser        *apiv1.User
+		ExistingKubermaticObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			Name: "scenario 1: list clusters that belong to the given project",
+			ExpectedClusters: []apiv1.Cluster{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterAbcID",
+						Name:              "clusterAbc",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "FakeDatacenter",
+							Fake:           &kubermaticv1.FakeCloudSpec{},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+					Type: "kubernetes",
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterDefID",
+						Name:              "clusterDef",
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "FakeDatacenter",
+							Fake:           &kubermaticv1.FakeCloudSpec{},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+					Type: "kubernetes",
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterOpenstackID",
+						Name:              "clusterOpenstack",
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "OpenstackDatacenter",
+							Openstack: &kubermaticv1.OpenstackCloudSpec{
+								FloatingIPPool: "floatingIPPool",
+								SubnetID:       "subnetID",
+								Domain:         "domain",
+								Network:        "network",
+								RouterID:       "routerID",
+								SecurityGroups: "securityGroups",
+								Tenant:         "tenant",
+							},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+					Type: "kubernetes",
+				},
+			},
+			HTTPStatus: http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+				test.GenCluster("clusterDefID", "clusterDef", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC)),
+				test.GenClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			Name: "scenario 2: the admin John can list Bob's clusters",
+			ExpectedClusters: []apiv1.Cluster{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterAbcID",
+						Name:              "clusterAbc",
+						CreationTimestamp: apiv1.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "FakeDatacenter",
+							Fake:           &kubermaticv1.FakeCloudSpec{},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+					Type: "kubernetes",
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterDefID",
+						Name:              "clusterDef",
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "FakeDatacenter",
+							Fake:           &kubermaticv1.FakeCloudSpec{},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+					Type: "kubernetes",
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:                "clusterOpenstackID",
+						Name:              "clusterOpenstack",
+						CreationTimestamp: apiv1.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC),
+					},
+					Spec: apiv1.ClusterSpec{
+						Cloud: kubermaticv1.CloudSpec{
+							DatacenterName: "OpenstackDatacenter",
+							Openstack: &kubermaticv1.OpenstackCloudSpec{
+								FloatingIPPool: "floatingIPPool",
+								SubnetID:       "subnetID",
+								Domain:         "domain",
+								Network:        "network",
+								RouterID:       "routerID",
+								SecurityGroups: "securityGroups",
+								Tenant:         "tenant",
+							},
+						},
+						Version: *semver.NewSemverOrDie("9.9.9"),
+					},
+					Status: apiv1.ClusterStatus{
+						Version: *semver.NewSemverOrDie("9.9.9"),
+						URL:     "https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885",
+					},
+					Type: "kubernetes",
+				},
+			},
+			HTTPStatus: http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", true),
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+				test.GenCluster("clusterDefID", "clusterDef", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC)),
+				test.GenClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/clusters", test.ProjectName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			var kubermaticObj []runtime.Object
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			actualClusters := test.NewClusterV1SliceWrapper{}
+			actualClusters.DecodeOrDie(res.Body, t).Sort()
+
+			wrappedExpectedClusters := test.NewClusterV1SliceWrapper(tc.ExpectedClusters)
+			wrappedExpectedClusters.Sort()
+
+			actualClusters.EqualOrDie(wrappedExpectedClusters, t)
+		})
+	}
+}
+
+func TestGetCluster(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		HTTPStatus             int
+		ClusterToGet           string
+		ExistingAPIUser        *apiv1.User
+		ExistingKubermaticObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			Name:             "scenario 1: gets cluster with the given name that belongs to the given project",
+			Body:             ``,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"FakeDatacenter","fake":{}},"version":"9.9.9","oidc":{}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			ClusterToGet:     test.GenDefaultCluster().Name,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			Name:             "scenario 2: gets cluster for Openstack and no sensitive data (credentials) are returned",
+			Body:             ``,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			ClusterToGet:     test.GenDefaultCluster().Name,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenClusterWithOpenstack(test.GenDefaultCluster()),
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 3
+		{
+			Name:             "scenario 3: the admin John can get Bob's cluster",
+			Body:             ``,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"OpenstackDatacenter","openstack":{"floatingIpPool":"floatingIPPool","tenant":"tenant","domain":"domain","network":"network","securityGroups":"securityGroups","routerID":"routerID","subnetID":"subnetID"}},"version":"9.9.9","oidc":{}},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			ClusterToGet:     test.GenDefaultCluster().Name,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", true),
+				test.GenClusterWithOpenstack(test.GenDefaultCluster()),
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		// scenario 4
+		{
+			Name:             "scenario 4: the regular user John can not get Bob's cluster",
+			Body:             ``,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ClusterToGet:     test.GenDefaultCluster().Name,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", false),
+				test.GenClusterWithOpenstack(test.GenDefaultCluster()),
+				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s", test.ProjectName, tc.ClusterToGet), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			var kubermaticObj []runtime.Object
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
 		})
 	}
 }
