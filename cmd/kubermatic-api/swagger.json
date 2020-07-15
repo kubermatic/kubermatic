@@ -10558,6 +10558,10 @@
           "type": "string",
           "x-go-name": "Network"
         },
+        "path": {
+          "type": "string",
+          "x-go-name": "Path"
+        },
         "privateIpGoogleAccess": {
           "type": "boolean",
           "x-go-name": "PrivateIPGoogleAccess"
