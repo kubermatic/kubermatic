@@ -29,8 +29,8 @@ updates:
   to: 1.16.*
   type: kubernetes
 - automatic: true
-  from: <= 1.16.1, >= 1.16.0
-  to: 1.16.2
+  from: <= 1.16.12, >= 1.16.0
+  to: 1.16.13
   type: kubernetes
 - automatic: true
   from: 1.16.5
