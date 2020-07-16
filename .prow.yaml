@@ -15,7 +15,7 @@ presubmits:
       - image: docker.io/kubermatic/kubernetes-test-binaries:v0.10.8
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.2"
+          value: "v1.16.13"
         command:
         - "./api/hack/ci-run-minimal-conformance-tests.sh"
         # docker-in-docker needs privileged mode
@@ -527,7 +527,7 @@ presubmits:
       - image: docker.io/kubermatic/kubernetes-test-binaries:v0.10.8
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.6"
+          value: "v1.16.13"
         - name: PROVIDER
           value: "azure"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -738,7 +738,7 @@ presubmits:
       - image: kubermatic/kubernetes-test-binaries:v0.10.8
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.3"
+          value: "v1.16.13"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -775,7 +775,7 @@ presubmits:
       - image: kubermatic/kubernetes-test-binaries:v0.10.8
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.3"
+          value: "v1.16.13"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -812,7 +812,7 @@ presubmits:
       - image: kubermatic/kubernetes-test-binaries:v0.10.8
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.3"
+          value: "v1.16.13"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
