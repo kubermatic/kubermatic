@@ -391,7 +391,7 @@ spec:
     # Kubernetes configures the Kubernetes versions and updates.
     kubernetes:
       # Default is the default version to offer users.
-      default: 1.17.5
+      default: 1.17.9
       # Updates is a list of available and automatic upgrades.
       # All 'to' versions must be configured in the version list for this orchestrator.
       # Each update may optionally be configured to be 'automatic: true', in which case the
@@ -432,16 +432,13 @@ spec:
       - automatic: true
         from: <= 1.16.12, >= 1.16.0
         to: 1.16.13
-      - automatic: true
-        from: 1.16.5
-        to: 1.16.6
       - from: 1.16.*
         to: 1.17.*
       - from: 1.17.*
         to: 1.17.*
       - automatic: true
-        from: 1.17.1
-        to: 1.17.2
+        from: <= 1.17.8, >= 1.17.0
+        to: 1.17.9
       - from: 1.17.*
         to: 1.18.*
       - from: 1.18.*
@@ -456,10 +453,7 @@ spec:
       - 1.15.11
       - 1.15.12
       - 1.16.13
-      - 1.17.0
-      - 1.17.2
-      - 1.17.3
-      - 1.17.5
+      - 1.17.9
       - 1.18.2
     # Openshift configures the Openshift versions and updates.
     openshift:
