@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
 
@@ -80,6 +81,71 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 
 		return handlercommon.ConvertInternalClusterToExternal(cluster, true), nil
 	}
+}
+
+func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(DeleteReq)
+		return handlercommon.DeleteEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.DeleteVolumes, req.DeleteLoadBalancers, sshKeyProvider, privilegedSSHKeyProvider, projectProvider, privilegedProjectProvider)
+	}
+}
+
+// DeleteReq defines HTTP request for deleteCluster endpoint
+// swagger:parameters deleteClusterV2
+type DeleteReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+	// in: header
+	// DeleteVolumes if true all cluster PV's and PVC's will be deleted from cluster
+	DeleteVolumes bool
+	// in: header
+	// DeleteLoadBalancers if true all load balancers will be deleted from cluster
+	DeleteLoadBalancers bool
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req DeleteReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req DeleteReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+
+	headerValue := r.Header.Get("DeleteVolumes")
+	if len(headerValue) > 0 {
+		deleteVolumes, err := strconv.ParseBool(headerValue)
+		if err != nil {
+			return nil, err
+		}
+		req.DeleteVolumes = deleteVolumes
+	}
+
+	headerValue = r.Header.Get("DeleteLoadBalancers")
+	if len(headerValue) > 0 {
+		deleteLB, err := strconv.ParseBool(headerValue)
+		if err != nil {
+			return nil, err
+		}
+		req.DeleteLoadBalancers = deleteLB
+	}
+
+	return req, nil
 }
 
 // GetClusterReq defines HTTP request for getCluster endpoint.
