@@ -421,15 +421,7 @@ versions:
 - version: "v1.15.10"
   default: true
 # Kubernetes 1.16
-- version: "v1.16.2"
-  default: false
-- version: "v1.16.3"
-  default: false
-- version: "v1.16.4"
-  default: false
-- version: "v1.16.6"
-  default: false
-- version: "v1.16.7"
+- version: "v1.16.13"
   default: false
 # Kubernetes 1.17
 - version: "v1.17.0"
@@ -524,13 +516,9 @@ updates:
 - from: 1.16.*
   to: 1.16.*
   automatic: false
-# CVE-2019-11253
-- from: <= 1.16.1, >= 1.16.0
-  to: 1.16.2
-  automatic: true
-# Released with broken Anago
-- from: 1.16.5
-  to: 1.16.6
+# CVE-2019-11253, CVE-2020-8559
+- from: <= 1.16.12, >= 1.16.0
+  to: 1.16.13
   automatic: true
 # Allow to next minor release
 - from: 1.16.*
