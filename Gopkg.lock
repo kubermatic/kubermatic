@@ -221,12 +221,36 @@
   version = "v2.0.0"
 
 [[projects]]
+  digest = "1:05ffeeed3f0f05520de0679f6aa3219ffee69cfd6d9fb6c194879d4c818ad670"
+  name = "github.com/coreos/go-semver"
+  packages = ["semver"]
+  pruneopts = "NUT"
+  revision = "e214231b295a8ea9479f11b70b35d5acf3556d9b"
+  version = "v0.3.0"
+
+[[projects]]
+  digest = "1:bcf36df8d43860bfde913d008301aef27c6e9a303582118a837c4a34c0d18167"
+  name = "github.com/coreos/go-systemd"
+  packages = ["journal"]
+  pruneopts = "NUT"
+  revision = "b51e752dd1c9c618846f8bc5b95ab524bd7b11c2"
+  version = "v22.1.0"
+
+[[projects]]
   digest = "1:00d770ba4aa7cda773e9554052073552abc04a1788d489ef8647a0d2557b2ebc"
   name = "github.com/coreos/locksmith"
   packages = ["pkg/timeutil"]
   pruneopts = "NUT"
   revision = "c1eeae7709f3204038b91ed5c8bea7ba1292fc02"
   version = "v0.6.2"
+
+[[projects]]
+  digest = "1:22332f13485f13511589dc1f59eb97594e8636d3606b69d172a9a85421ad465d"
+  name = "github.com/coreos/pkg"
+  packages = ["capnslog"]
+  pruneopts = "NUT"
+  revision = "97fdf19511ea361ae1c100dd393cc47f8dcfa1e1"
+  version = "v4"
 
 [[projects]]
   branch = "master"
@@ -538,10 +562,12 @@
   version = "v1.0.1"
 
 [[projects]]
-  digest = "1:8679b8a64f3613e9749c5640c3535c83399b8e69f67ce54d91dc73f6d77373af"
+  digest = "1:cd4f86461732066e277335465962660cbf02999e18d5bbb5e9285eac4608b970"
   name = "github.com/gogo/protobuf"
   packages = [
+    "gogoproto",
     "proto",
+    "protoc-gen-gogo/descriptor",
     "sortkeys",
   ]
   pruneopts = "NUT"
@@ -1272,6 +1298,34 @@
   version = "v0.19.0"
 
 [[projects]]
+  digest = "1:09aa25d3db5e2734308179224178c48b3cd18a9670d1eda13cb7e022115aacb6"
+  name = "go.etcd.io/etcd"
+  packages = [
+    "auth/authpb",
+    "clientv3",
+    "clientv3/balancer",
+    "clientv3/balancer/connectivity",
+    "clientv3/balancer/picker",
+    "clientv3/balancer/resolver/endpoint",
+    "clientv3/credentials",
+    "etcdserver/api/v3rpc/rpctypes",
+    "etcdserver/etcdserverpb",
+    "mvcc/mvccpb",
+    "pkg/logutil",
+    "pkg/systemd",
+    "pkg/types",
+    "raft",
+    "raft/confchange",
+    "raft/quorum",
+    "raft/raftpb",
+    "raft/tracker",
+    "version",
+  ]
+  pruneopts = "NUT"
+  revision = "54ba9589114fc3fa5cc36c313550b3c0c0938c91"
+  version = "v3.4.9"
+
+[[projects]]
   digest = "1:00ccb7bf33c11f1905bd791a5dd8ddcf202f84e95aa506808fd0376bf6dc224b"
   name = "go.mongodb.org/mongo-driver"
   packages = [
@@ -1562,10 +1616,12 @@
   revision = "082222b4a5c572e33e82ee9162d1352c7cf38682"
 
 [[projects]]
-  digest = "1:4837585442801f3c7ebd044a96fce852242529a73bdd96fcba2119ff74987b0b"
+  digest = "1:f216759392e775aa91e1896b96ca0d81e63260845ab85e09873f41614b2a19a2"
   name = "google.golang.org/grpc"
   packages = [
     ".",
+    "attributes",
+    "backoff",
     "balancer",
     "balancer/base",
     "balancer/roundrobin",
@@ -1579,11 +1635,18 @@
     "grpclog",
     "internal",
     "internal/backoff",
+    "internal/balancerload",
     "internal/binarylog",
+    "internal/buffer",
     "internal/channelz",
     "internal/envconfig",
+    "internal/grpclog",
     "internal/grpcrand",
     "internal/grpcsync",
+    "internal/grpcutil",
+    "internal/resolver/dns",
+    "internal/resolver/passthrough",
+    "internal/status",
     "internal/syscall",
     "internal/transport",
     "keepalive",
@@ -1593,13 +1656,14 @@
     "resolver",
     "resolver/dns",
     "resolver/passthrough",
+    "serviceconfig",
     "stats",
     "status",
     "tap",
   ]
   pruneopts = "NUT"
-  revision = "a02b0774206b209466313a0b525d2c738fe407eb"
-  version = "v1.18.0"
+  revision = "754ee590a4f386d0910d887f3b8776354042260b"
+  version = "v1.29.1"
 
 [[projects]]
   digest = "1:1b91ae0dc69a41d4c2ed23ea5cffb721ea63f5037ca4b81e6d6771fbb8f45129"
@@ -2089,7 +2153,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8ea4b9692e447e091dda8d2ae75da4378a3509e032c77a15ed77d863b580668f"
+  digest = "1:c8e4d640c29a9fd9e5c7cde908fad0bd7662066916ddcd47922f9c6d40cb53b5"
   name = "k8s.io/test-infra"
   packages = ["pkg/genyaml"]
   pruneopts = "NUT"
@@ -2298,6 +2362,9 @@
     "github.com/vmware/govmomi/find",
     "github.com/vmware/govmomi/object",
     "github.com/vmware/govmomi/simulator",
+    "go.etcd.io/etcd/clientv3",
+    "go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes",
+    "go.etcd.io/etcd/etcdserver/etcdserverpb",
     "go.uber.org/zap",
     "go.uber.org/zap/zapcore",
     "go.uber.org/zap/zaptest",

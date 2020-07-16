@@ -37,7 +37,22 @@ spec:
               topologyKey: kubernetes.io/hostname
             weight: 10
       containers:
-      - command:
+      - args:
+        - -namespace
+        - $(NAMESPACE)
+        - -etcd-cluster-size
+        - $(ETCD_CLUSTER_SIZE)
+        - -pod-name
+        - $(POD_NAME)
+        - -pod-ip
+        - $(POD_IP)
+        - -api-version
+        - $(ETCDCTL_API)
+        - -token
+        - $(TOKEN)
+        - -initial-state
+        - $(INITIAL_STATE)
+        command:
         - /usr/local/bin/etcd-launcher
         env:
         - name: POD_NAME
@@ -57,7 +72,7 @@ spec:
               fieldPath: metadata.namespace
         - name: TOKEN
           value: de-test-01
-        - name: ECTD_CLUSTER_SIZE
+        - name: ETCD_CLUSTER_SIZE
           value: "3"
         - name: ENABLE_CORRUPTION_CHECK
           value: "false"
@@ -69,10 +84,20 @@ spec:
           value: /etc/etcd/pki/client/apiserver-etcd-client.crt
         - name: ETCDCTL_KEY
           value: /etc/etcd/pki/client/apiserver-etcd-client.key
-        - name: ETCDCTL_ENDPOINTS
-          value: https://127.0.0.1:2379
+        - name: INITIAL_STATE
+          value: new
         image: 'quay.io/kubermatic/etcd-launcher-v33:'
         imagePullPolicy: IfNotPresent
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 2378
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 30
+          successThreshold: 1
+          timeoutSeconds: 10
         name: etcd
         ports:
         - containerPort: 2379
@@ -91,7 +116,7 @@ spec:
             - health
           failureThreshold: 3
           initialDelaySeconds: 15
-          periodSeconds: 30
+          periodSeconds: 15
           successThreshold: 1
           timeoutSeconds: 10
         resources:

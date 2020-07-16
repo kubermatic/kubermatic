@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 const (
@@ -36,6 +37,9 @@ const (
 	// ImageTag defines the image tag to use for the etcd image
 	etcdImageTagV33 = "v3.3.18"
 	etcdImageTagV34 = "v3.4.3"
+
+	initialStateExisting = "existing"
+	initialStateNew      = "new"
 )
 
 var (
@@ -71,9 +75,10 @@ type etcdStatefulSetCreatorData interface {
 func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChecks bool) reconciling.NamedStatefulSetCreatorGetter {
 	return func() (string, reconciling.StatefulSetCreator) {
 		return resources.EtcdStatefulSetName, func(set *appsv1.StatefulSet) (*appsv1.StatefulSet, error) {
-			set.Name = resources.EtcdStatefulSetName
 
-			set.Spec.Replicas = resources.Int32(resources.EtcdClusterSize)
+			replicas := computeReplicas(data, set)
+			set.Name = resources.EtcdStatefulSetName
+			set.Spec.Replicas = resources.Int32(int32(replicas))
 			set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 			set.Spec.ServiceName = resources.EtcdServiceName
@@ -90,6 +95,11 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				return nil, fmt.Errorf("failed to create pod labels: %v", err)
 			}
 
+			initialState := initialStateNew
+
+			if data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
+				initialState = initialStateExisting
+			}
 			set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 				Name:   name,
 				Labels: podLabels,
@@ -98,13 +108,14 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			if err != nil {
 				return nil, err
 			}
+
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name: resources.EtcdStatefulSetName,
 
 					Image:           image,
 					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/usr/local/bin/etcd-launcher"},
+					Command:         []string{"/usr/local/bin/etcd-launcher"}, Args: getLauncherArgs(enableDataCorruptionChecks),
 					Env: []corev1.EnvVar{
 						{
 							Name: "POD_NAME",
@@ -138,8 +149,8 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							Value: data.Cluster().Name,
 						},
 						{
-							Name:  "ECTD_CLUSTER_SIZE",
-							Value: strconv.Itoa(resources.EtcdClusterSize),
+							Name:  "ETCD_CLUSTER_SIZE",
+							Value: strconv.Itoa(replicas),
 						},
 						{
 							Name:  "ENABLE_CORRUPTION_CHECK",
@@ -162,8 +173,8 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							Value: "/etc/etcd/pki/client/apiserver-etcd-client.key",
 						},
 						{
-							Name:  "ETCDCTL_ENDPOINTS",
-							Value: "https://127.0.0.1:2379",
+							Name:  "INITIAL_STATE",
+							Value: initialState,
 						},
 					},
 					Ports: []corev1.ContainerPort{
@@ -180,7 +191,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 					},
 					ReadinessProbe: &corev1.Probe{
 						TimeoutSeconds:      10,
-						PeriodSeconds:       30,
+						PeriodSeconds:       15,
 						SuccessThreshold:    1,
 						FailureThreshold:    3,
 						InitialDelaySeconds: 15,
@@ -193,6 +204,20 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 								},
 							},
 						},
+					},
+					LivenessProbe: &corev1.Probe{
+						Handler: corev1.Handler{
+							HTTPGet: &corev1.HTTPGetAction{
+								Path:   "/health",
+								Port:   intstr.FromInt(2378),
+								Scheme: corev1.URISchemeHTTP,
+							},
+						},
+						InitialDelaySeconds: 5,
+						FailureThreshold:    3,
+						PeriodSeconds:       30,
+						SuccessThreshold:    1,
+						TimeoutSeconds:      10,
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
@@ -313,4 +338,43 @@ func getLauncherImage(data etcdStatefulSetCreatorData) (string, error) {
 		return "", errors.New("unknown etcd tag")
 	}
 	return data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/etcd-launcher-" + baseTag + ":" + resources.KUBERMATICCOMMIT, nil
+}
+
+func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int {
+	etcdClusterSize := data.Cluster().Spec.ComponentsOverride.Etcd.ClusterSize
+	// handle existing clusters that don't have a configured size
+	if etcdClusterSize < kubermaticv1.DefaultEtcdClusterSize {
+		etcdClusterSize = kubermaticv1.DefaultEtcdClusterSize
+	}
+	if set.Spec.Replicas == nil { // new replicaset
+		return etcdClusterSize
+	}
+	replicas := int(*set.Spec.Replicas)
+	// at required size. do nothing
+	if etcdClusterSize == replicas {
+		return replicas
+	}
+	isEtcdHealthy := data.Cluster().Status.ExtendedHealth.Etcd == kubermaticv1.HealthStatusUp
+	if isEtcdHealthy { // no scaling until we are healthy
+		if etcdClusterSize > replicas {
+			return replicas + 1
+		}
+		return replicas - 1
+	}
+	return replicas
+}
+
+func getLauncherArgs(enableCorruptionCheck bool) []string {
+	command := []string{"-namespace", "$(NAMESPACE)",
+		"-etcd-cluster-size", "$(ETCD_CLUSTER_SIZE)",
+		"-pod-name", "$(POD_NAME)",
+		"-pod-ip", "$(POD_IP)",
+		"-api-version", "$(ETCDCTL_API)",
+		"-token", "$(TOKEN)",
+		"-initial-state", "$(INITIAL_STATE)",
+	}
+	if enableCorruptionCheck {
+		command = append(command, "-enable-corruption-check")
+	}
+	return command
 }
