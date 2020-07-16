@@ -395,7 +395,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
@@ -434,7 +434,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
@@ -477,7 +477,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,flatcar,rhel"
         - name: PROVIDER
@@ -521,7 +521,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: PROVIDER
           value: "gcp"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -562,7 +562,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: PROVIDER
           value: "gcp"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -608,7 +608,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "ubuntu,coreos,flatcar,rhel"
         - name: PROVIDER
@@ -649,7 +649,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: PROVIDER
           value: "packet"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -690,7 +690,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: PROVIDER
           value: "kubevirt"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -731,7 +731,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: PROVIDER
           value: "hetzner"
         # Hetzner doesn't support coreos
@@ -775,7 +775,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: PROVIDER
           value: "openstack"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -818,7 +818,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -861,7 +861,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -904,7 +904,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: PROVIDER
           value: "vsphere"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -946,7 +946,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: PROVIDER
           value: "vsphere"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -1082,7 +1082,7 @@ presubmits:
         - name: EXCLUDE_DISTRIBUTIONS
           value: ubuntu,centos,sles,rhel,flatcar
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: KUBERMATIC_USE_OPERATOR
           value: "true"
         - name: ONLY_TEST_CREATION
