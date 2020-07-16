@@ -901,7 +901,7 @@ presubmits:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.17.0"
+          value: "v1.17.9"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -1062,7 +1062,7 @@ presubmits:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.17.0"
+          value: "v1.17.9"
         - name: KUBERMATIC_USE_OPERATOR
           value: "true"
         - name: ONLY_TEST_CREATION
