@@ -28,6 +28,7 @@ import (
 )
 
 func WriteSettings(providers watcher.Providers, ws *websocket.Conn) {
+	// There can be a race here if the settings change between getting the initial data and setting up the subscription
 	initialSettings, err := providers.SettingsProvider.GetGlobalSettings()
 	if err != nil {
 		log.Logger.Debug(err)
@@ -45,7 +46,7 @@ func WriteSettings(providers watcher.Providers, ws *websocket.Conn) {
 		return
 	}
 
-	providers.SettingsWatcher.Subscribe(func(settings interface{}) {
+	unSub := providers.SettingsWatcher.Subscribe(func(settings interface{}) {
 		var response []byte
 		if settings != nil {
 			var externalSettings api.GlobalSettings
@@ -75,5 +76,10 @@ func WriteSettings(providers watcher.Providers, ws *websocket.Conn) {
 			log.Logger.Debug(err)
 			return
 		}
+	})
+
+	ws.SetCloseHandler(func(code int, text string) error {
+		unSub()
+		return ws.CloseHandler()(code, text)
 	})
 }

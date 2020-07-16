@@ -101,6 +101,6 @@ func (watcher *UserWatcher) CalculateHash(id string) (uint64, error) {
 }
 
 // Subscribe allows to register subscription handler which will be invoked on each user change.
-func (watcher *UserWatcher) Subscribe(subscription pubsub.Subscription, opts ...pubsub.SubscribeOption) {
-	watcher.publisher.Subscribe(subscription, opts...)
+func (watcher *UserWatcher) Subscribe(subscription pubsub.Subscription, opts ...pubsub.SubscribeOption) pubsub.Unsubscriber {
+	return watcher.publisher.Subscribe(subscription, opts...)
 }

@@ -85,6 +85,6 @@ func (watcher *SettingsWatcher) run() {
 }
 
 // Subscribe allows to register subscription handler which will be invoked on each settings change.
-func (watcher *SettingsWatcher) Subscribe(subscription pubsub.Subscription) {
-	watcher.publisher.Subscribe(subscription)
+func (watcher *SettingsWatcher) Subscribe(subscription pubsub.Subscription) pubsub.Unsubscriber {
+	return watcher.publisher.Subscribe(subscription)
 }
