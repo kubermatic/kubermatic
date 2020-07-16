@@ -76,7 +76,7 @@ func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider pro
 			return nil, err
 		}
 
-		var upgrades []*apiv1.MasterVersion
+		upgrades := make([]*apiv1.MasterVersion, 0)
 		for _, v := range versions {
 			isRestricted := false
 			if clusterType == apiv1.KubernetesClusterType {
