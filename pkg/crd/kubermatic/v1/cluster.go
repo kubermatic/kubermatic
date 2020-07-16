@@ -50,6 +50,8 @@ const (
 	WorkerNameLabelKey   = "worker-name"
 	ProjectIDLabelKey    = "project-id"
 	UpdatedByVPALabelKey = "updated-by-vpa"
+
+	DefaultEtcdClusterSize = 3
 )
 
 // ProtectedClusterLabels is a set of labels that must not be set by users on clusters,
@@ -166,6 +168,8 @@ const (
 
 	ClusterConditionRancherInitialized     ClusterConditionType = "RancherInitializedSuccessfully"
 	ClusterConditionRancherClusterImported ClusterConditionType = "RancherClusterImportedSuccessfully"
+
+	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpdateInProgress = "ClusterUpdateInProgress"
@@ -287,11 +291,11 @@ type AuditLoggingSettings struct {
 }
 
 type ComponentSettings struct {
-	Apiserver         APIServerSettings   `json:"apiserver"`
-	ControllerManager DeploymentSettings  `json:"controllerManager"`
-	Scheduler         DeploymentSettings  `json:"scheduler"`
-	Etcd              StatefulSetSettings `json:"etcd"`
-	Prometheus        StatefulSetSettings `json:"prometheus"`
+	Apiserver         APIServerSettings       `json:"apiserver"`
+	ControllerManager DeploymentSettings      `json:"controllerManager"`
+	Scheduler         DeploymentSettings      `json:"scheduler"`
+	Etcd              EtcdStatefulSetSettings `json:"etcd"`
+	Prometheus        StatefulSetSettings     `json:"prometheus"`
 }
 
 type APIServerSettings struct {
@@ -307,6 +311,11 @@ type DeploymentSettings struct {
 
 type StatefulSetSettings struct {
 	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+type EtcdStatefulSetSettings struct {
+	ClusterSize int                          `json:"clusterSize,omitempty"`
+	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // ClusterNetworkingConfig specifies the different networking
