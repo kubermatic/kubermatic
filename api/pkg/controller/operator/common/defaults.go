@@ -195,12 +195,7 @@ var (
 			semver.MustParse("v1.15.10"),
 			semver.MustParse("v1.15.11"),
 			// Kubernetes 1.16
-			semver.MustParse("v1.16.2"),
-			semver.MustParse("v1.16.3"),
-			semver.MustParse("v1.16.4"),
-			semver.MustParse("v1.16.6"),
-			semver.MustParse("v1.16.7"),
-			semver.MustParse("v1.16.9"),
+			semver.MustParse("v1.16.13"),
 			// Kubernetes 1.17
 			semver.MustParse("v1.17.0"),
 			semver.MustParse("v1.17.2"),
@@ -259,15 +254,9 @@ var (
 				To:   "1.16.*",
 			},
 			{
-				// CVE-2019-11253
-				From:      "<= 1.16.1, >= 1.16.0",
-				To:        "1.16.2",
-				Automatic: pointer.BoolPtr(true),
-			},
-			{
-				// Released with broken Anago
-				From:      "1.16.5",
-				To:        "1.16.6",
+				// CVE-2019-11253, CVE-2020-8559
+				From:      "<= 1.16.12, >= 1.16.0",
+				To:        "1.16.13",
 				Automatic: pointer.BoolPtr(true),
 			},
 			{
