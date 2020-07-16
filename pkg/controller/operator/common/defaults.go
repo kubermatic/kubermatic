@@ -201,7 +201,7 @@ var (
 			// Kubernetes 1.17
 			semver.MustParse("v1.17.9"),
 			// Kubernetes 1.18
-			semver.MustParse("v1.18.2"),
+			semver.MustParse("v1.18.6"),
 		},
 		Updates: []operatorv1alpha1.Update{
 			// ======= 1.14 =======
@@ -287,6 +287,14 @@ var (
 				// Allow to change to any patch version
 				From: "1.18.*",
 				To:   "1.18.*",
+			},
+			{
+				// CVE-2020-8559
+				// Releases from 1.18.0 to 1.18.2 also do not work with CentOS7
+				// https://github.com/kubernetes/kubernetes/pull/90678
+				From:      "<= 1.18.5, >= 1.18.0",
+				To:        "1.18.6",
+				Automatic: pointer.BoolPtr(true),
 			},
 		},
 	}
