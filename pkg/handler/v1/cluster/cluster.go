@@ -267,27 +267,6 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProv
 	}
 }
 
-func updateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, clusterSSHKey *kubermaticv1.UserSSHKey, projectID string) error {
-	adminUserInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return errors.New(http.StatusInternalServerError, err.Error())
-	}
-	if adminUserInfo.IsAdmin {
-		if _, err := privilegedSSHKeyProvider.UpdateUnsecured(clusterSSHKey); err != nil {
-			return common.KubernetesErrorToHTTPError(err)
-		}
-		return nil
-	}
-	userInfo, err := userInfoGetter(ctx, projectID)
-	if err != nil {
-		return errors.New(http.StatusInternalServerError, err.Error())
-	}
-	if _, err = sshKeyProvider.Update(userInfo, clusterSSHKey); err != nil {
-		return common.KubernetesErrorToHTTPError(err)
-	}
-	return nil
-}
-
 func GetClusterEventsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(EventsReq)
@@ -407,7 +386,7 @@ func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHK
 			return apiKey, nil
 		}
 		sshKey.AddToCluster(req.ClusterID)
-		if err := updateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, sshKey, req.ProjectID); err != nil {
+		if err := handlercommon.UpdateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, sshKey, req.ProjectID); err != nil {
 			return nil, err
 		}
 
@@ -495,7 +474,7 @@ func DetachSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHK
 		}
 
 		clusterSSHKey.RemoveFromCluster(req.ClusterID)
-		if err := updateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, clusterSSHKey, req.ProjectID); err != nil {
+		if err := handlercommon.UpdateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, clusterSSHKey, req.ProjectID); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return nil, nil

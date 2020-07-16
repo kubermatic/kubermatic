@@ -234,7 +234,7 @@ func DeleteEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 
 	for _, clusterSSHKey := range clusterSSHKeys {
 		clusterSSHKey.RemoveFromCluster(clusterID)
-		if err := updateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, clusterSSHKey, projectID); err != nil {
+		if err := UpdateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, clusterSSHKey, projectID); err != nil {
 			return nil, err
 		}
 	}
@@ -259,7 +259,7 @@ func DeleteEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 	return nil, updateAndDeleteCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, existingCluster)
 }
 
-func updateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, clusterSSHKey *kubermaticv1.UserSSHKey, projectID string) error {
+func UpdateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, clusterSSHKey *kubermaticv1.UserSSHKey, projectID string) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return errors.New(http.StatusInternalServerError, err.Error())
