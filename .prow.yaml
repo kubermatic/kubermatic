@@ -356,7 +356,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.17.5"
+          value: "v1.17.9"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
