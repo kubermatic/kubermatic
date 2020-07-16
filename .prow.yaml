@@ -741,7 +741,7 @@ presubmits:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.3"
+          value: "v1.16.13"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -776,7 +776,7 @@ presubmits:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.3"
+          value: "v1.16.13"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -817,7 +817,7 @@ presubmits:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.3"
+          value: "v1.16.13"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -858,7 +858,7 @@ presubmits:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
         env:
         - name: VERSIONS_TO_TEST
-          value: "v1.16.3"
+          value: "v1.16.13"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
