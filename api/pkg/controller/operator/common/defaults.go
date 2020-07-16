@@ -424,11 +424,7 @@ versions:
 - version: "v1.16.13"
   default: false
 # Kubernetes 1.17
-- version: "v1.17.0"
-  default: false
-- version: "v1.17.2"
-  default: false
-- version: "v1.17.3"
+- version: "v1.17.9"
   default: false
 # OpenShift 4.1.9
 - version: "v4.1.9"
@@ -530,9 +526,9 @@ updates:
 - from: 1.17.*
   to: 1.17.*
   automatic: false
-# Released with broken Anago
-- from: 1.17.1
-  to: 1.17.2
+# CVE-2020-8559
+- from: <= 1.17.8, >= 1.17.0
+  to: 1.17.9
   automatic: true
 # Allow to next minor release
 - from: 1.16.*
