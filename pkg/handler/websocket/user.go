@@ -28,6 +28,7 @@ import (
 )
 
 func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string) {
+	// There can be a race here if the user changes between getting the initial data and setting up the subscription
 	initialUser, err := providers.UserProvider.UserByEmail(userEmail)
 	if err != nil {
 		log.Logger.Debug(err)
@@ -58,7 +59,7 @@ func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string
 		return
 	}
 
-	providers.UserWatcher.Subscribe(func(rawUser interface{}) {
+	unSub := providers.UserWatcher.Subscribe(func(rawUser interface{}) {
 		var response []byte
 		if rawUser != nil {
 			user, ok := rawUser.(*v1.User)
@@ -94,4 +95,9 @@ func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string
 			return
 		}
 	}, pubsub.WithPath([]uint64{hashID}))
+
+	ws.SetCloseHandler(func(code int, text string) error {
+		unSub()
+		return ws.CloseHandler()(code, text)
+	})
 }
