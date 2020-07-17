@@ -1311,25 +1311,23 @@ func (r *runner) Logout() error {
 	return nil
 }
 
-func cleanUpDC(seed, dc string) func(t *testing.T) {
-	return func(t *testing.T) {
-		adminMasterToken, err := retrieveAdminMasterToken()
-		if err != nil {
-			t.Fatalf("can not get admin master token: %v", err)
-		}
-		runner := createRunner(adminMasterToken, t)
-
-		t.Logf("deleting dc %s...", dc)
-		_, err = runner.GetDC(dc)
-		if err != nil {
-			t.Logf("dc %s already deleted, skipping cleanup", dc)
-			return
-		}
-
-		if err := runner.DeleteDC(seed, dc); err != nil {
-			t.Fatalf("can not delete dc %s : %v", dc, err)
-		}
-
-		t.Logf("dc %s deleted successfully", dc)
+func cleanUpDC(t *testing.T, seed, dc string) {
+	adminMasterToken, err := retrieveAdminMasterToken()
+	if err != nil {
+		t.Fatalf("can not get admin master token: %v", GetErrorResponse(err))
 	}
+	runner := createRunner(adminMasterToken, t)
+
+	t.Logf("deleting dc %s...", dc)
+	_, err = runner.GetDC(dc)
+	if err != nil {
+		t.Logf("dc %s already deleted, skipping cleanup", dc)
+		return
+	}
+
+	if err := runner.DeleteDC(seed, dc); err != nil {
+		t.Fatalf("can not delete dc %s: %v", dc, GetErrorResponse(err))
+	}
+
+	t.Logf("dc %s deleted successfully", dc)
 }

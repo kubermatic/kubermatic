@@ -136,7 +136,6 @@ func TestCreateDC(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
 			}
-			defer cleanUpDC(tc.seed, tc.dc.Metadata.Name)
 
 			if !reflect.DeepEqual(tc.dc, dc) {
 				t.Fatalf("Expected create result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
@@ -148,6 +147,8 @@ func TestCreateDC(t *testing.T) {
 			if err == nil {
 				t.Fatalf("expected error, shouldn't be able to create DC with existing name in the same seed")
 			}
+			// cleanup cannot be defered because the DC deletes update the seed which can cause flakiness in other tests
+			cleanUpDC(t, tc.seed, tc.dc.Metadata.Name)
 		})
 	}
 }
@@ -255,7 +256,6 @@ func TestUpdateDC(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
 			}
-			defer cleanUpDC(tc.seed, tc.originalDC.Metadata.Name)
 
 			if !reflect.DeepEqual(tc.originalDC, dc) {
 				t.Fatalf("Expected create result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
@@ -266,11 +266,15 @@ func TestUpdateDC(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not update dc due to error: %v", GetErrorResponse(err))
 			}
-			defer cleanUpDC(tc.seed, tc.updatedDC.Metadata.Name)
 
 			if !reflect.DeepEqual(tc.updatedDC, updatedDC) {
 				t.Fatalf("Expected update result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
 					*tc.updatedDC.Metadata, *tc.updatedDC.Spec, *tc.updatedDC.Spec.Node, *updatedDC.Metadata, *updatedDC.Spec, *updatedDC.Spec.Node)
+			}
+
+			// cleanup cannot be defered because the DC deletes update the seed which can cause flakiness in other tests
+			for _, toDelete := range []string{tc.originalDC.Metadata.Name, tc.updatedDC.Metadata.Name} {
+				cleanUpDC(t, tc.seed, toDelete)
 			}
 		})
 	}
@@ -333,7 +337,6 @@ func TestPatchDC(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
 			}
-			defer cleanUpDC(tc.seed, tc.originalDC.Metadata.Name)
 
 			if !reflect.DeepEqual(tc.originalDC, dc) {
 				t.Fatalf("Expected create result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
@@ -344,11 +347,14 @@ func TestPatchDC(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not patch dc due to error: %v", GetErrorResponse(err))
 			}
-			defer cleanUpDC(tc.seed, tc.expectedDC.Metadata.Name)
 
 			if !reflect.DeepEqual(tc.expectedDC, patchedDC) {
 				t.Fatalf("Expected patch result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
 					*tc.expectedDC.Metadata, *tc.expectedDC.Spec, *tc.expectedDC.Spec.Node, *patchedDC.Metadata, *patchedDC.Spec, *patchedDC.Spec.Node)
+			}
+			// cleanup cannot be defered because the DC deletes update the seed which can cause flakiness in other tests
+			for _, toDelete := range []string{tc.originalDC.Metadata.Name, "patched-dc"} {
+				cleanUpDC(t, tc.seed, toDelete)
 			}
 		})
 	}
