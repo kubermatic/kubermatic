@@ -135,7 +135,7 @@ sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/kubermatic-operator/*.yaml
 echodate "Uploading kubermatic CE archive..."
 
 archive="kubermatic-ce-$tag.tar.gz"
-# Gnu tar is required
+# GNU tar is required
 tar czf "$archive" \
   --transform='flags=r;s|charts/values.example.ce.yaml|examples/values.example.yaml|' \
   --transform='flags=r;s|charts/test/|examples/|' \
@@ -167,7 +167,7 @@ echodate "Uploading kubermatic EE archive..."
 yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
 
 archive="kubermatic-ee-$tag.tar.gz"
-# Gnu tar is required
+# GNU tar is required
 tar czf "$archive" \
   --transform='flags=r;s|charts/values.example.ee.yaml|examples/values.example.yaml|' \
   --transform='flags=r;s|charts/test/|examples/|' \
