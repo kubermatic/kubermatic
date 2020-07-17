@@ -31,10 +31,10 @@ type Providers struct {
 }
 
 type SettingsWatcher interface {
-	Subscribe(subscription pubsub.Subscription)
+	Subscribe(subscription pubsub.Subscription) pubsub.Unsubscriber
 }
 
 type UserWatcher interface {
-	Subscribe(subscription pubsub.Subscription, opts ...pubsub.SubscribeOption)
+	Subscribe(subscription pubsub.Subscription, opts ...pubsub.SubscribeOption) pubsub.Unsubscriber
 	CalculateHash(id string) (uint64, error)
 }

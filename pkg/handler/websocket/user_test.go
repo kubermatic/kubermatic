@@ -110,6 +110,10 @@ func TestUserWatchEndpoint(t *testing.T) {
 			}
 
 			// Update user to get watch notification
+			// Sleep for just a bit so the subscription gets set up in the api server. This is due to a race condition
+			// can happen when there are changes to the watched user right after the ws connection is established.
+			// Without this the test is flaky.
+			time.Sleep(time.Second)
 			userToUpdate, err := cli.FakeKubermaticClient.KubermaticV1().Users().Get(tc.userToUpdate, metav1.GetOptions{})
 			if err != nil {
 				t.Fatalf("error getting user to update: %v", err)
