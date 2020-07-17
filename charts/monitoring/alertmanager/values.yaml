@@ -104,4 +104,4 @@ alertmanager:
     enabled: false
     image:
       repository: quay.io/kubermatic/util
-      tag: 1.3.4
+      tag: 1.3.5
