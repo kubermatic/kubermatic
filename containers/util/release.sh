@@ -14,10 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -euo pipefail
+
 SUFFIX=""
-VERSION=1.3.4
+VERSION=1.3.5
 
-set -euox pipefail
+cd $(dirname $0)
 
+set -x
 docker build --no-cache --pull -t quay.io/kubermatic/util:${VERSION}${SUFFIX} .
 docker push quay.io/kubermatic/util:${VERSION}${SUFFIX}

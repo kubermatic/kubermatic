@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.11
+FROM alpine:3.12
 
-ENV MC_VERSION=RELEASE.2020-05-16T01-44-37Z \
-    KUBECTL_VERSION=v1.17.5 \
-    HELM_VERSION=v2.16.7 \
-    VAULT_VERSION=1.3.5 \
-    YQ_VERSION=3.3.0
+ENV MC_VERSION=RELEASE.2020-07-17T02-52-20Z \
+    KUBECTL_VERSION=v1.18.6 \
+    HELM_VERSION=v2.16.9 \
+    VAULT_VERSION=1.4.3 \
+    YQ_VERSION=3.3.2
 
 RUN apk add --no-cache -U \
     bash \
@@ -33,7 +33,8 @@ RUN apk add --no-cache -U \
     openssh-client \
     rsync \
     socat \
-    unzip
+    unzip \
+    tar
 
 RUN curl -Lo /usr/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64 && \
     chmod +x /usr/bin/yq && \

@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: karma
-version: 0.0.9
+version: 0.0.10
 appVersion: v0.55
 description: Dashboard for Prometheus Alertmanager
 keywords:
