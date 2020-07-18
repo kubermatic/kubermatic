@@ -204,7 +204,7 @@ func main() {
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
-	flag.StringVar(&sversions, "versions", "v1.15.11,v1.16.9,,v1.17.5,v1.18.2", "a comma-separated list of versions to test")
+	flag.StringVar(&sversions, "versions", "v1.15.12,v1.16.13,,v1.17.9,v1.18.6", "a comma-separated list of versions to test")
 	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 	_ = flag.Bool("run-kubermatic-controller-manager", false, "Unused, but kept for compatibility reasons")
 	flag.IntVar(&defaultTimeoutMinutes, "default-timeout-minutes", 10, "The default timeout in minutes")
