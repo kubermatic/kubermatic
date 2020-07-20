@@ -80,6 +80,7 @@ func WriteSettings(providers watcher.Providers, ws *websocket.Conn) {
 
 	ws.SetCloseHandler(func(code int, text string) error {
 		unSub()
-		return ws.CloseHandler()(code, text)
+		writeCloseMessage(ws, code)
+		return nil
 	})
 }

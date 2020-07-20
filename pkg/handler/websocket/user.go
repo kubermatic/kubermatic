@@ -18,6 +18,7 @@ package websocket
 
 import (
 	"encoding/json"
+
 	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 	v1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/pkg/log"
@@ -98,6 +99,7 @@ func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string
 
 	ws.SetCloseHandler(func(code int, text string) error {
 		unSub()
-		return ws.CloseHandler()(code, text)
+		writeCloseMessage(ws, code)
+		return nil
 	})
 }
