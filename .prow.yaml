@@ -466,7 +466,7 @@ presubmits:
         - name: ONLY_TEST_CREATION
           value: "true"
         - name: VERSIONS_TO_TEST
-          value: "v1.18.2"
+          value: "v1.18.6"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
