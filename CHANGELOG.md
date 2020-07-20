@@ -1,3 +1,13 @@
+### [v2.14.3]()
+
+
+- Added Kubernetes v1.16.13, and removed v1.16.2-9 in default version configuration [#5659](https://github.com/kubermatic/kubermatic/issues/5659) ([kdomanski](https://github.com/kdomanski))
+- Added Kubernetes v1.17.9, and removed v1.17.0-5 in default version configuration [#5664](https://github.com/kubermatic/kubermatic/issues/5664) ([kdomanski](https://github.com/kdomanski))
+- Added Kubernetes v1.18.6, and removed v1.18.2 in default version configuration [#5673](https://github.com/kubermatic/kubermatic/issues/5673) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
 ### [v2.14.2]()
 
 
@@ -142,6 +152,15 @@ Supported Kubernetes versions:
 - Fixed swagger and API client for ssh key creation. [#5069](https://github.com/kubermatic/kubermatic/issues/5069) ([kdomanski](https://github.com/kdomanski))
 - Fixed seed-proxy controller not being triggered. [#5101](https://github.com/kubermatic/kubermatic/issues/5101) ([xrstf](https://github.com/xrstf))
 - Fixed a bug in Kubernetes 1.17 on CoreOS that prevented the Kubelet from starting [#658](https://github.com/kubermatic/machine-controller/issues/658) ([alvaroaleman](https://github.com/alvaroaleman))
+
+
+
+
+### [v2.13.7]()
+
+
+- Added Kubernetes v1.16.13, and removed v1.16.2-7 in default version configuration [#5661](https://github.com/kubermatic/kubermatic/issues/5661) ([kdomanski](https://github.com/kdomanski))
+- Added Kubernetes v1.17.9, and removed v1.17.0-3 in default version configuration [#5667](https://github.com/kubermatic/kubermatic/issues/5667) ([kdomanski](https://github.com/kdomanski))
 
 
 
@@ -307,6 +326,14 @@ Supported Kubernetes versions:
 - Added support for dynamic presets [#4903](https://github.com/kubermatic/kubermatic/issues/4903) ([zreigz](https://github.com/zreigz))
 - Presets can now be filtered by datacenter [#4991](https://github.com/kubermatic/kubermatic/issues/4991) ([zreigz](https://github.com/zreigz))
 - Revoking the viewer token is possible via UI now. [#1708](https://github.com/kubermatic/dashboard/issues/1708) ([kgroschoff](https://github.com/kgroschoff))
+
+
+
+
+### [v2.12.9]()
+
+
+- Added Kubernetes v1.16.13, and removed v1.16.2-7 [#5662](https://github.com/kubermatic/kubermatic/issues/5662) ([kdomanski](https://github.com/kdomanski))
 
 
 
