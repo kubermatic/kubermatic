@@ -142,6 +142,11 @@ func TestCreateDC(t *testing.T) {
 					*tc.dc.Metadata, *tc.dc.Spec, *tc.dc.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
 			}
 
+			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.dc.Metadata.Name, 5)
+			if err != nil {
+				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
+			}
+
 			// user can't create DC with the same name in the same seed
 			_, err = adminAPIRunner.CreateDC(tc.seed, tc.dc)
 			if err == nil {
@@ -189,6 +194,11 @@ func TestDeleteDC(t *testing.T) {
 			_, err = adminAPIRunner.CreateDC(tc.seed, tc.dc)
 			if err != nil {
 				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
+			}
+
+			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.dc.Metadata.Name, 5)
+			if err != nil {
+				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
 			}
 
 			err = adminAPIRunner.DeleteDC(tc.seed, tc.dc.Metadata.Name)
@@ -258,6 +268,11 @@ func TestUpdateDC(t *testing.T) {
 			if !reflect.DeepEqual(tc.originalDC, dc) {
 				t.Fatalf("Expected create result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
 					*tc.originalDC.Metadata, *tc.originalDC.Spec, *tc.originalDC.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
+			}
+
+			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.originalDC.Metadata.Name, 5)
+			if err != nil {
+				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
 			}
 
 			updatedDC, err := adminAPIRunner.UpdateDC(tc.seed, tc.originalDC.Metadata.Name, tc.updatedDC)
@@ -334,6 +349,11 @@ func TestPatchDC(t *testing.T) {
 			if !reflect.DeepEqual(tc.originalDC, dc) {
 				t.Fatalf("Expected create result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
 					*tc.originalDC.Metadata, *tc.originalDC.Spec, *tc.originalDC.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
+			}
+
+			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.originalDC.Metadata.Name, 5)
+			if err != nil {
+				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
 			}
 
 			patchedDC, err := adminAPIRunner.PatchDC(tc.seed, tc.originalDC.Metadata.Name, tc.patch)
