@@ -156,6 +156,15 @@ Supported Kubernetes versions:
 
 
 
+### [v2.13.7]()
+
+
+- Added Kubernetes v1.16.13, and removed v1.16.2-7 in default version configuration [#5661](https://github.com/kubermatic/kubermatic/issues/5661) ([kdomanski](https://github.com/kdomanski))
+- Added Kubernetes v1.17.9, and removed v1.17.0-3 in default version configuration [#5667](https://github.com/kubermatic/kubermatic/issues/5667) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
 ### [v2.13.6]()
 
 
