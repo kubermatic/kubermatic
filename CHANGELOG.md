@@ -330,6 +330,14 @@ Supported Kubernetes versions:
 
 
 
+### [v2.12.9]()
+
+
+- Added Kubernetes v1.16.13, and removed v1.16.2-7 [#5662](https://github.com/kubermatic/kubermatic/issues/5662) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
 ### [v2.12.8]()
 
 
