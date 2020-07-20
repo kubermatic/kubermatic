@@ -99,7 +99,6 @@ func WriteUser(providers watcher.Providers, ws *websocket.Conn, userEmail string
 
 	ws.SetCloseHandler(func(code int, text string) error {
 		unSub()
-		writeCloseMessage(ws, code)
-		return nil
+		return writeCloseMessage(ws, code)
 	})
 }

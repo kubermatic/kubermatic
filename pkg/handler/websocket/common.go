@@ -23,7 +23,7 @@ import (
 )
 
 // writes close control message to the websocket connection. Same as the default websocket close handler.
-func writeCloseMessage(ws *websocket.Conn, code int) {
+func writeCloseMessage(ws *websocket.Conn, code int) error {
 	message := websocket.FormatCloseMessage(code, "")
-	_ = ws.WriteControl(websocket.CloseMessage, message, time.Now().Add(time.Second))
+	return ws.WriteControl(websocket.CloseMessage, message, time.Now().Add(time.Second))
 }
