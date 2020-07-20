@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: oauth
-version: 1.2.5
+version: 1.2.6
 appVersion: v2.24.0
 description: Dex
 keywords:
@@ -26,4 +26,4 @@ sources:
 - https://github.com/kubermatic/kubermatic
 maintainers:
 - name: Loodse GmbH
-  email: support@loodse.com
+  email: support@kubermatic.com

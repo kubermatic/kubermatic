@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM alpine:latest
-LABEL maintainer="support@loodse.com"
+LABEL maintainer="support@kubermatic.com"
 
 ADD ./_build/lb-updater /
 ADD ./_build/envoy-manager /

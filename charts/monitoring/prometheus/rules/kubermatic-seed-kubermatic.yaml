@@ -6,7 +6,7 @@ groups:
     annotations:
       message: Kubermatic controller manager in {{ $labels.namespace }} is experiencing
         too many errors.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubermatictoomanyunhandlederrors
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubermatictoomanyunhandlederrors
     expr: sum(rate(kubermatic_controller_manager_unhandled_errors_total[5m])) > 0.01
     for: 10m
     labels:
@@ -14,7 +14,7 @@ groups:
   - alert: KubermaticClusterDeletionTakesTooLong
     annotations:
       message: Cluster {{ $labels.cluster }} is stuck in deletion for more than 30min.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubermaticclusterdeletiontakestoolong
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubermaticclusterdeletiontakestoolong
     expr: (time() - max by (cluster) (kubermatic_cluster_deleted)) > 30*60
     for: 0m
     labels:
@@ -23,7 +23,7 @@ groups:
     annotations:
       message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} is stuck
         in deletion for more than 30min.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubermaticaddondeletiontakestoolong
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubermaticaddondeletiontakestoolong
     expr: (time() - max by (cluster,addon) (kubermatic_addon_deleted)) > 30*60
     for: 0m
     labels:
@@ -32,7 +32,7 @@ groups:
     annotations:
       message: KubermaticControllerManager has disappeared from Prometheus target
         discovery.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-kubermaticcontrollermanagerdown
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubermaticcontrollermanagerdown
     expr: absent(up{job="pods",namespace="kubermatic",role="controller-manager"} ==
       1)
     for: 15m
@@ -41,7 +41,7 @@ groups:
   - alert: OpenVPNServerDown
     annotations:
       message: There is no healthy OpenVPN server in cluster {{ $labels.cluster }}.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-openvpnserverdown
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-openvpnserverdown
     expr: absent(kube_deployment_status_replicas_available{cluster!="",deployment="openvpn-server"}
       > 0) and count(kubermatic_cluster_info) > 0
     for: 15m
@@ -50,7 +50,7 @@ groups:
   - alert: UserClusterPrometheusAbsent
     annotations:
       message: There is no Prometheus in cluster {{ $labels.name }}.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-userclusterprometheusdisappeared
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-userclusterprometheusdisappeared
     expr: |
       (
         kubermatic_cluster_info * on (name) group_left

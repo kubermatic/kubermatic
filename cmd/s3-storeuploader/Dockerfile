@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM alpine:3.10
-LABEL maintainer="support@loodse.com"
+LABEL maintainer="support@kubermatic.com"
 
 RUN apk add --no-cache ca-certificates
 

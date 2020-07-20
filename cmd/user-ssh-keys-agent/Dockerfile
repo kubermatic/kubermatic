@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM alpine:3.10
-LABEL maintainer="support@loodse.com"
+LABEL maintainer="support@kubermatic.com"
 
 COPY ./user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent
 

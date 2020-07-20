@@ -199,7 +199,7 @@ groups:
       message:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of space within the next 24 hours.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemspacefillingup
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemspacefillingup
     expr: |
       predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
       and
@@ -215,7 +215,7 @@ groups:
       message:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of space within the next 4 hours.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemspacefillingup
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemspacefillingup
     expr: |
       predict_linear(node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
       and
@@ -231,7 +231,7 @@ groups:
       message:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available space left.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemoutofspace
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemoutofspace
     expr: |
       node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
       and
@@ -245,7 +245,7 @@ groups:
       message:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available space left.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemoutofspace
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemoutofspace
     expr: |
       node_filesystem_avail_bytes{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_size_bytes{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 3
       and
@@ -259,7 +259,7 @@ groups:
       message:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of files within the next 24 hours.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemfilesfillingup
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemfilesfillingup
     expr: |
       predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 24*60*60) < 0
       and
@@ -275,7 +275,7 @@ groups:
       message:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of files within the next 4 hours.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemfilesfillingup
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemfilesfillingup
     expr: |
       predict_linear(node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"}[6h], 4*60*60) < 0
       and
@@ -291,7 +291,7 @@ groups:
       message:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available inodes left.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemoutoffiles
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemoutoffiles
     expr: |
       node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 5
       and
@@ -305,7 +305,7 @@ groups:
       message:
         Filesystem on {{ $labels.device }} at {{ $labels.instance }} has only
         {{ $value }}% available space left.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemoutofspace
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-nodefilesystemoutofspace
     expr: |
       node_filesystem_files_free{app="node-exporter",fstype=~"ext.|xfs"} / node_filesystem_files{app="node-exporter",fstype=~"ext.|xfs"} * 100 < 3
       and
@@ -319,7 +319,7 @@ groups:
       message:
         '{{ $labels.instance }} interface {{ $labels.device }} shows errors
         while receiving packets ({{ $value }} errors in two minutes).'
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-nodenetworkreceiveerrs
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-nodenetworkreceiveerrs
     expr: increase(node_network_receive_errs_total[2m]) > 10
     for: 1h
     labels:
@@ -330,7 +330,7 @@ groups:
       message:
         '{{ $labels.instance }} interface {{ $labels.device }} shows errors
         while transmitting packets ({{ $value }} errors in two minutes).'
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-nodenetworktransmiterrs
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-nodenetworktransmiterrs
     expr: increase(node_network_transmit_errs_total[2m]) > 10
     for: 1h
     labels:

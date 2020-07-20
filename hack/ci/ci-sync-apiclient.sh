@@ -30,7 +30,7 @@ commit_and_push() {
     (
         cd "$repodir"
 
-        git config --local user.email "dev@loodse.com"
+        git config --local user.email "dev@kubermatic.com"
         git config --local user.name "Prow CI Robot"
         git config --local core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
 

@@ -18,7 +18,7 @@ groups:
   - alert: HttpProbeFailed
     annotations:
       message: Probing the blackbox-exporter target {{ $labels.instance }} failed.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-httpprobefailed
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-httpprobefailed
     expr: probe_success != 1
     for: 5m
     labels:
@@ -27,7 +27,7 @@ groups:
   - alert: HttpProbeSlow
     annotations:
       message: '{{ $labels.instance }} takes {{ $value }} seconds to respond.'
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-httpprobeslow
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-httpprobeslow
     expr: sum by (instance) (probe_http_duration_seconds) > 3
     for: 15m
     labels:
@@ -40,7 +40,7 @@ groups:
   - alert: HttpCertExpiresSoon
     annotations:
       message: The certificate for {{ $labels.instance }} expires in less than 3 days.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-httpcertexpiressoon
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-httpcertexpiressoon
     expr: probe_ssl_earliest_cert_expiry - time() < 3*24*3600
     labels:
       severity: warning
@@ -48,7 +48,7 @@ groups:
   - alert: HttpCertExpiresVerySoon
     annotations:
       message: The certificate for {{ $labels.instance }} expires in less than 24 hours.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-httpcertexpiresverysoon
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-httpcertexpiresverysoon
     expr: probe_ssl_earliest_cert_expiry - time() < 24*3600
     labels:
       severity: critical

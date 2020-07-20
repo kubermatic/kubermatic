@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: elasticsearch
-version: 1.0.8
+version: 1.0.9
 appVersion: 6.8.5
 description: "[DEPRECATED] Chart to deploy Elasticsearch master and data nodes."
 keywords:
@@ -27,4 +27,4 @@ sources:
 - https://github.com/helm/charts/tree/master/stable/elasticsearch
 maintainers:
 - name: Loodse GmbH
-  email: support@loodse.com
+  email: support@kubermatic.com

@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: certs
-version: 1.1.1
+version: 1.1.2
 description: Chart for creating the required certificates for Kubermatic master clusters.
 keywords:
 - kubermatic
@@ -22,4 +22,4 @@ keywords:
 home: https://www.kubermatic.io/
 maintainers:
 - name: Loodse GmbH
-  email: support@loodse.com
+  email: support@kubermatic.com

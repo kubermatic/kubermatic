@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: kubernetes-dashboard
-version: 1.0.5
+version: 1.0.6
 appVersion: v2.0.0
 description: Kubernetes Dashboard
 keywords:
@@ -26,4 +26,4 @@ sources:
 - https://github.com/kubernetes/dashboard
 maintainers:
 - name: Loodse GmbH
-  email: support@loodse.com
+  email: support@kubermatic.com
