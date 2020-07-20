@@ -101,9 +101,8 @@ func (r Routing) listClusters() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
-		cluster.DecodeListReq,
+		)(cluster.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.clusterProviderGetter, r.userInfoGetter)),
+		common.DecodeGetProject,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

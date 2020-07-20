@@ -473,7 +473,7 @@ func TestListClusters(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/clusters", test.ProjectName), strings.NewReader(""))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters", test.ProjectName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -878,7 +878,7 @@ func TestPatchCluster(t *testing.T) {
 				machineObj = append(machineObj, existingMachine)
 			}
 			// test data
-			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s", tc.project, tc.cluster), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v2/projects/%s/clusters/%s", tc.project, tc.cluster), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, machineObj, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {

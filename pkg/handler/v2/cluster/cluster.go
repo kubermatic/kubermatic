@@ -24,19 +24,19 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
-
 	"github.com/go-kit/kit/endpoint"
 	"github.com/prometheus/client_golang/prometheus"
 
 	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
 	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	handlercommon "github.com/kubermatic/kubermatic/pkg/handler/common"
+	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
 	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
 	"github.com/kubermatic/kubermatic/pkg/provider"
 	"github.com/kubermatic/kubermatic/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/klog"
 )
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter,
@@ -59,15 +59,31 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 }
 
 // ListEndpoint list clusters for the given project
-func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, clusterProviderGetter provider.ClusterProviderGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(ListReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		apiClusters, err := handlercommon.GetExternalClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, req.ProjectID)
+		req := request.(common.GetProjectRq)
+		allClusters := make([]*apiv1.Cluster, 0)
+
+		seeds, err := seedsGetter()
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return apiClusters, nil
+
+		for _, seed := range seeds {
+			// if a Seed is bad, do not forward that error to the user, but only log
+			clusterProvider, err := clusterProviderGetter(seed)
+			if err != nil {
+				klog.Errorf("failed to create cluster provider for seed %s: %v", seed.Name, err)
+				continue
+			}
+			apiClusters, err := handlercommon.GetExternalClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, req.ProjectID)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			allClusters = append(allClusters, apiClusters...)
+		}
+
+		return allClusters, nil
 	}
 }
 
@@ -222,24 +238,6 @@ func (req GetClusterReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
 	}
-}
-
-// ListReq defines HTTP request for listClusters endpoint
-// swagger:parameters listClustersV2
-type ListReq struct {
-	common.ProjectReq
-}
-
-func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req ListReq
-
-	pr, err := common.DecodeProjectRequest(c, r)
-	if err != nil {
-		return nil, err
-	}
-	req.ProjectReq = pr.(common.ProjectReq)
-
-	return req, nil
 }
 
 // CreateClusterReq defines HTTP request for createCluster
