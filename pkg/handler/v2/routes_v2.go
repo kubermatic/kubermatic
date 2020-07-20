@@ -49,6 +49,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clusters/{cluster_id}").
 		Handler(r.deleteCluster())
+
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/clusters/{cluster_id}").
+		Handler(r.patchCluster())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -153,6 +157,32 @@ func (r Routing) deleteCluster() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.DeleteEndpoint(r.sshKeyProvider, r.privilegedSSHKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeDeleteReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v2/projects/{project_id}/clusters/{cluster_id} project patchClusterV2
+//
+//     Patches the given cluster using JSON Merge Patch method (https://tools.ietf.org/html/rfc7396).
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Cluster
+//       401: empty
+//       403: empty
+func (r Routing) patchCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.PatchEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		cluster.DecodePatchReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

@@ -24,7 +24,6 @@ import (
 	"net/http"
 	"strconv"
 
-	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus"
@@ -38,8 +37,6 @@ import (
 	kubernetesprovider "github.com/kubermatic/kubermatic/pkg/provider/kubernetes"
 	"github.com/kubermatic/kubermatic/pkg/util/errors"
 	kubermaticerrors "github.com/kubermatic/kubermatic/pkg/util/errors"
-	"github.com/kubermatic/kubermatic/pkg/validation"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog"
@@ -69,153 +66,15 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		return handlercommon.ConvertInternalClusterToExternal(cluster, true), nil
+		return handlercommon.GetEndpoint(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 	}
-}
-
-// patchClusterSpec is equivalent of ClusterSpec but it uses default JSON marshalling method instead of custom
-// MarshalJSON defined for ClusterSpec type. This means it should be only used internally as it may contain
-// sensitive cloud provider authentication data.
-type patchClusterSpec apiv1.ClusterSpec
-
-// patchCluster is equivalent of Cluster but it uses patchClusterSpec instead of original ClusterSpec.
-// This means it should be only used internally as it may contain sensitive cloud provider authentication data.
-type patchCluster struct {
-	apiv1.Cluster `json:",inline"`
-	Spec          patchClusterSpec `json:"spec"`
 }
 
 func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(PatchReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		oldInternalCluster, err := handlercommon.GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		// Converting to API type as it is the type exposed externally.
-		externalCluster := handlercommon.ConvertInternalClusterToExternal(oldInternalCluster, false)
-
-		// Changing the type to patchCluster as during marshalling it doesn't remove the cloud provider authentication
-		// data that is required here for validation.
-		externalClusterSpec := (patchClusterSpec)(externalCluster.Spec)
-		clusterToPatch := patchCluster{
-			Cluster: *externalCluster,
-			Spec:    externalClusterSpec,
-		}
-
-		existingClusterJSON, err := json.Marshal(clusterToPatch)
-		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode existing cluster: %v", err)
-		}
-
-		patchedClusterJSON, err := jsonpatch.MergePatch(existingClusterJSON, req.Patch)
-		if err != nil {
-			return nil, errors.NewBadRequest("cannot patch cluster: %v", err)
-		}
-
-		var patchedCluster *apiv1.Cluster
-		err = json.Unmarshal(patchedClusterJSON, &patchedCluster)
-		if err != nil {
-			return nil, errors.NewBadRequest("cannot decode patched cluster: %v", err)
-		}
-
-		// Only specific fields from old internal cluster will be updated by a patch.
-		// It prevents user from changing other fields like resource ID or version that should not be modified.
-		newInternalCluster := oldInternalCluster.DeepCopy()
-		newInternalCluster.Spec.HumanReadableName = patchedCluster.Name
-		newInternalCluster.Labels = patchedCluster.Labels
-		newInternalCluster.Spec.Cloud = patchedCluster.Spec.Cloud
-		newInternalCluster.Spec.MachineNetworks = patchedCluster.Spec.MachineNetworks
-		newInternalCluster.Spec.Version = patchedCluster.Spec.Version
-		newInternalCluster.Spec.OIDC = patchedCluster.Spec.OIDC
-		newInternalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = patchedCluster.Spec.UsePodSecurityPolicyAdmissionPlugin
-		newInternalCluster.Spec.UsePodNodeSelectorAdmissionPlugin = patchedCluster.Spec.UsePodNodeSelectorAdmissionPlugin
-		newInternalCluster.Spec.AdmissionPlugins = patchedCluster.Spec.AdmissionPlugins
-		newInternalCluster.Spec.AuditLogging = patchedCluster.Spec.AuditLogging
-		newInternalCluster.Spec.Openshift = patchedCluster.Spec.Openshift
-		newInternalCluster.Spec.UpdateWindow = patchedCluster.Spec.UpdateWindow
-
-		incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfoGetter, clusterProvider, newInternalCluster, req.ProjectID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to check existing nodes' version skew: %v", err)
-		}
-		if len(incompatibleKubelets) > 0 {
-			return nil, errors.NewBadRequest("Cluster contains nodes running the following incompatible kubelet versions: %v. Upgrade your nodes before you upgrade the cluster.", incompatibleKubelets)
-		}
-
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, err.Error())
-		}
-		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, newInternalCluster.Spec.Cloud.DatacenterName)
-		if err != nil {
-			return nil, fmt.Errorf("error getting dc: %v", err)
-		}
-
-		if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), newInternalCluster); err != nil {
-			return nil, err
-		}
-
-		// Enforce audit logging
-		if dc.Spec.EnforceAuditLogging {
-			newInternalCluster.Spec.AuditLogging = &kubermaticv1.AuditLoggingSettings{
-				Enabled: true,
-			}
-		}
-
-		// Enforce PodSecurityPolicy
-		if dc.Spec.EnforcePodSecurityPolicy {
-			newInternalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = true
-		}
-
-		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-		}
-		if err := validation.ValidateUpdateCluster(ctx, newInternalCluster, oldInternalCluster, dc, assertedClusterProvider); err != nil {
-			return nil, errors.NewBadRequest("invalid cluster: %v", err)
-		}
-		if err = validation.ValidateUpdateWindow(newInternalCluster.Spec.UpdateWindow); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		updatedCluster, err := updateCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, newInternalCluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return handlercommon.ConvertInternalClusterToExternal(updatedCluster, true), nil
+		return handlercommon.PatchEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Patch, seedsGetter, projectProvider, privilegedProjectProvider)
 	}
-}
-
-func updateCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
-	adminUserInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user information: %v", err)
-	}
-	if adminUserInfo.IsAdmin {
-		return privilegedClusterProvider.UpdateUnsecured(project, cluster)
-	}
-	userInfo, err := userInfoGetter(ctx, project.Name)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get user information: %v", err)
-	}
-	return clusterProvider.Update(project, userInfo, cluster)
 }
 
 // ListEndpoint list clusters within the given datacenter
