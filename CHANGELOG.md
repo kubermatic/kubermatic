@@ -1,3 +1,13 @@
+### [v2.14.3]()
+
+
+- Added Kubernetes v1.16.13, and removed v1.16.2-9 in default version configuration [#5659](https://github.com/kubermatic/kubermatic/issues/5659) ([kdomanski](https://github.com/kdomanski))
+- Added Kubernetes v1.17.9, and removed v1.17.0-5 in default version configuration [#5664](https://github.com/kubermatic/kubermatic/issues/5664) ([kdomanski](https://github.com/kdomanski))
+- Added Kubernetes v1.18.6, and removed v1.18.2 in default version configuration [#5673](https://github.com/kubermatic/kubermatic/issues/5673) ([kdomanski](https://github.com/kdomanski))
+
+
+
+
 ### [v2.14.2]()
 
 
