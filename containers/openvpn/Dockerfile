@@ -14,7 +14,7 @@
 
 FROM alpine:3.11
 ARG OPENVPN_VERSION
-LABEL maintainer="support@loodse.com"
+LABEL maintainer="support@kubermatic.com"
 
 RUN apk add -U \
 	bash \

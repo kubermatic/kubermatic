@@ -52,7 +52,7 @@ fi
 sed -i "s/__KUBERMATIC_TAG__/$KUBERMATIC_VERSION/g" charts/*/*.yaml
 sed -i "s/__DASHBOARD_TAG__/$DASHBOARD_VERSION/g" charts/*/*.yaml
 
-git config --global user.email "dev@loodse.com"
+git config --global user.email "dev@kubermatic.com"
 git config --global user.name "Prow CI Robot"
 git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
 ensure_github_host_pubkey

@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: nginx-ingress-controller
-version: 1.1.4
+version: 1.1.5
 appVersion: 0.32.0
 description: nginx-ingress-controller
 keywords:
@@ -26,4 +26,4 @@ sources:
 - https://github.com/kubernetes/ingress/tree/master/controllers/nginx
 maintainers:
 - name: Loodse GmbH
-  email: support@loodse.com
+  email: support@kubermatic.com

@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: cert-manager
-version: 1.2.0
+version: 1.2.1
 appVersion: v0.15.1
 description: A Helm chart for cert-manager
 keywords:
@@ -28,4 +28,4 @@ sources:
 - https://github.com/jetstack/cert-manager/tree/master/deploy/charts/cert-manager
 maintainers:
 - name: Loodse GmbH
-  email: support@loodse.com
+  email: support@kubermatic.com

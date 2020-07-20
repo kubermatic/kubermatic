@@ -6,7 +6,7 @@ groups:
     annotations:
       message: Backup schedule {{ $labels.schedule }} has been taking more than 60min
         already.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-velerobackuptakestoolong
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-velerobackuptakestoolong
     expr: (velero_backup_attempt_total - velero_backup_success_total) > 0
     for: 60m
     labels:
@@ -15,7 +15,7 @@ groups:
     annotations:
       message: There has not been a successful backup for schedule {{ $labels.schedule
         }} in the last 24 hours.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-veleronorecentbackup
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-veleronorecentbackup
     expr: time() - velero_backup_last_successful_timestamp{schedule!=""} > 3600*25
     labels:
       severity: warning

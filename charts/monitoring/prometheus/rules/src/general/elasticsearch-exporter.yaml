@@ -18,7 +18,7 @@ groups:
   - alert: ElasticsearchHeapTooHigh
     annotations:
       message: The heap usage of Elasticsearch node {{ $labels.name }} is over 90%.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-elasticsearchheaptoohigh
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-elasticsearchheaptoohigh
     expr: elasticsearch_jvm_memory_used_bytes{area="heap"} / elasticsearch_jvm_memory_max_bytes{area="heap"} > 0.9
     for: 15m
     labels:
@@ -31,7 +31,7 @@ groups:
   - alert: ElasticsearchClusterUnavailable
     annotations:
       message: The Elasticsearch cluster health endpoint does not respond to scrapes.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-elasticsearchclusterunavailable
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-elasticsearchclusterunavailable
     expr: elasticsearch_cluster_health_up == 0
     for: 15m
     labels:
@@ -40,7 +40,7 @@ groups:
   - alert: ElasticsearchClusterUnhealthy
     annotations:
       message: The Elasticsearch cluster is not healthy.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-elasticsearchclusterunhealthy
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-elasticsearchclusterunhealthy
     expr: elasticsearch_cluster_health_status{color="green"} == 0
     for: 15m
     labels:
@@ -49,7 +49,7 @@ groups:
   - alert: ElasticsearchUnassignedShards
     annotations:
       message: There are {{ $value }} unassigned shards in the Elasticsearch cluster.
-      runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-elasticsearchunassignedshards
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-elasticsearchunassignedshards
     expr: elasticsearch_cluster_health_unassigned_shards > 0
     for: 15m
     labels:

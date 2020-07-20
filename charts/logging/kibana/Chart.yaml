@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: kibana
-version: 1.0.12
+version: 1.0.13
 appVersion: 6.8.5
 description: "[DEPRECATED] Kibana is a User Interface for Elasticsearch"
 keywords:
@@ -27,4 +27,4 @@ sources:
 - https://github.com/helm/charts/tree/master/stable/kibana
 maintainers:
 - name: Loodse GmbH
-  email: support@loodse.com
+  email: support@kubermatic.com
