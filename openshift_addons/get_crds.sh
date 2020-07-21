@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
@@ -14,13 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
-
 # This script can be used to get all crd manifests from a running
 # openshift cluster
 
+set -euo pipefail
+
+cd $(dirname $0)
 
 targetFile="$(mktemp)"
+
+echo "# This file has been generated, DO NOT EDIT." > $targetFile
 
 for crd in $(kubectl get crd -o name); do
 	echo "Getting crd $crd"
@@ -29,4 +32,4 @@ for crd in $(kubectl get crd -o name); do
 	kubectl get $crd -o json|jq '{metadata: {name: .metadata.name}, apiVersion: .apiVersion, kind: .kind, spec: .spec}' >> $targetFile
 done
 
-mv $targetFile $(dirname $0)/crd/crds.yaml
+mv $targetFile openshift_addons/crd/crds.yaml

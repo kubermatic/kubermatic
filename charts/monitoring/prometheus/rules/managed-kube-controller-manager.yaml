@@ -1,14 +1,29 @@
-# This file has been generated, do not edit.
+# This file has been generated, DO NOT EDIT.
+
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 groups:
 - name: kube-controller-manager
   rules:
-  - expr: |
+  - record: :ready_kube_controller_managers:sum
+    expr: |
       sum (
         (sum by (pod) (kube_pod_labels{label_component="kube-controller-manager"}))
         * on (pod)
         (sum by (pod) (kube_pod_status_ready{condition="true"}))
       )
-    record: :ready_kube_controller_managers:sum
   - alert: KubeControllerManagerDown
     annotations:
       message: No healthy controller-manager pods exist inside the cluster.

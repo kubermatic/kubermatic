@@ -17,7 +17,7 @@
 set -euo pipefail
 
 SUFFIX=""
-VERSION=1.3.5
+VERSION=1.4.0
 
 cd $(dirname $0)
 

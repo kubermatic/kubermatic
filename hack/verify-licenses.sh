@@ -14,10 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -eu
+set -euo pipefail
 
 cd $(dirname $0)/..
-. hack/lib.sh
+source hack/lib.sh
 
 echodate "Checking licenses..."
 wwhrd check -q

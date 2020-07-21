@@ -129,6 +129,8 @@ func TestUserdataGeneration(t *testing.T) {
 				t.Fatalf("failed to call p.Userdata: %v", err)
 			}
 
+			userdata = "# This file has been generated, DO NOT EDIT.\n\n" + userdata
+
 			testhelper.CompareOutput(t, test.name, userdata, *update, ".yaml")
 		})
 	}

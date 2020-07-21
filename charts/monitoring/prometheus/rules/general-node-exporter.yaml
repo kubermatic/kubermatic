@@ -1,29 +1,45 @@
-# This file has been generated, do not edit.
+# This file has been generated, DO NOT EDIT.
+
+# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 groups:
 - name: node-exporter
   rules:
-  - expr: |
+  - record: node:node_num_cpu:sum
+    expr: |
       count by (node) (sum by (node, cpu) (
         node_cpu_seconds_total{app="node-exporter"}
       * on (namespace, pod) group_left(node)
         node_namespace_pod:kube_pod_info:
       ))
-    record: node:node_num_cpu:sum
-  - expr: |
+  - record: :node_cpu_utilisation:avg1m
+    expr: |
       1 - avg(rate(node_cpu_seconds_total{app="node-exporter",mode="idle"}[1m]))
-    record: :node_cpu_utilisation:avg1m
-  - expr: |
+  - record: node:node_cpu_utilisation:avg1m
+    expr: |
       1 - avg by (node) (
         rate(node_cpu_seconds_total{app="node-exporter",mode="idle"}[1m])
       * on (namespace, pod) group_left(node)
         node_namespace_pod:kube_pod_info:)
-    record: node:node_cpu_utilisation:avg1m
-  - expr: |
+  - record: ':node_cpu_saturation_load1:'
+    expr: |
       sum(node_load1{app="node-exporter"})
       /
       sum(node:node_num_cpu:sum)
-    record: ':node_cpu_saturation_load1:'
-  - expr: |
+  - record: 'node:node_cpu_saturation_load1:'
+    expr: |
       sum by (node) (
         node_load1{app="node-exporter"}
       * on (namespace, pod) group_left(node)
@@ -31,46 +47,46 @@ groups:
       )
       /
       node:node_num_cpu:sum
-    record: 'node:node_cpu_saturation_load1:'
-  - expr: |
+  - record: node:cluster_cpu_utilisation:ratio
+    expr: |
       node:node_cpu_utilisation:avg1m
         *
       node:node_num_cpu:sum
         /
       scalar(sum(node:node_num_cpu:sum))
-    record: node:cluster_cpu_utilisation:ratio
-  - expr: |
+  - record: ':node_memory_utilisation:'
+    expr: |
       1 -
       sum(node_memory_MemFree_bytes{app="node-exporter"} + node_memory_Cached_bytes{app="node-exporter"} + node_memory_Buffers_bytes{app="node-exporter"})
       /
       sum(node_memory_MemTotal_bytes{app="node-exporter"})
-    record: ':node_memory_utilisation:'
-  - expr: |
+  - record: node:node_memory_bytes_available:sum
+    expr: |
       sum by (node) (
         (node_memory_MemFree_bytes{app="node-exporter"} + node_memory_Cached_bytes{app="node-exporter"} + node_memory_Buffers_bytes{app="node-exporter"})
         * on (namespace, pod) group_left(node)
           node_namespace_pod:kube_pod_info:
       )
-    record: node:node_memory_bytes_available:sum
-  - expr: |
+  - record: node:node_memory_bytes_total:sum
+    expr: |
       sum by (node) (
         node_memory_MemTotal_bytes{app="node-exporter"}
         * on (namespace, pod) group_left(node)
           node_namespace_pod:kube_pod_info:
       )
-    record: node:node_memory_bytes_total:sum
-  - expr: |
+  - record: node:node_memory_utilisation:ratio
+    expr: |
       (node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)
       /
       scalar(sum(node:node_memory_bytes_total:sum))
-    record: node:node_memory_utilisation:ratio
-  - expr: |
+  - record: :node_memory_swap_io_bytes:sum_rate
+    expr: |
       1e3 * sum(
         (rate(node_vmstat_pgpgin{app="node-exporter"}[1m])
         + rate(node_vmstat_pgpgout{app="node-exporter"}[1m]))
       )
-    record: :node_memory_swap_io_bytes:sum_rate
-  - expr: |
+  - record: 'node:node_memory_utilisation:'
+    expr: |
       1 -
       sum by (node) (
         (node_memory_MemFree_bytes{app="node-exporter"} + node_memory_Cached_bytes{app="node-exporter"} + node_memory_Buffers_bytes{app="node-exporter"})
@@ -83,76 +99,78 @@ groups:
       * on (namespace, pod) group_left(node)
         node_namespace_pod:kube_pod_info:
       )
-    record: 'node:node_memory_utilisation:'
-  - expr: |
+  - record: 'node:node_memory_utilisation_2:'
+    expr: |
       1 - (node:node_memory_bytes_available:sum / node:node_memory_bytes_total:sum)
-    record: 'node:node_memory_utilisation_2:'
-  - expr: |
+  - record: node:node_memory_swap_io_bytes:sum_rate
+    expr: |
       1e3 * sum by (node) (
         (rate(node_vmstat_pgpgin{app="node-exporter"}[1m])
         + rate(node_vmstat_pgpgout{app="node-exporter"}[1m]))
         * on (namespace, pod) group_left(node)
           node_namespace_pod:kube_pod_info:
       )
-    record: node:node_memory_swap_io_bytes:sum_rate
-  - expr: |
+  - record: node:cluster_memory_utilisation:ratio
+    expr: |
       (node:node_memory_bytes_total:sum - node:node_memory_bytes_available:sum)
       /
       scalar(sum(node:node_memory_bytes_total:sum))
-    record: node:cluster_memory_utilisation:ratio
-  - expr: |
+  - record: :node_disk_utilisation:avg_irate
+    expr: |
       avg(irate(node_disk_io_time_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]))
-    record: :node_disk_utilisation:avg_irate
-  - expr: |
+  - record: node:node_disk_utilisation:avg_irate
+    expr: |
       avg by (node) (
         irate(node_disk_io_time_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m])
       * on (namespace, pod) group_left(node)
         node_namespace_pod:kube_pod_info:
       )
-    record: node:node_disk_utilisation:avg_irate
-  - expr: |
+  - record: :node_disk_saturation:avg_irate
+    expr: |
       avg(irate(node_disk_io_time_weighted_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]) / 1e3)
-    record: :node_disk_saturation:avg_irate
-  - expr: |
+  - record: node:node_disk_saturation:avg_irate
+    expr: |
       avg by (node) (
         irate(node_disk_io_time_weighted_seconds_total{app="node-exporter",device=~"nvme.+|rbd.+|sd.+|vd.+|xvd.+"}[1m]) / 1e3
       * on (namespace, pod) group_left(node)
         node_namespace_pod:kube_pod_info:
       )
-    record: node:node_disk_saturation:avg_irate
-  - expr: |
+  - record: 'node:node_filesystem_usage:'
+    expr: |
       max by (namespace, pod, device) ((node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"}
       - node_filesystem_avail_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"})
       / node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"})
-    record: 'node:node_filesystem_usage:'
-  - expr: |
+  - record: 'node:node_filesystem_avail:'
+    expr: |
       max by (namespace, pod, device) (node_filesystem_avail_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"} / node_filesystem_size_bytes{fstype=~"ext[234]|btrfs|xfs|zfs"})
-    record: 'node:node_filesystem_avail:'
-  - expr: |
+  - record: :node_net_utilisation:sum_irate
+    expr: |
       sum(irate(node_network_receive_bytes_total{app="node-exporter",device!~"veth.+"}[1m])) +
       sum(irate(node_network_transmit_bytes_total{app="node-exporter",device!~"veth.+"}[1m]))
-    record: :node_net_utilisation:sum_irate
-  - expr: |
+  - record: node:node_net_utilisation:sum_irate
+    expr: |
       sum by (node) (
         (irate(node_network_receive_bytes_total{app="node-exporter",device!~"veth.+"}[1m]) +
         irate(node_network_transmit_bytes_total{app="node-exporter",device!~"veth.+"}[1m]))
       * on (namespace, pod) group_left(node)
         node_namespace_pod:kube_pod_info:
       )
-    record: node:node_net_utilisation:sum_irate
-  - expr: |
+  - record: :node_net_saturation:sum_irate
+    expr: |
       sum(irate(node_network_receive_drop_total{app="node-exporter",device!~"veth.+"}[1m])) +
       sum(irate(node_network_transmit_drop_total{app="node-exporter",device!~"veth.+"}[1m]))
-    record: :node_net_saturation:sum_irate
-  - expr: |
+  - record: node:node_net_saturation:sum_irate
+    expr: |
       sum by (node) (
         (irate(node_network_receive_drop_total{app="node-exporter",device!~"veth.+"}[1m]) +
         irate(node_network_transmit_drop_total{app="node-exporter",device!~"veth.+"}[1m]))
       * on (namespace, pod) group_left(node)
         node_namespace_pod:kube_pod_info:
       )
-    record: node:node_net_saturation:sum_irate
-  - alert: NodeFilesystemSpaceFillingUp
+  - ############################################################
+    # alerts
+    ############################################################
+    alert: NodeFilesystemSpaceFillingUp
     annotations:
       message: Filesystem on {{ $labels.device }} at {{ $labels.instance }} is predicted
         to run out of space within the next 24 hours.
