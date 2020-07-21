@@ -63,7 +63,7 @@ func TestGetDCForProvider(t *testing.T) {
 					Name: "do-ams3",
 				},
 				Spec: &models.DatacenterSpec{
-					Seed:     "prow-build-cluster",
+					Seed:     "kubermatic",
 					Provider: "digitalocean",
 					Location: "Amsterdam",
 					Country:  "NL",
@@ -105,13 +105,13 @@ func TestCreateDC(t *testing.T) {
 	}{
 		{
 			name: "create DC",
-			seed: "prow-build-cluster",
+			seed: "kubermatic",
 			dc: &models.Datacenter{
 				Metadata: &models.DatacenterMeta{
 					Name: "created-dc",
 				},
 				Spec: &models.DatacenterSpec{
-					Seed:     "prow-build-cluster",
+					Seed:     "kubermatic",
 					Provider: "digitalocean",
 					Location: "Hamburg",
 					Country:  "DE",
@@ -160,13 +160,13 @@ func TestDeleteDC(t *testing.T) {
 	}{
 		{
 			name: "delete DC",
-			seed: "prow-build-cluster",
+			seed: "kubermatic",
 			dc: &models.Datacenter{
 				Metadata: &models.DatacenterMeta{
 					Name: "dc-to-delete",
 				},
 				Spec: &models.DatacenterSpec{
-					Seed:     "prow-build-cluster",
+					Seed:     "kubermatic",
 					Provider: "digitalocean",
 					Location: "Hamburg",
 					Country:  "DE",
@@ -209,13 +209,13 @@ func TestUpdateDC(t *testing.T) {
 	}{
 		{
 			name: "update DC",
-			seed: "prow-build-cluster",
+			seed: "kubermatic",
 			originalDC: &models.Datacenter{
 				Metadata: &models.DatacenterMeta{
 					Name: "to-update-dc",
 				},
 				Spec: &models.DatacenterSpec{
-					Seed:     "prow-build-cluster",
+					Seed:     "kubermatic",
 					Provider: "digitalocean",
 					Location: "Hamburg",
 					Country:  "DE",
@@ -230,7 +230,7 @@ func TestUpdateDC(t *testing.T) {
 					Name: "updated-dc",
 				},
 				Spec: &models.DatacenterSpec{
-					Seed:     "prow-build-cluster",
+					Seed:     "kubermatic",
 					Provider: "aws",
 					Location: "Frankfurt",
 					Country:  "DE",
@@ -286,13 +286,13 @@ func TestPatchDC(t *testing.T) {
 	}{
 		{
 			name: "patch DC",
-			seed: "prow-build-cluster",
+			seed: "kubermatic",
 			originalDC: &models.Datacenter{
 				Metadata: &models.DatacenterMeta{
 					Name: "to-patch-dc",
 				},
 				Spec: &models.DatacenterSpec{
-					Seed:     "prow-build-cluster",
+					Seed:     "kubermatic",
 					Provider: "digitalocean",
 					Location: "Hamburg",
 					Country:  "DE",
@@ -308,7 +308,7 @@ func TestPatchDC(t *testing.T) {
 					Name: "patched-dc",
 				},
 				Spec: &models.DatacenterSpec{
-					Seed:     "prow-build-cluster",
+					Seed:     "kubermatic",
 					Provider: "aws",
 					Location: "Frankfurt",
 					Country:  "DE",
@@ -362,15 +362,15 @@ func TestGetDCForSeed(t *testing.T) {
 		expected *models.Datacenter
 	}{
 		{
-			name: "get DC do-ams3 for seed prow-build-cluster",
-			seed: "prow-build-cluster",
+			name: "get DC do-ams3 for seed kubermatic",
+			seed: "kubermatic",
 			dc:   "do-ams3",
 			expected: &models.Datacenter{
 				Metadata: &models.DatacenterMeta{
 					Name: "do-ams3",
 				},
 				Spec: &models.DatacenterSpec{
-					Seed:     "prow-build-cluster",
+					Seed:     "kubermatic",
 					Provider: "digitalocean",
 					Location: "Amsterdam",
 					Country:  "NL",
@@ -411,8 +411,8 @@ func TestListDCForSeed(t *testing.T) {
 		expectedDCNames []string
 	}{
 		{
-			name:            "list DCs for seed prow-build-cluster",
-			seed:            "prow-build-cluster",
+			name:            "list DCs for seed kubermatic",
+			seed:            "kubermatic",
 			expectedDCNames: []string{"alibaba-eu-central-1a", "aws-eu-central-1a", "azure-westeurope", "byo-kubernetes", "do-ams3", "do-fra1", "gcp-westeurope", "hetzner-nbg1", "kubevirt-europe-west3-c", "packet-ewr1", "syseleven-dbl1", "vsphere-ger"},
 		},
 	}
@@ -458,7 +458,7 @@ func TestGetDC(t *testing.T) {
 					Name: "do-ams3",
 				},
 				Spec: &models.DatacenterSpec{
-					Seed:     "prow-build-cluster",
+					Seed:     "kubermatic",
 					Provider: "digitalocean",
 					Location: "Amsterdam",
 					Country:  "NL",
