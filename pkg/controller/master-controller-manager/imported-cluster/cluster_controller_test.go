@@ -82,7 +82,7 @@ func TestReconcile(t *testing.T) {
 				t.Fatal(err)
 			}
 			if kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.ImportedClusterKubeconfigCleanupFinalizer) {
-				t.Fatalf("the finilizer should be deleted")
+				t.Fatal("the finalizer should be deleted")
 			}
 
 			secretKubeconfig := &corev1.Secret{}
@@ -91,7 +91,7 @@ func TestReconcile(t *testing.T) {
 				t.Fatal("expected error")
 			}
 			if !kerrors.IsNotFound(err) {
-				t.Fatal("expected not found error")
+				t.Fatalf("expected not-found error, but got %v", err)
 			}
 		})
 	}
