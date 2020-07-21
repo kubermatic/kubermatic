@@ -1260,6 +1260,26 @@ func (r *runner) GetDCForSeed(seed, dc string) (*models.Datacenter, error) {
 	return receivedDC.GetPayload(), nil
 }
 
+func (r *runner) GetDCForSeedWithRetry(seed, dc string, attempts int) (*models.Datacenter, error) {
+	var errGetDC error
+	var receivedDC *models.Datacenter
+
+	if err := wait.PollImmediate(time.Second, time.Duration(attempts)*time.Second, func() (bool, error) {
+		receivedDC, errGetDC = r.GetDCForSeed(seed, dc)
+		if errGetDC != nil {
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		// first check error from GetDC
+		if errGetDC != nil {
+			return nil, errGetDC
+		}
+		return nil, err
+	}
+	return receivedDC, nil
+}
+
 func (r *runner) ListDCForSeed(seed string) ([]*models.Datacenter, error) {
 	params := &datacenter.ListDCForSeedParams{
 		Seed: seed,
@@ -1309,27 +1329,4 @@ func (r *runner) Logout() error {
 		return err
 	}
 	return nil
-}
-
-func cleanUpDC(seed, dc string) func(t *testing.T) {
-	return func(t *testing.T) {
-		adminMasterToken, err := retrieveAdminMasterToken()
-		if err != nil {
-			t.Fatalf("can not get admin master token: %v", err)
-		}
-		runner := createRunner(adminMasterToken, t)
-
-		t.Logf("deleting dc %s...", dc)
-		_, err = runner.GetDC(dc)
-		if err != nil {
-			t.Logf("dc %s already deleted, skipping cleanup", dc)
-			return
-		}
-
-		if err := runner.DeleteDC(seed, dc); err != nil {
-			t.Fatalf("can not delete dc %s : %v", dc, err)
-		}
-
-		t.Logf("dc %s deleted successfully", dc)
-	}
 }

@@ -136,11 +136,15 @@ func TestCreateDC(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
 			}
-			defer cleanUpDC(tc.seed, tc.dc.Metadata.Name)
 
 			if !reflect.DeepEqual(tc.dc, dc) {
 				t.Fatalf("Expected create result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
 					*tc.dc.Metadata, *tc.dc.Spec, *tc.dc.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
+			}
+
+			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.dc.Metadata.Name, 5)
+			if err != nil {
+				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
 			}
 
 			// user can't create DC with the same name in the same seed
@@ -190,6 +194,11 @@ func TestDeleteDC(t *testing.T) {
 			_, err = adminAPIRunner.CreateDC(tc.seed, tc.dc)
 			if err != nil {
 				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
+			}
+
+			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.dc.Metadata.Name, 5)
+			if err != nil {
+				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
 			}
 
 			err = adminAPIRunner.DeleteDC(tc.seed, tc.dc.Metadata.Name)
@@ -255,18 +264,21 @@ func TestUpdateDC(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
 			}
-			defer cleanUpDC(tc.seed, tc.originalDC.Metadata.Name)
 
 			if !reflect.DeepEqual(tc.originalDC, dc) {
 				t.Fatalf("Expected create result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
 					*tc.originalDC.Metadata, *tc.originalDC.Spec, *tc.originalDC.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
 			}
 
+			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.originalDC.Metadata.Name, 5)
+			if err != nil {
+				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
+			}
+
 			updatedDC, err := adminAPIRunner.UpdateDC(tc.seed, tc.originalDC.Metadata.Name, tc.updatedDC)
 			if err != nil {
 				t.Fatalf("can not update dc due to error: %v", GetErrorResponse(err))
 			}
-			defer cleanUpDC(tc.seed, tc.updatedDC.Metadata.Name)
 
 			if !reflect.DeepEqual(tc.updatedDC, updatedDC) {
 				t.Fatalf("Expected update result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
@@ -333,18 +345,21 @@ func TestPatchDC(t *testing.T) {
 			if err != nil {
 				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
 			}
-			defer cleanUpDC(tc.seed, tc.originalDC.Metadata.Name)
 
 			if !reflect.DeepEqual(tc.originalDC, dc) {
 				t.Fatalf("Expected create result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
 					*tc.originalDC.Metadata, *tc.originalDC.Spec, *tc.originalDC.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
 			}
 
+			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.originalDC.Metadata.Name, 5)
+			if err != nil {
+				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
+			}
+
 			patchedDC, err := adminAPIRunner.PatchDC(tc.seed, tc.originalDC.Metadata.Name, tc.patch)
 			if err != nil {
 				t.Fatalf("can not patch dc due to error: %v", GetErrorResponse(err))
 			}
-			defer cleanUpDC(tc.seed, tc.expectedDC.Metadata.Name)
 
 			if !reflect.DeepEqual(tc.expectedDC, patchedDC) {
 				t.Fatalf("Expected patch result: [meta: %+v, spec:%+v, node: %+v] is not equal to the one received: [meta: %+v, spec:%+v, node: %+v]",
