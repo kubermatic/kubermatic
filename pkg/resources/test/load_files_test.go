@@ -66,6 +66,8 @@ func checkTestResult(t *testing.T, resFile string, testObj interface{}) {
 		t.Fatal(err)
 	}
 
+	res = append([]byte("# This file has been generated, DO NOT EDIT.\n\n"), res...)
+
 	if *update {
 		if err := ioutil.WriteFile(path, res, 0644); err != nil {
 			t.Fatalf("failed to update fixtures: %v", err)

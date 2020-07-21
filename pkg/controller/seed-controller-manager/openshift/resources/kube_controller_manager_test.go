@@ -64,6 +64,8 @@ func TestKubeControllerConfigMapCreation(t *testing.T) {
 				t.Fatalf("failed to marshal configmap: %v", err)
 			}
 
+			serializedConfigmap = append([]byte("# This file has been generated, DO NOT EDIT.\n"), serializedConfigmap...)
+
 			testhelper.CompareOutput(t, fmt.Sprintf("kube-%s", tc.name), string(serializedConfigmap), *update, ".yaml")
 		})
 	}

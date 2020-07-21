@@ -197,12 +197,12 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-license-validation
-    run_if_changed: "vendor"
+    run_if_changed: "^vendor/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
-      - image: quay.io/kubermatic/wwhrd:0.3.0-0
+      - image: quay.io/kubermatic/util:1.4.0
         command:
         - ./hack/verify-licenses.sh
         resources:
@@ -210,19 +210,29 @@ presubmits:
             memory: 512Mi
             cpu: 1
 
+  - name: pre-kubermatic-verify-boilerplate
+    always_run: true
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    spec:
+      containers:
+      - image: quay.io/kubermatic-labs/boilerplate:v0.1.1
+        command:
+        - ./hack/verify-boilerplate.sh
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+
   - name: pre-kubermatic-prometheus-rules-validation
     run_if_changed: "charts/monitoring"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
-      - image: quay.io/kubermatic/promtool:2.7.0-3
+      - image: quay.io/kubermatic/util:1.4.0
         command:
-        - make
-        args:
-        - -C
-        - charts/monitoring
-        - check-rules
+        - ./hack/verify-prometheus-rules.sh
         env:
         - name: KUBERMATIC_EDITION
           value: ee

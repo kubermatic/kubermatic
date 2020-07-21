@@ -1,3 +1,5 @@
+# This file has been generated, DO NOT EDIT.
+
 metadata:
   annotations:
     nodeport-proxy.k8s.io/expose-namespaced: "true"

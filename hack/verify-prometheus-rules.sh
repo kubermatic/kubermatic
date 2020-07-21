@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
@@ -14,20 +14,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd $(dirname $0)
+set -euo pipefail
 
-# Install yq if not installed
-if ! [ -x "$(command -v yq)" ]; then
-	echo "yq not installed / vailable in PATH!"
-	echo "Executing go get on github.com/mikefarah/yq ..."
-	go get github.com/mikefarah/yq
-	echo "Done!"
+cd $(dirname $0)/..
+source hack/lib.sh
+
+if ! [ -x "$(command -v promtool)" ]; then
+  version=2.19.2
+
+	echodate "Downloading promtool v$version..."
+
+  curl -L https://github.com/prometheus/prometheus/releases/download/v$version/prometheus-$version.linux-amd64.tar.gz | tar -xz
+  mv prometheus-$version.linux-amd64/promtool /usr/local/bin/
+  rm -rf prometheus-$version.linux-amd64
+
+	echodate "Done!"
 fi
 
-comment="# This file has been generated, do not edit."
+echodate "Rebuilding rules..."
+./hack/update-prometheus-rules.sh
 
-for file in */*.yaml; do
-  newfile=$(dirname $file)-$(basename $file)
-  echo "$file => $newfile"
-  yq r $file --tojson | jq 'del(.groups[].rules[].runbook)' | (echo "$comment"; yq r --prettyPrint -) > ../$newfile
-done
+echodate "Diffing..."
+git diff --exit-code
+echodate "No changes detected."
