@@ -46,13 +46,13 @@ export PATH=$PATH:/usr/local/go/bin
 export SEED_NAME=kubermatic
 
 if [[ -z ${JOB_NAME} ]]; then
-	echo "This script should only be running in a CI environment."
-	exit 1
+  echo "This script should only be running in a CI environment."
+  exit 1
 fi
 
 if [[ -z ${PROW_JOB_ID} ]]; then
-	echo "Build id env variable has to be set."
-	exit 1
+  echo "Build id env variable has to be set."
+  exit 1
 fi
 
 cd "${GOPATH}/src/github.com/kubermatic/kubermatic"
@@ -345,15 +345,11 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
     time retry 5 docker push "${IMAGE_NAME}"
   )
   (
-    echodate "Building etcd-launcher images"
-    TEST_NAME="Build etcd-launcher Docker images"
-
-    for ETCD_TAG in $(getEtcdTags); do
-      BASE_TAG=$(echo ${ETCD_TAG} | cut -d\. -f 1,2| tr -d .)
-      IMAGE_NAME="quay.io/kubermatic/etcd-launcher-${BASE_TAG}:${KUBERMATIC_VERSION}"
-      time retry 5 docker build --build-arg ETCD_VERSION=${ETCD_TAG} -t "${IMAGE_NAME}" -f cmd/etcd-launcher/Dockerfile .
-      time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
-    done
+    echodate "Building etcd-launcher image"
+    TEST_NAME="Build etcd-launcher Docker image"
+    IMAGE_NAME="quay.io/kubermatic/etcd-launcher:${KUBERMATIC_VERSION}"
+    time retry 5 docker build -t "${IMAGE_NAME}" -f cmd/etcd-launcher/Dockerfile .
+    time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
   )
 
   pushElapsed kubermatic_docker_build_duration_milliseconds $beforeDockerBuild

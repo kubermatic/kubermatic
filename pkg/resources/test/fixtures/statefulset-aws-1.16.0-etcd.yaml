@@ -55,7 +55,7 @@ spec:
         - -initial-state
         - $(INITIAL_STATE)
         command:
-        - /usr/local/bin/etcd-launcher
+        - /opt/bin/etcd-launcher
         env:
         - name: POD_NAME
           valueFrom:
@@ -88,7 +88,7 @@ spec:
           value: /etc/etcd/pki/client/apiserver-etcd-client.key
         - name: INITIAL_STATE
           value: new
-        image: 'quay.io/kubermatic/etcd-launcher-v33:'
+        image: gcr.io/etcd-development/etcd:v3.3.18
         imagePullPolicy: IfNotPresent
         livenessProbe:
           failureThreshold: 3
@@ -138,8 +138,22 @@ spec:
         - mountPath: /etc/etcd/pki/client
           name: apiserver-etcd-client-certificate
           readOnly: true
+        - mountPath: /opt/bin/
+          name: launcher
       imagePullSecrets:
       - name: dockercfg
+      initContainers:
+      - command:
+        - /bin/cp
+        - /etcd-launcher
+        - /opt/bin/
+        image: 'quay.io/kubermatic/etcd-launcher:'
+        imagePullPolicy: IfNotPresent
+        name: etcd-launcher-init
+        resources: {}
+        volumeMounts:
+        - mountPath: /opt/bin/
+          name: launcher
       volumes:
       - name: etcd-tls-certificate
         secret:
@@ -153,6 +167,8 @@ spec:
       - name: apiserver-etcd-client-certificate
         secret:
           secretName: apiserver-etcd-client-certificate
+      - emptyDir: {}
+        name: launcher
   updateStrategy:
     type: RollingUpdate
   volumeClaimTemplates:

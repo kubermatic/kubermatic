@@ -17,7 +17,6 @@ limitations under the License.
 package etcd
 
 import (
-	"errors"
 	"fmt"
 	"strconv"
 
@@ -43,11 +42,6 @@ const (
 )
 
 var (
-	baseTags = map[string]string{
-		etcdImageTagV33: "v33",
-		etcdImageTagV34: "v34",
-	}
-
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
 		name: {
 			Requests: corev1.ResourceList{
@@ -104,18 +98,30 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				Name:   name,
 				Labels: podLabels,
 			}
-			image, err := getLauncherImage(data)
-			if err != nil {
-				return nil, err
+
+			set.Spec.Template.Spec.InitContainers = []corev1.Container{
+				{
+					Name: "etcd-launcher-init",
+
+					Image:           data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/etcd-launcher:" + resources.KUBERMATICCOMMIT,
+					ImagePullPolicy: corev1.PullIfNotPresent,
+					Command:         []string{"/bin/cp", "/etcd-launcher", "/opt/bin/"},
+					VolumeMounts: []corev1.VolumeMount{
+						{
+							Name:      "launcher",
+							MountPath: "/opt/bin/",
+						},
+					},
+				},
 			}
 
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name: resources.EtcdStatefulSetName,
 
-					Image:           image,
+					Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
 					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/usr/local/bin/etcd-launcher"}, Args: getLauncherArgs(enableDataCorruptionChecks),
+					Command:         []string{"/opt/bin/etcd-launcher"}, Args: getLauncherArgs(enableDataCorruptionChecks),
 					Env: []corev1.EnvVar{
 						{
 							Name: "POD_NAME",
@@ -237,6 +243,10 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							MountPath: "/etc/etcd/pki/client",
 							ReadOnly:  true,
 						},
+						{
+							Name:      "launcher",
+							MountPath: "/opt/bin/",
+						},
 					},
 				},
 			}
@@ -312,6 +322,12 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		},
+		{
+			Name: "launcher",
+			VolumeSource: corev1.VolumeSource{
+				EmptyDir: &corev1.EmptyDirVolumeSource{},
+			},
+		},
 	}
 }
 
@@ -329,15 +345,6 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 		return etcdImageTagV33
 	}
 	return etcdImageTagV34
-}
-
-func getLauncherImage(data etcdStatefulSetCreatorData) (string, error) {
-	etcdTag := ImageTag(data.Cluster())
-	baseTag, ok := baseTags[etcdTag]
-	if !ok {
-		return "", errors.New("unknown etcd tag")
-	}
-	return data.ImageRegistry(resources.RegistryQuay) + "/kubermatic/etcd-launcher-" + baseTag + ":" + resources.KUBERMATICCOMMIT, nil
 }
 
 func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int {

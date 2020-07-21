@@ -38,8 +38,6 @@ if [ "$KUBERMATIC_EDITION" != "ce" ]; then
   REPOSUFFIX="-$KUBERMATIC_EDITION"
 fi
 
-ETCD_TAGS=$(getEtcdTags)
-
 make build
 docker build -t ${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${1} .
 cd cmd/nodeport-proxy && export TAG=${1} && make DOCKER_REPO=${DOCKER_REPO} docker && unset TAG && cd -
@@ -47,11 +45,7 @@ cd cmd/kubeletdnat-controller && export TAG=${1} && make DOCKER_REPO=${DOCKER_RE
 docker build -t "${DOCKER_REPO}/addons:${1}" addons
 docker build -t "${DOCKER_REPO}/openshift-addons:${1}" openshift_addons
 cd cmd/user-ssh-keys-agent && export TAG=${1} && make DOCKER_REPO=${DOCKER_REPO} docker && unset TAG && cd -
-
-for ETCD_TAG in $ETCD_TAGS; do
-  BASE_TAG=$(echo ${ETCD_TAG} | cut -d\. -f 1,2| tr -d .)
-  docker build --build-arg ETCD_VERSION=${ETCD_TAG} -t ${DOCKER_REPO}/etcd-launcher-${BASE_TAG}:${1} -f cmd/etcd-launcher/Dockerfile .
-done
+docker build  -t ${DOCKER_REPO}/etcd-launcher:${1} -f cmd/etcd-launcher/Dockerfile .
 
 # keep a mirror of the EE version in the old repo
 if [ "$KUBERMATIC_EDITION" == "ee" ]; then
@@ -70,6 +64,7 @@ for TAG in "$@"; do
   docker tag ${DOCKER_REPO}/addons:${1} ${DOCKER_REPO}/addons:${TAG}
   docker tag ${DOCKER_REPO}/openshift-addons:${1} ${DOCKER_REPO}/openshift-addons:${TAG}
   docker tag ${DOCKER_REPO}/user-ssh-keys-agent:${1} ${DOCKER_REPO}/user-ssh-keys-agent:${TAG}
+  docker tag ${DOCKER_REPO}/etcd-launcher:${1} ${DOCKER_REPO}/etcd-launcher:${TAG}
 
   docker push ${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}
   docker push ${DOCKER_REPO}/nodeport-proxy:${TAG}
@@ -77,12 +72,7 @@ for TAG in "$@"; do
   docker push ${DOCKER_REPO}/addons:${TAG}
   docker push ${DOCKER_REPO}/openshift-addons:${TAG}
   docker push ${DOCKER_REPO}/user-ssh-keys-agent:${TAG}
-
-  for ETCD_TAG in $ETCD_TAGS; do
-    BASE_TAG=$(echo ${ETCD_TAG} | cut -d\. -f 1,2| tr -d .)
-    docker tag ${DOCKER_REPO}/etcd-launcher-${BASE_TAG}:${1} ${DOCKER_REPO}/etcd-launcher-${BASE_TAG}:${TAG}
-    docker push ${DOCKER_REPO}/etcd-launcher-${BASE_TAG}:${TAG}
-  done
+  docker push ${DOCKER_REPO}/etcd-launcher:${TAG}
 
   if [ "$KUBERMATIC_EDITION" == "ee" ]; then
     docker tag ${DOCKER_REPO}/api:${1} ${DOCKER_REPO}/api:${TAG}
