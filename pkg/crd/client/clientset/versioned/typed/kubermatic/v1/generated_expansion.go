@@ -8,6 +8,8 @@ type AddonConfigExpansion interface{}
 
 type ClusterExpansion interface{}
 
+type ImportedClusterExpansion interface{}
+
 type KubermaticSettingExpansion interface{}
 
 type ProjectExpansion interface{}

@@ -1,0 +1,138 @@
+/*
+Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package importedcluster
+
+import (
+	"context"
+	"fmt"
+
+	"go.uber.org/zap"
+
+	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kuberneteshelper "github.com/kubermatic/kubermatic/pkg/kubernetes"
+	"github.com/kubermatic/kubermatic/pkg/resources"
+
+	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
+)
+
+const (
+	ControllerName = "imported_cluster_controller"
+)
+
+// Reconciler is a controller which is responsible for managing clusters
+type Reconciler struct {
+	ctx context.Context
+	ctrlruntimeclient.Client
+	log *zap.SugaredLogger
+}
+
+// NewController creates a cluster controller.
+func Add(
+	ctx context.Context,
+	mgr manager.Manager,
+	log *zap.SugaredLogger) error {
+	reconciler := &Reconciler{
+		log:    log.Named(ControllerName),
+		Client: mgr.GetClient(),
+		ctx:    ctx,
+	}
+	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler})
+	if err != nil {
+		return err
+	}
+	// Watch for changes to ImportedCluster
+	err = c.Watch(&source.Kind{Type: &kubermaticv1.ImportedCluster{}}, &handler.EnqueueRequestForObject{})
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	resourceName := request.Name
+	log := r.log.With("request", request)
+	log.Debug("Processing")
+
+	icl := &kubermaticv1.ImportedCluster{}
+	if err := r.Get(r.ctx, client.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, icl); err != nil {
+		if kerrors.IsNotFound(err) {
+			log.Debug("Could not find imported cluster")
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+
+	if icl.DeletionTimestamp != nil {
+		if kuberneteshelper.HasOnlyFinalizer(icl, kubermaticapiv1.ImportedClusterKubeconfigCleanupFinalizer) {
+			if err := r.cleanUpKubeconfigSecret(icl); err != nil {
+				log.Errorf("Could not delete kubeconfig secret, %v", err)
+				return reconcile.Result{}, err
+			}
+		}
+	}
+
+	return reconcile.Result{}, nil
+}
+
+func (r *Reconciler) cleanUpKubeconfigSecret(cluster *kubermaticv1.ImportedCluster) error {
+	if err := r.deleteSecret(cluster); err != nil {
+		return err
+	}
+
+	oldCluster := cluster.DeepCopy()
+	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.ImportedClusterKubeconfigCleanupFinalizer)
+	return r.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+}
+
+func (r *Reconciler) deleteSecret(cluster *kubermaticv1.ImportedCluster) error {
+	secretName := cluster.GetKubeconfigSecretName()
+	if secretName == "" {
+		return nil
+	}
+
+	secret := &corev1.Secret{}
+	name := types.NamespacedName{Name: secretName, Namespace: resources.KubermaticNamespace}
+	err := r.Get(r.ctx, name, secret)
+	// Its already gone
+	if kerrors.IsNotFound(err) {
+		return nil
+	}
+
+	// Something failed while loading the secret
+	if err != nil {
+		return fmt.Errorf("failed to get Secret %q: %v", name.String(), err)
+	}
+
+	if err := r.Delete(r.ctx, secret); err != nil {
+		return fmt.Errorf("failed to delete Secret %q: %v", name.String(), err)
+	}
+
+	// We successfully deleted the secret
+	return nil
+}
