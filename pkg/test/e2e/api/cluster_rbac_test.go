@@ -43,7 +43,7 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 	}{
 		{
 			name:                     "create cluster/role binding",
-			dc:                       "prow-build-cluster",
+			dc:                       "kubermatic",
 			location:                 "do-fra1",
 			version:                  "v1.15.6",
 			credential:               "e2e-digitalocean",
