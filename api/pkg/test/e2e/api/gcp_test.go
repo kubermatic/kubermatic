@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestGCPZones(t *testing.T) {
@@ -110,10 +111,9 @@ func TestGCPDiskTypes(t *testing.T) {
 				t.Fatalf("can not get disk types %v", err)
 			}
 
-			sort.Strings(diskTypeList)
-			sort.Strings(tc.resultList)
+			expectedDiskTypeList := sets.NewString(diskTypeList...)
 
-			if !equality.Semantic.DeepEqual(tc.resultList, diskTypeList) {
+			if !expectedDiskTypeList.HasAll(tc.resultList...) {
 				t.Fatalf("expected: %v, got %v", tc.resultList, diskTypeList)
 			}
 
