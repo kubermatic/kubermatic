@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-ARG ETCD_VERSION=v3.4.3
-FROM gcr.io/etcd-development/etcd:$ETCD_VERSION
+FROM busybox
 LABEL maintainer="support@kubermatic.com"
 
-COPY ./_build/etcd-launcher /usr/local/bin/
+COPY ./_build/etcd-launcher /
