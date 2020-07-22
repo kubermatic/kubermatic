@@ -916,7 +916,13 @@ func GetHTTPProxyEnvVarsFromSeed(seed *kubermaticv1.Seed, inClusterAPIServerURL 
 // SetResourceRequirements sets resource requirements on provided slice of containers.
 // The highest priority has requirements provided using overrides, then requirements provided by the vpa-updater
 // (if VPA is enabled), and at the end provided default requirements for a given resource.
-func SetResourceRequirements(containers []corev1.Container, requirements, overrides map[string]*corev1.ResourceRequirements, annotations map[string]string) error {
+func SetResourceRequirements(containers []corev1.Container, defaultRequirements, overrides map[string]*corev1.ResourceRequirements, annotations map[string]string) error {
+	// do not accidentally modify the map of default requirements
+	requirements := map[string]*corev1.ResourceRequirements{}
+	for k, v := range defaultRequirements {
+		requirements[k] = v.DeepCopy()
+	}
+
 	val, ok := annotations[kubermaticv1.UpdatedByVPALabelKey]
 	if ok && val != "" {
 		var req []Requirements
@@ -929,7 +935,7 @@ func SetResourceRequirements(containers []corev1.Container, requirements, overri
 		}
 	}
 	for k, v := range overrides {
-		requirements[k] = v
+		requirements[k] = v.DeepCopy()
 	}
 
 	for i := range containers {
