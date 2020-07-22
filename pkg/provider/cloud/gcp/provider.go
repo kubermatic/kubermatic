@@ -100,7 +100,11 @@ func (g *gcp) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 
 // ValidateCloudSpec validates the given CloudSpec.
 func (g *gcp) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	if spec.GCP.ServiceAccount == "" {
+	sa, err := GetCredentialsForCluster(spec, g.secretKeySelector)
+	if err != nil {
+		return err
+	}
+	if sa == "" {
 		return fmt.Errorf("serviceAccount cannot be empty")
 	}
 	return nil
