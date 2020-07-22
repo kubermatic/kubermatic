@@ -19,6 +19,8 @@ package resources
 import (
 	"testing"
 
+	"github.com/go-test/deep"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 
@@ -541,5 +543,39 @@ func TestSetResourceRequirements(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestSetResourceRequirementsDoesNotChangeDefaults(t *testing.T) {
+	defaults := map[string]*corev1.ResourceRequirements{
+		"test": {
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("100Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+			},
+		},
+	}
+
+	backup := map[string]*corev1.ResourceRequirements{}
+	for k, v := range defaults {
+		backup[k] = v.DeepCopy()
+	}
+
+	overrides := map[string]*corev1.ResourceRequirements{
+		"test": {
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("200Mi"),
+				corev1.ResourceCPU:    resource.MustParse("200m"),
+			},
+		},
+	}
+
+	err := SetResourceRequirements(nil, defaults, overrides, nil)
+	if err != nil {
+		t.Fatalf("function should not have returned an error, but got: %v", err)
+	}
+
+	if diff := deep.Equal(backup, defaults); diff != nil {
+		t.Fatalf("The defaults have changed: %v\n", diff)
 	}
 }
