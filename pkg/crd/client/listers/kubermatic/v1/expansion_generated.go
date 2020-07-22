@@ -18,9 +18,9 @@ type AddonConfigListerExpansion interface{}
 // ClusterLister.
 type ClusterListerExpansion interface{}
 
-// ImportedClusterListerExpansion allows custom methods to be added to
-// ImportedClusterLister.
-type ImportedClusterListerExpansion interface{}
+// ExternalClusterListerExpansion allows custom methods to be added to
+// ExternalClusterLister.
+type ExternalClusterListerExpansion interface{}
 
 // KubermaticSettingListerExpansion allows custom methods to be added to
 // KubermaticSettingLister.

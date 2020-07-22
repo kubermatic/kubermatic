@@ -73,8 +73,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&PresetList{},
 		&AdmissionPlugin{},
 		&AdmissionPluginList{},
-		&ImportedCluster{},
-		&ImportedClusterList{},
+		&ExternalCluster{},
+		&ExternalClusterList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package importedcluster
+package externalcluster
 
 import (
 	"context"
@@ -49,9 +49,9 @@ func TestReconcile(t *testing.T) {
 			name:        "scenario 1: cleanup finalizer and kubeconfig secret",
 			clusterName: "test",
 			existingKubermaticObjects: []runtime.Object{
-				genImportedCluster("test", metav1.Now()),
+				genExternalCluster("test", metav1.Now()),
 				&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{Name: genImportedCluster("test", metav1.Now()).GetKubeconfigSecretName(), Namespace: resources.KubermaticNamespace},
+					ObjectMeta: metav1.ObjectMeta{Name: genExternalCluster("test", metav1.Now()).GetKubeconfigSecretName(), Namespace: resources.KubermaticNamespace},
 				},
 			},
 		},
@@ -76,12 +76,12 @@ func TestReconcile(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cluster := &kubermaticv1.ImportedCluster{}
+			cluster := &kubermaticv1.ExternalCluster{}
 			err = kubermaticFakeClient.Get(context.TODO(), client.ObjectKey{Name: test.clusterName}, cluster)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.ImportedClusterKubeconfigCleanupFinalizer) {
+			if kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer) {
 				t.Fatal("the finalizer should be deleted")
 			}
 
@@ -97,16 +97,16 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func genImportedCluster(name string, deletionTimestamp metav1.Time) *kubermaticv1.ImportedCluster {
+func genExternalCluster(name string, deletionTimestamp metav1.Time) *kubermaticv1.ExternalCluster {
 
-	cluster := &kubermaticv1.ImportedCluster{
+	cluster := &kubermaticv1.ExternalCluster{
 		ObjectMeta: metav1.ObjectMeta{Name: name, DeletionTimestamp: &deletionTimestamp},
-		Spec: kubermaticv1.ImportedClusterSpec{
+		Spec: kubermaticv1.ExternalClusterSpec{
 			HumanReadableName: name,
 		},
 	}
 
-	kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.ImportedClusterKubeconfigCleanupFinalizer)
+	kuberneteshelper.AddFinalizer(cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer)
 
 	cluster.Spec.KubeconfigReference = &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{

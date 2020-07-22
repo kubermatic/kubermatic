@@ -14,8 +14,8 @@ type Interface interface {
 	AddonConfigs() AddonConfigInformer
 	// Clusters returns a ClusterInformer.
 	Clusters() ClusterInformer
-	// ImportedClusters returns a ImportedClusterInformer.
-	ImportedClusters() ImportedClusterInformer
+	// ExternalClusters returns a ExternalClusterInformer.
+	ExternalClusters() ExternalClusterInformer
 	// KubermaticSettings returns a KubermaticSettingInformer.
 	KubermaticSettings() KubermaticSettingInformer
 	// Projects returns a ProjectInformer.
@@ -54,9 +54,9 @@ func (v *version) Clusters() ClusterInformer {
 	return &clusterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
-// ImportedClusters returns a ImportedClusterInformer.
-func (v *version) ImportedClusters() ImportedClusterInformer {
-	return &importedClusterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+// ExternalClusters returns a ExternalClusterInformer.
+func (v *version) ExternalClusters() ExternalClusterInformer {
+	return &externalClusterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // KubermaticSettings returns a KubermaticSettingInformer.

@@ -13,7 +13,7 @@ type KubermaticV1Interface interface {
 	AddonsGetter
 	AddonConfigsGetter
 	ClustersGetter
-	ImportedClustersGetter
+	ExternalClustersGetter
 	KubermaticSettingsGetter
 	ProjectsGetter
 	UsersGetter
@@ -38,8 +38,8 @@ func (c *KubermaticV1Client) Clusters() ClusterInterface {
 	return newClusters(c)
 }
 
-func (c *KubermaticV1Client) ImportedClusters() ImportedClusterInterface {
-	return newImportedClusters(c)
+func (c *KubermaticV1Client) ExternalClusters() ExternalClusterInterface {
+	return newExternalClusters(c)
 }
 
 func (c *KubermaticV1Client) KubermaticSettings() KubermaticSettingInterface {

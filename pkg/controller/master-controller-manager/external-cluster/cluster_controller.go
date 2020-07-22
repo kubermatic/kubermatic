@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package importedcluster
+package externalcluster
 
 import (
 	"context"
@@ -41,7 +41,7 @@ import (
 )
 
 const (
-	ControllerName = "imported_cluster_controller"
+	ControllerName = "external_cluster_controller"
 )
 
 // Reconciler is a controller which is responsible for managing clusters
@@ -51,7 +51,7 @@ type Reconciler struct {
 	log *zap.SugaredLogger
 }
 
-// NewController creates a cluster controller.
+// Add creates a cluster controller.
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
@@ -65,8 +65,8 @@ func Add(
 	if err != nil {
 		return err
 	}
-	// Watch for changes to ImportedCluster
-	err = c.Watch(&source.Kind{Type: &kubermaticv1.ImportedCluster{}}, &handler.EnqueueRequestForObject{})
+	// Watch for changes to ExternalCluster
+	err = c.Watch(&source.Kind{Type: &kubermaticv1.ExternalCluster{}}, &handler.EnqueueRequestForObject{})
 	if err != nil {
 		return err
 	}
@@ -79,7 +79,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
-	icl := &kubermaticv1.ImportedCluster{}
+	icl := &kubermaticv1.ExternalCluster{}
 	if err := r.Get(r.ctx, client.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, icl); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Debug("Could not find imported cluster")
@@ -89,7 +89,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	if icl.DeletionTimestamp != nil {
-		if kuberneteshelper.HasOnlyFinalizer(icl, kubermaticapiv1.ImportedClusterKubeconfigCleanupFinalizer) {
+		if kuberneteshelper.HasOnlyFinalizer(icl, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer) {
 			if err := r.cleanUpKubeconfigSecret(icl); err != nil {
 				log.Errorf("Could not delete kubeconfig secret, %v", err)
 				return reconcile.Result{}, err
@@ -100,17 +100,17 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, nil
 }
 
-func (r *Reconciler) cleanUpKubeconfigSecret(cluster *kubermaticv1.ImportedCluster) error {
+func (r *Reconciler) cleanUpKubeconfigSecret(cluster *kubermaticv1.ExternalCluster) error {
 	if err := r.deleteSecret(cluster); err != nil {
 		return err
 	}
 
 	oldCluster := cluster.DeepCopy()
-	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.ImportedClusterKubeconfigCleanupFinalizer)
+	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer)
 	return r.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
-func (r *Reconciler) deleteSecret(cluster *kubermaticv1.ImportedCluster) error {
+func (r *Reconciler) deleteSecret(cluster *kubermaticv1.ExternalCluster) error {
 	secretName := cluster.GetKubeconfigSecretName()
 	if secretName == "" {
 		return nil

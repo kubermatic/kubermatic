@@ -24,8 +24,8 @@ func (c *FakeKubermaticV1) Clusters() v1.ClusterInterface {
 	return &FakeClusters{c}
 }
 
-func (c *FakeKubermaticV1) ImportedClusters() v1.ImportedClusterInterface {
-	return &FakeImportedClusters{c}
+func (c *FakeKubermaticV1) ExternalClusters() v1.ExternalClusterInterface {
+	return &FakeExternalClusters{c}
 }
 
 func (c *FakeKubermaticV1) KubermaticSettings() v1.KubermaticSettingInterface {

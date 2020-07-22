@@ -20,7 +20,7 @@ import (
 	"context"
 	"fmt"
 
-	importedcluster "github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/imported-cluster"
+	externalcluster "github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/external-cluster"
 	projectlabelsynchronizer "github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/project-label-synchronizer"
 	"github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/rbac"
 	seedproxy "github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/seed-proxy"
@@ -75,8 +75,8 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	if err := seedproxy.Add(ctrlCtx.ctx, ctrlCtx.mgr, 1, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create seedproxy controller: %v", err)
 	}
-	if err := importedcluster.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
-		return fmt.Errorf("failed to create imported cluster controller: %v", err)
+	if err := externalcluster.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create external cluster controller: %v", err)
 	}
 
 	return nil

@@ -1577,8 +1577,8 @@ const (
 	CredentialsSecretsCleanupFinalizer = "kubermatic.io/cleanup-credentials-secrets"
 	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup
 	UserClusterRoleCleanupFinalizer = "kubermatic.io/user-cluster-role"
-	// ImportedClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup
-	ImportedClusterKubeconfigCleanupFinalizer = "kubermatic.io/cleanup-kubeconfig-secret"
+	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup
+	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.io/cleanup-kubeconfig-secret"
 )
 
 func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {

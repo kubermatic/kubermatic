@@ -27,26 +27,26 @@ import (
 //+genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ImportedCluster is the object representing a imported kubernetes cluster.
-type ImportedCluster struct {
+// ExternalCluster is the object representing an external kubernetes cluster.
+type ExternalCluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec ImportedClusterSpec `json:"spec"`
+	Spec ExternalClusterSpec `json:"spec"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// ImportedClusterList specifies a list of imported kubernetes clusters
-type ImportedClusterList struct {
+// ExternalClusterList specifies a list of external kubernetes clusters
+type ExternalClusterList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []Cluster `json:"items"`
 }
 
-// ImportedClusterSpec specifies the data for a new imported kubernetes cluster.
-type ImportedClusterSpec struct {
+// ExternalClusterSpec specifies the data for a new external kubernetes cluster.
+type ExternalClusterSpec struct {
 
 	// HumanReadableName is the cluster name provided by the user
 	HumanReadableName string `json:"humanReadableName"`
@@ -54,6 +54,6 @@ type ImportedClusterSpec struct {
 	KubeconfigReference *providerconfig.GlobalSecretKeySelector `json:"kubeconfigReference,omitempty"`
 }
 
-func (i *ImportedCluster) GetKubeconfigSecretName() string {
-	return fmt.Sprintf("kubeconfig-imported-cluster-%s", i.Name)
+func (i *ExternalCluster) GetKubeconfigSecretName() string {
+	return fmt.Sprintf("kubeconfig-external-cluster-%s", i.Name)
 }
