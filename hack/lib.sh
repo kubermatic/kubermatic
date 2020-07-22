@@ -247,7 +247,3 @@ pushMetric() {
 pushElapsed() {
   pushMetric "$1" $(elapsed $2) "${3:-}" "${4:-}" "${5:-}"
 }
-
-getEtcdTags() {
-  echo $(git grep -h etcdImageTag $(go env GOPATH)/src/github.com/kubermatic/kubermatic/pkg/resources/etcd/statefulset.go | grep -v return | cut -d\  -f 3| tr -d "\"" | xargs echo -n)
-}
