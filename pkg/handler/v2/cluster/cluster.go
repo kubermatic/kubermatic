@@ -286,7 +286,7 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 // Validate validates CreateEndpoint request
 func (req CreateClusterReq) Validate(clusterType kubermaticv1.ClusterType, updateManager common.UpdateManager) error {
 	if len(req.ProjectID) == 0 {
-		return fmt.Errorf("the service account ID cannot be empty")
+		return fmt.Errorf("the project ID cannot be empty")
 	}
 	return handlercommon.ValidateClusterSpec(clusterType, updateManager, req.Body)
 }
