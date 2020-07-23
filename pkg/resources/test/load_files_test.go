@@ -582,6 +582,7 @@ func TestLoadFiles(t *testing.T) {
 					"kubermaticIssuer",
 					true,
 					"quay.io/kubermatic/kubermatic",
+					"quay.io/kubermatic/etcd-launcher",
 					"quay.io/kubermatic/kubeletdnat-controller",
 					false)
 

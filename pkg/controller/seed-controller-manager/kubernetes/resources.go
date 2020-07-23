@@ -168,6 +168,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r.oidcIssuerClientID,
 		r.nodeLocalDNSCacheEnabled,
 		r.kubermaticImage,
+		r.etcdLauncherImage,
 		r.dnatControllerImage,
 		supportsFailureDomainZoneAntiAffinity,
 	), nil
