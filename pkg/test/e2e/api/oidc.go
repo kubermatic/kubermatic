@@ -51,7 +51,7 @@ func retrieveMasterToken() (string, error) {
 		return "", fmt.Errorf("no Helm values.yaml specified via KUBERMATIC_DEX_VALUES_FILE env variable")
 	}
 
-	logger := log.New(true, log.FormatJSON).Sugar()
+	logger := log.New(false, log.FormatJSON).Sugar()
 
 	client, err := dex.NewClientFromHelmValues(valuesFile, "kubermatic", logger)
 	if err != nil {
@@ -82,7 +82,7 @@ func retrieveAdminMasterToken() (string, error) {
 		return "", fmt.Errorf("no Helm values.yaml specified via KUBERMATIC_DEX_VALUES_FILE env variable")
 	}
 
-	logger := log.New(true, log.FormatJSON).Sugar()
+	logger := log.New(false, log.FormatJSON).Sugar()
 
 	client, err := dex.NewClientFromHelmValues(valuesFile, "kubermatic", logger)
 	if err != nil {

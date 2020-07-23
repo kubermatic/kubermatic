@@ -29,8 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-const getMaxAttempts = 24
-
 func TestCreateClusterRoleBinding(t *testing.T) {
 	tests := []struct {
 		name                     string
@@ -46,9 +44,9 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			name:                     "create cluster/role binding",
 			dc:                       "kubermatic",
 			location:                 "do-fra1",
-			version:                  "v1.18.8",
+			version:                  getKubernetesVersion(),
 			credential:               "e2e-digitalocean",
-			replicas:                 1,
+			replicas:                 0,
 			expectedRoleNames:        []string{"namespace-admin", "namespace-editor", "namespace-viewer"},
 			expectedClusterRoleNames: []string{"admin", "edit", "view"},
 		},
@@ -57,34 +55,21 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, cluster := createProjectWithCluster(t, apiRunner, tc.dc, tc.credential, tc.version, tc.location, tc.replicas)
-			teardown := cleanUpProject(project.ID, getMaxAttempts)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
+			// wait for controller to provision the roles
+			var roleErr error
 			roleNameList := []v1.RoleName{}
-			// wait for controller
-			if err := wait.PollImmediate(time.Second, getMaxAttempts*time.Second, func() (bool, error) {
-				roleNameList, err = apiRunner.GetRoles(project.ID, tc.dc, cluster.ID)
-				if err != nil {
-					t.Logf("can not get user cluster roles due to error: %v", GetErrorResponse(err))
-					return false, nil
-				}
-
-				if len(roleNameList) == len(tc.expectedRoleNames) {
-					return true, nil
-				}
-
-				return false, nil
+			if err := wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
+				roleNameList, roleErr = apiRunner.GetRoles(project.ID, tc.dc, cluster.ID)
+				return len(roleNameList) >= len(tc.expectedRoleNames), nil
 			}); err != nil {
-				t.Fatalf("can not get  user cluster roles after %d attempts", getMaxAttempts)
-			}
-
-			if len(roleNameList) != len(tc.expectedRoleNames) {
-				t.Fatalf("expectd length list is different then returned")
+				t.Fatalf("failed to wait for roles to be created (final list of roles before giving up: %v): %v", roleNameList, roleErr)
 			}
 
 			roleNames := []string{}
@@ -93,26 +78,17 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			}
 			namesSet := sets.NewString(tc.expectedRoleNames...)
 			if !namesSet.HasAll(roleNames...) {
-				t.Fatalf("expects roles %v, got %v", tc.expectedRoleNames, roleNames)
+				t.Fatalf("expected roles %v, got %v", tc.expectedRoleNames, roleNames)
 			}
 
-			// test cluster roles
+			// wait for controller to provision the cluster roles
+			var clusterRoleErr error
 			clusterRoleNameList := []v1.ClusterRoleName{}
-			// wait for controller
-			for attempt := 1; attempt <= getMaxAttempts; attempt++ {
-				clusterRoleNameList, err = apiRunner.GetClusterRoles(project.ID, tc.dc, cluster.ID)
-				if err != nil {
-					t.Fatalf("can not get cluster roles due to error: %v", GetErrorResponse(err))
-				}
-
-				if len(clusterRoleNameList) == len(tc.expectedClusterRoleNames) {
-					break
-				}
-				time.Sleep(2 * time.Second)
-			}
-
-			if len(clusterRoleNameList) != len(tc.expectedClusterRoleNames) {
-				t.Fatalf("expectd length list is different then returned")
+			if err := wait.PollImmediate(1*time.Second, 5*time.Minute, func() (bool, error) {
+				clusterRoleNameList, clusterRoleErr = apiRunner.GetClusterRoles(project.ID, tc.dc, cluster.ID)
+				return len(clusterRoleNameList) >= len(tc.expectedClusterRoleNames), nil
+			}); err != nil {
+				t.Fatalf("failed to wait for cluster roles to be created (final list of roles before giving up: %v): %v", clusterRoleNameList, clusterRoleErr)
 			}
 
 			clusterRoleNames := []string{}
@@ -121,13 +97,13 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			}
 			namesSet = sets.NewString(tc.expectedClusterRoleNames...)
 			if !namesSet.HasAll(clusterRoleNames...) {
-				t.Fatalf("expects cluster roles %v, got %v", tc.expectedRoleNames, roleNames)
+				t.Fatalf("expected cluster roles %v, got %v", tc.expectedRoleNames, roleNames)
 			}
 
 			// test if default cluster role bindings were created
 			clusterBindings, err := apiRunner.GetClusterBindings(project.ID, tc.dc, cluster.ID)
 			if err != nil {
-				t.Fatalf("can not get cluster bindings due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to get cluster bindings: %v", err)
 			}
 
 			namesSet = sets.NewString(tc.expectedClusterRoleNames...)
@@ -140,20 +116,20 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			for _, roleName := range roleNameList {
 				binding, err := apiRunner.BindUserToRole(project.ID, tc.dc, cluster.ID, roleName.Name, "default", "test@example.com")
 				if err != nil {
-					t.Fatalf("can not create binding due to error: %v", GetErrorResponse(err))
+					t.Fatalf("failed to create binding: %v", err)
 				}
 				if binding.RoleRefName != roleName.Name {
-					t.Fatalf("expected binding RoleRefName %s got %s", roleName.Name, binding.RoleRefName)
+					t.Fatalf("expected binding RoleRefName %q, but got %q", roleName.Name, binding.RoleRefName)
 				}
 			}
 
 			for _, clusterRoleName := range clusterRoleNameList {
 				binding, err := apiRunner.BindUserToClusterRole(project.ID, tc.dc, cluster.ID, clusterRoleName.Name, "test@example.com")
 				if err != nil {
-					t.Fatalf("can not create cluster binding due to error: %v", GetErrorResponse(err))
+					t.Fatalf("failed to create cluster binding: %v", err)
 				}
 				if binding.RoleRefName != clusterRoleName.Name {
-					t.Fatalf("expected cluster binding RoleRefName %s got %s", clusterRoleName.Name, binding.RoleRefName)
+					t.Fatalf("expected cluster binding RoleRefName %q, but got %q", clusterRoleName.Name, binding.RoleRefName)
 				}
 			}
 
@@ -165,30 +141,16 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 func createProjectWithCluster(t *testing.T, apiRunner *runner, dc, credential, version, location string, replicas int32) (*v1.Project, *v1.Cluster) {
 	project, err := apiRunner.CreateProject(rand.String(10))
 	if err != nil {
-		t.Fatalf("can not create project %v", GetErrorResponse(err))
+		t.Fatalf("failed to create project %v", err)
 	}
 
 	cluster, err := apiRunner.CreateDOCluster(project.ID, dc, rand.String(10), credential, version, location, replicas)
 	if err != nil {
-		t.Fatalf("can not create cluster due to error: %v", GetErrorResponse(err))
+		t.Fatalf("failed to create cluster: %v", err)
 	}
 
-	var clusterReady bool
-	for attempt := 1; attempt <= getMaxAttempts; attempt++ {
-		healthStatus, err := apiRunner.GetClusterHealthStatus(project.ID, dc, cluster.ID)
-		if err != nil {
-			t.Fatalf("can not get health status %v", GetErrorResponse(err))
-		}
-
-		if IsHealthyCluster(healthStatus) {
-			clusterReady = true
-			break
-		}
-		time.Sleep(30 * time.Second)
-	}
-
-	if !clusterReady {
-		t.Fatalf("cluster not ready after %d attempts", getMaxAttempts)
+	if err := apiRunner.WaitForClusterHealthy(project.ID, dc, cluster.ID); err != nil {
+		t.Fatalf("cluster not ready: %v", err)
 	}
 
 	return project, cluster

@@ -43,24 +43,23 @@ func TestCreateSA(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 10)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			sa, err := apiRunner.CreateServiceAccount(rand.String(10), tc.group, project.ID)
 			if err != nil {
-				t.Fatalf("can not create service account due error: %v", err)
+				t.Fatalf("failed to create service account: %v", err)
 			}
 
 			if _, err := apiRunner.AddTokenToServiceAccount(rand.String(10), sa.ID, project.ID); err != nil {
-				t.Fatalf("can not create token due error: %v", err)
+				t.Fatalf("failed to create token: %v", err)
 			}
 		})
 	}
@@ -85,36 +84,36 @@ func TestTokenAccessForProject(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
+
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 10)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			sa, err := apiRunner.CreateServiceAccount(rand.String(10), tc.group, project.ID)
 			if err != nil {
-				t.Fatalf("can not create service account due error: %v", err)
+				t.Fatalf("failed to create service account: %v", err)
 			}
 
 			sa, err = apiRunner.GetServiceAccount(sa.ID, project.ID)
 			if err != nil {
-				t.Fatalf("can not get service account due error: %v", err)
+				t.Fatalf("failed to get service account: %v", err)
 			}
 
 			saToken, err := apiRunner.AddTokenToServiceAccount(rand.String(10), sa.ID, project.ID)
 			if err != nil {
-				t.Fatalf("can not create token due error: %v", err)
+				t.Fatalf("failed to create token: %v", err)
 			}
 
 			apiRunnerWithSAToken := createRunner(saToken.Token, t)
 
-			project, err = apiRunnerWithSAToken.GetProject(project.ID, 1)
+			project, err = apiRunnerWithSAToken.GetProject(project.ID)
 			if err != nil {
-				t.Fatalf("can not get project due error: %v", err)
+				t.Fatalf("failed to get project: %v", err)
 			}
 
 			newProjectName := rand.String(10)
@@ -124,37 +123,36 @@ func TestTokenAccessForProject(t *testing.T) {
 
 			if tc.group == "viewers" {
 				if err == nil {
-					t.Fatalf("expected error")
+					t.Fatal("expected error")
 				}
 
 				if !strings.Contains(err.Error(), "403") {
-					t.Fatalf("expected error status 403 Forbidden was %v", err)
+					t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
 				}
 			} else {
 				if err != nil {
-					t.Fatalf("can not update project due error: %v", err)
+					t.Fatalf("failed to update project: %v", err)
 				}
 
 				if project.Name != newProjectName {
-					t.Fatalf("expected name %s got %s", newProjectName, project.Name)
+					t.Fatalf("expected name %q, but got %q", newProjectName, project.Name)
 				}
 			}
 
 			// check access to not owned project
 			notOwnedProject, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardownNotOwnedProject := cleanUpProject(notOwnedProject.ID, 10)
-			defer teardownNotOwnedProject(t)
+			defer cleanUpProject(t, notOwnedProject.ID)
 
-			_, err = apiRunnerWithSAToken.GetProject(notOwnedProject.ID, 1)
+			_, err = apiRunnerWithSAToken.GetProject(notOwnedProject.ID)
 			if err == nil {
-				t.Fatalf("expected error, SA token can't access not owned project")
+				t.Fatal("expected error, SA token can't access not owned project")
 			}
 
 			if !strings.Contains(err.Error(), "403") {
-				t.Fatalf("expected error status 403 Forbidden was %v", err)
+				t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
 			}
 		})
 	}

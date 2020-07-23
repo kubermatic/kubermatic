@@ -66,13 +66,11 @@ dockerd > /tmp/docker.log 2>&1 &
 echodate "Started Docker successfully"
 
 function docker_logs {
-  originalRC=$?
-  if [[ $originalRC -ne 0 ]]; then
+  if [[ $? -ne 0 ]]; then
     echodate "Printing Docker logs"
     cat /tmp/docker.log
     echodate "Done printing Docker logs"
   fi
-  return $originalRC
 }
 appendTrap docker_logs EXIT
 
@@ -155,16 +153,14 @@ CGO_ENABLED=0 /tmp/clusterexposer \
   --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
 
 function print_cluster_exposer_logs {
-  originalRC=$?
-
-  # Tolerate errors and just continue
-  set +e
-  echodate "Printing cluster exposer logs"
-  cat /var/log/clusterexposer.log
-  echodate "Done printing cluster exposer logs"
-  set -e
-
-  return $originalRC
+  if [[ $? -ne 0 ]]; then
+    # Tolerate errors and just continue
+    set +e
+    echodate "Printing cluster exposer logs"
+    cat /var/log/clusterexposer.log
+    echodate "Done printing cluster exposer logs"
+    set -e
+  fi
 }
 appendTrap print_cluster_exposer_logs EXIT
 

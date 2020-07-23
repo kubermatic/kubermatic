@@ -20,11 +20,8 @@ package api
 
 import (
 	"testing"
-	"time"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestDeleteProjectOwner(t *testing.T) {
@@ -42,47 +39,35 @@ func TestDeleteProjectOwner(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 10)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
-			var projectUsers []apiv1.User
-
-			if err := wait.PollImmediate(time.Second, maxAttempts*time.Second, func() (bool, error) {
-				var e error
-				projectUsers, e = apiRunner.GetProjectUsers(project.ID)
-				if e != nil {
-					t.Logf("can not get the project user due error: %v", e)
-					return false, nil
-				}
-
-				return true, nil
-			}); err != nil {
-				t.Fatalf("can not get the project user after %d attempts", maxAttempts)
+			projectUsers, err := apiRunner.GetProjectUsers(project.ID)
+			if err != nil {
+				t.Fatalf("failed to get the project user: %v", err)
 			}
 
 			if len(projectUsers) != len(tc.expectedUsers) {
-				t.Fatalf("the number of user is different than expected")
+				t.Fatal("the number of user is different than expected")
 			}
 
 			for _, user := range projectUsers {
 				if !contains(tc.expectedUsers, user.Email) {
-					t.Fatalf("the user %s doesn't belong to the expected user list", user.Email)
+					t.Fatalf("the user %q doesn't belong to the expected user list", user.Email)
 				}
 			}
 
 			err = apiRunner.DeleteUserFromProject(project.ID, projectUsers[0].ID)
 			if err == nil {
-				t.Fatalf("expected error when delete owner of the project")
+				t.Fatal("expected error when delete owner of the project")
 			}
-
 		})
 	}
 }
@@ -108,43 +93,35 @@ func TestAddUserToProject(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 10)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
-			if err := wait.PollImmediate(time.Second, maxAttempts*time.Second, func() (bool, error) {
-				if _, e := apiRunner.AddProjectUser(project.ID, tc.newUserEmail, tc.newUserName, tc.newUserGroup); e != nil {
-					t.Logf("can not add user to project due error: %v", GetErrorResponse(err))
-					return false, nil
-				}
-
-				return true, nil
-			}); err != nil {
-				t.Fatalf("can not add user to project after %d attempts", maxAttempts)
+			_, err = apiRunner.AddProjectUser(project.ID, tc.newUserEmail, tc.newUserName, tc.newUserGroup)
+			if err != nil {
+				t.Fatalf("failed to add user to project: %v", err)
 			}
 
 			projectUsers, err := apiRunner.GetProjectUsers(project.ID)
 			if err != nil {
-				t.Fatalf("can not get the project user due error: %v", err)
+				t.Fatalf("failed to get the project users: %v", err)
 			}
 
 			if len(projectUsers) != len(tc.expectedUsers) {
-				t.Fatalf("the number of user is different than expected")
+				t.Fatal("the number of user is different than expected")
 			}
 
 			for _, user := range projectUsers {
 				if !contains(tc.expectedUsers, user.Email) {
-					t.Fatalf("the user %s doesn't belong to the expected user list", user.Email)
+					t.Fatalf("the user %q doesn't belong to the expected user list", user.Email)
 				}
 			}
-
 		})
 	}
 }

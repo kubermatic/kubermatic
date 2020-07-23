@@ -283,8 +283,6 @@ check_all_deployments_ready() {
 }
 
 function cleanup_kubermatic_clusters_in_kind {
-  originalRC=$?
-
   # Tolerate errors and just continue
   set +e
   # Clean up clusters
@@ -295,6 +293,4 @@ function cleanup_kubermatic_clusters_in_kind {
   # Kill all descendant processes
   pkill -P $$
   set -e
-
-  return $originalRC
 }

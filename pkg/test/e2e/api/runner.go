@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
+	"net/http"
 	"strings"
 	"testing"
 	"time"
@@ -45,36 +45,16 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
 
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const (
-	maxAttempts = 8
-	timeout     = time.Second * 4
+	apiRequestTimeout = 10 * time.Second
 )
 
 type runner struct {
 	client      *apiclient.KubermaticAPI
 	bearerToken runtime.ClientAuthInfoWriter
 	test        *testing.T
-}
-
-func getHost() string {
-	host := os.Getenv("KUBERMATIC_HOST")
-	if len(host) == 0 {
-		fmt.Printf("No KUBERMATIC_HOST env variable set.")
-		os.Exit(1)
-	}
-	return host
-}
-
-func getScheme() string {
-	scheme := os.Getenv("KUBERMATIC_SCHEME")
-	if len(scheme) == 0 {
-		fmt.Printf("No KUBERMATIC_SCHEME env variable set.")
-		os.Exit(1)
-	}
-	return scheme
 }
 
 func createRunner(token string, t *testing.T) *runner {
@@ -88,52 +68,45 @@ func createRunner(token string, t *testing.T) *runner {
 	}
 }
 
-// CreateProject creates a new project
+// CreateProject creates a new project and waits for it to become active (ready).
 func (r *runner) CreateProject(name string) (*apiv1.Project, error) {
+	before := time.Now()
+	timeout := 30 * time.Second
+
 	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: name}}
-	params.WithTimeout(timeout)
-	project, err := r.client.Project.CreateProject(params, r.bearerToken)
+	setupParams(r.test, params, 1*time.Second, timeout)
+
+	r.test.Logf("Creating project %s...", name)
+
+	response, err := r.client.Project.CreateProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
 
 	var apiProject *apiv1.Project
-	if err := wait.PollImmediate(time.Second, maxAttempts*time.Second, func() (bool, error) {
-		apiProject, err = r.GetProject(project.Payload.ID, maxAttempts)
-		if err != nil {
-			return false, nil
-		}
-		if apiProject.Status == kubermaticv1.ProjectActive {
-			return true, nil
-		}
-		return false, nil
+	if !waitFor(1*time.Second, timeout, func() bool {
+		apiProject, _ = r.GetProject(response.Payload.ID)
+		return apiProject != nil && apiProject.Status == kubermaticv1.ProjectActive
+	}) {
+		// best effort cleanup of a failed cluster
+		_ = r.DeleteProject(name)
 
-	}); err != nil {
-		return nil, fmt.Errorf("project is not redy after %d attempts", maxAttempts)
+		return nil, fmt.Errorf("project is not ready after %s", timeout)
 	}
+
+	r.test.Logf("Created project and it became ready after %v", time.Since(before))
 
 	return apiProject, nil
 }
 
-// GetProject gets the project with the given ID
-func (r *runner) GetProject(id string, attempts int) (*apiv1.Project, error) {
+// GetProject gets the project with the given ID; it does not perform any
+// retries if the API returns errors.
+func (r *runner) GetProject(id string) (*apiv1.Project, error) {
 	params := &project.GetProjectParams{ProjectID: id}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusUnauthorized)
 
-	var errGetProject error
-	var project *project.GetProjectOK
-	duration := time.Duration(attempts) * time.Second
-	if err := wait.PollImmediate(time.Second, duration, func() (bool, error) {
-		project, errGetProject = r.client.Project.GetProject(params, r.bearerToken)
-		if errGetProject != nil {
-			return false, nil
-		}
-		return true, nil
-	}); err != nil {
-		// first check error from GetProject
-		if errGetProject != nil {
-			return nil, errGetProject
-		}
+	project, err := r.client.Project.GetProject(params, r.bearerToken)
+	if err != nil {
 		return nil, err
 	}
 
@@ -141,26 +114,12 @@ func (r *runner) GetProject(id string, attempts int) (*apiv1.Project, error) {
 }
 
 // ListProjects gets projects
-func (r *runner) ListProjects(displayAll bool, attempts int) ([]*apiv1.Project, error) {
-	params := &project.ListProjectsParams{
-		DisplayAll: &displayAll,
-	}
-	params.WithTimeout(timeout)
+func (r *runner) ListProjects(displayAll bool) ([]*apiv1.Project, error) {
+	params := &project.ListProjectsParams{DisplayAll: &displayAll}
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	var errListProjects error
-	var projects *project.ListProjectsOK
-	duration := time.Duration(attempts) * time.Second
-	if err := wait.PollImmediate(time.Second, duration, func() (bool, error) {
-		projects, errListProjects = r.client.Project.ListProjects(params, r.bearerToken)
-		if errListProjects != nil {
-			return false, nil
-		}
-		return true, nil
-	}); err != nil {
-		// first check error from ListProjects
-		if errListProjects != nil {
-			return nil, errListProjects
-		}
+	projects, err := r.client.Project.ListProjects(params, r.bearerToken)
+	if err != nil {
 		return nil, err
 	}
 
@@ -179,13 +138,18 @@ func (r *runner) ListProjects(displayAll bool, attempts int) ([]*apiv1.Project, 
 // UpdateProject updates the given project
 func (r *runner) UpdateProject(projectToUpdate *apiv1.Project) (*apiv1.Project, error) {
 	params := &project.UpdateProjectParams{ProjectID: projectToUpdate.ID, Body: &models.Project{Name: projectToUpdate.Name}}
-	params.WithTimeout(timeout)
-	project, err := r.client.Project.UpdateProject(params, r.bearerToken)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
+	r.test.Log("Updating project...")
+
+	response, err := r.client.Project.UpdateProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertProject(project.Payload)
+	r.test.Log("Project updated successfully")
+
+	return convertProject(response.Payload)
 }
 
 func convertProject(project *models.Project) (*apiv1.Project, error) {
@@ -205,39 +169,44 @@ func convertProject(project *models.Project) (*apiv1.Project, error) {
 
 // DeleteProject deletes given project
 func (r *runner) DeleteProject(id string) error {
+	r.test.Log("Deleting project...")
+
 	params := &project.DeleteProjectParams{ProjectID: id}
-	params.WithTimeout(timeout)
-	if _, err := r.client.Project.DeleteProject(params, r.bearerToken); err != nil {
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
+
+	_, err := r.client.Project.DeleteProject(params, r.bearerToken)
+	if err != nil {
 		return err
 	}
+
+	r.test.Log("Project deleted successfully")
 	return nil
 }
 
-// CreateServiceAccount method creates a new service account
+// CreateServiceAccount method creates a new service account and waits a certain
+// amount of time for it to become active.
 func (r *runner) CreateServiceAccount(name, group, projectID string) (*apiv1.ServiceAccount, error) {
 	params := &serviceaccounts.AddServiceAccountToProjectParams{ProjectID: projectID, Body: &models.ServiceAccount{Name: name, Group: group}}
-	params.WithTimeout(timeout)
-	params.SetTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
+	r.test.Logf("Creating ServiceAccount %q in group %q...", name, group)
+
 	sa, err := r.client.Serviceaccounts.AddServiceAccountToProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
 
-	var apiServiceAccount *apiv1.ServiceAccount
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		apiServiceAccount, err = r.GetServiceAccount(sa.Payload.ID, projectID)
-		if err != nil {
-			return nil, err
-		}
+	before := time.Now()
 
-		if apiServiceAccount.Status == apiv1.ServiceAccountActive {
-			break
-		}
-		time.Sleep(time.Second)
+	var apiServiceAccount *apiv1.ServiceAccount
+	if !waitFor(1*time.Second, 60*time.Second, func() bool {
+		apiServiceAccount, _ = r.GetServiceAccount(sa.Payload.ID, projectID)
+		return apiServiceAccount != nil && apiServiceAccount.Status == apiv1.ServiceAccountActive
+	}) {
+		return nil, err
 	}
-	if apiServiceAccount.Status != apiv1.ServiceAccountActive {
-		return nil, fmt.Errorf("service account is not redy after %d attempts", maxAttempts)
-	}
+
+	r.test.Logf("Created ServiceAccount and it became active after %v", time.Since(before))
 
 	return apiServiceAccount, nil
 }
@@ -245,17 +214,9 @@ func (r *runner) CreateServiceAccount(name, group, projectID string) (*apiv1.Ser
 // GetServiceAccount returns service account for given ID and project
 func (r *runner) GetServiceAccount(saID, projectID string) (*apiv1.ServiceAccount, error) {
 	params := &serviceaccounts.ListServiceAccountsParams{ProjectID: projectID}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	var err error
-	var saList *serviceaccounts.ListServiceAccountsOK
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		saList, err = r.client.Serviceaccounts.ListServiceAccounts(params, r.bearerToken)
-		if err == nil {
-			break
-		}
-		time.Sleep(time.Second)
-	}
+	saList, err := r.client.Serviceaccounts.ListServiceAccounts(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
@@ -266,21 +227,25 @@ func (r *runner) GetServiceAccount(saID, projectID string) (*apiv1.ServiceAccoun
 		}
 	}
 
-	return nil, fmt.Errorf("service account %s not found", saID)
+	return nil, fmt.Errorf("ServiceAccount %s not found", saID)
 }
 
 // DeleteServiceAccount deletes service account for given ID and project
 func (r *runner) DeleteServiceAccount(saID, projectID string) error {
+	r.test.Logf("Deleting ServiceAccount %s...", saID)
+
 	params := &serviceaccounts.DeleteServiceAccountParams{
 		ProjectID:        projectID,
 		ServiceAccountID: saID,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	if _, err := r.client.Serviceaccounts.DeleteServiceAccount(params, r.bearerToken); err != nil {
+	_, err := r.client.Serviceaccounts.DeleteServiceAccount(params, r.bearerToken)
+	if err != nil {
 		return err
 	}
 
+	r.test.Log("ServiceAccount deleted successfully")
 	return nil
 }
 
@@ -302,24 +267,34 @@ func convertServiceAccount(sa *models.ServiceAccount) (*apiv1.ServiceAccount, er
 
 // AddTokenToServiceAccount creates a new token for service account
 func (r *runner) AddTokenToServiceAccount(name, saID, projectID string) (*apiv1.ServiceAccountToken, error) {
+	r.test.Logf("Adding token %s to ServiceAccount %s...", name, saID)
+
 	params := &tokens.AddTokenToServiceAccountParams{ProjectID: projectID, ServiceAccountID: saID, Body: &models.ServiceAccountToken{Name: name}}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
+
 	token, err := r.client.Tokens.AddTokenToServiceAccount(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
+
+	r.test.Log("ServiceAccount token added successfully")
 
 	return convertServiceAccountToken(token.Payload)
 }
 
 // DeleteTokenForServiceAccount deletes a token for service account
 func (r *runner) DeleteTokenForServiceAccount(tokenID, saID, projectID string) error {
+	r.test.Logf("Deleting token %s from ServiceAccount %s...", tokenID, saID)
+
 	params := &tokens.DeleteServiceAccountTokenParams{ProjectID: projectID, ServiceAccountID: saID, TokenID: tokenID}
-	params.WithTimeout(timeout)
-	if _, err := r.client.Tokens.DeleteServiceAccountToken(params, r.bearerToken); err != nil {
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
+	_, err := r.client.Tokens.DeleteServiceAccountToken(params, r.bearerToken)
+	if err != nil {
 		return err
 	}
 
+	r.test.Log("ServiceAccount token deleted successfully")
 	return nil
 }
 
@@ -341,7 +316,8 @@ func convertServiceAccountToken(saToken *models.ServiceAccountToken) (*apiv1.Ser
 // ListCredentials returns list of credential names for the provider
 func (r *runner) ListCredentials(providerName, datacenter string) ([]string, error) {
 	params := &credentials.ListCredentialsParams{ProviderName: providerName, Datacenter: &datacenter}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
 	credentialsResponse, err := r.client.Credentials.ListCredentials(params, r.bearerToken)
 	if err != nil {
 		return nil, err
@@ -355,17 +331,12 @@ func (r *runner) ListCredentials(providerName, datacenter string) ([]string, err
 
 // CreateAWSCluster creates cluster for AWS provider
 func (r *runner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKeyID, version, location, availabilityZone string, replicas int32) (*apiv1.Cluster, error) {
-
 	vr, err := semver.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
 	}
 
-	instanceType := "t3.small"
-	volumeSize := int64(25)
-	volumeType := "standard"
 	clusterSpec := &models.CreateClusterSpec{}
-
 	clusterSpec.Cluster = &models.Cluster{
 		Type: "kubernetes",
 		Name: name,
@@ -380,46 +351,55 @@ func (r *runner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKe
 			Version: vr,
 		},
 	}
-	clusterSpec.NodeDeployment = &models.NodeDeployment{
-		Spec: &models.NodeDeploymentSpec{
-			Replicas: &replicas,
-			Template: &models.NodeSpec{
-				Cloud: &models.NodeCloudSpec{
-					Aws: &models.AWSNodeSpec{
-						AvailabilityZone: availabilityZone,
-						InstanceType:     &instanceType,
-						VolumeSize:       &volumeSize,
-						VolumeType:       &volumeType,
+
+	if replicas > 0 {
+		instanceType := "t3.small"
+		volumeSize := int64(25)
+		volumeType := "standard"
+
+		clusterSpec.NodeDeployment = &models.NodeDeployment{
+			Spec: &models.NodeDeploymentSpec{
+				Replicas: &replicas,
+				Template: &models.NodeSpec{
+					Cloud: &models.NodeCloudSpec{
+						Aws: &models.AWSNodeSpec{
+							AvailabilityZone: availabilityZone,
+							InstanceType:     &instanceType,
+							VolumeSize:       &volumeSize,
+							VolumeType:       &volumeType,
+						},
 					},
-				},
-				OperatingSystem: &models.OperatingSystemSpec{
-					Ubuntu: &models.UbuntuSpec{
-						DistUpgradeOnBoot: false,
+					OperatingSystem: &models.OperatingSystemSpec{
+						Ubuntu: &models.UbuntuSpec{
+							DistUpgradeOnBoot: false,
+						},
 					},
 				},
 			},
-		},
+		}
 	}
 
+	r.test.Logf("Creating AWS cluster %q (%s, %d nodes)...", name, version, replicas)
+
 	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
+
+	r.test.Log("Cluster created successfully.")
 
 	return convertCluster(clusterResponse.Payload)
 }
 
 // CreateDOCluster creates cluster for DigitalOcean provider
 func (r *runner) CreateDOCluster(projectID, dc, name, credential, version, location string, replicas int32) (*apiv1.Cluster, error) {
-
 	vr, err := semver.NewVersion(version)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
 	}
-
-	instanceSize := "s-1vcpu-1gb"
 
 	clusterSpec := &models.CreateClusterSpec{}
 	clusterSpec.Cluster = &models.Cluster{
@@ -434,71 +414,86 @@ func (r *runner) CreateDOCluster(projectID, dc, name, credential, version, locat
 			Version: vr,
 		},
 	}
-	clusterSpec.NodeDeployment = &models.NodeDeployment{
-		Spec: &models.NodeDeploymentSpec{
-			Replicas: &replicas,
-			Template: &models.NodeSpec{
-				Cloud: &models.NodeCloudSpec{
-					Digitalocean: &models.DigitaloceanNodeSpec{
-						Size:       &instanceSize,
-						Backups:    false,
-						IPV6:       false,
-						Monitoring: false,
+
+	if replicas > 0 {
+		instanceSize := "s-1vcpu-1gb"
+
+		clusterSpec.NodeDeployment = &models.NodeDeployment{
+			Spec: &models.NodeDeploymentSpec{
+				Replicas: &replicas,
+				Template: &models.NodeSpec{
+					Cloud: &models.NodeCloudSpec{
+						Digitalocean: &models.DigitaloceanNodeSpec{
+							Size:       &instanceSize,
+							Backups:    false,
+							IPV6:       false,
+							Monitoring: false,
+						},
 					},
-				},
-				OperatingSystem: &models.OperatingSystemSpec{
-					Ubuntu: &models.UbuntuSpec{
-						DistUpgradeOnBoot: false,
+					OperatingSystem: &models.OperatingSystemSpec{
+						Ubuntu: &models.UbuntuSpec{
+							DistUpgradeOnBoot: false,
+						},
 					},
 				},
 			},
-		},
+		}
 	}
 
 	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
-	params.WithTimeout(timeout * 2)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
+	r.test.Logf("Creating DigitalOcean cluster %q (%s, %d nodes)...", name, version, replicas)
+
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
-		return nil, errors.New(fmtSwaggerError(err))
+		return nil, err
 	}
+
+	r.test.Log("Cluster created successfully.")
 
 	return convertCluster(clusterResponse.Payload)
 }
 
 // DeleteCluster delete cluster method
 func (r *runner) DeleteCluster(projectID, dc, clusterID string) error {
+	r.test.Logf("Deleting cluster %s...", clusterID)
 
 	params := &project.DeleteClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	if _, err := r.client.Project.DeleteCluster(params, r.bearerToken); err != nil {
+	_, err := r.client.Project.DeleteCluster(params, r.bearerToken)
+	if err != nil {
 		return err
 	}
+
+	r.test.Log("Cluster deleted successfully")
 	return nil
 }
 
 // GetCluster cluster getter
 func (r *runner) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster, error) {
-
 	params := &project.GetClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	cluster, err := r.client.Project.GetCluster(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
+
 	return convertCluster(cluster.Payload)
 }
 
 // GetClusterEvents returns the cluster events
 func (r *runner) GetClusterEvents(projectID, dc, clusterID string) ([]*models.Event, error) {
 	params := &project.GetClusterEventsParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	events, err := r.client.Project.GetClusterEvents(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
+
 	return events.Payload, nil
 }
 
@@ -508,10 +503,12 @@ func (r *runner) PrintClusterEvents(projectID, dc, clusterID string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get cluster events: %v", err)
 	}
+
 	encodedEvents, err := json.Marshal(events)
 	if err != nil {
 		return fmt.Errorf("failed to serialize events: %v", err)
 	}
+
 	r.test.Logf("Cluster events:\n%s", string(encodedEvents))
 	return nil
 }
@@ -519,17 +516,9 @@ func (r *runner) PrintClusterEvents(projectID, dc, clusterID string) error {
 // GetClusterHealthStatus gets the cluster status
 func (r *runner) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1.ClusterHealth, error) {
 	params := &project.GetClusterHealthParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	var err error
-	var response *project.GetClusterHealthOK
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		response, err = r.client.Project.GetClusterHealth(params, r.bearerToken)
-		if err == nil {
-			break
-		}
-		time.Sleep(time.Second)
-	}
+	response, err := r.client.Project.GetClusterHealth(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
@@ -545,6 +534,23 @@ func (r *runner) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1
 	return apiClusterHealth, nil
 }
 
+func (r *runner) WaitForClusterHealthy(projectID, dc, clusterID string) error {
+	timeout := 5 * time.Minute
+	before := time.Now()
+
+	r.test.Logf("Waiting %v for cluster %s to become healthy...", timeout, clusterID)
+
+	if !waitFor(5*time.Second, timeout, func() bool {
+		healthStatus, _ := r.GetClusterHealthStatus(projectID, dc, clusterID)
+		return IsHealthyCluster(healthStatus)
+	}) {
+		return errors.New("cluster did not become healthy")
+	}
+
+	r.test.Logf("Cluster became healthy after %v", time.Since(before))
+	return nil
+}
+
 func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
 	switch int64(status) {
 	case int64(kubermaticv1.HealthStatusProvisioning):
@@ -556,24 +562,16 @@ func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
 	}
 }
 
-// GetClusterNodeDeployment returns the cluster node deployments
-func (r *runner) GetClusterNodeDeployment(projectID, dc, clusterID string) ([]apiv1.NodeDeployment, error) {
+// GetClusterNodeDeployments returns the cluster node deployments
+func (r *runner) GetClusterNodeDeployments(projectID, dc, clusterID string) ([]apiv1.NodeDeployment, error) {
 	params := &project.ListNodeDeploymentsParams{ClusterID: clusterID, ProjectID: projectID, DC: dc}
-	params.WithTimeout(timeout * 2)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	var err error
-	var response *project.ListNodeDeploymentsOK
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		response, err = r.client.Project.ListNodeDeployments(params, r.bearerToken)
-		if err == nil {
-			break
-		}
-		time.Sleep(time.Second)
-	}
-
+	response, err := r.client.Project.ListNodeDeployments(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
+
 	list := make([]apiv1.NodeDeployment, 0)
 	for _, nd := range response.Payload {
 		apiNd := apiv1.NodeDeployment{}
@@ -583,10 +581,46 @@ func (r *runner) GetClusterNodeDeployment(projectID, dc, clusterID string) ([]ap
 			Replicas:          nd.Status.Replicas,
 			AvailableReplicas: nd.Status.AvailableReplicas,
 		}
+
 		list = append(list, apiNd)
 	}
 
 	return list, nil
+}
+
+func (r *runner) WaitForClusterNodeDeploymentsToExist(projectID, dc, clusterID string) error {
+	timeout := 30 * time.Second
+	before := time.Now()
+
+	r.test.Logf("Waiting %v for NodeDeployment in cluster %s to exist...", timeout, clusterID)
+
+	if !waitFor(1*time.Second, timeout, func() bool {
+		deployments, _ := r.GetClusterNodeDeployments(projectID, dc, clusterID)
+		return len(deployments) > 0
+	}) {
+		return errors.New("NodeDeployment did not appear")
+	}
+
+	r.test.Logf("NodeDeployment appeared after %v", time.Since(before))
+	return nil
+}
+
+func (r *runner) WaitForClusterNodeDeploymentsToByReady(projectID, dc, clusterID string, replicas int32) error {
+	timeout := 10 * time.Minute
+	before := time.Now()
+
+	r.test.Logf("Waiting %v for NodeDeployment in cluster %s to become ready...", timeout, clusterID)
+
+	if !waitFor(5*time.Second, timeout, func() bool {
+		deployments, _ := r.GetClusterNodeDeployments(projectID, dc, clusterID)
+		return len(deployments) > 0 && deployments[0].Status.AvailableReplicas == replicas
+	}) {
+		return fmt.Errorf("NodeDeployment has not reached %d ready replicas", replicas)
+	}
+
+	r.test.Logf("All nodes became ready after %v.", time.Since(before))
+
+	return nil
 }
 
 func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
@@ -608,11 +642,13 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 // ListGCPZones returns list of GCP zones
 func (r *runner) ListGCPZones(credential, dc string) ([]string, error) {
 	params := &gcp.ListGCPZonesParams{Credential: &credential, DC: dc}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
 	zonesResponse, err := r.client.Gcp.ListGCPZones(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
+
 	names := make([]string, 0)
 	for _, name := range zonesResponse.Payload {
 		names = append(names, name.Name)
@@ -624,11 +660,13 @@ func (r *runner) ListGCPZones(credential, dc string) ([]string, error) {
 // ListGCPDiskTypes returns list of GCP disk types
 func (r *runner) ListGCPDiskTypes(credential, zone string) ([]string, error) {
 	params := &gcp.ListGCPDiskTypesParams{Credential: &credential, Zone: &zone}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
 	typesResponse, err := r.client.Gcp.ListGCPDiskTypes(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
+
 	names := make([]string, 0)
 	for _, name := range typesResponse.Payload {
 		names = append(names, name.Name)
@@ -640,11 +678,13 @@ func (r *runner) ListGCPDiskTypes(credential, zone string) ([]string, error) {
 // ListGCPSizes returns list of GCP sizes
 func (r *runner) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSize, error) {
 	params := &gcp.ListGCPSizesParams{Credential: &credential, Zone: &zone}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
 	sizesResponse, err := r.client.Gcp.ListGCPSizes(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
+
 	sizes := make([]apiv1.GCPMachineSize, 0)
 	for _, machineType := range sizesResponse.Payload {
 		mt := apiv1.GCPMachineSize{
@@ -659,109 +699,43 @@ func (r *runner) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSize, 
 	return sizes, nil
 }
 
-// GetErrorResponse converts the client error response to string
-func GetErrorResponse(err error) string {
-	rawData, newErr := json.Marshal(err)
-	if newErr != nil {
-		return err.Error()
-	}
-	return string(rawData)
-}
-
 // IsHealthyCluster check if all cluster components are up
 func IsHealthyCluster(healthStatus *apiv1.ClusterHealth) bool {
-	if healthStatus.UserClusterControllerManager == kubermaticv1.HealthStatusUp && healthStatus.Scheduler == kubermaticv1.HealthStatusUp &&
-		healthStatus.MachineController == kubermaticv1.HealthStatusUp && healthStatus.Etcd == kubermaticv1.HealthStatusUp &&
-		healthStatus.Controller == kubermaticv1.HealthStatusUp && healthStatus.Apiserver == kubermaticv1.HealthStatusUp {
-		return true
-	}
-	return false
-}
-
-func cleanUpProject(id string, attempts int) func(t *testing.T) {
-	return func(t *testing.T) {
-		masterToken, err := retrieveMasterToken()
-		if err != nil {
-			t.Fatalf("can not get master token: %v", err)
-		}
-		runner := createRunner(masterToken, t)
-
-		t.Log("deleting project...")
-		if err := runner.DeleteProject(id); err != nil {
-			t.Fatalf("can not delete project: %v", err)
-		}
-
-		for attempt := 1; attempt <= attempts; attempt++ {
-			_, err := runner.GetProject(id, 5)
-			if err != nil {
-				break
-			}
-			time.Sleep(3 * time.Second)
-		}
-
-		_, err = runner.GetProject(id, 5)
-		if err == nil {
-			t.Fatalf("can not delete the project")
-		}
-
-		t.Log("project deleted successfully")
-	}
-}
-
-func cleanUpCluster(t *testing.T, runner *runner, projectID, dc, clusterID string) {
-	if err := runner.DeleteCluster(projectID, dc, clusterID); err != nil {
-		t.Fatalf("can not delete the cluster %v", GetErrorResponse(err))
-	}
-
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		_, err := runner.GetCluster(projectID, dc, clusterID)
-		if err != nil {
-			t.Logf("cluster deleted %v", GetErrorResponse(err))
-			break
-		}
-		time.Sleep(60 * time.Second)
-	}
-	_, err := runner.GetCluster(projectID, dc, clusterID)
-	if err == nil {
-		t.Fatalf("can not delete the cluster after %d attempts", maxAttempts)
-	}
+	return healthStatus != nil &&
+		kubermaticv1.HealthStatusUp == healthStatus.UserClusterControllerManager &&
+		kubermaticv1.HealthStatusUp == healthStatus.Scheduler &&
+		kubermaticv1.HealthStatusUp == healthStatus.MachineController &&
+		kubermaticv1.HealthStatusUp == healthStatus.Etcd &&
+		kubermaticv1.HealthStatusUp == healthStatus.Controller &&
+		kubermaticv1.HealthStatusUp == healthStatus.Apiserver
 }
 
 func (r *runner) DeleteUserFromProject(projectID, userID string) error {
 	params := &users.DeleteUserFromProjectParams{ProjectID: projectID, UserID: userID}
-	params.WithTimeout(timeout)
-	if _, err := r.client.Users.DeleteUserFromProject(params, r.bearerToken); err != nil {
-		return err
-	}
-	return nil
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
+	_, err := r.client.Users.DeleteUserFromProject(params, r.bearerToken)
+	return err
 }
 
 func (r *runner) GetProjectUsers(projectID string) ([]apiv1.User, error) {
 	params := &users.GetUsersForProjectParams{ProjectID: projectID}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
 
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		_, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
-		if err != nil {
-			break
-		}
-		time.Sleep(2 * time.Second)
-	}
-
-	responseUsers, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
+	response, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
+
 	users := make([]apiv1.User, 0)
-	for _, user := range responseUsers.Payload {
-		usr := apiv1.User{
+	for _, user := range response.Payload {
+		users = append(users, apiv1.User{
 			Email: user.Email,
 			ObjectMeta: apiv1.ObjectMeta{
 				ID:   user.ID,
 				Name: user.Name,
 			},
-		}
-		users = append(users, usr)
+		})
 	}
 
 	return users, nil
@@ -777,25 +751,28 @@ func (r *runner) AddProjectUser(projectID, email, name, group string) (*apiv1.Us
 			},
 		},
 	}}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
+
 	responseUser, err := r.client.Users.AddUserToProject(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
 
-	usr := &apiv1.User{
+	user := &apiv1.User{
 		Email: responseUser.Payload.Email,
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:   responseUser.Payload.ID,
 			Name: responseUser.Payload.Name,
 		},
 	}
-	return usr, nil
+
+	return user, nil
 }
 
 func (r *runner) GetGlobalSettings() (*apiv1.GlobalSettings, error) {
 	params := &admin.GetKubermaticSettingsParams{}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
 	responseSettings, err := r.client.Admin.GetKubermaticSettings(params, r.bearerToken)
 	if err != nil {
 		return nil, err
@@ -808,7 +785,8 @@ func (r *runner) UpdateGlobalSettings(patch json.RawMessage) (*apiv1.GlobalSetti
 	params := &admin.PatchKubermaticSettingsParams{
 		Patch: &patch,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
 	responseSettings, err := r.client.Admin.PatchKubermaticSettings(params, r.bearerToken)
 	if err != nil {
 		return nil, err
@@ -851,35 +829,22 @@ func (r *runner) SetAdmin(email string, isAdmin bool) error {
 			IsAdmin: isAdmin,
 		},
 	}
-	params.WithTimeout(timeout)
-	_, err := r.client.Admin.SetAdmin(params, r.bearerToken)
-	if err != nil {
-		return err
-	}
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	return nil
+	_, err := r.client.Admin.SetAdmin(params, r.bearerToken)
+	return err
 }
 
-// GetRoles
 func (r *runner) GetRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
 	params := &project.ListRoleNamesParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	var err error
-	var response *project.ListRoleNamesOK
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		response, err = r.client.Project.ListRoleNames(params, r.bearerToken)
-		if err == nil {
-			break
-		}
-		time.Sleep(time.Second)
-	}
+	response, err := r.client.Project.ListRoleNames(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
 
 	roleNames := []apiv1.RoleName{}
-
 	for _, roleName := range response.Payload {
 		roleNames = append(roleNames, apiv1.RoleName{
 			Name:      roleName.Name,
@@ -890,7 +855,6 @@ func (r *runner) GetRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, er
 	return roleNames, nil
 }
 
-// BindUserToRole
 func (r *runner) BindUserToRole(projectID, dc, clusterID, roleName, namespace, user string) (*apiv1.RoleBinding, error) {
 	params := &project.BindUserToRoleParams{
 		Body:      &models.RoleUser{UserEmail: user},
@@ -900,17 +864,9 @@ func (r *runner) BindUserToRole(projectID, dc, clusterID, roleName, namespace, u
 		ProjectID: projectID,
 		RoleID:    roleName,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	var err error
-	var response *project.BindUserToRoleOK
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		response, err = r.client.Project.BindUserToRole(params, r.bearerToken)
-		if err == nil {
-			break
-		}
-		time.Sleep(time.Second)
-	}
+	response, err := r.client.Project.BindUserToRole(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
@@ -923,23 +879,14 @@ func (r *runner) BindUserToRole(projectID, dc, clusterID, roleName, namespace, u
 
 func (r *runner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.ClusterRoleName, error) {
 	params := &project.ListClusterRoleNamesParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	var err error
-	var response *project.ListClusterRoleNamesOK
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		response, err = r.client.Project.ListClusterRoleNames(params, r.bearerToken)
-		if err == nil {
-			break
-		}
-		time.Sleep(time.Second)
-	}
+	response, err := r.client.Project.ListClusterRoleNames(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
 
 	clusterRoleNames := []apiv1.ClusterRoleName{}
-
 	for _, roleName := range response.Payload {
 		clusterRoleNames = append(clusterRoleNames, apiv1.ClusterRoleName{
 			Name: roleName.Name,
@@ -958,17 +905,9 @@ func (r *runner) BindUserToClusterRole(projectID, dc, clusterID, roleName, user 
 		ProjectID: projectID,
 		RoleID:    roleName,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	var err error
-	var response *project.BindUserToClusterRoleOK
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		response, err = r.client.Project.BindUserToClusterRole(params, r.bearerToken)
-		if err == nil {
-			break
-		}
-		time.Sleep(time.Second)
-	}
+	response, err := r.client.Project.BindUserToClusterRole(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
@@ -980,28 +919,16 @@ func (r *runner) BindUserToClusterRole(projectID, dc, clusterID, roleName, user 
 
 func (r *runner) GetClusterBindings(projectID, dc, clusterID string) ([]apiv1.ClusterRoleBinding, error) {
 	params := &project.ListClusterRoleBindingParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	var err error
-	var response *project.ListClusterRoleBindingOK
-	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		response, err = r.client.Project.ListClusterRoleBinding(params, r.bearerToken)
-		if err == nil {
-			break
-		}
-		time.Sleep(time.Second)
-	}
+	response, err := r.client.Project.ListClusterRoleBinding(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
 
-	var clusterRoleBindings []apiv1.ClusterRoleBinding
-
+	clusterRoleBindings := []apiv1.ClusterRoleBinding{}
 	for _, roleBinding := range response.Payload {
-		newBinding := apiv1.ClusterRoleBinding{
-			RoleRefName: roleBinding.RoleRefName,
-		}
-		var subjects []rbacv1.Subject
+		subjects := []rbacv1.Subject{}
 		for _, subject := range roleBinding.Subjects {
 			subjects = append(subjects, rbacv1.Subject{
 				Kind:     subject.Kind,
@@ -1009,34 +936,25 @@ func (r *runner) GetClusterBindings(projectID, dc, clusterID string) ([]apiv1.Cl
 				Name:     subject.Name,
 			})
 		}
-		newBinding.Subjects = subjects
-		clusterRoleBindings = append(clusterRoleBindings, newBinding)
+
+		clusterRoleBindings = append(clusterRoleBindings, apiv1.ClusterRoleBinding{
+			RoleRefName: roleBinding.RoleRefName,
+			Subjects:    subjects,
+		})
 	}
 
 	return clusterRoleBindings, nil
 }
 
-// fmtSwaggerError works around the Error() implementration generated by swagger
-// which prints only a pointer to the body but we want to see the actual content of the body.
-// to fix this we can either type assert for each request type or naively use json
-func fmtSwaggerError(err error) string {
-	rawData, newErr := json.Marshal(err)
-	if newErr != nil {
-		return fmt.Sprintf("failed to marshal response(%v): %v", err, newErr)
-	}
-	return string(rawData)
-}
-
-// UpdateCluster updates cluster
 func (r *runner) UpdateCluster(projectID, dc, clusterID string, patch PatchCluster) (*apiv1.Cluster, error) {
-
 	params := &project.PatchClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID, Patch: patch}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 5*time.Minute, http.StatusConflict)
 
 	cluster, err := r.client.Project.PatchCluster(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
+
 	return convertCluster(cluster.Payload)
 }
 
@@ -1056,7 +974,8 @@ func (r *runner) CreateUserSSHKey(projectID, keyName, publicKey string) (*apiv1.
 		},
 		ProjectID: projectID,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
 	key, err := r.client.Project.CreateSSHKey(params, r.bearerToken)
 	if err != nil {
 		return nil, err
@@ -1070,13 +989,14 @@ func (r *runner) ListUserSSHKey(projectID string) ([]*apiv1.SSHKey, error) {
 	params := &project.ListSSHKeysParams{
 		ProjectID: projectID,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
 	keyList, err := r.client.Project.ListSSHKeys(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
 
-	resultList := make([]*apiv1.SSHKey, 0)
+	resultList := []*apiv1.SSHKey{}
 	for _, key := range keyList.Payload {
 		resultList = append(resultList, convertSSHKey(key))
 	}
@@ -1090,21 +1010,12 @@ func (r *runner) DeleteUserSSHKey(projectID, keyID string) error {
 		ProjectID: projectID,
 		SSHKeyID:  keyID,
 	}
-	params.WithTimeout(timeout)
+	// consider HTTP 403 (Forbidden) to be transient, as it can take a few
+	// moments for the UserProjectBindings to be properly reconciled
+	setupParams(r.test, params, 1*time.Second, 1*time.Minute, http.StatusForbidden)
 
-	var deleteError error
-	if err := wait.PollImmediate(time.Second, maxAttempts*time.Second, func() (bool, error) {
-		_, deleteError := r.client.Project.DeleteSSHKey(params, r.bearerToken)
-		if deleteError != nil {
-			return false, nil
-		}
-		return true, nil
-
-	}); err != nil {
-		return fmt.Errorf("the user SSH key can not be deleted after %d attempts %v", maxAttempts, deleteError)
-	}
-
-	return nil
+	_, err := r.client.Project.DeleteSSHKey(params, r.bearerToken)
+	return err
 }
 
 // AssignSSHKeyToCluster adds user SSH key to the cluster
@@ -1115,11 +1026,10 @@ func (r *runner) AssignSSHKeyToCluster(projectID, clusterID, dc, keyID string) e
 		KeyID:     keyID,
 		ProjectID: projectID,
 	}
-	params.WithTimeout(timeout)
-	if _, err := r.client.Project.AssignSSHKeyToCluster(params, r.bearerToken); err != nil {
-		return err
-	}
-	return nil
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
+	_, err := r.client.Project.AssignSSHKeyToCluster(params, r.bearerToken)
+	return err
 }
 
 // DetachSSHKeyFromClusterParams detaches user SSH key from the cluster
@@ -1130,11 +1040,10 @@ func (r *runner) DetachSSHKeyFromClusterParams(projectID, clusterID, dc, keyID s
 		KeyID:     keyID,
 		ProjectID: projectID,
 	}
-	params.WithTimeout(timeout)
-	if _, err := r.client.Project.DetachSSHKeyFromCluster(params, r.bearerToken); err != nil {
-		return err
-	}
-	return nil
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+
+	_, err := r.client.Project.DetachSSHKeyFromCluster(params, r.bearerToken)
+	return err
 }
 
 func convertSSHKey(key *models.SSHKey) *apiv1.SSHKey {
@@ -1156,7 +1065,7 @@ func (r *runner) ListDCForProvider(provider string) ([]*models.Datacenter, error
 	params := &datacenter.ListDCForProviderParams{
 		Provider: provider,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	list, err := r.client.Datacenter.ListDCForProvider(params, r.bearerToken)
 	if err != nil {
@@ -1171,7 +1080,7 @@ func (r *runner) GetDCForProvider(provider, dc string) (*models.Datacenter, erro
 		Provider:   provider,
 		Datacenter: dc,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	receivedDC, err := r.client.Datacenter.GetDCForProvider(params, r.bearerToken)
 	if err != nil {
@@ -1189,7 +1098,7 @@ func (r *runner) CreateDC(seed string, dc *models.Datacenter) (*models.Datacente
 		},
 		Seed: seed,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	createdDC, err := r.client.Datacenter.CreateDC(params, r.bearerToken)
 	if err != nil {
@@ -1204,7 +1113,8 @@ func (r *runner) DeleteDC(seed, dc string) error {
 		Seed: seed,
 		DC:   dc,
 	}
-	params.WithTimeout(timeout)
+	// HTTP400 is returned when the DC is not yet available in the Seed
+	setupParams(r.test, params, 1*time.Second, 5*time.Minute, http.StatusBadRequest)
 
 	_, err := r.client.Datacenter.DeleteDC(params, r.bearerToken)
 	return err
@@ -1219,7 +1129,7 @@ func (r *runner) UpdateDC(seed, dcToUpdate string, dc *models.Datacenter) (*mode
 		DCToUpdate: dcToUpdate,
 		Seed:       seed,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	updatedDC, err := r.client.Datacenter.UpdateDC(params, r.bearerToken)
 	if err != nil {
@@ -1235,14 +1145,14 @@ func (r *runner) PatchDC(seed, dcToPatch, patch string) (*models.Datacenter, err
 		DCToPatch: dcToPatch,
 		Seed:      seed,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	updatedDC, err := r.client.Datacenter.PatchDC(params, r.bearerToken)
+	patchedDC, err := r.client.Datacenter.PatchDC(params, r.bearerToken)
 	if err != nil {
 		return nil, err
 	}
 
-	return updatedDC.GetPayload(), nil
+	return patchedDC.GetPayload(), nil
 }
 
 func (r *runner) GetDCForSeed(seed, dc string) (*models.Datacenter, error) {
@@ -1250,7 +1160,7 @@ func (r *runner) GetDCForSeed(seed, dc string) (*models.Datacenter, error) {
 		Seed: seed,
 		DC:   dc,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusNotFound)
 
 	receivedDC, err := r.client.Datacenter.GetDCForSeed(params, r.bearerToken)
 	if err != nil {
@@ -1260,31 +1170,11 @@ func (r *runner) GetDCForSeed(seed, dc string) (*models.Datacenter, error) {
 	return receivedDC.GetPayload(), nil
 }
 
-func (r *runner) GetDCForSeedWithRetry(seed, dc string, attempts int) (*models.Datacenter, error) {
-	var errGetDC error
-	var receivedDC *models.Datacenter
-
-	if err := wait.PollImmediate(time.Second, time.Duration(attempts)*time.Second, func() (bool, error) {
-		receivedDC, errGetDC = r.GetDCForSeed(seed, dc)
-		if errGetDC != nil {
-			return false, nil
-		}
-		return true, nil
-	}); err != nil {
-		// first check error from GetDC
-		if errGetDC != nil {
-			return nil, errGetDC
-		}
-		return nil, err
-	}
-	return receivedDC, nil
-}
-
 func (r *runner) ListDCForSeed(seed string) ([]*models.Datacenter, error) {
 	params := &datacenter.ListDCForSeedParams{
 		Seed: seed,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	list, err := r.client.Datacenter.ListDCForSeed(params, r.bearerToken)
 	if err != nil {
@@ -1298,7 +1188,7 @@ func (r *runner) GetDC(dc string) (*models.Datacenter, error) {
 	params := &datacenter.GetDatacenterParams{
 		DC: dc,
 	}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	receivedDC, err := r.client.Datacenter.GetDatacenter(params, r.bearerToken)
 	if err != nil {
@@ -1310,7 +1200,7 @@ func (r *runner) GetDC(dc string) (*models.Datacenter, error) {
 
 func (r *runner) ListDC() ([]*models.Datacenter, error) {
 	params := &datacenter.ListDatacentersParams{}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	list, err := r.client.Datacenter.ListDatacenters(params, r.bearerToken)
 	if err != nil {
@@ -1322,13 +1212,10 @@ func (r *runner) ListDC() ([]*models.Datacenter, error) {
 
 func (r *runner) Logout() error {
 	params := &users.LogoutCurrentUserParams{}
-	params.WithTimeout(timeout)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	_, err := r.client.Users.LogoutCurrentUser(params, r.bearerToken)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (r *runner) GetKubeconfig(dc, projectID, clusterID string) (string, error) {
@@ -1337,8 +1224,8 @@ func (r *runner) GetKubeconfig(dc, projectID, clusterID string) (string, error) 
 		DC:        dc,
 		ProjectID: projectID,
 	}
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
-	params.WithTimeout(timeout)
 	conf, err := r.client.Project.GetClusterKubeconfig(params, r.bearerToken)
 	if err != nil {
 		return "", err

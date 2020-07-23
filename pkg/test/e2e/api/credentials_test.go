@@ -67,13 +67,13 @@ func TestListCredentials(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			credentialList, err := apiRunner.ListCredentials(tc.provider, tc.datacenter)
 			if err != nil {
-				t.Fatalf("can not get credential names for provider %s: %v", tc.provider, err)
+				t.Fatalf("failed to get credential names for provider %s: %v", tc.provider, err)
 			}
 			sort.Strings(tc.expectedList)
 			sort.Strings(credentialList)
@@ -110,7 +110,7 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			var u url.URL
@@ -120,7 +120,7 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 
 			req, err := http.NewRequest("GET", u.String(), nil)
 			if err != nil {
-				t.Fatalf("can not make GET call due error: %v", err)
+				t.Fatalf("failed to make GET call: %v", err)
 			}
 
 			req.Header.Set("Cache-Control", "no-cache")
@@ -135,14 +135,13 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 
 			resp, err := client.Do(req)
 			if err != nil {
-				t.Fatal("error reading response. ", err)
+				t.Fatalf("error reading response: %v", err)
 			}
 			defer resp.Body.Close()
 
 			if resp.StatusCode != tc.expectedCode {
-				t.Fatalf("expected code %d, got %d", tc.expectedCode, resp.StatusCode)
+				t.Fatalf("expected code %d, but got %d", tc.expectedCode, resp.StatusCode)
 			}
-
 		})
 	}
 }
