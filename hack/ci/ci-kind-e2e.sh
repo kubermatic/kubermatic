@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+cd $(dirname $0)/../..
 source hack/lib.sh
 
 export KUBERMATIC_NO_WORKER_NAME=true

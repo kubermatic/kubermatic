@@ -339,7 +339,7 @@ func kubeControllerManagerArgs(openshiftConfigPath, kubeconfigPath, caCertPath, 
 		fmt.Sprintf("--authorization-kubeconfig=%s", kubeconfigPath),
 		fmt.Sprintf("--client-ca-file=%s", caCertPath),
 		fmt.Sprintf("--requestheader-client-ca-file=%s", aggregatorCACertPath),
-		fmt.Sprint("-v=2"),
+		"-v=2",
 		// Used for metrics only, we can use a self-signed cert for now
 		//fmt.Sprintf("--tls-cert-file=%s", servingCert),
 		//fmt.Sprintf("--tls-private-key=%s", servingKey)

@@ -55,7 +55,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 const mockNamespaceName = "mock-namespace"
@@ -385,6 +385,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 		true,
 		// Since this is the image-loader we hardcode the default image for pulling.
 		resources.DefaultKubermaticImage,
+		resources.DefaultEtcdLauncherImage,
 		resources.DefaultDNATControllerImage,
 		false,
 	), nil

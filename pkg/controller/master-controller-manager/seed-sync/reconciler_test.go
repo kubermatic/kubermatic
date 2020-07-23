@@ -35,7 +35,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
-	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestReconcilingSeed(t *testing.T) {

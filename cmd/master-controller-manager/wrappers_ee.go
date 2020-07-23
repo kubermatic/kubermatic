@@ -40,13 +40,9 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 }
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt controllerRunOptions) (provider.SeedKubeconfigGetter, error) {
-	return eemasterctrlmgr.SeedKubeconfigGetterFactory(ctx, client, opt.kubeconfig)
+	return eemasterctrlmgr.SeedKubeconfigGetterFactory(ctx, client)
 }
 
 func setupSeedValidationWebhook(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger, opt controllerRunOptions, ctrlCtx *controllerContext) error {
-	return eemasterctrlmgr.SetupSeedValidationWebhook(ctx, mgr, log, opt.seedvalidationHook, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter, opt.kubeconfig, opt.workerName)
-}
-
-func runMigrations(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger, opt controllerRunOptions, ctrlCtx *controllerContext) error {
-	return eemasterctrlmgr.RunMigrations(ctx, client, log, ctrlCtx.namespace, opt.kubeconfig)
+	return eemasterctrlmgr.SetupSeedValidationWebhook(ctx, mgr, log, opt.seedvalidationHook, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter, opt.workerName)
 }

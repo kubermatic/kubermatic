@@ -46,9 +46,9 @@ import (
 )
 
 type controllerRunOptions struct {
-	kubeconfig   string
-	masterURL    string
-	internalAddr string
+	internalAddr            string
+	enableLeaderElection    bool
+	leaderElectionNamespace string
 
 	externalURL                                      string
 	dc                                               string
@@ -75,6 +75,7 @@ type controllerRunOptions struct {
 	monitoringScrapeAnnotationPrefix                 string
 	dockerPullConfigJSONFile                         string
 	kubermaticImage                                  string
+	etcdLauncherImage                                string
 	dnatControllerImage                              string
 	namespace                                        string
 	apiServerDefaultReplicas                         int
@@ -103,8 +104,9 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	var defaultOpenshiftAddonList string
 	var defaultOpenshiftAddonsFile string
 
-	flag.StringVar(&c.kubeconfig, "kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
-	flag.StringVar(&c.masterURL, "master", "", "The address of the Kubernetes API server. Overrides any value in kubeconfig. Only required if out-of-cluster.")
+	flag.BoolVar(&c.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. "+
+		"Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&c.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
 	flag.StringVar(&c.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal server is running on")
 	flag.StringVar(&c.externalURL, "external-url", "", "The external url for the apiserver host and the the dc.(Required)")
 	flag.StringVar(&c.dc, "datacenter-name", "", "The name of the seed datacenter, the controller is running in. It will be used to build the absolute url for a customer cluster.")
@@ -138,6 +140,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", resources.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
+	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", resources.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", resources.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")

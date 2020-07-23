@@ -35,7 +35,6 @@ import (
 
 type serverRunOptions struct {
 	listenAddress    string
-	kubeconfig       string
 	internalAddr     string
 	prometheusURL    string
 	masterResources  string
@@ -82,7 +81,6 @@ func newServerRunOptions() (serverRunOptions, error) {
 	s.log.AddFlags(flag.CommandLine)
 
 	flag.StringVar(&s.listenAddress, "address", ":8080", "The address to listen on")
-	flag.StringVar(&s.kubeconfig, "kubeconfig", "", "Path to the kubeconfig.")
 	flag.StringVar(&s.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the internal handler should be exposed")
 	flag.StringVar(&s.prometheusURL, "prometheus-url", "http://prometheus.monitoring.svc.local:web", "The URL on which this API can talk to Prometheus")
 	flag.StringVar(&s.masterResources, "master-resources", "", "The path to the master resources (Required).")

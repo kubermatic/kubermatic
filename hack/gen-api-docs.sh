@@ -14,8 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
-swagger -apiPackage="github.com/kubermatic/kubermatic"  \
-  -mainApiFile="github.com/kubermatic/kubermatic/cmd/kubermatic-api/main.go" \
+set -euo pipefail
+
+cd $(dirname $0)/..
+source hack/lib.sh
+
+swagger -apiPackage="github.com/kubermatic/kubermatic" \
+  -mainApiFile="cmd/kubermatic-api/main.go" \
   -format="swagger" \
-  -output="$(go env GOPATH)/src/github.com/kubermatic/kubermatic/handler/swagger/"
+  -output=handler/swagger/

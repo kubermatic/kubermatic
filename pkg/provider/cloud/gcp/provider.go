@@ -32,6 +32,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
 
 	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	kuberneteshelper "github.com/kubermatic/kubermatic/pkg/kubernetes"
@@ -193,8 +194,9 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 	if err != nil {
 		return nil, "", err
 	}
-	client := conf.Client(context.Background())
-	svc, err := compute.New(client)
+	ctx := context.Background()
+	client := conf.Client(ctx)
+	svc, err := compute.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
 		return nil, "", fmt.Errorf("cannot connect to Google Cloud: %v", err)
 	}

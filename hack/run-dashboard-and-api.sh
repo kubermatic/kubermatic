@@ -16,7 +16,7 @@
 
 set -exuo pipefail
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+cd $(dirname $0)/..
 source hack/lib.sh
 
 function cleanup {

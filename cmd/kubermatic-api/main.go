@@ -74,9 +74,9 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
@@ -144,7 +144,7 @@ func main() {
 }
 
 func createInitProviders(options serverRunOptions) (providers, error) {
-	masterCfg, err := clientcmd.BuildConfigFromFlags("", options.kubeconfig)
+	masterCfg, err := ctrl.GetConfig()
 	if err != nil {
 		return providers{}, fmt.Errorf("unable to build client configuration from kubeconfig due to %v", err)
 	}

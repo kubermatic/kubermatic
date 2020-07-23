@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+cd $(dirname $0)/..
 source hack/lib.sh
 
 KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
@@ -44,6 +44,7 @@ echodate "Starting master-controller-manager..."
 set -x
 ./_build/master-controller-manager $CTRL_EXTRA_ARGS \
   -kubeconfig=$KUBECONFIG \
+  -enable-leader-election=false \
   -internal-address=127.0.0.1:8086 \
   -worker-name="$(worker_name)" \
   -log-debug=$KUBERMATIC_DEBUG \

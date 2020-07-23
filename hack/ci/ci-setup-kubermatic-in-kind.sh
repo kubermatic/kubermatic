@@ -55,7 +55,7 @@ if [[ -z ${PROW_JOB_ID} ]]; then
   exit 1
 fi
 
-cd "${GOPATH}/src/github.com/kubermatic/kubermatic"
+cd $(dirname $0)/../..
 source hack/lib.sh
 
 TEST_NAME="Get Vault token"

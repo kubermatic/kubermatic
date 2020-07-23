@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+cd $(dirname $0)/..
 source hack/lib.sh
 
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}

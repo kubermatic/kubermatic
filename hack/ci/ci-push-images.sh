@@ -15,8 +15,8 @@
 # limitations under the License.
 
 set -eu
-cd "$(git rev-parse --show-toplevel)"
 
+cd $(dirname $0)/../..
 source hack/lib.sh
 
 GIT_HEAD_HASH="$(git rev-parse HEAD)"

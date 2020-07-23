@@ -95,9 +95,10 @@ type VSphere struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 
-	VMNetName string `json:"vmNetName,omitempty"`
-
-	Datacenter string `json:"datacenter,omitempty"`
+	VMNetName        string `json:"vmNetName,omitempty"`
+	Datastore        string `json:"datastore,omitempty"`
+	DatastoreCluster string `json:"datastoreCluster,omitempty"`
+	Datacenter       string `json:"datacenter,omitempty"`
 }
 
 type AWS struct {

@@ -34,8 +34,9 @@ const (
 type AddonCollector struct {
 	client ctrlruntimeclient.Reader
 
-	addonCreated *prometheus.Desc
-	addonDeleted *prometheus.Desc
+	addonCreated       *prometheus.Desc
+	addonDeleted       *prometheus.Desc
+	addonReconcileFail *prometheus.Desc
 }
 
 // MustRegisterAddonCollector registers the addon collector at the given prometheus registry
@@ -54,6 +55,12 @@ func MustRegisterAddonCollector(registry prometheus.Registerer, client ctrlrunti
 			[]string{"cluster", "addon"},
 			nil,
 		),
+		addonReconcileFail: prometheus.NewDesc(
+			addonPrefix+"reconcile_failed",
+			"Reconcile is failing",
+			[]string{"cluster", "addon"},
+			nil,
+		),
 	}
 
 	registry.MustRegister(cc)
@@ -63,6 +70,7 @@ func MustRegisterAddonCollector(registry prometheus.Registerer, client ctrlrunti
 func (cc AddonCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- cc.addonCreated
 	ch <- cc.addonDeleted
+	ch <- cc.addonReconcileFail
 }
 
 // Collect gets called by prometheus to collect the metrics
@@ -87,6 +95,21 @@ func (cc *AddonCollector) collectAddon(ch chan<- prometheus.Metric, addon *kuber
 	}
 
 	clusterName := addon.OwnerReferences[0].Name
+
+	notCreated := 1
+	for _, cond := range addon.Status.Conditions {
+		if cond.Type == kubermaticv1.AddonResourcesCreated {
+			notCreated = 0
+			break
+		}
+	}
+	ch <- prometheus.MustNewConstMetric(
+		cc.addonReconcileFail,
+		prometheus.GaugeValue,
+		float64(notCreated),
+		clusterName,
+		addon.Name,
+	)
 
 	ch <- prometheus.MustNewConstMetric(
 		cc.addonCreated,

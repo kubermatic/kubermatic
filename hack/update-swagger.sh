@@ -19,13 +19,8 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-ROOT_DIR="$(realpath .)"
-SWAGGER_FILE="swagger.json"
-
-echodate "Installing go-swagger"
-cd vendor/github.com/go-swagger/go-swagger/cmd/swagger
-go install
+SWAGGER_FILE=""
 
 echodate "Generating swagger spec"
-cd "${ROOT_DIR}/cmd/kubermatic-api/"
-swagger generate spec --scan-models -o ${SWAGGER_FILE}
+cd cmd/kubermatic-api/
+go run github.com/go-swagger/go-swagger/cmd/swagger generate spec --scan-models -o swagger.json
