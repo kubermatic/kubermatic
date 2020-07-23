@@ -41,14 +41,14 @@ func TestListDCForProvider(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 
 			dcs, err := apiRunner.ListDCForProvider(tc.provider)
 			if err != nil {
-				t.Fatalf("can not get dcs list due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to get dcs list: %v", err)
 			}
 
 			var resultNames []string
@@ -95,14 +95,14 @@ func TestGetDCForProvider(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 
 			dc, err := apiRunner.GetDCForProvider(tc.provider, tc.dc)
 			if err != nil {
-				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to get dc: %v", err)
 			}
 
 			if !reflect.DeepEqual(tc.expected, dc) {
@@ -143,14 +143,14 @@ func TestCreateDC(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			adminMasterToken, err := retrieveAdminMasterToken()
 			if err != nil {
-				t.Fatalf("can not get admin master token due error: %v", err)
+				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
 			adminAPIRunner := createRunner(adminMasterToken, t)
 
 			dc, err := adminAPIRunner.CreateDC(tc.seed, tc.dc)
 			if err != nil {
-				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to create dc: %v", err)
 			}
 
 			if !reflect.DeepEqual(tc.dc, dc) {
@@ -158,9 +158,9 @@ func TestCreateDC(t *testing.T) {
 					*tc.dc.Metadata, *tc.dc.Spec, *tc.dc.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
 			}
 
-			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.dc.Metadata.Name, 5)
+			_, err = adminAPIRunner.GetDCForSeed(tc.seed, tc.dc.Metadata.Name)
 			if err != nil {
-				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to get dc: %v", err)
 			}
 
 			// user can't create DC with the same name in the same seed
@@ -202,24 +202,24 @@ func TestDeleteDC(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			adminMasterToken, err := retrieveAdminMasterToken()
 			if err != nil {
-				t.Fatalf("can not get admin master token due error: %v", err)
+				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
 			adminAPIRunner := createRunner(adminMasterToken, t)
 
 			_, err = adminAPIRunner.CreateDC(tc.seed, tc.dc)
 			if err != nil {
-				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to create dc: %v", err)
 			}
 
-			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.dc.Metadata.Name, 5)
+			_, err = adminAPIRunner.GetDCForSeed(tc.seed, tc.dc.Metadata.Name)
 			if err != nil {
-				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to get dc: %v", err)
 			}
 
 			err = adminAPIRunner.DeleteDC(tc.seed, tc.dc.Metadata.Name)
 			if err != nil {
-				t.Fatalf("can not delete dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to delete dc: %v", err)
 			}
 		})
 	}
@@ -271,14 +271,14 @@ func TestUpdateDC(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			adminMasterToken, err := retrieveAdminMasterToken()
 			if err != nil {
-				t.Fatalf("can not get admin master token due error: %v", err)
+				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
 			adminAPIRunner := createRunner(adminMasterToken, t)
 
 			dc, err := adminAPIRunner.CreateDC(tc.seed, tc.originalDC)
 			if err != nil {
-				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to create dc: %v", err)
 			}
 
 			if !reflect.DeepEqual(tc.originalDC, dc) {
@@ -286,14 +286,14 @@ func TestUpdateDC(t *testing.T) {
 					*tc.originalDC.Metadata, *tc.originalDC.Spec, *tc.originalDC.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
 			}
 
-			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.originalDC.Metadata.Name, 5)
+			_, err = adminAPIRunner.GetDCForSeed(tc.seed, tc.originalDC.Metadata.Name)
 			if err != nil {
-				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to get dc: %v", err)
 			}
 
 			updatedDC, err := adminAPIRunner.UpdateDC(tc.seed, tc.originalDC.Metadata.Name, tc.updatedDC)
 			if err != nil {
-				t.Fatalf("can not update dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to update dc: %v", err)
 			}
 
 			if !reflect.DeepEqual(tc.updatedDC, updatedDC) {
@@ -352,14 +352,14 @@ func TestPatchDC(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			adminMasterToken, err := retrieveAdminMasterToken()
 			if err != nil {
-				t.Fatalf("can not get admin master token due error: %v", err)
+				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
 			adminAPIRunner := createRunner(adminMasterToken, t)
 
 			dc, err := adminAPIRunner.CreateDC(tc.seed, tc.originalDC)
 			if err != nil {
-				t.Fatalf("can not create dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to create dc: %v", err)
 			}
 
 			if !reflect.DeepEqual(tc.originalDC, dc) {
@@ -367,14 +367,14 @@ func TestPatchDC(t *testing.T) {
 					*tc.originalDC.Metadata, *tc.originalDC.Spec, *tc.originalDC.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
 			}
 
-			_, err = adminAPIRunner.GetDCForSeedWithRetry(tc.seed, tc.originalDC.Metadata.Name, 5)
+			_, err = adminAPIRunner.GetDCForSeed(tc.seed, tc.originalDC.Metadata.Name)
 			if err != nil {
-				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to get dc: %v", err)
 			}
 
 			patchedDC, err := adminAPIRunner.PatchDC(tc.seed, tc.originalDC.Metadata.Name, tc.patch)
 			if err != nil {
-				t.Fatalf("can not patch dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to patch dc: %v", err)
 			}
 
 			if !reflect.DeepEqual(tc.expectedDC, patchedDC) {
@@ -417,14 +417,14 @@ func TestGetDCForSeed(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 
 			dc, err := apiRunner.GetDCForSeed(tc.seed, tc.dc)
 			if err != nil {
-				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to get dc: %v", err)
 			}
 
 			if !reflect.DeepEqual(tc.expected, dc) {
@@ -451,14 +451,14 @@ func TestListDCForSeed(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 
 			dcs, err := apiRunner.ListDCForSeed(tc.seed)
 			if err != nil {
-				t.Fatalf("can not get dcs list due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to get dcs list: %v", err)
 			}
 
 			resultNames := make(map[string]bool)
@@ -505,14 +505,14 @@ func TestGetDC(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 
 			dc, err := apiRunner.GetDC(tc.dc)
 			if err != nil {
-				t.Fatalf("can not get dc due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to get dc: %v", err)
 			}
 
 			if !reflect.DeepEqual(tc.expected, dc) {
@@ -537,14 +537,14 @@ func TestListDC(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 
 			dcs, err := apiRunner.ListDC()
 			if err != nil {
-				t.Fatalf("can not get dcs list due to error: %v", GetErrorResponse(err))
+				t.Fatalf("failed to get dcs list: %v", err)
 			}
 
 			resultNames := make(map[string]bool)

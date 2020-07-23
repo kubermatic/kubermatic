@@ -46,13 +46,13 @@ func TestGCPZones(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			credentialList, err := apiRunner.ListCredentials(tc.provider, "")
 			if err != nil {
-				t.Fatalf("can not get credential names for provider %s: %v", tc.provider, err)
+				t.Fatalf("failed to get credential names for provider %s: %v", tc.provider, err)
 			}
 			if !equality.Semantic.DeepEqual(tc.expectedCredentials, credentialList) {
 				t.Fatalf("expected: %v, got %v", tc.expectedCredentials, credentialList)
@@ -60,16 +60,15 @@ func TestGCPZones(t *testing.T) {
 
 			zoneList, err := apiRunner.ListGCPZones(credentialList[0], tc.datacenter)
 			if err != nil {
-				t.Fatalf("can not get zones %v", err)
+				t.Fatalf("failed to get zones %v", err)
 			}
 
 			sort.Strings(zoneList)
 			sort.Strings(tc.resultList)
 
 			if !equality.Semantic.DeepEqual(tc.resultList, zoneList) {
-				t.Fatalf("expected: %v, got %v", tc.resultList, zoneList)
+				t.Fatalf("expected: %v, but got %v", tc.resultList, zoneList)
 			}
-
 		})
 	}
 }
@@ -94,13 +93,13 @@ func TestGCPDiskTypes(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			credentialList, err := apiRunner.ListCredentials(tc.provider, "")
 			if err != nil {
-				t.Fatalf("can not get credential names for provider %s: %v", tc.provider, err)
+				t.Fatalf("failed to get credential names for provider %s: %v", tc.provider, err)
 			}
 			if !equality.Semantic.DeepEqual(tc.expectedCredentials, credentialList) {
 				t.Fatalf("expected: %v, got %v", tc.expectedCredentials, credentialList)
@@ -108,15 +107,14 @@ func TestGCPDiskTypes(t *testing.T) {
 
 			diskTypeList, err := apiRunner.ListGCPDiskTypes(credentialList[0], tc.zone)
 			if err != nil {
-				t.Fatalf("can not get disk types %v", err)
+				t.Fatalf("failed to get disk types: %v", err)
 			}
 
 			expectedDiskTypeList := sets.NewString(diskTypeList...)
 
 			if !expectedDiskTypeList.HasAll(tc.resultList...) {
-				t.Fatalf("expected: %v, got %v", tc.resultList, diskTypeList)
+				t.Fatalf("expected: %v, but got %v", tc.resultList, diskTypeList)
 			}
-
 		})
 	}
 }
@@ -139,23 +137,22 @@ func TestGCPSizes(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			credentialList, err := apiRunner.ListCredentials(tc.provider, "")
 			if err != nil {
-				t.Fatalf("can not get credential names for provider %s: %v", tc.provider, err)
+				t.Fatalf("failed to get credential names for provider %s: %v", tc.provider, err)
 			}
 			if !equality.Semantic.DeepEqual(tc.expectedCredentials, credentialList) {
-				t.Fatalf("expected: %v, got %v", tc.expectedCredentials, credentialList)
+				t.Fatalf("expected: %v, but got %v", tc.expectedCredentials, credentialList)
 			}
 
 			_, err = apiRunner.ListGCPSizes(credentialList[0], tc.zone)
 			if err != nil {
-				t.Fatalf("can not get sizes %v", err)
+				t.Fatalf("failed to get sizes: %v", err)
 			}
-
 		})
 	}
 }

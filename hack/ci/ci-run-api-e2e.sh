@@ -105,8 +105,23 @@ spec:
 EOF
 retry 2 kubectl apply -f user.yaml
 
+function print_kubermatic_logs {
+  if [[ $? -ne 0 ]]; then
+    echodate "Printing logs for Kubermatic API"
+    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-api'
+    echodate "Printing logs for Master Controller Manager"
+    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-master-controller-manager'
+    echodate "Printing logs for Seed Controller Manager"
+    kubectl -n kubermatic logs --tail=-1 --selector='app.kubernetes.io/name=kubermatic-seed-controller-manager'
+  fi
+}
+appendTrap print_kubermatic_logs EXIT
+
 echodate "Running API E2E tests..."
+
 export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
 go test -tags="create,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
 go test -tags="e2e,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
 go test -tags="logout,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
+
+echodate "Tests completed successfully!"
