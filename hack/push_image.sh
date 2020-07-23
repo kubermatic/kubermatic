@@ -31,6 +31,8 @@ source hack/lib.sh
 
 DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 
+GOOS="${GOOS:-linux}"
+
 REPOSUFFIX=""
 KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ee}"
 
@@ -38,14 +40,13 @@ if [ "$KUBERMATIC_EDITION" != "ce" ]; then
   REPOSUFFIX="-$KUBERMATIC_EDITION"
 fi
 
-make build
-docker build -t ${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${1} .
-cd cmd/nodeport-proxy && export TAG=${1} && make DOCKER_REPO=${DOCKER_REPO} docker && unset TAG && cd -
-cd cmd/kubeletdnat-controller && export TAG=${1} && make DOCKER_REPO=${DOCKER_REPO} docker && unset TAG && cd -
+make docker-build GOOS="${GOOS}" KUBERMATIC_EDITION="${KUBERMATIC_EDITION}" DOCKER_REPO=${DOCKER_REPO} TAGS="${1}"
+make -C cmd/nodeport-proxy docker GOOS="${GOOS}" DOCKER_REPO="${DOCKER_REPO}" TAG="${1}"
+make -C cmd/kubeletdnat-controller docker GOOS="${GOOS}" DOCKER_REPO=${DOCKER_REPO} TAG="${1}"
 docker build -t "${DOCKER_REPO}/addons:${1}" addons
 docker build -t "${DOCKER_REPO}/openshift-addons:${1}" openshift_addons
-cd cmd/user-ssh-keys-agent && export TAG=${1} && make DOCKER_REPO=${DOCKER_REPO} docker && unset TAG && cd -
-docker build  -t ${DOCKER_REPO}/etcd-launcher:${1} -f cmd/etcd-launcher/Dockerfile .
+make -C cmd/user-ssh-keys-agent docker GOOS="${GOOS}" DOCKER_REPO=${DOCKER_REPO} TAG="${1}"
+docker build  -t "${DOCKER_REPO}/etcd-launcher:${1}" -f cmd/etcd-launcher/Dockerfile .
 
 # keep a mirror of the EE version in the old repo
 if [ "$KUBERMATIC_EDITION" == "ee" ]; then
