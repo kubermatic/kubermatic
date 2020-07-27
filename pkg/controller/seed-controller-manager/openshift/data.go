@@ -51,6 +51,7 @@ type openshiftData struct {
 	nodeAccessNetwork                     string
 	oidc                                  OIDCConfig
 	etcdDiskSize                          resource.Quantity
+	etcdLauncherImage                     string
 	kubermaticImage                       string
 	dnatControllerImage                   string
 	supportsFailureDomainZoneAntiAffinity bool
@@ -237,6 +238,19 @@ func (od *openshiftData) EtcdDiskSize() resource.Quantity {
 	return od.etcdDiskSize
 }
 
+func (od *openshiftData) EtcdLauncherImage() string {
+	imageSplit := strings.Split(od.etcdLauncherImage, "/")
+	var registry, imageWithoutRegistry string
+	if len(imageSplit) != 3 {
+		registry = kubernetesresources.RegistryDocker
+		imageWithoutRegistry = strings.Join(imageSplit, "/")
+	} else {
+		registry = imageSplit[0]
+		imageWithoutRegistry = strings.Join(imageSplit[1:], "/")
+	}
+	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
+}
+
 // Openshift has its own DNS cache, so this is always false
 func (od *openshiftData) NodeLocalDNSCacheEnabled() bool {
 	return false
@@ -246,7 +260,7 @@ func (od *openshiftData) KubermaticAPIImage() string {
 	apiImageSplit := strings.Split(od.kubermaticImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(apiImageSplit) != 3 {
-		registry = "docker.io"
+		registry = kubernetesresources.RegistryDocker
 		imageWithoutRegistry = strings.Join(apiImageSplit, "/")
 	} else {
 		registry = apiImageSplit[0]
@@ -263,7 +277,7 @@ func (od *openshiftData) DNATControllerImage() string {
 	dnatControllerImageSplit := strings.Split(od.dnatControllerImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(dnatControllerImageSplit) != 3 {
-		registry = "docker.io"
+		registry = kubernetesresources.RegistryDocker
 		imageWithoutRegistry = strings.Join(dnatControllerImageSplit, "/")
 	} else {
 		registry = dnatControllerImageSplit[0]
