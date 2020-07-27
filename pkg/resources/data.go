@@ -57,6 +57,7 @@ type TemplateData struct {
 	oidcIssuerClientID                               string
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
+	etcdLauncherImage                                string
 	dnatControllerImage                              string
 	supportsFailureDomainZoneAntiAffinity            bool
 }
@@ -82,6 +83,7 @@ func NewTemplateData(
 	oidcIssuerClientID string,
 	nodeLocalDNSCacheEnabled bool,
 	kubermaticImage string,
+	etcdLauncherImage string,
 	dnatControllerImage string,
 	supportsFailureDomainZoneAntiAffinity bool) *TemplateData {
 	return &TemplateData{
@@ -104,6 +106,7 @@ func NewTemplateData(
 		oidcIssuerClientID:                               oidcIssuerClientID,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
+		etcdLauncherImage:                                etcdLauncherImage,
 		dnatControllerImage:                              dnatControllerImage,
 		supportsFailureDomainZoneAntiAffinity:            supportsFailureDomainZoneAntiAffinity,
 	}
@@ -156,6 +159,19 @@ func (d *TemplateData) DC() *kubermaticv1.Datacenter {
 // EtcdDiskSize returns the etcd disk size
 func (d *TemplateData) EtcdDiskSize() resource.Quantity {
 	return d.etcdDiskSize
+}
+
+func (d *TemplateData) EtcdLauncherImage() string {
+	imageSplit := strings.Split(d.etcdLauncherImage, "/")
+	var registry, imageWithoutRegistry string
+	if len(imageSplit) != 3 {
+		registry = RegistryDocker
+		imageWithoutRegistry = strings.Join(imageSplit, "/")
+	} else {
+		registry = imageSplit[0]
+		imageWithoutRegistry = strings.Join(imageSplit[1:], "/")
+	}
+	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
 
 // MonitoringScrapeAnnotationPrefix returns the scrape annotation prefix
@@ -277,7 +293,7 @@ func (d *TemplateData) KubermaticAPIImage() string {
 	apiImageSplit := strings.Split(d.kubermaticImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(apiImageSplit) != 3 {
-		registry = "docker.io"
+		registry = RegistryDocker
 		imageWithoutRegistry = strings.Join(apiImageSplit, "/")
 	} else {
 		registry = apiImageSplit[0]
@@ -290,7 +306,7 @@ func (d *TemplateData) DNATControllerImage() string {
 	dnatControllerImageSplit := strings.Split(d.dnatControllerImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(dnatControllerImageSplit) != 3 {
-		registry = "docker.io"
+		registry = RegistryDocker
 		imageWithoutRegistry = strings.Join(dnatControllerImageSplit, "/")
 	} else {
 		registry = dnatControllerImageSplit[0]

@@ -37,6 +37,8 @@ kubermatic:
   monitoringScrapeAnnotationPrefix: ""
   # The location from which to pull the Kubermatic docker image
   kubermaticImage: ""
+  # The location from which to pull the etcd launcher docker image
+  etcdLauncherImage: ""
   # The location from which to pull the Kubermatic dnatcontroller image
   dnatcontrollerImage: "quay.io/kubermatic/kubeletdnat-controller"
   # The strategy to expose the cluster with, either "NodePort" which creates a NodePort with a "nodeport-proxy.k8s.io/expose": "true" annotation to expose all

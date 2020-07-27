@@ -132,6 +132,9 @@ spec:
         {{- if .Values.kubermatic.kubermaticImage }}
         - -kubermatic-image={{ .Values.kubermatic.kubermaticImage }}
         {{- end }}
+        {{- if .Values.kubermatic.etcdLauncherImage }}
+        - -etcd-launcher-image={{ .Values.kubermatic.etcdLauncherImage }}
+        {{- end }}
         {{- if .Values.kubermatic.dnatcontrollerImage }}
         - -dnatcontroller-image={{ .Values.kubermatic.dnatcontrollerImage  }}
         {{- end }}

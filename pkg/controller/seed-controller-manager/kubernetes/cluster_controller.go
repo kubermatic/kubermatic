@@ -89,6 +89,7 @@ type Reconciler struct {
 	dockerPullConfigJSON                             []byte
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
+	etcdLauncherImage                                string
 	dnatControllerImage                              string
 	concurrentClusterUpdates                         int
 
@@ -125,6 +126,7 @@ func Add(
 	oidcIssuerURL string,
 	oidcIssuerClientID string,
 	kubermaticImage string,
+	etcdLauncherImage string,
 	dnatControllerImage string,
 	features Features) error {
 
@@ -148,6 +150,7 @@ func Add(
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
+		etcdLauncherImage:                                etcdLauncherImage,
 		dnatControllerImage:                              dnatControllerImage,
 		concurrentClusterUpdates:                         concurrentClusterUpdates,
 

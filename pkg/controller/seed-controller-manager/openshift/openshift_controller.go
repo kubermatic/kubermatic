@@ -101,6 +101,7 @@ type Reconciler struct {
 	externalURL              string
 	oidc                     OIDCConfig
 	kubermaticImage          string
+	etcdLauncherImage        string
 	dnatControllerImage      string
 	features                 Features
 	concurrentClusterUpdates int
@@ -119,6 +120,7 @@ func Add(
 	dockerPullConfigJSON []byte,
 	externalURL string,
 	kubermaticImage string,
+	etcdLauncherImage string,
 	dnatControllerImage string,
 	features Features,
 	concurrentClusterUpdates int,
@@ -137,6 +139,7 @@ func Add(
 		workerName:               workerName,
 		externalURL:              externalURL,
 		kubermaticImage:          kubermaticImage,
+		etcdLauncherImage:        etcdLauncherImage,
 		dnatControllerImage:      dnatControllerImage,
 		features:                 features,
 		concurrentClusterUpdates: concurrentClusterUpdates,
