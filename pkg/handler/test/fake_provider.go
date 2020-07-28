@@ -17,6 +17,7 @@ limitations under the License.
 package test
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"time"
@@ -26,6 +27,8 @@ import (
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -118,4 +121,21 @@ func createError(status int32, message string) error {
 		Reason:  metav1.StatusReasonBadRequest,
 		Message: message,
 	}}
+}
+
+type FakeExternalClusterProvider struct {
+	Provider   *kubernetes.ExternalClusterProvider
+	FakeClient ctrlruntimeclient.Client
+}
+
+func (p *FakeExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (*ctrlruntimeclient.Client, error) {
+	return &p.FakeClient, nil
+}
+
+func (p *FakeExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, kubeconfig *clientcmdapi.Config) error {
+	return p.Provider.CreateOrUpdateKubeconfigSecretForCluster(ctx, cluster, kubeconfig)
+}
+
+func (p *FakeExternalClusterProvider) New(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
+	return p.Provider.New(userInfo, project, cluster)
 }

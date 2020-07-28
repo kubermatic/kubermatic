@@ -497,6 +497,10 @@ const (
 	TokenBlacklist = "token-blacklist"
 )
 
+const (
+	ExternalClusterKubeconfig = "kubeconfig"
+)
+
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key
 type ECDSAKeyPair struct {
 	Key  *ecdsa.PrivateKey

@@ -74,6 +74,8 @@ type Routing struct {
 	admissionPluginProvider               provider.AdmissionPluginsProvider
 	settingsWatcher                       watcher.SettingsWatcher
 	userWatcher                           watcher.UserWatcher
+	externalClusterProvider               provider.ExternalClusterProvider
+	privilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
 }
 
 // NewV2Routing creates a new Routing.
@@ -115,6 +117,8 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		admissionPluginProvider:               routingParams.AdmissionPluginProvider,
 		settingsWatcher:                       routingParams.SettingsWatcher,
 		userWatcher:                           routingParams.UserWatcher,
+		externalClusterProvider:               routingParams.ExternalClusterProvider,
+		privilegedExternalClusterProvider:     routingParams.PrivilegedExternalClusterProvider,
 	}
 }
 
