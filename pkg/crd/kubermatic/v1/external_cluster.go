@@ -23,6 +23,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+
+	// ExternalClusterResourceName represents "Resource" defined in Kubernetes
+	ExternalClusterResourceName = "externalclusters"
+
+	// ExternalClusterKind represents "Kind" defined in Kubernetes
+	ExternalClusterKind = "ExternalCluster"
+)
+
 //+genclient
 //+genclient:nonNamespaced
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
