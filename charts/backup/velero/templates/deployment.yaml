@@ -90,6 +90,10 @@ spec:
           protocol: TCP
         resources:
 {{ toYaml .Values.velero.resources | indent 10 }}
+      {{- if .Values.velero.initContainers }}
+      initContainers:
+{{ toYaml .Values.velero.initContainers | indent 6 }}
+      {{- end }}
       volumes:
       - name: plugins
         emptyDir: {}
