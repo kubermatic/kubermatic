@@ -26,6 +26,30 @@ velero:
   # are automatically set via the configuration below
   serverFlags: []
 
+  # Init containers to add to the Velero deployment's pod spec.
+  # At least one plugin provider image is required.
+  initContainers:
+  # - name: velero-plugin-for-aws
+  #   image: docker.io/velero/velero-plugin-for-aws:v1.1.0
+  #   imagePullPolicy: IfNotPresent
+  #   volumeMounts:
+  #     - mountPath: /target
+  #       name: plugins
+
+  # - name: velero-plugin-for-gcp
+  #   image: docker.io/velero/velero-plugin-for-gcp:v1.1.0
+  #   imagePullPolicy: IfNotPresent
+  #   volumeMounts:
+  #     - mountPath: /target
+  #       name: plugins
+
+  # - name: velero-plugin-for-microsoft-azure
+  #   image: docker.io/velero/velero-plugin-for-microsoft-azure:v1.1.0
+  #   imagePullPolicy: IfNotPresent
+  #   volumeMounts:
+  #     - mountPath: /target
+  #       name: plugins
+
   # whether or not to create a restic daemonset
   restic:
     deploy: false
