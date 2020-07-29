@@ -161,7 +161,7 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 			kind:      "Secret",
 			namespace: "kubermatic",
 			shouldEnqueue: func(obj metav1.Object) bool {
-				// do not reconcile secrets without "sa-token" and "credential" prefix
+				// do not reconcile secrets without "sa-token", "credential" and "kubeconfig-external-cluster" prefix
 				return shouldEnqueueSecret(obj.GetName())
 			},
 		},
@@ -177,6 +177,15 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 				// do not reconcile resources without "serviceaccount" prefix
 				return strings.HasPrefix(obj.GetName(), "serviceaccount")
 			},
+		},
+
+		{
+			gvr: schema.GroupVersionResource{
+				Group:    kubermaticv1.GroupName,
+				Version:  kubermaticv1.GroupVersion,
+				Resource: kubermaticv1.ExternalClusterResourceName,
+			},
+			kind: kubermaticv1.ExternalClusterKind,
 		},
 	}
 
@@ -222,7 +231,7 @@ func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 }
 
 func shouldEnqueueSecret(name string) bool {
-	supportedPrefixes := []string{"sa-token", "credential"}
+	supportedPrefixes := []string{"sa-token", "credential", "kubeconfig-external-cluster"}
 	for _, prefix := range supportedPrefixes {
 		if strings.HasPrefix(name, prefix) {
 			return true
