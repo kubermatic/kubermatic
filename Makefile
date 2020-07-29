@@ -14,10 +14,11 @@
 
 export CGO_ENABLED?=0
 export KUBERMATIC_EDITION?=ce
-REPO=quay.io/kubermatic/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
+DOCKER_REPO?=quay.io/kubermatic
+REPO=$(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
 CMD=$(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS?=-v
-GOOS ?= $(shell go env GOOS)
+GOOS?=$(shell go env GOOS)
 GITTAG=$(shell git describe --tags --always)
 TAGS?=$(GITTAG)
 DOCKERTAGS=$(TAGS) latestbuild
