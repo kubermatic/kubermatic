@@ -1385,7 +1385,7 @@
   version = "v1.1.0"
 
 [[projects]]
-  digest = "1:da2b9a41b46b14a9d9d093413cf922dd1352743364e8ede79ba60c9b8e21ca39"
+  digest = "1:85674ac609b704fd4e9f463553b6ffc3a3527a993ae0ba550eb56beaabdfe094"
   name = "go.uber.org/zap"
   packages = [
     ".",
@@ -1393,9 +1393,7 @@
     "internal/bufferpool",
     "internal/color",
     "internal/exit",
-    "internal/ztest",
     "zapcore",
-    "zaptest",
   ]
   pruneopts = "NUT"
   revision = "ff33455a0e382e8a81d14dd7c922020b6b5e7982"
@@ -2173,9 +2171,11 @@
   revision = "861946025e3491219eaccb1bf693e23df70c2fa8"
 
 [[projects]]
-  digest = "1:8c0691e0782560c6dc4f48e90e7c0c5c3ce9eb7f2b8a6562100e8a65ad6234ef"
+  digest = "1:75a298b189a76a348f73c9d62ab8546804265cf6a0a22009e4e655997756a963"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
+    ".",
+    "pkg/builder",
     "pkg/cache",
     "pkg/cache/internal",
     "pkg/client",
@@ -2184,6 +2184,7 @@
     "pkg/client/fake",
     "pkg/controller",
     "pkg/controller/controllerutil",
+    "pkg/conversion",
     "pkg/envtest",
     "pkg/envtest/printer",
     "pkg/event",
@@ -2212,6 +2213,7 @@
     "pkg/source/internal",
     "pkg/webhook",
     "pkg/webhook/admission",
+    "pkg/webhook/conversion",
     "pkg/webhook/internal/certwatcher",
     "pkg/webhook/internal/metrics",
   ]
@@ -2367,7 +2369,6 @@
     "go.etcd.io/etcd/etcdserver/etcdserverpb",
     "go.uber.org/zap",
     "go.uber.org/zap/zapcore",
-    "go.uber.org/zap/zaptest",
     "golang.org/x/crypto/bcrypt",
     "golang.org/x/crypto/ssh",
     "golang.org/x/oauth2",
@@ -2460,6 +2461,7 @@
     "k8s.io/metrics/pkg/apis/metrics/v1beta1",
     "k8s.io/test-infra/pkg/genyaml",
     "k8s.io/utils/pointer",
+    "sigs.k8s.io/controller-runtime",
     "sigs.k8s.io/controller-runtime/pkg/cache",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/apiutil",

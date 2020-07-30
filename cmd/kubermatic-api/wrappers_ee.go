@@ -37,5 +37,5 @@ func seedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, op
 }
 
 func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt serverRunOptions) (provider.SeedKubeconfigGetter, error) {
-	return eeapi.SeedKubeconfigGetterFactory(ctx, client, opt.kubeconfig)
+	return eeapi.SeedKubeconfigGetterFactory(ctx, client)
 }

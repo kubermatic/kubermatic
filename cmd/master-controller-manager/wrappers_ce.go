@@ -66,7 +66,7 @@ func setupSeedValidationWebhook(ctx context.Context, mgr manager.Manager, log *z
 			seedvalidation.SingleSeedValidateFunc(ctrlCtx.namespace),
 			validator.Validate,
 		),
-		false)
+	)
 	if err != nil {
 		return fmt.Errorf("failed to create seed validation webhook server: %v", err)
 	}
@@ -75,10 +75,5 @@ func setupSeedValidationWebhook(ctx context.Context, mgr manager.Manager, log *z
 		return fmt.Errorf("failed to add the seed validation webhook to the mgr: %v", err)
 	}
 
-	return nil
-}
-
-func runMigrations(ctx context.Context, client ctrlruntimeclient.Client, log *zap.SugaredLogger, opt controllerRunOptions, ctrlCtx *controllerContext) error {
-	// NOP
 	return nil
 }
