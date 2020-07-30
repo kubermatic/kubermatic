@@ -54,7 +54,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		}
 
 		if _, err := clusterProvider.GenerateClient(cfg); err != nil {
-			return nil, errors.NewBadRequest(fmt.Sprintf("can not connect to the kubernetes cluster: %v", err))
+			return nil, errors.NewBadRequest(fmt.Sprintf("cannot connect to the kubernetes cluster: %v", err))
 		}
 
 		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
