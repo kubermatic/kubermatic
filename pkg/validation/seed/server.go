@@ -48,14 +48,11 @@ func (opts *WebhookOpts) AddFlags(fs *flag.FlagSet) {
 }
 
 // Server returns a Server that validates AdmissionRequests for Seed CRs.
-// When migrationModeEnabled is enabled, only creating new seeds is allowed, not
-// changing or deleting existing.
 func (opts *WebhookOpts) Server(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	namespace string,
-	validateFunc ValidateFunc,
-	migrationModeEnabled bool) (*Server, error) {
+	validateFunc ValidateFunc) (*Server, error) {
 
 	if opts.CertFile == "" || opts.KeyFile == "" {
 		return nil, fmt.Errorf("seed-admissionwebhook-cert-file or seed-admissionwebhook-key-file cannot be empty")
@@ -65,13 +62,12 @@ func (opts *WebhookOpts) Server(
 		Server: &http.Server{
 			Addr: opts.ListenAddress,
 		},
-		log:                  log.Named("seed-webhook-server"),
-		listenAddress:        opts.ListenAddress,
-		certFile:             opts.CertFile,
-		keyFile:              opts.KeyFile,
-		validateFunc:         validateFunc,
-		namespace:            namespace,
-		migrationModeEnabled: migrationModeEnabled,
+		log:           log.Named("seed-webhook-server"),
+		listenAddress: opts.ListenAddress,
+		certFile:      opts.CertFile,
+		keyFile:       opts.KeyFile,
+		validateFunc:  validateFunc,
+		namespace:     namespace,
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", server.handleSeedValidationRequests)
@@ -82,14 +78,13 @@ func (opts *WebhookOpts) Server(
 
 type Server struct {
 	*http.Server
-	ctx                  context.Context
-	log                  *zap.SugaredLogger
-	listenAddress        string
-	certFile             string
-	keyFile              string
-	validateFunc         ValidateFunc
-	namespace            string
-	migrationModeEnabled bool
+	ctx           context.Context
+	log           *zap.SugaredLogger
+	listenAddress string
+	certFile      string
+	keyFile       string
+	validateFunc  ValidateFunc
+	namespace     string
 }
 
 // Server implements LeaderElectionRunnable to indicate that it does not require to run
@@ -180,13 +175,6 @@ func (s *Server) handle(req *http.Request) (*admissionv1beta1.AdmissionRequest, 
 		seed.Namespace = admissionReview.Request.Namespace
 	} else if err := json.Unmarshal(admissionReview.Request.Object.Raw, seed); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal object from request into a Seed: %v", err)
-	}
-
-	// during datacenters->seed migration we reject any changes, so the seeds can never get
-	// out of sync with the datacenters.yaml; this must happen after the checks above or else
-	// we would block deleting namespaces
-	if s.migrationModeEnabled && admissionReview.Request.Operation != admissionv1beta1.Create {
-		return admissionReview.Request, errors.New("migration is enabled, changes to Seed resources are forbidden; disable migration by removing either -datacenters or -dynamic-datacenters flags from the master-controller-manager")
 	}
 
 	validationErr := s.validateFunc(s.ctx, seed, admissionReview.Request.Operation)

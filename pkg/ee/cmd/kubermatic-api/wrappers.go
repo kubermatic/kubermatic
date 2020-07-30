@@ -48,10 +48,10 @@ func SeedsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, na
 	return eeprovider.SeedsGetterFactory(ctx, client, datacentersFile, namespace, dynamicDatacenters)
 }
 
-func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, kubeconfig string) (provider.SeedKubeconfigGetter, error) {
+func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.Client) (provider.SeedKubeconfigGetter, error) {
 	if dynamicDatacenters {
 		return provider.SeedKubeconfigGetterFactory(ctx, client)
 	}
 
-	return eeprovider.SeedKubeconfigGetterFactory(kubeconfig)
+	return eeprovider.SeedKubeconfigGetter, nil
 }

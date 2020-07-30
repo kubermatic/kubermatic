@@ -53,7 +53,7 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 	}
 
 	if len(projectName) == 0 {
-		return fmt.Errorf("unable to find owing project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
+		return fmt.Errorf("unable to find owning project for the object name = %s, gvr = %s", item.metaObject.GetName(), item.gvr.String())
 	}
 
 	if len(item.metaObject.GetNamespace()) == 0 {

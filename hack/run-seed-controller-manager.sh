@@ -61,6 +61,7 @@ echodate "Starting seed-controller-manager..."
 set -x
 ./_build/seed-controller-manager $CTRL_EXTRA_ARGS \
   -namespace=kubermatic \
+  -enable-leader-election=false \
   -datacenter-name=europe-west3-c \
   -kubeconfig=$KUBECONFIG \
   -versions=charts/kubermatic/static/master/versions.yaml \

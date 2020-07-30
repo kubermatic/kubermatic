@@ -21,10 +21,10 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 
 	"github.com/go-logr/zapr"
-	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
@@ -32,21 +32,19 @@ import (
 	"github.com/kubermatic/kubermatic/pkg/cluster/client"
 	"github.com/kubermatic/kubermatic/pkg/collectors"
 	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	seedmigrations "github.com/kubermatic/kubermatic/pkg/crd/migrations/seed"
-	"github.com/kubermatic/kubermatic/pkg/leaderelection"
 	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
 	"github.com/kubermatic/kubermatic/pkg/metrics"
 	metricserver "github.com/kubermatic/kubermatic/pkg/metrics/server"
 	"github.com/kubermatic/kubermatic/pkg/pprof"
-	"github.com/kubermatic/kubermatic/pkg/signals"
 	"github.com/kubermatic/kubermatic/pkg/util/restmapper"
 	seedvalidation "github.com/kubermatic/kubermatic/pkg/validation/seed"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
@@ -85,17 +83,23 @@ func main() {
 
 	cmdutil.Hello(log, "Seed Controller-Manager", logOpts.Debug)
 
-	config, err := clientcmd.BuildConfigFromFlags(options.masterURL, options.kubeconfig)
-	if err != nil {
-		log.Fatalw("Failed to create a kubernetes config", zap.Error(err))
-	}
-
 	// Set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
+	electionName := controllerName + "-leader-election"
+	if options.workerName != "" {
+		electionName += "-" + options.workerName
+	}
+
+	cfg := ctrl.GetConfigOrDie()
 	// Create a manager, disable metrics as we have our own handler that exposes
 	// the metrics of both the ctrltuntime registry and the default registry
-	mgr, err := manager.New(config, manager.Options{MetricsBindAddress: "0"})
+	mgr, err := manager.New(cfg, manager.Options{
+		MetricsBindAddress:      "0",
+		LeaderElection:          options.enableLeaderElection,
+		LeaderElectionNamespace: options.leaderElectionNamespace,
+		LeaderElectionID:        electionName,
+	})
 	if err != nil {
 		log.Fatalw("Failed to create the manager", zap.Error(err))
 	}
@@ -131,14 +135,14 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		)
 	}
 
-	rootCtx, rootCancel := context.WithCancel(context.Background())
+	rootCtx := context.Background()
 	seedGetter, err := seedGetterFactory(rootCtx, mgr.GetClient(), options)
 	if err != nil {
 		log.Fatalw("Unable to create the seed factory", zap.Error(err))
 	}
 
 	var clientProvider *client.Provider
-	if options.kubeconfig != "" {
+	if !isInternalConfig(cfg) {
 		clientProvider, err = client.NewExternal(mgr.GetClient())
 	} else {
 		clientProvider, err = client.NewInternal(mgr.GetClient())
@@ -189,7 +193,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 			log,
 			options.namespace,
 			validator.Validate,
-			false)
+		)
 		if err != nil {
 			log.Fatalw("Failed to get seedValidationWebhookServer", zap.Error(err))
 		}
@@ -220,69 +224,19 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	log.Debug("Starting addons collector")
 	collectors.MustRegisterAddonCollector(prometheus.DefaultRegisterer, ctrlCtx.mgr.GetAPIReader())
 
-	var g run.Group
-	// This group is forever waiting in a goroutine for signals to stop
-	{
-		signalChan := signals.SetupSignalHandler()
-		g.Add(func() error {
-			select {
-			case <-signalChan:
-				log.Info("Received a signal to stop")
-				return nil
-			case <-rootCtx.Done():
-				return nil
-			}
-		}, func(err error) {
-			rootCancel()
-		})
+	if err := mgr.Add(metricserver.New(options.internalAddr)); err != nil {
+		log.Fatalw("failed to add metrics server", zap.Error(err))
 	}
 
-	// This group is running the metrics server, which needs to run all the time
-	// because Prometheus scrapes all controller-manager pods, not just the leader.
-	{
-		g.Add(func() error {
-			server := metricserver.New(options.internalAddr)
-			if err := server.Start(rootCtx.Done()); err != nil {
-				return fmt.Errorf("failed to start the metrics server: %v", err)
-			}
-			return nil
-		}, func(err error) {
-			rootCancel()
-		})
+	log.Info("starting the seed-controller-manager...")
+	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+		log.Fatalw("problem running manager", zap.Error(err))
 	}
+}
 
-	// This group is running the actual controller logic
-	{
-		leaderCtx, stopLeaderElection := context.WithCancel(rootCtx)
-		defer stopLeaderElection()
-
-		g.Add(func() error {
-			electionName := controllerName
-			if options.workerName != "" {
-				electionName += "-" + options.workerName
-			}
-
-			return leaderelection.RunAsLeader(leaderCtx, log, config, mgr.GetEventRecorderFor(controllerName), electionName, func(ctx context.Context) error {
-				log.Info("Executing migrations...")
-				if err := seedmigrations.RunAll(leaderCtx, ctrlCtx.mgr.GetConfig(), options.workerName); err != nil {
-					return fmt.Errorf("failed to run migrations: %v", err)
-				}
-				log.Info("Migrations executed successfully")
-
-				log.Info("Starting the controller-manager...")
-				if err := mgr.Start(ctx.Done()); err != nil {
-					return fmt.Errorf("the controller-manager stopped with an error: %v", err)
-				}
-
-				return nil
-			})
-		}, func(err error) {
-			stopLeaderElection()
-		})
-	}
-
-	if err := g.Run(); err != nil {
-		// Set the error as field so we have a consistent way of logging errors
-		log.Fatalw("Shutting down with error", zap.Error(err))
-	}
+// isInternalConfig returns `true` if the Host contained in the given config
+// matches the one used when the controller runs in cluster, `false` otherwise.
+func isInternalConfig(cfg *rest.Config) bool {
+	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
+	return cfg.Host == "https://"+net.JoinHostPort(host, port)
 }
