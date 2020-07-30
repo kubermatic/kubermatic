@@ -22,16 +22,16 @@ import (
 	"encoding/json"
 	"fmt"
 
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
-
 	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/pkg/provider"
 	"github.com/kubermatic/kubermatic/pkg/resources"
 	"github.com/kubermatic/kubermatic/pkg/util/restmapper"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
+	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -139,48 +139,62 @@ func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cl
 
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
 	existingSecret := &corev1.Secret{}
-	if err := p.clientPrivileged.Get(ctx, namespacedName, existingSecret); err != nil && !kerrors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
+
+	if err := p.clientPrivileged.Get(ctx, namespacedName, existingSecret); err != nil {
+		if !kerrors.IsNotFound(err) {
+			return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
+		}
+		return createKubeconfigSecret(ctx, p.clientPrivileged, name, secretData)
 	}
 
-	if existingSecret.Name == "" {
-		secret := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      name,
-				Namespace: resources.KubermaticNamespace,
-			},
-			Type: corev1.SecretTypeOpaque,
-			Data: secretData,
-		}
+	return updateKubeconfigSecret(ctx, p.clientPrivileged, existingSecret, secretData)
 
-		if err := p.clientPrivileged.Create(ctx, secret); err != nil {
-			return nil, fmt.Errorf("failed to create kubeconfig secret: %v", err)
-		}
-	} else {
-		if existingSecret.Data == nil {
-			existingSecret.Data = map[string][]byte{}
-		}
+}
 
-		requiresUpdate := false
+func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: resources.KubermaticNamespace,
+		},
+		Type: corev1.SecretTypeOpaque,
+		Data: secretData,
+	}
+	if err := client.Create(ctx, secret); err != nil {
+		return nil, fmt.Errorf("failed to create kubeconfig secret: %v", err)
+	}
+	return &providerconfig.GlobalSecretKeySelector{
+		ObjectReference: corev1.ObjectReference{
+			Name:      name,
+			Namespace: resources.KubermaticNamespace,
+		},
+	}, nil
+}
 
-		for k, v := range secretData {
-			if !bytes.Equal(v, existingSecret.Data[k]) {
-				requiresUpdate = true
-				break
-			}
+func updateKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, existingSecret *corev1.Secret, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
+	if existingSecret.Data == nil {
+		existingSecret.Data = map[string][]byte{}
+	}
+
+	requiresUpdate := false
+
+	for k, v := range secretData {
+		if !bytes.Equal(v, existingSecret.Data[k]) {
+			requiresUpdate = true
+			break
 		}
+	}
 
-		if requiresUpdate {
-			existingSecret.Data = secretData
-			if err := p.clientPrivileged.Update(ctx, existingSecret); err != nil {
-				return nil, fmt.Errorf("failed to update kubeconfig secret: %v", err)
-			}
+	if requiresUpdate {
+		existingSecret.Data = secretData
+		if err := client.Update(ctx, existingSecret); err != nil {
+			return nil, fmt.Errorf("failed to update kubeconfig secret: %v", err)
 		}
 	}
 
 	return &providerconfig.GlobalSecretKeySelector{
 		ObjectReference: corev1.ObjectReference{
-			Name:      name,
+			Name:      existingSecret.Name,
 			Namespace: resources.KubermaticNamespace,
 		},
 	}, nil
