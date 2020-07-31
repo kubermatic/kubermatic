@@ -162,17 +162,24 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *
 }
 
 func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	var datastore = ""
+	// If `DatastoreCluster` is not specified we use either the Datastore
+	// specified at `Cluster` or the one specified at `Datacenter` level.
+	if c.Spec.Cloud.VSphere.DatastoreCluster == "" {
+		datastore = defaultIfEmpty(c.Spec.Cloud.VSphere.Datastore, dc.Spec.VSphere.DefaultDatastore)
+	}
 	config := vsphere.RawConfig{
-		TemplateVMName: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.Template},
-		VMNetName:      providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.VMNetName},
-		CPUs:           int32(nodeSpec.Cloud.VSphere.CPUs),
-		MemoryMB:       int64(nodeSpec.Cloud.VSphere.Memory),
-		DiskSizeGB:     nodeSpec.Cloud.VSphere.DiskSizeGB,
-		Datacenter:     providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datacenter},
-		Datastore:      providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datastore},
-		Cluster:        providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Cluster},
-		Folder:         providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Folder},
-		AllowInsecure:  providerconfig.ConfigVarBool{Value: dc.Spec.VSphere.AllowInsecure},
+		TemplateVMName:   providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.Template},
+		VMNetName:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.VMNetName},
+		CPUs:             int32(nodeSpec.Cloud.VSphere.CPUs),
+		MemoryMB:         int64(nodeSpec.Cloud.VSphere.Memory),
+		DiskSizeGB:       nodeSpec.Cloud.VSphere.DiskSizeGB,
+		Datacenter:       providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Datacenter},
+		Datastore:        providerconfig.ConfigVarString{Value: datastore},
+		DatastoreCluster: providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.DatastoreCluster},
+		Cluster:          providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Cluster},
+		Folder:           providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Folder},
+		AllowInsecure:    providerconfig.ConfigVarBool{Value: dc.Spec.VSphere.AllowInsecure},
 	}
 
 	ext := &runtime.RawExtension{}
@@ -494,4 +501,13 @@ func getFlatcarOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtensi
 
 	ext.Raw = b
 	return ext, nil
+}
+
+// defaultIfEmpty returns the given value if not empty or the default value
+// otherwise.
+func defaultIfEmpty(value, defaultValue string) string {
+	if value != "" {
+		return value
+	}
+	return defaultValue
 }

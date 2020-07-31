@@ -146,7 +146,10 @@ spec:
           cluster: ""
           # The name of the datacenter to use.
           datacenter: ""
-          # The name of the datastore to use.
+          # The name of the default Datastore to be used for provisioning volumes
+          # using storage classes/dynamic provisioning and for storing virtual
+          # machine files in case no `Datastore` or `DatastoreCluster` is provided
+          # with the `VSphereCloudSpec`.
           datastore: ""
           # Endpoint URL to use, including protocol, for example "https://vcenter.example.com".
           endpoint: ""

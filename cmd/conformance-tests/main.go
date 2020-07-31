@@ -466,6 +466,7 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] = false
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemSLES] = true
 		opts.excludeSelector.Distributions[providerconfig.OperatingSystemRHEL] = true
+		opts.excludeSelector.Distributions[providerconfig.OperatingSystemFlatcar] = true
 	}
 
 	scenarioOptions := strings.Split(opts.scenarioOptions, ",")

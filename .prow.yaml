@@ -1012,6 +1012,47 @@ presubmits:
           limits:
             memory: 4Gi
 
+  - name: pre-kubermatic-e2e-vsphere-coreos-1.18-datastore-cluster
+    decorate: true
+    optional: true
+    run_if_changed: "pkg/provider/cloud/vsphere"
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-vsphere: "true"
+      preset-vault: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-repo-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.18.6"
+            - name: PROVIDER
+              value: "vsphere"
+            - name: SCENARIO_OPTIONS
+              value: "datastore-cluster"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/ci-kind-e2e.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
   #########################################################
   # Base Openshift Tests
   #########################################################
