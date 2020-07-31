@@ -216,6 +216,10 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 		return err
 	}
 
+	if spec.VSphere.DatastoreCluster != "" && spec.VSphere.Datastore != "" {
+		return errors.New("either datastore or datastore cluster can be selected")
+	}
+
 	session, err := newSession(context.TODO(), v.dc, username, password)
 	if err != nil {
 		return fmt.Errorf("failed to create vCenter session: %v", err)

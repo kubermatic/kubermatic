@@ -177,12 +177,12 @@ func TestLoadFiles(t *testing.T) {
 				Location: "az-location",
 			},
 			VSphere: &kubermaticv1.DatacenterSpecVSphere{
-				Endpoint:      "https://vs-endpoint.io",
-				AllowInsecure: false,
-				Datastore:     "vs-datastore",
-				Datacenter:    "vs-datacenter",
-				Cluster:       "vs-cluster",
-				RootPath:      "vs-cluster",
+				Endpoint:         "https://vs-endpoint.io",
+				AllowInsecure:    false,
+				DefaultDatastore: "vs-datastore",
+				Datacenter:       "vs-datacenter",
+				Cluster:          "vs-cluster",
+				RootPath:         "vs-cluster",
 			},
 			AWS: &kubermaticv1.DatacenterSpecAWS{
 				Images: kubermaticv1.ImageList{

@@ -377,6 +377,8 @@ func (m *PresetsProvider) setVsphereCredentials(userInfo *provider.UserInfo, pre
 	cloud.VSphere.Username = credentials.Username
 
 	cloud.VSphere.VMNetName = credentials.VMNetName
+	cloud.VSphere.Datastore = credentials.Datastore
+	cloud.VSphere.DatastoreCluster = credentials.DatastoreCluster
 	return &cloud, nil
 
 }
