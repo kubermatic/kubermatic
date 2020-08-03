@@ -60,6 +60,7 @@ type TemplateData struct {
 	etcdLauncherImage                                string
 	dnatControllerImage                              string
 	supportsFailureDomainZoneAntiAffinity            bool
+	etcdReplicas                                     int
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -85,7 +86,8 @@ func NewTemplateData(
 	kubermaticImage string,
 	etcdLauncherImage string,
 	dnatControllerImage string,
-	supportsFailureDomainZoneAntiAffinity bool) *TemplateData {
+	supportsFailureDomainZoneAntiAffinity bool,
+	etcdReplicas int) *TemplateData {
 	return &TemplateData{
 		ctx:                                    ctx,
 		client:                                 client,
@@ -109,6 +111,7 @@ func NewTemplateData(
 		etcdLauncherImage:                                etcdLauncherImage,
 		dnatControllerImage:                              dnatControllerImage,
 		supportsFailureDomainZoneAntiAffinity:            supportsFailureDomainZoneAntiAffinity,
+		etcdReplicas:                                     etcdReplicas,
 	}
 }
 
@@ -159,6 +162,11 @@ func (d *TemplateData) DC() *kubermaticv1.Datacenter {
 // EtcdDiskSize returns the etcd disk size
 func (d *TemplateData) EtcdDiskSize() resource.Quantity {
 	return d.etcdDiskSize
+}
+
+// EtcdReplicas returns number of etcd replicas.
+func (d *TemplateData) EtcdReplicas() int {
+	return d.etcdReplicas
 }
 
 func (d *TemplateData) EtcdLauncherImage() string {

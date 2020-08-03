@@ -81,6 +81,7 @@ type Reconciler struct {
 	nodePortRange                                    string
 	nodeAccessNetwork                                string
 	etcdDiskSize                                     resource.Quantity
+	etcdReplicas                                     int
 	inClusterPrometheusRulesFile                     string
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
@@ -113,6 +114,7 @@ func Add(
 	nodePortRange string,
 	nodeAccessNetwork string,
 	etcdDiskSize resource.Quantity,
+	etcdReplicas int,
 	monitoringScrapeAnnotationPrefix string,
 	inClusterPrometheusRulesFile string,
 	inClusterPrometheusDisableDefaultRules bool,
@@ -142,6 +144,7 @@ func Add(
 		nodePortRange:                          nodePortRange,
 		nodeAccessNetwork:                      nodeAccessNetwork,
 		etcdDiskSize:                           etcdDiskSize,
+		etcdReplicas:                           etcdReplicas,
 		inClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
 		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,

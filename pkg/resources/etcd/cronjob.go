@@ -36,6 +36,7 @@ type cronJobCreatorData interface {
 	Cluster() *kubermaticv1.Cluster
 	ImageRegistry(string) string
 	GetClusterRef() metav1.OwnerReference
+	EtcdReplicas() int
 }
 
 // CronJobCreator returns the func to create/update the etcd defragger cronjob
@@ -87,11 +88,12 @@ func CronJobCreator(data cronJobCreatorData) reconciling.NamedCronJobCreatorGett
 }
 
 type defraggerCommandTplData struct {
-	ServiceName string
-	Namespace   string
-	CACertFile  string
-	CertFile    string
-	KeyFile     string
+	ServiceName  string
+	Namespace    string
+	CACertFile   string
+	CertFile     string
+	KeyFile      string
+	EtcdReplicas []string
 }
 
 func defraggerCommand(data cronJobCreatorData) ([]string, error) {
@@ -100,12 +102,18 @@ func defraggerCommand(data cronJobCreatorData) ([]string, error) {
 		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
 	}
 
+	etcdReplicas := make([]string, data.EtcdReplicas())
+	for i := range etcdReplicas {
+		etcdReplicas[i] = fmt.Sprintf("etcd-%d", i)
+	}
+
 	tplData := defraggerCommandTplData{
-		ServiceName: resources.EtcdServiceName,
-		Namespace:   data.Cluster().Status.NamespaceName,
-		CACertFile:  resources.CACertSecretKey,
-		CertFile:    resources.ApiserverEtcdClientCertificateCertSecretKey,
-		KeyFile:     resources.ApiserverEtcdClientCertificateKeySecretKey,
+		ServiceName:  resources.EtcdServiceName,
+		Namespace:    data.Cluster().Status.NamespaceName,
+		CACertFile:   resources.CACertSecretKey,
+		CertFile:     resources.ApiserverEtcdClientCertificateCertSecretKey,
+		KeyFile:      resources.ApiserverEtcdClientCertificateKeySecretKey,
+		EtcdReplicas: etcdReplicas,
 	}
 
 	buf := bytes.Buffer{}
@@ -131,7 +139,7 @@ ETCDCTL_API=3 /usr/local/bin/etcdctl \
   $2
 }
 
-for node in etcd-0 etcd-1 etcd-2; do
+for node in{{range $name := .EtcdReplicas}} {{$name}}{{end}}; do
   etcdctl $node "endpoint health"
 
   if [ $? -eq 0 ]; then

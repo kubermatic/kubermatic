@@ -55,6 +55,7 @@ type configTemplateData struct {
 	EtcdTLSConfig         string
 	ApiserverTLSConfig    string
 	CustomScrapingConfigs string
+	EtcdReplicas          []string
 }
 
 // ConfigMapCreator returns a ConfigMapCreator containing the prometheus config for the supplied data
@@ -108,6 +109,11 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 				return nil, fmt.Errorf("failed to encode apiserver TLS config as YAML: %v", err)
 			}
 
+			etcdReplicas := make([]string, data.EtcdReplicas())
+			for i := range etcdReplicas {
+				etcdReplicas[i] = fmt.Sprintf("etcd-%d", i)
+			}
+
 			// prepare config template
 			configData := &configTemplateData{
 				TemplateData:          data,
@@ -115,6 +121,7 @@ func ConfigMapCreator(data *resources.TemplateData) reconciling.NamedConfigMapCr
 				CustomScrapingConfigs: customScrapingConfigs,
 				EtcdTLSConfig:         strings.TrimSpace(string(etcdTLSYaml)),
 				ApiserverTLSConfig:    strings.TrimSpace(string(apiserverTLSYaml)),
+				EtcdReplicas:          etcdReplicas,
 			}
 
 			config, err := renderTemplate(prometheusConfig, configData)
@@ -212,10 +219,8 @@ scrape_configs:
 {{ .EtcdTLSConfig | indent 4 }}
 
   static_configs:
-  - targets:
-    - 'etcd-0.etcd.{{ .TemplateData.Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
-    - 'etcd-1.etcd.{{ .TemplateData.Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
-    - 'etcd-2.etcd.{{ .TemplateData.Cluster.Status.NamespaceName }}.svc.cluster.local:2379'
+  - targets:{{range $name := .EtcdReplicas}}
+    - '{{$name}}.etcd.{{ $.TemplateData.Cluster.Status.NamespaceName }}.svc.cluster.local:2379'{{end}}
 
   relabel_configs:
   - source_labels: [__address__]

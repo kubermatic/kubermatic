@@ -57,6 +57,11 @@ type openshiftData struct {
 	supportsFailureDomainZoneAntiAffinity bool
 	externalURL                           string
 	seed                                  *kubermaticv1.Seed
+	etcdReplicas                          int
+}
+
+func (od *openshiftData) EtcdReplicas() int {
+	return od.etcdReplicas
 }
 
 func (od *openshiftData) DC() *kubermaticv1.Datacenter {

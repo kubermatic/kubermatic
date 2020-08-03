@@ -363,6 +363,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 
 	fakeDynamicClient := fake.NewFakeClient(objects...)
+	fakeEtcdReplicas := kubermaticv1.DefaultEtcdClusterSize
 
 	return resources.NewTemplateData(
 		context.Background(),
@@ -388,6 +389,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 		resources.DefaultEtcdLauncherImage,
 		resources.DefaultDNATControllerImage,
 		false,
+		fakeEtcdReplicas,
 	), nil
 }
 

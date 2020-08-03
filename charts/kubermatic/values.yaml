@@ -78,6 +78,8 @@ kubermatic:
   etcd:
     # PV size for the etcd StatefulSet of new clusters
     diskSize: "5Gi"
+    # Number of etcd replicas for the etcd StatefulSet of new cluster (if not specified using componenetsOverride).
+    replicas: 3
 
   # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificate
   certIssuer:

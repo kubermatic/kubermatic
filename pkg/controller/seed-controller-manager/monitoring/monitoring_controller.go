@@ -85,6 +85,7 @@ type Reconciler struct {
 	// example: kubermatic.io -> kubermatic.io/path,kubermatic.io/port
 	monitoringScrapeAnnotationPrefix string
 	concurrentClusterUpdates         int
+	etcdReplicas                     int
 
 	features Features
 }

@@ -76,6 +76,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-external-url=%s", cfg.Spec.Ingress.Domain),
 				fmt.Sprintf("-datacenter-name=%s", seed.Name),
+				fmt.Sprintf("-etcd-replicas=%d", cfg.Spec.UserCluster.EtcdReplicas),
 				fmt.Sprintf("-etcd-disk-size=%s", cfg.Spec.UserCluster.EtcdVolumeSize),
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
 				fmt.Sprintf("-nodeport-range=%s", cfg.Spec.UserCluster.NodePortRange),

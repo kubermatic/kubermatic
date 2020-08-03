@@ -584,7 +584,9 @@ func TestLoadFiles(t *testing.T) {
 					"quay.io/kubermatic/kubermatic",
 					"quay.io/kubermatic/etcd-launcher",
 					"quay.io/kubermatic/kubeletdnat-controller",
-					false)
+					false,
+					kubermaticv1.DefaultEtcdClusterSize,
+				)
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
 				deploymentCreators = append(deploymentCreators, kubernetescontroller.GetDeploymentCreators(data, true)...)

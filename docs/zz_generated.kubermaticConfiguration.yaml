@@ -358,6 +358,8 @@ spec:
     disableApiserverEndpointReconciling: false
     # DNATControllerDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
     dnatControllerDockerRepository: quay.io/kubermatic/kubeletdnat-controller
+    # EtcdReplicas configures the number of replicas to use by default for each etcd pod inside user clusters.
+    etcdReplicas: 3
     # EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
     etcdVolumeSize: 5Gi
     # KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.

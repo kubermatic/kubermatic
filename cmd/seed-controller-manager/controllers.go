@@ -91,6 +91,9 @@ func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
 			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.controllerManagerDefaultReplicas))},
 		Scheduler: kubermaticv1.DeploymentSettings{
 			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.schedulerDefaultReplicas))},
+		Etcd: kubermaticv1.EtcdStatefulSetSettings{
+			ClusterSize: ctrlCtx.runOptions.etcdReplicas,
+		},
 	}
 	return clustercomponentdefaulter.Add(
 		context.Background(),
@@ -155,6 +158,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.nodePortRange,
 		ctrlCtx.runOptions.nodeAccessNetwork,
 		ctrlCtx.runOptions.etcdDiskSize,
+		ctrlCtx.runOptions.etcdReplicas,
 		ctrlCtx.runOptions.monitoringScrapeAnnotationPrefix,
 		ctrlCtx.runOptions.inClusterPrometheusRulesFile,
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,

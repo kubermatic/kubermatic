@@ -68,6 +68,7 @@ type controllerRunOptions struct {
 	backupContainerImage                             string
 	backupInterval                                   string
 	etcdDiskSize                                     resource.Quantity
+	etcdReplicas                                     int
 	inClusterPrometheusRulesFile                     string
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
@@ -128,6 +129,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
 	flag.StringVar(&c.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
 	flag.StringVar(&rawEtcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
+	flag.IntVar(&c.etcdReplicas, "etcd-replicas", kubermaticv1.DefaultEtcdClusterSize, "Number of etcd replicas. Only applies to new clusters.")
 	flag.StringVar(&c.inClusterPrometheusRulesFile, "in-cluster-prometheus-rules-file", "", "The file containing the custom alerting rules for the prometheus running in the cluster-foo namespaces.")
 	flag.BoolVar(&c.inClusterPrometheusDisableDefaultRules, "in-cluster-prometheus-disable-default-rules", false, "A flag indicating whether the default rules for the prometheus running in the cluster-foo namespaces should be deployed.")
 	flag.StringVar(&c.dockerPullConfigJSONFile, "docker-pull-config-json-file", "config.json", "The file containing the docker auth config.")

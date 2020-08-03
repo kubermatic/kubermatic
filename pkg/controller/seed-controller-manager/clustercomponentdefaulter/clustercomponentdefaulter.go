@@ -132,6 +132,9 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, cluster *kubermaticv1.Clu
 	if targetComponentsOverride.Etcd.Resources == nil {
 		targetComponentsOverride.Etcd.Resources = r.defaults.Etcd.Resources
 	}
+	if targetComponentsOverride.Etcd.ClusterSize == 0 {
+		targetComponentsOverride.Etcd.ClusterSize = r.defaults.Etcd.ClusterSize
+	}
 	if targetComponentsOverride.Prometheus.Resources == nil {
 		targetComponentsOverride.Prometheus.Resources = r.defaults.Prometheus.Resources
 	}

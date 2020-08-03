@@ -167,6 +167,8 @@ type KubermaticUserClusterConfiguration struct {
 	DisableAPIServerEndpointReconciling bool `json:"disableApiserverEndpointReconciling,omitempty"`
 	// EtcdVolumeSize configures the volume size to use for each etcd pod inside user clusters.
 	EtcdVolumeSize string `json:"etcdVolumeSize,omitempty"`
+	// EtcdReplicas configures the number of replicas to use by default for each etcd pod inside user clusters.
+	EtcdReplicas int `json:"etcdReplicas,omitempty"`
 	// APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
 	APIServerReplicas *int32 `json:"apiserverReplicas,omitempty"`
 }

@@ -95,6 +95,7 @@ type kubermaticValues struct {
 	DynamicPresets                       bool    `yaml:"dynamicPresets"`
 	Etcd                                 struct {
 		DiskSize string `yaml:"diskSize"`
+		Replicas int    `yaml:"replicas"`
 	} `yaml:"etcd"`
 	Controller struct {
 		FeatureGates   string      `yaml:"featureGates"`
@@ -453,11 +454,17 @@ func convertUserCluster(values *kubermaticValues) (*operatorv1alpha1.KubermaticU
 		return nil, fmt.Errorf("invalid apiserverDefaultReplicas: %v", err)
 	}
 
+	etcdReplicas := kubermaticv1.DefaultEtcdClusterSize
+	if values.Etcd.Replicas > 0 {
+		etcdReplicas = values.Etcd.Replicas
+	}
+
 	return &operatorv1alpha1.KubermaticUserClusterConfiguration{
 		KubermaticDockerRepository:     strIfChanged(values.KubermaticImage, resources.DefaultKubermaticImage),
 		DNATControllerDockerRepository: strIfChanged(values.DNATControllerImage, resources.DefaultDNATControllerImage),
 		NodePortRange:                  strIfChanged(values.Controller.NodeportRange, common.DefaultNodePortRange),
 		EtcdVolumeSize:                 strIfChanged(values.Etcd.DiskSize, common.DefaultEtcdVolumeSize),
+		EtcdReplicas:                   etcdReplicas,
 		OverwriteRegistry:              values.Controller.OverwriteRegistry,
 		Addons: operatorv1alpha1.KubermaticAddonsConfiguration{
 			Kubernetes: *kubernetesAddonCfg,

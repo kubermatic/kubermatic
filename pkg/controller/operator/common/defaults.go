@@ -406,6 +406,11 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "userCluster.etcdVolumeSize", "value", copy.Spec.UserCluster.EtcdVolumeSize)
 	}
 
+	if copy.Spec.UserCluster.EtcdReplicas == 0 {
+		copy.Spec.UserCluster.EtcdReplicas = kubermaticv1.DefaultEtcdClusterSize
+		logger.Debugw("Defaulting field", "field", "userCluster.etcdReplicas", "value", copy.Spec.UserCluster.EtcdReplicas)
+	}
+
 	if copy.Spec.Ingress.ClassName == "" {
 		copy.Spec.Ingress.ClassName = DefaultIngressClass
 		logger.Debugw("Defaulting field", "field", "ingress.className", "value", copy.Spec.Ingress.ClassName)
