@@ -43,6 +43,17 @@ groups:
     for: 0m
     labels:
       severity: warning
+  - alert: KubermaticAddonTakesTooLongToReconcile
+    annotations:
+      message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} has no related
+        resources created for more than 30min.
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubermaticaddonreconciliationtakestoolong
+    expr: kubermatic_addon_reconcile_failed * on(cluster) group_left() kubermatic_cluster_created
+      - kubermatic_addon_reconcile_failed * on(cluster) group_left() kubermatic_cluster_deleted
+      > 0
+    for: 30m
+    labels:
+      severity: warning
   - alert: KubermaticControllerManagerDown
     annotations:
       message: KubermaticControllerManager has disappeared from Prometheus target

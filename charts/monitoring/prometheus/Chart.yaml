@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: prometheus
-version: 2.2.24
+version: 2.2.25
 appVersion: v2.19.2
 description: Prometheus Monitoring for Kubernetes
 keywords:
