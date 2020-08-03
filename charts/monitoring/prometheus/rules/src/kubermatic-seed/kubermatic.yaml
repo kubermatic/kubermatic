@@ -57,6 +57,21 @@ groups:
           Manually deleted resources inside of the user cluster is a common reason for failing deletions.
         - If all resources of the addon inside the user cluster have been cleaned up, remove the blocking finalizer (e.g. `cleanup-manifests`) from the addon resource.
 
+  - alert: KubermaticAddonTakesTooLongToReconcile
+    annotations:
+      message: Addon {{ $labels.addon }} in cluster {{ $labels.cluster }} has no related
+        resources created for more than 30min.
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubermaticaddonreconciliationtakestoolong
+    expr: kubermatic_addon_reconcile_failed * on(cluster) group_left() kubermatic_cluster_created
+      - kubermatic_addon_reconcile_failed * on(cluster) group_left() kubermatic_cluster_deleted
+      > 0
+    for: 30m
+    labels:
+      severity: warning
+    runbook:
+      steps:
+        - Check the kubermatic controller-manager's logs via `kubectl -n kubermatic logs -l 'role=controller-manager'` for errors related to reconciliation of the addon.
+
   - alert: KubermaticControllerManagerDown
     annotations:
       message: KubermaticControllerManager has disappeared from Prometheus target discovery.
