@@ -1542,8 +1542,8 @@ func TestPatchNodeDeployment(t *testing.T) {
 		// Scenario 4: Downgrade to too old kubelet version
 		{
 			Name:                       "Scenario 4: Downgrade kubelet to too old",
-			Body:                       fmt.Sprintf(`{"spec":{"template":{"versions":{"kubelet":"9.6.0"}}}}`),
-			ExpectedResponse:           fmt.Sprintf(`{"error":{"code":400,"message":"kubelet version 9.6.0 is not compatible with control plane version 9.9.9"}}`),
+			Body:                       `{"spec":{"template":{"versions":{"kubelet":"9.6.0"}}}}`,
+			ExpectedResponse:           `{"error":{"code":400,"message":"kubelet version 9.6.0 is not compatible with control plane version 9.9.9"}}`,
 			cluster:                    "keen-snyder",
 			HTTPStatus:                 http.StatusBadRequest,
 			project:                    test.GenDefaultProject().Name,
@@ -1555,8 +1555,8 @@ func TestPatchNodeDeployment(t *testing.T) {
 		// Scenario 5: Upgrade kubelet to a too new version
 		{
 			Name:                       "Scenario 5: Upgrade kubelet to too new",
-			Body:                       fmt.Sprintf(`{"spec":{"template":{"versions":{"kubelet":"9.10.0"}}}}`),
-			ExpectedResponse:           fmt.Sprintf(`{"error":{"code":400,"message":"kubelet version 9.10.0 is not compatible with control plane version 9.9.9"}}`),
+			Body:                       `{"spec":{"template":{"versions":{"kubelet":"9.10.0"}}}}`,
+			ExpectedResponse:           `{"error":{"code":400,"message":"kubelet version 9.10.0 is not compatible with control plane version 9.9.9"}}`,
 			cluster:                    "keen-snyder",
 			HTTPStatus:                 http.StatusBadRequest,
 			project:                    test.GenDefaultProject().Name,

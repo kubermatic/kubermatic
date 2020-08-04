@@ -18,7 +18,6 @@ package label_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -53,7 +52,7 @@ func TestListSystemLabels(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/labels/system"), strings.NewReader(""))
+			req := httptest.NewRequest("GET", "/api/v1/labels/system", strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)

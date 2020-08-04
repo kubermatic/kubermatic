@@ -97,7 +97,7 @@ type Opts struct {
 	createOIDCToken              bool
 	dexHelmValuesFile            string
 	kubermatcProjectID           string
-	kubermaticClient             *apiclient.Kubermatic
+	kubermaticClient             *apiclient.KubermaticAPI
 	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
 	scenarioOptions              string
 	pushgatewayEndpoint          string
@@ -149,7 +149,7 @@ type secrets struct {
 		AccessKeyID     string
 		AccessKeySecret string
 	}
-	kubermaticClient        *apiclient.Kubermatic
+	kubermaticClient        *apiclient.KubermaticAPI
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 
@@ -620,7 +620,7 @@ func shuffle(vals []testScenario) []testScenario {
 	return ret
 }
 
-func createProject(client *apiclient.Kubermatic, bearerToken runtime.ClientAuthInfoWriter, log *zap.SugaredLogger) (string, error) {
+func createProject(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, log *zap.SugaredLogger) (string, error) {
 	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: "kubermatic-conformance-tester"}}
 	params.WithTimeout(15 * time.Second)
 

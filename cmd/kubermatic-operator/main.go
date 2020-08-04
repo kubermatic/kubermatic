@@ -37,8 +37,8 @@ import (
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
+	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
-	ctrllog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 )
 
 type controllerRunOptions struct {

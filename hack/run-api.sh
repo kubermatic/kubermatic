@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+cd $(dirname $0)/..
 source hack/lib.sh
 
 # Please make sure to set -feature-gates=PrometheusEndpoint=true if you want to use that endpoint.

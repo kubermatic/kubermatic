@@ -40,8 +40,9 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlruntimezaplog "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/yaml"
 )
 
@@ -111,7 +112,7 @@ func TestResources(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrlruntimelog.SetLogger(ctrlruntimelog.ZapLogger(true))
+			ctrlruntimelog.SetLogger(ctrlruntimezaplog.Logger(false))
 			if err := autoscalingv1beta2.AddToScheme(scheme.Scheme); err != nil {
 				t.Fatalf("failed to add the autoscaling.k8s.io scheme to mgr: %v", err)
 			}

@@ -16,6 +16,9 @@
 
 set -euo pipefail
 
+cd $(dirname $0)/..
+source hack/lib.sh
+
 function cleanup() {
   rm -f $TMP_SWAGGER
 
@@ -25,20 +28,11 @@ function cleanup() {
 }
 trap cleanup EXIT SIGINT SIGTERM
 
-ROOT_DIR="$(go env GOPATH)/src/github.com/kubermatic/kubermatic"
 SWAGGER_FILE="swagger.json"
 TMP_SWAGGER="${SWAGGER_FILE}.tmp"
 
-# install swagger to temp dir
-TMP_DIR=$(mktemp -d)
-mkdir -p "${TMP_DIR}/bin"
-
-cd ${ROOT_DIR}/vendor/github.com/go-swagger/go-swagger/cmd/swagger
-env "GOBIN=${TMP_DIR}/bin" go install
-export PATH="${TMP_DIR}/bin:${PATH}"
-
-cd ${ROOT_DIR}/cmd/kubermatic-api/
-swagger generate spec --scan-models -o ${TMP_SWAGGER}
+cd cmd/kubermatic-api/
+go run github.com/go-swagger/go-swagger/cmd/swagger generate spec --scan-models -o ${TMP_SWAGGER}
 diff -Naup ${SWAGGER_FILE} ${TMP_SWAGGER}
 
-swagger validate ${SWAGGER_FILE}
+go run github.com/go-swagger/go-swagger/cmd/swagger validate ${SWAGGER_FILE}

@@ -19,20 +19,28 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
+echodate "Creating vendor directory"
+go mod vendor
+chmod +x vendor/k8s.io/code-generator/generate-groups.sh
+
 echodate "Removing old clients"
 rm -rf "pkg/crd/client"
 
 echo "" > /tmp/headerfile
 
+# -trimpath would cause the code generation to fail, so undo the
+# Makefile's value and also force mod=readonly here
+export "GOFLAGS=-mod=readonly"
+
 echodate "Generating kubermatic:v1"
-GOPATH=$(go env GOPATH) ./vendor/k8s.io/code-generator/generate-groups.sh all \
+./vendor/k8s.io/code-generator/generate-groups.sh all \
   github.com/kubermatic/kubermatic/pkg/crd/client \
   github.com/kubermatic/kubermatic/pkg/crd \
   "kubermatic:v1" \
   --go-header-file /tmp/headerfile
 
 echodate "Generating operator:v1alpha1"
-GOPATH=$(go env GOPATH) ./vendor/k8s.io/code-generator/generate-groups.sh deepcopy,lister,informer \
+./vendor/k8s.io/code-generator/generate-groups.sh deepcopy,lister,informer \
   github.com/kubermatic/kubermatic/pkg/crd/client \
   github.com/kubermatic/kubermatic/pkg/crd \
   "operator:v1alpha1" \
@@ -43,7 +51,7 @@ GENERIC_FILE="pkg/crd/client/informers/externalversions/generic.go"
 sed -i s/usersshkeys/usersshkeies/g ${GENERIC_FILE}
 
 echodate "Generating deepcopy funcs for other packages"
-GOPATH=$(go env GOPATH) $(go env GOPATH)/bin/deepcopy-gen \
+go run k8s.io/code-generator/cmd/deepcopy-gen \
   --input-dirs github.com/kubermatic/kubermatic/pkg/semver \
   -O zz_generated.deepcopy \
   --go-header-file /tmp/headerfile
