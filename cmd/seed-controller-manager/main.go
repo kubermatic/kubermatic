@@ -28,6 +28,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	cmdutil "k8c.io/kubermatic/v2/cmd/util"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/collectors"
@@ -38,7 +39,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
-	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"

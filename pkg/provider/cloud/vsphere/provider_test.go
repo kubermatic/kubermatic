@@ -19,10 +19,10 @@ package vsphere
 import (
 	"testing"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 )
 
 func TestGetCredentialsForCluster(t *testing.T) {

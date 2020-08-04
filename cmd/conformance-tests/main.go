@@ -36,6 +36,8 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	cmdutil "k8c.io/kubermatic/v2/cmd/util"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -47,8 +49,6 @@ import (
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/dex"
-	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"

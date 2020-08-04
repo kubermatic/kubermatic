@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/crypto/ssh"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/uuid"
-	"golang.org/x/crypto/ssh"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"testing"
 
+	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 )
 
 func TestGetVsphereCloudConfig(t *testing.T) {

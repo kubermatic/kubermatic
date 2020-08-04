@@ -28,10 +28,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8s.io/apimachinery/pkg/types"
 
+	"gopkg.in/square/go-jose.v2/jwt"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
-	"gopkg.in/square/go-jose.v2/jwt"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

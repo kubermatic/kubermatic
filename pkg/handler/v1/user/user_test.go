@@ -24,8 +24,8 @@ import (
 	"testing"
 	"time"
 
-	"k8c.io/kubermatic/v2/pkg/resources"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	corev1 "k8s.io/api/core/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"

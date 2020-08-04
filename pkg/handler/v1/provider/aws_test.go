@@ -20,8 +20,8 @@ import (
 	"reflect"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/handler/test"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/provider"

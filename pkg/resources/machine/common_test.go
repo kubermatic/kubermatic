@@ -20,10 +20,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfigtypes "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
 func TestGetVSphereProviderSpec(t *testing.T) {

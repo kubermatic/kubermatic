@@ -20,12 +20,12 @@ import (
 	"os"
 
 	httptransport "github.com/go-kit/kit/transport/http"
+	prometheusapi "github.com/prometheus/client_golang/api"
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/watcher"
-	prometheusapi "github.com/prometheus/client_golang/api"
 
 	"github.com/go-kit/kit/log"
 	"go.uber.org/zap"

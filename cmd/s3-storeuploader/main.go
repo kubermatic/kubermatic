@@ -20,10 +20,11 @@ import (
 	"fmt"
 	"os"
 
-	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/storeuploader"
 	"github.com/urfave/cli"
 	"go.uber.org/zap"
+
+	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/storeuploader"
 )
 
 var logger *zap.SugaredLogger
