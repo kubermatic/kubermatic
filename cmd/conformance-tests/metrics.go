@@ -163,6 +163,7 @@ func updateMetrics(log *zap.SugaredLogger) {
 	}
 }
 
+//nolint:interfacer
 func measureTime(metric prometheus.Gauge, log *zap.SugaredLogger, callback func() error) error {
 	start := time.Now()
 	err := callback()

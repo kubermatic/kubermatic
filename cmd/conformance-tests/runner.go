@@ -603,6 +603,7 @@ func retryNAttempts(maxAttempts int, f func(attempt int) error) error {
 // attempt.
 func measuredRetryNAttempts(
 	runtimeMetric *prometheus.GaugeVec,
+	//nolint:interfacer
 	attemptsMetric prometheus.Gauge,
 	log *zap.SugaredLogger,
 	maxAttempts int,
