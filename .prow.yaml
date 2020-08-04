@@ -18,7 +18,7 @@ presubmits:
   #########################################################
 
   - name: pre-kubermatic-test
-    run_if_changed: "^(cmd|codegen|hack|pkg|vendor)/"
+    run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
@@ -37,7 +37,7 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-verify
-    run_if_changed: "^(cmd|codegen|hack|pkg|vendor)/"
+    run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
@@ -79,7 +79,7 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-verify-kubermatic-chart
-    run_if_changed: "^(cmd|codegen|hack|pkg|vendor|charts)/"
+    run_if_changed: "^(cmd|codegen|hack|pkg|charts)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
@@ -119,7 +119,7 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-verify-docs
-    run_if_changed: "^(cmd|codegen|hack|pkg|vendor|docs)/"
+    run_if_changed: "^(cmd|codegen|hack|pkg|docs)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
@@ -136,7 +136,7 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-lint
-    run_if_changed: "^(cmd|codegen|hack|pkg|vendor)/"
+    run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
@@ -155,12 +155,12 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-dependencies
-    run_if_changed: "^(cmd|codegen|hack|pkg|vendor)/"
+    run_if_changed: "^(cmd|codegen|hack|pkg|go.mod|go.sum)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
-      - image: quay.io/kubermatic/dep:0.5.4-2
+      - image: quay.io/kubermatic/go-docker:14.2-1806-0
         command:
         - make
         args:
@@ -197,7 +197,7 @@ presubmits:
           value: ee
 
   - name: pre-kubermatic-license-validation
-    run_if_changed: "^vendor/"
+    run_if_changed: "^go.(mod|sum)$"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
@@ -299,7 +299,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-coreos-1.16
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|charts/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -338,7 +338,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-coreos-1.17
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|charts/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -377,7 +377,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-coreos-1.18
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|charts/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -416,7 +416,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-flatcar-1.18
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|charts/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -455,7 +455,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-aws-flatcar-1.18-ce
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|charts/kubermatic|addons/|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -1104,7 +1104,7 @@ presubmits:
   #########################################################
 
   - name: pre-kubermatic-api-e2e
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|charts/kubermatic|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|.prow.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -1146,7 +1146,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-operator
     decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|vendor/|charts/kubermatic|.prow.yaml)"
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
@@ -1252,14 +1252,14 @@ presubmits:
             memory: 3Gi
 
   - name: pre-kubermatic-test-integration
-    run_if_changed: "^(cmd|codegen|hack|pkg|vendor)/"
+    run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/integration-tests:2-1
+      - image: quay.io/kubermatic/integration-tests:3-1
         command:
         - make
         args:

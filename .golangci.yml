@@ -13,9 +13,10 @@
 # limitations under the License.
 
 run:
+  # concurrency=1 lowers memory usage a bit
+  concurrency: 1
+  modules-download-mode: readonly
   deadline: 20m
-  skip-dirs:
-    - vendor
   build-tags:
     - cloud
     - create
