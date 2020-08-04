@@ -13,6 +13,8 @@
 # limitations under the License.
 
 export CGO_ENABLED?=0
+export GOFLAGS?=-mod=readonly -trimpath
+export GO111MODULE=on
 export KUBERMATIC_EDITION?=ce
 DOCKER_REPO?=quay.io/kubermatic
 REPO=$(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
@@ -31,14 +33,12 @@ LDFLAGS += -extldflags '-static' \
   -X github.com/kubermatic/kubermatic/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
   -X github.com/kubermatic/kubermatic/pkg/controller/operator/common.KUBERMATICDOCKERTAG=$(KUBERMATICDOCKERTAG) \
   -X github.com/kubermatic/kubermatic/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
-HAS_DEP:= $(shell command -v dep 2> /dev/null)
-HAS_GIT:= $(shell command -v git 2> /dev/null)
 BUILD_DEST?=_build
 GOTOOLFLAGS?=$(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
 
 default: all
 
-all: check vendor build test
+all: check build test
 
 .PHONY: $(CMD)
 build: $(CMD)
@@ -52,7 +52,7 @@ install:
 showenv:
 	@go env
 
-check: gofmt lint
+check: lint
 
 download-gocache:
 	@./hack/ci/ci-download-gocache.sh
@@ -60,7 +60,7 @@ download-gocache:
 	@touch download-gocache
 
 test: download-gocache
-	CGO_ENABLED=1 go test -tags "unit,$(KUBERMATIC_EDITION)" -race ./...
+	CGO_ENABLED=1 go test -tags "unit,$(KUBERMATIC_EDITION)" -race ./pkg/... ./cmd/... ./codegen/...
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
 	@# **Imortant:** Do not replace this with one `go test` with multiple tags,
@@ -68,7 +68,7 @@ test: download-gocache
 	go test -tags "cloud,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
 	go test -tags "create,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
 	go test -tags "e2e,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
-	go test -tags "integration,$(KUBERMATIC_EDITION)" -run nope ./...
+	go test -tags "integration,$(KUBERMATIC_EDITION)" -run nope ./pkg/... ./cmd/... ./codegen/...
 
 test-integration : CGO_ENABLED = 1
 test-integration: download-gocache
@@ -81,7 +81,7 @@ test-integration: download-gocache
 		|xargs --max-args=1 -I ^ go test -tags "integration $(KUBERMATIC_EDITION)"  -race ./^
 
 test-update:
-	-go test ./... -update
+	-go test ./pkg/... ./cmd/... ./codegen/... -update
 
 clean:
 	rm -f $(TARGET)
@@ -96,18 +96,8 @@ docker-push:
 		docker push $(REPO):$$tag; \
 	done
 
-vendor:
-	dep ensure -v
-
 gittag:
 	@echo $(GITTAG)
-
-GFMT=find . -not \( \( -wholename "./vendor" \) -prune \) -name "*.go" | xargs gofmt -l
-gofmt:
-	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "gofmt needed on" $$UNFMT && exit 1; fi
-
-fix:
-	@UNFMT=$$($(GFMT)); if [ -n "$$UNFMT" ]; then echo "goimports -w" $$UNFMT; goimports -w $$UNFMT; fi
 
 lint:
 	./hack/ci/ci-run-lint.sh
@@ -130,19 +120,16 @@ run-operator:
 run-master-controller-manager:
 	./hack/run-master-controller-manager.sh
 
-verify: gofmt
+verify:
 	./hack/verify-codegen.sh
 	./hack/verify-swagger.sh
 	./hack/verify-api-client.sh
 
 check-dependencies:
-	# We need mercurial for bitbucket.org/ww/goautoneg, otherwise dep hangs forever
-	which hg >/dev/null 2>&1 || apt update && apt install -y mercurial
-	dep version || go get -u github.com/golang/dep/cmd/dep
-	dep check
+	go mod verify
 	git diff --exit-code
 
 gen-api-client:
 	./hack/gen-api-client.sh
 
-.PHONY: vendor build install test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture $(TARGET)
+.PHONY: build install test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture $(TARGET)

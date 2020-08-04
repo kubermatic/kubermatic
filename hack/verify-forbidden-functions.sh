@@ -16,7 +16,7 @@
 
 cd $(dirname $0)/..
 
-grep -nER "\breflect\.DeepEqual\b" --include '*.go' --exclude-dir vendor api
+grep -nER "\breflect\.DeepEqual\b" --include '*.go' api
 if [ $? -eq 0 ]; then
   echo
   echo "Please replace calls to reflect.DeepEqual with equality.Semantic.DeepEqual."

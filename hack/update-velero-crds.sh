@@ -16,10 +16,10 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/../..
-source api/hack/lib.sh
+cd $(dirname $0)/..
+source hack/lib.sh
 
-cd config/backup/velero/
+cd charts/backup/velero/
 
 version=$(velero version --client-only | grep Version | cut -d' ' -f2)
 crds=$(velero install --crds-only --dry-run -o json | jq -c '.items[]')

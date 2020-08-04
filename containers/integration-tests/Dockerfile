@@ -1,5 +1,3 @@
-#!/usr/bin/env bash
-
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
+FROM golang:1.14.2
+LABEL maintainer="support@kubermatic.com"
 
-cd $(dirname $0)/..
-source hack/lib.sh
-
-swagger -apiPackage="github.com/kubermatic/kubermatic" \
-  -mainApiFile="cmd/kubermatic-api/main.go" \
-  -format="swagger" \
-  -output=handler/swagger/
+RUN os=$(go env GOOS) && \
+    arch=$(go env GOARCH) && \
+    curl --fail -sL https://go.kubebuilder.io/dl/2.2.0/${os}/${arch} | tar -xz -C /tmp/ && \
+    mv /tmp/kubebuilder_2.2.0_${os}_${arch} /usr/local/kubebuilder && \
+    curl --fail https://storage.googleapis.com/kubernetes-release/release/v1.18.6/bin/${os}/${arch}/kube-apiserver -L -o /tmp/kube-apiserver && \
+    chmod +x /tmp/kube-apiserver && \
+    mv /tmp/kube-apiserver /usr/local/kubebuilder/bin/kube-apiserver && \
+    echo 'export PATH=$PATH:/usr/local/kubebuilder/bin' >> ~/.bashrc
