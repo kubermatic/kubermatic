@@ -34,7 +34,7 @@ import (
 	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/client/vsphere"
 )
 
-// Default kubermatic HTTP client.
+// Default kubermatic API HTTP client.
 var Default = NewHTTPClient(nil)
 
 const (
@@ -49,14 +49,14 @@ const (
 // DefaultSchemes are the default schemes found in Meta (info) section of spec file
 var DefaultSchemes = []string{"https"}
 
-// NewHTTPClient creates a new kubermatic HTTP client.
-func NewHTTPClient(formats strfmt.Registry) *Kubermatic {
+// NewHTTPClient creates a new kubermatic API HTTP client.
+func NewHTTPClient(formats strfmt.Registry) *KubermaticAPI {
 	return NewHTTPClientWithConfig(formats, nil)
 }
 
-// NewHTTPClientWithConfig creates a new kubermatic HTTP client,
+// NewHTTPClientWithConfig creates a new kubermatic API HTTP client,
 // using a customizable transport config.
-func NewHTTPClientWithConfig(formats strfmt.Registry, cfg *TransportConfig) *Kubermatic {
+func NewHTTPClientWithConfig(formats strfmt.Registry, cfg *TransportConfig) *KubermaticAPI {
 	// ensure nullable parameters have default
 	if cfg == nil {
 		cfg = DefaultTransportConfig()
@@ -67,14 +67,14 @@ func NewHTTPClientWithConfig(formats strfmt.Registry, cfg *TransportConfig) *Kub
 	return New(transport, formats)
 }
 
-// New creates a new kubermatic client
-func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic {
+// New creates a new kubermatic API client
+func New(transport runtime.ClientTransport, formats strfmt.Registry) *KubermaticAPI {
 	// ensure nullable parameters have default
 	if formats == nil {
 		formats = strfmt.Default
 	}
 
-	cli := new(Kubermatic)
+	cli := new(KubermaticAPI)
 	cli.Transport = transport
 	cli.Addon = addon.New(transport, formats)
 	cli.Admin = admin.New(transport, formats)
@@ -140,8 +140,8 @@ func (cfg *TransportConfig) WithSchemes(schemes []string) *TransportConfig {
 	return cfg
 }
 
-// Kubermatic is a client for kubermatic
-type Kubermatic struct {
+// KubermaticAPI is a client for kubermatic API
+type KubermaticAPI struct {
 	Addon addon.ClientService
 
 	Admin admin.ClientService
@@ -190,7 +190,7 @@ type Kubermatic struct {
 }
 
 // SetTransport changes the transport on the client and all its subresources
-func (c *Kubermatic) SetTransport(transport runtime.ClientTransport) {
+func (c *KubermaticAPI) SetTransport(transport runtime.ClientTransport) {
 	c.Transport = transport
 	c.Addon.SetTransport(transport)
 	c.Admin.SetTransport(transport)

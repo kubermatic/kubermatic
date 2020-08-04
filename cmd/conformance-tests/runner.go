@@ -144,7 +144,7 @@ type testRunner struct {
 	existingClusterLabel string
 
 	kubermatcProjectID      string
-	kubermaticClient        *apiclient.Kubermatic
+	kubermaticClient        *apiclient.KubermaticAPI
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 

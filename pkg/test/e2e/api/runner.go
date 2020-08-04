@@ -54,7 +54,7 @@ const (
 )
 
 type runner struct {
-	client      *apiclient.Kubermatic
+	client      *apiclient.KubermaticAPI
 	bearerToken runtime.ClientAuthInfoWriter
 	test        *testing.T
 }
