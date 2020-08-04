@@ -34,15 +34,15 @@ export "GOFLAGS=-mod=readonly"
 
 echodate "Generating kubermatic:v1"
 ./vendor/k8s.io/code-generator/generate-groups.sh all \
-  github.com/kubermatic/kubermatic/pkg/crd/client \
-  github.com/kubermatic/kubermatic/pkg/crd \
+  k8c.io/kubermatic/v2/pkg/crd/client \
+  k8c.io/kubermatic/v2/pkg/crd \
   "kubermatic:v1" \
   --go-header-file /tmp/headerfile
 
 echodate "Generating operator:v1alpha1"
 ./vendor/k8s.io/code-generator/generate-groups.sh deepcopy,lister,informer \
-  github.com/kubermatic/kubermatic/pkg/crd/client \
-  github.com/kubermatic/kubermatic/pkg/crd \
+  k8c.io/kubermatic/v2/pkg/crd/client \
+  k8c.io/kubermatic/v2/pkg/crd \
   "operator:v1alpha1" \
   --go-header-file /tmp/headerfile
 
@@ -52,7 +52,7 @@ sed -i s/usersshkeys/usersshkeies/g ${GENERIC_FILE}
 
 echodate "Generating deepcopy funcs for other packages"
 go run k8s.io/code-generator/cmd/deepcopy-gen \
-  --input-dirs github.com/kubermatic/kubermatic/pkg/semver \
+  --input-dirs k8c.io/kubermatic/v2/pkg/semver \
   -O zz_generated.deepcopy \
   --go-header-file /tmp/headerfile
 

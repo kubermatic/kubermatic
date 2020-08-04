@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"testing"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
+	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"

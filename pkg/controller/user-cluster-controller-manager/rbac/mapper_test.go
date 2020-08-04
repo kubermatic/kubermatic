@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/rbac"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 )

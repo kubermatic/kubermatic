@@ -22,8 +22,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ec2"
 
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	alibaba "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"

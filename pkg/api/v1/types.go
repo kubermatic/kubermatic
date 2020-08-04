@@ -21,9 +21,9 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	"github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	ksemver "github.com/kubermatic/kubermatic/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
 	corev1 "k8s.io/api/core/v1"

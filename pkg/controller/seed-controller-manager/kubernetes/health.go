@@ -23,10 +23,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1/helper"
-	"github.com/kubermatic/kubermatic/pkg/provider/kubernetes"
-	"github.com/kubermatic/kubermatic/pkg/resources"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
 func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.ExtendedClusterHealth, error) {

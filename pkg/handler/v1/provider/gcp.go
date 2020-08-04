@@ -27,15 +27,15 @@ import (
 	"github.com/gorilla/mux"
 	compute "google.golang.org/api/compute/v1"
 
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	handlercommon "github.com/kubermatic/kubermatic/pkg/handler/common"
-	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/dc"
-	"github.com/kubermatic/kubermatic/pkg/provider"
-	"github.com/kubermatic/kubermatic/pkg/provider/cloud/gcp"
-	kubernetesprovider "github.com/kubermatic/kubermatic/pkg/provider/kubernetes"
-	"github.com/kubermatic/kubermatic/pkg/util/errors"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/dc"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // GCPZoneReq represent a request for GCP zones.

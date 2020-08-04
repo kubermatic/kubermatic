@@ -19,10 +19,10 @@ package websocket
 import (
 	"encoding/json"
 
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	v1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/log"
-	"github.com/kubermatic/kubermatic/pkg/watcher"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/watcher"
 
 	"code.cloudfoundry.org/go-pubsub"
 	"github.com/gorilla/websocket"

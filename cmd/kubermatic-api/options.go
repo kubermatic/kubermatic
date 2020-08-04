@@ -23,11 +23,11 @@ import (
 	"io/ioutil"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/pkg/features"
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
-	"github.com/kubermatic/kubermatic/pkg/provider"
-	"github.com/kubermatic/kubermatic/pkg/serviceaccount"
-	"github.com/kubermatic/kubermatic/pkg/watcher"
+	"k8c.io/kubermatic/v2/pkg/features"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/serviceaccount"
+	"k8c.io/kubermatic/v2/pkg/watcher"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"

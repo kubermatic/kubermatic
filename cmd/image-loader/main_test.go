@@ -20,9 +20,9 @@ import (
 	"context"
 	"testing"
 
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/version"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )

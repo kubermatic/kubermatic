@@ -23,11 +23,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kubermatic/kubermatic/pkg/controller/operator/common"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "github.com/kubermatic/kubermatic/pkg/crd/operator/v1alpha1"
-	"github.com/kubermatic/kubermatic/pkg/kubernetes"
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"

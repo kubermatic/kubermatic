@@ -19,7 +19,7 @@ package kubernetes
 import (
 	"sync"
 
-	"github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned/scheme"
+	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 
 	apicorev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"

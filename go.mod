@@ -1,4 +1,4 @@
-module github.com/kubermatic/kubermatic
+module k8c.io/kubermatic/v2
 
 go 1.14
 

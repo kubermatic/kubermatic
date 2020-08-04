@@ -25,13 +25,13 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/rbac"
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/pkg/provider"
-	serviceaccount "github.com/kubermatic/kubermatic/pkg/provider/kubernetes"
-	"github.com/kubermatic/kubermatic/pkg/util/errors"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	serviceaccount "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // serviceAccountGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for service account.

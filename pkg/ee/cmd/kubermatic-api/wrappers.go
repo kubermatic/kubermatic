@@ -28,8 +28,8 @@ import (
 	"context"
 	"flag"
 
-	eeprovider "github.com/kubermatic/kubermatic/pkg/ee/provider"
-	"github.com/kubermatic/kubermatic/pkg/provider"
+	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

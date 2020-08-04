@@ -20,9 +20,9 @@ import (
 	"context"
 	"errors"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/label"
-	"github.com/kubermatic/kubermatic/pkg/provider"
+	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

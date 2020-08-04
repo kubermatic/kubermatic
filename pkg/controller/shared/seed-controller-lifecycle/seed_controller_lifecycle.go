@@ -23,10 +23,10 @@ import (
 
 	"go.uber.org/zap"
 
-	controllerutil "github.com/kubermatic/kubermatic/pkg/controller/util"
-	predicateutil "github.com/kubermatic/kubermatic/pkg/controller/util/predicate"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/provider"
+	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"github.com/prometheus/client_golang/prometheus"
 
 	corev1 "k8s.io/api/core/v1"

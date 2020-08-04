@@ -22,10 +22,10 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/resources/apiserver"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

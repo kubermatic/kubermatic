@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-swagger -apiPackage="github.com/kubermatic/kubermatic" \
+swagger -apiPackage="k8c.io/kubermatic/v2" \
   -mainApiFile="cmd/kubermatic-api/main.go" \
   -format="swagger" \
   -output=handler/swagger/

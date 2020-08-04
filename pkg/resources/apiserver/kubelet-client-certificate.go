@@ -17,10 +17,10 @@ limitations under the License.
 package apiserver
 
 import (
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/resources/certificates"
-	"github.com/kubermatic/kubermatic/pkg/resources/certificates/triple"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 type kubeletClientCertificateCreatorData interface {

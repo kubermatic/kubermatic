@@ -19,11 +19,11 @@ package resources
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/resources/apiserver"
-	"github.com/kubermatic/kubermatic/pkg/resources/machinecontroller"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
-	openshiftuserdata "github.com/kubermatic/kubermatic/pkg/userdata/openshift"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
+	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	openshiftuserdata "k8c.io/kubermatic/v2/pkg/userdata/openshift"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

@@ -19,8 +19,8 @@ package defaulting
 import (
 	"fmt"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/provider"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 // DefaultCreateClusterSpec defalts the cluster spec when creating a new cluster

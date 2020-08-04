@@ -20,9 +20,9 @@ import (
 	"context"
 	"errors"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/provider"
-	"github.com/kubermatic/kubermatic/pkg/resources"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"github.com/digitalocean/godo"
 	"golang.org/x/oauth2"

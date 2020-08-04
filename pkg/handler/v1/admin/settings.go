@@ -25,11 +25,11 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 
-	v1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/pkg/provider"
-	"github.com/kubermatic/kubermatic/pkg/util/errors"
+	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 // KubermaticSettingsEndpoint returns global settings

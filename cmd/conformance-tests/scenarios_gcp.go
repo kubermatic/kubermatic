@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/pkg/semver"
-	apimodels "github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/semver"
+	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // Returns a matrix of (version x operating system)

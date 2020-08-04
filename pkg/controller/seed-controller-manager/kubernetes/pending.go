@@ -22,10 +22,10 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/pkg/resources"
+	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
 const (

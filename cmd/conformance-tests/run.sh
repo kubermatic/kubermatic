@@ -18,19 +18,19 @@ set -xeuo pipefail
 
 cd $(dirname $0)
 
-cd $(go env GOPATH)/src/github.com/kubermatic/kubermatic
+cd $(go env GOPATH)/src/k8c.io/kubermatic
 docker build -t conformance-tester-image containers/conformance-tests
 cd -
 
-go build github.com/kubermatic/kubermatic/cmd/conformance-tests
+go build k8c.io/kubermatic/v2/cmd/conformance-tests
 
 docker run --rm -it \
   -v $PWD:/bin/mounted \
-  -v $(go env GOPATH)/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/kubeconfig:/kubeconfig \
-  -v $(go env GOPATH)/src/github.com/kubermatic/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml:/datacenters.yaml \
-  -v $(go env GOPATH)/src/github.com/kubermatic/secrets:/go/src/github.com/kubermatic/secrets \
-  -v $(go env GOPATH)/src/github.com/kubermatic/kubermatic/reports:/reports \
-  -v $(go env GOPATH)/src/github.com/kubermatic/kubermatic:/go/src/github.com/kubermatic/kubermatic \
+  -v $(go env GOPATH)/src/k8c.io/secrets/seed-clusters/dev.kubermatic.io/kubeconfig:/kubeconfig \
+  -v $(go env GOPATH)/src/k8c.io/secrets/seed-clusters/dev.kubermatic.io/datacenters.yaml:/datacenters.yaml \
+  -v $(go env GOPATH)/src/k8c.io/secrets:/go/src/k8c.io/secrets \
+  -v $(go env GOPATH)/src/k8c.io/kubermatic/v2/reports:/reports \
+  -v $(go env GOPATH)/src/k8c.io/kubermatic:/go/src/k8c.io/kubermatic \
   conformance-tester-image \
     /bin/mounted/conformance-tests \
         -debug \

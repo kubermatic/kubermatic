@@ -25,8 +25,8 @@ import (
 	"sync"
 	"testing"
 
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
-	"github.com/kubermatic/kubermatic/pkg/resources"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

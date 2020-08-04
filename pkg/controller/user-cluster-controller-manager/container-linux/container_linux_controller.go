@@ -20,11 +20,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/pkg/controller/user-cluster-controller-manager/container-linux/resources"
-	nodelabelerapi "github.com/kubermatic/kubermatic/pkg/controller/user-cluster-controller-manager/node-labeler/api"
-	predicateutil "github.com/kubermatic/kubermatic/pkg/controller/util/predicate"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/container-linux/resources"
+	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

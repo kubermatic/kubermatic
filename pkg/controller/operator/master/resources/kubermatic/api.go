@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/pkg/controller/operator/common"
-	operatorv1alpha1 "github.com/kubermatic/kubermatic/pkg/crd/operator/v1alpha1"
-	"github.com/kubermatic/kubermatic/pkg/features"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

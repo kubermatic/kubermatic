@@ -21,7 +21,7 @@ package main
 import (
 	"context"
 
-	"github.com/kubermatic/kubermatic/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

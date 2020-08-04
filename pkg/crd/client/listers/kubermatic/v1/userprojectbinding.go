@@ -3,7 +3,7 @@
 package v1
 
 import (
-	v1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/cache"

@@ -21,8 +21,8 @@ import (
 	"errors"
 	"fmt"
 
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"

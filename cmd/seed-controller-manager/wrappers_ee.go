@@ -22,8 +22,8 @@ import (
 	"context"
 	"flag"
 
-	eeseedctrlmgr "github.com/kubermatic/kubermatic/pkg/ee/cmd/seed-controller-manager"
-	"github.com/kubermatic/kubermatic/pkg/provider"
+	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

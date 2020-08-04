@@ -5,7 +5,7 @@ package versioned
 import (
 	"fmt"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

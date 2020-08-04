@@ -22,7 +22,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/rbac"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 
 	apps "k8s.io/api/apps/v1"
 	autoscaling "k8s.io/api/autoscaling/v1"

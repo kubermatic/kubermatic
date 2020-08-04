@@ -28,12 +28,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/pkg/controller/master-controller-manager/rbac"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/provider"
-	kubermaticerrors "github.com/kubermatic/kubermatic/pkg/util/errors"
-	"github.com/kubermatic/kubermatic/pkg/version"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	"k8c.io/kubermatic/v2/pkg/version"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 
 	corev1 "k8s.io/api/core/v1"

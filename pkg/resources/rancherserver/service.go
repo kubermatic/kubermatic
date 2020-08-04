@@ -20,9 +20,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/resources/nodeportproxy"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 // ServiceCreator creates the service for rancher server

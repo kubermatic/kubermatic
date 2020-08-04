@@ -28,11 +28,11 @@ import (
 
 	"github.com/Masterminds/sprig"
 
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/resources/apiserver"
-	"github.com/kubermatic/kubermatic/pkg/resources/certificates/servingcerthelper"
-	"github.com/kubermatic/kubermatic/pkg/resources/nodeportproxy"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

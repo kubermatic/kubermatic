@@ -26,10 +26,10 @@ import (
 
 	"go.uber.org/zap"
 
-	clusterclient "github.com/kubermatic/kubermatic/pkg/cluster/client"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/semver"
-	testhelper "github.com/kubermatic/kubermatic/pkg/test"
+	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/semver"
+	testhelper "k8c.io/kubermatic/v2/pkg/test"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

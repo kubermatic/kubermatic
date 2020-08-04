@@ -20,11 +20,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kubermatic/kubermatic/pkg/handler/test"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/provider"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/provider"
 )
 
 func TestSetDefaultSubnet(t *testing.T) {

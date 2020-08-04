@@ -21,9 +21,9 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/pkg/resources/address"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources/address"
 )
 
 // syncAddress will set the all address relevant fields on the cluster

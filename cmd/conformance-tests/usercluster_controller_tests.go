@@ -23,9 +23,9 @@ import (
 	"go.uber.org/zap"
 	"k8s.io/apimachinery/pkg/types"
 
-	rbacusercluster "github.com/kubermatic/kubermatic/pkg/controller/user-cluster-controller-manager/rbac"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/resources"
+	rbacusercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/rbac"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
 	rbacv1 "k8s.io/api/rbac/v1"

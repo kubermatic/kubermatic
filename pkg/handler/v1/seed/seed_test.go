@@ -17,9 +17,9 @@ limitations under the License.
 package seed_test
 
 import (
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/pkg/handler/test"
-	"github.com/kubermatic/kubermatic/pkg/handler/test/hack"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
+	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8s.io/apimachinery/pkg/runtime"
 	"net/http/httptest"
 	"testing"

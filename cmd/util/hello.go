@@ -19,8 +19,8 @@ package util
 import (
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/util/edition"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/edition"
 )
 
 func Hello(log *zap.SugaredLogger, app string, verbose bool) {

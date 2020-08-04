@@ -17,9 +17,9 @@ limitations under the License.
 package common
 
 import (
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	kubermaticapiv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/label"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
 
 	corev1 "k8s.io/api/core/v1"
 )

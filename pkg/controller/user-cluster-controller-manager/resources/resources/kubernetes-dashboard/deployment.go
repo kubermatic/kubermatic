@@ -19,9 +19,9 @@ package kubernetesdashboard
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	kubernetesdashboard "github.com/kubermatic/kubermatic/pkg/resources/kubernetes-dashboard"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

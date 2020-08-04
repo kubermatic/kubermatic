@@ -26,11 +26,11 @@ import (
 
 	"go.uber.org/zap"
 
-	openshiftresources "github.com/kubermatic/kubermatic/pkg/controller/seed-controller-manager/openshift/resources"
-	userclusteropenshiftresources "github.com/kubermatic/kubermatic/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
-	controllerutil "github.com/kubermatic/kubermatic/pkg/controller/util"
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	openshiftresources "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/openshift/resources"
+	userclusteropenshiftresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
+	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"

@@ -22,7 +22,7 @@ import (
 	"os"
 	"testing"
 
-	testhelper "github.com/kubermatic/kubermatic/pkg/test"
+	testhelper "k8c.io/kubermatic/v2/pkg/test"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/apis/plugin"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"

@@ -79,15 +79,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 
-	clusterclient "github.com/kubermatic/kubermatic/pkg/cluster/client"
-	kubermaticclientset "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned"
-	kubermaticinformers "github.com/kubermatic/kubermatic/pkg/crd/client/informers/externalversions"
-	kubermaticv1lister "github.com/kubermatic/kubermatic/pkg/crd/client/listers/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/provider"
-	"github.com/kubermatic/kubermatic/pkg/semver"
-	kubermaticsignals "github.com/kubermatic/kubermatic/pkg/signals"
-	"github.com/kubermatic/kubermatic/pkg/util/informer"
+	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
+	kubermaticinformers "k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions"
+	kubermaticv1lister "k8c.io/kubermatic/v2/pkg/crd/client/listers/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/semver"
+	kubermaticsignals "k8c.io/kubermatic/v2/pkg/signals"
+	"k8c.io/kubermatic/v2/pkg/util/informer"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -108,9 +108,9 @@ import (
 	"errors"
 	"fmt"
 
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	kuberneteshelper "github.com/kubermatic/kubermatic/pkg/kubernetes"
-	"github.com/kubermatic/kubermatic/pkg/provider"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"github.com/golang/glog"
 
