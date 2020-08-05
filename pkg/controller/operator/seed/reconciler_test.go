@@ -317,18 +317,6 @@ func TestBasicReconciling(t *testing.T) {
 
 				seedClient := reconciler.seedClients["seed-with-nodeport-proxy-annotations"]
 
-				seed := kubermaticv1.Seed{}
-				if err := seedClient.Get(reconciler.ctx, types.NamespacedName{
-					Namespace: "kubermatic",
-					Name:      "seed-with-nodeport-proxy-annotations",
-				}, &seed); err != nil {
-					return fmt.Errorf("failed to retrieve Seed: %v", err)
-				}
-
-				if !kubernetes.HasFinalizer(&seed, common.CleanupFinalizer) {
-					return fmt.Errorf("Seed copy in seed cluster does not have cleanup finalizer %q", common.CleanupFinalizer)
-				}
-
 				svc := corev1.Service{}
 				if err := seedClient.Get(reconciler.ctx, types.NamespacedName{
 					Namespace: "kubermatic",
@@ -342,7 +330,6 @@ func TestBasicReconciling(t *testing.T) {
 				}
 
 				for k, v := range allSeeds["seed-with-nodeport-proxy-annotations"].Spec.NodeportProxy.Annotations {
-					fmt.Printf("svc.Annotations[k]: %s, k: %s, v: %s", svc.Annotations[k], k, v)
 					if svc.Annotations[k] != v {
 						return fmt.Errorf("Nodeport service in seed cluster is missing configured annotation: %s: %s", k, v)
 					}
