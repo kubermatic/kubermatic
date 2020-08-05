@@ -43,3 +43,11 @@ This section covers the process to create a new Kubermatic release. Reflects the
       - Strip the Github links from the GCHL version
     - Use the `ACTION REQUIRED` sections of changelog to draft a migration guide (e.g. https://docs.kubermatic.io/kubermatic/v2.12/upgrading/)
     - Have PS/dev test the upgrade and update the migration guide if necessary
+
+## Kubernetes version policy
+
+A Kubermatic minor version supports all Kubernetes versions which were supported upstream at the time of its release. As time passes, patch versions of Kubermatic will support new patch versions of Kubernetes that have been released since, as well as drop old patch versions when they are affected by critical bugs.
+
+Kubermatic (including stable versions) will typically drop support of minor versions of Kubernetes which have gone EOL. This of course results in any stable version of Kubermatic being eventually limited to two and later one minor version of Kubernetes.
+
+One notable exception is when upgrading from an older version of Kubernetes might require extensive migration of loads running within the updated clusters (e.g. API version deprecations) - in these cases Kubermatic will maintain LIMITED support of an EOL Kubernetes version(s) for an additional release cycle for the purpose of facilitating these migrations.
