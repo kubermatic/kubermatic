@@ -517,7 +517,7 @@ func (r *Reconciler) reconcileServices(cfg *operatorv1alpha1.KubermaticConfigura
 	// remove the entire Kubermatic namespace.
 	if !seed.Spec.NodeportProxy.Disable {
 		creators = []reconciling.NamedServiceCreatorGetter{
-			nodeportproxy.ServiceCreator(),
+			nodeportproxy.ServiceCreator(seed),
 		}
 
 		if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client); err != nil {
