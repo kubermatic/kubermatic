@@ -35,6 +35,8 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-verify
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
@@ -58,6 +60,8 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-verify-charts
     run_if_changed: "^charts/"
@@ -78,6 +82,8 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-verify-kubermatic-chart
     run_if_changed: "^(cmd|codegen|hack|pkg|charts)/"
@@ -98,6 +104,8 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-verify-grafana-dashboards
     run_if_changed: "^charts/monitoring/grafana/"
@@ -118,6 +126,8 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-verify-docs
     run_if_changed: "^(cmd|codegen|hack|pkg|docs)/"
@@ -135,6 +145,8 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-lint
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
@@ -154,6 +166,8 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-dependencies
     run_if_changed: "^(cmd|codegen|hack|pkg|go.mod|go.sum)/"
@@ -176,6 +190,8 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-shellcheck
     optional: true
@@ -286,6 +302,8 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -325,6 +343,8 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -364,6 +384,8 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -403,6 +425,8 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -442,6 +466,8 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -485,6 +511,8 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
+        - name: GOPROXY
+          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode

@@ -43,7 +43,7 @@ all: check build test
 .PHONY: $(CMD)
 build: $(CMD)
 
-$(CMD): download-gocache
+$(CMD):
 	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
 
 install:
@@ -54,12 +54,7 @@ showenv:
 
 check: lint
 
-download-gocache:
-	@./hack/ci/ci-download-gocache.sh
-	@# Prevent this from getting executed multiple times
-	@touch download-gocache
-
-test: download-gocache
+test:
 	CGO_ENABLED=1 go test -tags "unit,$(KUBERMATIC_EDITION)" -race ./pkg/... ./cmd/... ./codegen/...
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
@@ -71,7 +66,7 @@ test: download-gocache
 	go test -tags "integration,$(KUBERMATIC_EDITION)" -run nope ./pkg/... ./cmd/... ./codegen/...
 
 test-integration : CGO_ENABLED = 1
-test-integration: download-gocache
+test-integration:
 	@# Run integration tests and only integration tests by:
 	@# * Finding all files that contain the build tag via grep
 	@# * Extracting the dirname as the `go test` command doesn't play well with individual files as args
