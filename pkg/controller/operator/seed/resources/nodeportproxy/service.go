@@ -18,6 +18,7 @@ package nodeportproxy
 
 import (
 	"github.com/kubermatic/kubermatic/pkg/controller/operator/common"
+	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -29,10 +30,12 @@ import (
 // as all existing kubeconfigs for user clusters would be broken.
 
 const (
+	// ServiceName is the name for the created service object
 	ServiceName = "nodeport-proxy"
 )
 
-func ServiceCreator() reconciling.NamedServiceCreatorGetter {
+// ServiceCreator bootstraps the nodeport-proxy service object for a seed cluster resource
+func ServiceCreator(seed *kubermaticv1.Seed) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return ServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			// We don't actually manage this service, that is done by the nodeport proxy, we just
@@ -41,6 +44,11 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 			s.Spec.Type = corev1.ServiceTypeLoadBalancer
 			s.Spec.Selector = map[string]string{
 				common.NameLabel: EnvoyDeploymentName,
+			}
+
+			// Copy custom annotations if supplied by seed spec.
+			if seed.Spec.NodeportProxy.Annotations != nil {
+				s.Annotations = seed.Spec.NodeportProxy.Annotations
 			}
 
 			// Services need at least one port to be valid, so create it initially.
