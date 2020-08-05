@@ -91,6 +91,8 @@ replace (
 	// pin protobuf and genproto to prevent panics in DeepEqual() when
 	// comparing envoy objects
 	github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
+	// prevent issues when using a GOPROXY, as v2.0.0 is broken
+	gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.0.1
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20190219182410-082222b4a5c5
 	k8s.io/api => k8s.io/api v0.16.13
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.16.13
