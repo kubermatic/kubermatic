@@ -44,6 +44,7 @@ require (
 	github.com/huandu/xstrings v1.2.0 // indirect
 	github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365
 	github.com/jetstack/cert-manager v0.11.0
+	github.com/kubermatic/kubermatic v8.88.1+incompatible
 	github.com/kubermatic/machine-controller v1.13.2
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/nelsam/hel v0.0.0-20200611165952-2d829bae0c66 // indirect

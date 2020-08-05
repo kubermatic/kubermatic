@@ -73,6 +73,10 @@ func generateRBACRoleNameForNamedResource(kind, resourceName, groupName string) 
 	return fmt.Sprintf("%s:%s-%s:%s", RBACResourcesNamePrefix, strings.ToLower(kind), resourceName, groupName)
 }
 
+func generateRBACRoleNameForNamedResourceWithServiceAccount(kind, resourceName, serviceAccount string) string {
+	return fmt.Sprintf("%s:%s-%s:%s", RBACResourcesNamePrefix, strings.ToLower(kind), resourceName, serviceAccount)
+}
+
 func generateRBACRoleNameForResources(resourceName, groupName string) string {
 	groupPrefix := ExtractGroupPrefix(groupName)
 	return fmt.Sprintf("%s:%s:%s", RBACResourcesNamePrefix, resourceName, groupPrefix)
@@ -182,6 +186,30 @@ func generateClusterRBACRoleBindingForResource(resourceName, groupName string) *
 			APIGroup: rbacv1.GroupName,
 			Kind:     "ClusterRole",
 			Name:     generateRBACRoleNameForResources(resourceName, groupName),
+		},
+	}
+	return binding
+}
+
+// generateClusterRBACRoleBindingForResourceWithServiceAccount creates a ClusterRoleBinding with a ServiceAccount as a subject, instead of a group
+func generateClusterRBACRoleBindingForResourceWithServiceAccount(resourceName, kind, groupName, sa, namespace string, oRef metav1.OwnerReference) *rbacv1.ClusterRoleBinding {
+	binding := &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            generateRBACRoleNameForNamedResourceWithServiceAccount(kind, resourceName, sa),
+			OwnerReferences: []metav1.OwnerReference{oRef},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup:  "",
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      sa,
+				Namespace: namespace,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "ClusterRole",
+			Name:     generateRBACRoleNameForNamedResource(kind, resourceName, groupName),
 		},
 	}
 	return binding

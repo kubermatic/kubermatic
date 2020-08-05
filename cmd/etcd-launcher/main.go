@@ -33,9 +33,14 @@ import (
 	"go.etcd.io/etcd/v3/etcdserver/etcdserverpb"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
+	"k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -75,7 +80,26 @@ func main() {
 	log := rawLog.Sugar()
 	log = log.With("member-name", e.config.podName)
 
+	// here we find the cluster state
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		log.Fatalw("failed to get in cluster config", zap.Error(err))
+	}
+	clusterCli, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+	if err != nil {
+		log.Fatalw("failed to create cluster client", zap.Error(err))
+	}
+
+	k8cCluster := kubermaticv1.Cluster{}
+	if err := clusterCli.Get(context.Background(), types.NamespacedName{Name: strings.ReplaceAll(e.config.namespace, "cluster-", ""), Namespace: ""}, &k8cCluster); err != nil {
+		log.Fatalw("failed to get cluster", zap.Error(err))
+	}
 	initialMembers := initialMemberList(e.config.clusterSize, e.config.namespace)
+
+	e.config.initialState = "new"
+	if isInitialized := k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue); isInitialized {
+		e.config.initialState = "existing"
+	}
 
 	log.Info("initializing etcd..")
 	log.Infof("initial-state: %s", e.config.initialState)
@@ -176,7 +200,6 @@ func (e *etcdCluster) parseConfigFlags() error {
 	flag.StringVar(&config.etcdctlAPIVersion, "api-version", defaultEtcdctlAPIVersion, "etcdctl API version")
 	flag.StringVar(&config.token, "token", "", "etcd database token")
 	flag.BoolVar(&config.enableCorruptionCheck, "enable-corruption-check", false, "enable etcd experimental corruption check")
-	flag.StringVar(&config.initialState, "initial-state", "", "etcd cluster initial state")
 	flag.Parse()
 
 	if config.namespace == "" {
@@ -201,14 +224,6 @@ func (e *etcdCluster) parseConfigFlags() error {
 
 	if config.token == "" {
 		return errors.New("-token is not set")
-	}
-
-	if config.initialState == "" {
-		return errors.New("-initial-state is not set")
-	}
-
-	if config.initialState != "new" && config.initialState != "existing" {
-		return fmt.Errorf("invalid initial state: %s", config.initialState)
 	}
 
 	config.dataDir = fmt.Sprintf("/var/run/etcd/pod_%s/", config.podName)

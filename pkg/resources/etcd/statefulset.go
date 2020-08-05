@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -36,9 +37,6 @@ const (
 	// ImageTag defines the image tag to use for the etcd image
 	etcdImageTagV33 = "v3.3.18"
 	etcdImageTagV34 = "v3.4.3"
-
-	initialStateExisting = "existing"
-	initialStateNew      = "new"
 )
 
 var (
@@ -90,15 +88,11 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				return nil, fmt.Errorf("failed to create pod labels: %v", err)
 			}
 
-			initialState := initialStateNew
-
-			if data.Cluster().Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
-				initialState = initialStateExisting
-			}
 			set.Spec.Template.ObjectMeta = metav1.ObjectMeta{
 				Name:   name,
 				Labels: podLabels,
 			}
+			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
 
 			set.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
@@ -178,10 +172,6 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 							Name:  "ETCDCTL_KEY",
 							Value: "/etc/etcd/pki/client/apiserver-etcd-client.key",
 						},
-						{
-							Name:  "INITIAL_STATE",
-							Value: initialState,
-						},
 					},
 					Ports: []corev1.ContainerPort{
 						{
@@ -200,7 +190,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 						PeriodSeconds:       15,
 						SuccessThreshold:    1,
 						FailureThreshold:    3,
-						InitialDelaySeconds: 15,
+						InitialDelaySeconds: 5,
 						Handler: corev1.Handler{
 							Exec: &corev1.ExecAction{
 								Command: []string{
@@ -363,6 +353,7 @@ func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) i
 	}
 	isEtcdHealthy := data.Cluster().Status.ExtendedHealth.Etcd == kubermaticv1.HealthStatusUp
 	if isEtcdHealthy { // no scaling until we are healthy
+
 		if etcdClusterSize > replicas {
 			return replicas + 1
 		}
@@ -378,7 +369,6 @@ func getLauncherArgs(enableCorruptionCheck bool) []string {
 		"-pod-ip", "$(POD_IP)",
 		"-api-version", "$(ETCDCTL_API)",
 		"-token", "$(TOKEN)",
-		"-initial-state", "$(INITIAL_STATE)",
 	}
 	if enableCorruptionCheck {
 		command = append(command, "-enable-corruption-check")

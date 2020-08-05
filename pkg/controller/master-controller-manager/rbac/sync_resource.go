@@ -31,6 +31,10 @@ import (
 	"k8s.io/klog"
 )
 
+const (
+	EtcdLauncherServiceAccountName = "etcd-launcher"
+)
+
 // syncProjectResource generates RBAC Role and Binding for a resource that belongs to a project.
 // in order to support multiple cluster this code doesn't retrieve the project from the kube-api server
 // instead it assumes that all required information is stored in OwnerReferences or in Labels (for cluster resources)
@@ -69,6 +73,9 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 			}
 			if err := c.ensureRBACRoleBindingForClusterAddons(projectName, item.metaObject, item.clusterProvider); err != nil {
 				return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
+			}
+			if err := ensureClusterRBACRoleBindingForEtcdLauncher(projectName, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
+				return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
 			}
 		}
 
@@ -451,4 +458,47 @@ func shouldSkipRBACRoleForClusterNamespaceResource(projectName string, cluster *
 		return true, nil, nil
 	}
 	return false, generatedRole, nil
+}
+
+// ensureClusterRBACRoleBindingForEtcdLauncher ensures the ClusterRoleBinding required to allow the etcd launcher to get Clusters on the Seed
+func ensureClusterRBACRoleBindingForEtcdLauncher(projectName string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleBindingLister rbaclister.ClusterRoleBindingLister) error {
+
+	cluster, ok := object.(*kubermaticv1.Cluster)
+	if !ok {
+		return fmt.Errorf("ensureClusterRBACRoleBindingForEtcdLauncher called with non-cluster: %+v", object)
+	}
+	generatedRoleBinding := generateClusterRBACRoleBindingForResourceWithServiceAccount(
+		cluster.Name,
+		kubermaticv1.ClusterKindName,
+		GenerateActualGroupNameFor(projectName, ViewerGroupNamePrefix),
+		EtcdLauncherServiceAccountName,
+		cluster.Status.NamespaceName,
+		metav1.OwnerReference{
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			Kind:       kubermaticv1.ClusterKindName,
+			UID:        object.GetUID(),
+			Name:       object.GetName(),
+		},
+	)
+
+	existingRoleBinding, err := rbacClusterRoleBindingLister.Get(generatedRoleBinding.Name)
+	if err != nil {
+		if !kerrors.IsNotFound(err) {
+			return fmt.Errorf("failed to get existing ClusterRoleBiding: :%v", err)
+		}
+	}
+	if existingRoleBinding != nil {
+		if equality.Semantic.DeepEqual(existingRoleBinding.Subjects, generatedRoleBinding.Subjects) {
+			return nil
+		}
+		updatedRoleBinding := existingRoleBinding.DeepCopy()
+		updatedRoleBinding.Subjects = generatedRoleBinding.Subjects
+		_, err = kubeClient.RbacV1().ClusterRoleBindings().Update(updatedRoleBinding)
+		return fmt.Errorf("failed to update existing ClusterRoleBiding [%s]:%v", updatedRoleBinding.Name, err)
+	}
+
+	if _, err = kubeClient.RbacV1().ClusterRoleBindings().Create(generatedRoleBinding); err != nil {
+		return fmt.Errorf("failed to create ClusterRoleBiding [%s]:%v", generatedRoleBinding.Name, err)
+	}
+	return nil
 }
