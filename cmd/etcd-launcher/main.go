@@ -78,20 +78,19 @@ func main() {
 	logOpts := kubermaticlog.NewDefaultOptions()
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
-	log = log.With("member-name", e.config.podName)
 
 	// here we find the cluster state
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		log.Fatalw("failed to get in cluster config", zap.Error(err))
 	}
-	clusterCli, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+	clusterClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
 	if err != nil {
 		log.Fatalw("failed to create cluster client", zap.Error(err))
 	}
 
 	k8cCluster := kubermaticv1.Cluster{}
-	if err := clusterCli.Get(context.Background(), types.NamespacedName{Name: strings.ReplaceAll(e.config.namespace, "cluster-", ""), Namespace: ""}, &k8cCluster); err != nil {
+	if err := clusterClient.Get(context.Background(), types.NamespacedName{Name: strings.ReplaceAll(e.config.namespace, "cluster-", ""), Namespace: ""}, &k8cCluster); err != nil {
 		log.Fatalw("failed to get cluster", zap.Error(err))
 	}
 	initialMembers := initialMemberList(e.config.clusterSize, e.config.namespace)

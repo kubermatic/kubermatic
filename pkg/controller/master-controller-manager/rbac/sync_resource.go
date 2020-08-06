@@ -62,20 +62,20 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 
 	if len(item.metaObject.GetNamespace()) == 0 {
 		if err := ensureClusterRBACRoleForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()); err != nil {
-			return fmt.Errorf("failed to sync RBAC ClusterRole for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
+			return fmt.Errorf("failed to sync RBAC ClusterRole for %s resource for %s cluster provider: %v", item.gvr.String(), item.clusterProvider.providerName, err)
 		}
 		if err := ensureClusterRBACRoleBindingForNamedResource(projectName, item.gvr.Resource, item.kind, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
-			return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
+			return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", item.gvr.String(), item.clusterProvider.providerName, err)
 		}
 		if item.kind == kubermaticv1.ClusterKindName {
 			if err := c.ensureRBACRoleForClusterAddons(projectName, item.metaObject, item.clusterProvider); err != nil {
-				return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
+				return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s: %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
 			}
 			if err := c.ensureRBACRoleBindingForClusterAddons(projectName, item.metaObject, item.clusterProvider); err != nil {
-				return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
+				return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s: %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
 			}
 			if err := ensureClusterRBACRoleBindingForEtcdLauncher(projectName, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
-				return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider, due to = %v", item.gvr.String(), item.clusterProvider.providerName, err)
+				return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", item.gvr.String(), item.clusterProvider.providerName, err)
 			}
 		}
 
@@ -90,7 +90,7 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 		item.clusterProvider.kubeClient,
 		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.metaObject.GetNamespace()).Rbac().V1().Roles().Lister().Roles(item.metaObject.GetNamespace()))
 	if err != nil {
-		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
+		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s: %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
 	}
 
 	err = c.ensureRBACRoleBindingForNamedResource(projectName,
@@ -101,7 +101,7 @@ func (c *resourcesController) syncProjectResource(item *resourceToProcess) error
 		item.clusterProvider.kubeClient,
 		item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(item.metaObject.GetNamespace()).Rbac().V1().RoleBindings().Lister().RoleBindings(item.metaObject.GetNamespace()))
 	if err != nil {
-		return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
+		return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s: %v", item.gvr.String(), item.clusterProvider.providerName, item.metaObject.GetNamespace(), err)
 	}
 
 	return nil
@@ -484,7 +484,7 @@ func ensureClusterRBACRoleBindingForEtcdLauncher(projectName string, object meta
 	existingRoleBinding, err := rbacClusterRoleBindingLister.Get(generatedRoleBinding.Name)
 	if err != nil {
 		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get existing ClusterRoleBiding: :%v", err)
+			return fmt.Errorf("failed to get existing ClusterRoleBiding: %v", err)
 		}
 	}
 	if existingRoleBinding != nil {
@@ -494,11 +494,11 @@ func ensureClusterRBACRoleBindingForEtcdLauncher(projectName string, object meta
 		updatedRoleBinding := existingRoleBinding.DeepCopy()
 		updatedRoleBinding.Subjects = generatedRoleBinding.Subjects
 		_, err = kubeClient.RbacV1().ClusterRoleBindings().Update(updatedRoleBinding)
-		return fmt.Errorf("failed to update existing ClusterRoleBiding [%s]:%v", updatedRoleBinding.Name, err)
+		return fmt.Errorf("failed to update existing ClusterRoleBiding [%s]: %v", updatedRoleBinding.Name, err)
 	}
 
 	if _, err = kubeClient.RbacV1().ClusterRoleBindings().Create(generatedRoleBinding); err != nil {
-		return fmt.Errorf("failed to create ClusterRoleBiding [%s]:%v", generatedRoleBinding.Name, err)
+		return fmt.Errorf("failed to create ClusterRoleBiding [%s]: %v", generatedRoleBinding.Name, err)
 	}
 	return nil
 }
