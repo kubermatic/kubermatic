@@ -17,8 +17,8 @@ limitations under the License.
 package apiserver
 
 import (
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
 	policyv1beta1 "k8s.io/api/policy/v1beta1"

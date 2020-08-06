@@ -17,8 +17,8 @@ limitations under the License.
 package seedsync
 
 import (
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 func seedCreator(seed *kubermaticv1.Seed) reconciling.NamedSeedCreatorGetter {

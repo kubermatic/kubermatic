@@ -30,7 +30,7 @@ Releasing:
 
 ```
 # Go to the project dir
-cd $GOPATH/src/github.com/kubermatic/kubermatic
+cd $GOPATH/src/k8c.io/kubermatic
 
 # Increment the tag variable in the publish script
 vim hack/publish-s3-exporter.sh

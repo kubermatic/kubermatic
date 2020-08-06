@@ -17,8 +17,8 @@ limitations under the License.
 package resources
 
 import (
-	"github.com/kubermatic/kubermatic/pkg/resources/certificates"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 const ServiceSignerCASecretName = "service-signer-ca"

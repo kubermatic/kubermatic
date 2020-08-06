@@ -15,7 +15,7 @@ import (
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // NewCreateClusterV2Params creates a new CreateClusterV2Params object

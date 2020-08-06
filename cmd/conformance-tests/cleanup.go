@@ -21,7 +21,7 @@ import (
 
 	"go.uber.org/zap"
 
-	kubernetesdashboard "github.com/kubermatic/kubermatic/pkg/resources/kubernetes-dashboard"
+	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

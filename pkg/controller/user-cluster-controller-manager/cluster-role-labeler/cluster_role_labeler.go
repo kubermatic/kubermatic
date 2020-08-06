@@ -22,8 +22,8 @@ import (
 
 	"go.uber.org/zap"
 
-	predicateutil "github.com/kubermatic/kubermatic/pkg/controller/util/predicate"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/cluster"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"

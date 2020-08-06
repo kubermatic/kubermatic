@@ -17,7 +17,7 @@ limitations under the License.
 package common
 
 import (
-	"github.com/kubermatic/kubermatic/pkg/util/edition"
+	"k8c.io/kubermatic/v2/pkg/util/edition"
 )
 
 // UIDOCKERTAG is a magic variable containing the tag / git commit hash

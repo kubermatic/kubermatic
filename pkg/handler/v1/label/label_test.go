@@ -27,10 +27,10 @@ import (
 
 	"k8s.io/apimachinery/pkg/runtime"
 
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	"github.com/kubermatic/kubermatic/pkg/handler/test"
-	"github.com/kubermatic/kubermatic/pkg/handler/test/hack"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/label"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
+	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
 )
 
 func TestListSystemLabels(t *testing.T) {

@@ -3,9 +3,9 @@
 package fake
 
 import (
-	clientset "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
-	fakekubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/client/clientset/versioned/typed/kubermatic/v1/fake"
+	clientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/typed/kubermatic/v1"
+	fakekubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/typed/kubermatic/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

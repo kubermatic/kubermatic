@@ -19,7 +19,7 @@ package openshift
 import (
 	"fmt"
 
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )

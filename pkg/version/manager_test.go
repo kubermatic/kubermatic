@@ -22,7 +22,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	"github.com/kubermatic/kubermatic/pkg/validation/nodeupdate"
+	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 )
 
 func TestAutomaticNodeUpdate(t *testing.T) {

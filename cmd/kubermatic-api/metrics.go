@@ -23,7 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 )
 
 var metrics = common.ServerMetrics{

@@ -31,10 +31,10 @@ import (
 
 	"go.uber.org/zap"
 
-	eeprovider "github.com/kubermatic/kubermatic/pkg/ee/provider"
-	"github.com/kubermatic/kubermatic/pkg/provider"
-	"github.com/kubermatic/kubermatic/pkg/validation/seed"
-	seedvalidation "github.com/kubermatic/kubermatic/pkg/validation/seed"
+	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/validation/seed"
+	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"

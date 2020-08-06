@@ -17,7 +17,7 @@ limitations under the License.
 package watcher
 
 import (
-	"github.com/kubermatic/kubermatic/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	"code.cloudfoundry.org/go-pubsub"
 )

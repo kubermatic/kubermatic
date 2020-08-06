@@ -22,8 +22,8 @@ import (
 
 	"github.com/go-test/deep"
 
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/cluster"
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

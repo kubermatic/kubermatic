@@ -14,7 +14,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 
-	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // CreateDCReader is a Reader for the CreateDC structure.

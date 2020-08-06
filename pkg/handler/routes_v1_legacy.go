@@ -23,8 +23,8 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/node"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/node"
 )
 
 // RegisterV1Legacy declares legacy HTTP paths that can be deleted in the future

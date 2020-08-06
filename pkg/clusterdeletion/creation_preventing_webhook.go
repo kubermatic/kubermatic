@@ -19,7 +19,7 @@ package clusterdeletion
 import (
 	"strings"
 
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	utilpointer "k8s.io/utils/pointer"
