@@ -21,6 +21,8 @@ presubmits:
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: golang:1.14.2
@@ -35,14 +37,14 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-verify
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     path_alias: k8c.io/kubermatic
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: golang:1.14.2
@@ -60,13 +62,13 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-verify-charts
     run_if_changed: "^charts/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/util:1.3.5
@@ -82,13 +84,13 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-verify-kubermatic-chart
     run_if_changed: "^(cmd|codegen|hack|pkg|charts)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/go-docker:14.2-1806-0
@@ -104,13 +106,13 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-verify-grafana-dashboards
     run_if_changed: "^charts/monitoring/grafana/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/util:1.3.5
@@ -126,13 +128,13 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-verify-docs
     run_if_changed: "^(cmd|codegen|hack|pkg|docs)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/go-docker:14.2-1806-0
@@ -145,13 +147,13 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-lint
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: golangci/golangci-lint:v1.23.6
@@ -166,13 +168,13 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-dependencies
     run_if_changed: "^(cmd|codegen|hack|pkg|go.mod|go.sum)/"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/go-docker:14.2-1806-0
@@ -190,13 +192,13 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
 
   - name: pre-kubermatic-shellcheck
     optional: true
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: koalaman/shellcheck-alpine:v0.7.0
@@ -217,6 +219,8 @@ presubmits:
     run_if_changed: "^go.(mod|sum)$"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/util:1.4.0
@@ -231,6 +235,8 @@ presubmits:
     always_run: true
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic-labs/boilerplate:v0.1.1
@@ -245,6 +251,8 @@ presubmits:
     run_if_changed: "charts/monitoring"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/util:1.4.0
@@ -260,6 +268,8 @@ presubmits:
     run_if_changed: "pkg/resources/prometheus"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/promtool:2.7.0-3
@@ -287,6 +297,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -302,8 +313,6 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -328,6 +337,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -343,8 +353,6 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -369,6 +377,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -384,8 +393,6 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -410,6 +417,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -425,8 +433,6 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -451,6 +457,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -466,8 +473,6 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -492,6 +497,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -511,8 +517,6 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
-        - name: GOPROXY
-          value: "http://athens-proxy.athens.svc.cluster.local"
         command:
         - "./hack/ci/ci-kind-e2e.sh"
         # docker-in-docker needs privileged mode
@@ -541,6 +545,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -585,6 +590,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -626,6 +632,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -672,6 +679,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -713,6 +721,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -754,6 +763,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -795,6 +805,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -839,6 +850,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -882,6 +894,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -925,6 +938,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -968,6 +982,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -1010,6 +1025,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -1054,6 +1070,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -1082,6 +1099,7 @@ presubmits:
               cpu: 3.5
             limits:
               memory: 4Gi
+
   #########################################################
   # Base Openshift Tests
   #########################################################
@@ -1101,6 +1119,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -1146,6 +1165,7 @@ presubmits:
       preset-gce: "true"
       preset-kind-volume-mounts: "true"
       preset-vault: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -1185,6 +1205,7 @@ presubmits:
       preset-repo-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
@@ -1228,6 +1249,7 @@ presubmits:
       preset-vault: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/go-docker:14.2-1806-0
@@ -1260,6 +1282,7 @@ presubmits:
       preset-docker-push: "true"
       preset-vault: "true"
       preset-repo-ssh: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/go-docker:14.2-1806-0
@@ -1286,6 +1309,7 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
+      preset-goproxy: "true"
     spec:
       containers:
       - image: quay.io/kubermatic/integration-tests:3-1
