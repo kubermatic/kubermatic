@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"time"
 
-	kubermaticsharedinformers "github.com/kubermatic/kubermatic/pkg/crd/client/informers/externalversions"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	kubermaticsharedinformers "k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -19,22 +19,22 @@ package hack
 import (
 	"net/http"
 
-	v2 "github.com/kubermatic/kubermatic/pkg/handler/v2"
+	v2 "k8c.io/kubermatic/v2/pkg/handler/v2"
 
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/kubermatic/kubermatic/pkg/handler"
-	"github.com/kubermatic/kubermatic/pkg/handler/auth"
-	"github.com/kubermatic/kubermatic/pkg/handler/test"
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
-	"github.com/kubermatic/kubermatic/pkg/provider"
-	"github.com/kubermatic/kubermatic/pkg/provider/kubernetes"
-	"github.com/kubermatic/kubermatic/pkg/serviceaccount"
-	"github.com/kubermatic/kubermatic/pkg/version"
-	"github.com/kubermatic/kubermatic/pkg/watcher"
+	"k8c.io/kubermatic/v2/pkg/handler"
+	"k8c.io/kubermatic/v2/pkg/handler/auth"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/serviceaccount"
+	"k8c.io/kubermatic/v2/pkg/version"
+	"k8c.io/kubermatic/v2/pkg/watcher"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"

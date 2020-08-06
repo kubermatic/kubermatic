@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/resources/apiserver"
-	"github.com/kubermatic/kubermatic/pkg/resources/etcd"
-	"github.com/kubermatic/kubermatic/pkg/resources/etcd/etcdrunning"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
-	"github.com/kubermatic/kubermatic/pkg/resources/vpnsidecar"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
+	"k8c.io/kubermatic/v2/pkg/resources/etcd"
+	"k8c.io/kubermatic/v2/pkg/resources/etcd/etcdrunning"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

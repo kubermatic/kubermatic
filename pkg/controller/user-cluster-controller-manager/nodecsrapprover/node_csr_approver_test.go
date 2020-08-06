@@ -21,7 +21,7 @@ import (
 	"sync"
 	"testing"
 
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	certificatesv1beta1 "k8s.io/api/certificates/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

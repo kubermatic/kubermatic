@@ -17,7 +17,7 @@ limitations under the License.
 package common
 
 import (
-	"github.com/kubermatic/kubermatic/pkg/util/errors"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 )

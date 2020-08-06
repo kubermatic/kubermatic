@@ -23,7 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
-	controllerutil "github.com/kubermatic/kubermatic/pkg/controller/util"
+	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"

@@ -30,8 +30,8 @@ import (
 
 	"go.uber.org/zap"
 
-	predicateutil "github.com/kubermatic/kubermatic/pkg/controller/util/predicate"
-	"github.com/kubermatic/kubermatic/pkg/resources"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"

@@ -22,7 +22,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 func TestListDCForProvider(t *testing.T) {

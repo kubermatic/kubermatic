@@ -20,7 +20,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/kubermatic/kubermatic/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/log"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )

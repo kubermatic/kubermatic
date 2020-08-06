@@ -27,9 +27,9 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	cmdutil "github.com/kubermatic/kubermatic/cmd/util"
-	usersshkeys "github.com/kubermatic/kubermatic/pkg/controller/usersshkeysagent"
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
+	cmdutil "k8c.io/kubermatic/v2/cmd/util"
+	usersshkeys "k8c.io/kubermatic/v2/pkg/controller/usersshkeysagent"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"

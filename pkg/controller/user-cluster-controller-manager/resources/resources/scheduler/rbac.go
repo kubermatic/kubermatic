@@ -17,8 +17,8 @@ limitations under the License.
 package scheduler
 
 import (
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 // RoleBindingAuthDelegator creates the RoleBinding which is needed for extension apiserver which do auth delegation

@@ -29,10 +29,10 @@ KUBERMATICCOMMIT?=$(shell git log -1 --format=%H)
 KUBERMATICDOCKERTAG?=$(KUBERMATICCOMMIT)
 UIDOCKERTAG?=NA
 LDFLAGS += -extldflags '-static' \
-  -X github.com/kubermatic/kubermatic/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT) \
-  -X github.com/kubermatic/kubermatic/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
-  -X github.com/kubermatic/kubermatic/pkg/controller/operator/common.KUBERMATICDOCKERTAG=$(KUBERMATICDOCKERTAG) \
-  -X github.com/kubermatic/kubermatic/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
+  -X k8c.io/kubermatic/v2/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT) \
+  -X k8c.io/kubermatic/v2/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
+  -X k8c.io/kubermatic/v2/pkg/controller/operator/common.KUBERMATICDOCKERTAG=$(KUBERMATICDOCKERTAG) \
+  -X k8c.io/kubermatic/v2/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
 BUILD_DEST?=_build
 GOTOOLFLAGS?=$(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
 

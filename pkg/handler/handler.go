@@ -22,8 +22,8 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/kubermatic/kubermatic/pkg/log"
-	"github.com/kubermatic/kubermatic/pkg/util/errors"
+	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 const (

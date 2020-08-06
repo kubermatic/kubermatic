@@ -23,9 +23,9 @@ import (
 	"code.cloudfoundry.org/go-pubsub"
 	"k8s.io/apimachinery/pkg/watch"
 
-	v1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/log"
-	"github.com/kubermatic/kubermatic/pkg/provider"
+	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 // UserWatcher watches user and notifies its subscribers about any changes.

@@ -22,7 +22,7 @@ import (
 	"net"
 	"strings"
 
-	"github.com/kubermatic/kubermatic/pkg/controller/user-cluster-controller-manager/ipam"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ipam"
 )
 
 type networkFlags []ipam.Network

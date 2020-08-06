@@ -21,7 +21,7 @@ package main
 import (
 	"github.com/urfave/cli"
 
-	util "github.com/kubermatic/kubermatic/pkg/ee/cmd/kubermatic-operator-util"
+	util "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-operator-util"
 )
 
 func extraCommands() []cli.Command {

@@ -23,9 +23,9 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	v1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
-	"github.com/kubermatic/kubermatic/pkg/validation/nodeupdate"
+	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 )
 
 var (

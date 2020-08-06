@@ -20,10 +20,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/kubermatic/kubermatic/pkg/validation"
+	"k8c.io/kubermatic/v2/pkg/validation"
 
-	apiv1 "github.com/kubermatic/kubermatic/pkg/api/v1"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
 // EqualError reports whether errors a and b are considered equal.

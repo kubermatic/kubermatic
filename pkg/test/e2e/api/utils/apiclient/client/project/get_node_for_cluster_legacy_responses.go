@@ -12,7 +12,7 @@ import (
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
 
-	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // GetNodeForClusterLegacyReader is a Reader for the GetNodeForClusterLegacy structure.

@@ -22,9 +22,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/client/credentials"
-	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/client/datacenter"
-	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/client/project"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/credentials"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/datacenter"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 )

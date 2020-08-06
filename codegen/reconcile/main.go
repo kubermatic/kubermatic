@@ -144,7 +144,7 @@ func main() {
 			{
 				ResourceName:       "Seed",
 				ImportAlias:        "kubermaticv1",
-				ResourceImportPath: "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1",
+				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1",
 			},
 			{
 				ResourceName:       "Certificate",

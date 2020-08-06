@@ -20,18 +20,18 @@ import (
 	"os"
 
 	httptransport "github.com/go-kit/kit/transport/http"
-	"github.com/kubermatic/kubermatic/pkg/handler"
-	"github.com/kubermatic/kubermatic/pkg/handler/auth"
-	"github.com/kubermatic/kubermatic/pkg/handler/middleware"
-	"github.com/kubermatic/kubermatic/pkg/serviceaccount"
-	"github.com/kubermatic/kubermatic/pkg/watcher"
 	prometheusapi "github.com/prometheus/client_golang/api"
+	"k8c.io/kubermatic/v2/pkg/handler"
+	"k8c.io/kubermatic/v2/pkg/handler/auth"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/serviceaccount"
+	"k8c.io/kubermatic/v2/pkg/watcher"
 
 	"github.com/go-kit/kit/log"
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/pkg/handler/v1/common"
-	"github.com/kubermatic/kubermatic/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )

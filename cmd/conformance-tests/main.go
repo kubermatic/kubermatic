@@ -36,19 +36,19 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/crypto/ssh"
 
-	cmdutil "github.com/kubermatic/kubermatic/cmd/util"
-	clusterclient "github.com/kubermatic/kubermatic/pkg/cluster/client"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
-	"github.com/kubermatic/kubermatic/pkg/provider"
-	"github.com/kubermatic/kubermatic/pkg/semver"
-	kubermaticsignals "github.com/kubermatic/kubermatic/pkg/signals"
-	apitest "github.com/kubermatic/kubermatic/pkg/test/e2e/api"
-	apiclient "github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/client"
-	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/apiclient/client/project"
-	"github.com/kubermatic/kubermatic/pkg/test/e2e/api/utils/dex"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	cmdutil "k8c.io/kubermatic/v2/cmd/util"
+	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/semver"
+	kubermaticsignals "k8c.io/kubermatic/v2/pkg/signals"
+	apitest "k8c.io/kubermatic/v2/pkg/test/e2e/api"
+	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/dex"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -204,7 +204,7 @@ func main() {
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
-	flag.StringVar(&sversions, "versions", "v1.15.12,v1.16.13,,v1.17.9,v1.18.6", "a comma-separated list of versions to test")
+	flag.StringVar(&sversions, "versions", "v1.15.12,v1.16.13,v1.17.9,v1.18.6", "a comma-separated list of versions to test")
 	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 	_ = flag.Bool("run-kubermatic-controller-manager", false, "Unused, but kept for compatibility reasons")
 	flag.IntVar(&defaultTimeoutMinutes, "default-timeout-minutes", 10, "The default timeout in minutes")

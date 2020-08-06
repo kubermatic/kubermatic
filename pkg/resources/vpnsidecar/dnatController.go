@@ -17,7 +17,7 @@ limitations under the License.
 package vpnsidecar
 
 import (
-	"github.com/kubermatic/kubermatic/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"

@@ -3,8 +3,8 @@
 package kubermatic
 
 import (
-	internalinterfaces "github.com/kubermatic/kubermatic/pkg/crd/client/informers/externalversions/internalinterfaces"
-	v1 "github.com/kubermatic/kubermatic/pkg/crd/client/informers/externalversions/kubermatic/v1"
+	internalinterfaces "k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions/internalinterfaces"
+	v1 "k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions/kubermatic/v1"
 )
 
 // Interface provides access to each of this group's versions.

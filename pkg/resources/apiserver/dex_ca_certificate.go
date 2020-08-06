@@ -19,9 +19,9 @@ package apiserver
 import (
 	"crypto/x509"
 
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/resources/certificates"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 // DexCACertificateCreator returns a function to create/update the secret with the certificate for TLS verification against dex

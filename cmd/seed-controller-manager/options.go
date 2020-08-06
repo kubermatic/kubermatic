@@ -28,14 +28,14 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/kubermatic/kubermatic/pkg/cluster/client"
-	"github.com/kubermatic/kubermatic/pkg/controller/operator/common"
-	backupcontroller "github.com/kubermatic/kubermatic/pkg/controller/seed-controller-manager/backup"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	"github.com/kubermatic/kubermatic/pkg/features"
-	"github.com/kubermatic/kubermatic/pkg/provider"
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	seedvalidation "github.com/kubermatic/kubermatic/pkg/validation/seed"
+	"k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

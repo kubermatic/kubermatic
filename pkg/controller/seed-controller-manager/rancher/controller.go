@@ -32,11 +32,11 @@ import (
 
 	"go.uber.org/zap"
 
-	rancherclient "github.com/kubermatic/kubermatic/pkg/controller/seed-controller-manager/rancher/client"
-	predicateutil "github.com/kubermatic/kubermatic/pkg/controller/util/predicate"
-	kubermaticv1 "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1"
-	kubermaticv1helper "github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1/helper"
-	"github.com/kubermatic/kubermatic/pkg/resources"
+	rancherclient "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/rancher/client"
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"

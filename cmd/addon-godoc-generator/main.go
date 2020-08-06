@@ -29,7 +29,7 @@ import (
 
 	"golang.org/x/tools/go/packages"
 
-	"github.com/kubermatic/kubermatic/pkg/addon"
+	"k8c.io/kubermatic/v2/pkg/addon"
 )
 
 var packageCache = map[string]*packages.Package{}

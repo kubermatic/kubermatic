@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/kubermatic/kubermatic/pkg/api/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"

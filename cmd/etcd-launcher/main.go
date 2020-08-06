@@ -33,7 +33,7 @@ import (
 	"go.etcd.io/etcd/v3/etcdserver/etcdserverpb"
 	"go.uber.org/zap"
 
-	kubermaticlog "github.com/kubermatic/kubermatic/pkg/log"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	"k8s.io/apimachinery/pkg/util/wait"
 )

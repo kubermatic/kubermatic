@@ -17,9 +17,9 @@ limitations under the License.
 package openvpn
 
 import (
-	"github.com/kubermatic/kubermatic/pkg/resources"
-	"github.com/kubermatic/kubermatic/pkg/resources/certificates"
-	"github.com/kubermatic/kubermatic/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 // ClientCertificate returns a function to create/update the secret with the client certificate
