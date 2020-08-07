@@ -17,6 +17,7 @@ limitations under the License.
 package rbac
 
 import (
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -114,7 +115,7 @@ func managersToInformers(mgr manager.Manager, seedManagerMap map[string]manager.
 }
 
 // New creates a new controller aggregator for managing RBAC for resources
-func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, labelSelectorFunc func(*metav1.ListOptions), workerPredicate predicate.Predicate, workerCount int) (*ControllerAggregator, error) {
+func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, labelSelectorFunc func(*metav1.ListOptions), workerPredicate predicate.Predicate, workerCount int) (*ControllerAggregator, error) {
 	// Convert the controller-runtime's managers to old-school informers.
 	masterClusterProvider, seedClusterProviders, err := managersToInformers(mgr, seedManagerMap, labelSelectorFunc)
 	if err != nil {
@@ -186,12 +187,12 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 		},
 	}
 
-	err = newProjectRBACController(metrics, mgr, seedManagerMap, masterClusterProvider, projectResources, workerPredicate)
+	err = newProjectRBACController(ctx, metrics, mgr, seedManagerMap, masterClusterProvider, projectResources, workerPredicate)
 	if err != nil {
 		return nil, err
 	}
 
-	resourcesRBACCtrl, err := newResourcesControllers(metrics, mgr, seedManagerMap, masterClusterProvider, seedClusterProviders, projectResources)
+	resourcesRBACCtrl, err := newResourcesControllers(ctx, metrics, mgr, seedManagerMap, masterClusterProvider, seedClusterProviders, projectResources)
 	if err != nil {
 		return nil, err
 	}

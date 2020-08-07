@@ -757,6 +757,8 @@ func TestDeleteToken(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
+
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens/%s", tc.projectToSync, tc.saToSync, tc.tokenToDelete), strings.NewReader(""))
@@ -767,7 +769,7 @@ func TestDeleteToken(t *testing.T) {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
 
-			if _, err := clientset.FakeKubernetesCoreClient.CoreV1().Secrets("kubermatic").Get(tc.tokenToDelete, metav1.GetOptions{}); err != nil {
+			if _, err := clientset.FakeKubernetesCoreClient.CoreV1().Secrets("kubermatic").Get(ctx, tc.tokenToDelete, metav1.GetOptions{}); err != nil {
 				t.Fatalf("failed to check token %v", err)
 			}
 
@@ -783,7 +785,7 @@ func TestDeleteToken(t *testing.T) {
 			if tc.privilegedOperation {
 				err = clientset.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: tc.tokenToDelete, Namespace: "kubermatic"}, expectedToken)
 			} else {
-				_, err = clientset.FakeKubermaticClient.KubermaticV1().Users().Get(tc.tokenToDelete, metav1.GetOptions{})
+				_, err = clientset.FakeKubermaticClient.KubermaticV1().Users().Get(ctx, tc.tokenToDelete, metav1.GetOptions{})
 			}
 			if err == nil {
 				t.Fatalf("failed to delete token %s", tc.tokenToDelete)

@@ -17,6 +17,7 @@ limitations under the License.
 package rbac
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -42,13 +43,13 @@ import (
 
 type resourcesController struct {
 	projectResourcesQueue workqueue.RateLimitingInterface
-
-	metrics          *Metrics
-	projectResources []projectResource
-	client           client.Client
-	restMapper       meta.RESTMapper
-	providerName     string
-	objectType       runtime.Object
+	ctx                   context.Context
+	metrics               *Metrics
+	projectResources      []projectResource
+	client                client.Client
+	restMapper            meta.RESTMapper
+	providerName          string
+	objectType            runtime.Object
 }
 
 type resourceToProcess struct {
@@ -70,7 +71,7 @@ func (i *resourceToProcess) String() string {
 }
 
 // newResourcesController creates a new controller for managing RBAC for named resources that belong to project
-func newResourcesControllers(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, masterClusterProvider *ClusterProvider, seedClusterProviders []*ClusterProvider, resources []projectResource) ([]*resourcesController, error) {
+func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, masterClusterProvider *ClusterProvider, seedClusterProviders []*ClusterProvider, resources []projectResource) ([]*resourcesController, error) {
 	// allControllers := []*resourcesController{mc}
 
 	klog.V(4).Infof("considering %s master cluster provider for resources", masterClusterProvider.providerName)
@@ -79,6 +80,7 @@ func newResourcesControllers(metrics *Metrics, mgr manager.Manager, seedManagerM
 
 		mc := &resourcesController{
 			projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_resources"),
+			ctx:                   ctx,
 			metrics:               metrics,
 			projectResources:      resources,
 			client:                mgr.GetClient(),
@@ -112,6 +114,7 @@ func newResourcesControllers(metrics *Metrics, mgr manager.Manager, seedManagerM
 
 			c := &resourcesController{
 				projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf("rbac_generator_resources_%s", clusterProvider.providerName)),
+				ctx:                   ctx,
 				metrics:               metrics,
 				projectResources:      resources,
 				client:                seedManager.GetClient(),

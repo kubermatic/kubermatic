@@ -112,7 +112,7 @@ func (d CredentialsData) GetGlobalSecretKeySelectorValue(configVar *providerconf
 // GetReadyPod returns a pod matching provided label selector if it is posting ready status, error otherwise.
 // Namespace can be ensured by creating proper PodInterface client.
 func GetReadyPod(client corev1interface.PodInterface, labelSelector string) (*corev1.Pod, error) {
-	pods, err := client.List(metav1.ListOptions{LabelSelector: labelSelector})
+	pods, err := client.List(context.Background(), metav1.ListOptions{LabelSelector: labelSelector})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pod: %v", err)
 	}

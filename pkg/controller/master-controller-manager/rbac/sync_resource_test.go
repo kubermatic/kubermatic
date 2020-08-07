@@ -1411,7 +1411,7 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			fakeMasterClusterClient := fakeruntime.NewFakeClient(objs...)
 
 			// act
-			err := ensureClusterRBACRoleBindingForNamedResource(fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			err := ensureClusterRBACRoleBindingForNamedResource(context.Background(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
 			assert.NoError(t, err)
 
 			{
@@ -1841,7 +1841,7 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			fakeMasterClusterClient := fakeruntime.NewFakeClient(objs...)
 
 			// act
-			err := ensureClusterRBACRoleForNamedResource(fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
+			err := ensureClusterRBACRoleForNamedResource(context.Background(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
 			assert.NoError(t, err)
 
 			{

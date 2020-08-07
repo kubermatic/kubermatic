@@ -157,7 +157,8 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 				APIGroups: []string{"*"},
 				Resources: []string{"*"},
 				Verbs:     verbs,
-			}}
+			},
+		}
 	}
 	return clusterRole, nil
 }

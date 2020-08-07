@@ -287,7 +287,7 @@ func (r *testRunner) testUserClusterMetrics(log *zap.SugaredLogger, cluster *kub
 		Name("prometheus-0:9090").
 		SubResource("proxy").
 		Suffix("api/v1/label/__name__/values").
-		Do()
+		Do(r.ctx)
 
 	if err := res.Error(); err != nil {
 		return fmt.Errorf("request to Prometheus failed: %v", err)
