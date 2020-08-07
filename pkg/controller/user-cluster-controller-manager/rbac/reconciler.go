@@ -53,7 +53,7 @@ func (r *reconciler) Reconcile(resourceName string) error {
 func (r *reconciler) ensureRBACClusterRole(resourceName string) error {
 	defaultClusterRole, err := GenerateRBACClusterRole(resourceName)
 	if err != nil {
-		return fmt.Errorf("failed to generate the RBAC Cluster Role: %v", err)
+		return fmt.Errorf("failed to generate the RBAC ClusterRole: %v", err)
 	}
 
 	clusterRole := &rbacv1.ClusterRole{}
@@ -62,7 +62,7 @@ func (r *reconciler) ensureRBACClusterRole(resourceName string) error {
 		// create Cluster Role if not exist
 		if errors.IsNotFound(err) {
 			if err := r.client.Create(r.ctx, defaultClusterRole); err != nil {
-				return fmt.Errorf("failed to create the RBAC Cluster Role: %v", err)
+				return fmt.Errorf("failed to create the RBAC ClusterRole: %v", err)
 			}
 			klog.V(2).Infof("Created a new ClusterRole %s", defaultClusterRole.Name)
 			return nil
@@ -71,10 +71,11 @@ func (r *reconciler) ensureRBACClusterRole(resourceName string) error {
 	}
 	// compare Cluster Role with default. If don't match update for default
 	if !ClusterRoleMatches(clusterRole, defaultClusterRole) {
-		if err := r.client.Update(r.ctx, defaultClusterRole); err != nil {
-			return fmt.Errorf("failed to update the RBAC Cluster Role: %v", err)
+		clusterRole.Rules = defaultClusterRole.Rules
+		if err := r.client.Update(r.ctx, clusterRole); err != nil {
+			return fmt.Errorf("failed to update the RBAC ClusterRole: %v", err)
 		}
-		klog.V(2).Infof("Updated the ClusterCole %s", defaultClusterRole.Name)
+		klog.V(2).Infof("Updated the ClusterRole %s", clusterRole.Name)
 	}
 
 	return nil
