@@ -141,6 +141,7 @@ func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 		}
 
 		data := common.CredentialsData{
+			Ctx:               ctx,
 			KubermaticCluster: cluster,
 			Client:            assertedClusterProvider.GetSeedClusterAdminRuntimeClient(),
 		}
@@ -699,6 +700,7 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, k8cerrors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create nodeDeployment")
 		}
 		data := common.CredentialsData{
+			Ctx:               ctx,
 			KubermaticCluster: cluster,
 			Client:            assertedClusterProvider.GetSeedClusterAdminRuntimeClient(),
 		}
