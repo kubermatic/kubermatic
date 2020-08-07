@@ -71,7 +71,6 @@ func TestEnsureProjectIsInActivePhase(t *testing.T) {
 			expectedProject: func() *kubermaticv1.Project {
 				project := test.CreateProject("thunderball", test.CreateUser("James Bond"))
 				project.Status.Phase = "Active"
-				project.ObjectMeta.ResourceVersion = "1"
 				return project
 			}(),
 		},
@@ -98,6 +97,9 @@ func TestEnsureProjectIsInActivePhase(t *testing.T) {
 			err = masterClient.List(context.Background(), &projectList)
 			assert.NoError(t, err)
 
+			projectList.Items[0].ObjectMeta.ResourceVersion = ""
+			test.expectedProject.ObjectMeta.ResourceVersion = ""
+
 			assert.Len(t, projectList.Items, 1)
 			assert.Equal(t, projectList.Items[0], *test.expectedProject)
 		})
@@ -116,7 +118,6 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			expectedProject: func() *kubermaticv1.Project {
 				project := test.CreateProject("thunderball", test.CreateUser("James Bond"))
 				project.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
-				project.ObjectMeta.ResourceVersion = "1"
 				return project
 			}(),
 		},
@@ -142,6 +143,9 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			var projectList kubermaticv1.ProjectList
 			err = masterClient.List(context.Background(), &projectList)
 			assert.NoError(t, err)
+
+			projectList.Items[0].ObjectMeta.ResourceVersion = ""
+			test.expectedProject.ObjectMeta.ResourceVersion = ""
 
 			assert.Len(t, projectList.Items, 1)
 			assert.Equal(t, projectList.Items[0], *test.expectedProject)
