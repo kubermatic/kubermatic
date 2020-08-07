@@ -72,16 +72,11 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 					"kubernetes.default",
 					"kubernetes.default.svc",
 					fmt.Sprintf("kubernetes.default.svc.%s", data.Cluster().Spec.ClusterNetwork.DNSDomain),
-					// Internal - apiserver-external
-					resources.ApiserverExternalServiceName,
-					fmt.Sprintf("%s.%s", resources.ApiserverExternalServiceName, data.Cluster().Status.NamespaceName),
-					fmt.Sprintf("%s.%s.svc", resources.ApiserverExternalServiceName, data.Cluster().Status.NamespaceName),
-					fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverExternalServiceName, data.Cluster().Status.NamespaceName),
 					// Internal - apiserver
-					resources.ApiserverInternalServiceName,
-					fmt.Sprintf("%s.%s", resources.ApiserverInternalServiceName, data.Cluster().Status.NamespaceName),
-					fmt.Sprintf("%s.%s.svc", resources.ApiserverInternalServiceName, data.Cluster().Status.NamespaceName),
-					fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverInternalServiceName, data.Cluster().Status.NamespaceName),
+					resources.ApiserverServiceName,
+					fmt.Sprintf("%s.%s", resources.ApiserverServiceName, data.Cluster().Status.NamespaceName),
+					fmt.Sprintf("%s.%s.svc", resources.ApiserverServiceName, data.Cluster().Status.NamespaceName),
+					fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverServiceName, data.Cluster().Status.NamespaceName),
 				},
 				IPs: []net.IP{
 					externalIPParsed,
