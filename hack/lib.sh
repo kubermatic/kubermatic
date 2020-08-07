@@ -247,3 +247,14 @@ pushMetric() {
 pushElapsed() {
   pushMetric "$1" $(elapsed $2) "${3:-}" "${4:-}" "${5:-}"
 }
+
+# err print an error log to stderr
+err() {
+  echo "$(date) E: $*" >>/dev/stderr
+}
+
+# fatal can be used to print logs to stderr
+fatal() {
+  echo "$(date) F: $*" >>/dev/stderr
+  exit 1
+}

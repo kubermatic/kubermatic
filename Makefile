@@ -35,6 +35,8 @@ LDFLAGS += -extldflags '-static' \
   -X k8c.io/kubermatic/v2/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
 BUILD_DEST?=_build
 GOTOOLFLAGS?=$(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
+GOBUILDIMAGE?=golang:1.14.6
+DOCKER_BIN := $(shell which docker)
 
 default: all
 
@@ -83,12 +85,18 @@ clean:
 	@echo "Cleaned $(BUILD_DEST)"
 
 docker-build: build
-	docker build $(DOCKER_BUILD_FLAG) .
+ifndef DOCKER_BIN
+	$(error "Docker not available in your environment, please install it and retry.")
+endif
+	$(DOCKER_BIN) build $(DOCKER_BUILD_FLAG) .
 
 docker-push:
+ifndef DOCKER_BIN
+	$(error "Docker not available in your environment, please install it and retry.")
+endif
 	@for tag in $(DOCKERTAGS) ; do \
 		echo "docker push $(REPO):$$tag"; \
-		docker push $(REPO):$$tag; \
+		$(DOCKER_BIN) push $(REPO):$$tag; \
 	done
 
 gittag:
@@ -127,4 +135,10 @@ check-dependencies:
 gen-api-client:
 	./hack/gen-api-client.sh
 
-.PHONY: build install test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture $(TARGET)
+update-codegen-in-docker:
+ifndef DOCKER_BIN
+	$(error "Docker not available in your environment, please install it and retry.")
+endif
+	$(DOCKER_BIN) run --rm -it -v ${PWD}:/go/src/k8c.io/kubermatic -w /go/src/k8c.io/kubermatic $(GOBUILDIMAGE) hack/update-codegen.sh
+
+.PHONY: build install test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture update-codegen-in-docker $(TARGET)
