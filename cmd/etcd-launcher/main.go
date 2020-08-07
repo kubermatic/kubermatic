@@ -96,7 +96,8 @@ func main() {
 	initialMembers := initialMemberList(e.config.clusterSize, e.config.namespace)
 
 	e.config.initialState = "new"
-	if isInitialized := k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue); isInitialized {
+	// check if the etcd cluster is initialized succcessfully.
+	if k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
 		e.config.initialState = "existing"
 	}
 
