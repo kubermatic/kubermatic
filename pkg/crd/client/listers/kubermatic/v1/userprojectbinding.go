@@ -10,10 +10,13 @@ import (
 )
 
 // UserProjectBindingLister helps list UserProjectBindings.
+// All objects returned here must be treated as read-only.
 type UserProjectBindingLister interface {
 	// List lists all UserProjectBindings in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.UserProjectBinding, err error)
 	// Get retrieves the UserProjectBinding from the index for a given name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1.UserProjectBinding, error)
 	UserProjectBindingListerExpansion
 }

@@ -21,6 +21,7 @@ type Config struct {
 
 	// Legacy field from pkg/api/types.go TypeMeta.
 	// TODO(jlowdermilk): remove this after eliminating downstream dependencies.
+	// +k8s:conversion-gen=false
 	// +optional
 	APIVersion string `json:"apiVersion,omitempty"`
 
@@ -42,6 +43,7 @@ type Config struct {
 
 	// Legacy field from pkg/api/types.go TypeMeta.
 	// TODO(jlowdermilk): remove this after eliminating downstream dependencies.
+	// +k8s:conversion-gen=false
 	// +optional
 	Kind string `json:"kind,omitempty"`
 

@@ -10,10 +10,13 @@ import (
 )
 
 // ExternalClusterLister helps list ExternalClusters.
+// All objects returned here must be treated as read-only.
 type ExternalClusterLister interface {
 	// List lists all ExternalClusters in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.ExternalCluster, err error)
 	// Get retrieves the ExternalCluster from the index for a given name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1.ExternalCluster, error)
 	ExternalClusterListerExpansion
 }

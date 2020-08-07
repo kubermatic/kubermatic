@@ -10,10 +10,13 @@ import (
 )
 
 // UserSSHKeyLister helps list UserSSHKeys.
+// All objects returned here must be treated as read-only.
 type UserSSHKeyLister interface {
 	// List lists all UserSSHKeys in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.UserSSHKey, err error)
 	// Get retrieves the UserSSHKey from the index for a given name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1.UserSSHKey, error)
 	UserSSHKeyListerExpansion
 }

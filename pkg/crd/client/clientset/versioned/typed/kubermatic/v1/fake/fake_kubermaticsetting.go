@@ -3,6 +3,8 @@
 package fake
 
 import (
+	"context"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -22,7 +24,7 @@ var kubermaticsettingsResource = schema.GroupVersionResource{Group: "kubermatic.
 var kubermaticsettingsKind = schema.GroupVersionKind{Group: "kubermatic.k8s.io", Version: "v1", Kind: "KubermaticSetting"}
 
 // Get takes name of the kubermaticSetting, and returns the corresponding kubermaticSetting object, and an error if there is any.
-func (c *FakeKubermaticSettings) Get(name string, options v1.GetOptions) (result *kubermaticv1.KubermaticSetting, err error) {
+func (c *FakeKubermaticSettings) Get(ctx context.Context, name string, options v1.GetOptions) (result *kubermaticv1.KubermaticSetting, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootGetAction(kubermaticsettingsResource, name), &kubermaticv1.KubermaticSetting{})
 	if obj == nil {
@@ -32,7 +34,7 @@ func (c *FakeKubermaticSettings) Get(name string, options v1.GetOptions) (result
 }
 
 // List takes label and field selectors, and returns the list of KubermaticSettings that match those selectors.
-func (c *FakeKubermaticSettings) List(opts v1.ListOptions) (result *kubermaticv1.KubermaticSettingList, err error) {
+func (c *FakeKubermaticSettings) List(ctx context.Context, opts v1.ListOptions) (result *kubermaticv1.KubermaticSettingList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootListAction(kubermaticsettingsResource, kubermaticsettingsKind, opts), &kubermaticv1.KubermaticSettingList{})
 	if obj == nil {
@@ -53,13 +55,13 @@ func (c *FakeKubermaticSettings) List(opts v1.ListOptions) (result *kubermaticv1
 }
 
 // Watch returns a watch.Interface that watches the requested kubermaticSettings.
-func (c *FakeKubermaticSettings) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeKubermaticSettings) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewRootWatchAction(kubermaticsettingsResource, opts))
 }
 
 // Create takes the representation of a kubermaticSetting and creates it.  Returns the server's representation of the kubermaticSetting, and an error, if there is any.
-func (c *FakeKubermaticSettings) Create(kubermaticSetting *kubermaticv1.KubermaticSetting) (result *kubermaticv1.KubermaticSetting, err error) {
+func (c *FakeKubermaticSettings) Create(ctx context.Context, kubermaticSetting *kubermaticv1.KubermaticSetting, opts v1.CreateOptions) (result *kubermaticv1.KubermaticSetting, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootCreateAction(kubermaticsettingsResource, kubermaticSetting), &kubermaticv1.KubermaticSetting{})
 	if obj == nil {
@@ -69,7 +71,7 @@ func (c *FakeKubermaticSettings) Create(kubermaticSetting *kubermaticv1.Kubermat
 }
 
 // Update takes the representation of a kubermaticSetting and updates it. Returns the server's representation of the kubermaticSetting, and an error, if there is any.
-func (c *FakeKubermaticSettings) Update(kubermaticSetting *kubermaticv1.KubermaticSetting) (result *kubermaticv1.KubermaticSetting, err error) {
+func (c *FakeKubermaticSettings) Update(ctx context.Context, kubermaticSetting *kubermaticv1.KubermaticSetting, opts v1.UpdateOptions) (result *kubermaticv1.KubermaticSetting, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateAction(kubermaticsettingsResource, kubermaticSetting), &kubermaticv1.KubermaticSetting{})
 	if obj == nil {
@@ -79,22 +81,22 @@ func (c *FakeKubermaticSettings) Update(kubermaticSetting *kubermaticv1.Kubermat
 }
 
 // Delete takes name of the kubermaticSetting and deletes it. Returns an error if one occurs.
-func (c *FakeKubermaticSettings) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeKubermaticSettings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewRootDeleteAction(kubermaticsettingsResource, name), &kubermaticv1.KubermaticSetting{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeKubermaticSettings) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(kubermaticsettingsResource, listOptions)
+func (c *FakeKubermaticSettings) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(kubermaticsettingsResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &kubermaticv1.KubermaticSettingList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched kubermaticSetting.
-func (c *FakeKubermaticSettings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *kubermaticv1.KubermaticSetting, err error) {
+func (c *FakeKubermaticSettings) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *kubermaticv1.KubermaticSetting, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(kubermaticsettingsResource, name, pt, data, subresources...), &kubermaticv1.KubermaticSetting{})
 	if obj == nil {

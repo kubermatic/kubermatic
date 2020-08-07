@@ -3,6 +3,8 @@
 package fake
 
 import (
+	"context"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -22,7 +24,7 @@ var userprojectbindingsResource = schema.GroupVersionResource{Group: "kubermatic
 var userprojectbindingsKind = schema.GroupVersionKind{Group: "kubermatic.k8s.io", Version: "v1", Kind: "UserProjectBinding"}
 
 // Get takes name of the userProjectBinding, and returns the corresponding userProjectBinding object, and an error if there is any.
-func (c *FakeUserProjectBindings) Get(name string, options v1.GetOptions) (result *kubermaticv1.UserProjectBinding, err error) {
+func (c *FakeUserProjectBindings) Get(ctx context.Context, name string, options v1.GetOptions) (result *kubermaticv1.UserProjectBinding, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootGetAction(userprojectbindingsResource, name), &kubermaticv1.UserProjectBinding{})
 	if obj == nil {
@@ -32,7 +34,7 @@ func (c *FakeUserProjectBindings) Get(name string, options v1.GetOptions) (resul
 }
 
 // List takes label and field selectors, and returns the list of UserProjectBindings that match those selectors.
-func (c *FakeUserProjectBindings) List(opts v1.ListOptions) (result *kubermaticv1.UserProjectBindingList, err error) {
+func (c *FakeUserProjectBindings) List(ctx context.Context, opts v1.ListOptions) (result *kubermaticv1.UserProjectBindingList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootListAction(userprojectbindingsResource, userprojectbindingsKind, opts), &kubermaticv1.UserProjectBindingList{})
 	if obj == nil {
@@ -53,13 +55,13 @@ func (c *FakeUserProjectBindings) List(opts v1.ListOptions) (result *kubermaticv
 }
 
 // Watch returns a watch.Interface that watches the requested userProjectBindings.
-func (c *FakeUserProjectBindings) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeUserProjectBindings) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewRootWatchAction(userprojectbindingsResource, opts))
 }
 
 // Create takes the representation of a userProjectBinding and creates it.  Returns the server's representation of the userProjectBinding, and an error, if there is any.
-func (c *FakeUserProjectBindings) Create(userProjectBinding *kubermaticv1.UserProjectBinding) (result *kubermaticv1.UserProjectBinding, err error) {
+func (c *FakeUserProjectBindings) Create(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding, opts v1.CreateOptions) (result *kubermaticv1.UserProjectBinding, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootCreateAction(userprojectbindingsResource, userProjectBinding), &kubermaticv1.UserProjectBinding{})
 	if obj == nil {
@@ -69,7 +71,7 @@ func (c *FakeUserProjectBindings) Create(userProjectBinding *kubermaticv1.UserPr
 }
 
 // Update takes the representation of a userProjectBinding and updates it. Returns the server's representation of the userProjectBinding, and an error, if there is any.
-func (c *FakeUserProjectBindings) Update(userProjectBinding *kubermaticv1.UserProjectBinding) (result *kubermaticv1.UserProjectBinding, err error) {
+func (c *FakeUserProjectBindings) Update(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding, opts v1.UpdateOptions) (result *kubermaticv1.UserProjectBinding, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateAction(userprojectbindingsResource, userProjectBinding), &kubermaticv1.UserProjectBinding{})
 	if obj == nil {
@@ -79,22 +81,22 @@ func (c *FakeUserProjectBindings) Update(userProjectBinding *kubermaticv1.UserPr
 }
 
 // Delete takes name of the userProjectBinding and deletes it. Returns an error if one occurs.
-func (c *FakeUserProjectBindings) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeUserProjectBindings) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewRootDeleteAction(userprojectbindingsResource, name), &kubermaticv1.UserProjectBinding{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeUserProjectBindings) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(userprojectbindingsResource, listOptions)
+func (c *FakeUserProjectBindings) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(userprojectbindingsResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &kubermaticv1.UserProjectBindingList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched userProjectBinding.
-func (c *FakeUserProjectBindings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *kubermaticv1.UserProjectBinding, err error) {
+func (c *FakeUserProjectBindings) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *kubermaticv1.UserProjectBinding, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(userprojectbindingsResource, name, pt, data, subresources...), &kubermaticv1.UserProjectBinding{})
 	if obj == nil {
