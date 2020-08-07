@@ -321,6 +321,7 @@ func (r *Reconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster,
 
 func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.Cluster) error {
 	namedServiceAccountCreatorGetters := []reconciling.NamedServiceAccountCreatorGetter{
+		etcd.ServiceAccountCreator,
 		usercluster.ServiceAccountCreator,
 	}
 	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {

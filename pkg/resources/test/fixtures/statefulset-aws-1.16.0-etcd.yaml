@@ -52,8 +52,6 @@ spec:
         - $(ETCDCTL_API)
         - -token
         - $(TOKEN)
-        - -initial-state
-        - $(INITIAL_STATE)
         command:
         - /opt/bin/etcd-launcher
         env:
@@ -86,8 +84,6 @@ spec:
           value: /etc/etcd/pki/client/apiserver-etcd-client.crt
         - name: ETCDCTL_KEY
           value: /etc/etcd/pki/client/apiserver-etcd-client.key
-        - name: INITIAL_STATE
-          value: new
         image: gcr.io/etcd-development/etcd:v3.3.18
         imagePullPolicy: IfNotPresent
         livenessProbe:
@@ -117,7 +113,7 @@ spec:
             - endpoint
             - health
           failureThreshold: 3
-          initialDelaySeconds: 15
+          initialDelaySeconds: 5
           periodSeconds: 15
           successThreshold: 1
           timeoutSeconds: 10
@@ -154,6 +150,7 @@ spec:
         volumeMounts:
         - mountPath: /opt/bin/
           name: launcher
+      serviceAccountName: etcd-launcher
       volumes:
       - name: etcd-tls-certificate
         secret:
