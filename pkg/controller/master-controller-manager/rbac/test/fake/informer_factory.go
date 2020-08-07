@@ -72,6 +72,10 @@ func (i *dummySharedIndexInformer) AddEventHandler(handler cache.ResourceEventHa
 	panic("implement me")
 }
 
+func (i *dummySharedIndexInformer) SetWatchErrorHandler(handler cache.WatchErrorHandler) error {
+	panic("implement me")
+}
+
 func (i *dummySharedIndexInformer) AddEventHandlerWithResyncPeriod(handler cache.ResourceEventHandler, resyncPeriod time.Duration) {
 	panic("implement me")
 }
