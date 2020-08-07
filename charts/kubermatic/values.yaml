@@ -267,10 +267,12 @@ kubermatic:
     tolerations: []
 
   # You can override the default containers used for managing user cluster backups
-  # using these two options. If they are left empty, the default containers from
-  # the static/ directory will be used.
+  # using these three options. If they are left empty, the default containers from
+  # the static/ directory will be used for the store and cleanup containers, and
+  # the delete container will be disabled
   # To disable backups, configure containers that just run /bin/true, for example.
   storeContainer: null
+  deleteContainer: null
   cleanupContainer: null
 
   clusterNamespacePrometheus: {}

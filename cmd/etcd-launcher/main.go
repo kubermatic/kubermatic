@@ -20,6 +20,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/minio/minio-go"
+	"go.etcd.io/etcd/v3/clientv3/snapshot"
 	"io"
 	"net/url"
 	"os"
@@ -86,10 +88,14 @@ func main() {
 		log.Panicw("get user cluster", zap.Error(err))
 	}
 
-	e.initialState = initialStateNew
-	// check if the etcd cluster is initialized succcesfully.
+	// check if the etcd cluster is initialized successfully.
 	if k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
 		e.initialState = initialStateExisting
+	} else {
+		e.initialState = initialStateNew
+		if err := e.restoreDatadirFromBackupIfNeeded(context.Background(), k8cCluster, clusterClient, log); err != nil {
+			log.Fatalw("failed to restore datadir from backup", zap.Error(err))
+		}
 	}
 
 	log.Info("initializing etcd..")
@@ -527,6 +533,58 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger) error {
 		}
 	}
 	return nil
+}
+
+func (e *etcdCluster) restoreDatadirFromBackupIfNeeded(ctx context.Context, k8cCluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+	restoreList := &kubermaticv1.EtcdRestoreList{}
+	if err := client.List(ctx, restoreList, &ctrlruntimeclient.ListOptions{Namespace: k8cCluster.Status.NamespaceName}); err != nil {
+		return fmt.Errorf("failed to list EtcdRestores: %w", err)
+	}
+
+	var activeRestore *kubermaticv1.EtcdRestore
+	for _, restore := range restoreList.Items {
+		if restore.Status.Phase == kubermaticv1.EtcdRestorePhaseStsRebuilding {
+			if activeRestore != nil {
+				return fmt.Errorf("found more than one restore in state %v, refusing to restore anything", kubermaticv1.EtcdRestorePhaseStsRebuilding)
+			}
+			activeRestore = restore.DeepCopy()
+		}
+	}
+	if activeRestore == nil {
+		// no active restores for this cluster
+		return nil
+	}
+
+	log.Infow("restoring datadir from backup", "backup-name", activeRestore.Spec.BackupName)
+
+	s3Client, bucketName, err := resources.GetEtcdRestoreS3Client(ctx, activeRestore, false, client, k8cCluster)
+	if err != nil {
+		return fmt.Errorf("failed to get s3 client: %w", err)
+	}
+
+	objectName := fmt.Sprintf("%s-%s", k8cCluster.GetName(), activeRestore.Spec.BackupName)
+	downloadedSnapshotFile := fmt.Sprintf("/tmp/%s", objectName)
+
+	if err := s3Client.FGetObject(bucketName, objectName, downloadedSnapshotFile, minio.GetObjectOptions{}); err != nil {
+		return fmt.Errorf("failed to download backup (%s/%s): %w", bucketName, objectName, err)
+	}
+
+	if err := os.RemoveAll(e.dataDir); err != nil {
+		return fmt.Errorf("error deleting data directory before restore (%s): %w", e.dataDir, err)
+	}
+
+	sp := snapshot.NewV3(log.Desugar())
+
+	return sp.Restore(snapshot.RestoreConfig{
+		SnapshotPath:        downloadedSnapshotFile,
+		Name:                e.podName,
+		OutputDataDir:       e.dataDir,
+		OutputWALDir:        filepath.Join(e.dataDir, "member", "wal"),
+		PeerURLs:            []string{fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.podName, e.namespace)},
+		InitialCluster:      strings.Join(initialMemberList(e.clusterSize, e.namespace), ","),
+		InitialClusterToken: e.token,
+		SkipHashCheck:       false,
+	})
 }
 
 func close(c io.Closer, log *zap.SugaredLogger) {
