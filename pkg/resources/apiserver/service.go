@@ -27,33 +27,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-// InternalServiceCreator returns the function to reconcile the internal API server service
-func InternalServiceCreator() reconciling.NamedServiceCreatorGetter {
+// ServiceCreator returns the function to reconcile the external API server service
+func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
-		return resources.ApiserverInternalServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-			se.Name = resources.ApiserverInternalServiceName
-			se.Labels = resources.BaseAppLabels(name, nil)
-			se.Spec.Type = corev1.ServiceTypeClusterIP
-			se.Spec.Selector = map[string]string{
-				resources.AppLabelKey: name,
-			}
-			se.Spec.Ports = []corev1.ServicePort{
-				{
-					Name:       "insecure",
-					Port:       8080,
-					Protocol:   corev1.ProtocolTCP,
-					TargetPort: intstr.FromInt(8080),
-				},
-			}
-			return se, nil
-		}
-	}
-}
-
-// ExternalServiceCreator returns the function to reconcile the external API server service
-func ExternalServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
-		return resources.ApiserverExternalServiceName, func(se *corev1.Service) (*corev1.Service, error) {
+		return resources.ApiserverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			// Always set it to NodePort. Even when using exposeStrategy==LoadBalancer, we create
 			// one LoadBalancer for two Services (APIServer and openVPN) and use the nodePortProxy in
 			// namespaced mode to redirect the traffic to the right service depending on its port.
@@ -84,7 +61,7 @@ func ExternalServiceCreator(exposeStrategy corev1.ServiceType) reconciling.Named
 						Name:       "secure",
 						Port:       443,
 						Protocol:   corev1.ProtocolTCP,
-						TargetPort: intstr.FromInt(443),
+						TargetPort: intstr.FromInt(resources.APIServerSecurePort),
 					},
 				}
 
@@ -93,7 +70,11 @@ func ExternalServiceCreator(exposeStrategy corev1.ServiceType) reconciling.Named
 
 			se.Spec.Ports[0].Name = "secure"
 			se.Spec.Ports[0].Protocol = corev1.ProtocolTCP
-			se.Spec.Ports[0].Port = se.Spec.Ports[0].NodePort
+			se.Spec.Ports[0].Port = 443
+			// We assign the target port the same value as the NodePort port.
+			// The reason is that we need  both access the apiserver using
+			// this service (i.e. from seed cluster) and from the kubernetes
+			// nodeport service in the default namespace of the user cluster.
 			se.Spec.Ports[0].TargetPort = intstr.FromInt(int(se.Spec.Ports[0].NodePort))
 
 			return se, nil

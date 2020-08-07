@@ -124,7 +124,7 @@ func GetInternalKubeconfigCreator(name, commonName string, organizations []strin
 			}
 
 			b := se.Data[KubeconfigSecretKey]
-			apiserverURL := fmt.Sprintf("https://%s:%d", data.Cluster().Address.InternalName, data.Cluster().Address.Port)
+			apiserverURL := fmt.Sprintf("https://%s", data.Cluster().Address.InternalName)
 			valid, err := IsValidKubeconfig(b, ca.Cert, apiserverURL, commonName, organizations, data.Cluster().Name)
 			if err != nil || !valid {
 				if err != nil {
