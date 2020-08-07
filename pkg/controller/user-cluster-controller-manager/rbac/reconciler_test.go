@@ -18,6 +18,7 @@ package rbacusercluster
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -34,7 +35,6 @@ const (
 )
 
 func TestReconcileCreate(t *testing.T) {
-
 	tests := []struct {
 		name                      string
 		resourceNames             []string
@@ -83,8 +83,11 @@ func TestReconcileCreate(t *testing.T) {
 				t.Fatalf("incorrect number of cluster roles were returned, got: %d, want: %d, ", len(roles.Items), test.expectedRoleNumber)
 			}
 
+			sortClusterRoles(roles.Items)
+			sortClusterRoles(test.expectedRoles)
+
 			if !equality.Semantic.DeepEqual(roles.Items, test.expectedRoles) {
-				t.Fatalf("incorrect roles were returned, got: %v, want: %v", roles, test.expectedRoles)
+				t.Fatalf("incorrect roles were returned, got: %v, want: %v", roles.Items, test.expectedRoles)
 			}
 
 			rolesBindings := &rbacv1.ClusterRoleBindingList{}
@@ -96,17 +99,37 @@ func TestReconcileCreate(t *testing.T) {
 				t.Fatalf("incorrect number of cluster role bindings were returned, got: %d, want: %d, ", len(rolesBindings.Items), test.expectedRoleBindingNumber)
 			}
 
+			sortClusterRoleBindings(rolesBindings.Items)
+			sortClusterRoleBindings(test.expectedRoleBindings)
+
 			if !equality.Semantic.DeepEqual(rolesBindings.Items, test.expectedRoleBindings) {
 				t.Fatalf("incorrect roles were returned, got: %v, want: %v", rolesBindings.Items, test.expectedRoleBindings)
 			}
-
 		})
 	}
+}
 
+func sortClusterRoles(roles []rbacv1.ClusterRole) {
+	sort.SliceStable(roles, func(i, j int) bool {
+		mi, mj := roles[i], roles[j]
+		if mi.Namespace == mj.Namespace {
+			return mi.Name < mj.Name
+		}
+		return mi.Namespace < mj.Namespace
+	})
+}
+
+func sortClusterRoleBindings(roles []rbacv1.ClusterRoleBinding) {
+	sort.SliceStable(roles, func(i, j int) bool {
+		mi, mj := roles[i], roles[j]
+		if mi.Namespace == mj.Namespace {
+			return mi.Name < mj.Name
+		}
+		return mi.Namespace < mj.Namespace
+	})
 }
 
 func TestReconcileUpdateRole(t *testing.T) {
-
 	tests := []struct {
 		name         string
 		roleName     string
@@ -154,7 +177,7 @@ func TestReconcileUpdateRole(t *testing.T) {
 			r := reconciler{client: fake.NewFakeClient(), ctx: context.TODO()}
 
 			if err := r.client.Create(r.ctx, test.updatedRole); err != nil {
-				t.Fatalf("Reconcile method error: %v", err)
+				t.Fatalf("failed to create ClusterRole: %v", err)
 			}
 
 			// check for updates
@@ -165,7 +188,6 @@ func TestReconcileUpdateRole(t *testing.T) {
 
 			role := &rbacv1.ClusterRole{}
 			if err := r.client.Get(r.ctx, controllerclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: test.roleName}, role); err != nil {
-
 				t.Fatalf("can't find cluster role %v", err)
 			}
 
@@ -177,10 +199,8 @@ func TestReconcileUpdateRole(t *testing.T) {
 			if !equality.Semantic.DeepEqual(role.OwnerReferences, test.expectedRole.OwnerReferences) {
 				t.Fatalf("incorrect cluster role OwnerReferences were returned, got: %v, want: %v", role.OwnerReferences, test.expectedRole.OwnerReferences)
 			}
-
 		})
 	}
-
 }
 
 func genTestClusterRole(t *testing.T, resourceName string) rbacv1.ClusterRole {

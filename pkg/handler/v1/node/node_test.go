@@ -1913,7 +1913,7 @@ type nodeDeploymentSliceWrapper []apiv1.NodeDeployment
 // Sort sorts the collection by CreationTimestamp
 func (k nodeDeploymentSliceWrapper) Sort() {
 	sort.Slice(k, func(i, j int) bool {
-		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+		return k[i].Name < k[j].Name
 	})
 }
 
