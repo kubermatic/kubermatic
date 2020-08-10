@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"time"
 
+	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
@@ -58,6 +59,7 @@ var AllControllers = map[string]controllerCreator{
 	clustercomponentdefaulter.ControllerName:      createClusterComponentDefaulter,
 	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
 	rancher.ControllerName:                        createRancherController,
+	pvwatcher.ControllerName:                      createPvWatcherController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -301,4 +303,13 @@ func createRancherController(ctrlCtx *controllerContext) error {
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.clientProvider)
+}
+
+func createPvWatcherController(ctrlCtx *controllerContext) error {
+	return pvwatcher.Add(
+		ctrlCtx.log,
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName)
+
 }
