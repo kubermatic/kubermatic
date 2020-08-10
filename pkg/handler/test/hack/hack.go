@@ -74,7 +74,9 @@ func NewTestRouting(
 	presetsProvider provider.PresetProvider,
 	admissionPluginProvider provider.AdmissionPluginsProvider,
 	settingsWatcher watcher.SettingsWatcher,
-	userWatcher watcher.UserWatcher) http.Handler {
+	userWatcher watcher.UserWatcher,
+	externalClusterProvider provider.ExternalClusterProvider,
+	privilegedExternalClusterProvider provider.PrivilegedExternalClusterProvider) http.Handler {
 
 	updateManager := version.New(versions, updates)
 
@@ -114,6 +116,8 @@ func NewTestRouting(
 		AdmissionPluginProvider:               admissionPluginProvider,
 		SettingsWatcher:                       settingsWatcher,
 		UserWatcher:                           userWatcher,
+		ExternalClusterProvider:               externalClusterProvider,
+		PrivilegedExternalClusterProvider:     privilegedExternalClusterProvider,
 	}
 
 	r := handler.NewRouting(routingParams)

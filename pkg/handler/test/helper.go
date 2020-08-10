@@ -163,7 +163,9 @@ type newRoutingFunc func(
 	presetsProvider provider.PresetProvider,
 	admissionPluginProvider provider.AdmissionPluginsProvider,
 	settingsWatcher watcher.SettingsWatcher,
-	userWatcher watcher.UserWatcher) http.Handler
+	userWatcher watcher.UserWatcher,
+	externalClusterProvider provider.ExternalClusterProvider,
+	privilegedExternalClusterProvider provider.PrivilegedExternalClusterProvider) http.Handler
 
 func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	if seedsGetter == nil {
@@ -281,6 +283,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return fakeClient, nil
 	}
 
+	externalClusterProvider, err := kubernetes.NewExternalClusterProvider(fakeImpersonationClient, fakeClient)
+	if err != nil {
+		return nil, nil, err
+	}
+	fakeExternalClusterProvider := &FakeExternalClusterProvider{
+		Provider:   externalClusterProvider,
+		FakeClient: fakeClient,
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -330,6 +341,8 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		admissionPluginProvider,
 		settingsWatcher,
 		userWatcher,
+		fakeExternalClusterProvider,
+		externalClusterProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

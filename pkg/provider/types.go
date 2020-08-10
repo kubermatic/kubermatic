@@ -711,3 +711,21 @@ type AdmissionPluginsProvider interface {
 	Update(userInfo *UserInfo, admissionPlugin *kubermaticv1.AdmissionPlugin) (*kubermaticv1.AdmissionPlugin, error)
 	ListPluginNamesFromVersion(fromVersion string) ([]string, error)
 }
+
+// ExternalClusterProvider declares the set of methods for interacting with external cluster
+type ExternalClusterProvider interface {
+	New(userInfo *UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+
+	GenerateClient(cfg *clientcmdapi.Config) (*ctrlruntimeclient.Client, error)
+
+	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig *clientcmdapi.Config) error
+}
+
+// ExternalClusterProvider declares the set of methods for interacting with external cluster
+type PrivilegedExternalClusterProvider interface {
+	// NewUnsecured creates an external cluster
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resources
+	NewUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+}

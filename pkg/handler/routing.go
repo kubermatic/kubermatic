@@ -161,4 +161,6 @@ type RoutingParams struct {
 	AdmissionPluginProvider               provider.AdmissionPluginsProvider
 	SettingsWatcher                       watcher.SettingsWatcher
 	UserWatcher                           watcher.UserWatcher
+	ExternalClusterProvider               provider.ExternalClusterProvider
+	PrivilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
 }

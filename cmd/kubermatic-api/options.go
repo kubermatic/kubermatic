@@ -197,4 +197,6 @@ type providers struct {
 	admissionPluginProvider               provider.AdmissionPluginsProvider
 	settingsWatcher                       watcher.SettingsWatcher
 	userWatcher                           watcher.UserWatcher
+	externalClusterProvider               provider.ExternalClusterProvider
+	privilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
 }
