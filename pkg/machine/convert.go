@@ -149,6 +149,8 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			Tags:           config.Tags,
 			ImageID:        config.ImageID.Value,
 			Zones:          config.Zones,
+			DataDiskSize:   config.DataDiskSize,
+			OSDiskSize:     config.OSDiskSize,
 		}
 	case providerconfig.CloudProviderDigitalocean:
 		config := &digitalocean.RawConfig{}
