@@ -43,6 +43,10 @@ const (
 func (c *projectController) sync(key client.ObjectKey) error {
 	var originalProject kubermaticv1.Project
 	if err := c.client.Get(c.ctx, key, &originalProject); err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
+
 		return err
 	}
 
