@@ -243,6 +243,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create user info getter due to %v", err)
 	}
 
+	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create user info getter due to %v", err)
+	}
+
 	kubeMasterInformerFactory.Start(wait.NeverStop)
 	kubeMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
@@ -288,6 +293,8 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		admissionPluginProvider:               admissionPluginProvider,
 		settingsWatcher:                       settingsWatcher,
 		userWatcher:                           userWatcher,
+		externalClusterProvider:               externalClusterProvider,
+		privilegedExternalClusterProvider:     externalClusterProvider,
 	}, nil
 }
 
@@ -389,6 +396,8 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		AdmissionPluginProvider:               prov.admissionPluginProvider,
 		SettingsWatcher:                       prov.settingsWatcher,
 		UserWatcher:                           prov.userWatcher,
+		ExternalClusterProvider:               prov.externalClusterProvider,
+		PrivilegedExternalClusterProvider:     prov.privilegedExternalClusterProvider,
 	}
 
 	r := handler.NewRouting(routingParams)
