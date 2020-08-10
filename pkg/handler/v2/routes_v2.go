@@ -19,8 +19,6 @@ package v2
 import (
 	"net/http"
 
-	externalcluster "github.com/kubermatic/kubermatic/pkg/handler/v2/external_cluster"
-
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
@@ -30,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
+	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
 )
 
 // RegisterV2 declares all router paths for v2
