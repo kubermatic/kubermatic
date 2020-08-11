@@ -726,8 +726,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			}
 
 			// act
-			target := resourcesController{}
-			test.dependantToSync.clusterProvider = fakeClusterProvider
+			target := resourcesController{clusterProvider: fakeClusterProvider}
 			err := target.syncProjectResource(test.dependantToSync)
 
 			// validate
@@ -918,8 +917,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 			}
 
 			// act
-			target := resourcesController{}
-			test.dependantToSync.clusterProvider = fakeClusterProvider
+			target := resourcesController{clusterProvider: fakeClusterProvider}
 			err := target.syncProjectResource(test.dependantToSync)
 
 			// validate

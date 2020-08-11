@@ -62,8 +62,8 @@ func NewMetrics() *Metrics {
 
 // ControllerAggregator type holds controllers for managing RBAC for projects and theirs resources
 type ControllerAggregator struct {
-	workerCount            int
-	rbacResourceController *resourcesController
+	workerCount             int
+	rbacResourceControllers []*resourcesController
 
 	metrics               *Metrics
 	masterClusterProvider *ClusterProvider
@@ -194,21 +194,21 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 		return nil, err
 	}
 
-	resourcesRBACCtrl, err := newResourcesController(metrics, masterClusterProvider, seedClusterProviders, projectResources)
+	resourcesRBACCtrl, err := newResourcesControllers(metrics, masterClusterProvider, seedClusterProviders, projectResources)
 	if err != nil {
 		return nil, err
 	}
 
 	return &ControllerAggregator{
-		workerCount:            workerCount,
-		rbacResourceController: resourcesRBACCtrl,
-		metrics:                metrics,
-		masterClusterProvider:  masterClusterProvider,
-		seedClusterProviders:   seedClusterProviders,
+		workerCount:             workerCount,
+		rbacResourceControllers: resourcesRBACCtrl,
+		metrics:                 metrics,
+		masterClusterProvider:   masterClusterProvider,
+		seedClusterProviders:    seedClusterProviders,
 	}, nil
 }
 
-// Run starts the controller's worker routines. It is an implementation of
+// Start starts the controller's worker routines. It is an implementation of
 // sigs.k8s.io/controller-runtime/pkg/manager.Runnable
 func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 	defer runtime.HandleCrash()
@@ -221,7 +221,9 @@ func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 		}
 	}
 
-	go a.rbacResourceController.run(a.workerCount, stopCh)
+	for _, ctl := range a.rbacResourceControllers {
+		go ctl.run(a.workerCount, stopCh)
+	}
 
 	klog.Info("RBAC generator aggregator controller started")
 	<-stopCh

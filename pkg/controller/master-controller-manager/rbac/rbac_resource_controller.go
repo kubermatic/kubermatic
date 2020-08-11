@@ -40,22 +40,21 @@ type resourcesController struct {
 
 	metrics          *Metrics
 	projectResources []projectResource
+	clusterProvider  *ClusterProvider
 }
 
 type resourceToProcess struct {
-	gvr             schema.GroupVersionResource
-	kind            string
-	metaObject      metav1.Object
-	clusterProvider *ClusterProvider
+	gvr        schema.GroupVersionResource
+	kind       string
+	metaObject metav1.Object
 }
 
 type queueItem struct {
-	gvr             schema.GroupVersionResource
-	kind            string
-	name            string
-	indexKey        string
-	clusterProvider *ClusterProvider
-	cache           kcache.GenericLister
+	gvr      schema.GroupVersionResource
+	kind     string
+	name     string
+	indexKey string
+	cache    kcache.GenericLister
 }
 
 func (i *resourceToProcess) String() string {
@@ -63,34 +62,43 @@ func (i *resourceToProcess) String() string {
 }
 
 // newResourcesController creates a new controller for managing RBAC for named resources that belong to project
-func newResourcesController(metrics *Metrics, masterClusterProvider *ClusterProvider, seedClusterProviders []*ClusterProvider, resources []projectResource) (*resourcesController, error) {
-	c := &resourcesController{
+func newResourcesControllers(metrics *Metrics, masterClusterProvider *ClusterProvider, seedClusterProviders []*ClusterProvider, resources []projectResource) ([]*resourcesController, error) {
+	mc := &resourcesController{
 		projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_resources"),
 		metrics:               metrics,
 		projectResources:      resources,
+		clusterProvider:       masterClusterProvider,
 	}
+	allControllers := []*resourcesController{mc}
 
 	klog.V(4).Infof("considering %s master cluster provider for resources", masterClusterProvider.providerName)
-	for _, resource := range c.projectResources {
+	for _, resource := range mc.projectResources {
 		if resource.destination == destinationSeed {
 			klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", resource.gvr.String(), masterClusterProvider.providerName)
 			continue
 		}
 		if resource.gvr.Group == kubermaticv1.GroupName {
-			indexer, err := c.registerInformerIndexerForKubermaticResource(masterClusterProvider.kubermaticInformerFactory, resource, masterClusterProvider)
+			indexer, err := mc.registerInformerIndexerForKubermaticResource(masterClusterProvider.kubermaticInformerFactory, resource)
 			if err != nil {
 				return nil, err
 			}
 			masterClusterProvider.AddIndexerFor(indexer, resource.gvr)
 			continue
 		}
-		err := c.registerInformerForKubeResource(masterClusterProvider.kubeInformerProvider, resource, masterClusterProvider)
+		err := mc.registerInformerForKubeResource(masterClusterProvider.kubeInformerProvider, resource)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	for _, clusterProvider := range seedClusterProviders {
+		c := &resourcesController{
+			projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf("rbac_generator_resources_%s", clusterProvider.providerName)),
+			metrics:               metrics,
+			projectResources:      resources,
+			clusterProvider:       clusterProvider,
+		}
+
 		klog.V(4).Infof("considering %s provider for resources", clusterProvider.providerName)
 		for _, resource := range c.projectResources {
 			if len(resource.destination) == 0 {
@@ -98,21 +106,23 @@ func newResourcesController(metrics *Metrics, masterClusterProvider *ClusterProv
 				continue
 			}
 			if resource.gvr.Group == kubermaticv1.GroupName {
-				indexer, err := c.registerInformerIndexerForKubermaticResource(clusterProvider.kubermaticInformerFactory, resource, clusterProvider)
+				indexer, err := c.registerInformerIndexerForKubermaticResource(clusterProvider.kubermaticInformerFactory, resource)
 				if err != nil {
 					return nil, err
 				}
 				clusterProvider.AddIndexerFor(indexer, resource.gvr)
 				continue
 			}
-			err := c.registerInformerForKubeResource(clusterProvider.kubeInformerProvider, resource, clusterProvider)
+			err := c.registerInformerForKubeResource(clusterProvider.kubeInformerProvider, resource)
 			if err != nil {
 				return nil, err
 			}
 		}
+
+		allControllers = append(allControllers, c)
 	}
 
-	return c, nil
+	return allControllers, nil
 }
 
 // run starts the controller's worker routines. This method is blocking and ends when stopCh gets closed
@@ -151,10 +161,9 @@ func (c *resourcesController) processProjectResourcesNextItem() bool {
 		return true
 	}
 	processingItem := &resourceToProcess{
-		gvr:             qItem.gvr,
-		kind:            qItem.kind,
-		clusterProvider: qItem.clusterProvider,
-		metaObject:      resMeta,
+		gvr:        qItem.gvr,
+		kind:       qItem.kind,
+		metaObject: resMeta,
 	}
 
 	err = c.syncProjectResource(processingItem)
@@ -162,7 +171,7 @@ func (c *resourcesController) processProjectResourcesNextItem() bool {
 	return true
 }
 
-func (c *resourcesController) enqueueProjectResource(obj interface{}, staticResource projectResource, clusterProvider *ClusterProvider, lister kcache.GenericLister) {
+func (c *resourcesController) enqueueProjectResource(obj interface{}, staticResource projectResource, lister kcache.GenericLister) {
 	metaObj, err := meta.Accessor(obj)
 	if err != nil {
 		runtime.HandleError(fmt.Errorf("unable to get meta accessor for %#v, gvr %s, due to %v", obj, staticResource.gvr.String(), err))
@@ -178,75 +187,74 @@ func (c *resourcesController) enqueueProjectResource(obj interface{}, staticReso
 	}
 
 	item := queueItem{
-		gvr:             staticResource.gvr,
-		kind:            staticResource.kind,
-		name:            metaObj.GetName(),
-		indexKey:        indexKey,
-		clusterProvider: clusterProvider,
-		cache:           lister,
+		gvr:      staticResource.gvr,
+		kind:     staticResource.kind,
+		name:     metaObj.GetName(),
+		indexKey: indexKey,
+		cache:    lister,
 	}
 
 	c.projectResourcesQueue.Add(item)
 }
 
-func (c *resourcesController) registerInformerIndexerForKubermaticResource(sharedInformers kubermaticsharedinformers.SharedInformerFactory, resource projectResource, clusterProvider *ClusterProvider) (kcache.Indexer, error) {
+func (c *resourcesController) registerInformerIndexerForKubermaticResource(sharedInformers kubermaticsharedinformers.SharedInformerFactory, resource projectResource) (kcache.Indexer, error) {
 	var genLister kcache.GenericLister
 
 	handlers := kcache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			c.enqueueProjectResource(obj, resource, clusterProvider, genLister)
+			c.enqueueProjectResource(obj, resource, genLister)
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			c.enqueueProjectResource(newObj, resource, clusterProvider, genLister)
+			c.enqueueProjectResource(newObj, resource, genLister)
 		},
 		DeleteFunc: func(obj interface{}) {
 			if deletedFinalStateUnknown, ok := obj.(kcache.DeletedFinalStateUnknown); ok {
 				obj = deletedFinalStateUnknown.Obj
 			}
-			c.enqueueProjectResource(obj, resource, clusterProvider, genLister)
+			c.enqueueProjectResource(obj, resource, genLister)
 		},
 	}
 	shared, err := sharedInformers.ForResource(resource.gvr)
 	if err == nil {
-		klog.V(4).Infof("using a shared informer and indexer for %q resource, provider %q", resource.gvr.String(), clusterProvider.providerName)
+		klog.V(4).Infof("using a shared informer and indexer for %q resource, provider %q", resource.gvr.String(), c.clusterProvider.providerName)
 		shared.Informer().AddEventHandlerWithResyncPeriod(handlers, projectResourcesResyncTime)
 		genLister = shared.Lister()
 		return shared.Informer().GetIndexer(), nil
 	}
-	return nil, fmt.Errorf("uanble to create shared informer and indexer for %q resource, provider %q, err %v", resource.gvr.String(), clusterProvider.providerName, err)
+	return nil, fmt.Errorf("uanble to create shared informer and indexer for %q resource, provider %q, err %v", resource.gvr.String(), c.clusterProvider.providerName, err)
 }
 
-func (c *resourcesController) registerInformerForKubeResource(kubeInformerProvider InformerProvider, resource projectResource, clusterProvider *ClusterProvider) error {
+func (c *resourcesController) registerInformerForKubeResource(kubeInformerProvider InformerProvider, resource projectResource) error {
 	var genLister kcache.GenericLister
 
 	handlers := kcache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			c.enqueueProjectResource(obj, resource, clusterProvider, genLister)
+			c.enqueueProjectResource(obj, resource, genLister)
 		},
 		UpdateFunc: func(oldObj, newObj interface{}) {
-			c.enqueueProjectResource(newObj, resource, clusterProvider, genLister)
+			c.enqueueProjectResource(newObj, resource, genLister)
 		},
 		DeleteFunc: func(obj interface{}) {
 			if deletedFinalStateUnknown, ok := obj.(kcache.DeletedFinalStateUnknown); ok {
 				obj = deletedFinalStateUnknown.Obj
 			}
-			c.enqueueProjectResource(obj, resource, clusterProvider, genLister)
+			c.enqueueProjectResource(obj, resource, genLister)
 		},
 	}
 	shared, err := kubeInformerProvider.KubeInformerFactoryFor(resource.namespace).ForResource(resource.gvr)
 	if err == nil {
-		klog.V(4).Infof("using a shared informer for %q resource, provider %q in namespace %q", resource.gvr.String(), clusterProvider.providerName, resource.namespace)
+		klog.V(4).Infof("using a shared informer for %q resource, provider %q in namespace %q", resource.gvr.String(), c.clusterProvider.providerName, resource.namespace)
 		shared.Informer().AddEventHandlerWithResyncPeriod(handlers, projectResourcesResyncTime)
 		genLister = shared.Lister()
 
 		if len(resource.namespace) > 0 {
-			klog.V(4).Infof("registering Roles and RoleBindings informers in %q namespace for provider %s for resource %q", resource.namespace, clusterProvider.providerName, resource.gvr.String())
+			klog.V(4).Infof("registering Roles and RoleBindings informers in %q namespace for provider %s for resource %q", resource.namespace, c.clusterProvider.providerName, resource.gvr.String())
 			_ = kubeInformerProvider.KubeInformerFactoryFor(resource.namespace).Rbac().V1().Roles().Lister()
 			_ = kubeInformerProvider.KubeInformerFactoryFor(resource.namespace).Rbac().V1().RoleBindings().Lister()
 		}
 		return nil
 	}
-	return fmt.Errorf("uanble to create shared informer and indexer for the given project's resource %v for provider %q, err %v", resource.gvr.String(), clusterProvider.providerName, err)
+	return fmt.Errorf("uanble to create shared informer and indexer for the given project's resource %v for provider %q, err %v", resource.gvr.String(), c.clusterProvider.providerName, err)
 }
 
 // handleErr checks if an error happened and makes sure we will retry later.
