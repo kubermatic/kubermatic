@@ -86,7 +86,11 @@ func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userCl
 	if cluster.Annotations == nil {
 		cluster.Annotations = map[string]string{}
 	}
-	cluster.Annotations[deletedLBAnnotationName] += fmt.Sprintf(",%s", string(service.UID))
+
+	set := parseStringSet(cluster.Annotations[deletedLBAnnotationName])
+	set.Insert(string(service.UID))
+	cluster.Annotations[deletedLBAnnotationName] += encodeStringSet(set)
+
 	if err := d.seedClient.Patch(ctx, cluster, controllerruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return fmt.Errorf("failed to update cluster when trying to add UID of deleted LoadBalancer: %v", err)
 	}
@@ -118,11 +122,12 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 	}
 
 	// We only need to wait for this if there were actually services of type Loadbalancer deleted
-	if cluster.Annotations[deletedLBAnnotationName] == "" {
+	ids := cluster.Annotations[deletedLBAnnotationName]
+	if ids == "" {
 		return true, nil
 	}
 
-	deletedLoadBalancers := sets.NewString(strings.Split(strings.TrimPrefix(cluster.Annotations[deletedLBAnnotationName], ","), ",")...)
+	deletedLoadBalancers := parseStringSet(ids)
 
 	// Kubernetes gives no guarantees at all about events, it is possible we don't get the event
 	// so bail out after 2h
@@ -149,10 +154,27 @@ func (d *Deletion) checkIfAllLoadbalancersAreGone(ctx context.Context, cluster *
 	}
 
 	oldCluster := cluster.DeepCopy()
-	cluster.Annotations[deletedLBAnnotationName] = strings.Join(deletedLoadBalancers.List(), ",")
+	cluster.Annotations[deletedLBAnnotationName] = encodeStringSet(deletedLoadBalancers)
 	if err := d.seedClient.Patch(ctx, cluster, controllerruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return false, fmt.Errorf("failed to update cluster: %v", err)
 	}
 
 	return deletedLoadBalancers.Len() > 0, nil
+}
+
+func parseStringSet(list string) sets.String {
+	items := strings.Split(list, ",")
+	s := sets.NewString()
+
+	for _, item := range items {
+		if len(item) > 0 {
+			s.Insert(item)
+		}
+	}
+
+	return s
+}
+
+func encodeStringSet(s sets.String) string {
+	return strings.Join(s.List(), ",")
 }
