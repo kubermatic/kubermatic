@@ -167,6 +167,9 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 			userInfo := &provider.UserInfo{Email: mapping.Spec.UserEmail, Group: mapping.Spec.Group}
 			projectInternal, err := projectProvider.Get(userInfo, mapping.Spec.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: true})
 			if err != nil {
+				if isStatus(err, http.StatusNotFound) {
+					continue
+				}
 				// Request came from the specified user. Instead `Not found` error status the `Forbidden` is returned.
 				// Next request with privileged user checks if the project doesn't exist or some other error occurred.
 				if !isStatus(err, http.StatusForbidden) {
