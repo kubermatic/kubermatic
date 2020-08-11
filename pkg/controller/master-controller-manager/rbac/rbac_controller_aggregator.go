@@ -29,8 +29,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions"
 	k8scorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
+	util "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -71,7 +71,7 @@ type ControllerAggregator struct {
 }
 
 type projectResource struct {
-	gvr         schema.GroupVersionResource
+	object      runtime.Object
 	kind        string
 	destination string
 	namespace   string
@@ -125,39 +125,23 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 
 	projectResources := []projectResource{
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    kubermaticv1.GroupName,
-				Version:  kubermaticv1.GroupVersion,
-				Resource: kubermaticv1.ClusterResourceName,
-			},
+			object:      &kubermaticv1.Cluster{},
 			kind:        kubermaticv1.ClusterKindName,
 			destination: destinationSeed,
 		},
 
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    kubermaticv1.GroupName,
-				Version:  kubermaticv1.GroupVersion,
-				Resource: kubermaticv1.SSHKeyResourceName,
-			},
-			kind: kubermaticv1.SSHKeyKind,
+			object: &kubermaticv1.UserSSHKey{},
+			kind:   kubermaticv1.SSHKeyKind,
 		},
 
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    kubermaticv1.GroupName,
-				Version:  kubermaticv1.GroupVersion,
-				Resource: kubermaticv1.UserProjectBindingResourceName,
-			},
-			kind: kubermaticv1.UserProjectBindingKind,
+			object: &kubermaticv1.UserProjectBinding{},
+			kind:   kubermaticv1.UserProjectBindingKind,
 		},
 
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    k8scorev1.GroupName,
-				Version:  k8scorev1.SchemeGroupVersion.Version,
-				Resource: "secrets",
-			},
+			object:    &k8scorev1.Secret{},
 			kind:      "Secret",
 			namespace: "kubermatic",
 			shouldEnqueue: func(obj metav1.Object) bool {
@@ -165,14 +149,9 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 				return shouldEnqueueSecret(obj.GetName())
 			},
 		},
-
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    kubermaticv1.GroupName,
-				Version:  kubermaticv1.GroupVersion,
-				Resource: kubermaticv1.UserResourceName,
-			},
-			kind: kubermaticv1.UserKindName,
+			object: &kubermaticv1.User{},
+			kind:   kubermaticv1.UserKindName,
 			shouldEnqueue: func(obj metav1.Object) bool {
 				// do not reconcile resources without "serviceaccount" prefix
 				return strings.HasPrefix(obj.GetName(), "serviceaccount")
@@ -194,7 +173,7 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 		return nil, err
 	}
 
-	resourcesRBACCtrl, err := newResourcesControllers(metrics, masterClusterProvider, seedClusterProviders, projectResources)
+	resourcesRBACCtrl, err := newResourcesControllers(metrics, mgr, seedManagerMap, masterClusterProvider, seedClusterProviders, projectResources)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +190,7 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 // Start starts the controller's worker routines. It is an implementation of
 // sigs.k8s.io/controller-runtime/pkg/manager.Runnable
 func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
-	defer runtime.HandleCrash()
+	defer util.HandleCrash()
 
 	// wait for all caches in all clusters to get in-sync
 	for _, clusterProvider := range append(a.seedClusterProviders, a.masterClusterProvider) {
