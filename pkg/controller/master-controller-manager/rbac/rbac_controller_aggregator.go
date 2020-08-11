@@ -75,9 +75,8 @@ type projectResource struct {
 	destination string
 	namespace   string
 
-	// shouldEnqueue is a convenience function that is called right before
-	// the object is added to the queue. This is your last chance to say "no"
-	shouldEnqueue func(obj metav1.Object) bool
+	// predicate is used by the controller-runtime to filter watched objects
+	predicate func(m metav1.Object, r runtime.Object) bool
 }
 
 func restConfigToInformer(cfg *rest.Config, name string, labelSelectorFunc func(*metav1.ListOptions)) (*ClusterProvider, error) {
@@ -159,9 +158,9 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 				},
 			},
 			namespace: "kubermatic",
-			shouldEnqueue: func(obj metav1.Object) bool {
+			predicate: func(m metav1.Object, r runtime.Object) bool {
 				// do not reconcile secrets without "sa-token", "credential" and "kubeconfig-external-cluster" prefix
-				return shouldEnqueueSecret(obj.GetName())
+				return shouldEnqueueSecret(m.GetName())
 			},
 		},
 		{
@@ -171,19 +170,19 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 					Kind:       kubermaticv1.UserKindName,
 				},
 			},
-			shouldEnqueue: func(obj metav1.Object) bool {
+			predicate: func(m metav1.Object, r runtime.Object) bool {
 				// do not reconcile resources without "serviceaccount" prefix
-				return strings.HasPrefix(obj.GetName(), "serviceaccount")
+				return strings.HasPrefix(m.GetName(), "serviceaccount")
 			},
 		},
 
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    kubermaticv1.GroupName,
-				Version:  kubermaticv1.GroupVersion,
-				Resource: kubermaticv1.ExternalClusterResourceName,
+			object: &kubermaticv1.ExternalCluster{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.ExternalClusterKind,
+				},
 			},
-			kind: kubermaticv1.ExternalClusterKind,
 		},
 	}
 
