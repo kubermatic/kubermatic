@@ -488,12 +488,12 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			expectedActionsForMaster: []string{"create", "create"},
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.ExternalClusterResourceName,
+					object: &kubermaticv1.ExternalCluster{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.ExternalClusterKind,
+						},
 					},
-					kind: kubermaticv1.ExternalClusterKind,
 				},
 			},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
@@ -1256,12 +1256,12 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			seedClusters:            2,
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.ExternalClusterResourceName,
+					object: &kubermaticv1.ExternalCluster{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.ExternalClusterKind,
+						},
 					},
-					kind: kubermaticv1.ExternalClusterKind,
 				},
 			},
 

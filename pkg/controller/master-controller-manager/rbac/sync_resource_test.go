@@ -499,28 +499,20 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			name:            "scenario 5: a proper set of RBAC Role/Binding is generated for an external cluster",
 			expectedActions: []string{"create", "create", "create", "create", "create", "create"},
 
-			dependantToSync: &resourceToProcess{
-				gvr: schema.GroupVersionResource{
-					Group:    kubermaticv1.SchemeGroupVersion.Group,
-					Version:  kubermaticv1.SchemeGroupVersion.Version,
-					Resource: kubermaticv1.ExternalClusterResourceName,
-				},
-				kind: kubermaticv1.ExternalClusterKind,
-				metaObject: &kubermaticv1.ExternalCluster{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "abcd",
-						UID:  types.UID("abcdID"),
-						OwnerReferences: []metav1.OwnerReference{
-							{
-								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
-								Kind:       kubermaticv1.ProjectKindName,
-								Name:       "thunderball",
-								UID:        "thunderballID",
-							},
+			dependantToSync: &kubermaticv1.ExternalCluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "abcd",
+					UID:  types.UID("abcdID"),
+					OwnerReferences: []metav1.OwnerReference{
+						{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.ProjectKindName,
+							Name:       "thunderball",
+							UID:        "thunderballID",
 						},
 					},
-					Spec: kubermaticv1.ExternalClusterSpec{},
 				},
+				Spec: kubermaticv1.ExternalClusterSpec{},
 			},
 
 			expectedClusterRoles: []*rbacv1.ClusterRole{
@@ -535,6 +527,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 								UID:        "abcdID", // set manually
 							},
 						},
+						ResourceVersion: "1",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -557,6 +550,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 								UID:        "abcdID", // set manually
 							},
 						},
+						ResourceVersion: "1",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -578,6 +572,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 								UID:        "abcdID", // set manually
 							},
 						},
+						ResourceVersion: "1",
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -602,6 +597,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 								UID:        "abcdID", // set manually
 							},
 						},
+						ResourceVersion: "1",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -628,6 +624,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 								UID:        "abcdID", // set manually
 							},
 						},
+						ResourceVersion: "1",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -654,6 +651,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 								UID:        "abcdID", // set manually
 							},
 						},
+						ResourceVersion: "1",
 					},
 					Subjects: []rbacv1.Subject{
 						{
