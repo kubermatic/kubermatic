@@ -29,7 +29,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 )
 
@@ -92,8 +91,8 @@ func (c *resourcesController) syncProjectResource(key client.ObjectKey) error {
 			if err := c.ensureRBACRoleBindingForClusterAddons(projectName, metaObject); err != nil {
 				return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
 			}
-			if err := ensureClusterRBACRoleBindingForEtcdLauncher(projectName, item.metaObject, item.clusterProvider.kubeClient, item.clusterProvider.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()); err != nil {
-				return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", item.gvr.String(), item.clusterProvider.providerName, err)
+			if err := ensureClusterRBACRoleBindingForEtcdLauncher(c.client, projectName, metaObject); err != nil {
+				return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
 			}
 		}
 
@@ -474,7 +473,7 @@ func shouldSkipRBACRoleForClusterNamespaceResource(projectName string, cluster *
 }
 
 // ensureClusterRBACRoleBindingForEtcdLauncher ensures the ClusterRoleBinding required to allow the etcd launcher to get Clusters on the Seed
-func ensureClusterRBACRoleBindingForEtcdLauncher(projectName string, object metav1.Object, kubeClient kubernetes.Interface, rbacClusterRoleBindingLister rbaclister.ClusterRoleBindingLister) error {
+func ensureClusterRBACRoleBindingForEtcdLauncher(cli client.Client, projectName string, object metav1.Object) error {
 
 	cluster, ok := object.(*kubermaticv1.Cluster)
 	if !ok {
@@ -494,24 +493,27 @@ func ensureClusterRBACRoleBindingForEtcdLauncher(projectName string, object meta
 		},
 	)
 
-	existingRoleBinding, err := rbacClusterRoleBindingLister.Get(generatedRoleBinding.Name)
-	if err != nil {
-		if !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to get existing ClusterRoleBiding: %v", err)
-		}
-	}
-	if existingRoleBinding != nil {
-		if equality.Semantic.DeepEqual(existingRoleBinding.Subjects, generatedRoleBinding.Subjects) {
+	var sharedExistingRoleBinding rbacv1.ClusterRoleBinding
+	key := client.ObjectKey{Name: generatedRoleBinding.Name}
+	if err := cli.Get(context.TODO(), key, &sharedExistingRoleBinding); err != nil {
+		if kerrors.IsNotFound(err) {
+			if err := cli.Create(context.TODO(), generatedRoleBinding); err != nil {
+				return err
+			}
 			return nil
 		}
-		updatedRoleBinding := existingRoleBinding.DeepCopy()
-		updatedRoleBinding.Subjects = generatedRoleBinding.Subjects
-		_, err = kubeClient.RbacV1().ClusterRoleBindings().Update(updatedRoleBinding)
-		return fmt.Errorf("failed to update existing ClusterRoleBiding [%s]: %v", updatedRoleBinding.Name, err)
+		return err
 	}
 
-	if _, err = kubeClient.RbacV1().ClusterRoleBindings().Create(generatedRoleBinding); err != nil {
-		return fmt.Errorf("failed to create ClusterRoleBiding [%s]: %v", generatedRoleBinding.Name, err)
+	if equality.Semantic.DeepEqual(sharedExistingRoleBinding.Subjects, generatedRoleBinding.Subjects) {
+		return nil
 	}
+
+	existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
+	existingRoleBinding.Subjects = generatedRoleBinding.Subjects
+	if err := cli.Update(context.TODO(), existingRoleBinding); err != nil {
+		return err
+	}
+
 	return nil
 }
