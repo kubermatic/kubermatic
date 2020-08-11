@@ -208,7 +208,7 @@ func (c *resourcesController) enqueueProjectResource(obj interface{}, staticReso
 
 	item := queueItem{
 		gvr:      rmapping.Resource,
-		kind:     staticResource.kind,
+		kind:     staticResource.object.GetObjectKind().GroupVersionKind().Kind,
 		name:     metaObj.GetName(),
 		indexKey: indexKey,
 		cache:    lister,
