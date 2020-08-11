@@ -716,6 +716,10 @@ type AdmissionPluginsProvider interface {
 type ExternalClusterProvider interface {
 	New(userInfo *UserInfo, project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
 
+	Get(userInfo *UserInfo, clusterName string) (*kubermaticv1.ExternalCluster, error)
+
+	Delete(userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) error
+
 	GenerateClient(cfg *clientcmdapi.Config) (*ctrlruntimeclient.Client, error)
 
 	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig *clientcmdapi.Config) error
@@ -728,4 +732,16 @@ type PrivilegedExternalClusterProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resources
 	NewUnsecured(project *kubermaticv1.Project, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+
+	// DeleteUnsecured deletes an external cluster
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to delete the resources
+	DeleteUnsecured(cluster *kubermaticv1.ExternalCluster) error
+
+	// GetUnsecured gets an external cluster
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resources
+	GetUnsecured(clusterName string) (*kubermaticv1.ExternalCluster, error)
 }

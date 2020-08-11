@@ -59,6 +59,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/kubernetes/clusters").
 		Handler(r.createExternalCluster())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}").
+		Handler(r.deleteExternalCluster())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -216,6 +220,31 @@ func (r Routing) createExternalCluster() http.Handler {
 		)(externalcluster.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
 		externalcluster.DecodeCreateReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// Delete the external cluster
+// swagger:route DELETE /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id} project deleteExternalCluster
+//
+//     Deletes the specified external cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteExternalCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
+		externalcluster.DecodeDeleteReq,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
