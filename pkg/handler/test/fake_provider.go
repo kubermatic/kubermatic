@@ -129,6 +129,10 @@ type FakeExternalClusterProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
+func (p *FakeExternalClusterProvider) List(project *kubermaticapiv1.Project) (*kubermaticapiv1.ExternalClusterList, error) {
+	return p.Provider.List(project)
+}
+
 func (p *FakeExternalClusterProvider) Get(userInfo *provider.UserInfo, clusterName string) (*kubermaticapiv1.ExternalCluster, error) {
 	return p.Provider.Get(userInfo, clusterName)
 }

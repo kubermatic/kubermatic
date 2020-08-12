@@ -24,13 +24,11 @@ import (
 	"strings"
 	"testing"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
-
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -158,7 +156,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 			ExpectedResponse:       `{}`,
 			HTTPStatus:             http.StatusOK,
 			ProjectToSync:          test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster("clusterAbcID")),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
 			ClusterToSync:          "clusterAbcID",
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
@@ -170,7 +168,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				// add admin user
 				genUser("John", "john@acme.com", true),
-				genExternalCluster("clusterAbcID"),
+				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
 			),
 			ClusterToSync:   "clusterAbcID",
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -183,7 +181,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				// add admin user
 				genUser("John", "john@acme.com", false),
-				genExternalCluster("clusterAbcID"),
+				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
 			),
 			ClusterToSync:   "clusterAbcID",
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -213,19 +211,125 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 	}
 }
 
+func TestListClusters(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		ExpectedClusters       []apiv1.Cluster
+		HTTPStatus             int
+		ExistingAPIUser        *apiv1.User
+		ExistingKubermaticObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			Name: "scenario 1: list clusters that belong to the given project",
+			ExpectedClusters: []apiv1.Cluster{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						Name: "clusterAbcID",
+						ID:   "clusterAbcID",
+					},
+					Type:   "kubernetes",
+					Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: test.GenDefaultProject().Name},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						Name: "clusterDefID",
+						ID:   "clusterDefID",
+					},
+					Type:   "kubernetes",
+					Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: test.GenDefaultProject().Name},
+				},
+			},
+			HTTPStatus: http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
+				genExternalCluster(test.GenDefaultProject().Name, "clusterDefID"),
+				genExternalCluster("fakeID", "clusterFakeID"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			Name: "scenario 2: the admin John can list Bob's clusters",
+			ExpectedClusters: []apiv1.Cluster{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						Name: "clusterAbcID",
+						ID:   "clusterAbcID",
+					},
+					Type:   "kubernetes",
+					Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: test.GenDefaultProject().Name},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						Name: "clusterDefID",
+						ID:   "clusterDefID",
+					},
+					Type:   "kubernetes",
+					Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: test.GenDefaultProject().Name},
+				},
+			},
+			HTTPStatus: http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", true),
+				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
+				genExternalCluster(test.GenDefaultProject().Name, "clusterDefID"),
+				genExternalCluster("fakeID", "clusterFakeID"),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters", test.ProjectName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			var kubermaticObj []runtime.Object
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			actualClusters := test.NewClusterV1SliceWrapper{}
+			actualClusters.DecodeOrDie(res.Body, t).Sort()
+
+			wrappedExpectedClusters := test.NewClusterV1SliceWrapper(tc.ExpectedClusters)
+			wrappedExpectedClusters.Sort()
+
+			actualClusters.EqualOrDie(wrappedExpectedClusters, t)
+		})
+	}
+}
+
 func genUser(name, email string, isAdmin bool) *kubermaticv1.User {
 	user := test.GenUser("", name, email)
 	user.Spec.IsAdmin = isAdmin
 	return user
 }
 
-func genExternalCluster(name string) *kubermaticv1.ExternalCluster {
+func genExternalCluster(projectName, clusterName string) *kubermaticv1.ExternalCluster {
 	return &kubermaticv1.ExternalCluster{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:   clusterName,
+			Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: projectName},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.ProjectKindName,
+					Name:       projectName,
+				},
+			},
 		},
 		Spec: kubermaticv1.ExternalClusterSpec{
-			HumanReadableName: name,
+			HumanReadableName: clusterName,
 		},
 	}
 }
