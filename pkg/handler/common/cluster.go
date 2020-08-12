@@ -133,6 +133,12 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 	}
 	partialCluster := &kubermaticv1.Cluster{}
 	partialCluster.Labels = body.Cluster.Labels
+	if partialCluster.Labels == nil {
+		partialCluster.Labels = make(map[string]string)
+	}
+	// Owning project ID must be set early, because it will be inherited by some child objects,
+	// for example the credentials secret.
+	partialCluster.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
 	partialCluster.Spec = *spec
 	if body.Cluster.Type == "openshift" {
 		if body.Cluster.Spec.Openshift == nil || body.Cluster.Spec.Openshift.ImagePullSecret == "" {
