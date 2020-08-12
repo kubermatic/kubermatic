@@ -24,6 +24,8 @@ import (
 	"strings"
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -140,8 +142,90 @@ func TestCreateClusterEndpoint(t *testing.T) {
 	}
 }
 
+func TestDeleteClusterEndpoint(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		ExpectedResponse       string
+		HTTPStatus             int
+		ProjectToSync          string
+		ClusterToSync          string
+		ExistingKubermaticObjs []runtime.Object
+		ExistingAPIUser        *apiv1.User
+	}{
+		{
+			Name:                   "scenario 1: delete external cluster",
+			ExpectedResponse:       `{}`,
+			HTTPStatus:             http.StatusOK,
+			ProjectToSync:          test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster("clusterAbcID")),
+			ClusterToSync:          "clusterAbcID",
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
+		{
+			Name:             "scenario 2: the admin John can delete Bob's cluster",
+			ExpectedResponse: `{}`,
+			HTTPStatus:       http.StatusOK,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add admin user
+				genUser("John", "john@acme.com", true),
+				genExternalCluster("clusterAbcID"),
+			),
+			ClusterToSync:   "clusterAbcID",
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			Name:             "scenario 3: the user John can not delete Bob's cluster",
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add admin user
+				genUser("John", "john@acme.com", false),
+				genExternalCluster("clusterAbcID"),
+			),
+			ClusterToSync:   "clusterAbcID",
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+
+			// validate if deletion was successful
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			var kubermaticObj []runtime.Object
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
 func genUser(name, email string, isAdmin bool) *kubermaticv1.User {
 	user := test.GenUser("", name, email)
 	user.Spec.IsAdmin = isAdmin
 	return user
+}
+
+func genExternalCluster(name string) *kubermaticv1.ExternalCluster {
+	return &kubermaticv1.ExternalCluster{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Spec: kubermaticv1.ExternalClusterSpec{
+			HumanReadableName: name,
+		},
+	}
 }
