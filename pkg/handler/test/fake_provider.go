@@ -129,6 +129,14 @@ type FakeExternalClusterProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
+func (p *FakeExternalClusterProvider) Get(userInfo *provider.UserInfo, clusterName string) (*kubermaticapiv1.ExternalCluster, error) {
+	return p.Provider.Get(userInfo, clusterName)
+}
+
+func (p *FakeExternalClusterProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticapiv1.ExternalCluster) error {
+	return p.Provider.Delete(userInfo, cluster)
+}
+
 func (p *FakeExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (*ctrlruntimeclient.Client, error) {
 	return &p.FakeClient, nil
 }

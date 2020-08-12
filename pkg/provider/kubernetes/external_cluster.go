@@ -78,6 +78,64 @@ func (p *ExternalClusterProvider) NewUnsecured(project *kubermaticapiv1.Project,
 	return cluster, nil
 }
 
+// Get returns the given cluster
+func (p *ExternalClusterProvider) Get(userInfo *provider.UserInfo, clusterName string) (*kubermaticapiv1.ExternalCluster, error) {
+
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	cluster := &kubermaticapiv1.ExternalCluster{}
+	if err := masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: clusterName}, cluster); err != nil {
+		return nil, err
+	}
+
+	return cluster, nil
+}
+
+// Delete deletes the given cluster
+func (p *ExternalClusterProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticapiv1.ExternalCluster) error {
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	if err != nil {
+		return err
+	}
+
+	// Will delete all child's after the object is gone - otherwise the etcd might be deleted before all machines are gone
+	// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents
+	policy := metav1.DeletePropagationBackground
+	delOpts := &ctrlruntimeclient.DeleteOptions{
+		PropagationPolicy: &policy,
+	}
+	return masterImpersonatedClient.Delete(context.Background(), cluster, delOpts)
+}
+
+// DeleteUnsecured deletes an external cluster.
+//
+// Note that the admin privileges are used to delete cluster
+func (p *ExternalClusterProvider) DeleteUnsecured(cluster *kubermaticapiv1.ExternalCluster) error {
+	// Will delete all child's after the object is gone - otherwise the etcd might be deleted before all machines are gone
+	// See https://kubernetes.io/docs/concepts/workloads/controllers/garbage-collection/#controlling-how-the-garbage-collector-deletes-dependents
+	policy := metav1.DeletePropagationBackground
+	delOpts := &ctrlruntimeclient.DeleteOptions{
+		PropagationPolicy: &policy,
+	}
+	return p.clientPrivileged.Delete(context.Background(), cluster, delOpts)
+}
+
+// GetUnsecured returns an external cluster for the project and given name.
+//
+// Note that the admin privileges are used to get cluster
+func (p *ExternalClusterProvider) GetUnsecured(clusterName string) (*kubermaticapiv1.ExternalCluster, error) {
+
+	cluster := &kubermaticapiv1.ExternalCluster{}
+	if err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: clusterName}, cluster); err != nil {
+		return nil, err
+	}
+
+	return cluster, nil
+}
+
 func addProjectReference(project *kubermaticapiv1.Project, cluster *kubermaticapiv1.ExternalCluster) {
 	if cluster.Labels == nil {
 		cluster.Labels = make(map[string]string)
