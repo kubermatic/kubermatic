@@ -24,13 +24,15 @@ import (
 
 	"go.uber.org/zap"
 
+	predicateutils "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
-
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -76,23 +78,49 @@ func Add(
 		return fmt.Errorf("failed to create controller: %v", err)
 	}
 	// reconcile PVCs in ClaimLost phase only
-	predicates := predicate.Funcs{
+	LostClaimPredicates := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
 			new := e.ObjectNew.(*corev1.PersistentVolumeClaim)
 			return new.Status.Phase == corev1.ClaimLost
 		},
 	}
-	if err := c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForObject{}, predicates); err != nil {
+
+	if err := c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForObject{},
+		LostClaimPredicates,
+		predicateutils.ByLabel(resources.AppLabelKey, resources.EtcdStatefulSetName)); err != nil {
 		return fmt.Errorf("failed to create watch fordocker-build PersistentVolumeClaidocker-buildms: %v", err)
 	}
 	return nil
 }
+
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	cluster := &kubermaticv1.Cluster{}
+	clusterName := strings.ReplaceAll(request.Namespace, "cluster-", "")
+	if err := r.Get(ctx, types.NamespacedName{Name: clusterName}, cluster); err != nil {
+		if kerrors.IsNotFound(err) {
+			log.Debug("Skipping because the cluster is already gone")
+			return reconcile.Result{}, nil
+		}
+		return reconcile.Result{}, err
+	}
+	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName || cluster.Spec.Pause {
+		return reconcile.Result{}, nil
+	}
+	result, err := r.reconcile(ctx, log, request)
+	if err != nil {
+		log.Errorw("Reconciling failed", zap.Error(err))
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+	}
+
+	return result, err
+}
+
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) (reconcile.Result, error) {
 	pvc := &corev1.PersistentVolumeClaim{}
 	if err := r.Get(ctx, types.NamespacedName{Name: request.Name, Namespace: request.Namespace}, pvc); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -141,5 +169,6 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 	// Workaround to force the sts to recreate the PVC/PV, we need to "reboot" the StatefulSet.
 	return reconcile.Result{},
-		r.DeleteAllOf(ctx, &corev1.Pod{}, ctrlruntimeclient.InNamespace(pvc.Namespace), ctrlruntimeclient.MatchingLabels{"app": resources.EtcdStatefulSetName})
+		r.DeleteAllOf(ctx, &corev1.Pod{}, ctrlruntimeclient.InNamespace(pvc.Namespace),
+			ctrlruntimeclient.MatchingLabels{resources.AppLabelKey: resources.EtcdStatefulSetName})
 }
