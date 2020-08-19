@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: iap
-version: 1.2.2
+version: 1.2.3
 appVersion: 7.0.0
 description: A Helm to install Keycloak-Gatekeeper as an identity-aware proxy.
 keywords:
