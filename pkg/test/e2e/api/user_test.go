@@ -20,8 +20,11 @@ package api
 
 import (
 	"testing"
+	"time"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestDeleteProjectOwner(t *testing.T) {
@@ -50,9 +53,19 @@ func TestDeleteProjectOwner(t *testing.T) {
 			teardown := cleanUpProject(project.ID, 10)
 			defer teardown(t)
 
-			projectUsers, err := apiRunner.GetProjectUsers(project.ID)
-			if err != nil {
-				t.Fatalf("can not get the project user due error: %v", err)
+			var projectUsers []apiv1.User
+
+			if err := wait.PollImmediate(time.Second, maxAttempts*time.Second, func() (bool, error) {
+				var e error
+				projectUsers, e = apiRunner.GetProjectUsers(project.ID)
+				if e != nil {
+					t.Logf("can not get the project user due error: %v", e)
+					return false, nil
+				}
+
+				return true, nil
+			}); err != nil {
+				t.Fatalf("can not get the project user after %d attempts", maxAttempts)
 			}
 
 			if len(projectUsers) != len(tc.expectedUsers) {
