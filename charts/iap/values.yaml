@@ -52,7 +52,8 @@ iap:
     #   client_id: grafana
     #   client_secret: xxx
     #   encryption_key: xxx
-    #   config: {} ## see https://www.keycloak.org/docs/latest/securing_apps/index.html#example-usage-and-configuration
+    #   config: ## see https://www.keycloak.org/docs/latest/securing_apps/index.html#example-usage-and-configuration
+    #     enable-authorization-header: false
     #   upstream_service: grafana.monitoring.svc.cluster.local
     #   upstream_port: 3000
     #   ingress:
