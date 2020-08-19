@@ -2,15 +2,15 @@
 
 **Bugfix:**
 
-- fix flaky TestGCPDiskTypes #5693
-- fix changing user/password for OpenStack cluster credentials #5691 
-- fix componentsOverride affecting default values when reconciling clusters #5704
-- fix typo in prometheus chart #5726 
+- fix flaky TestGCPDiskTypes [#5693](https://github.com/kubermatic/kubermatic/issues/5693)
+- fix changing user/password for OpenStack cluster credentials [#5691](https://github.com/kubermatic/kubermatic/issues/5691)
+- fix componentsOverride affecting default values when reconciling clusters [#5704](https://github.com/kubermatic/kubermatic/issues/5704)
+- fix typo in prometheus chart [#5726](https://github.com/kubermatic/kubermatic/issues/5726)
 
 **Misc:**
 
-- Allow to configure Velero plugin InitContainers (#5718) #5719
-- addons/csi: add nodeplugin for flatcar linux #5701
+- Allow to configure Velero plugin InitContainers [#5718](https://github.com/kubermatic/kubermatic/issues/5718) [#5719](https://github.com/kubermatic/kubermatic/issues/5719)
+- addons/csi: add nodeplugin for flatcar linux [#5701](https://github.com/kubermatic/kubermatic/issues/5701)
 
 ### [v2.14.3]()
 
