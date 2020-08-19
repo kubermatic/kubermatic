@@ -119,9 +119,15 @@ func TestAddUserToProject(t *testing.T) {
 			teardown := cleanUpProject(project.ID, 10)
 			defer teardown(t)
 
-			_, err = apiRunner.AddProjectUser(project.ID, tc.newUserEmail, tc.newUserName, tc.newUserGroup)
-			if err != nil {
-				t.Fatalf("can not add user to project due error: %v", GetErrorResponse(err))
+			if err := wait.PollImmediate(time.Second, maxAttempts*time.Second, func() (bool, error) {
+				if _, e := apiRunner.AddProjectUser(project.ID, tc.newUserEmail, tc.newUserName, tc.newUserGroup); e != nil {
+					t.Logf("can not add user to project due error: %v", GetErrorResponse(err))
+					return false, nil
+				}
+
+				return true, nil
+			}); err != nil {
+				t.Fatalf("can not add user to project after %d attempts", maxAttempts)
 			}
 
 			projectUsers, err := apiRunner.GetProjectUsers(project.ID)
