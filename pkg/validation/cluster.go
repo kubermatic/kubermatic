@@ -106,6 +106,9 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 	if newSpec.Openstack == nil && oldSpec.Openstack != nil {
 		return ErrCloudChangeNotAllowed
 	}
+	if newSpec.OTC == nil && oldSpec.OTC != nil {
+		return ErrCloudChangeNotAllowed
+	}
 	if newSpec.AWS == nil && oldSpec.AWS != nil {
 		return ErrCloudChangeNotAllowed
 	}
@@ -243,6 +246,11 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 			return fmt.Errorf("datacenter %q is not an Openstack datacenter", spec.DatacenterName)
 		}
 		return validateOpenStackCloudSpec(spec.Openstack, dc)
+	case spec.OTC != nil:
+		if dc.Spec.OTC == nil {
+			return fmt.Errorf("datacenter %q is not an OTC datacenter", spec.DatacenterName)
+		}
+		return validateOTCCloudSpec(spec.OTC, dc)
 	case spec.Azure != nil:
 		if dc.Spec.Azure == nil {
 			return fmt.Errorf("datacenter %q is not an Azure datacenter", spec.DatacenterName)
@@ -317,6 +325,40 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 	}
 
 	if spec.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {
+		return errors.New("no floating ip pool specified")
+	}
+	return nil
+}
+
+func validateOTCCloudSpec(spec *kubermaticv1.OTCCloudSpec, dc *kubermaticv1.Datacenter) error {
+	if spec.Domain == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OTCDomain); err != nil {
+			return err
+		}
+	}
+	if spec.Username == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OTCUsername); err != nil {
+			return err
+		}
+	}
+	if spec.Password == "" {
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OTCPassword); err != nil {
+			return err
+		}
+	}
+
+	var errs []error
+	if spec.Tenant == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OTCTenant))
+	}
+	if spec.TenantID == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OTCTenantID))
+	}
+	if utilerror.NewAggregate(errs) != nil {
+		return errors.New("no tenant name or ID specified")
+	}
+
+	if spec.FloatingIPPool == "" && dc.Spec.OTC != nil && dc.Spec.OTC.EnforceFloatingIP {
 		return errors.New("no floating ip pool specified")
 	}
 	return nil

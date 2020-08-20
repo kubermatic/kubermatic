@@ -31,11 +31,11 @@ import (
 )
 
 const (
-	osName = "openstack-cloud-controller-manager"
+	otcName = "otc-cloud-controller-manager"
 )
 
 var (
-	osResourceRequirements = corev1.ResourceRequirements{
+	otcResourceRequirements = corev1.ResourceRequirements{
 		Requests: corev1.ResourceList{
 			corev1.ResourceMemory: resource.MustParse("100Mi"),
 			corev1.ResourceCPU:    resource.MustParse("100m"),
@@ -47,21 +47,21 @@ var (
 	}
 )
 
-func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
+func otcDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return osName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = osName
-			dep.Labels = resources.BaseAppLabels(osName, nil)
+		return otcName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Name = otcName
+			dep.Labels = resources.BaseAppLabels(otcName, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(osName, nil),
+				MatchLabels: resources.BaseAppLabels(otcName, nil),
 			}
 
-			dep.Spec.Template.Spec.Volumes = getOSVolumes()
+			dep.Spec.Template.Spec.Volumes = getOTCVolumes()
 
-			podLabels, err := data.GetPodTemplateLabels(osName, dep.Spec.Template.Spec.Volumes, nil)
+			podLabels, err := data.GetPodTemplateLabels(otcName, dep.Spec.Template.Spec.Volumes, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -97,16 +97,16 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				},
 			}
 
-			version, err := getOSVersion(data.Cluster().Spec.Version)
+			version, err := getOTCVersion(data.Cluster().Spec.Version)
 			if err != nil {
 				return nil, err
 			}
-			flags := getOSFlags(data)
+			flags := getOTCFlags(data)
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:         osName,
+					Name:         otcName,
 					Image:        data.ImageRegistry(resources.RegistryDocker) + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version,
 					Command:      []string{"/bin/openstack-cloud-controller-manager"},
 					Args:         flags,
@@ -114,7 +114,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				},
 			}
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				osName:              osResourceRequirements.DeepCopy(),
+				otcName:             otcResourceRequirements.DeepCopy(),
 				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
@@ -127,7 +127,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 	}
 }
 
-func getOSVolumes() []corev1.Volume {
+func getOTCVolumes() []corev1.Volume {
 	return []corev1.Volume{
 		{
 			Name: resources.CloudConfigConfigMapName,
@@ -158,17 +158,17 @@ func getOSVolumes() []corev1.Volume {
 	}
 }
 
-func getOSFlags(data *resources.TemplateData) []string {
+func getOTCFlags(data *resources.TemplateData) []string {
 	flags := []string{
 		"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 		"--v=1",
 		"--cloud-config=/etc/kubernetes/cloud/config",
-		"--cloud-provider=openstack",
+		"--cloud-provider=huaweicloud",
 	}
 	return flags
 }
 
-func getOSVersion(version semver.Semver) (string, error) {
+func getOTCVersion(version semver.Semver) (string, error) {
 	switch version.Minor() {
 	case 16:
 		return "1.16.0", nil
@@ -181,12 +181,12 @@ func getOSVersion(version semver.Semver) (string, error) {
 	}
 }
 
-// OpenStackCloudControllerSupported checks if this version of Kubernetes is supported
+// OTCCloudControllerSupported checks if this version of Kubernetes is supported
 // by our implementation of the external cloud controller.
 // This is not called for now, but it's here so we can use it later to automagically
 // enable external cloud controller support for supported versions.
-func OpenStackCloudControllerSupported(version semver.Semver) bool {
-	if _, err := getOSVersion(version); err != nil {
+func OTCCloudControllerSupported(version semver.Semver) bool {
+	if _, err := getOTCVersion(version); err != nil {
 		return false
 	}
 	return true

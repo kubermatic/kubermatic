@@ -51,6 +51,9 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	if datacenter.Spec.Openstack != nil {
 		return openstack.NewCloudProvider(datacenter, secretKeyGetter)
 	}
+	if datacenter.Spec.OTC != nil {
+		return otc.NewCloudProvider(datacenter, secretKeyGetter)
+	}
 	if datacenter.Spec.Packet != nil {
 		return packet.NewCloudProvider(secretKeyGetter), nil
 	}

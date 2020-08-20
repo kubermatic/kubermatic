@@ -461,6 +461,12 @@ const (
 	OpenstackTenantID = "tenantID"
 	OpenstackDomain   = "domain"
 
+	OTCUsername = "username"
+	OTCPassword = "password"
+	OTCTenant   = "tenant"
+	OTCTenantID = "tenantID"
+	OTCDomain   = "domain"
+
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"
 

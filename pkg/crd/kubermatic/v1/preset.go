@@ -53,6 +53,7 @@ type PresetSpec struct {
 	VSphere      *VSphere      `json:"vsphere,omitempty"`
 	AWS          *AWS          `json:"aws,omitempty"`
 	Openstack    *Openstack    `json:"openstack,omitempty"`
+	OTC          *OTC          `json:"otc,omitempty"`
 	Packet       *Packet       `json:"packet,omitempty"`
 	GCP          *GCP          `json:"gcp,omitempty"`
 	Kubevirt     *Kubevirt     `json:"kubevirt,omitempty"`
@@ -115,6 +116,22 @@ type AWS struct {
 }
 
 type Openstack struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Tenant   string `json:"tenant"`
+	TenantID string `json:"tenantID"`
+	Domain   string `json:"domain"`
+
+	Network        string `json:"network,,omitempty"`
+	SecurityGroups string `json:"securityGroups,omitempty"`
+	FloatingIPPool string `json:"floatingIpPool,omitempty"`
+	RouterID       string `json:"routerID,omitempty"`
+	SubnetID       string `json:"subnetID,omitempty"`
+
+	Datacenter string `json:"datacenter,omitempty"`
+}
+
+type OTC struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Tenant   string `json:"tenant"`

@@ -348,6 +348,9 @@ func CloudRoutesFlagVal(cloudSpec kubermaticv1.CloudSpec) *bool {
 	if cloudSpec.Openstack != nil {
 		return utilpointer.BoolPtr(false)
 	}
+	if cloudSpec.OTC != nil {
+		return utilpointer.BoolPtr(false)
+	}
 	if cloudSpec.VSphere != nil {
 		return utilpointer.BoolPtr(false)
 	}

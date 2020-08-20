@@ -529,6 +529,27 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedCloudSpec: &kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{Tenant: "a", Domain: "b", Password: "c", Username: "d"}},
 		},
 		{
+			name:       "test 7: set credentials for OTC provider",
+			presetName: "test",
+			userInfo:   provider.UserInfo{Email: "test@example.com"},
+			presets: []runtime.Object{
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: "example.com",
+						OTC: &kubermaticv1.OTC{
+							Tenant: "a", Domain: "b", Password: "c", Username: "d",
+						},
+					},
+				},
+			},
+			dc:                &kubermaticv1.Datacenter{Spec: kubermaticv1.DatacenterSpec{OTC: &kubermaticv1.DatacenterSpecOTC{EnforceFloatingIP: false}}},
+			cloudSpec:         kubermaticv1.CloudSpec{OTC: &kubermaticv1.OTCCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{OTC: &kubermaticv1.OTCCloudSpec{Tenant: "a", Domain: "b", Password: "c", Username: "d"}},
+		},
+		{
 			name:       "test 8: set credentials for Vsphere provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},

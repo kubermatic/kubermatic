@@ -54,6 +54,9 @@ func CreateOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 	if cluster.Spec.Cloud.Openstack != nil {
 		return createOrUpdateOpenstackSecret(ctx, seedClient, cluster)
 	}
+	if cluster.Spec.Cloud.OTC != nil {
+		return createOrUpdateOTCSecret(ctx, seedClient, cluster)
+	}
 	if cluster.Spec.Cloud.Packet != nil {
 		return createOrUpdatePacketSecret(ctx, seedClient, cluster)
 	}
@@ -302,6 +305,54 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	cluster.Spec.Cloud.Openstack.Tenant = ""
 	cluster.Spec.Cloud.Openstack.TenantID = ""
 	cluster.Spec.Cloud.Openstack.Domain = ""
+
+	return nil
+}
+
+func createOrUpdateOTCSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.OTC
+
+	// already migrated
+	if spec.Username == "" && spec.Password == "" && spec.Tenant == "" && spec.TenantID == "" && spec.Domain == "" {
+		return nil
+	}
+
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, seedClient)
+	oldCred, err := otc.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
+	if err != nil {
+		return err
+	}
+	if spec.Tenant == "" {
+		spec.Tenant = oldCred.Tenant
+	}
+	if spec.TenantID == "" {
+		spec.TenantID = oldCred.TenantID
+	}
+	if spec.Domain == "" {
+		spec.Domain = oldCred.Domain
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.OTCUsername: []byte(spec.Username),
+		resources.OTCPassword: []byte(spec.Password),
+		resources.OTCTenant:   []byte(spec.Tenant),
+		resources.OTCTenantID: []byte(spec.TenantID),
+		resources.OTCDomain:   []byte(spec.Domain),
+	})
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	cluster.Spec.Cloud.OTC.CredentialsReference = credentialRef
+
+	// clean old inline credentials
+	cluster.Spec.Cloud.OTC.Username = ""
+	cluster.Spec.Cloud.OTC.Password = ""
+	cluster.Spec.Cloud.OTC.Tenant = ""
+	cluster.Spec.Cloud.OTC.TenantID = ""
+	cluster.Spec.Cloud.OTC.Domain = ""
 
 	return nil
 }

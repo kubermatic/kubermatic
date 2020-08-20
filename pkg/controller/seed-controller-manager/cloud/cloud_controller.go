@@ -199,6 +199,11 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
 		}
 		log.Info("Successfully ensured ICMP rules in security group of cluster")
+	case *otc.Provider:
+		if err := prov.AddICMPRulesIfRequired(cluster); err != nil {
+			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)
+		}
+		log.Info("Successfully ensured ICMP rules in security group of cluster")
 	case *azure.Azure:
 		if err := prov.AddICMPRulesIfRequired(cluster); err != nil {
 			return fmt.Errorf("failed to ensure ICMP rules for cluster %q: %v", cluster.Name, err)

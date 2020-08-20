@@ -67,6 +67,7 @@ type DatacenterSpec struct {
 	AWS          *kubermaticv1.DatacenterSpecAWS          `json:"aws,omitempty"`
 	Azure        *kubermaticv1.DatacenterSpecAzure        `json:"azure,omitempty"`
 	Openstack    *kubermaticv1.DatacenterSpecOpenstack    `json:"openstack,omitempty"`
+	OTC          *kubermaticv1.DatacenterSpecOTC          `json:"otc,omitempty"`
 	Packet       *kubermaticv1.DatacenterSpecPacket       `json:"packet,omitempty"`
 	GCP          *kubermaticv1.DatacenterSpecGCP          `json:"gcp,omitempty"`
 	Hetzner      *kubermaticv1.DatacenterSpecHetzner      `json:"hetzner,omitempty"`
@@ -579,6 +580,70 @@ type OpenstackAvailabilityZone struct {
 	Name string `json:"name"`
 }
 
+// OTCSize is the object representing OTC's sizes.
+// swagger:model OTCSize
+type OTCSize struct {
+	// Slug holds  the name of the size
+	Slug string `json:"slug"`
+	// MemoryTotalBytes is the amount of memory, measured in MB
+	Memory int `json:"memory"`
+	// VCPUs indicates how many (virtual) CPUs are available for this flavor
+	VCPUs int `json:"vcpus"`
+	// Disk is the amount of root disk, measured in GB
+	Disk int `json:"disk"`
+	// Swap is the amount of swap space, measured in MB
+	Swap int `json:"swap"`
+	// Region specifies the geographic region in which the size resides
+	Region string `json:"region"`
+	// IsPublic indicates whether the size is public (available to all projects) or scoped to a set of projects
+	IsPublic bool `json:"isPublic"`
+}
+
+// OTCSubnet is the object representing a OTC subnet.
+// swagger:model OTCSubnet
+type OTCSubnet struct {
+	// Id uniquely identifies the subnet
+	ID string `json:"id"`
+	// Name is human-readable name for the subnet
+	Name string `json:"name"`
+}
+
+// OTCTenant is the object representing a OTC tenant.
+// swagger:model OTCTenant
+type OTCTenant struct {
+	// Id uniquely identifies the current tenant
+	ID string `json:"id"`
+	// Name is the name of the tenant
+	Name string `json:"name"`
+}
+
+// OTCNetwork is the object representing a OTC network.
+// swagger:model OTCNetwork
+type OTCNetwork struct {
+	// Id uniquely identifies the current network
+	ID string `json:"id"`
+	// Name is the name of the network
+	Name string `json:"name"`
+	// External set if network is the external network
+	External bool `json:"external"`
+}
+
+// OTCSecurityGroup is the object representing a OTC security group.
+// swagger:model OTCSecurityGroup
+type OTCSecurityGroup struct {
+	// Id uniquely identifies the current security group
+	ID string `json:"id"`
+	// Name is the name of the security group
+	Name string `json:"name"`
+}
+
+// OTCAvailabilityZone is the object representing a OTC availability zone.
+// swagger:model OTCAvailabilityZone
+type OTCAvailabilityZone struct {
+	// Name is the name of the availability zone
+	Name string `json:"name"`
+}
+
 // VSphereNetwork is the object representing a vsphere network.
 // swagger:model VSphereNetwork
 type VSphereNetwork struct {
@@ -718,6 +783,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			AWS:            newPublicAWSCloudSpec(cs.Cloud.AWS),
 			Azure:          newPublicAzureCloudSpec(cs.Cloud.Azure),
 			Openstack:      newPublicOpenstackCloudSpec(cs.Cloud.Openstack),
+			OTC:            newPublicOTCCloudSpec(cs.Cloud.OTC),
 			Packet:         newPublicPacketCloudSpec(cs.Cloud.Packet),
 			Hetzner:        newPublicHetznerCloudSpec(cs.Cloud.Hetzner),
 			VSphere:        newPublicVSphereCloudSpec(cs.Cloud.VSphere),
@@ -748,6 +814,7 @@ type PublicCloudSpec struct {
 	AWS            *PublicAWSCloudSpec          `json:"aws,omitempty"`
 	Azure          *PublicAzureCloudSpec        `json:"azure,omitempty"`
 	Openstack      *PublicOpenstackCloudSpec    `json:"openstack,omitempty"`
+	OTC            *PublicOTCCloudSpec          `json:"otc,omitempty"`
 	Packet         *PublicPacketCloudSpec       `json:"packet,omitempty"`
 	Hetzner        *PublicHetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere        *PublicVSphereCloudSpec      `json:"vsphere,omitempty"`
@@ -851,6 +918,35 @@ func newPublicOpenstackCloudSpec(internal *kubermaticv1.OpenstackCloudSpec) (pub
 	}
 
 	return &PublicOpenstackCloudSpec{
+		FloatingIPPool: internal.FloatingIPPool,
+		Tenant:         internal.Tenant,
+		TenantID:       internal.TenantID,
+		Domain:         internal.Domain,
+		Network:        internal.Network,
+		SecurityGroups: internal.SecurityGroups,
+		RouterID:       internal.RouterID,
+		SubnetID:       internal.SubnetID,
+	}
+}
+
+// PublicOTCCloudSpec is a public counterpart of apiv1.OTCCloudSpec.
+type PublicOTCCloudSpec struct {
+	FloatingIPPool string `json:"floatingIpPool"`
+	Tenant         string `json:"tenant,omitempty"`
+	TenantID       string `json:"tenantID,omitempty"`
+	Domain         string `json:"domain,omitempty"`
+	Network        string `json:"network"`
+	SecurityGroups string `json:"securityGroups"`
+	RouterID       string `json:"routerID"`
+	SubnetID       string `json:"subnetID"`
+}
+
+func newPublicOTCCloudSpec(internal *kubermaticv1.OTCCloudSpec) (public *PublicOTCCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicOTCCloudSpec{
 		FloatingIPPool: internal.FloatingIPPool,
 		Tenant:         internal.Tenant,
 		TenantID:       internal.TenantID,
@@ -975,6 +1071,7 @@ type NodeCloudSpec struct {
 	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
 	Azure        *AzureNodeSpec        `json:"azure,omitempty"`
 	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
+	OTC          *OTCNodeSpec          `json:"otc,omitempty"`
 	Packet       *PacketNodeSpec       `json:"packet,omitempty"`
 	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
@@ -1130,6 +1227,29 @@ type VSphereNodeSpec struct {
 // OpenstackNodeSpec openstack node settings
 // swagger:model OpenstackNodeSpec
 type OpenstackNodeSpec struct {
+	// instance flavor
+	// required: true
+	Flavor string `json:"flavor"`
+	// image to use
+	// required: true
+	Image string `json:"image"`
+	// Additional metadata to set
+	// required: false
+	Tags map[string]string `json:"tags,omitempty"`
+	// Defines whether floating ip should be used
+	// required: false
+	UseFloatingIP bool `json:"useFloatingIP,omitempty"`
+	// if set, the rootDisk will be a volume. If not, the rootDisk will be on ephemeral storage and its size will be derived from the flavor
+	// required: false
+	RootDiskSizeGB *int `json:"diskSize"`
+	// if not set, the default AZ from the Datacenter spec will be used
+	// required: false
+	AvailabilityZone string `json:"availabilityZone"`
+}
+
+// OTCNodeSpec OTC node settings
+// swagger:model OTCNodeSpec
+type OTCNodeSpec struct {
 	// instance flavor
 	// required: true
 	Flavor string `json:"flavor"`

@@ -39,6 +39,7 @@ var providerNames = []string{
 	"vsphere",
 	"aws",
 	"openstack",
+	"otc",
 	"packet",
 	"gcp",
 	"kubevirt",
@@ -90,6 +91,7 @@ func CredentialEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 			//	VSphere      VSphere
 			//	AWS          AWS
 			//	Openstack    Openstack
+			//	OTC          OTC
 			//	Packet       Packet
 			//	GCP          GCP
 			//	Kubevirt     Kubevirt

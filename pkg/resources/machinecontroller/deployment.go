@@ -214,6 +214,14 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_NAME", Value: credentials.Openstack.Tenant})
 		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_ID", Value: credentials.Openstack.TenantID})
 	}
+	if data.Cluster().Spec.Cloud.OTC != nil {
+		// vars = append(vars, corev1.EnvVar{Name: "OS_AUTH_URL", Value: data.DC().Spec.OTC.AuthURL})
+		vars = append(vars, corev1.EnvVar{Name: "OS_USER_NAME", Value: credentials.OTC.Username})
+		vars = append(vars, corev1.EnvVar{Name: "OS_PASSWORD", Value: credentials.OTC.Password})
+		vars = append(vars, corev1.EnvVar{Name: "OS_DOMAIN_NAME", Value: credentials.OTC.Domain})
+		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_NAME", Value: credentials.OTC.Tenant})
+		vars = append(vars, corev1.EnvVar{Name: "OS_TENANT_ID", Value: credentials.OTC.TenantID})
+	}
 	if data.Cluster().Spec.Cloud.Hetzner != nil {
 		vars = append(vars, corev1.EnvVar{Name: "HZ_TOKEN", Value: credentials.Hetzner.Token})
 	}

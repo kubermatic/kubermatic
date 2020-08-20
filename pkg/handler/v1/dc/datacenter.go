@@ -652,6 +652,7 @@ func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName strin
 		AWS:                      dc.Spec.AWS,
 		BringYourOwn:             dc.Spec.BringYourOwn,
 		Openstack:                dc.Spec.Openstack,
+		OTC:                      dc.Spec.OTC,
 		Hetzner:                  dc.Spec.Hetzner,
 		VSphere:                  dc.Spec.VSphere,
 		Azure:                    dc.Spec.Azure,
@@ -678,6 +679,7 @@ func convertExternalDCToInternal(datacenter *apiv1.DatacenterSpec) kubermaticv1.
 			AWS:                      datacenter.AWS,
 			Azure:                    datacenter.Azure,
 			Openstack:                datacenter.Openstack,
+			OTC:                      datacenter.OTC,
 			Packet:                   datacenter.Packet,
 			Hetzner:                  datacenter.Hetzner,
 			VSphere:                  datacenter.VSphere,
@@ -945,6 +947,9 @@ func validateProvider(dcSpec *apiv1.DatacenterSpec) error {
 	}
 	if dcSpec.Openstack != nil {
 		providerNames = append(providerNames, provider.OpenstackCloudProvider)
+	}
+	if dcSpec.OTC != nil {
+		providerNames = append(providerNames, provider.OTCCloudProvider)
 	}
 	if dcSpec.Packet != nil {
 		providerNames = append(providerNames, provider.PacketCloudProvider)

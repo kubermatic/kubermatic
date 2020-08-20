@@ -300,6 +300,31 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedResponse: `{"names":["first"]}`,
 		},
 		{
+			name:             "test no credentials for OTC",
+			provider:         "otc",
+			httpStatus:       http.StatusOK,
+			expectedResponse: "{}",
+		},
+		{
+			name:     "test list of credential names for OTC",
+			provider: "otc",
+			credentials: []runtime.Object{
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "first",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: test.RequiredEmailDomain,
+						OTC: &kubermaticv1.OTC{
+							Password: "password",
+						},
+					},
+				},
+			},
+			httpStatus:       http.StatusOK,
+			expectedResponse: `{"names":["first"]}`,
+		},
+		{
 			name:             "test no credentials for Packet",
 			provider:         "packet",
 			httpStatus:       http.StatusOK,

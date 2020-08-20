@@ -14,27 +14,19 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package validation
+package cloudcontroller
 
 import (
-	"errors"
-
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
-func ValidateCreateNodeSpec(c *kubermaticv1.Cluster, spec *apiv1.NodeSpec, dc *kubermaticv1.Datacenter) error {
-	if c.Spec.Cloud.Openstack != nil {
-		if (dc.Spec.Openstack.EnforceFloatingIP || spec.Cloud.Openstack.UseFloatingIP) && len(c.Spec.Cloud.Openstack.FloatingIPPool) == 0 {
-			return errors.New("no floating ip pool specified")
-		}
+func ExternalCloudControllerFeatureSupported(cluster *kubermaticv1.Cluster) bool {
+	switch {
+	case cluster.Spec.Cloud.Openstack != nil:
+		return OpenStackCloudControllerSupported(cluster.Spec.Version)
+	case cluster.Spec.Cloud.OTC != nil:
+		return OTCCloudControllerSupported(cluster.Spec.Version)
+	default:
+		return false
 	}
-
-	if c.Spec.Cloud.OTC != nil {
-		if (dc.Spec.OTC.EnforceFloatingIP || spec.Cloud.OTC.UseFloatingIP) && len(c.Spec.Cloud.OTC.FloatingIPPool) == 0 {
-			return errors.New("no floating ip pool specified")
-		}
-	}
-
-	return nil
 }

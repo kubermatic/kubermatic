@@ -166,6 +166,19 @@ func TestLoadFiles(t *testing.T) {
 				SecurityGroups: "openstack-security-group1,openstack-security-group2",
 			},
 		},
+		"otc": {
+			OTC: &kubermaticv1.OTCCloudSpec{
+				SubnetID:       "otc-subnet-id",
+				Username:       "otc-username",
+				Tenant:         "otc-tenant",
+				Domain:         "otc-domain",
+				FloatingIPPool: "otc-floating-ip-pool",
+				Network:        "otc-network",
+				Password:       "otc-password",
+				RouterID:       "otc-router-id",
+				SecurityGroups: "otc-security-group1,otc-security-group2",
+			},
+		},
 		"bringyourown": {
 			BringYourOwn: &kubermaticv1.BringYourOwnCloudSpec{},
 		},
@@ -200,6 +213,12 @@ func TestLoadFiles(t *testing.T) {
 			},
 			Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 				AuthURL:          "https://example.com:8000/v3",
+				AvailabilityZone: "zone1",
+				DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
+				IgnoreVolumeAZ:   true,
+				Region:           "cbk",
+			},
+			OTC: &kubermaticv1.DatacenterSpecOTC{
 				AvailabilityZone: "zone1",
 				DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
 				IgnoreVolumeAZ:   true,

@@ -149,12 +149,14 @@ func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList
 }
 
 func (m *PresetsProvider) SetCloudCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
-
 	if cloud.VSphere != nil {
 		return m.setVsphereCredentials(userInfo, presetName, cloud)
 	}
 	if cloud.Openstack != nil {
 		return m.setOpenStackCredentials(userInfo, presetName, cloud, dc)
+	}
+	if cloud.OTC != nil {
+		return m.setOTCCredentials(userInfo, presetName, cloud, dc)
 	}
 	if cloud.Azure != nil {
 		return m.setAzureCredentials(userInfo, presetName, cloud)
@@ -202,7 +204,6 @@ func (m *PresetsProvider) setFakeCredentials(userInfo *provider.UserInfo, preset
 
 	cloud.Fake.Token = preset.Spec.Fake.Token
 	return &cloud, nil
-
 }
 
 func (m *PresetsProvider) setKubevirtCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
@@ -234,7 +235,6 @@ func (m *PresetsProvider) setGCPCredentials(userInfo *provider.UserInfo, presetN
 	cloud.GCP.Network = credentials.Network
 	cloud.GCP.Subnetwork = credentials.Subnetwork
 	return &cloud, nil
-
 }
 
 func (m *PresetsProvider) setAWSCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
@@ -270,7 +270,6 @@ func (m *PresetsProvider) setHetznerCredentials(userInfo *provider.UserInfo, pre
 
 	cloud.Hetzner.Token = preset.Spec.Hetzner.Token
 	return &cloud, nil
-
 }
 
 func (m *PresetsProvider) setPacketCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
@@ -292,7 +291,6 @@ func (m *PresetsProvider) setPacketCredentials(userInfo *provider.UserInfo, pres
 	}
 
 	return &cloud, nil
-
 }
 
 func (m *PresetsProvider) setDigitalOceanCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
@@ -306,7 +304,6 @@ func (m *PresetsProvider) setDigitalOceanCredentials(userInfo *provider.UserInfo
 
 	cloud.Digitalocean.Token = preset.Spec.Digitalocean.Token
 	return &cloud, nil
-
 }
 
 func (m *PresetsProvider) setAzureCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
@@ -330,7 +327,6 @@ func (m *PresetsProvider) setAzureCredentials(userInfo *provider.UserInfo, prese
 	cloud.Azure.SubnetName = credentials.SubnetName
 	cloud.Azure.VNetName = credentials.VNetName
 	return &cloud, nil
-
 }
 
 func (m *PresetsProvider) setOpenStackCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
@@ -361,7 +357,36 @@ func (m *PresetsProvider) setOpenStackCredentials(userInfo *provider.UserInfo, p
 	cloud.Openstack.RouterID = credentials.RouterID
 	cloud.Openstack.SecurityGroups = credentials.SecurityGroups
 	return &cloud, nil
+}
 
+func (m *PresetsProvider) setOTCCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(userInfo, presetName)
+	if err != nil {
+		return nil, err
+	}
+	if preset.Spec.OTC == nil {
+		return nil, emptyCredentialError(presetName, "OTC")
+	}
+
+	credentials := preset.Spec.OTC
+
+	cloud.OTC.Username = credentials.Username
+	cloud.OTC.Password = credentials.Password
+	cloud.OTC.Domain = credentials.Domain
+	cloud.OTC.Tenant = credentials.Tenant
+	cloud.OTC.TenantID = credentials.TenantID
+
+	cloud.OTC.SubnetID = credentials.SubnetID
+	cloud.OTC.Network = credentials.Network
+	cloud.OTC.FloatingIPPool = credentials.FloatingIPPool
+
+	if cloud.OTC.FloatingIPPool == "" && dc.Spec.OTC != nil && dc.Spec.OTC.EnforceFloatingIP {
+		return nil, fmt.Errorf("preset error, no floating ip pool specified for OTC")
+	}
+
+	cloud.OTC.RouterID = credentials.RouterID
+	cloud.OTC.SecurityGroups = credentials.SecurityGroups
+	return &cloud, nil
 }
 
 func (m *PresetsProvider) setVsphereCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
@@ -380,7 +405,6 @@ func (m *PresetsProvider) setVsphereCredentials(userInfo *provider.UserInfo, pre
 	cloud.VSphere.Datastore = credentials.Datastore
 	cloud.VSphere.DatastoreCluster = credentials.DatastoreCluster
 	return &cloud, nil
-
 }
 
 func (m *PresetsProvider) setAlibabaCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {

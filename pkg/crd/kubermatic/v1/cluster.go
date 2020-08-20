@@ -376,6 +376,7 @@ type CloudSpec struct {
 	AWS          *AWSCloudSpec          `json:"aws,omitempty"`
 	Azure        *AzureCloudSpec        `json:"azure,omitempty"`
 	Openstack    *OpenstackCloudSpec    `json:"openstack,omitempty"`
+	OTC          *OTCCloudSpec          `json:"otc,omitempty"`
 	Packet       *PacketCloudSpec       `json:"packet,omitempty"`
 	Hetzner      *HetznerCloudSpec      `json:"hetzner,omitempty"`
 	VSphere      *VSphereCloudSpec      `json:"vsphere,omitempty"`
@@ -497,6 +498,33 @@ type AWSCloudSpec struct {
 
 // OpenstackCloudSpec specifies access data to an OpenStack cloud.
 type OpenstackCloudSpec struct {
+	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	Username string `json:"username,omitempty"`
+	Password string `json:"password,omitempty"`
+	Tenant   string `json:"tenant,omitempty"`
+	TenantID string `json:"tenantID,omitempty"`
+	Domain   string `json:"domain,omitempty"`
+	// Network holds the name of the internal network
+	// When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created
+	//
+	// Note that the network is internal if the "External" field is set to false
+	Network        string `json:"network"`
+	SecurityGroups string `json:"securityGroups"`
+	// FloatingIPPool holds the name of the public network
+	// The public network is reachable from the outside world
+	// and should provide the pool of IP addresses to choose from.
+	//
+	// When specified, all worker nodes will receive a public ip from this floating ip pool
+	//
+	// Note that the network is external if the "External" field is set to true
+	FloatingIPPool string `json:"floatingIpPool"`
+	RouterID       string `json:"routerID"`
+	SubnetID       string `json:"subnetID"`
+}
+
+// OTCCloudSpec specifies access data to an OTC cloud.
+type OTCCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
 	Username string `json:"username,omitempty"`
@@ -646,6 +674,9 @@ func (cluster *Cluster) GetSecretName() string {
 	}
 	if cluster.Spec.Cloud.Openstack != nil {
 		return fmt.Sprintf("%s-openstack-%s", CredentialPrefix, cluster.Name)
+	}
+	if cluster.Spec.Cloud.OTC != nil {
+		return fmt.Sprintf("%s-otc-%s", CredentialPrefix, cluster.Name)
 	}
 	if cluster.Spec.Cloud.Packet != nil {
 		return fmt.Sprintf("%s-packet-%s", CredentialPrefix, cluster.Name)

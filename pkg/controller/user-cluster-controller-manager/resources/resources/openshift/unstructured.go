@@ -61,6 +61,8 @@ func translateKubernetesCloudProviderName(kubernetesCloudProviderName string) st
 		return "GCP"
 	case "openstack":
 		return "OpenStack"
+	case "otc":
+		return "Open Telekom Cloud"
 	case "vsphere":
 		return "VSphere"
 	default:

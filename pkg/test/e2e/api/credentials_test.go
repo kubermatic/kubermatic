@@ -37,27 +37,32 @@ func TestListCredentials(t *testing.T) {
 		expectedList []string
 	}{
 		{
-			name:         "test, get DigitalOcean credential names",
+			name:         "get DigitalOcean credential names",
 			provider:     "digitalocean",
 			expectedList: []string{"e2e-digitalocean"},
 		},
 		{
-			name:         "test, get Azure credential names",
+			name:         "get Azure credential names",
 			provider:     "azure",
 			expectedList: []string{"e2e-azure"},
 		},
 		{
-			name:         "test, get OpenStack credential names",
+			name:         "get OpenStack credential names",
 			provider:     "openstack",
 			expectedList: []string{"e2e-openstack"},
 		},
 		{
-			name:         "test, get GCP credential names",
+			name:         "get OTC credential names",
+			provider:     "otc",
+			expectedList: []string{"e2e-otc"},
+		},
+		{
+			name:         "get GCP credential names",
 			provider:     "gcp",
 			expectedList: []string{"e2e-gcp"},
 		},
 		{
-			name:         "test, get GCP credential names for the specific datacenter",
+			name:         "get GCP credential names for the specific datacenter",
 			provider:     "gcp",
 			datacenter:   "gcp-westeurope",
 			expectedList: []string{"e2e-gcp", "e2e-gcp-datacenter"},
@@ -93,13 +98,13 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 		expectedCode   int
 	}{
 		{
-			name:           "test, get DigitalOcean VM sizes",
+			name:           "get DigitalOcean VM sizes",
 			credentialName: "e2e-digitalocean",
 			path:           "api/v1/providers/digitalocean/sizes",
 			expectedCode:   http.StatusOK,
 		},
 		{
-			name:           "test, get Azure VM sizes",
+			name:           "get Azure VM sizes",
 			credentialName: "e2e-azure",
 			path:           "api/v1/providers/azure/sizes",
 			location:       "westeurope",

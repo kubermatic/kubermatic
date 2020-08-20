@@ -30,6 +30,10 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 		return openStackDeploymentCreator(data)
 	}
 
+	if data.Cluster().Spec.Cloud.OTC != nil {
+		return otcDeploymentCreator(data)
+	}
+
 	return func() (name string, create reconciling.DeploymentCreator) {
 		return osName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			return nil, errors.New("unsupported external cloud controller")

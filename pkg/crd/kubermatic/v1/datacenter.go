@@ -137,6 +137,7 @@ type DatacenterSpec struct {
 	AWS          *DatacenterSpecAWS          `json:"aws,omitempty"`
 	Azure        *DatacenterSpecAzure        `json:"azure,omitempty"`
 	Openstack    *DatacenterSpecOpenstack    `json:"openstack,omitempty"`
+	OTC          *DatacenterSpecOTC          `json:"otc,omitempty"`
 	Packet       *DatacenterSpecPacket       `json:"packet,omitempty"`
 	Hetzner      *DatacenterSpecHetzner      `json:"hetzner,omitempty"`
 	VSphere      *DatacenterSpecVSphere      `json:"vsphere,omitempty"`
@@ -210,6 +211,36 @@ type DatacenterSpecOpenstack struct {
 }
 
 type OpenstackNodeSizeRequirements struct {
+	// VCPUs is the minimum required amount of (virtual) CPUs
+	MinimumVCPUs int `json:"minimum_vcpus"`
+	// MinimumMemory is the minimum required amount of memory, measured in MB
+	MinimumMemory int `json:"minimum_memory"`
+}
+
+// DatacenterSpecOTC describes an Open Telekom Cloud datacenter
+type DatacenterSpecOTC struct {
+	AvailabilityZone string `json:"availability_zone"`
+	Region           string `json:"region"`
+	// Optional
+	IgnoreVolumeAZ bool `json:"ignore_volume_az"`
+	// Optional
+	EnforceFloatingIP bool `json:"enforce_floating_ip"`
+	// Used for automatic network creation
+	DNSServers []string `json:"dns_servers"`
+	// Images to use for each supported operating system.
+	Images ImageList `json:"images"`
+	// Optional: Gets mapped to the "manage-security-groups" setting in the cloud config.
+	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
+	// This setting defaults to true.
+	ManageSecurityGroups *bool `json:"manage_security_groups"`
+	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
+	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
+	// This setting defaults to false.
+	TrustDevicePath      *bool                   `json:"trust_device_path"`
+	NodeSizeRequirements OTCNodeSizeRequirements `json:"node_size_requirements"`
+}
+
+type OTCNodeSizeRequirements struct {
 	// VCPUs is the minimum required amount of (virtual) CPUs
 	MinimumVCPUs int `json:"minimum_vcpus"`
 	// MinimumMemory is the minimum required amount of memory, measured in MB

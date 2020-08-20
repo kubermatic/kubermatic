@@ -186,6 +186,16 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		if err != nil {
 			return nil, err
 		}
+	case nd.Spec.Template.Cloud.OTC != nil:
+		config.CloudProvider = providerconfig.CloudProviderOTC
+		if err := validation.ValidateCreateNodeSpec(c, &nd.Spec.Template, dc); err != nil {
+			return nil, err
+		}
+
+		cloudExt, err = getOTCProviderSpec(c, nd.Spec.Template, dc)
+		if err != nil {
+			return nil, err
+		}
 	case nd.Spec.Template.Cloud.Hetzner != nil:
 		config.CloudProvider = providerconfig.CloudProviderHetzner
 		cloudExt, err = getHetznerProviderSpec(c, nd.Spec.Template, dc)

@@ -241,6 +241,55 @@ func getOpenstackProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, 
 	return ext, nil
 }
 
+func getOTCProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config := otc.RawConfig{
+		Image:            providerconfig.ConfigVarString{Value: nodeSpec.Cloud.OTC.Image},
+		Flavor:           providerconfig.ConfigVarString{Value: nodeSpec.Cloud.OTC.Flavor},
+		AvailabilityZone: providerconfig.ConfigVarString{Value: dc.Spec.OTC.AvailabilityZone},
+		Region:           providerconfig.ConfigVarString{Value: dc.Spec.OTC.Region},
+		// IdentityEndpoint: providerconfig.ConfigVarString{Value: dc.Spec.OTC.AuthURL},
+		Network:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.OTC.Network},
+		Subnet:         providerconfig.ConfigVarString{Value: c.Spec.Cloud.OTC.SubnetID},
+		SecurityGroups: []providerconfig.ConfigVarString{{Value: c.Spec.Cloud.OTC.SecurityGroups}},
+	}
+
+	if nodeSpec.Cloud.OTC.UseFloatingIP || dc.Spec.OTC.EnforceFloatingIP {
+		config.FloatingIPPool = providerconfig.ConfigVarString{Value: c.Spec.Cloud.OTC.FloatingIPPool}
+	}
+
+	if nodeSpec.Cloud.OTC.RootDiskSizeGB != nil && *nodeSpec.Cloud.OTC.RootDiskSizeGB > 0 {
+		config.RootDiskSizeGB = nodeSpec.Cloud.OTC.RootDiskSizeGB
+	}
+
+	if dc.Spec.OTC.TrustDevicePath != nil {
+		config.TrustDevicePath = providerconfig.ConfigVarBool{Value: *dc.Spec.OTC.TrustDevicePath}
+	}
+
+	// Use the nodeDeployment spec AvailabilityZone if set, otherwise we stick to the default from the datacenter
+	if nodeSpec.Cloud.OTC.AvailabilityZone != "" {
+		config.AvailabilityZone = providerconfig.ConfigVarString{Value: nodeSpec.Cloud.OTC.AvailabilityZone}
+	}
+
+	config.Tags = map[string]string{}
+	for key, value := range nodeSpec.Cloud.OTC.Tags {
+		config.Tags[key] = value
+	}
+	config.Tags["kubernetes-cluster"] = c.Name
+	config.Tags["system-cluster"] = c.Name
+	projectID, ok := c.Labels[kubermaticv1.ProjectIDLabelKey]
+	if ok {
+		config.Tags["system-project"] = projectID
+	}
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
 func getHetznerProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
 	config := hetzner.RawConfig{
 		Datacenter: providerconfig.ConfigVarString{Value: dc.Spec.Hetzner.Datacenter},

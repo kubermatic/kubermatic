@@ -153,6 +153,34 @@ func CloudConfig(
 			return cloudConfig, err
 		}
 
+	case cloud.OTC != nil:
+		manageSecurityGroups := dc.Spec.OTC.ManageSecurityGroups
+		trustDevicePath := dc.Spec.OTC.TrustDevicePath
+		otcCloudConfig := &otc.CloudConfig{
+			Global: otc.GlobalOpts{
+				AuthURL:    dc.Spec.OTC.AuthURL,
+				Username:   credentials.OTC.Username,
+				Password:   credentials.OTC.Password,
+				DomainName: credentials.OTC.Domain,
+				TenantName: credentials.OTC.Tenant,
+				TenantID:   credentials.OTC.TenantID,
+				Region:     dc.Spec.OTC.Region,
+			},
+			BlockStorage: otc.BlockStorageOpts{
+				BSVersion:       "auto",
+				TrustDevicePath: trustDevicePath != nil && *trustDevicePath,
+				IgnoreVolumeAZ:  dc.Spec.OTC.IgnoreVolumeAZ,
+			},
+			LoadBalancer: otc.LoadBalancerOpts{
+				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
+			},
+			Version: cluster.Spec.Version.String(),
+		}
+		cloudConfig, err = otc.CloudConfigToString(otcCloudConfig)
+		if err != nil {
+			return cloudConfig, err
+		}
+
 	case cloud.VSphere != nil:
 		vsphereCloudConfig, err := getVsphereCloudConfig(cluster, dc, credentials)
 		if err != nil {

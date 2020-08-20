@@ -76,6 +76,11 @@ func ValidateSeed(seed *kubermaticv1.Seed) error {
 				return fmt.Errorf("invalid datacenter defined '%s': %v", name, err)
 			}
 		}
+		if dc.Spec.OTC != nil {
+			if err := validateImageList(dc.Spec.OTC.Images); err != nil {
+				return fmt.Errorf("invalid datacenter defined '%s': %v", name, err)
+			}
+		}
 	}
 
 	// invalid DNS overwrites can happen when a seed was freshly converted from

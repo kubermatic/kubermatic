@@ -28,6 +28,7 @@ import (
 	hetzner "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/hetzner/types"
 	kubevirt "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/kubevirt/types"
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
+	otc "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/otc/types"
 	packet "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/packet/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
@@ -180,6 +181,21 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 		cloudSpec.Openstack.UseFloatingIP = config.FloatingIPPool.Value != ""
 		if config.RootDiskSizeGB != nil && *config.RootDiskSizeGB > 0 {
 			cloudSpec.Openstack.RootDiskSizeGB = config.RootDiskSizeGB
+		}
+	case providerconfig.CloudProviderOTC:
+		config := &otc.RawConfig{}
+		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse OTC config: %v", err)
+		}
+		cloudSpec.OTC = &apiv1.OTCNodeSpec{
+			Flavor:           config.Flavor.Value,
+			Image:            config.Image.Value,
+			Tags:             config.Tags,
+			AvailabilityZone: config.AvailabilityZone.Value,
+		}
+		cloudSpec.OTC.UseFloatingIP = config.FloatingIPPool.Value != ""
+		if config.RootDiskSizeGB != nil && *config.RootDiskSizeGB > 0 {
+			cloudSpec.OTC.RootDiskSizeGB = config.RootDiskSizeGB
 		}
 	case providerconfig.CloudProviderHetzner:
 		config := &hetzner.RawConfig{}

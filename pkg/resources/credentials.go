@@ -33,6 +33,7 @@ type Credentials struct {
 	GCP          GCPCredentials
 	Hetzner      HetznerCredentials
 	Openstack    OpenstackCredentials
+	OTC          OTCCredentials
 	Packet       PacketCredentials
 	Kubevirt     KubevirtCredentials
 	VSphere      VSphereCredentials
@@ -64,6 +65,14 @@ type HetznerCredentials struct {
 }
 
 type OpenstackCredentials struct {
+	Username string
+	Password string
+	Tenant   string
+	TenantID string
+	Domain   string
+}
+
+type OTCCredentials struct {
 	Username string
 	Password string
 	Tenant   string
@@ -146,6 +155,11 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 	}
 	if data.Cluster().Spec.Cloud.Openstack != nil {
 		if credentials.Openstack, err = GetOpenstackCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+	if data.Cluster().Spec.Cloud.OTC != nil {
+		if credentials.OTC, err = GetOTCCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -307,6 +321,48 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 	}
 
 	return openstackCredentials, nil
+}
+
+func GetOTCCredentials(data CredentialsData) (OTCCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.OTC
+	otcCredentials := OTCCredentials{}
+	var err error
+
+	if spec.Username != "" {
+		otcCredentials.Username = spec.Username
+	} else if otcCredentials.Username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OTCUsername); err != nil {
+		return OTCCredentials{}, err
+	}
+
+	if spec.Password != "" {
+		otcCredentials.Password = spec.Password
+	} else if otcCredentials.Password, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OTCPassword); err != nil {
+		return OTCCredentials{}, err
+	}
+
+	if spec.Tenant != "" {
+		otcCredentials.Tenant = spec.Tenant
+	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+		if otcCredentials.Tenant, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OTCTenant); err != nil {
+			return OTCCredentials{}, err
+		}
+	}
+
+	if spec.TenantID != "" {
+		otcCredentials.TenantID = spec.TenantID
+	} else if spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+		if otcCredentials.TenantID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OTCTenantID); err != nil {
+			return OTCCredentials{}, err
+		}
+	}
+
+	if spec.Domain != "" {
+		otcCredentials.Domain = spec.Domain
+	} else if otcCredentials.Domain, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OTCDomain); err != nil {
+		return OTCCredentials{}, err
+	}
+
+	return otcCredentials, nil
 }
 
 func GetPacketCredentials(data CredentialsData) (PacketCredentials, error) {
