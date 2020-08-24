@@ -166,6 +166,10 @@ if ls /var/log/clusterexposer.log &>/dev/null; then
 else
   echodate "Starting clusterexposer"
 
+  beforeGocache=$(nowms)
+  make download-gocache
+  pushElapsed gocache_download_duration_milliseconds $beforeGocache
+
   CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./pkg/test/clusterexposer/cmd
   CGO_ENABLED=0 /tmp/clusterexposer \
     --kubeconfig-inner "$KUBECONFIG" \
