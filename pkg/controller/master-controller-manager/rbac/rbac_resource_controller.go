@@ -71,7 +71,7 @@ func (i *resourceToProcess) String() string {
 }
 
 // newResourcesController creates a new controller for managing RBAC for named resources that belong to project
-func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, seedClusterProviders []*ClusterProvider, resources []projectResource) ([]*resourcesController, error) {
+func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, resources []projectResource) ([]*resourcesController, error) {
 	// allControllers := []*resourcesController{mc}
 
 	klog.V(4).Infof("considering master cluster provider for resources")
@@ -105,32 +105,31 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 		}
 	}
 
-	for _, clusterProvider := range seedClusterProviders {
-		seedManager := seedManagerMap[clusterProvider.providerName]
+	for seedName, seedManager := range seedManagerMap {
 
-		klog.V(4).Infof("considering %s provider for resources", clusterProvider.providerName)
+		klog.V(4).Infof("considering %s provider for resources", seedName)
 		for _, resource := range resources {
 			clonedObject := resource.object.DeepCopyObject()
 
 			c := &resourcesController{
-				projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf("rbac_generator_resources_%s", clusterProvider.providerName)),
+				projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf("rbac_generator_resources_%s", seedName)),
 				ctx:                   ctx,
 				metrics:               metrics,
 				projectResources:      resources,
 				client:                seedManager.GetClient(),
 				restMapper:            seedManager.GetRESTMapper(),
-				providerName:          clusterProvider.providerName,
+				providerName:          seedName,
 				objectType:            clonedObject,
 			}
 
 			// Create a new controller
-			rc, err := controller.New(fmt.Sprintf("rbac_generator_resources_%s", clusterProvider.providerName), seedManager, controller.Options{Reconciler: c})
+			rc, err := controller.New(fmt.Sprintf("rbac_generator_resources_%s", seedName), seedManager, controller.Options{Reconciler: c})
 			if err != nil {
 				return nil, err
 			}
 
 			if len(resource.destination) == 0 {
-				klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.object.GetObjectKind().GroupVersionKind().String(), clusterProvider.providerName)
+				klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the master cluster provider", resource.object.GetObjectKind().GroupVersionKind().String(), seedName)
 				continue
 			}
 

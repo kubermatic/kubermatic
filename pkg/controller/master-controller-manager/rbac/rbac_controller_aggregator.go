@@ -18,22 +18,16 @@ package rbac
 
 import (
 	"context"
-	"fmt"
 	"strings"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
-	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
-	"k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions"
 	k8scorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	util "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -66,8 +60,7 @@ type ControllerAggregator struct {
 	workerCount             int
 	rbacResourceControllers []*resourcesController
 
-	metrics              *Metrics
-	seedClusterProviders []*ClusterProvider
+	metrics *Metrics
 }
 
 type projectResource struct {
@@ -79,43 +72,8 @@ type projectResource struct {
 	predicate func(m metav1.Object, r runtime.Object) bool
 }
 
-func restConfigToInformer(cfg *rest.Config, name string, labelSelectorFunc func(*metav1.ListOptions)) (*ClusterProvider, error) {
-	kubeClient, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create kubeClient: %v", err)
-	}
-	kubermaticClient, err := kubermaticclientset.NewForConfig(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create kubermaticClient: %v", err)
-	}
-	kubermaticInformerFactory := externalversions.NewFilteredSharedInformerFactory(kubermaticClient, time.Minute*5, metav1.NamespaceAll, labelSelectorFunc)
-	kubeInformerProvider := NewInformerProvider(kubeClient, time.Minute*5)
-
-	return NewClusterProvider(name, kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory), nil
-}
-
-func managersToInformers(mgr manager.Manager, seedManagerMap map[string]manager.Manager, selectorOps func(*metav1.ListOptions)) ([]*ClusterProvider, error) {
-	seedClusterProviders := []*ClusterProvider{}
-
-	for seedName, seedMgr := range seedManagerMap {
-		clusterProvider, err := restConfigToInformer(seedMgr.GetConfig(), seedName, selectorOps)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create rbac provider for seed %q: %v", seedName, err)
-		}
-		seedClusterProviders = append(seedClusterProviders, clusterProvider)
-	}
-
-	return seedClusterProviders, nil
-}
-
 // New creates a new controller aggregator for managing RBAC for resources
 func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, labelSelectorFunc func(*metav1.ListOptions), workerPredicate predicate.Predicate, workerCount int) (*ControllerAggregator, error) {
-	// Convert the controller-runtime's managers to old-school informers.
-	seedClusterProviders, err := managersToInformers(mgr, seedManagerMap, labelSelectorFunc)
-	if err != nil {
-		return nil, err
-	}
-
 	projectResources := []projectResource{
 		{
 			object: &kubermaticv1.Cluster{
@@ -181,12 +139,11 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 		},
 	}
 
-	err = newProjectRBACController(ctx, metrics, mgr, seedManagerMap, projectResources, workerPredicate)
-	if err != nil {
+	if err := newProjectRBACController(ctx, metrics, mgr, seedManagerMap, projectResources, workerPredicate); err != nil {
 		return nil, err
 	}
 
-	resourcesRBACCtrl, err := newResourcesControllers(ctx, metrics, mgr, seedManagerMap, seedClusterProviders, projectResources)
+	resourcesRBACCtrl, err := newResourcesControllers(ctx, metrics, mgr, seedManagerMap, projectResources)
 	if err != nil {
 		return nil, err
 	}
@@ -195,7 +152,6 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 		workerCount:             workerCount,
 		rbacResourceControllers: resourcesRBACCtrl,
 		metrics:                 metrics,
-		seedClusterProviders:    seedClusterProviders,
 	}, nil
 }
 
@@ -203,14 +159,6 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 // sigs.k8s.io/controller-runtime/pkg/manager.Runnable
 func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 	defer util.HandleCrash()
-
-	// wait for all caches in all clusters to get in-sync
-	for _, clusterProvider := range a.seedClusterProviders {
-		clusterProvider.StartInformers(stopCh)
-		if err := clusterProvider.WaitForCachesToSync(stopCh); err != nil {
-			return fmt.Errorf("failed to sync cache: %v", err)
-		}
-	}
 
 	for _, ctl := range a.rbacResourceControllers {
 		go ctl.run(a.workerCount, stopCh)
