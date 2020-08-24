@@ -58,10 +58,7 @@ echodate "Building binaries"
 TEST_NAME="Build tests"
 echodate "Building tests"
 
-retry 2 go test ./... -run nope -tags "cloud,${KUBERMATIC_EDITION}"
-retry 2 go test ./... -run nope -tags "create,${KUBERMATIC_EDITION}"
-retry 2 go test ./... -run nope -tags "e2e,${KUBERMATIC_EDITION}"
-retry 2 go test ./... -run nope -tags "integration,${KUBERMATIC_EDITION}"
+retry 2 make build-tests
 
 TEST_NAME="Creating gocache archive"
 echodate "Creating gocache archive"

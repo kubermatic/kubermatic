@@ -61,8 +61,12 @@ download-gocache:
 	@# Prevent this from getting executed multiple times
 	@touch download-gocache
 
-test: download-gocache
+test: download-gocache run-tests build-tests
+
+run-tests:
 	CGO_ENABLED=1 go test -tags "unit,$(KUBERMATIC_EDITION)" -race ./pkg/... ./cmd/... ./codegen/...
+
+build-tests:
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
 	@# **Imortant:** Do not replace this with one `go test` with multiple tags,
@@ -146,4 +150,4 @@ ifndef DOCKER_BIN
 endif
 	$(DOCKER_BIN) run --rm -it -v ${PWD}:/go/src/k8c.io/kubermatic -w /go/src/k8c.io/kubermatic $(GOBUILDIMAGE) hack/update-codegen.sh
 
-.PHONY: build install test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture update-codegen-in-docker $(TARGET)
+.PHONY: build install test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture update-codegen-in-docker run-tests build-tests $(TARGET)
