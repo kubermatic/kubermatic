@@ -24,7 +24,6 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -719,6 +718,8 @@ type ExternalClusterProvider interface {
 	Get(userInfo *UserInfo, clusterName string) (*kubermaticv1.ExternalCluster, error)
 
 	Delete(userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) error
+
+	List(project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error)
 
 	GenerateClient(cfg *clientcmdapi.Config) (*ctrlruntimeclient.Client, error)
 
