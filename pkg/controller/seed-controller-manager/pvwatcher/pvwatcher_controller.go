@@ -88,7 +88,7 @@ func Add(
 	if err := c.Watch(&source.Kind{Type: &corev1.PersistentVolumeClaim{}}, &handler.EnqueueRequestForObject{},
 		LostClaimPredicates,
 		predicateutils.ByLabel(resources.AppLabelKey, resources.EtcdStatefulSetName)); err != nil {
-		return fmt.Errorf("failed to create watch fordocker-build PersistentVolumeClaidocker-buildms: %v", err)
+		return fmt.Errorf("failed to create watch for PersistentVolumeClaims: %v", err)
 	}
 	return nil
 }
@@ -126,7 +126,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
-		log.Errorf("failed to get pvc: %v", err)
 		return reconcile.Result{}, err
 	}
 
@@ -143,7 +142,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 		return reconcile.Result{}, err
 	}
 
-	// When the pod is deleted and recreared it, it will be stuck in PodPending phase
+	// When the pod is deleted and recreated it, it will be stuck in PodPending phase
 	if err := wait.Poll(5*time.Second, 30*time.Second, func() (bool, error) {
 		if err := r.Get(ctx, types.NamespacedName{Name: podName, Namespace: pvc.Namespace}, pvcPod); err != nil {
 			return false, err
