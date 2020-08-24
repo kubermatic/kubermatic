@@ -129,14 +129,14 @@ func main() {
 
 	if isMemeber {
 		for { // reconcile dead members
-			members, err := e.listMembers()
+			containsUnwantedMembers, err := e.containsUnwantedMembers()
 			if err != nil {
 				log.Warnw("failed to list memebers ", zap.Error(err))
 				time.Sleep(10 * time.Second)
 				continue
 			}
-			// we only need to reconcile if we have more members than we should
-			if len(members) <= e.config.clusterSize {
+			// we only need to reconcile if we have members that we shouldn't have
+			if !containsUnwantedMembers {
 				log.Info("cluster members reconciled..")
 				break
 			}
@@ -319,6 +319,24 @@ func (e *etcdCluster) isClusterMember(name string) (bool, error) {
 		if member.Name == name || member.PeerURLs[0] == fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace) {
 			return true, nil
 		}
+	}
+	return false, nil
+}
+
+func (e *etcdCluster) containsUnwantedMembers() (bool, error) {
+	members, err := e.listMembers()
+	if err != nil {
+		return false, err
+	}
+	expectedMembers := initialMemberList(e.config.clusterSize, e.config.namespace)
+membersLoop:
+	for _, member := range members {
+		for _, expectedMember := range expectedMembers {
+			if len(member.GetPeerURLs()) == 1 && expectedMember == (member.GetName()+"="+member.GetPeerURLs()[0]) {
+				continue membersLoop
+			}
+		}
+		return true, nil
 	}
 	return false, nil
 }
