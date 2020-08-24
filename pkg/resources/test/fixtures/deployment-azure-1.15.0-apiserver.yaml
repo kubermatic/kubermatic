@@ -297,6 +297,12 @@ spec:
           readOnly: true
         - mountPath: /var/log/kubernetes/audit
           name: audit-log
+        - mountPath: /etc/ssl/certs
+          name: ca-certs
+          readOnly: true
+        - mountPath: /usr/share/ca-certificates
+          name: usr-share-ca-certificates
+          readOnly: true
         - mountPath: /etc/kubernetes/dex/ca
           name: dex-ca
           readOnly: true
@@ -368,6 +374,14 @@ spec:
         name: audit-config
       - emptyDir: {}
         name: audit-log
+      - hostPath:
+          path: /etc/ssl/certs
+          type: DirectoryOrCreate
+        name: ca-certs
+      - hostPath:
+          path: /usr/share/ca-certificates
+          type: DirectoryOrCreate
+        name: usr-share-ca-certificates
       - name: dex-ca
         secret:
           secretName: dex-ca

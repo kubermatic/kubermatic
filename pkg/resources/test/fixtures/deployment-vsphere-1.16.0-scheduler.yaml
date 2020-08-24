@@ -145,6 +145,12 @@ spec:
         - mountPath: /etc/kubernetes/pki/ca
           name: ca
           readOnly: true
+        - mountPath: /etc/ssl/certs
+          name: ca-certs
+          readOnly: true
+        - mountPath: /usr/share/ca-certificates
+          name: usr-share-ca-certificates
+          readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
       dnsConfig:
@@ -184,6 +190,14 @@ spec:
       - name: scheduler-kubeconfig
         secret:
           secretName: scheduler-kubeconfig
+      - hostPath:
+          path: /etc/ssl/certs
+          type: DirectoryOrCreate
+        name: ca-certs
+      - hostPath:
+          path: /usr/share/ca-certificates
+          type: DirectoryOrCreate
+        name: usr-share-ca-certificates
       - emptyDir: {}
         name: http-prober-bin
 status: {}
