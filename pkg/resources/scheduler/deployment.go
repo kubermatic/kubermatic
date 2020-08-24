@@ -80,6 +80,8 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			}
 
 			volumes := getVolumes()
+			volumeMounts := getVolumeMounts()
+
 			podLabels, err := data.GetPodTemplateLabels(name, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %v", err)
@@ -118,22 +120,11 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:    resources.SchedulerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-scheduler:v" + data.Cluster().Spec.Version.String(),
-					Command: []string{"/usr/local/bin/kube-scheduler"},
-					Args:    flags,
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      resources.SchedulerKubeconfigSecretName,
-							MountPath: "/etc/kubernetes/kubeconfig",
-							ReadOnly:  true,
-						},
-						{
-							Name:      resources.CASecretName,
-							MountPath: "/etc/kubernetes/pki/ca",
-							ReadOnly:  true,
-						},
-					},
+					Name:         resources.SchedulerDeploymentName,
+					Image:        data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-scheduler:v" + data.Cluster().Spec.Version.String(),
+					Command:      []string{"/usr/local/bin/kube-scheduler"},
+					Args:         flags,
+					VolumeMounts: volumeMounts,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: healthAction,
@@ -177,8 +168,23 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	}
 }
 
+func getVolumeMounts() []corev1.VolumeMount {
+	return append([]corev1.VolumeMount{
+		{
+			Name:      resources.SchedulerKubeconfigSecretName,
+			MountPath: "/etc/kubernetes/kubeconfig",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.CASecretName,
+			MountPath: "/etc/kubernetes/pki/ca",
+			ReadOnly:  true,
+		},
+	}, resources.GetHostCACertVolumeMounts()...)
+}
+
 func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+	return append([]corev1.Volume{
 		{
 			Name: resources.OpenVPNClientCertificatesSecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -209,5 +215,5 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		},
-	}
+	}, resources.GetHostCACertVolumes()...)
 }

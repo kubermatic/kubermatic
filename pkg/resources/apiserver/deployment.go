@@ -361,7 +361,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 }
 
 func getVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
+	return append([]corev1.VolumeMount{
 		{
 			MountPath: "/etc/kubernetes/tls",
 			Name:      resources.ApiserverTLSSecretName,
@@ -417,11 +417,11 @@ func getVolumeMounts() []corev1.VolumeMount {
 			MountPath: "/var/log/kubernetes/audit",
 			ReadOnly:  false,
 		},
-	}
+	}, resources.GetHostCACertVolumeMounts()...)
 }
 
 func getVolumes() []corev1.Volume {
-	return []corev1.Volume{
+	return append([]corev1.Volume{
 		{
 			Name: resources.ApiserverTLSSecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -535,7 +535,7 @@ func getVolumes() []corev1.Volume {
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		},
-	}
+	}, resources.GetHostCACertVolumes()...)
 }
 
 type kubeAPIServerEnvData interface {
