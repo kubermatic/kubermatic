@@ -175,6 +175,58 @@ func (req deleteClusterReq) Validate() error {
 	return nil
 }
 
+func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		clusterList, err := clusterProvider.List(project)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		apiClusters := make([]*apiv1.Cluster, 0)
+
+		for _, cluster := range clusterList.Items {
+			apiClusters = append(apiClusters, convertClusterToAPI(&cluster))
+		}
+
+		return apiClusters, nil
+	}
+}
+
+// listClusterReq defines HTTP request for listExternalClusters
+// swagger:parameters listExternalClusters
+type listClusterReq struct {
+	common.ProjectReq
+}
+
+func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req listClusterReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	return req, nil
+}
+
+// Validate validates ListEndpoint request
+func (req listClusterReq) Validate() error {
+	if len(req.ProjectID) == 0 {
+		return fmt.Errorf("the project ID cannot be empty")
+	}
+	return nil
+}
+
 func genExternalCluster(name string) *kubermaticapiv1.ExternalCluster {
 	return &kubermaticapiv1.ExternalCluster{
 		ObjectMeta: metav1.ObjectMeta{Name: rand.String(10)},
