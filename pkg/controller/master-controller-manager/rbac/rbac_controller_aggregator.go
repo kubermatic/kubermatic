@@ -29,8 +29,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/crd/client/informers/externalversions"
 	k8scorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/util/runtime"
+	"k8s.io/apimachinery/pkg/runtime"
+	util "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -62,8 +62,8 @@ func NewMetrics() *Metrics {
 
 // ControllerAggregator type holds controllers for managing RBAC for projects and theirs resources
 type ControllerAggregator struct {
-	workerCount            int
-	rbacResourceController *resourcesController
+	workerCount             int
+	rbacResourceControllers []*resourcesController
 
 	metrics               *Metrics
 	masterClusterProvider *ClusterProvider
@@ -71,14 +71,12 @@ type ControllerAggregator struct {
 }
 
 type projectResource struct {
-	gvr         schema.GroupVersionResource
-	kind        string
+	object      runtime.Object
 	destination string
 	namespace   string
 
-	// shouldEnqueue is a convenience function that is called right before
-	// the object is added to the queue. This is your last chance to say "no"
-	shouldEnqueue func(obj metav1.Object) bool
+	// predicate is used by the controller-runtime to filter watched objects
+	predicate func(m metav1.Object, r runtime.Object) bool
 }
 
 func restConfigToInformer(cfg *rest.Config, name string, labelSelectorFunc func(*metav1.ListOptions)) (*ClusterProvider, error) {
@@ -125,67 +123,66 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 
 	projectResources := []projectResource{
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    kubermaticv1.GroupName,
-				Version:  kubermaticv1.GroupVersion,
-				Resource: kubermaticv1.ClusterResourceName,
+			object: &kubermaticv1.Cluster{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.ClusterKindName,
+				},
 			},
-			kind:        kubermaticv1.ClusterKindName,
 			destination: destinationSeed,
 		},
 
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    kubermaticv1.GroupName,
-				Version:  kubermaticv1.GroupVersion,
-				Resource: kubermaticv1.SSHKeyResourceName,
+			object: &kubermaticv1.UserSSHKey{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.SSHKeyKind,
+				},
 			},
-			kind: kubermaticv1.SSHKeyKind,
 		},
 
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    kubermaticv1.GroupName,
-				Version:  kubermaticv1.GroupVersion,
-				Resource: kubermaticv1.UserProjectBindingResourceName,
+			object: &kubermaticv1.UserProjectBinding{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.UserProjectBindingKind,
+				},
 			},
-			kind: kubermaticv1.UserProjectBindingKind,
 		},
 
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    k8scorev1.GroupName,
-				Version:  k8scorev1.SchemeGroupVersion.Version,
-				Resource: "secrets",
+			object: &k8scorev1.Secret{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "v1",
+					Kind:       "Secret",
+				},
 			},
-			kind:      "Secret",
 			namespace: "kubermatic",
-			shouldEnqueue: func(obj metav1.Object) bool {
+			predicate: func(m metav1.Object, r runtime.Object) bool {
 				// do not reconcile secrets without "sa-token", "credential" and "kubeconfig-external-cluster" prefix
-				return shouldEnqueueSecret(obj.GetName())
+				return shouldEnqueueSecret(m.GetName())
 			},
 		},
-
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    kubermaticv1.GroupName,
-				Version:  kubermaticv1.GroupVersion,
-				Resource: kubermaticv1.UserResourceName,
+			object: &kubermaticv1.User{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.UserKindName,
+				},
 			},
-			kind: kubermaticv1.UserKindName,
-			shouldEnqueue: func(obj metav1.Object) bool {
+			predicate: func(m metav1.Object, r runtime.Object) bool {
 				// do not reconcile resources without "serviceaccount" prefix
-				return strings.HasPrefix(obj.GetName(), "serviceaccount")
+				return strings.HasPrefix(m.GetName(), "serviceaccount")
 			},
 		},
 
 		{
-			gvr: schema.GroupVersionResource{
-				Group:    kubermaticv1.GroupName,
-				Version:  kubermaticv1.GroupVersion,
-				Resource: kubermaticv1.ExternalClusterResourceName,
+			object: &kubermaticv1.ExternalCluster{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					Kind:       kubermaticv1.ExternalClusterKind,
+				},
 			},
-			kind: kubermaticv1.ExternalClusterKind,
 		},
 	}
 
@@ -194,24 +191,24 @@ func New(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manage
 		return nil, err
 	}
 
-	resourcesRBACCtrl, err := newResourcesController(metrics, masterClusterProvider, seedClusterProviders, projectResources)
+	resourcesRBACCtrl, err := newResourcesControllers(metrics, mgr, seedManagerMap, masterClusterProvider, seedClusterProviders, projectResources)
 	if err != nil {
 		return nil, err
 	}
 
 	return &ControllerAggregator{
-		workerCount:            workerCount,
-		rbacResourceController: resourcesRBACCtrl,
-		metrics:                metrics,
-		masterClusterProvider:  masterClusterProvider,
-		seedClusterProviders:   seedClusterProviders,
+		workerCount:             workerCount,
+		rbacResourceControllers: resourcesRBACCtrl,
+		metrics:                 metrics,
+		masterClusterProvider:   masterClusterProvider,
+		seedClusterProviders:    seedClusterProviders,
 	}, nil
 }
 
-// Run starts the controller's worker routines. It is an implementation of
+// Start starts the controller's worker routines. It is an implementation of
 // sigs.k8s.io/controller-runtime/pkg/manager.Runnable
 func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
-	defer runtime.HandleCrash()
+	defer util.HandleCrash()
 
 	// wait for all caches in all clusters to get in-sync
 	for _, clusterProvider := range append(a.seedClusterProviders, a.masterClusterProvider) {
@@ -221,7 +218,9 @@ func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 		}
 	}
 
-	go a.rbacResourceController.run(a.workerCount, stopCh)
+	for _, ctl := range a.rbacResourceControllers {
+		go ctl.run(a.workerCount, stopCh)
+	}
 
 	klog.Info("RBAC generator aggregator controller started")
 	<-stopCh

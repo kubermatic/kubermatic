@@ -28,6 +28,10 @@ import (
 // on CREATE, UPDATE and DELETE events. For UPDATE events, the filter is applied
 // to both the old and new object and OR's the result.
 func Factory(filter func(m metav1.Object, r runtime.Object) bool) predicate.Funcs {
+	if filter == nil {
+		return predicate.Funcs{}
+	}
+
 	return predicate.Funcs{
 		CreateFunc: func(e event.CreateEvent) bool {
 			return filter(e.Meta, e.Object)

@@ -31,9 +31,10 @@ import (
 
 	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/api/meta/testrestmapper"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/tools/cache"
@@ -42,6 +43,21 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+func getFakeRestMapper(t *testing.T) meta.RESTMapper {
+	t.Helper()
+
+	scheme := runtime.NewScheme()
+	if err := kubermaticv1.AddToScheme(scheme); err != nil {
+		t.Fatalf("getFakeRestMapper: %v", err)
+		t.FailNow()
+	}
+	if err := k8scorev1.AddToScheme(scheme); err != nil {
+		t.Fatalf("getFakeRestMapper: %v", err)
+		t.FailNow()
+	}
+	return testrestmapper.TestOnlyStaticRESTMapper(scheme)
+}
 
 func TestEnsureProjectIsInActivePhase(t *testing.T) {
 	tests := []struct {
@@ -70,8 +86,9 @@ func TestEnsureProjectIsInActivePhase(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:    context.Background(),
-				client: masterClient,
+				ctx:        context.Background(),
+				client:     masterClient,
+				restMapper: getFakeRestMapper(t),
 			}
 			err := target.ensureProjectIsInActivePhase(test.projectToSync)
 			assert.Nil(t, err)
@@ -114,8 +131,9 @@ func TestEnsureProjectInitialized(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:    context.Background(),
-				client: masterClient,
+				ctx:        context.Background(),
+				client:     masterClient,
+				restMapper: getFakeRestMapper(t),
 			}
 			err := target.ensureCleanupFinalizerExists(test.projectToSync)
 			assert.NoError(t, err)
@@ -151,22 +169,22 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			expectedActionsForMaster: []string{"create", "create"},
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.ClusterResourceName,
+					object: &kubermaticv1.Cluster{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.ClusterKindName,
+						},
 					},
-					kind:        kubermaticv1.ClusterKindName,
 					destination: destinationSeed,
 				},
 
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.SSHKeyResourceName,
+					object: &kubermaticv1.UserSSHKey{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.SSHKeyKind,
+						},
 					},
-					kind: kubermaticv1.SSHKeyKind,
 				},
 			},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
@@ -256,21 +274,21 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			expectedActionsForMaster: []string{"update", "update"},
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.ClusterResourceName,
+					object: &kubermaticv1.Cluster{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.ClusterKindName,
+						},
 					},
-					kind:        kubermaticv1.ClusterKindName,
 					destination: destinationSeed,
 				},
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.SSHKeyResourceName,
+					object: &kubermaticv1.UserSSHKey{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.SSHKeyKind,
+						},
 					},
-					kind: kubermaticv1.SSHKeyKind,
 				},
 			},
 			existingClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
@@ -470,12 +488,12 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			expectedActionsForMaster: []string{"create", "create"},
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.ExternalClusterResourceName,
+					object: &kubermaticv1.ExternalCluster{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.ExternalClusterKind,
+						},
 					},
-					kind: kubermaticv1.ExternalClusterKind,
 				},
 			},
 			expectedClusterRoleBindingsForMaster: []*rbacv1.ClusterRoleBinding{
@@ -556,6 +574,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			target := projectController{
 				ctx:              context.Background(),
 				client:           fakeMasterClient,
+				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClientMap,
 				projectResources: test.projectResourcesToSync,
 			}
@@ -771,6 +790,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 				ctx:                   context.Background(),
 				masterClusterProvider: fakeMasterClusterProvider,
 				client:                fakeMasterClusterClient,
+				restMapper:            getFakeRestMapper(t),
 				seedClientMap:         seedClientMap,
 			}
 			if err := target.ensureProjectCleanup(test.projectToSync); err != nil {
@@ -820,21 +840,21 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			projectToSync: test.CreateProject("plan9", test.CreateUser("James Bond")),
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.ClusterResourceName,
+					object: &kubermaticv1.Cluster{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.ClusterKindName,
+						},
 					},
-					kind:        kubermaticv1.ClusterKindName,
 					destination: destinationSeed,
 				},
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.SSHKeyResourceName,
+					object: &kubermaticv1.UserSSHKey{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.SSHKeyKind,
+						},
 					},
-					kind: kubermaticv1.SSHKeyKind,
 				},
 			},
 			expectedActionsForMaster: []string{"get", "update", "get", "update"},
@@ -1037,6 +1057,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 				masterClusterProvider: fakeMasterClusterProvider,
 				projectResources:      test.projectResourcesToSync,
 				client:                fakeMasterClusterClient,
+				restMapper:            getFakeRestMapper(t),
 				seedClientMap:         seedClusterClientMap,
 			}
 			err := target.ensureProjectCleanup(test.projectToSync)
@@ -1111,22 +1132,22 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			seedClusters:             2,
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.ClusterResourceName,
+					object: &kubermaticv1.Cluster{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.ClusterKindName,
+						},
 					},
-					kind:        kubermaticv1.ClusterKindName,
 					destination: destinationSeed,
 				},
 
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.SSHKeyResourceName,
+					object: &kubermaticv1.UserSSHKey{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.SSHKeyKind,
+						},
 					},
-					kind: kubermaticv1.SSHKeyKind,
 				},
 			},
 
@@ -1200,12 +1221,12 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			seedClusters:            2,
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.UserProjectBindingResourceName,
+					object: &kubermaticv1.UserProjectBinding{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.UserProjectBindingKind,
+						},
 					},
-					kind: kubermaticv1.UserProjectBindingKind,
 				},
 			},
 
@@ -1235,12 +1256,12 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			seedClusters:            2,
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    kubermaticv1.GroupName,
-						Version:  kubermaticv1.GroupVersion,
-						Resource: kubermaticv1.ExternalClusterResourceName,
+					object: &kubermaticv1.ExternalCluster{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+							Kind:       kubermaticv1.ExternalClusterKind,
+						},
 					},
-					kind: kubermaticv1.ExternalClusterKind,
 				},
 			},
 
@@ -1305,6 +1326,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 				masterClusterProvider: fakeMasterClusterProvider,
 				projectResources:      test.projectResourcesToSync,
 				client:                fakeMasterClient,
+				restMapper:            getFakeRestMapper(t),
 				seedClientMap:         seedClients,
 			}
 			err := target.ensureClusterRBACRoleForResources()
@@ -1415,8 +1437,9 @@ func TestEnsureProjectOwner(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:    context.Background(),
-				client: masterClient,
+				ctx:        context.Background(),
+				client:     masterClient,
+				restMapper: getFakeRestMapper(t),
 			}
 			err := target.ensureProjectOwner(test.projectToSync)
 			assert.NoError(t, err)
@@ -1457,21 +1480,21 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 			seedClusters:             1,
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    k8scorev1.GroupName,
-						Version:  k8scorev1.SchemeGroupVersion.Version,
-						Resource: "secrets",
+					object: &k8scorev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
 					},
-					kind:      "Secret",
 					namespace: "kubermatic",
 				},
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    k8scorev1.GroupName,
-						Version:  k8scorev1.SchemeGroupVersion.Version,
-						Resource: "secrets",
+					object: &k8scorev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
 					},
-					kind:        "Secret",
 					destination: destinationSeed,
 					namespace:   "kubermatic",
 				},
@@ -1520,21 +1543,21 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 			seedClusters:             1,
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    k8scorev1.GroupName,
-						Version:  k8scorev1.SchemeGroupVersion.Version,
-						Resource: "secrets",
+					object: &k8scorev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
 					},
-					kind:      "Secret",
 					namespace: "kubermatic",
 				},
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    k8scorev1.GroupName,
-						Version:  k8scorev1.SchemeGroupVersion.Version,
-						Resource: "secrets",
+					object: &k8scorev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
 					},
-					kind:        "Secret",
 					destination: destinationSeed,
 					namespace:   "kubermatic",
 				},
@@ -1621,6 +1644,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 			target := projectController{
 				ctx:              context.Background(),
 				client:           fakeMasterClient,
+				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClientMap,
 				projectResources: test.projectResourcesToSync,
 			}
@@ -1698,23 +1722,23 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 			expectedActionsForMaster: []string{"create"},
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    k8scorev1.GroupName,
-						Version:  k8scorev1.SchemeGroupVersion.Version,
-						Resource: "secrets",
+					object: &k8scorev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
 					},
-					kind:        "Secret",
 					destination: destinationSeed,
 					namespace:   "kubermatic",
 				},
 
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    k8scorev1.GroupName,
-						Version:  k8scorev1.SchemeGroupVersion.Version,
-						Resource: "secrets",
+					object: &k8scorev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
 					},
-					kind:      "Secret",
 					namespace: "kubermatic",
 				},
 			},
@@ -1771,22 +1795,22 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 			expectedActionsForMaster: []string{"update"},
 			projectResourcesToSync: []projectResource{
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    k8scorev1.GroupName,
-						Version:  k8scorev1.SchemeGroupVersion.Version,
-						Resource: "secrets",
+					object: &k8scorev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
 					},
-					kind:        "Secret",
 					destination: destinationSeed,
 					namespace:   "kubermatic",
 				},
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    k8scorev1.GroupName,
-						Version:  k8scorev1.SchemeGroupVersion.Version,
-						Resource: "secrets",
+					object: &k8scorev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
 					},
-					kind:      "Secret",
 					namespace: "kubermatic",
 				},
 			},
@@ -1933,6 +1957,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 			target := projectController{
 				ctx:              context.Background(),
 				client:           fakeMasterClient,
+				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClusterClientMap,
 				projectResources: test.projectResourcesToSync,
 			}
@@ -2011,22 +2036,22 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			projectResourcesToSync: []projectResource{
 
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    k8scorev1.GroupName,
-						Version:  k8scorev1.SchemeGroupVersion.Version,
-						Resource: "secrets",
+					object: &k8scorev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
 					},
-					kind:        "Secret",
 					destination: destinationSeed,
 					namespace:   "kubermatic",
 				},
 				{
-					gvr: schema.GroupVersionResource{
-						Group:    k8scorev1.GroupName,
-						Version:  k8scorev1.SchemeGroupVersion.Version,
-						Resource: "secrets",
+					object: &k8scorev1.Secret{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Secret",
+						},
 					},
-					kind:      "Secret",
 					namespace: "kubermatic",
 				},
 			},
@@ -2171,6 +2196,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				ctx:                   context.Background(),
 				masterClusterProvider: fakeMasterClusterProvider,
 				client:                fakeMasterClusterClient,
+				restMapper:            getFakeRestMapper(t),
 				seedClientMap:         seedClusterClientMap,
 				projectResources:      test.projectResourcesToSync,
 			}
