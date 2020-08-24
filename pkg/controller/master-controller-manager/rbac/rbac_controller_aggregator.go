@@ -66,9 +66,8 @@ type ControllerAggregator struct {
 	workerCount             int
 	rbacResourceControllers []*resourcesController
 
-	metrics               *Metrics
-	masterClusterProvider *ClusterProvider
-	seedClusterProviders  []*ClusterProvider
+	metrics              *Metrics
+	seedClusterProviders []*ClusterProvider
 }
 
 type projectResource struct {
@@ -95,29 +94,24 @@ func restConfigToInformer(cfg *rest.Config, name string, labelSelectorFunc func(
 	return NewClusterProvider(name, kubeClient, kubeInformerProvider, kubermaticClient, kubermaticInformerFactory), nil
 }
 
-func managersToInformers(mgr manager.Manager, seedManagerMap map[string]manager.Manager, selectorOps func(*metav1.ListOptions)) (*ClusterProvider, []*ClusterProvider, error) {
+func managersToInformers(mgr manager.Manager, seedManagerMap map[string]manager.Manager, selectorOps func(*metav1.ListOptions)) ([]*ClusterProvider, error) {
 	seedClusterProviders := []*ClusterProvider{}
 
 	for seedName, seedMgr := range seedManagerMap {
 		clusterProvider, err := restConfigToInformer(seedMgr.GetConfig(), seedName, selectorOps)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to create rbac provider for seed %q: %v", seedName, err)
+			return nil, fmt.Errorf("failed to create rbac provider for seed %q: %v", seedName, err)
 		}
 		seedClusterProviders = append(seedClusterProviders, clusterProvider)
 	}
 
-	masterClusterProvider, err := restConfigToInformer(mgr.GetConfig(), "master", selectorOps)
-	if err != nil {
-		return nil, nil, fmt.Errorf("failed to create master rbac provider: %v", err)
-	}
-
-	return masterClusterProvider, seedClusterProviders, nil
+	return seedClusterProviders, nil
 }
 
 // New creates a new controller aggregator for managing RBAC for resources
 func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, labelSelectorFunc func(*metav1.ListOptions), workerPredicate predicate.Predicate, workerCount int) (*ControllerAggregator, error) {
 	// Convert the controller-runtime's managers to old-school informers.
-	masterClusterProvider, seedClusterProviders, err := managersToInformers(mgr, seedManagerMap, labelSelectorFunc)
+	seedClusterProviders, err := managersToInformers(mgr, seedManagerMap, labelSelectorFunc)
 	if err != nil {
 		return nil, err
 	}
@@ -187,12 +181,12 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 		},
 	}
 
-	err = newProjectRBACController(ctx, metrics, mgr, seedManagerMap, masterClusterProvider, projectResources, workerPredicate)
+	err = newProjectRBACController(ctx, metrics, mgr, seedManagerMap, projectResources, workerPredicate)
 	if err != nil {
 		return nil, err
 	}
 
-	resourcesRBACCtrl, err := newResourcesControllers(ctx, metrics, mgr, seedManagerMap, masterClusterProvider, seedClusterProviders, projectResources)
+	resourcesRBACCtrl, err := newResourcesControllers(ctx, metrics, mgr, seedManagerMap, seedClusterProviders, projectResources)
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +195,6 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 		workerCount:             workerCount,
 		rbacResourceControllers: resourcesRBACCtrl,
 		metrics:                 metrics,
-		masterClusterProvider:   masterClusterProvider,
 		seedClusterProviders:    seedClusterProviders,
 	}, nil
 }
@@ -212,7 +205,7 @@ func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
 	defer util.HandleCrash()
 
 	// wait for all caches in all clusters to get in-sync
-	for _, clusterProvider := range append(a.seedClusterProviders, a.masterClusterProvider) {
+	for _, clusterProvider := range a.seedClusterProviders {
 		clusterProvider.StartInformers(stopCh)
 		if err := clusterProvider.WaitForCachesToSync(stopCh); err != nil {
 			return fmt.Errorf("failed to sync cache: %v", err)

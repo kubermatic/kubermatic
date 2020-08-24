@@ -71,10 +71,10 @@ func (i *resourceToProcess) String() string {
 }
 
 // newResourcesController creates a new controller for managing RBAC for named resources that belong to project
-func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, masterClusterProvider *ClusterProvider, seedClusterProviders []*ClusterProvider, resources []projectResource) ([]*resourcesController, error) {
+func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, seedClusterProviders []*ClusterProvider, resources []projectResource) ([]*resourcesController, error) {
 	// allControllers := []*resourcesController{mc}
 
-	klog.V(4).Infof("considering %s master cluster provider for resources", masterClusterProvider.providerName)
+	klog.V(4).Infof("considering master cluster provider for resources")
 	for _, resource := range resources {
 		clonedObject := resource.object.DeepCopyObject()
 
@@ -96,7 +96,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 		}
 
 		if resource.destination == destinationSeed {
-			klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for provider %q, as it is meant only for the seed cluster provider", resource.object.GetObjectKind().GroupVersionKind().String(), masterClusterProvider.providerName)
+			klog.V(4).Infof("skipping adding a shared informer and indexer for a project's resource %q for master provider, as it is meant only for the seed cluster provider", resource.object.GetObjectKind().GroupVersionKind().String())
 			continue
 		}
 
