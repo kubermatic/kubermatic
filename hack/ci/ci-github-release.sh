@@ -24,11 +24,6 @@ source hack/lib.sh
 
 GITHUB_TOKEN="${GITHUB_TOKEN:-$(cat /etc/github/oauth | tr -d '\n')}"
 
-# err can be used to print logs to stderr
-err(){
-  echo "E: $*" >>/dev/stderr
-}
-
 # utility function setting some curl default values for calling the github API
 # first argument is the URL, the rest of the arguments is used as curl
 # arguments.

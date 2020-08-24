@@ -16,8 +16,14 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/..
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." >/dev/null 2>&1 && pwd )"
+WANTED_DIR="$(go env GOPATH)/src/k8c.io/kubermatic"
+cd "${ROOT_DIR}"
 source hack/lib.sh
+[[ "${ROOT_DIR}" == "${WANTED_DIR}" ]] || \
+    fatal "${BASH_SOURCE[0]} only works when repository is located at" \
+        "${WANTED_DIR} but currently it is at ${ROOT_DIR}"
+
 
 echodate "Creating vendor directory"
 go mod vendor

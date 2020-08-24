@@ -65,10 +65,16 @@ Feedback and discussion are available on [the mailing list][11].
 ### Development environment
 
 ```bash
-mkdir -p $(go env GOPATH)/src/github.com/kubermatic
-cd $(go env GOPATH)/src/github.com/kubermatic
+mkdir -p $(go env GOPATH)/src/k8c.io
+cd $(go env GOPATH)/src/k8c.io
 git clone git@github.com:kubermatic/kubermatic
 cd kubermatic
+```
+
+Or alternatively:
+
+```bash
+go get k8c.io/kubermatic
 ```
 
 There are a couple of scripts in the `hacks` directory to aid in running the components locally
@@ -118,18 +124,21 @@ make fix
 make test
 ```
 
-#### Update dependencies
-
-Sure that you want to update? And not just install dependencies?
-
-```bash
-dep ensure -update
-```
-
 #### Update code generation
 
+Kuberneres code-generator tool does not work out of GOPATH
+[see](https://github.com/kubernetes/kubernetes/issues/86753), if you followed
+the recommendation and cloned your repository at `$(go env GOPATH)/src/k8c.io`
+you can run the following command:
+
 ```bash
-./hack/update-codegen.sh
+hack/update-codegen.sh
+```
+
+Otherwise run the following (requires Docker):
+
+```bash
+make update-codegen-in-docker
 ```
 
 ### Pull requests
