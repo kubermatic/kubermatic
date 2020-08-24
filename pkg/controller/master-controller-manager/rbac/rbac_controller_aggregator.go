@@ -27,8 +27,6 @@ import (
 	k8scorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	util "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -153,22 +151,6 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 		rbacResourceControllers: resourcesRBACCtrl,
 		metrics:                 metrics,
 	}, nil
-}
-
-// Start starts the controller's worker routines. It is an implementation of
-// sigs.k8s.io/controller-runtime/pkg/manager.Runnable
-func (a *ControllerAggregator) Start(stopCh <-chan struct{}) error {
-	defer util.HandleCrash()
-
-	for _, ctl := range a.rbacResourceControllers {
-		go ctl.run(a.workerCount, stopCh)
-	}
-
-	klog.Info("RBAC generator aggregator controller started")
-	<-stopCh
-	klog.Info("RBAC generator aggregator controller finished")
-
-	return nil
 }
 
 func shouldEnqueueSecret(name string) bool {
