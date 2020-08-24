@@ -26,6 +26,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 const getMaxAttempts = 24
@@ -66,16 +67,20 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 
 			roleNameList := []v1.RoleName{}
 			// wait for controller
-			for attempt := 1; attempt <= getMaxAttempts; attempt++ {
+			if err := wait.PollImmediate(time.Second, getMaxAttempts*time.Second, func() (bool, error) {
 				roleNameList, err = apiRunner.GetRoles(project.ID, tc.dc, cluster.ID)
 				if err != nil {
-					t.Fatalf("can not get user cluster roles due to error: %v", GetErrorResponse(err))
+					t.Logf("can not get user cluster roles due to error: %v", GetErrorResponse(err))
+					return false, nil
 				}
 
 				if len(roleNameList) == len(tc.expectedRoleNames) {
-					break
+					return true, nil
 				}
-				time.Sleep(2 * time.Second)
+
+				return false, nil
+			}); err != nil {
+				t.Fatalf("can not get  user cluster roles after %d attempts", getMaxAttempts)
 			}
 
 			if len(roleNameList) != len(tc.expectedRoleNames) {
