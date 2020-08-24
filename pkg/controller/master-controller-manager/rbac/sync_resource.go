@@ -58,7 +58,7 @@ func (c *resourcesController) syncProjectResource(key client.ObjectKey) error {
 	gvk := obj.GetObjectKind().GroupVersionKind()
 	rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	projectName := ""
