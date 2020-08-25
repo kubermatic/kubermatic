@@ -10,10 +10,13 @@ import (
 )
 
 // AddonConfigLister helps list AddonConfigs.
+// All objects returned here must be treated as read-only.
 type AddonConfigLister interface {
 	// List lists all AddonConfigs in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.AddonConfig, err error)
 	// Get retrieves the AddonConfig from the index for a given name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1.AddonConfig, error)
 	AddonConfigListerExpansion
 }

@@ -10,10 +10,13 @@ import (
 )
 
 // KubermaticSettingLister helps list KubermaticSettings.
+// All objects returned here must be treated as read-only.
 type KubermaticSettingLister interface {
 	// List lists all KubermaticSettings in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1.KubermaticSetting, err error)
 	// Get retrieves the KubermaticSetting from the index for a given name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1.KubermaticSetting, error)
 	KubermaticSettingListerExpansion
 }

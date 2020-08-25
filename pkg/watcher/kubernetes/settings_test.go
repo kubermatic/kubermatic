@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes
 
 import (
+	"context"
 	"testing"
 
 	"code.cloudfoundry.org/go-pubsub"
@@ -32,7 +33,7 @@ import (
 func TestNewSettingsWatcher(t *testing.T) {
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset()
 	runtimeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, []runtime.Object{}...)
-	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, runtimeClient)
+	settingsProvider := kubernetes.NewSettingsProvider(context.Background(), kubermaticClient, runtimeClient)
 	settingsWatcher, err := NewSettingsWatcher(settingsProvider)
 	if err != nil {
 		t.Fatal("cannot create settings watcher")

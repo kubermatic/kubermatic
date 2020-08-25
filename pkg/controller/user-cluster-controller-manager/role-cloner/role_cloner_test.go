@@ -356,7 +356,10 @@ func TestReconcile(t *testing.T) {
 func sortRoles(roles []rbacv1.Role) {
 	sort.SliceStable(roles, func(i, j int) bool {
 		mi, mj := roles[i], roles[j]
-		return mi.Name < (mj.Name)
+		if mi.Namespace == mj.Namespace {
+			return mi.Name < mj.Name
+		}
+		return mi.Namespace < mj.Namespace
 	})
 }
 

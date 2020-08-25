@@ -94,7 +94,7 @@ type NodeV1SliceWrapper []apiv1.Node
 // Sort sorts the collection by CreationTimestamp
 func (k NodeV1SliceWrapper) Sort() {
 	sort.Slice(k, func(i, j int) bool {
-		return k[i].CreationTimestamp.Before(k[j].CreationTimestamp)
+		return k[i].Name < k[j].Name
 	})
 }
 

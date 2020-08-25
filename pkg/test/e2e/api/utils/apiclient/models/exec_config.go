@@ -16,7 +16,7 @@ import (
 // ExecConfig ExecConfig specifies a command to provide client credentials. The command is exec'd
 // and outputs structured stdout holding credentials.
 //
-// See the client.authentiction.k8s.io API group for specifications of the exact input
+// See the client.authentication.k8s.io API group for specifications of the exact input
 // and output format
 //
 // swagger:model ExecConfig
@@ -38,6 +38,11 @@ type ExecConfig struct {
 	// to pass argument to the plugin.
 	// +optional
 	Env []*ExecEnvVar `json:"env"`
+
+	// This text is shown to the user when the executable doesn't seem to be
+	// present. For example, `brew install foo-cli` might be a good InstallHint for
+	// foo-cli on Mac OS systems.
+	InstallHint string `json:"installHint,omitempty"`
 }
 
 // Validate validates this exec config

@@ -41,6 +41,7 @@ func CreateProject(name string, owner *kubermaticv1.User) *kubermaticv1.Project 
 					Name:       owner.Name,
 				},
 			},
+			ResourceVersion: "1",
 		},
 		Spec: kubermaticv1.ProjectSpec{
 			Name: name,

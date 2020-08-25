@@ -3,6 +3,7 @@
 package v1
 
 import (
+	"context"
 	"time"
 
 	scheme "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
@@ -21,14 +22,14 @@ type UserSSHKeysGetter interface {
 
 // UserSSHKeyInterface has methods to work with UserSSHKey resources.
 type UserSSHKeyInterface interface {
-	Create(*v1.UserSSHKey) (*v1.UserSSHKey, error)
-	Update(*v1.UserSSHKey) (*v1.UserSSHKey, error)
-	Delete(name string, options *metav1.DeleteOptions) error
-	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
-	Get(name string, options metav1.GetOptions) (*v1.UserSSHKey, error)
-	List(opts metav1.ListOptions) (*v1.UserSSHKeyList, error)
-	Watch(opts metav1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.UserSSHKey, err error)
+	Create(ctx context.Context, userSSHKey *v1.UserSSHKey, opts metav1.CreateOptions) (*v1.UserSSHKey, error)
+	Update(ctx context.Context, userSSHKey *v1.UserSSHKey, opts metav1.UpdateOptions) (*v1.UserSSHKey, error)
+	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
+	Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1.UserSSHKey, error)
+	List(ctx context.Context, opts metav1.ListOptions) (*v1.UserSSHKeyList, error)
+	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.UserSSHKey, err error)
 	UserSSHKeyExpansion
 }
 
@@ -45,19 +46,19 @@ func newUserSSHKeys(c *KubermaticV1Client) *userSSHKeys {
 }
 
 // Get takes name of the userSSHKey, and returns the corresponding userSSHKey object, and an error if there is any.
-func (c *userSSHKeys) Get(name string, options metav1.GetOptions) (result *v1.UserSSHKey, err error) {
+func (c *userSSHKeys) Get(ctx context.Context, name string, options metav1.GetOptions) (result *v1.UserSSHKey, err error) {
 	result = &v1.UserSSHKey{}
 	err = c.client.Get().
 		Resource("usersshkeies").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of UserSSHKeys that match those selectors.
-func (c *userSSHKeys) List(opts metav1.ListOptions) (result *v1.UserSSHKeyList, err error) {
+func (c *userSSHKeys) List(ctx context.Context, opts metav1.ListOptions) (result *v1.UserSSHKeyList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -67,13 +68,13 @@ func (c *userSSHKeys) List(opts metav1.ListOptions) (result *v1.UserSSHKeyList, 
 		Resource("usersshkeies").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested userSSHKeys.
-func (c *userSSHKeys) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+func (c *userSSHKeys) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -83,66 +84,69 @@ func (c *userSSHKeys) Watch(opts metav1.ListOptions) (watch.Interface, error) {
 		Resource("usersshkeies").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a userSSHKey and creates it.  Returns the server's representation of the userSSHKey, and an error, if there is any.
-func (c *userSSHKeys) Create(userSSHKey *v1.UserSSHKey) (result *v1.UserSSHKey, err error) {
+func (c *userSSHKeys) Create(ctx context.Context, userSSHKey *v1.UserSSHKey, opts metav1.CreateOptions) (result *v1.UserSSHKey, err error) {
 	result = &v1.UserSSHKey{}
 	err = c.client.Post().
 		Resource("usersshkeies").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(userSSHKey).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a userSSHKey and updates it. Returns the server's representation of the userSSHKey, and an error, if there is any.
-func (c *userSSHKeys) Update(userSSHKey *v1.UserSSHKey) (result *v1.UserSSHKey, err error) {
+func (c *userSSHKeys) Update(ctx context.Context, userSSHKey *v1.UserSSHKey, opts metav1.UpdateOptions) (result *v1.UserSSHKey, err error) {
 	result = &v1.UserSSHKey{}
 	err = c.client.Put().
 		Resource("usersshkeies").
 		Name(userSSHKey.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(userSSHKey).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the userSSHKey and deletes it. Returns an error if one occurs.
-func (c *userSSHKeys) Delete(name string, options *metav1.DeleteOptions) error {
+func (c *userSSHKeys) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Resource("usersshkeies").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *userSSHKeys) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+func (c *userSSHKeys) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Resource("usersshkeies").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched userSSHKey.
-func (c *userSSHKeys) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.UserSSHKey, err error) {
+func (c *userSSHKeys) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.UserSSHKey, err error) {
 	result = &v1.UserSSHKey{}
 	err = c.client.Patch(pt).
 		Resource("usersshkeies").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

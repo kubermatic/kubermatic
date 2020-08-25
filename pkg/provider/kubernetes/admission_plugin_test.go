@@ -27,6 +27,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -48,7 +49,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 		fromVersion    string
 		plugins        []runtime.Object
 		expectedError  string
-		expectedResult []string
+		expectedResult sets.String
 	}{
 		{
 			name:        "test 1: get plugins for version 1.12",
@@ -89,7 +90,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 			},
-			expectedResult: []string{"DefaultTolerationSeconds", "ImagePolicyWebhook"},
+			expectedResult: sets.NewString("DefaultTolerationSeconds", "ImagePolicyWebhook"),
 		},
 		{
 			name:        "test 1: get plugins for version 1.14.3",
@@ -130,7 +131,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 			},
-			expectedResult: []string{"DefaultTolerationSeconds", "ImagePolicyWebhook", "EventRateLimit"},
+			expectedResult: sets.NewString("DefaultTolerationSeconds", "ImagePolicyWebhook", "EventRateLimit"),
 		},
 		{
 			name:        "test 1: get plugins for version 1.16.0",
@@ -171,7 +172,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 			},
-			expectedResult: []string{"DefaultTolerationSeconds", "ImagePolicyWebhook", "RuntimeClass", "EventRateLimit"},
+			expectedResult: sets.NewString("DefaultTolerationSeconds", "ImagePolicyWebhook", "RuntimeClass", "EventRateLimit"),
 		},
 		{
 			name:        "test 1: get plugins for version 1.17.0",
@@ -212,7 +213,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 					},
 				},
 			},
-			expectedResult: []string{"DefaultTolerationSeconds", "ImagePolicyWebhook", "RuntimeClass", "EventRateLimit"},
+			expectedResult: sets.NewString("DefaultTolerationSeconds", "ImagePolicyWebhook", "RuntimeClass", "EventRateLimit"),
 		},
 	}
 
@@ -222,6 +223,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 			provider := kubernetes.NewAdmissionPluginsProvider(context.Background(), fakeClient)
 
 			result, err := provider.ListPluginNamesFromVersion(tc.fromVersion)
+			resultSet := sets.NewString(result...)
 
 			if len(tc.expectedError) > 0 {
 				if err == nil {
@@ -230,9 +232,8 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 				if err.Error() != tc.expectedError {
 					t.Fatalf("expected: %s, got %v", tc.expectedError, err)
 				}
-
-			} else if !equality.Semantic.DeepEqual(result, tc.expectedResult) {
-				t.Fatalf("expected: %v, got %v", tc.expectedResult, result)
+			} else if !equality.Semantic.DeepEqual(resultSet, tc.expectedResult) {
+				t.Fatalf("expected: %v, got %v", tc.expectedResult, resultSet)
 			}
 		})
 	}

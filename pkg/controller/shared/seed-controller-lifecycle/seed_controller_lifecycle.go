@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -99,7 +100,15 @@ func Add(
 	// prepare a shared cache across all future master managers; this cache
 	// will be wrapped so that ctrlruntime cannot start and stop it, which
 	// would cause it to close the same channels multiple times and panic
-	cache := mgr.GetCache()
+	resync := 2 * time.Second
+	cache, err := cache.New(mgr.GetConfig(), cache.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+		Resync: &resync,
+	})
+	if err != nil {
+		return err
+	}
 
 	go func() {
 		if err := cache.Start(ctx.Done()); err != nil {

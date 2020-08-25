@@ -46,7 +46,7 @@ const (
 // project resource and will be automatically gc'ed
 func (c *resourcesController) syncProjectResource(key client.ObjectKey) error {
 	obj := c.objectType.DeepCopyObject()
-	if err := c.client.Get(context.TODO(), key, obj); err != nil {
+	if err := c.client.Get(c.ctx, key, obj); err != nil {
 		return err
 	}
 
@@ -78,10 +78,10 @@ func (c *resourcesController) syncProjectResource(key client.ObjectKey) error {
 	}
 
 	if len(metaObject.GetNamespace()) == 0 {
-		if err := ensureClusterRBACRoleForNamedResource(c.client, projectName, rmapping.Resource.Resource, gvk.Kind, metaObject); err != nil {
+		if err := ensureClusterRBACRoleForNamedResource(c.ctx, c.client, projectName, rmapping.Resource.Resource, gvk.Kind, metaObject); err != nil {
 			return fmt.Errorf("failed to sync RBAC ClusterRole for %s resource for %s cluster provider, due to = %v", rmapping, c.providerName, err)
 		}
-		if err := ensureClusterRBACRoleBindingForNamedResource(c.client, projectName, rmapping.Resource.Resource, gvk.Kind, metaObject); err != nil {
+		if err := ensureClusterRBACRoleBindingForNamedResource(c.ctx, c.client, projectName, rmapping.Resource.Resource, gvk.Kind, metaObject); err != nil {
 			return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider, due to = %v", rmapping, c.providerName, err)
 		}
 		if gvk.Kind == kubermaticv1.ClusterKindName {
@@ -91,7 +91,7 @@ func (c *resourcesController) syncProjectResource(key client.ObjectKey) error {
 			if err := c.ensureRBACRoleBindingForClusterAddons(projectName, metaObject); err != nil {
 				return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
 			}
-			if err := ensureClusterRBACRoleBindingForEtcdLauncher(c.client, projectName, metaObject); err != nil {
+			if err := ensureClusterRBACRoleBindingForEtcdLauncher(c.ctx, c.client, projectName, metaObject); err != nil {
 				return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
 			}
 		}
@@ -120,7 +120,7 @@ func (c *resourcesController) syncProjectResource(key client.ObjectKey) error {
 	return nil
 }
 
-func ensureClusterRBACRoleForNamedResource(cli client.Client, projectName string, objectResource string, objectKind string, object metav1.Object) error {
+func ensureClusterRBACRoleForNamedResource(ctx context.Context, cli client.Client, projectName string, objectResource string, objectKind string, object metav1.Object) error {
 	for _, groupPrefix := range AllGroupsPrefixes {
 		skip, generatedRole, err := shouldSkipClusterRBACRoleBindingForNamedResource(projectName, objectResource, objectKind, groupPrefix, object)
 		if err != nil {
@@ -133,9 +133,9 @@ func ensureClusterRBACRoleForNamedResource(cli client.Client, projectName string
 
 		var sharedExistingRole rbacv1.ClusterRole
 		key := client.ObjectKey{Name: generatedRole.Name}
-		if err := cli.Get(context.TODO(), key, &sharedExistingRole); err != nil {
+		if err := cli.Get(ctx, key, &sharedExistingRole); err != nil {
 			if kerrors.IsNotFound(err) {
-				if err := cli.Create(context.TODO(), generatedRole); err != nil {
+				if err := cli.Create(ctx, generatedRole); err != nil {
 					return err
 				}
 				continue
@@ -149,14 +149,14 @@ func ensureClusterRBACRoleForNamedResource(cli client.Client, projectName string
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
 
-		if err := cli.Update(context.TODO(), existingRole); err != nil {
+		if err := cli.Update(ctx, existingRole); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func ensureClusterRBACRoleBindingForNamedResource(cli client.Client, projectName string, objectResource string, objectKind string, object metav1.Object) error {
+func ensureClusterRBACRoleBindingForNamedResource(ctx context.Context, cli client.Client, projectName string, objectResource string, objectKind string, object metav1.Object) error {
 	for _, groupPrefix := range AllGroupsPrefixes {
 		skip, _, err := shouldSkipClusterRBACRoleBindingForNamedResource(projectName, objectResource, objectKind, groupPrefix, object)
 		if err != nil {
@@ -181,9 +181,9 @@ func ensureClusterRBACRoleBindingForNamedResource(cli client.Client, projectName
 
 		var sharedExistingRoleBinding rbacv1.ClusterRoleBinding
 		key := client.ObjectKey{Name: generatedRoleBinding.Name}
-		if err := cli.Get(context.TODO(), key, &sharedExistingRoleBinding); err != nil {
+		if err := cli.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
 			if kerrors.IsNotFound(err) {
-				if err := cli.Create(context.TODO(), generatedRoleBinding); err != nil {
+				if err := cli.Create(ctx, generatedRoleBinding); err != nil {
 					return err
 				}
 				continue
@@ -196,7 +196,7 @@ func ensureClusterRBACRoleBindingForNamedResource(cli client.Client, projectName
 		}
 		existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
 		existingRoleBinding.Subjects = generatedRoleBinding.Subjects
-		if err := cli.Update(context.TODO(), existingRoleBinding); err != nil {
+		if err := cli.Update(ctx, existingRoleBinding); err != nil {
 			return err
 		}
 	}
@@ -243,9 +243,9 @@ func (c *resourcesController) ensureRBACRoleForNamedResource(projectName string,
 		}
 		var sharedExistingRole rbacv1.Role
 		key := client.ObjectKey{Name: generatedRole.Name}
-		if err := c.client.Get(context.TODO(), key, &sharedExistingRole); err != nil {
+		if err := c.client.Get(c.ctx, key, &sharedExistingRole); err != nil {
 			if kerrors.IsNotFound(err) {
-				if err := c.client.Create(context.TODO(), generatedRole); err != nil {
+				if err := c.client.Create(c.ctx, generatedRole); err != nil {
 					return nil
 				}
 				continue
@@ -259,7 +259,7 @@ func (c *resourcesController) ensureRBACRoleForNamedResource(projectName string,
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
-		if err := c.client.Update(context.TODO(), existingRole); err != nil {
+		if err := c.client.Update(c.ctx, existingRole); err != nil {
 			return err
 		}
 	}
@@ -292,9 +292,9 @@ func (c *resourcesController) ensureRBACRoleBindingForNamedResource(projectName 
 		)
 		var sharedExistingRoleBinding rbacv1.RoleBinding
 		key := client.ObjectKey{Name: generatedRoleBinding.Name}
-		if err := c.client.Get(context.TODO(), key, &sharedExistingRoleBinding); err != nil {
+		if err := c.client.Get(c.ctx, key, &sharedExistingRoleBinding); err != nil {
 			if kerrors.IsNotFound(err) {
-				if err := c.client.Create(context.TODO(), generatedRoleBinding); err != nil {
+				if err := c.client.Create(c.ctx, generatedRoleBinding); err != nil {
 					return nil
 				}
 				continue
@@ -307,7 +307,7 @@ func (c *resourcesController) ensureRBACRoleBindingForNamedResource(projectName 
 		}
 		existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
 		existingRoleBinding.Subjects = generatedRoleBinding.Subjects
-		if err := c.client.Update(context.TODO(), existingRoleBinding); err != nil {
+		if err := c.client.Update(c.ctx, existingRoleBinding); err != nil {
 			return err
 		}
 	}
@@ -351,7 +351,7 @@ func (c *resourcesController) ensureRBACRoleForClusterAddons(projectName string,
 
 	var roleList rbacv1.RoleList
 	opts := &client.ListOptions{Namespace: cluster.Status.NamespaceName}
-	if err := c.client.List(context.TODO(), &roleList, opts); err != nil {
+	if err := c.client.List(c.ctx, &roleList, opts); err != nil {
 		return err
 	}
 
@@ -373,9 +373,9 @@ func (c *resourcesController) ensureRBACRoleForClusterAddons(projectName string,
 
 		var sharedExistingRole rbacv1.Role
 		key := client.ObjectKey{Name: generatedRole.Name, Namespace: cluster.Status.NamespaceName}
-		if err := c.client.Get(context.TODO(), key, &sharedExistingRole); err != nil {
+		if err := c.client.Get(c.ctx, key, &sharedExistingRole); err != nil {
 			if kerrors.IsNotFound(err) {
-				if err := c.client.Create(context.TODO(), generatedRole); err != nil {
+				if err := c.client.Create(c.ctx, generatedRole); err != nil {
 					return err
 				}
 				continue
@@ -390,7 +390,7 @@ func (c *resourcesController) ensureRBACRoleForClusterAddons(projectName string,
 		}
 		existingRole := sharedExistingRole.DeepCopy()
 		existingRole.Rules = generatedRole.Rules
-		if err := c.client.Update(context.TODO(), existingRole); err != nil {
+		if err := c.client.Update(c.ctx, existingRole); err != nil {
 			return err
 		}
 	}
@@ -427,9 +427,9 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAddons(projectName 
 
 		var sharedExistingRoleBinding rbacv1.RoleBinding
 		key := client.ObjectKey{Name: generatedRoleBinding.Name, Namespace: cluster.Status.NamespaceName}
-		if err := c.client.Get(context.TODO(), key, &sharedExistingRoleBinding); err != nil {
+		if err := c.client.Get(c.ctx, key, &sharedExistingRoleBinding); err != nil {
 			if kerrors.IsNotFound(err) {
-				if err := c.client.Create(context.TODO(), generatedRoleBinding); err != nil {
+				if err := c.client.Create(c.ctx, generatedRoleBinding); err != nil {
 					return err
 				}
 				continue
@@ -443,7 +443,7 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAddons(projectName 
 		}
 		existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
 		existingRoleBinding.Subjects = generatedRoleBinding.Subjects
-		if err := c.client.Update(context.TODO(), existingRoleBinding); err != nil {
+		if err := c.client.Update(c.ctx, existingRoleBinding); err != nil {
 			return err
 		}
 	}
@@ -473,7 +473,7 @@ func shouldSkipRBACRoleForClusterNamespaceResource(projectName string, cluster *
 }
 
 // ensureClusterRBACRoleBindingForEtcdLauncher ensures the ClusterRoleBinding required to allow the etcd launcher to get Clusters on the Seed
-func ensureClusterRBACRoleBindingForEtcdLauncher(cli client.Client, projectName string, object metav1.Object) error {
+func ensureClusterRBACRoleBindingForEtcdLauncher(ctx context.Context, cli client.Client, projectName string, object metav1.Object) error {
 
 	cluster, ok := object.(*kubermaticv1.Cluster)
 	if !ok {
@@ -495,9 +495,9 @@ func ensureClusterRBACRoleBindingForEtcdLauncher(cli client.Client, projectName 
 
 	var sharedExistingRoleBinding rbacv1.ClusterRoleBinding
 	key := client.ObjectKey{Name: generatedRoleBinding.Name}
-	if err := cli.Get(context.TODO(), key, &sharedExistingRoleBinding); err != nil {
+	if err := cli.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
 		if kerrors.IsNotFound(err) {
-			if err := cli.Create(context.TODO(), generatedRoleBinding); err != nil {
+			if err := cli.Create(ctx, generatedRoleBinding); err != nil {
 				return err
 			}
 			return nil
@@ -511,7 +511,7 @@ func ensureClusterRBACRoleBindingForEtcdLauncher(cli client.Client, projectName 
 
 	existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
 	existingRoleBinding.Subjects = generatedRoleBinding.Subjects
-	if err := cli.Update(context.TODO(), existingRoleBinding); err != nil {
+	if err := cli.Update(ctx, existingRoleBinding); err != nil {
 		return err
 	}
 

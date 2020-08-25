@@ -17,6 +17,7 @@ limitations under the License.
 package s3
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -86,7 +87,7 @@ func (e *s3Exporter) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (e *s3Exporter) Collect(ch chan<- prometheus.Metric) {
-	clusters, err := e.kubermaticClient.KubermaticV1().Clusters().List(metav1.ListOptions{})
+	clusters, err := e.kubermaticClient.KubermaticV1().Clusters().List(context.Background(), metav1.ListOptions{})
 	if err != nil {
 		e.logger.Errorw("Failed to list clusters", zap.Error(err))
 		ch <- prometheus.MustNewConstMetric(

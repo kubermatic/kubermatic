@@ -56,7 +56,7 @@ type projectController struct {
 
 // The controller will also set proper ownership chain through OwnerReferences
 // so that whenever a project is deleted dependants object will be garbage collected.
-func newProjectRBACController(metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, masterClusterProvider *ClusterProvider, resources []projectResource, workerPredicate predicate.Predicate) error {
+func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, masterClusterProvider *ClusterProvider, resources []projectResource, workerPredicate predicate.Predicate) error {
 	seedClientMap := make(map[string]client.Client)
 	for k, v := range seedManagerMap {
 		seedClientMap[k] = v.GetClient()
@@ -70,7 +70,7 @@ func newProjectRBACController(metrics *Metrics, mgr manager.Manager, seedManager
 		client:                mgr.GetClient(),
 		restMapper:            mgr.GetRESTMapper(),
 		seedClientMap:         seedClientMap,
-		ctx:                   context.TODO(),
+		ctx:                   ctx,
 	}
 
 	// Create a new controller

@@ -17,6 +17,7 @@ limitations under the License.
 package websocket_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http/httptest"
@@ -68,6 +69,9 @@ func TestUserWatchEndpoint(t *testing.T) {
 			updateShouldTimeout: true,
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			var runtimeObjectUsers []runtime.Object
@@ -114,13 +118,13 @@ func TestUserWatchEndpoint(t *testing.T) {
 			// can happen when there are changes to the watched user right after the ws connection is established.
 			// Without this the test is flaky.
 			time.Sleep(time.Second)
-			userToUpdate, err := cli.FakeKubermaticClient.KubermaticV1().Users().Get(tc.userToUpdate, metav1.GetOptions{})
+			userToUpdate, err := cli.FakeKubermaticClient.KubermaticV1().Users().Get(ctx, tc.userToUpdate, metav1.GetOptions{})
 			if err != nil {
 				t.Fatalf("error getting user to update: %v", err)
 			}
 			userToUpdate.Spec.Settings = tc.userSettingsUpdate
 
-			_, err = cli.FakeKubermaticClient.KubermaticV1().Users().Update(userToUpdate)
+			_, err = cli.FakeKubermaticClient.KubermaticV1().Users().Update(ctx, userToUpdate, metav1.UpdateOptions{})
 			if err != nil {
 				t.Fatalf("error updating user: %v", err)
 			}

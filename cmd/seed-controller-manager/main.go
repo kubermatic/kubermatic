@@ -203,6 +203,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	ctrlCtx := &controllerContext{
+		ctx:                  rootCtx,
 		runOptions:           options,
 		mgr:                  mgr,
 		clientProvider:       clientProvider,

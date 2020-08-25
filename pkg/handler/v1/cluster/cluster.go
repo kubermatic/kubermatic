@@ -38,7 +38,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/klog"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
@@ -385,7 +384,6 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 }
 
 func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1beta1.NodeMetrics, availableNodesResources map[string]corev1.ResourceList, cluster *kubermaticv1.Cluster) (*apiv1.ClusterMetrics, error) {
-
 	if podMetrics == nil {
 		return nil, fmt.Errorf("metric list can not be nil")
 	}
@@ -399,14 +397,9 @@ func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1b
 	}
 
 	for _, m := range nodeMetrics {
-		usage := corev1.ResourceList{}
-		err := scheme.Scheme.Convert(&m.Usage, &usage, nil)
-		if err != nil {
-			return nil, err
-		}
 		resourceMetricsInfo := common.ResourceMetricsInfo{
 			Name:      m.Name,
-			Metrics:   usage,
+			Metrics:   m.Usage.DeepCopy(),
 			Available: availableNodesResources[m.Name],
 		}
 
@@ -422,6 +415,7 @@ func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1b
 			clusterMetrics.NodesMetrics.MemoryAvailableBytes += availableMemory.Value() / (1024 * 1024)
 		}
 	}
+
 	fractionCPU := float64(clusterMetrics.NodesMetrics.CPUTotalMillicores) / float64(clusterMetrics.NodesMetrics.CPUAvailableMillicores) * 100
 	clusterMetrics.NodesMetrics.CPUUsedPercentage += int64(fractionCPU)
 	fractionMemory := float64(clusterMetrics.NodesMetrics.MemoryTotalBytes) / float64(clusterMetrics.NodesMetrics.MemoryAvailableBytes) * 100
@@ -429,17 +423,12 @@ func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1b
 
 	for _, podMetrics := range podMetrics.Items {
 		for _, container := range podMetrics.Containers {
-			usage := corev1.ResourceList{}
-			err := scheme.Scheme.Convert(&container.Usage, &usage, nil)
-			if err != nil {
-				return nil, err
-			}
+			usage := container.Usage.DeepCopy()
 			quantityCPU := usage[corev1.ResourceCPU]
 			clusterMetrics.ControlPlaneMetrics.CPUTotalMillicores += quantityCPU.MilliValue()
 			quantityM := usage[corev1.ResourceMemory]
 			clusterMetrics.ControlPlaneMetrics.MemoryTotalBytes += quantityM.Value() / (1024 * 1024)
 		}
-
 	}
 
 	return clusterMetrics, nil

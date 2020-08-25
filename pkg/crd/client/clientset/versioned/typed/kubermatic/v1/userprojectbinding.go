@@ -3,6 +3,7 @@
 package v1
 
 import (
+	"context"
 	"time"
 
 	scheme "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
@@ -21,14 +22,14 @@ type UserProjectBindingsGetter interface {
 
 // UserProjectBindingInterface has methods to work with UserProjectBinding resources.
 type UserProjectBindingInterface interface {
-	Create(*v1.UserProjectBinding) (*v1.UserProjectBinding, error)
-	Update(*v1.UserProjectBinding) (*v1.UserProjectBinding, error)
-	Delete(name string, options *metav1.DeleteOptions) error
-	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
-	Get(name string, options metav1.GetOptions) (*v1.UserProjectBinding, error)
-	List(opts metav1.ListOptions) (*v1.UserProjectBindingList, error)
-	Watch(opts metav1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.UserProjectBinding, err error)
+	Create(ctx context.Context, userProjectBinding *v1.UserProjectBinding, opts metav1.CreateOptions) (*v1.UserProjectBinding, error)
+	Update(ctx context.Context, userProjectBinding *v1.UserProjectBinding, opts metav1.UpdateOptions) (*v1.UserProjectBinding, error)
+	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
+	Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1.UserProjectBinding, error)
+	List(ctx context.Context, opts metav1.ListOptions) (*v1.UserProjectBindingList, error)
+	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.UserProjectBinding, err error)
 	UserProjectBindingExpansion
 }
 
@@ -45,19 +46,19 @@ func newUserProjectBindings(c *KubermaticV1Client) *userProjectBindings {
 }
 
 // Get takes name of the userProjectBinding, and returns the corresponding userProjectBinding object, and an error if there is any.
-func (c *userProjectBindings) Get(name string, options metav1.GetOptions) (result *v1.UserProjectBinding, err error) {
+func (c *userProjectBindings) Get(ctx context.Context, name string, options metav1.GetOptions) (result *v1.UserProjectBinding, err error) {
 	result = &v1.UserProjectBinding{}
 	err = c.client.Get().
 		Resource("userprojectbindings").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of UserProjectBindings that match those selectors.
-func (c *userProjectBindings) List(opts metav1.ListOptions) (result *v1.UserProjectBindingList, err error) {
+func (c *userProjectBindings) List(ctx context.Context, opts metav1.ListOptions) (result *v1.UserProjectBindingList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -67,13 +68,13 @@ func (c *userProjectBindings) List(opts metav1.ListOptions) (result *v1.UserProj
 		Resource("userprojectbindings").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested userProjectBindings.
-func (c *userProjectBindings) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+func (c *userProjectBindings) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -83,66 +84,69 @@ func (c *userProjectBindings) Watch(opts metav1.ListOptions) (watch.Interface, e
 		Resource("userprojectbindings").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a userProjectBinding and creates it.  Returns the server's representation of the userProjectBinding, and an error, if there is any.
-func (c *userProjectBindings) Create(userProjectBinding *v1.UserProjectBinding) (result *v1.UserProjectBinding, err error) {
+func (c *userProjectBindings) Create(ctx context.Context, userProjectBinding *v1.UserProjectBinding, opts metav1.CreateOptions) (result *v1.UserProjectBinding, err error) {
 	result = &v1.UserProjectBinding{}
 	err = c.client.Post().
 		Resource("userprojectbindings").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(userProjectBinding).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a userProjectBinding and updates it. Returns the server's representation of the userProjectBinding, and an error, if there is any.
-func (c *userProjectBindings) Update(userProjectBinding *v1.UserProjectBinding) (result *v1.UserProjectBinding, err error) {
+func (c *userProjectBindings) Update(ctx context.Context, userProjectBinding *v1.UserProjectBinding, opts metav1.UpdateOptions) (result *v1.UserProjectBinding, err error) {
 	result = &v1.UserProjectBinding{}
 	err = c.client.Put().
 		Resource("userprojectbindings").
 		Name(userProjectBinding.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(userProjectBinding).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the userProjectBinding and deletes it. Returns an error if one occurs.
-func (c *userProjectBindings) Delete(name string, options *metav1.DeleteOptions) error {
+func (c *userProjectBindings) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Resource("userprojectbindings").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *userProjectBindings) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+func (c *userProjectBindings) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Resource("userprojectbindings").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched userProjectBinding.
-func (c *userProjectBindings) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.UserProjectBinding, err error) {
+func (c *userProjectBindings) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.UserProjectBinding, err error) {
 	result = &v1.UserProjectBinding{}
 	err = c.client.Patch(pt).
 		Resource("userprojectbindings").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

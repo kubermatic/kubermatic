@@ -67,15 +67,18 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 					"seed_test": fake.NewFakeClient(
 						&kubermaticv1.Cluster{
 							ObjectMeta: metav1.ObjectMeta{
-								DeletionTimestamp: &deletionTimestamp,
 								Name:              "test_cluster_1",
-								Namespace:         "test_namespace",
+								DeletionTimestamp: &deletionTimestamp,
 							},
-						}),
+						},
+					),
 				},
 			},
 			request: reconcile.Request{
-				NamespacedName: types.NamespacedName{Namespace: "seed_test"},
+				NamespacedName: types.NamespacedName{
+					Name:      "test_cluster_1", // cluster name
+					Namespace: "seed_test",      // seed name
+				},
 			},
 			expectedUserSSHKey: kubermaticv1.UserSSHKey{
 				ObjectMeta: metav1.ObjectMeta{
@@ -97,15 +100,14 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 			}
 
 			userSSHKey := &kubermaticv1.UserSSHKey{}
-			if err := tc.reconciler.client.Get(context.TODO(),
-				types.NamespacedName{Namespace: "test_namespace", Name: "test_user_ssh_keys"},
-				userSSHKey); err != nil {
+			identifier := types.NamespacedName{Namespace: "test_namespace", Name: "test_user_ssh_keys"}
+			if err := tc.reconciler.client.Get(context.Background(), identifier, userSSHKey); err != nil {
 				t.Fatalf("failed to get usersshkey: %v", err)
 			}
 
 			if !reflect.DeepEqual(userSSHKey.Spec.Clusters, tc.expectedUserSSHKey.Spec.Clusters) {
 				t.Fatalf("usersshkey clusters and expected clusters don't match: want: %v, got: %v",
-					tc.expectedUserSSHKey, userSSHKey.Spec.Clusters)
+					tc.expectedUserSSHKey.Spec.Clusters, userSSHKey.Spec.Clusters)
 			}
 		})
 	}

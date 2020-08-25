@@ -81,6 +81,7 @@ type testScenario interface {
 
 func newRunner(scenarios []testScenario, opts *Opts, log *zap.SugaredLogger) *testRunner {
 	return &testRunner{
+		ctx:                          context.Background(),
 		scenarios:                    scenarios,
 		controlPlaneReadyWaitTimeout: opts.controlPlaneReadyWaitTimeout,
 		deleteClusterAfterTests:      opts.deleteClusterAfterTests,
@@ -1520,7 +1521,7 @@ func printLogsForContainer(client kubernetes.Interface, pod *corev1.Pod, contain
 		CoreV1().
 		Pods(pod.Namespace).
 		GetLogs(pod.Name, &corev1.PodLogOptions{Container: containerName}).
-		Stream()
+		Stream(context.Background())
 	if err != nil {
 		return err
 	}

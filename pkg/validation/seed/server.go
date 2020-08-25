@@ -62,6 +62,7 @@ func (opts *WebhookOpts) Server(
 		Server: &http.Server{
 			Addr: opts.ListenAddress,
 		},
+		ctx:           ctx,
 		log:           log.Named("seed-webhook-server"),
 		listenAddress: opts.ListenAddress,
 		certFile:      opts.CertFile,
