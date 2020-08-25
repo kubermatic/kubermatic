@@ -23,6 +23,7 @@ import (
 	"flag"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
+	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -33,4 +34,13 @@ func addFlags(fs *flag.FlagSet) {
 
 func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (provider.SeedGetter, error) {
 	return provider.SeedGetterFactory(ctx, client, options.dc, options.namespace)
+}
+
+func seedValidationHandler(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (seedvalidation.AdmissionHandler, error) {
+	return (&seedvalidation.ValidationHandlerBuilder{}).
+		Client(client).
+		SeedName(options.dc).
+		WorkerName(options.workerName).
+		AllowedSeed(options.namespace, provider.DefaultSeedName).
+		Build(ctx)
 }

@@ -24,7 +24,7 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ini/ini v1.55.0 // indirect
 	github.com/go-kit/kit v0.10.0
-	github.com/go-logr/logr v0.2.1 // indirect
+	github.com/go-logr/logr v0.2.1
 	github.com/go-logr/zapr v0.2.0
 	github.com/go-openapi/errors v0.19.6
 	github.com/go-openapi/runtime v0.19.20

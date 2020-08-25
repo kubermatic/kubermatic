@@ -18,8 +18,6 @@ package seed
 
 import (
 	"context"
-	"errors"
-	"strings"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -415,7 +413,7 @@ func TestValidate(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			sv := &Validator{
+			sv := &validator{
 				listOpts: &ctrlruntimeclient.ListOptions{},
 			}
 
@@ -490,87 +488,13 @@ func TestSingleSeedValidateFunc(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := SingleSeedValidateFunc(tt.namespace)(context.Background(), tt.seed, tt.op); (got == nil) == tt.wantErr {
+			if got := (ensureSingleSeedValidatorWrapper{validateFunc: validationSuccess, Namespace: tt.namespace, Name: "kubermatic"}).Validate(context.Background(), tt.seed, tt.op); (got == nil) == tt.wantErr {
 				t.Errorf("Expected validation error = %v, but got: %v", tt.wantErr, got)
 			}
 		})
 	}
 }
 
-func TestCombineSeedValidateFuncs(t *testing.T) {
-	tests := []struct {
-		name              string
-		validationResults string
-		wantErr           bool
-		expSuccess        int
-		expFailures       int
-	}{
-		{
-			name:              "Multiple succeeding validations",
-			validationResults: "S -> S -> S -> S",
-			wantErr:           false,
-			expSuccess:        4,
-		},
-		{
-			name:              "Last validation fails",
-			validationResults: "S -> S -> S -> S -> F",
-			wantErr:           true,
-			expSuccess:        4,
-		},
-		{
-			name:              "Last validation fails",
-			validationResults: "S -> S -> F -> S -> S",
-			wantErr:           true,
-			expSuccess:        2,
-		},
-		{
-			name:              "First validation fails",
-			validationResults: "F -> S -> S -> S -> S",
-			wantErr:           true,
-			expSuccess:        0,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tv := &TestValidator{}
-			if got := CombineSeedValidateFuncs(tv.GetValidateFuncs(tt.validationResults)...)(context.Background(), &kubermaticv1.Seed{}, admissionv1beta1.Create); (got == nil) == tt.wantErr {
-				t.Errorf("Expected validation error = %v, but got: %v", tt.wantErr, got)
-			}
-			if exp, got := tt.expSuccess, tv.successCounter; exp != got {
-				t.Errorf("Expected %d success, but got: %v", exp, got)
-			}
-		})
-	}
-}
-
-type TestValidator struct {
-	successCounter int
-}
-
-func (t *TestValidator) ValidationSuccess(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error {
-	t.successCounter++
+func validationSuccess(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error {
 	return nil
-}
-
-func (t *TestValidator) ValidationFailure(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error {
-	return errors.New("Validation failed")
-}
-
-// GetValidateFuncs returns a slice of ValidateFunc respecting the given
-// pattern where "S" stands for Success and "F" for failure. Those symbols are
-// separated by " -> ".
-// e.g. "S -> S -> F" will return the following sequence:
-// []SeedValidateFunc{t.ValidationSuccess, t.ValidationSuccess, t.ValidationFailure}
-func (t *TestValidator) GetValidateFuncs(pattern string) []ValidateFunc {
-	seq := strings.Split(pattern, "->")
-	var funcs []ValidateFunc
-	for _, s := range seq {
-		switch strings.ToUpper(strings.Trim(s, " ")) {
-		case "F":
-			funcs = append(funcs, t.ValidationFailure)
-		case "S":
-			funcs = append(funcs, t.ValidationSuccess)
-		}
-	}
-	return funcs
 }

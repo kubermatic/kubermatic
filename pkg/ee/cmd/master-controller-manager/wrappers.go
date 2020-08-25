@@ -27,17 +27,10 @@ package mastercontrollermanager
 import (
 	"context"
 	"flag"
-	"fmt"
-
-	"go.uber.org/zap"
-
 	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/validation/seed"
-	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var (
@@ -60,40 +53,4 @@ func SeedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 	}
 
 	return eeprovider.SeedKubeconfigGetter, nil
-}
-
-func SetupSeedValidationWebhook(
-	ctx context.Context,
-	mgr manager.Manager,
-	log *zap.SugaredLogger,
-	webhookOpt seed.WebhookOpts,
-	namespace string,
-	seedsGetter provider.SeedsGetter,
-	seedKubeconfigGetter provider.SeedKubeconfigGetter,
-	workerName string,
-) error {
-	// Creates a new default validator
-	validator, err := seedvalidation.NewDefaultSeedValidator(
-		workerName,
-		seedsGetter,
-		provider.SeedClientGetterFactory(seedKubeconfigGetter),
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create seed validator webhook server: %v", err)
-	}
-	server, err := webhookOpt.Server(
-		ctx,
-		log,
-		namespace,
-		validator.Validate,
-	)
-	if err != nil {
-		return fmt.Errorf("failed to create server: %v", err)
-	}
-
-	if err := mgr.Add(server); err != nil {
-		return fmt.Errorf("failed to add server to mgr: %v", err)
-	}
-
-	return nil
 }
