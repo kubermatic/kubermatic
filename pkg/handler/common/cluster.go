@@ -164,7 +164,7 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 	// generate the name here so that it can be used in the secretName below
 	partialCluster.Name = rand.String(10)
 
-	if cloudcontroller.ExternalCloudControllerFeatureSupported(partialCluster) {
+	if cloudcontroller.ExternalCloudControllerFeatureSupported(dc, partialCluster) {
 		partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
 	}
 
