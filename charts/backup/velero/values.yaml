@@ -18,7 +18,7 @@ velero:
   # that also contains the restic binary
   image:
     repository: docker.io/velero/velero
-    tag: v1.4.0
+    tag: v1.4.2
     pullPolicy: IfNotPresent
 
   # CLI flags to pass to velero server; note that the two flags

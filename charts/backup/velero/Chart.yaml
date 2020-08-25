@@ -14,8 +14,8 @@
 
 apiVersion: v1
 name: velero
-version: 1.4.2
-appVersion: v1.4.0
+version: 1.4.3
+appVersion: v1.4.2
 description: A Helm chart for Heptio Velero
 keywords:
 - kubermatic
