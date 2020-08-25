@@ -90,7 +90,7 @@ spec:
       nodeSelector:
 {{ toYaml $.Values.iap.nodeSelector | indent 8 }}
       affinity:
-{{ (tpl (toYaml $.Values.iap.affinity) (merge $ .)) | fromYaml | toYaml | indent 8 }}
+{{ (tpl (toYaml $.Values.iap.affinity) (merge (deepCopy $) .)) | fromYaml | toYaml | indent 8 }}
       tolerations:
 {{ toYaml $.Values.iap.tolerations | indent 8 }}
 {{ end }}

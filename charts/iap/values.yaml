@@ -60,6 +60,9 @@ iap:
     #     ## do not route health endpoint through the proxy
     #     skip_auth_regex:
     #       - '/api/health'
+    #     ## auto-register users based on their email address
+    #     ## Grafana is configured to look for the X-Forwarded-Email header
+    #     pass_user_headers: true
     #   upstream_service: grafana.monitoring.svc.cluster.local
     #   upstream_port: 3000
     #   ingress:
