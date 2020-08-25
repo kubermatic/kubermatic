@@ -24,11 +24,14 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -170,28 +173,60 @@ func addProjectReference(project *kubermaticapiv1.Project, cluster *kubermaticap
 	cluster.Labels[kubermaticapiv1.ProjectIDLabelKey] = project.Name
 }
 
-func (p *ExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (*ctrlruntimeclient.Client, error) {
-	iconfig := clientcmd.NewNonInteractiveClientConfig(
-		*cfg,
-		resources.KubeconfigDefaultContextKey,
-		&clientcmd.ConfigOverrides{},
-		nil,
-	)
+func (p *ExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (ctrlruntimeclient.Client, error) {
 
-	clientConfig, err := iconfig.ClientConfig()
+	clientConfig, err := getRestConfig(cfg)
 	if err != nil {
 		return nil, err
 	}
-
-	// Avoid blocking of the controller by increasing the QPS for user cluster interaction
-	clientConfig.QPS = 20
-	clientConfig.Burst = 50
-
 	client, err := p.restMapperCache.Client(clientConfig)
 	if err != nil {
 		return nil, err
 	}
-	return &client, nil
+	return client, nil
+}
+
+func (p *ExternalClusterProvider) GetClient(cluster *kubermaticapiv1.ExternalCluster) (ctrlruntimeclient.Client, error) {
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.clientPrivileged)
+	kubeconfig, err := secretKeyGetter(cluster.Spec.KubeconfigReference, resources.KubeconfigSecretKey)
+	if err != nil {
+		return nil, err
+	}
+	cfg, err := clientcmd.Load([]byte(kubeconfig))
+	if err != nil {
+		return nil, err
+	}
+	return p.GenerateClient(cfg)
+}
+
+func (p *ExternalClusterProvider) GetVersion(cluster *kubermaticapiv1.ExternalCluster) (*ksemver.Semver, error) {
+	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.clientPrivileged)
+	kubeconfig, err := secretKeyGetter(cluster.Spec.KubeconfigReference, resources.KubeconfigSecretKey)
+	if err != nil {
+		return nil, err
+	}
+	cfg, err := clientcmd.Load([]byte(kubeconfig))
+	if err != nil {
+		return nil, err
+	}
+	clientConfig, err := getRestConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+	masterClient, err := kubernetes.NewForConfig(clientConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	version, err := masterClient.DiscoveryClient.ServerVersion()
+	if err != nil {
+		return nil, err
+	}
+	v, err := ksemver.NewSemver(version.GitVersion)
+	if err != nil {
+		return nil, err
+	}
+	return v, nil
 }
 
 func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, kubeconfig *clientcmdapi.Config) error {
@@ -274,4 +309,24 @@ func updateKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 			Namespace: resources.KubermaticNamespace,
 		},
 	}, nil
+}
+
+func getRestConfig(cfg *clientcmdapi.Config) (*rest.Config, error) {
+	iconfig := clientcmd.NewNonInteractiveClientConfig(
+		*cfg,
+		resources.KubeconfigDefaultContextKey,
+		&clientcmd.ConfigOverrides{},
+		nil,
+	)
+
+	clientConfig, err := iconfig.ClientConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	// Avoid blocking of the controller by increasing the QPS for user cluster interaction
+	clientConfig.QPS = 20
+	clientConfig.Burst = 50
+
+	return clientConfig, nil
 }

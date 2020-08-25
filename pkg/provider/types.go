@@ -24,6 +24,8 @@ import (
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -721,9 +723,13 @@ type ExternalClusterProvider interface {
 
 	List(project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error)
 
-	GenerateClient(cfg *clientcmdapi.Config) (*ctrlruntimeclient.Client, error)
+	GenerateClient(cfg *clientcmdapi.Config) (ctrlruntimeclient.Client, error)
+
+	GetClient(cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error)
 
 	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig *clientcmdapi.Config) error
+
+	GetVersion(cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
 }
 
 // ExternalClusterProvider declares the set of methods for interacting with external cluster
