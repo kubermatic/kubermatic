@@ -71,7 +71,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/util:1.3.5
+      - image: quay.io/kubermatic/util:1.4.1
         command:
         - "./hack/verify-chart-versions.sh"
         resources:
@@ -115,7 +115,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/util:1.3.5
+      - image: quay.io/kubermatic/util:1.4.1
         command:
         - "./hack/verify-grafana-dashboards.sh"
         resources:
@@ -223,7 +223,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/util:1.4.0
+      - image: quay.io/kubermatic/util:1.4.1
         command:
         - ./hack/verify-licenses.sh
         resources:
@@ -255,7 +255,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/util:1.4.0
+      - image: quay.io/kubermatic/util:1.4.1
         command:
         - ./hack/verify-prometheus-rules.sh
         env:
