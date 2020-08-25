@@ -31,6 +31,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/clientcmd"
@@ -223,6 +224,75 @@ func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
 func (req listClusterReq) Validate() error {
 	if len(req.ProjectID) == 0 {
 		return fmt.Errorf("the project ID cannot be empty")
+	}
+	return nil
+}
+
+func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		version, err := clusterProvider.GetVersion(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		apiCluster := convertClusterToAPI(cluster)
+		apiCluster.Spec = apiv1.ClusterSpec{
+			Version: *version,
+		}
+
+		return apiCluster, nil
+	}
+}
+
+// getClusterReq defines HTTP request for getExternalCluster
+// swagger:parameters getExternalCluster
+type getClusterReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+}
+
+func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req getClusterReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	return req, nil
+}
+
+// Validate validates DeleteEndpoint request
+func (req getClusterReq) Validate() error {
+	if len(req.ProjectID) == 0 {
+		return fmt.Errorf("the project ID cannot be empty")
+	}
+	if len(req.ClusterID) == 0 {
+		return fmt.Errorf("the cluster ID cannot be empty")
 	}
 	return nil
 }

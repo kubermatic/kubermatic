@@ -114,6 +114,8 @@ const (
 	TestFakeCredential = "fake"
 	// RequiredEmailDomain required domain for predefined credentials
 	RequiredEmailDomain = "acme.com"
+	// DefaultKubernetesVersion kubernetes version
+	DefaultKubernetesVersion = "1.17.9"
 )
 
 // GetUser is a convenience function for generating apiv1.User

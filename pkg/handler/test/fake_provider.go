@@ -25,6 +25,7 @@ import (
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -129,6 +130,14 @@ type FakeExternalClusterProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
+func (p *FakeExternalClusterProvider) GetVersion(cluster *kubermaticapiv1.ExternalCluster) (*semver.Semver, error) {
+	return semver.NewSemver(DefaultKubernetesVersion)
+}
+
+func (p *FakeExternalClusterProvider) GetClient(cluster *kubermaticapiv1.ExternalCluster) (ctrlruntimeclient.Client, error) {
+	return p.Provider.GetClient(cluster)
+}
+
 func (p *FakeExternalClusterProvider) List(project *kubermaticapiv1.Project) (*kubermaticapiv1.ExternalClusterList, error) {
 	return p.Provider.List(project)
 }
@@ -141,8 +150,8 @@ func (p *FakeExternalClusterProvider) Delete(userInfo *provider.UserInfo, cluste
 	return p.Provider.Delete(userInfo, cluster)
 }
 
-func (p *FakeExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (*ctrlruntimeclient.Client, error) {
-	return &p.FakeClient, nil
+func (p *FakeExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (ctrlruntimeclient.Client, error) {
+	return p.FakeClient, nil
 }
 
 func (p *FakeExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, kubeconfig *clientcmdapi.Config) error {
