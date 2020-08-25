@@ -146,7 +146,7 @@ func TestGetPreset(t *testing.T) {
 			presets: []runtime.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tes-1",
+						Name: "test-1",
 					},
 					Spec: kubermaticv1.PresetSpec{
 						Fake: &kubermaticv1.Fake{
@@ -156,7 +156,7 @@ func TestGetPreset(t *testing.T) {
 				},
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tes-2",
+						Name: "test-2",
 					},
 					Spec: kubermaticv1.PresetSpec{
 						RequiredEmailDomain: "acme.com",
@@ -167,7 +167,7 @@ func TestGetPreset(t *testing.T) {
 				},
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tes-3",
+						Name: "test-3",
 					},
 					Spec: kubermaticv1.PresetSpec{
 						RequiredEmailDomain: "test.com",
@@ -239,7 +239,7 @@ func TestGetPresets(t *testing.T) {
 				},
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tes-3",
+						Name: "test-3",
 					},
 					Spec: kubermaticv1.PresetSpec{
 						RequiredEmailDomain: "example.com",
@@ -262,7 +262,7 @@ func TestGetPresets(t *testing.T) {
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tes-3",
+						Name: "test-3",
 					},
 					Spec: kubermaticv1.PresetSpec{
 						RequiredEmailDomain: "example.com",
@@ -279,7 +279,7 @@ func TestGetPresets(t *testing.T) {
 			presets: []runtime.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tes-1",
+						Name: "test-1",
 					},
 					Spec: kubermaticv1.PresetSpec{
 						Fake: &kubermaticv1.Fake{
@@ -289,7 +289,7 @@ func TestGetPresets(t *testing.T) {
 				},
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tes-2",
+						Name: "test-2",
 					},
 					Spec: kubermaticv1.PresetSpec{
 						Fake: &kubermaticv1.Fake{
@@ -299,7 +299,7 @@ func TestGetPresets(t *testing.T) {
 				},
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tes-3",
+						Name: "test-3",
 					},
 					Spec: kubermaticv1.PresetSpec{
 						RequiredEmailDomain: "test.com",
@@ -312,7 +312,7 @@ func TestGetPresets(t *testing.T) {
 			expected: []kubermaticv1.Preset{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tes-1",
+						Name: "test-1",
 					},
 					Spec: kubermaticv1.PresetSpec{
 						Fake: &kubermaticv1.Fake{
@@ -322,7 +322,7 @@ func TestGetPresets(t *testing.T) {
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "tes-2",
+						Name: "test-2",
 					},
 					Spec: kubermaticv1.PresetSpec{
 						Fake: &kubermaticv1.Fake{
@@ -344,6 +344,11 @@ func TestGetPresets(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			for n := range presets {
+				presets[n].ResourceVersion = ""
+			}
+
 			if !equality.Semantic.DeepEqual(presets, tc.expected) {
 				t.Fatalf("expected: %v, got %v", tc.expected, presets)
 			}

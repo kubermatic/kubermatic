@@ -3,6 +3,8 @@
 package fake
 
 import (
+	"context"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -22,7 +24,7 @@ var externalclustersResource = schema.GroupVersionResource{Group: "kubermatic.k8
 var externalclustersKind = schema.GroupVersionKind{Group: "kubermatic.k8s.io", Version: "v1", Kind: "ExternalCluster"}
 
 // Get takes name of the externalCluster, and returns the corresponding externalCluster object, and an error if there is any.
-func (c *FakeExternalClusters) Get(name string, options v1.GetOptions) (result *kubermaticv1.ExternalCluster, err error) {
+func (c *FakeExternalClusters) Get(ctx context.Context, name string, options v1.GetOptions) (result *kubermaticv1.ExternalCluster, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootGetAction(externalclustersResource, name), &kubermaticv1.ExternalCluster{})
 	if obj == nil {
@@ -32,7 +34,7 @@ func (c *FakeExternalClusters) Get(name string, options v1.GetOptions) (result *
 }
 
 // List takes label and field selectors, and returns the list of ExternalClusters that match those selectors.
-func (c *FakeExternalClusters) List(opts v1.ListOptions) (result *kubermaticv1.ExternalClusterList, err error) {
+func (c *FakeExternalClusters) List(ctx context.Context, opts v1.ListOptions) (result *kubermaticv1.ExternalClusterList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootListAction(externalclustersResource, externalclustersKind, opts), &kubermaticv1.ExternalClusterList{})
 	if obj == nil {
@@ -53,13 +55,13 @@ func (c *FakeExternalClusters) List(opts v1.ListOptions) (result *kubermaticv1.E
 }
 
 // Watch returns a watch.Interface that watches the requested externalClusters.
-func (c *FakeExternalClusters) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeExternalClusters) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewRootWatchAction(externalclustersResource, opts))
 }
 
 // Create takes the representation of a externalCluster and creates it.  Returns the server's representation of the externalCluster, and an error, if there is any.
-func (c *FakeExternalClusters) Create(externalCluster *kubermaticv1.ExternalCluster) (result *kubermaticv1.ExternalCluster, err error) {
+func (c *FakeExternalClusters) Create(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster, opts v1.CreateOptions) (result *kubermaticv1.ExternalCluster, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootCreateAction(externalclustersResource, externalCluster), &kubermaticv1.ExternalCluster{})
 	if obj == nil {
@@ -69,7 +71,7 @@ func (c *FakeExternalClusters) Create(externalCluster *kubermaticv1.ExternalClus
 }
 
 // Update takes the representation of a externalCluster and updates it. Returns the server's representation of the externalCluster, and an error, if there is any.
-func (c *FakeExternalClusters) Update(externalCluster *kubermaticv1.ExternalCluster) (result *kubermaticv1.ExternalCluster, err error) {
+func (c *FakeExternalClusters) Update(ctx context.Context, externalCluster *kubermaticv1.ExternalCluster, opts v1.UpdateOptions) (result *kubermaticv1.ExternalCluster, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootUpdateAction(externalclustersResource, externalCluster), &kubermaticv1.ExternalCluster{})
 	if obj == nil {
@@ -79,22 +81,22 @@ func (c *FakeExternalClusters) Update(externalCluster *kubermaticv1.ExternalClus
 }
 
 // Delete takes name of the externalCluster and deletes it. Returns an error if one occurs.
-func (c *FakeExternalClusters) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeExternalClusters) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewRootDeleteAction(externalclustersResource, name), &kubermaticv1.ExternalCluster{})
 	return err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeExternalClusters) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewRootDeleteCollectionAction(externalclustersResource, listOptions)
+func (c *FakeExternalClusters) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewRootDeleteCollectionAction(externalclustersResource, listOpts)
 
 	_, err := c.Fake.Invokes(action, &kubermaticv1.ExternalClusterList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched externalCluster.
-func (c *FakeExternalClusters) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *kubermaticv1.ExternalCluster, err error) {
+func (c *FakeExternalClusters) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *kubermaticv1.ExternalCluster, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewRootPatchSubresourceAction(externalclustersResource, name, pt, data, subresources...), &kubermaticv1.ExternalCluster{})
 	if obj == nil {

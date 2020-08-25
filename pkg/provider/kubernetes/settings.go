@@ -38,7 +38,7 @@ type SettingsProvider struct {
 }
 
 // NewUserProvider returns a user provider
-func NewSettingsProvider(client kubermaticclientset.Interface, runtimeClient ctrlruntimeclient.Client) *SettingsProvider {
+func NewSettingsProvider(ctx context.Context, client kubermaticclientset.Interface, runtimeClient ctrlruntimeclient.Client) *SettingsProvider {
 	return &SettingsProvider{
 		client:        client,
 		runtimeClient: runtimeClient,
@@ -58,7 +58,7 @@ func (s *SettingsProvider) GetGlobalSettings() (*kubermaticv1.KubermaticSetting,
 }
 
 func (s *SettingsProvider) WatchGlobalSettings() (watch.Interface, error) {
-	return s.client.KubermaticV1().KubermaticSettings().Watch(v1.ListOptions{})
+	return s.client.KubermaticV1().KubermaticSettings().Watch(context.Background(), v1.ListOptions{})
 }
 
 func (s *SettingsProvider) UpdateGlobalSettings(userInfo *provider.UserInfo, settings *kubermaticv1.KubermaticSetting) (*kubermaticv1.KubermaticSetting, error) {

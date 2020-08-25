@@ -122,7 +122,7 @@ write_files:
         certificate-authority-data: bXktY2VydA==
         server: https://server:443
       name: ""
-    contexts: []
+    contexts: null
     current-context: ""
     kind: Config
     preferences: {}

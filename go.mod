@@ -5,7 +5,7 @@ go 1.14
 require (
 	code.cloudfoundry.org/go-pubsub v0.0.0-20180503211407-becd51dc37cb
 	github.com/Azure/azure-sdk-for-go v38.0.0+incompatible
-	github.com/Azure/go-autorest/autorest v0.9.5
+	github.com/Azure/go-autorest/autorest v0.9.6
 	github.com/Azure/go-autorest/autorest/azure/auth v0.4.2
 	github.com/Azure/go-autorest/autorest/to v0.3.0
 	github.com/Masterminds/semver v1.4.2
@@ -23,7 +23,7 @@ require (
 	github.com/evanphx/json-patch v4.5.0+incompatible
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ini/ini v1.55.0 // indirect
-	github.com/go-kit/kit v0.9.0
+	github.com/go-kit/kit v0.10.0
 	github.com/go-logr/zapr v0.1.1
 	github.com/go-openapi/errors v0.19.6
 	github.com/go-openapi/runtime v0.19.20
@@ -34,6 +34,7 @@ require (
 	github.com/go-test/deep v1.0.4
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
+	github.com/google/go-cmp v0.5.1 // indirect
 	github.com/gophercloud/gophercloud v0.2.1-0.20190626201551-2949719e8258
 	github.com/gorilla/handlers v1.4.2
 	github.com/gorilla/mux v1.7.3
@@ -43,63 +44,71 @@ require (
 	github.com/hetznercloud/hcloud-go v1.15.1
 	github.com/huandu/xstrings v1.2.0 // indirect
 	github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365
+	github.com/imdario/mergo v0.3.10 // indirect
 	github.com/jetstack/cert-manager v0.11.0
 	github.com/kubermatic/machine-controller v1.13.2
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/nelsam/hel v0.0.0-20200611165952-2d829bae0c66 // indirect
-	github.com/oklog/run v1.0.0
-	github.com/onsi/ginkgo v1.10.1
-	github.com/onsi/gomega v1.7.1 // indirect
+	github.com/oklog/run v1.1.0
+	github.com/onsi/ginkgo v1.14.0
 	github.com/packethost/packngo v0.1.1-0.20190410075950-a02c426e4888
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/poy/onpar v0.0.0-20200406201722-06f95a1c68e8 // indirect
-	github.com/prometheus/client_golang v1.4.1
+	github.com/prometheus/client_golang v1.7.1
+	github.com/prometheus/common v0.11.1 // indirect
 	github.com/robfig/cron v1.2.0
-	github.com/spf13/cobra v0.0.5
+	github.com/spf13/cobra v1.0.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
-	github.com/urfave/cli v1.20.0
+	github.com/urfave/cli v1.22.4
 	github.com/vmware/govmomi v0.22.2
 	go.etcd.io/etcd/v3 v3.3.0-rc.0.0.20200728214110-6c81b20ec8de
-	go.uber.org/zap v1.14.1
-	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899
+	go.uber.org/zap v1.15.0
+	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	golang.org/x/sys v0.0.0-20200806125547-5acd03effb82 // indirect
+	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	golang.org/x/tools v0.0.0-20200717024301-6ddee64345a6
-	google.golang.org/api v0.13.0
+	gomodules.xyz/jsonpatch/v2 v2.1.0 // indirect
+	google.golang.org/api v0.15.0
 	google.golang.org/grpc v1.27.1
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
-	k8s.io/api v0.17.2
-	k8s.io/apiextensions-apiserver v0.16.4
-	k8s.io/apimachinery v0.17.2
+	k8s.io/api v0.19.0-rc.3
+	k8s.io/apiextensions-apiserver v0.19.0-rc.3
+	k8s.io/apimachinery v0.19.0-rc.3
 	k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 // git digest for VPA v0.4.0
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.17.1
+	k8s.io/code-generator v0.19.0-rc.3
 	k8s.io/klog v1.0.0
+	k8s.io/klog/v2 v2.3.0 // indirect
 	k8s.io/kube-aggregator v0.16.4
+	k8s.io/kube-openapi v0.0.0-20200727223308-4c7aaf529f79 // indirect
 	k8s.io/metrics v0.16.4
 	k8s.io/test-infra v0.0.0-20200220102703-18fae0a00a2c
-	k8s.io/utils v0.0.0-20200124190032-861946025e34
-	sigs.k8s.io/controller-runtime v0.4.0
+	k8s.io/utils v0.0.0-20200731180307-f00132d28269
+	sigs.k8s.io/controller-runtime v0.6.2
 	sigs.k8s.io/yaml v1.2.0
 )
 
 replace (
-	// pin protobuf and genproto to prevent panics in DeepEqual() when
-	// comparing envoy objects
+	github.com/go-logr/logr => github.com/go-logr/logr v0.2.1-0.20200730175230-ee2de8da5be6
+	github.com/go-logr/zapr => github.com/go-logr/zapr v0.2.0
+	// pin to prevent panics in DeepEqual() when comparing envoy objects
 	github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
-	// prevent issues when using a GOPROXY, as v2.0.0 is broken
-	gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.0.1
+	// prevent 2.0.0 dependency because it's a broken release
+	gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.1.0
+	// pin to prevent panics in DeepEqual() when comparing envoy objects
 	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20190219182410-082222b4a5c5
-	k8s.io/api => k8s.io/api v0.16.13
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.16.13
-	k8s.io/apimachinery => k8s.io/apimachinery v0.16.13
-	k8s.io/client-go => k8s.io/client-go v0.16.13
-	k8s.io/code-generator => k8s.io/code-generator v0.16.13
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.16.13
-	k8s.io/kubelet => k8s.io/kubelet v0.16.13
-	k8s.io/metrics => k8s.io/metrics v0.16.13
+	k8s.io/api => k8s.io/api v0.19.0-rc.3
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.19.0-rc.3
+	k8s.io/apimachinery => k8s.io/apimachinery v0.19.0-rc.3
+	k8s.io/client-go => k8s.io/client-go v0.19.0-rc.3
+	k8s.io/code-generator => k8s.io/code-generator v0.19.0-rc.3
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.19.0-rc.3
+	k8s.io/kubelet => k8s.io/kubelet v0.19.0-rc.3
+	k8s.io/metrics => k8s.io/metrics v0.19.0-rc.3
 )

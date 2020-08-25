@@ -156,6 +156,14 @@ func TestResourceReconciliationIdempotency(t *testing.T) {
 		log:        kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar(),
 	}
 
+	if err := mgr.GetClient().Create(ctx, &corev1.Namespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: "openshift-infra",
+		},
+	}); err != nil {
+		t.Fatalf("Failed to create openshift base namespace: %v", err)
+	}
+
 	if err := r.reconcile(ctx); err != nil {
 		t.Fatalf("Initial resource deployment failed, this indicates that some resources are invalid. Error: %v", err)
 	}

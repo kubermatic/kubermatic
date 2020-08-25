@@ -3,6 +3,7 @@
 package v1
 
 import (
+	"context"
 	"time"
 
 	scheme "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
@@ -21,14 +22,14 @@ type ExternalClustersGetter interface {
 
 // ExternalClusterInterface has methods to work with ExternalCluster resources.
 type ExternalClusterInterface interface {
-	Create(*v1.ExternalCluster) (*v1.ExternalCluster, error)
-	Update(*v1.ExternalCluster) (*v1.ExternalCluster, error)
-	Delete(name string, options *metav1.DeleteOptions) error
-	DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error
-	Get(name string, options metav1.GetOptions) (*v1.ExternalCluster, error)
-	List(opts metav1.ListOptions) (*v1.ExternalClusterList, error)
-	Watch(opts metav1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.ExternalCluster, err error)
+	Create(ctx context.Context, externalCluster *v1.ExternalCluster, opts metav1.CreateOptions) (*v1.ExternalCluster, error)
+	Update(ctx context.Context, externalCluster *v1.ExternalCluster, opts metav1.UpdateOptions) (*v1.ExternalCluster, error)
+	Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error
+	Get(ctx context.Context, name string, opts metav1.GetOptions) (*v1.ExternalCluster, error)
+	List(ctx context.Context, opts metav1.ListOptions) (*v1.ExternalClusterList, error)
+	Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.ExternalCluster, err error)
 	ExternalClusterExpansion
 }
 
@@ -45,19 +46,19 @@ func newExternalClusters(c *KubermaticV1Client) *externalClusters {
 }
 
 // Get takes name of the externalCluster, and returns the corresponding externalCluster object, and an error if there is any.
-func (c *externalClusters) Get(name string, options metav1.GetOptions) (result *v1.ExternalCluster, err error) {
+func (c *externalClusters) Get(ctx context.Context, name string, options metav1.GetOptions) (result *v1.ExternalCluster, err error) {
 	result = &v1.ExternalCluster{}
 	err = c.client.Get().
 		Resource("externalclusters").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of ExternalClusters that match those selectors.
-func (c *externalClusters) List(opts metav1.ListOptions) (result *v1.ExternalClusterList, err error) {
+func (c *externalClusters) List(ctx context.Context, opts metav1.ListOptions) (result *v1.ExternalClusterList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -67,13 +68,13 @@ func (c *externalClusters) List(opts metav1.ListOptions) (result *v1.ExternalClu
 		Resource("externalclusters").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested externalClusters.
-func (c *externalClusters) Watch(opts metav1.ListOptions) (watch.Interface, error) {
+func (c *externalClusters) Watch(ctx context.Context, opts metav1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -83,66 +84,69 @@ func (c *externalClusters) Watch(opts metav1.ListOptions) (watch.Interface, erro
 		Resource("externalclusters").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a externalCluster and creates it.  Returns the server's representation of the externalCluster, and an error, if there is any.
-func (c *externalClusters) Create(externalCluster *v1.ExternalCluster) (result *v1.ExternalCluster, err error) {
+func (c *externalClusters) Create(ctx context.Context, externalCluster *v1.ExternalCluster, opts metav1.CreateOptions) (result *v1.ExternalCluster, err error) {
 	result = &v1.ExternalCluster{}
 	err = c.client.Post().
 		Resource("externalclusters").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(externalCluster).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a externalCluster and updates it. Returns the server's representation of the externalCluster, and an error, if there is any.
-func (c *externalClusters) Update(externalCluster *v1.ExternalCluster) (result *v1.ExternalCluster, err error) {
+func (c *externalClusters) Update(ctx context.Context, externalCluster *v1.ExternalCluster, opts metav1.UpdateOptions) (result *v1.ExternalCluster, err error) {
 	result = &v1.ExternalCluster{}
 	err = c.client.Put().
 		Resource("externalclusters").
 		Name(externalCluster.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(externalCluster).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the externalCluster and deletes it. Returns an error if one occurs.
-func (c *externalClusters) Delete(name string, options *metav1.DeleteOptions) error {
+func (c *externalClusters) Delete(ctx context.Context, name string, opts metav1.DeleteOptions) error {
 	return c.client.Delete().
 		Resource("externalclusters").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *externalClusters) DeleteCollection(options *metav1.DeleteOptions, listOptions metav1.ListOptions) error {
+func (c *externalClusters) DeleteCollection(ctx context.Context, opts metav1.DeleteOptions, listOpts metav1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Resource("externalclusters").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched externalCluster.
-func (c *externalClusters) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1.ExternalCluster, err error) {
+func (c *externalClusters) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts metav1.PatchOptions, subresources ...string) (result *v1.ExternalCluster, err error) {
 	result = &v1.ExternalCluster{}
 	err = c.client.Patch(pt).
 		Resource("externalclusters").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

@@ -24,6 +24,7 @@ import (
 
 	certificatesv1beta1 "k8s.io/api/certificates/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	certificatesv1beta1client "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 	"k8s.io/client-go/rest"
@@ -121,7 +122,7 @@ func (r *reconciler) reconcile(ctx context.Context, request reconcile.Request) e
 	}
 	csr.Status.Conditions = append(csr.Status.Conditions, approvalCondition)
 
-	if _, err := r.certClient.UpdateApproval(csr); err != nil {
+	if _, err := r.certClient.UpdateApproval(ctx, csr, metav1.UpdateOptions{}); err != nil {
 		return fmt.Errorf("failed to update approval for CSR %q: %v", csr.Name, err)
 	}
 

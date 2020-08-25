@@ -190,7 +190,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	}
 	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount, kubermaticClient)
 	adminProvider := kubernetes.NewAdminProvider(fakeClient)
-	settingsProvider := kubernetes.NewSettingsProvider(kubermaticClient, fakeClient)
+	settingsProvider := kubernetes.NewSettingsProvider(context.Background(), kubermaticClient, fakeClient)
 	addonConfigProvider := kubernetes.NewAddonConfigProvider(fakeClient)
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
 	if err != nil {

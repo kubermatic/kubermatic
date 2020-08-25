@@ -181,7 +181,7 @@ func (p *UserProvider) AddUserTokenToBlacklist(user *kubermaticv1.User, token st
 }
 
 func (p *UserProvider) WatchUser() (watch.Interface, error) {
-	return p.client.KubermaticV1().Users().Watch(v1.ListOptions{})
+	return p.client.KubermaticV1().Users().Watch(context.Background(), v1.ListOptions{})
 }
 
 func (p *UserProvider) GetUserBlacklistTokens(user *kubermaticv1.User) ([]string, error) {

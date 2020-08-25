@@ -87,7 +87,12 @@ test-integration: download-gocache
 		|xargs --max-args=1 -I ^ go test -tags "integration $(KUBERMATIC_EDITION)"  -race ./^
 
 test-update:
-	-go test ./pkg/... ./cmd/... ./codegen/... -update
+	-go test ./pkg/userdata/openshift -update
+	-go test ./pkg/resources/test -update
+	-go test ./pkg/provider/cloud/aws -update
+	-go test ./pkg/controller/seed-controller-manager/openshift -update
+	-go test ./pkg/controller/seed-controller-manager/openshift/resources -update
+	-go test ./codegen/openshift_versions -update
 
 clean:
 	rm -f $(TARGET)

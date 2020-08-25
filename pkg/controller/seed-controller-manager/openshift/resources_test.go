@@ -32,7 +32,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,41 +73,8 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		t.Fatalf("failed to register vertical pod autoscaler resources to scheme: %v", err)
 	}
 	crdInstallOpts := envtest.CRDInstallOptions{
-		// Results in timeouts, maybe a controller-runtime bug?
-		// Paths: []string{"../../../../../charts/kubermatic/crd"},
-		CRDs: []*apiextensionsv1beta1.CustomResourceDefinition{
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "clusters.kubermatic.k8s.io",
-				},
-				Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-					Group:   "kubermatic.k8s.io",
-					Version: "v1",
-					Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
-						Kind:     "Cluster",
-						ListKind: "ClusterList",
-						Plural:   "clusters",
-						Singular: "cluster",
-					},
-					Scope: apiextensionsv1beta1.ClusterScoped,
-				},
-			},
-			{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "verticalpodautoscalers.autoscaling.k8s.io",
-				},
-				Spec: apiextensionsv1beta1.CustomResourceDefinitionSpec{
-					Group:   "autoscaling.k8s.io",
-					Version: "v1beta2",
-					Names: apiextensionsv1beta1.CustomResourceDefinitionNames{
-						Kind:     "VerticalPodAutoscaler",
-						Plural:   "verticalpodautoscalers",
-						Singular: "verticalpodautoscaler",
-					},
-					Scope: apiextensionsv1beta1.NamespaceScoped,
-				},
-			},
-		},
+		Paths:              []string{"../../../../charts/kubermatic/crd"},
+		ErrorIfPathMissing: true,
 	}
 	if _, err := envtest.InstallCRDs(cfg, crdInstallOpts); err != nil {
 		t.Fatalf("failed install crds: %v", err)

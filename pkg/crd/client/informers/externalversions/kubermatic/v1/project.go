@@ -3,6 +3,7 @@
 package v1
 
 import (
+	"context"
 	time "time"
 
 	versioned "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
@@ -44,13 +45,13 @@ func NewFilteredProjectInformer(client versioned.Interface, resyncPeriod time.Du
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.KubermaticV1().Projects().List(options)
+				return client.KubermaticV1().Projects().List(context.TODO(), options)
 			},
 			WatchFunc: func(options metav1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.KubermaticV1().Projects().Watch(options)
+				return client.KubermaticV1().Projects().Watch(context.TODO(), options)
 			},
 		},
 		&kubermaticv1.Project{},

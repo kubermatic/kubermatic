@@ -48,7 +48,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -142,6 +141,7 @@ func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 		}
 
 		data := common.CredentialsData{
+			Ctx:               ctx,
 			KubermaticCluster: cluster,
 			Client:            assertedClusterProvider.GetSeedClusterAdminRuntimeClient(),
 		}
@@ -547,7 +547,6 @@ func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider, privile
 
 func convertNodeMetrics(metrics []v1beta1.NodeMetrics, availableResources map[string]corev1.ResourceList) ([]apiv1.NodeMetric, error) {
 	nodeMetrics := make([]apiv1.NodeMetric, 0)
-	var usage corev1.ResourceList
 
 	if metrics == nil {
 		return nil, fmt.Errorf("metric list can not be nil")
@@ -557,13 +556,10 @@ func convertNodeMetrics(metrics []v1beta1.NodeMetrics, availableResources map[st
 		nodeMetric := apiv1.NodeMetric{
 			Name: m.Name,
 		}
-		err := scheme.Scheme.Convert(&m.Usage, &usage, nil)
-		if err != nil {
-			return nil, err
-		}
+
 		resourceMetricsInfo := common.ResourceMetricsInfo{
 			Name:      m.Name,
-			Metrics:   usage,
+			Metrics:   m.Usage.DeepCopy(),
 			Available: availableResources[m.Name],
 		}
 
@@ -704,6 +700,7 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, k8cerrors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create nodeDeployment")
 		}
 		data := common.CredentialsData{
+			Ctx:               ctx,
 			KubermaticCluster: cluster,
 			Client:            assertedClusterProvider.GetSeedClusterAdminRuntimeClient(),
 		}

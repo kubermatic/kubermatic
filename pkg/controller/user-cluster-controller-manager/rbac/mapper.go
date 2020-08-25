@@ -59,7 +59,6 @@ func generateVerbsForGroup(groupName string) ([]string, error) {
 
 // GenerateRBACClusterRole creates role for specific group
 func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
-
 	groupName, err := getGroupName(resourceName)
 	if err != nil {
 		return nil, err
@@ -157,7 +156,8 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 				APIGroups: []string{"*"},
 				Resources: []string{"*"},
 				Verbs:     verbs,
-			}}
+			},
+		}
 	}
 	return clusterRole, nil
 }

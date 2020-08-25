@@ -162,19 +162,22 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to construct manager: %v", err)
 	}
 
+	ctx := context.Background()
+	client := mgr.GetClient()
+
 	defaultImpersonationClient := kubernetesprovider.NewImpersonationClient(masterCfg, mgr.GetRESTMapper())
 
-	seedsGetter, err := seedsGetterFactory(context.Background(), mgr.GetClient(), options)
+	seedsGetter, err := seedsGetterFactory(ctx, client, options)
 	if err != nil {
 		return providers{}, err
 	}
-	seedKubeconfigGetter, err := seedKubeconfigGetterFactory(context.Background(), mgr.GetClient(), options)
+	seedKubeconfigGetter, err := seedKubeconfigGetterFactory(ctx, client, options)
 	if err != nil {
 		return providers{}, err
 	}
 
 	// Make sure the manager creates a cache for Seeds by requesting an informer
-	if _, err := mgr.GetCache().GetInformer(&kubermaticv1.Seed{}); err != nil {
+	if _, err := mgr.GetCache().GetInformer(ctx, &kubermaticv1.Seed{}); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to get seed informer", zap.Error(err))
 	}
 	// mgr.Start() is blocking
@@ -183,7 +186,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 			kubermaticlog.Logger.Fatalw("failed to start the mgr", zap.Error(err))
 		}
 	}()
-	mgrSyncCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	mgrSyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx.Done()); !synced {
 		kubermaticlog.Logger.Fatal("failed to sync mgr cache")
@@ -192,11 +195,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
 	clusterProviderGetter := clusterProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, seedClientGetter, options.workerName, options.featureGates.Enabled(features.OIDCKubeCfgEndpoint))
 
-	presetsProvider, err := kubernetesprovider.NewPresetsProvider(context.Background(), mgr.GetClient(), options.presetsFile, options.dynamicPresets)
+	presetsProvider, err := kubernetesprovider.NewPresetsProvider(ctx, client, options.presetsFile, options.dynamicPresets)
 	if err != nil {
 		return providers{}, err
 	}
-	admissionPluginProvider := kubernetesprovider.NewAdmissionPluginsProvider(context.Background(), mgr.GetClient())
+	admissionPluginProvider := kubernetesprovider.NewAdmissionPluginsProvider(ctx, client)
 	// Warm up the restMapper cache. Log but ignore errors encountered here, maybe there are stale seeds
 	go func() {
 		seeds, err := seedsGetter()
@@ -211,29 +214,29 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		}
 	}()
 
-	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
-	privilegedSSHKeyProvider, err := kubernetesprovider.NewPrivilegedSSHKeyProvider(mgr.GetClient())
+	sshKeyProvider := kubernetesprovider.NewSSHKeyProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
+	privilegedSSHKeyProvider, err := kubernetesprovider.NewPrivilegedSSHKeyProvider(client)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create privileged SSH key provider due to %v", err)
 	}
-	userProvider := kubernetesprovider.NewUserProvider(mgr.GetClient(), kubernetesprovider.IsServiceAccount, kubermaticMasterClient)
-	settingsProvider := kubernetesprovider.NewSettingsProvider(kubermaticMasterClient, mgr.GetClient())
-	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(mgr.GetClient())
-	adminProvider := kubernetesprovider.NewAdminProvider(mgr.GetClient())
+	userProvider := kubernetesprovider.NewUserProvider(client, kubernetesprovider.IsServiceAccount, kubermaticMasterClient)
+	settingsProvider := kubernetesprovider.NewSettingsProvider(ctx, kubermaticMasterClient, client)
+	addonConfigProvider := kubernetesprovider.NewAddonConfigProvider(client)
+	adminProvider := kubernetesprovider.NewAdminProvider(client)
 
-	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
+	serviceAccountTokenProvider, err := kubernetesprovider.NewServiceAccountTokenProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create service account token provider due to %v", err)
 	}
 
-	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient(), options.domain)
-	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient(), kubernetesprovider.IsServiceAccount)
-	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
+	serviceAccountProvider := kubernetesprovider.NewServiceAccountProvider(defaultImpersonationClient.CreateImpersonatedClient, client, options.domain)
+	projectMemberProvider := kubernetesprovider.NewProjectMemberProvider(defaultImpersonationClient.CreateImpersonatedClient, client, kubernetesprovider.IsServiceAccount)
+	projectProvider, err := kubernetesprovider.NewProjectProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create project provider due to %v", err)
 	}
 
-	privilegedProjectProvider, err := kubernetesprovider.NewPrivilegedProjectProvider(mgr.GetClient())
+	privilegedProjectProvider, err := kubernetesprovider.NewPrivilegedProjectProvider(client)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create privileged project provider due to %v", err)
 	}

@@ -59,7 +59,7 @@ func TestSingleCIDRAllocation(t *testing.T) {
 	}
 
 	resultMachine := &clusterv1alpha1.Machine{}
-	if err := r.Get(context.Background(), types.NamespacedName{Name: "Malcolm"}, resultMachine); err != nil {
+	if err := r.Get(context.Background(), types.NamespacedName{Name: m.Name, Namespace: m.Namespace}, resultMachine); err != nil {
 		t.Fatalf("failed to get machine after reconciling: %v", err)
 	}
 
@@ -91,7 +91,7 @@ func TestMultipleCIDRAllocation(t *testing.T) {
 			t.Errorf("failed to sync machine %q: %v", tuple.machine.Name, err)
 		}
 		reconciledMachine := &clusterv1alpha1.Machine{}
-		if err := r.Get(context.Background(), types.NamespacedName{Name: tuple.machine.Name}, reconciledMachine); err != nil {
+		if err := r.Get(context.Background(), types.NamespacedName{Name: tuple.machine.Name, Namespace: tuple.machine.Namespace}, reconciledMachine); err != nil {
 			t.Errorf("failed to get machine %q after reconcile: %v", tuple.machine.Name, err)
 		}
 		assertNetworkEquals(t, reconciledMachine, tuple.ip, tuple.gw, "8.8.8.8")
@@ -113,7 +113,7 @@ func TestReuseReleasedIP(t *testing.T) {
 	}
 
 	updatedHoban := &clusterv1alpha1.Machine{}
-	if err := r.Get(context.Background(), types.NamespacedName{Name: mHoban.Name}, updatedHoban); err != nil {
+	if err := r.Get(context.Background(), types.NamespacedName{Name: mHoban.Name, Namespace: mHoban.Namespace}, updatedHoban); err != nil {
 		t.Fatalf("failed to get machine %q after reconcile: %v", mHoban.Name, err)
 	}
 
@@ -128,7 +128,7 @@ func TestReuseReleasedIP(t *testing.T) {
 	}
 
 	updatedShepherd := &clusterv1alpha1.Machine{}
-	if err := r.Get(context.Background(), types.NamespacedName{Name: mShepherd.Name}, updatedShepherd); err != nil {
+	if err := r.Get(context.Background(), types.NamespacedName{Name: mShepherd.Name, Namespace: mShepherd.Namespace}, updatedShepherd); err != nil {
 		t.Fatalf("failed to get machine %q  after reconcile: %v", mShepherd.Name, err)
 	}
 
