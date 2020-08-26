@@ -14,8 +14,8 @@
 
 apiVersion: v1
 name: blackbox-exporter
-version: 1.0.6
-appVersion: v0.16.0
+version: 1.0.7
+appVersion: v0.17.0
 description: Deploys the Prometheus Blackbox Exporter
 keywords:
 - kubermatic
