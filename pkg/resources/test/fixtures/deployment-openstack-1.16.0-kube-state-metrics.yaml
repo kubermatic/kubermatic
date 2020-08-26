@@ -36,7 +36,7 @@ spec:
         - '{"command":"/kube-state-metrics","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--port","8080","--telemetry-port","8081"]}'
         command:
         - /http-prober-bin/http-prober
-        image: quay.io/coreos/kube-state-metrics:v1.9.4
+        image: quay.io/coreos/kube-state-metrics:v1.9.7
         name: kube-state-metrics
         ports:
         - containerPort: 8080
