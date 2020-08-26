@@ -38,14 +38,6 @@ spec:
   - host: {{ .ingress.host | trim }}
     http:
       paths:
-      {{- $name := .name }}
-      {{- $upstream_port := .upstream_port }}
-      {{- range .passthrough }}
-      - path: "{{ . }}"
-        backend:
-          serviceName: {{ $name }}-upstream
-          servicePort: {{ $upstream_port }}
-      {{- end }}
       - path: "/"
         backend:
           serviceName: {{ .name }}-iap
