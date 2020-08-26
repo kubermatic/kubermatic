@@ -109,7 +109,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/hyperkube","args":["kube-controller-manager","--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--service-account-private-key-file","/etc/kubernetes/service-account-key/sa.key","--root-ca-file","/etc/kubernetes/pki/ca/ca.crt","--cluster-signing-cert-file","/etc/kubernetes/pki/ca/ca.crt","--cluster-signing-key-file","/etc/kubernetes/pki/ca/ca.key","--cluster-cidr","172.25.0.0/16","--allocate-node-cidrs=true","--controllers","*,bootstrapsigner,tokencleaner","--use-service-account-credentials=true","--feature-gates","RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true","--cloud-provider","azure","--cloud-config","/etc/kubernetes/cloud/config","--cluster-name","de-test-01","--configure-cloud-routes=false","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--client-ca-file","/etc/kubernetes/pki/ca/ca.crt","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--port","0","--authentication-tolerate-lookup-failure=false"]}'
+        - '{"command":"/usr/local/bin/kube-controller-manager","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--service-account-private-key-file","/etc/kubernetes/service-account-key/sa.key","--root-ca-file","/etc/kubernetes/pki/ca/ca.crt","--cluster-signing-cert-file","/etc/kubernetes/pki/ca/ca.crt","--cluster-signing-key-file","/etc/kubernetes/pki/ca/ca.key","--cluster-cidr","172.25.0.0/16","--allocate-node-cidrs=true","--controllers","*,bootstrapsigner,tokencleaner","--use-service-account-credentials=true","--feature-gates","RotateKubeletClientCertificate=true,RotateKubeletServerCertificate=true","--cloud-provider","azure","--cloud-config","/etc/kubernetes/cloud/config","--cluster-name","de-test-01","--configure-cloud-routes=false","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--client-ca-file","/etc/kubernetes/pki/ca/ca.crt","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--port","0","--authentication-tolerate-lookup-failure=false"]}'
         command:
         - /http-prober-bin/http-prober
         env:
@@ -125,7 +125,7 @@ spec:
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
         - name: no_proxy
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
-        image: gcr.io/google_containers/hyperkube-amd64:v1.15.0
+        image: k8s.gcr.io/kube-controller-manager:v1.15.0
         livenessProbe:
           failureThreshold: 8
           httpGet:
@@ -165,6 +165,12 @@ spec:
           readOnly: true
         - mountPath: /etc/kubernetes/kubeconfig
           name: controllermanager-kubeconfig
+          readOnly: true
+        - mountPath: /etc/ssl/certs
+          name: ca-certs
+          readOnly: true
+        - mountPath: /usr/share/ca-certificates
+          name: usr-share-ca-certificates
           readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
@@ -208,6 +214,14 @@ spec:
       - name: controllermanager-kubeconfig
         secret:
           secretName: controllermanager-kubeconfig
+      - hostPath:
+          path: /etc/ssl/certs
+          type: DirectoryOrCreate
+        name: ca-certs
+      - hostPath:
+          path: /usr/share/ca-certificates
+          type: DirectoryOrCreate
+        name: usr-share-ca-certificates
       - emptyDir: {}
         name: http-prober-bin
 status: {}

@@ -207,6 +207,11 @@ const (
 	// the Kubernetes Dashboard
 	KubernetesDashboardCsrfTokenSecretName = "kubernetes-dashboard-csrf"
 
+	// HostCACertVolumeName is the name for the /etc/ssl/certs host mount volume
+	HostCACertVolumeName = "ca-certs"
+	// HostUsrShareCACertVolumeName is the anme for the /usr/share/ca-certificates host mount volume
+	HostUsrShareCACertVolumeName = "usr-share-ca-certificates"
+
 	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
 	// CloudConfigConfigMapKey is the key under which the cloud-config in the cloud-config configmap can be found
@@ -325,6 +330,8 @@ const (
 	// EtcdClusterSize defines the size of the etcd to use
 	EtcdClusterSize = 3
 
+	// RegistryK8SGCR defines the kubernetes specific docker registry at google
+	RegistryK8SGCR = "k8s.gcr.io"
 	// RegistryGCR defines the kubernetes docker registry at google
 	RegistryGCR = "gcr.io"
 	// RegistryDocker defines the default docker.io registry
@@ -1018,4 +1025,45 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 	}
 
 	return len(nodeList.Items) != 0, nil
+}
+
+// GetHostCACertVolumes returns a list of v1 volumes so that pod can have root CA-certs
+func GetHostCACertVolumes() []corev1.Volume {
+	doc := corev1.HostPathDirectoryOrCreate
+	return []corev1.Volume{
+		{
+			Name: HostCACertVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/etc/ssl/certs",
+					Type: &doc,
+				},
+			},
+		},
+		{
+			Name: HostUsrShareCACertVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/usr/share/ca-certificates",
+					Type: &doc,
+				},
+			},
+		},
+	}
+}
+
+// GetHostCACertVolumeMounts returns a list of v1 volumeMounts such that pod could mount from the host OS root CA-certs
+func GetHostCACertVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      HostCACertVolumeName,
+			MountPath: "/etc/ssl/certs",
+			ReadOnly:  true,
+		},
+		{
+			Name:      HostUsrShareCACertVolumeName,
+			MountPath: "/usr/share/ca-certificates",
+			ReadOnly:  true,
+		},
+	}
 }
