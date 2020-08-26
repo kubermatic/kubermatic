@@ -18,7 +18,6 @@ package kubernetes_test
 
 import (
 	"context"
-	"encoding/json"
 	"reflect"
 	"testing"
 
@@ -31,16 +30,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
+
+const defaultKubeconfig = "YXBpVmVyc2lvbjogdjEKY2x1c3RlcnM6Ci0gY2x1c3RlcjoKICAgIGNlcnRpZmljYXRlLWF1dGhvcml0eS1kYXRhOiBZWEJwVm1WeWMybHZiam9nZGpFS1kyeDFjM1JsY25NNkNpMGdZMngxYzNSbGNqb0tJQ0FnSUdObGNuUnBabWxqWVhSbExXRjFkR2h2Y21sMGVTMWtZWFJoT2lCaFltTUtJQ0FnSUhObGNuWmxjam9nYUhSMGNITTZMeTlzYzJoNmRtTm5PR3RrTG1WMWNtOXdaUzEzWlhOME15MWpMbVJsZGk1cmRXSmxjbTFoZEdsakxtbHZPak14TWpjMUNpQWdibUZ0WlRvZ2JITm9lblpqWnpoclpBcGpiMjUwWlhoMGN6b0tMU0JqYjI1MFpYaDBPZ29nSUNBZ1kyeDFjM1JsY2pvZ2JITm9lblpqWnpoclpBb2dJQ0FnZFhObGNqb2daR1ZtWVhWc2RBb2dJRzVoYldVNklHUmxabUYxYkhRS1kzVnljbVZ1ZEMxamIyNTBaWGgwT2lCa1pXWmhkV3gwQ210cGJtUTZJRU52Ym1acFp3cHdjbVZtWlhKbGJtTmxjem9nZTMwS2RYTmxjbk02Q2kwZ2JtRnRaVG9nWkdWbVlYVnNkQW9nSUhWelpYSTZDaUFnSUNCMGIydGxiam9nWVdGaExtSmlZZ289CiAgICBzZXJ2ZXI6IGh0dHBzOi8vbG9jYWxob3N0OjMwODA4CiAgbmFtZTogaHZ3OWs0c2djbApjb250ZXh0czoKLSBjb250ZXh0OgogICAgY2x1c3RlcjogaHZ3OWs0c2djbAogICAgdXNlcjogZGVmYXVsdAogIG5hbWU6IGRlZmF1bHQKY3VycmVudC1jb250ZXh0OiBkZWZhdWx0CmtpbmQ6IENvbmZpZwpwcmVmZXJlbmNlczoge30KdXNlcnM6Ci0gbmFtZTogZGVmYXVsdAogIHVzZXI6CiAgICB0b2tlbjogejlzaDc2LjI0ZGNkaDU3czR6ZGt4OGwK"
 
 func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 	testCases := []struct {
 		name            string
 		externalCluster *kubermaticapiv1.ExternalCluster
-		kubeconfig      *clientcmdapi.Config
+		kubeconfig      string
 		existingObjects []runtime.Object
 		expectedSecret  *corev1.Secret
 	}{
@@ -48,7 +48,7 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 			name:            "test: create a new secret",
 			existingObjects: []runtime.Object{},
 			externalCluster: genExternalCluster("test"),
-			kubeconfig:      genKubeconfig("localhost", "test"),
+			kubeconfig:      defaultKubeconfig,
 			expectedSecret: &corev1.Secret{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Secret",
@@ -59,7 +59,7 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 					Name:            genExternalCluster("test").GetKubeconfigSecretName(),
 					Namespace:       resources.KubermaticNamespace,
 				},
-				Data: map[string][]byte{resources.ExternalClusterKubeconfig: convertKubeconfig(genKubeconfig("localhost", "test"), t)},
+				Data: map[string][]byte{resources.ExternalClusterKubeconfig: []byte(defaultKubeconfig)},
 				Type: corev1.SecretTypeOpaque,
 			},
 		},
@@ -76,12 +76,12 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 						Name:            genExternalCluster("test").GetKubeconfigSecretName(),
 						Namespace:       resources.KubermaticNamespace,
 					},
-					Data: map[string][]byte{resources.ExternalClusterKubeconfig: convertKubeconfig(genKubeconfig("localhost", "test"), t)},
+					Data: map[string][]byte{resources.ExternalClusterKubeconfig: []byte("abc")},
 					Type: corev1.SecretTypeOpaque,
 				},
 			},
 			externalCluster: genExternalCluster("test"),
-			kubeconfig:      genKubeconfig("192.168.1.1", "updated"),
+			kubeconfig:      defaultKubeconfig,
 			expectedSecret: &corev1.Secret{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Secret",
@@ -92,7 +92,7 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 					Name:            genExternalCluster("test").GetKubeconfigSecretName(),
 					Namespace:       resources.KubermaticNamespace,
 				},
-				Data: map[string][]byte{resources.ExternalClusterKubeconfig: convertKubeconfig(genKubeconfig("192.168.1.1", "updated"), t)},
+				Data: map[string][]byte{resources.ExternalClusterKubeconfig: []byte(defaultKubeconfig)},
 				Type: corev1.SecretTypeOpaque,
 			},
 		},
@@ -133,24 +133,4 @@ func genExternalCluster(name string) *kubermaticapiv1.ExternalCluster {
 			HumanReadableName: name,
 		},
 	}
-}
-
-func genKubeconfig(server, cluster string) *clientcmdapi.Config {
-	return &clientcmdapi.Config{
-		Clusters: map[string]*clientcmdapi.Cluster{"test": {
-			Server: server,
-		}},
-		Contexts: map[string]*clientcmdapi.Context{"default": {
-			Cluster: cluster,
-		}},
-		CurrentContext: "default",
-	}
-}
-
-func convertKubeconfig(kubeconfig *clientcmdapi.Config, t *testing.T) []byte {
-	rawData, err := json.Marshal(kubeconfig)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return rawData
 }

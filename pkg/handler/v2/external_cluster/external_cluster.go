@@ -67,7 +67,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 		kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
 
-		if err := clusterProvider.CreateOrUpdateKubeconfigSecretForCluster(ctx, newCluster, cfg); err != nil {
+		if err := clusterProvider.CreateOrUpdateKubeconfigSecretForCluster(ctx, newCluster, req.Body.Kubeconfig); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -85,12 +85,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 type createClusterReq struct {
 	common.ProjectReq
 	// in: body
-	Body struct {
-		// Name is human readable name for the external cluster
-		Name string `json:"name"`
-		// Kubeconfig Base64 encoded kubeconfig
-		Kubeconfig string `json:"kubeconfig"`
-	}
+	Body body
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -297,6 +292,95 @@ func (req getClusterReq) Validate() error {
 	return nil
 }
 
+func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(updateClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if req.Body.Kubeconfig != "" {
+			config, err := base64.StdEncoding.DecodeString(req.Body.Kubeconfig)
+			if err != nil {
+				return nil, errors.NewBadRequest(err.Error())
+			}
+			cfg, err := clientcmd.Load(config)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			if _, err := clusterProvider.GenerateClient(cfg); err != nil {
+				return nil, errors.NewBadRequest(fmt.Sprintf("cannot connect to the kubernetes cluster: %v", err))
+			}
+			if err := clusterProvider.CreateOrUpdateKubeconfigSecretForCluster(ctx, cluster, req.Body.Kubeconfig); err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+		}
+
+		if req.Body.Name != "" && req.Body.Name != cluster.Spec.HumanReadableName {
+			cluster.Spec.HumanReadableName = req.Body.Name
+			cluster, err = upddateCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, cluster)
+			if err != nil {
+				return nil, errors.NewBadRequest(err.Error())
+			}
+		}
+
+		return convertClusterToAPI(cluster), nil
+	}
+}
+
+// updateClusterReq defines HTTP request for updateExternalCluster
+// swagger:parameters updateExternalCluster
+type updateClusterReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+	// in: body
+	Body body
+}
+
+func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req updateClusterReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// Validate validates CreateEndpoint request
+func (req updateClusterReq) Validate() error {
+	if len(req.ProjectID) == 0 {
+		return fmt.Errorf("the project ID cannot be empty")
+	}
+	if len(req.ClusterID) == 0 {
+		return fmt.Errorf("the cluster ID cannot be empty")
+	}
+	return nil
+}
+
 func genExternalCluster(name string) *kubermaticapiv1.ExternalCluster {
 	return &kubermaticapiv1.ExternalCluster{
 		ObjectMeta: metav1.ObjectMeta{Name: rand.String(10)},
@@ -372,4 +456,27 @@ func deleteCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return err
 	}
 	return clusterProvider.Delete(userInfo, cluster)
+}
+
+func upddateCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider, projectID string, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedClusterProvider.UpdateUnsecured(cluster)
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return clusterProvider.Update(userInfo, cluster)
+}
+
+type body struct {
+	// Name is human readable name for the external cluster
+	Name string `json:"name"`
+	// Kubeconfig Base64 encoded kubeconfig
+	Kubeconfig string `json:"kubeconfig"`
 }

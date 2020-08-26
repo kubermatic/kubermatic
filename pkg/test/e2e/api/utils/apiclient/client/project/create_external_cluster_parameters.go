@@ -14,6 +14,8 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
 )
 
 // NewCreateExternalClusterParams creates a new CreateExternalClusterParams object
@@ -61,7 +63,7 @@ for the create external cluster operation typically these are written to a http.
 type CreateExternalClusterParams struct {
 
 	/*Body*/
-	Body CreateExternalClusterBody
+	Body *models.Body
 	/*ProjectID*/
 	ProjectID string
 
@@ -104,13 +106,13 @@ func (o *CreateExternalClusterParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithBody adds the body to the create external cluster params
-func (o *CreateExternalClusterParams) WithBody(body CreateExternalClusterBody) *CreateExternalClusterParams {
+func (o *CreateExternalClusterParams) WithBody(body *models.Body) *CreateExternalClusterParams {
 	o.SetBody(body)
 	return o
 }
 
 // SetBody adds the body to the create external cluster params
-func (o *CreateExternalClusterParams) SetBody(body CreateExternalClusterBody) {
+func (o *CreateExternalClusterParams) SetBody(body *models.Body) {
 	o.Body = body
 }
 
@@ -133,8 +135,10 @@ func (o *CreateExternalClusterParams) WriteToRequest(r runtime.ClientRequest, re
 	}
 	var res []error
 
-	if err := r.SetBodyParam(o.Body); err != nil {
-		return err
+	if o.Body != nil {
+		if err := r.SetBodyParam(o.Body); err != nil {
+			return err
+		}
 	}
 
 	// path param project_id
