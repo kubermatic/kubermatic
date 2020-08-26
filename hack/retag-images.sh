@@ -19,27 +19,32 @@ set -euo pipefail
 TARGET_REGISTRY=${TARGET_REGISTRY:-127.0.0.1:5000}
 
 function retag {
-  local IMAGE="$1"
+  local image="$1"
 
-  ORG="$(echo ${IMAGE} | cut -d / -f2)"
-  NAME="$(echo ${IMAGE} | cut -d / -f3 | cut -d : -f1)"
-  TAG="$(echo ${IMAGE} | cut -d / -f3 | cut -d : -f2)"
-  TARGET_IMAGE="${TARGET_REGISTRY}/${ORG}/${NAME}:${TAG}"
+  # trim registry
+  local local_image="$(echo ${image} | cut -d/ -f1 --complement)"
 
-  echo -n "Retagging ${IMAGE} => ${TARGET_IMAGE}"
+  # split into name and tag
+  local name="$(echo ${local_image} | cut -d: -f1)"
+  local tag="$(echo ${local_image} | cut -d: -f2)"
 
-  if curl -s --fail "http://${TARGET_REGISTRY}/v2/${ORG}/${NAME}/tags/list" | jq -e ".tags | index(\"${TAG}\")" >/dev/null; then
+  # build target image name
+  local target_image="${TARGET_REGISTRY}/${name}:${tag}"
+
+  echo -n "Retagging ${image} => ${target_image}"
+
+  if curl -s --fail "http://${TARGET_REGISTRY}/v2/${name}/tags/list" | jq -e ".tags | index(\"${tag}\")" >/dev/null; then
     echo " skipping, exists already"
     return
   fi
 
   echo " ..."
 
-  docker pull "${IMAGE}"
-  docker tag "${IMAGE}" "${TARGET_IMAGE}"
-  docker push "${TARGET_IMAGE}"
+  docker pull "${image}"
+  docker tag "${image}" "${target_image}"
+  docker push "${target_image}"
 
-  echo "Done retagging ${IMAGE}"
+  echo "Done retagging ${image}"
 }
 
 IMAGES=$(cat /dev/stdin | (grep "image: " || true) | cut -d : -f 2,3)
