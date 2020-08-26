@@ -20,7 +20,7 @@ metadata:
   labels:
     addonmanager.kubernetes.io/mode: Reconcile
     app.kubernetes.io/name: node-exporter
-    app.kubernetes.io/version: v0.18.0
+    app.kubernetes.io/version: v1.0.1
 spec:
   updateStrategy:
     type: RollingUpdate
@@ -64,7 +64,7 @@ spec:
           mountPropagation: HostToContainer
 
       - name: kube-rbac-proxy
-        image: '{{ Registry "quay.io" }}/coreos/kube-rbac-proxy:v0.4.1'
+        image: '{{ Registry "quay.io" }}/brancz/kube-rbac-proxy:v0.6.0'
         args:
         - '--logtostderr'
         - '--secure-listen-address=$(IP):9100'
