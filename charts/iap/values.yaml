@@ -13,6 +13,14 @@
 # limitations under the License.
 
 iap:
+  image:
+    repository: quay.io/oauth2-proxy/oauth2-proxy
+    tag: v6.0.0
+    pullPolicy: IfNotPresent
+
+  oidc_issuer_url: https://kubermatic.tld/dex
+  port: 3000
+
   # replicas per deployment; you can set this explicitly per deployment
   # to override this
   replicas: 2
@@ -20,87 +28,88 @@ iap:
   deployments:
     # alertmanager:
     #   name: alertmanager
-    #   replicas: 2 #
+    #   replicas: 3
     #   client_id: alertmanager
     #   client_secret: xxx
     #   encryption_key: xxx
-    #   config: ## see https://www.keycloak.org/docs/latest/securing_apps/index.html#example-usage-and-configuration
-    #   ## example configuration allowing access only to the mygroup from mygithuborg organization
-    #     scopes:
-    #     - "groups"
-    #     resources:
-    #     - uri: "/*"
-    #       groups:
-    #       - "mygithuborg:mygroup"
+    #   config: ## see https://github.com/oauth2-proxy/oauth2-proxy/blob/master/docs/configuration/configuration.md
+    #     scope: "groups openid email"
+    #     email_domains:
+    #       - '*'
+    #     ## example configuration allowing access only to the mygroup from mygithuborg organization
+    #     github_org: mygithuborg
+    #     github_team: mygroup
+    #     ## do not route health endpoint through the proxy
+    #     skip_auth_regex:
+    #       - '/-/healthy'
     #   upstream_service: alertmanager.monitoring.svc.cluster.local
     #   upstream_port: 9093
     #   ingress:
     #     host: "alertmanager.kubermatic.tld"
-    #     annotations: {}
-    #   # List of URL prefixes for which nginx should be configured to route requests
-    #   # directly to the upstream service instead of to the Keycloak Proxy;
-    #   # this can be useful for health check which should not generate load on the
-    #   # identity aware proxy (Dex for example creates AuthRequest CRDs for each
-    #   # opened session).
-    #   # Be careful to not accidentally expose a health endpoint that in case of errors
-    #   # or bad configuration can respond with confidential data (error messages,
-    #   # stack traces, configuration, ...).
-    #   passthrough:
-    #   - /-/healthy # exposes nothing
+    #     annotations: {}1
+    #
     # grafana:
     #   name: grafana
     #   client_id: grafana
     #   client_secret: xxx
     #   encryption_key: xxx
-    #   config: ## see https://www.keycloak.org/docs/latest/securing_apps/index.html#example-usage-and-configuration
-    #     enable-authorization-header: false
+    #   config: ## see https://github.com/oauth2-proxy/oauth2-proxy/blob/master/docs/configuration/configuration.md
+    #     scope: "groups openid email"
+    #     email_domains:
+    #       - '*'
+    #     ## do not route health endpoint through the proxy
+    #     skip_auth_regex:
+    #       - '/api/health'
+    #     ## auto-register users based on their email address
+    #     ## Grafana is configured to look for the X-Forwarded-Email header
+    #     pass_user_headers: true
     #   upstream_service: grafana.monitoring.svc.cluster.local
     #   upstream_port: 3000
     #   ingress:
     #     host: "grafana.kubermatic.tld"
     #     annotations: {}
-    #   passthrough:
-    #   - /api/health # exposes Grafana version and Git hash
+    #
     # kibana:
     #   name: kibana
     #   client_id: kibana
     #   client_secret: xxx
     #   encryption_key: xxx
-    #   config: {} ## see https://www.keycloak.org/docs/latest/securing_apps/index.html#example-usage-and-configuration
+    #   config: ## see https://github.com/oauth2-proxy/oauth2-proxy/blob/master/docs/configuration/configuration.md
+    #     scope: "groups openid email"
+    #     email_domains:
+    #       - '*'
+    #     ## do not route health endpoint through the proxy
+    #     skip_auth_regex:
+    #       - '/ui/favicons/favicon.ico'
     #   upstream_service: kibana.logging.svc.cluster.local
     #   upstream_port: 5601
     #   ingress:
     #     host: "kibana.kubermatic.tld"
     #     annotations: {}
-    #   passthrough:
-    #   - /ui/favicons/favicon.ico # exposes nothing
+    #
     # prometheus:
     #   name: prometheus
     #   client_id: prometheus
     #   client_secret: xxx
     #   encryption_key: xxx
-    #   config: {} ## see https://www.keycloak.org/docs/latest/securing_apps/index.html#example-usage-and-configuration
+    #   config: ## see https://github.com/oauth2-proxy/oauth2-proxy/blob/master/docs/configuration/configuration.md
+    #     scope: "groups openid email"
+    #     email_domains:
+    #       - '*'
+    #     ## do not route health endpoint through the proxy
+    #     skip_auth_regex:
+    #       - '/-/healthy'
     #   upstream_service: prometheus.monitoring.svc.cluster.local
     #   upstream_port: 9090
     #   ingress:
     #     host: "prometheus.kubermatic.tld"
     #     annotations:
     #       ingress.kubernetes.io/upstream-hash-by: "ip_hash" ## needed for prometheus federations
-    #   passthrough:
-    #   - /-/healthy # exposes nothing
 
   # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
   certIssuer:
     name: letsencrypt-prod
     kind: ClusterIssuer
-
-  discovery_url: https://kubermatic.tld/dex/.well-known/openid-configuration
-  port: 3000
-
-  image:
-    repository: docker.io/keycloak/keycloak-gatekeeper
-    tag: 7.0.0
-    pullPolicy: IfNotPresent
 
   resources:
     requests:

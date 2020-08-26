@@ -37,13 +37,20 @@ spec:
         checksum/secrets: {{ include (print $.Template.BasePath "/secrets.yaml") $ | sha256sum }}
     spec:
       containers:
-      - name: keycloak-gatekeeper
+      - name: oauth2-proxy
         image: "{{ $.Values.iap.image.repository }}:{{ $.Values.iap.image.tag }}"
         imagePullPolicy: {{ $.Values.iap.image.pullPolicy }}
         args:
-        - --discovery-url={{ $.Values.iap.discovery_url }}
-        - --listen=0.0.0.0:{{ $.Values.iap.port }}
-        - --upstream-url=http://{{ .upstream_service }}:{{ .upstream_port }}
+        - --provider=oidc
+        - --oidc-issuer-url={{ $.Values.iap.oidc_issuer_url }}
+        - --http-address=0.0.0.0:{{ $.Values.iap.port }}
+        - --upstream=http://{{ .upstream_service }}:{{ .upstream_port }}
+        - --cookie-name={{ .name }}_oauth2_proxy
+        - --proxy-prefix=/oauth
+        - --ping-path=/oauth/healthy
+        - --silence-ping-logging=true
+        - --reverse-proxy=true
+        - --skip-provider-button=true
         - --config=/config/config.yaml
         envFrom:
         - secretRef:
@@ -54,13 +61,13 @@ spec:
           protocol: TCP
         livenessProbe:
           httpGet:
-            path: /oauth/health
+            path: /oauth/healthy
             port: http
           initialDelaySeconds: 3
           timeoutSeconds: 2
         readinessProbe:
           httpGet:
-            path: /oauth/health
+            path: /oauth/healthy
             port: http
           initialDelaySeconds: 3
           timeoutSeconds: 2
@@ -83,7 +90,7 @@ spec:
       nodeSelector:
 {{ toYaml $.Values.iap.nodeSelector | indent 8 }}
       affinity:
-{{ (tpl (toYaml $.Values.iap.affinity) (merge $ .)) | fromYaml | toYaml | indent 8 }}
+{{ (tpl (toYaml $.Values.iap.affinity) (merge (deepCopy $) .)) | fromYaml | toYaml | indent 8 }}
       tolerations:
 {{ toYaml $.Values.iap.tolerations | indent 8 }}
 {{ end }}

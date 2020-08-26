@@ -21,6 +21,6 @@ metadata:
 data:
   config.yaml: |
 {{- with .config }}
-{{ toYaml . | indent 4 }}
+{{ toToml . | indent 4 }}
 {{ end }}
 {{ end }}
