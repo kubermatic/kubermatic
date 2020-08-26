@@ -151,6 +151,8 @@ type ClientService interface {
 
 	UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingOK, error)
 
+	UpdateExternalCluster(params *UpdateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateExternalClusterOK, error)
+
 	UpdateProject(params *UpdateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateProjectOK, error)
 
 	UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*UpgradeClusterNodeDeploymentsOK, error)
@@ -2314,6 +2316,40 @@ func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingPara
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*UnbindUserFromRoleBindingDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  UpdateExternalCluster updates an external cluster for the given project
+*/
+func (a *Client) UpdateExternalCluster(params *UpdateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateExternalClusterOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateExternalClusterParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "updateExternalCluster",
+		Method:             "PUT",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateExternalClusterReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*UpdateExternalClusterOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateExternalClusterDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

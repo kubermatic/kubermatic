@@ -19,7 +19,7 @@ package kubernetes
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/base64"
 	"errors"
 	"fmt"
 
@@ -158,6 +158,26 @@ func (p *ExternalClusterProvider) List(project *kubermaticapiv1.Project) (*kuber
 	return projectClusters, nil
 }
 
+// Update updates the given cluster
+func (p *ExternalClusterProvider) UpdateUnsecured(cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
+	if err := p.clientPrivileged.Update(context.Background(), cluster); err != nil {
+		return nil, err
+	}
+	return cluster, nil
+}
+
+// Update updates the given cluster
+func (p *ExternalClusterProvider) Update(userInfo *provider.UserInfo, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
+	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+	if err := masterImpersonatedClient.Update(context.Background(), cluster); err != nil {
+		return nil, err
+	}
+	return cluster, nil
+}
+
 func addProjectReference(project *kubermaticapiv1.Project, cluster *kubermaticapiv1.ExternalCluster) {
 	if cluster.Labels == nil {
 		cluster.Labels = make(map[string]string)
@@ -188,11 +208,15 @@ func (p *ExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (ctrl
 
 func (p *ExternalClusterProvider) GetClient(cluster *kubermaticapiv1.ExternalCluster) (ctrlruntimeclient.Client, error) {
 	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.clientPrivileged)
-	kubeconfig, err := secretKeyGetter(cluster.Spec.KubeconfigReference, resources.KubeconfigSecretKey)
+	rawKubeconfig, err := secretKeyGetter(cluster.Spec.KubeconfigReference, resources.KubeconfigSecretKey)
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := clientcmd.Load([]byte(kubeconfig))
+	kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
+	if err != nil {
+		return nil, err
+	}
+	cfg, err := clientcmd.Load(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
@@ -201,11 +225,15 @@ func (p *ExternalClusterProvider) GetClient(cluster *kubermaticapiv1.ExternalClu
 
 func (p *ExternalClusterProvider) GetVersion(cluster *kubermaticapiv1.ExternalCluster) (*ksemver.Semver, error) {
 	secretKeyGetter := provider.SecretKeySelectorValueFuncFactory(context.Background(), p.clientPrivileged)
-	kubeconfig, err := secretKeyGetter(cluster.Spec.KubeconfigReference, resources.KubeconfigSecretKey)
+	rawKubeconfig, err := secretKeyGetter(cluster.Spec.KubeconfigReference, resources.KubeconfigSecretKey)
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := clientcmd.Load([]byte(kubeconfig))
+	kubeconfig, err := base64.StdEncoding.DecodeString(rawKubeconfig)
+	if err != nil {
+		return nil, err
+	}
+	cfg, err := clientcmd.Load(kubeconfig)
 	if err != nil {
 		return nil, err
 	}
@@ -229,14 +257,9 @@ func (p *ExternalClusterProvider) GetVersion(cluster *kubermaticapiv1.ExternalCl
 	return v, nil
 }
 
-func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, kubeconfig *clientcmdapi.Config) error {
-
-	rawData, err := json.Marshal(kubeconfig)
-	if err != nil {
-		return err
-	}
+func (p *ExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, kubeconfig string) error {
 	kubeconfigRef, err := p.ensureKubeconfigSecret(ctx, cluster, map[string][]byte{
-		resources.ExternalClusterKubeconfig: rawData,
+		resources.ExternalClusterKubeconfig: []byte(kubeconfig),
 	})
 	if err != nil {
 		return err
