@@ -14,8 +14,8 @@
 
 apiVersion: v1
 name: kube-state-metrics
-version: 1.0.9
-appVersion: v1.9.4
+version: 1.0.10
+appVersion: v1.9.7
 description: Kube-State-Metrics for Kubermatic
 keywords:
 - kubermatic
