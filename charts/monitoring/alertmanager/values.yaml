@@ -15,11 +15,11 @@
 alertmanager:
   image:
     repository: quay.io/prometheus/alertmanager
-    tag: v0.20.0
+    tag: v0.21.0
     pullPolicy: IfNotPresent
   configReloaderImage:
     repository: docker.io/jimmidyson/configmap-reload
-    tag: v0.2.2
+    tag: v0.3.0
     pullPolicy: IfNotPresent
   host: ""
   replicas: 3
