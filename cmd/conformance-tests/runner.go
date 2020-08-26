@@ -1109,10 +1109,17 @@ func (r *testRunner) getGinkgoRuns(
 	nodeNumberTotal := int32(r.nodeCount)
 
 	ginkgoSkipParallel := `\[Serial\]`
-	if minor := cluster.Spec.Version.Minor(); minor >= 16 && minor <= 18 {
+	if minor := cluster.Spec.Version.Minor(); minor >= 16 && minor <= 19 {
 		// These require the nodes NodePort to be available from the tester, which is not the case for us.
 		// TODO: Maybe add an option to allow the NodePorts in the SecurityGroup?
-		ginkgoSkipParallel += "|Services should be able to change the type from ExternalName to NodePort|Services should be able to create a functioning NodePort service"
+		ginkgoSkipParallel = strings.Join([]string{
+			ginkgoSkipParallel,
+			"Services should be able to change the type from ExternalName to NodePort",
+			"Services should be able to create a functioning NodePort service",
+			"Services should be able to switch session affinity for NodePort service",
+			"Services should have session affinity timeout work for NodePort service",
+			"Services should have session affinity work for NodePort service",
+		}, "|")
 	}
 
 	runs := []struct {
@@ -1144,6 +1151,8 @@ func (r *testRunner) getGinkgoRuns(
 
 		reportsDir := path.Join("/tmp", scenario.Name(), run.name)
 		env := []string{
+			// `kubectl diff` needs to find /usr/bin/diff
+			fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
 			fmt.Sprintf("HOME=%s", r.homeDir),
 			fmt.Sprintf("AWS_SSH_KEY=%s", path.Join(r.homeDir, ".ssh", "google_compute_engine")),
 			fmt.Sprintf("LOCAL_SSH_KEY=%s", path.Join(r.homeDir, ".ssh", "google_compute_engine")),

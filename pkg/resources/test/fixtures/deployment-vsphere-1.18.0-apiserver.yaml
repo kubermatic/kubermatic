@@ -160,7 +160,6 @@ spec:
         - --token-auth-file
         - /etc/kubernetes/tokens/tokens.csv
         - --enable-bootstrap-token-auth
-        - "true"
         - --service-account-key-file
         - /etc/kubernetes/service-account-key/sa.key
         - --service-cluster-ip-range

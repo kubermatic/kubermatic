@@ -301,7 +301,7 @@ func TestManageClusterByAdmin(t *testing.T) {
 			name:       "create cluster on DigitalOcean",
 			dc:         "kubermatic",
 			location:   "do-fra1",
-			version:    "v1.15.6",
+			version:    "v1.18.8",
 			credential: "e2e-digitalocean",
 			replicas:   1,
 			patch: PatchCluster{

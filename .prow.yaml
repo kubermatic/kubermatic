@@ -285,46 +285,6 @@ presubmits:
   # Base Kubernetes Tests (AWS, CoreOS)
   #########################################################
 
-  - name: pre-kubermatic-e2e-aws-coreos-1.15
-    decorate: true
-    optional: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-aws: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-vault: "true"
-      preset-repo-ssh: "true"
-      preset-kubeconfig-ci: "true"
-      preset-kind-volume-mounts: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.15.11"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/ci-kind-e2e.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
-
   - name: pre-kubermatic-e2e-aws-coreos-1.16
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
@@ -340,12 +300,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.16.13"
+          value: "v1.16.14"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
@@ -380,12 +340,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.17.9"
+          value: "v1.17.11"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
@@ -420,12 +380,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.18.8"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
@@ -445,7 +405,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-aws-flatcar-1.18
+  - name: pre-kubermatic-e2e-aws-flatcar-1.19
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -460,12 +420,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
@@ -485,7 +445,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-aws-flatcar-1.18-ce
+  - name: pre-kubermatic-e2e-aws-flatcar-1.19-ce
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -500,7 +460,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: "ce"
@@ -509,7 +469,7 @@ presubmits:
         - name: ONLY_TEST_CREATION
           value: "true"
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
@@ -529,11 +489,11 @@ presubmits:
           limits:
             memory: 4Gi
 
-  #########################################################
-  # Extended Kubernetes Tests (various cloud providers, OS)
-  #########################################################
+  # #########################################################
+  # # Extended Kubernetes Tests (various cloud providers, OS)
+  # #########################################################
 
-  - name: pre-kubermatic-e2e-azure-coreos-1.18
+  - name: pre-kubermatic-e2e-azure-coreos-1.19
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -548,12 +508,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,flatcar,rhel"
         - name: PROVIDER
@@ -577,7 +537,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-gcp-coreos-1.18
+  - name: pre-kubermatic-e2e-gcp-coreos-1.19
     decorate: true
     always_run: false
     optional: true
@@ -593,12 +553,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: PROVIDER
           value: "gcp"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -620,7 +580,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-gcp-coreos-1.18-psp
+  - name: pre-kubermatic-e2e-gcp-coreos-1.19-psp
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -635,12 +595,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: PROVIDER
           value: "gcp"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -666,7 +626,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-do-centos-1.18
+  - name: pre-kubermatic-e2e-do-centos-1.19
     decorate: true
     always_run: false
     optional: true
@@ -682,12 +642,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "ubuntu,coreos,flatcar,rhel"
         - name: PROVIDER
@@ -709,7 +669,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-packet-coreos-1.18
+  - name: pre-kubermatic-e2e-packet-coreos-1.19
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -724,12 +684,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: PROVIDER
           value: "packet"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -751,7 +711,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-kubevirt-centos-1.18
+  - name: pre-kubermatic-e2e-kubevirt-centos-1.19
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -766,12 +726,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: PROVIDER
           value: "kubevirt"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -793,7 +753,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-hetzner-ubuntu-1.18
+  - name: pre-kubermatic-e2e-hetzner-ubuntu-1.19
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -808,12 +768,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: PROVIDER
           value: "hetzner"
         # Hetzner doesn't support coreos
@@ -838,7 +798,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-openstack-coreos-1.18
+  - name: pre-kubermatic-e2e-openstack-coreos-1.19
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -853,12 +813,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: PROVIDER
           value: "openstack"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -882,7 +842,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-openstack-centos-1.18
+  - name: pre-kubermatic-e2e-openstack-centos-1.19
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -897,12 +857,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -926,7 +886,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-openstack-ubuntu-1.18
+  - name: pre-kubermatic-e2e-openstack-ubuntu-1.19
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -941,12 +901,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: PROVIDER
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -970,7 +930,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-coreos-1.18
+  - name: pre-kubermatic-e2e-vsphere-coreos-1.19
     decorate: true
     run_if_changed: "pkg/provider/cloud/vsphere"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -985,12 +945,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: PROVIDER
           value: "vsphere"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -1012,7 +972,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-coreos-1.18-customfolder
+  - name: pre-kubermatic-e2e-vsphere-coreos-1.19-customfolder
     decorate: true
     optional: true
     run_if_changed: "pkg/provider/cloud/vsphere"
@@ -1028,12 +988,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: PROVIDER
           value: "vsphere"
         - name: EXCLUDE_DISTRIBUTIONS
@@ -1057,7 +1017,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-coreos-1.18-datastore-cluster
+  - name: pre-kubermatic-e2e-vsphere-coreos-1.19-datastore-cluster
     decorate: true
     optional: true
     run_if_changed: "pkg/provider/cloud/vsphere"
@@ -1073,12 +1033,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+        - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
           env:
             - name: KUBERMATIC_EDITION
               value: ee
             - name: VERSIONS_TO_TEST
-              value: "v1.18.6"
+              value: "v1.19.0"
             - name: PROVIDER
               value: "vsphere"
             - name: SCENARIO_OPTIONS
@@ -1122,7 +1082,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -1168,7 +1128,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         imagePullPolicy: Always
         command:
         - "./hack/ci/ci_run_api_e2e.sh"
@@ -1208,14 +1168,14 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.17
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: EXCLUDE_DISTRIBUTIONS
           value: ubuntu,centos,sles,rhel,flatcar
         - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
+          value: "v1.19.0"
         - name: KUBERMATIC_USE_OPERATOR
           value: "true"
         - name: ONLY_TEST_CREATION

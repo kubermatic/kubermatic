@@ -25,6 +25,9 @@
 {{ if eq .Cluster.MajorMinorVersion "1.18" }}
 {{ $version = "v1.18.0 "}}
 {{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.19" }}
+{{ $version = "v1.19.0 "}}
+{{ end }}
 
 kind: Service
 apiVersion: v1

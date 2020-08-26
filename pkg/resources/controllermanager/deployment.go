@@ -207,9 +207,9 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 		"--cluster-signing-cert-file", "/etc/kubernetes/pki/ca/ca.crt",
 		"--cluster-signing-key-file", "/etc/kubernetes/pki/ca/ca.key",
 		"--cluster-cidr", data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0],
-		"--allocate-node-cidrs=true",
+		"--allocate-node-cidrs",
 		"--controllers", "*,bootstrapsigner,tokencleaner",
-		"--use-service-account-credentials=true",
+		"--use-service-account-credentials",
 	}
 
 	featureGates := []string{"RotateKubeletClientCertificate=true",
@@ -243,8 +243,6 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	flags = append(flags, "--authorization-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig")
 	// We're going to use the https endpoints for scraping the metrics starting from 1.12. Thus we can deactivate the http endpoint
 	flags = append(flags, "--port", "0")
-	// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
-	flags = append(flags, "--authentication-tolerate-lookup-failure=false")
 
 	return flags, nil
 }
