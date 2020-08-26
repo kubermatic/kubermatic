@@ -34,5 +34,6 @@ echo "" >> $file
 set -x
 curl -sLo - $source >> $file
 
-# remove misleading label
+# remove misleading labels
 yq delete -i -d'*' $file 'metadata.labels."helm.sh/chart"'
+yq delete -i -d'*' $file 'metadata.labels."app.kubernetes.io/managed-by"'
