@@ -15,7 +15,7 @@
 kubeStateMetrics:
   image:
     repository: quay.io/coreos/kube-state-metrics
-    tag: v1.9.4
+    tag: v1.9.7
   resources:
     requests:
       cpu: 50m
