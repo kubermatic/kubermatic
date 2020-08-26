@@ -15,7 +15,7 @@
 nodeExporter:
   image:
     repository: quay.io/prometheus/node-exporter
-    tag: v0.18.1
+    tag: v1.0.1
   resources:
     requests:
       cpu: 50m
@@ -26,8 +26,8 @@ nodeExporter:
 
   rbacProxy:
     image:
-      repository: quay.io/coreos/kube-rbac-proxy
-      tag: v0.4.1
+      repository: quay.io/brancz/kube-rbac-proxy
+      tag: v0.6.0
     resources:
       requests:
         cpu: 50m
