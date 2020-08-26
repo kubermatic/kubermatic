@@ -721,13 +721,15 @@ type ExternalClusterProvider interface {
 
 	Delete(userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) error
 
+	Update(userInfo *UserInfo, cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+
 	List(project *kubermaticv1.Project) (*kubermaticv1.ExternalClusterList, error)
 
 	GenerateClient(cfg *clientcmdapi.Config) (ctrlruntimeclient.Client, error)
 
 	GetClient(cluster *kubermaticv1.ExternalCluster) (ctrlruntimeclient.Client, error)
 
-	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig *clientcmdapi.Config) error
+	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig string) error
 
 	GetVersion(cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
 }
@@ -751,4 +753,10 @@ type PrivilegedExternalClusterProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
 	GetUnsecured(clusterName string) (*kubermaticv1.ExternalCluster, error)
+
+	// UpdateUnsecured updates an external cluster
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resources
+	UpdateUnsecured(cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
 }

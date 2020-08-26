@@ -380,6 +380,81 @@ func TestGetClusterEndpoint(t *testing.T) {
 	}
 }
 
+func TestUpdateClusterEndpoint(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		HTTPStatus             int
+		ProjectToSync          string
+		ClusterToSync          string
+		ExistingKubermaticObjs []runtime.Object
+		ExistingAPIUser        *apiv1.User
+	}{
+		{
+			Name:                   "scenario 1: update external cluster",
+			Body:                   `{"name":"test"}`,
+			ExpectedResponse:       `{"id":"clusterAbcID","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"kubernetes","spec":{"cloud":{"dc":""},"version":"","oidc":{}},"status":{"version":"","url":""}}`,
+			HTTPStatus:             http.StatusOK,
+			ProjectToSync:          test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
+			ClusterToSync:          "clusterAbcID",
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+		},
+		{
+			Name:             "scenario 2: the admin John can update Bob's cluster",
+			Body:             `{"name":"test"}`,
+			ExpectedResponse: `{"id":"clusterAbcID","name":"test","creationTimestamp":"0001-01-01T00:00:00Z","labels":{"project-id":"my-first-project-ID"},"type":"kubernetes","spec":{"cloud":{"dc":""},"version":"","oidc":{}},"status":{"version":"","url":""}}`,
+			HTTPStatus:       http.StatusOK,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add admin user
+				genUser("John", "john@acme.com", true),
+				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
+			),
+			ClusterToSync:   "clusterAbcID",
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			Name:             "scenario 3: the user John can not update Bob's cluster",
+			Body:             `{"name":"test"}`,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				// add admin user
+				genUser("John", "john@acme.com", false),
+				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
+			),
+			ClusterToSync:   "clusterAbcID",
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+
+			// validate if deletion was successful
+			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			var kubermaticObj []runtime.Object
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
 func genUser(name, email string, isAdmin bool) *kubermaticv1.User {
 	user := test.GenUser("", name, email)
 	user.Spec.IsAdmin = isAdmin

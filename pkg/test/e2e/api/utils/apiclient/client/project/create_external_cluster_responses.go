@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-openapi/runtime"
 	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
 )
@@ -168,40 +167,5 @@ func (o *CreateExternalClusterDefault) readResponse(response runtime.ClientRespo
 		return err
 	}
 
-	return nil
-}
-
-/*CreateExternalClusterBody create external cluster body
-swagger:model CreateExternalClusterBody
-*/
-type CreateExternalClusterBody struct {
-
-	// Kubeconfig Base64 encoded kubeconfig
-	Kubeconfig string `json:"kubeconfig,omitempty"`
-
-	// Name is human readable name for the external cluster
-	Name string `json:"name,omitempty"`
-}
-
-// Validate validates this create external cluster body
-func (o *CreateExternalClusterBody) Validate(formats strfmt.Registry) error {
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (o *CreateExternalClusterBody) MarshalBinary() ([]byte, error) {
-	if o == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(o)
-}
-
-// UnmarshalBinary interface implementation
-func (o *CreateExternalClusterBody) UnmarshalBinary(b []byte) error {
-	var res CreateExternalClusterBody
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*o = res
 	return nil
 }

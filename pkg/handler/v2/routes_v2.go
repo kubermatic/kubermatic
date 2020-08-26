@@ -71,6 +71,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}").
 		Handler(r.getExternalCluster())
+
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}").
+		Handler(r.updateExternalCluster())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -301,6 +305,31 @@ func (r Routing) getExternalCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.GetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
 		externalcluster.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id} project updateExternalCluster
+//
+//     Updates an external cluster for the given project.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Cluster
+//       401: empty
+//       403: empty
+func (r Routing) updateExternalCluster() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.UpdateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
+		externalcluster.DecodeUpdateReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

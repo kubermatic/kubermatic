@@ -130,6 +130,10 @@ type FakeExternalClusterProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
+func (p *FakeExternalClusterProvider) Update(userInfo *provider.UserInfo, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
+	return p.Provider.Update(userInfo, cluster)
+}
+
 func (p *FakeExternalClusterProvider) GetVersion(cluster *kubermaticapiv1.ExternalCluster) (*semver.Semver, error) {
 	return semver.NewSemver(DefaultKubernetesVersion)
 }
@@ -154,7 +158,7 @@ func (p *FakeExternalClusterProvider) GenerateClient(cfg *clientcmdapi.Config) (
 	return p.FakeClient, nil
 }
 
-func (p *FakeExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, kubeconfig *clientcmdapi.Config) error {
+func (p *FakeExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, kubeconfig string) error {
 	return p.Provider.CreateOrUpdateKubeconfigSecretForCluster(ctx, cluster, kubeconfig)
 }
 
