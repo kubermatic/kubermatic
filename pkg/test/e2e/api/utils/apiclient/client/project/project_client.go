@@ -109,6 +109,8 @@ type ClientService interface {
 
 	ListClustersV2(params *ListClustersV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClustersV2OK, error)
 
+	ListExternalClusterNodes(params *ListExternalClusterNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterNodesOK, error)
+
 	ListExternalClusters(params *ListExternalClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClustersOK, error)
 
 	ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceOK, error)
@@ -1594,6 +1596,40 @@ func (a *Client) ListClustersV2(params *ListClustersV2Params, authInfo runtime.C
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListClustersV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListExternalClusterNodes gets an external cluster nodes
+*/
+func (a *Client) ListExternalClusterNodes(params *ListExternalClusterNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterNodesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListExternalClusterNodesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listExternalClusterNodes",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/nodes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListExternalClusterNodesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListExternalClusterNodesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListExternalClusterNodesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

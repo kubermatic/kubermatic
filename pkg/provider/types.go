@@ -732,6 +732,8 @@ type ExternalClusterProvider interface {
 	CreateOrUpdateKubeconfigSecretForCluster(ctx context.Context, cluster *kubermaticv1.ExternalCluster, kubeconfig string) error
 
 	GetVersion(cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
+
+	ListNodes(cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error)
 }
 
 // ExternalClusterProvider declares the set of methods for interacting with external cluster
