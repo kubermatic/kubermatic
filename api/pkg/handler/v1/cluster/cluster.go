@@ -160,7 +160,7 @@ func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider prov
 		// generate the name here so that it can be used in the secretName below
 		partialCluster.Name = rand.String(10)
 
-		if cloudcontroller.ExternalCloudControllerFeatureSupported(partialCluster) {
+		if cloudcontroller.ExternalCloudControllerFeatureSupported(dc, partialCluster) {
 			partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
 		}
 
