@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/klog"
 )
 
 const (
@@ -341,7 +342,12 @@ func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) i
 	etcdClusterSize := data.Cluster().Spec.ComponentsOverride.Etcd.ClusterSize
 	// handle existing clusters that don't have a configured size
 	if etcdClusterSize < kubermaticv1.DefaultEtcdClusterSize {
+		klog.V(2).Infof("etcdClusterSize [%d] is smaller than DefaultEtcdClusterSize [%d]. Falling back to DefaultEtcdClusterSize", etcdClusterSize, kubermaticv1.DefaultEtcdClusterSize)
 		etcdClusterSize = kubermaticv1.DefaultEtcdClusterSize
+	}
+	if etcdClusterSize > kubermaticv1.MaxEtcdClusterSize {
+		klog.V(2).Infof("etcdClusterSize [%d] is larger than MaxEtcdClusterSize [%d]. Falling back to MaxEtcdClusterSize", etcdClusterSize, kubermaticv1.MaxEtcdClusterSize)
+		etcdClusterSize = kubermaticv1.MaxEtcdClusterSize
 	}
 	if set.Spec.Replicas == nil { // new replicaset
 		return etcdClusterSize

@@ -52,8 +52,8 @@ func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecr
 					net.ParseIP("127.0.0.1"),
 				},
 			}
-
-			for i := 0; i < 3; i++ {
+			// TODO: make this dynamic based on existing pod count
+			for i := 0; i < kubermaticv1.MaxEtcdClusterSize; i++ {
 				// Member name
 				podName := fmt.Sprintf("etcd-%d", i)
 				altNames.DNSNames = append(altNames.DNSNames, podName)
