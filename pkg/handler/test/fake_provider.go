@@ -19,6 +19,7 @@ package test
 import (
 	"context"
 	"errors"
+
 	"net/http"
 	"time"
 
@@ -27,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -128,6 +130,10 @@ func createError(status int32, message string) error {
 type FakeExternalClusterProvider struct {
 	Provider   *kubernetes.ExternalClusterProvider
 	FakeClient ctrlruntimeclient.Client
+}
+
+func (p *FakeExternalClusterProvider) ListNodes(cluster *kubermaticapiv1.ExternalCluster) (*corev1.NodeList, error) {
+	return GenDefaultExternalClusterNodes()
 }
 
 func (p *FakeExternalClusterProvider) Update(userInfo *provider.UserInfo, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
