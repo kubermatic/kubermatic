@@ -51,6 +51,7 @@ import (
 	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -1051,4 +1052,69 @@ func GenClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluste
 		},
 	}
 	return cluster
+}
+
+func GenDefaultExternalClusterNodes() (*corev1.NodeList, error) {
+	cpuQuantity, err := resource.ParseQuantity("290")
+	if err != nil {
+		return nil, err
+	}
+	memoryQuantity, err := resource.ParseQuantity("687202304")
+	if err != nil {
+		return nil, err
+	}
+	return &corev1.NodeList{Items: []corev1.Node{
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "node1"},
+			Spec: corev1.NodeSpec{
+				PodCIDR:       "abc",
+				ProviderID:    "abc",
+				Unschedulable: false,
+			},
+			Status: corev1.NodeStatus{
+				Capacity:        nil,
+				Allocatable:     corev1.ResourceList{"cpu": cpuQuantity, "memory": memoryQuantity},
+				Phase:           "init",
+				DaemonEndpoints: corev1.NodeDaemonEndpoints{},
+				NodeInfo: corev1.NodeSystemInfo{
+					MachineID:               "abc",
+					SystemUUID:              "abc",
+					BootID:                  "190ee9ec-75b7-43f3-9c39-0ebf361d64f0",
+					KernelVersion:           "4.14",
+					OSImage:                 "Container-Optimized OS from Google",
+					ContainerRuntimeVersion: "containerd://1.2.8",
+					KubeletVersion:          "v1.15.12-gke.2",
+					KubeProxyVersion:        "v1.15.12-gke.2",
+					OperatingSystem:         "linux",
+					Architecture:            "amd64",
+				},
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{Name: "node2"},
+			Spec: corev1.NodeSpec{
+				PodCIDR:       "def",
+				ProviderID:    "def",
+				Unschedulable: false,
+			},
+			Status: corev1.NodeStatus{
+				Capacity:        nil,
+				Allocatable:     corev1.ResourceList{"cpu": cpuQuantity, "memory": memoryQuantity},
+				Phase:           "init",
+				DaemonEndpoints: corev1.NodeDaemonEndpoints{},
+				NodeInfo: corev1.NodeSystemInfo{
+					MachineID:               "def",
+					SystemUUID:              "def",
+					BootID:                  "190ee9ec-75b7-43f3-9c39-0ebf361d64f0",
+					KernelVersion:           "4.14",
+					OSImage:                 "Container-Optimized OS from Google",
+					ContainerRuntimeVersion: "containerd://1.2.8",
+					KubeletVersion:          "v1.15.12-gke.2",
+					KubeProxyVersion:        "v1.15.12-gke.2",
+					OperatingSystem:         "linux",
+					Architecture:            "amd64",
+				},
+			},
+		},
+	}}, nil
 }
