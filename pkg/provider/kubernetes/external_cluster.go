@@ -282,6 +282,20 @@ func (p *ExternalClusterProvider) ListNodes(cluster *kubermaticapiv1.ExternalClu
 	return nodes, nil
 }
 
+func (p *ExternalClusterProvider) GetNode(cluster *kubermaticapiv1.ExternalCluster, nodeName string) (*corev1.Node, error) {
+	client, err := p.GetClient(cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	node := &corev1.Node{}
+	if err := client.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: nodeName}, node); err != nil {
+		return nil, err
+	}
+
+	return node, nil
+}
+
 func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
 	name := cluster.GetKubeconfigSecretName()
 

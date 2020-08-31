@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gorilla/mux"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	corev1 "k8s.io/api/core/v1"
 
@@ -76,7 +78,7 @@ type listNodesReq struct {
 	ClusterID string `json:"cluster_id"`
 }
 
-func DecodeListNodestReq(c context.Context, r *http.Request) (interface{}, error) {
+func DecodeListNodesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req listNodesReq
 
 	pr, err := common.DecodeProjectRequest(c, r)
@@ -101,6 +103,77 @@ func (req listNodesReq) Validate() error {
 	}
 	if len(req.ClusterID) == 0 {
 		return fmt.Errorf("the cluster ID cannot be empty")
+	}
+	return nil
+}
+
+func GetNodeEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getNodeReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		node, err := clusterProvider.GetNode(cluster, req.NodeID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return outputNode(*node)
+	}
+}
+
+// getNodeReq defines HTTP request for getExternalClusterNode
+// swagger:parameters getExternalClusterNode
+type getNodeReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+	// in: path
+	// required: true
+	NodeID string `json:"node_id"`
+}
+
+func DecodeGetNodeReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req getNodeReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	req.NodeID = mux.Vars(r)["node_id"]
+
+	return req, nil
+}
+
+// Validate validates CreateEndpoint request
+func (req getNodeReq) Validate() error {
+	if len(req.ProjectID) == 0 {
+		return fmt.Errorf("the project ID cannot be empty")
+	}
+	if len(req.ClusterID) == 0 {
+		return fmt.Errorf("the cluster ID cannot be empty")
+	}
+	if len(req.NodeID) == 0 {
+		return fmt.Errorf("the node ID cannot be empty")
 	}
 	return nil
 }
