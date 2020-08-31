@@ -734,6 +734,8 @@ type ExternalClusterProvider interface {
 	GetVersion(cluster *kubermaticv1.ExternalCluster) (*ksemver.Semver, error)
 
 	ListNodes(cluster *kubermaticv1.ExternalCluster) (*corev1.NodeList, error)
+
+	GetNode(cluster *kubermaticv1.ExternalCluster, nodeName string) (*corev1.Node, error)
 }
 
 // ExternalClusterProvider declares the set of methods for interacting with external cluster
