@@ -48,6 +48,7 @@ import (
 	apitest "k8c.io/kubermatic/v2/pkg/test/e2e/api"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/dex"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -96,7 +97,7 @@ type Opts struct {
 	pspEnabled                   bool
 	createOIDCToken              bool
 	dexHelmValuesFile            string
-	kubermatcProjectID           string
+	kubermaticProjectID          string
 	kubermaticClient             *apiclient.KubermaticAPI
 	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
 	scenarioOptions              string
@@ -290,7 +291,7 @@ func main() {
 	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{kubermaticAPIServerScheme}), nil)
 	opts.secrets.kubermaticClient = opts.kubermaticClient
 	// May be empty if creating an OIDC token
-	opts.kubermatcProjectID = strings.TrimSpace(os.Getenv("KUBERMATIC_PROJECT_ID"))
+	opts.kubermaticProjectID = strings.TrimSpace(os.Getenv("KUBERMATIC_PROJECT_ID"))
 
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
@@ -299,7 +300,7 @@ func main() {
 	defer updateMetrics(log)
 
 	if !opts.createOIDCToken {
-		if opts.kubermatcProjectID == "" {
+		if opts.kubermaticProjectID == "" {
 			log.Fatal("Kubermatic project id must be set via KUBERMATIC_PROJECT_ID env var")
 		}
 		kubermaticServiceaAccountToken := os.Getenv("KUBERMATIC_SERVICEACCOUNT_TOKEN")
@@ -337,12 +338,12 @@ func main() {
 
 		opts.kubermaticAuthenticator = httptransport.BearerToken(token)
 
-		if opts.kubermatcProjectID == "" {
+		if opts.kubermaticProjectID == "" {
 			projectID, err := createProject(opts.kubermaticClient, opts.kubermaticAuthenticator, log)
 			if err != nil {
 				log.Fatalw("Failed to create project", zap.Error(err))
 			}
-			opts.kubermatcProjectID = projectID
+			opts.kubermaticProjectID = projectID
 		}
 	}
 	opts.secrets.kubermaticAuthenticator = opts.kubermaticAuthenticator
@@ -390,6 +391,10 @@ func main() {
 	opts.publicKeys = append(opts.publicKeys, e2eTestPubKeyBytes)
 	opts.homeDir = homeDir
 
+	if err := createSSHKeys(opts.kubermaticClient, opts.kubermaticAuthenticator, &opts, log); err != nil {
+		log.Fatalw("Failed to create SSH keys", zap.Error(err))
+	}
+
 	stopCh := kubermaticsignals.SetupSignalHandler()
 
 	go func() {
@@ -435,7 +440,7 @@ func main() {
 	}
 	seedGetter, err := provider.SeedGetterFactory(context.Background(), seedClusterClient, seedName, namespaceName)
 	if err != nil {
-		log.Fatalw("Failed to consturct seedGetter", zap.Error(err))
+		log.Fatalw("Failed to construct seedGetter", zap.Error(err))
 	}
 	opts.seed, err = seedGetter()
 	if err != nil {
@@ -656,4 +661,33 @@ func createProject(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAu
 	}
 
 	return projectID, nil
+}
+
+func createSSHKeys(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, opts *Opts, log *zap.SugaredLogger) error {
+	for i, key := range opts.publicKeys {
+		log.Infow("Creating UserSSHKey", "pubkey", string(key))
+		if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+			body := project.CreateSSHKeyParams{
+				ProjectID: opts.kubermaticProjectID,
+				Key: &models.SSHKey{
+					Name: fmt.Sprintf("SSH Key No. %d", i+1),
+					Spec: &models.SSHKeySpec{
+						PublicKey: string(key),
+					},
+				},
+			}
+			body.WithTimeout(15 * time.Second)
+
+			if _, err := client.Project.CreateSSHKey(&body, bearerToken); err != nil {
+				log.Errorw("Failed to create SSH key", "error", fmtSwaggerError(err))
+				return false, nil
+			}
+
+			return true, nil
+		}); err != nil {
+			return fmt.Errorf("failed creating SSH key: %v", err)
+		}
+	}
+
+	return nil
 }
