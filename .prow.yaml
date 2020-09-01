@@ -405,7 +405,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-aws-flatcar-1.19
+  - name: pre-kubermatic-e2e-aws-ubuntu-1.19
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -427,7 +427,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.19.0"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,coreos,rhel"
+          value: "centos,flatcar,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -445,7 +445,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-aws-flatcar-1.19-ce
+  - name: pre-kubermatic-e2e-aws-ubuntu-1.19-ce
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -471,7 +471,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.19.0"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,coreos,rhel"
+          value: "centos,flatcar,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -493,7 +493,7 @@ presubmits:
   # # Extended Kubernetes Tests (various cloud providers, OS)
   # #########################################################
 
-  - name: pre-kubermatic-e2e-azure-coreos-1.19
+  - name: pre-kubermatic-e2e-azure-ubuntu-1.19
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -515,7 +515,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.19.0"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,coreos,flatcar,rhel"
         - name: PROVIDER
           value: "azure"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -537,7 +537,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-gcp-coreos-1.19
+  - name: pre-kubermatic-e2e-gcp-ubuntu-1.19
     decorate: true
     always_run: false
     optional: true
@@ -562,7 +562,7 @@ presubmits:
         - name: PROVIDER
           value: "gcp"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,coreos,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -580,7 +580,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-gcp-coreos-1.19-psp
+  - name: pre-kubermatic-e2e-gcp-ubuntu-1.19-psp
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -604,7 +604,7 @@ presubmits:
         - name: PROVIDER
           value: "gcp"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,coreos,flatcar,rhel"
         - name: KUBERMATIC_PSP_ENABLED
           value: "true"
         - name: ONLY_TEST_CREATION
@@ -669,7 +669,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-packet-coreos-1.19
+  - name: pre-kubermatic-e2e-packet-ubuntu-1.19
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -693,7 +693,7 @@ presubmits:
         - name: PROVIDER
           value: "packet"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,coreos,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -798,7 +798,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-openstack-coreos-1.19
+  - name: pre-kubermatic-e2e-openstack-ubuntu-1.19
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -822,7 +822,7 @@ presubmits:
         - name: PROVIDER
           value: "openstack"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,coreos,flatcar,rhel"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: SERVICE_ACCOUNT_KEY
@@ -886,51 +886,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-openstack-ubuntu-1.19
-    decorate: true
-    optional: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-openstack: "true"
-      preset-vault: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-repo-ssh: "true"
-      preset-kubeconfig-ci: "true"
-      preset-kind-volume-mounts: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.19.0"
-        - name: PROVIDER
-          value: "openstack"
-        - name: DEFAULT_TIMEOUT_MINUTES
-          value: "20"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "coreos,centos,flatcar,rhel"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/ci-kind-e2e.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
-
-  - name: pre-kubermatic-e2e-vsphere-coreos-1.19
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.19
     decorate: true
     run_if_changed: "pkg/provider/cloud/vsphere"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -954,7 +910,7 @@ presubmits:
         - name: PROVIDER
           value: "vsphere"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,coreos,flatcar,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -972,7 +928,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-coreos-1.19-customfolder
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.19-customfolder
     decorate: true
     optional: true
     run_if_changed: "pkg/provider/cloud/vsphere"
@@ -997,7 +953,7 @@ presubmits:
         - name: PROVIDER
           value: "vsphere"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,coreos,flatcar,rhel"
         - name: SCENARIO_OPTIONS
           value: "custom-folder"
         - name: SERVICE_ACCOUNT_KEY
@@ -1017,7 +973,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-vsphere-coreos-1.19-datastore-cluster
+  - name: pre-kubermatic-e2e-vsphere-ubuntu-1.19-datastore-cluster
     decorate: true
     optional: true
     run_if_changed: "pkg/provider/cloud/vsphere"
@@ -1173,7 +1129,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: EXCLUDE_DISTRIBUTIONS
-          value: ubuntu,centos,sles,rhel,flatcar
+          value: coreos,centos,sles,rhel,flatcar
         - name: VERSIONS_TO_TEST
           value: "v1.19.0"
         - name: KUBERMATIC_USE_OPERATOR
