@@ -94,11 +94,11 @@ func rbacControllerFactoryCreator(
 	prometheus.MustRegister(rbacMetrics.Workers)
 
 	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
-		ctrl, err := rbac.New(ctx, rbacMetrics, mgr, seedManagerMap, selectorOps, workerNamePredicate, workerCount)
+		_, err := rbac.New(ctx, rbacMetrics, mgr, seedManagerMap, selectorOps, workerNamePredicate, workerCount)
 		if err != nil {
 			return "", fmt.Errorf("failed to create rbac controller: %v", err)
 		}
-		return "rbac-controller", mgr.Add(ctrl)
+		return "rbac-controller", nil
 	}
 }
 
