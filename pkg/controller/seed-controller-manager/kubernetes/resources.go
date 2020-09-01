@@ -30,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/controllermanager"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
+	"k8c.io/kubermatic/v2/pkg/resources/gatekeeper"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/resources/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
@@ -85,6 +86,10 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	}
 
 	if err := r.ensureRoleBindings(ctx, cluster); err != nil {
+		return err
+	}
+
+	if err := r.ensureClusterRoleBindings(ctx, cluster, data); err != nil {
 		return err
 	}
 
@@ -212,6 +217,7 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		dns.ServiceCreator(),
 		machinecontroller.ServiceCreator(),
 		metricsserver.ServiceCreator(),
+		gatekeeper.ServiceCreator(),
 	}
 
 	if data.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
@@ -241,6 +247,8 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 		metricsserver.DeploymentCreator(data),
 		usercluster.DeploymentCreator(data, false),
 		kubernetesdashboard.DeploymentCreator(data),
+		gatekeeper.ControllerDeploymentCreator(data),
+		gatekeeper.AuditDeploymentCreator(data),
 	}
 	if data.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
 		deployments = append(deployments, clusterautoscaler.DeploymentCreator(data))
@@ -274,6 +282,7 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		openvpn.InternalClientCertificateCreator(data),
 		machinecontroller.TLSServingCertificateCreator(data),
 		metricsserver.TLSServingCertSecretCreator(data.GetRootCA),
+		gatekeeper.TLSServingCertSecretCreator(data),
 
 		// Kubeconfigs
 		resources.GetInternalKubeconfigCreator(resources.SchedulerKubeconfigSecretName, resources.SchedulerCertUsername, nil, data),
@@ -322,6 +331,7 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 	namedServiceAccountCreatorGetters := []reconciling.NamedServiceAccountCreatorGetter{
 		etcd.ServiceAccountCreator,
 		usercluster.ServiceAccountCreator,
+		gatekeeper.ServiceAccountCreator,
 	}
 	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure ServiceAccounts: %v", err)
@@ -333,6 +343,7 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) error {
 	namedRoleCreatorGetters := []reconciling.NamedRoleCreatorGetter{
 		usercluster.RoleCreator,
+		gatekeeper.RoleCreator,
 	}
 	if err := reconciling.ReconcileRoles(ctx, namedRoleCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Roles: %v", err)
@@ -344,9 +355,20 @@ func (r *Reconciler) ensureRoles(ctx context.Context, c *kubermaticv1.Cluster) e
 func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Cluster) error {
 	namedRoleBindingCreatorGetters := []reconciling.NamedRoleBindingCreatorGetter{
 		usercluster.RoleBindingCreator,
+		gatekeeper.RoleBindingCreator,
 	}
 	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure RoleBindings: %v", err)
+	}
+	return nil
+}
+
+func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	namedClusterRoleBindingCreatorGetters := []reconciling.NamedClusterRoleBindingCreatorGetter{
+		gatekeeper.ClusterRoleBindingCreator(data),
+	}
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingCreatorGetters, "", r.Client); err != nil {
+		return fmt.Errorf("failed to ensure ClusterRoleBindings: %v", err)
 	}
 	return nil
 }

@@ -146,6 +146,7 @@ func Add(
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
 		&admissionregistrationv1beta1.MutatingWebhookConfiguration{},
+		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
 		&apiextensionsv1beta1.CustomResourceDefinition{},
 	}
 

@@ -26,6 +26,7 @@ import (
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
 	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	kubestatemetrics "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
@@ -135,6 +136,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 	if err := r.reconcileDaemonSet(ctx); err != nil {
+		return err
+	}
+
+	if err := r.reconcileValidatingWebhookConfigurations(ctx, data); err != nil {
 		return err
 	}
 
@@ -388,6 +393,8 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 		machinecontroller.MachineSetCRDCreator(),
 		machinecontroller.MachineDeploymentCRDCreator(),
 		machinecontroller.ClusterCRDCreator(),
+		gatekeeper.ConfigCRDCreator(),
+		gatekeeper.ConstraintTemplateCRDCreator(),
 	}
 
 	if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
@@ -406,6 +413,20 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(
 
 	if err := reconciling.ReconcileMutatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile MutatingWebhookConfigurations: %v", err)
+	}
+	return nil
+}
+
+func (r *reconciler) reconcileValidatingWebhookConfigurations(
+	ctx context.Context,
+	data reconcileData,
+) error {
+	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
+		gatekeeper.ValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace),
+	}
+
+	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile ValidatingWebhookConfigurations: %v", err)
 	}
 	return nil
 }
