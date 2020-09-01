@@ -27,14 +27,18 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
@@ -255,7 +259,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 }
 
 // getClusterReq defines HTTP request for getExternalCluster
-// swagger:parameters getExternalCluster
+// swagger:parameters getExternalCluster getExternalClusterMetrics
 type getClusterReq struct {
 	common.ProjectReq
 	// in: path
@@ -379,6 +383,60 @@ func (req updateClusterReq) Validate() error {
 		return fmt.Errorf("the cluster ID cannot be empty")
 	}
 	return nil
+}
+
+func GetMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getClusterReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		isMetricServer, err := clusterProvider.IsMetricServerAvailable(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if isMetricServer {
+			client, err := clusterProvider.GetClient(cluster)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			nodeList := &corev1.NodeList{}
+			if err := client.List(ctx, nodeList); err != nil {
+				return nil, err
+			}
+			availableResources := make(map[string]corev1.ResourceList)
+			for _, n := range nodeList.Items {
+				availableResources[n.Name] = n.Status.Allocatable
+			}
+			allNodeMetricsList := &v1beta1.NodeMetricsList{}
+			if err := client.List(ctx, allNodeMetricsList); err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			podMetricsList := &v1beta1.PodMetricsList{}
+			if err := client.List(ctx, podMetricsList, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}); err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			return handlercommon.ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
+		}
+
+		return &apiv1.ClusterMetrics{
+			Name:                cluster.Name,
+			ControlPlaneMetrics: apiv1.ControlPlaneMetrics{},
+			NodesMetrics:        apiv1.NodesMetric{},
+		}, nil
+	}
 }
 
 func genExternalCluster(name string) *kubermaticapiv1.ExternalCluster {

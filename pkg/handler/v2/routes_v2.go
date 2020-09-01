@@ -72,6 +72,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}").
 		Handler(r.getExternalCluster())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics").
+		Handler(r.getExternalClusterMetrics())
+
 	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}").
 		Handler(r.updateExternalCluster())
@@ -388,6 +392,31 @@ func (r Routing) getExternalClusterNode() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.GetNodeEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
 		externalcluster.DecodeGetNodeReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/metrics project getExternalClusterMetrics
+//
+//     Gets cluster metrics
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterMetrics
+//       401: empty
+//       403: empty
+func (r Routing) getExternalClusterMetrics() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(externalcluster.GetMetricsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
+		externalcluster.DecodeGetReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
