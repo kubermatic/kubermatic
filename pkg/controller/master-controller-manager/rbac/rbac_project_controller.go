@@ -42,8 +42,6 @@ type projectController struct {
 	projectQueue workqueue.RateLimitingInterface
 	metrics      *Metrics
 
-	masterClusterProvider *ClusterProvider
-
 	projectResources []projectResource
 	client           client.Client
 	restMapper       meta.RESTMapper
@@ -56,21 +54,20 @@ type projectController struct {
 
 // The controller will also set proper ownership chain through OwnerReferences
 // so that whenever a project is deleted dependants object will be garbage collected.
-func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, masterClusterProvider *ClusterProvider, resources []projectResource, workerPredicate predicate.Predicate) error {
+func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, resources []projectResource, workerPredicate predicate.Predicate) error {
 	seedClientMap := make(map[string]client.Client)
 	for k, v := range seedManagerMap {
 		seedClientMap[k] = v.GetClient()
 	}
 
 	c := &projectController{
-		projectQueue:          workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_for_project"),
-		metrics:               metrics,
-		projectResources:      resources,
-		masterClusterProvider: masterClusterProvider,
-		client:                mgr.GetClient(),
-		restMapper:            mgr.GetRESTMapper(),
-		seedClientMap:         seedClientMap,
-		ctx:                   ctx,
+		projectQueue:     workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_for_project"),
+		metrics:          metrics,
+		projectResources: resources,
+		client:           mgr.GetClient(),
+		restMapper:       mgr.GetRESTMapper(),
+		seedClientMap:    seedClientMap,
+		ctx:              ctx,
 	}
 
 	// Create a new controller

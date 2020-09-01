@@ -26,7 +26,6 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	fakeInformerProvider "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test/fake"
-	kubermaticfakeclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	k8scorev1 "k8s.io/api/core/v1"
@@ -783,19 +782,14 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					index++
 				}
 			}
-			fakeKubermaticMasterClient := kubermaticfakeclientset.NewSimpleClientset(test.projectToSync)
 			fakeMasterClusterClient := fakeruntime.NewFakeClient(test.projectToSync)
-			fakeMasterClusterProvider := &ClusterProvider{
-				kubermaticClient: fakeKubermaticMasterClient,
-			}
 
 			// act
 			target := projectController{
-				ctx:                   context.Background(),
-				masterClusterProvider: fakeMasterClusterProvider,
-				client:                fakeMasterClusterClient,
-				restMapper:            getFakeRestMapper(t),
-				seedClientMap:         seedClientMap,
+				ctx:           context.Background(),
+				client:        fakeMasterClusterClient,
+				restMapper:    getFakeRestMapper(t),
+				seedClientMap: seedClientMap,
 			}
 			if err := target.ensureProjectCleanup(test.projectToSync); err != nil {
 				t.Fatal(err)
@@ -1038,13 +1032,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			allObjs = append(allObjs, objs...)
 			allObjs = append(allObjs, kubermaticObjs...)
 
-			fakeMasterKubeClient := fake.NewSimpleClientset(objs...)
-			fakeMasterKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
 			fakeMasterClusterClient := fakeruntime.NewFakeClient(allObjs...)
-			fakeMasterClusterProvider := &ClusterProvider{
-				kubeClient:       fakeMasterKubeClient,
-				kubermaticClient: fakeMasterKubermaticClient,
-			}
 			seedClusterClientMap := make(map[string]client.Client)
 			for i := 0; i < test.seedClusters; i++ {
 				objs := []runtime.Object{}
@@ -1057,12 +1045,11 @@ func TestEnsureProjectCleanup(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:                   context.Background(),
-				masterClusterProvider: fakeMasterClusterProvider,
-				projectResources:      test.projectResourcesToSync,
-				client:                fakeMasterClusterClient,
-				restMapper:            getFakeRestMapper(t),
-				seedClientMap:         seedClusterClientMap,
+				ctx:              context.Background(),
+				projectResources: test.projectResourcesToSync,
+				client:           fakeMasterClusterClient,
+				restMapper:       getFakeRestMapper(t),
+				seedClientMap:    seedClusterClientMap,
 			}
 			err := target.ensureProjectCleanup(test.projectToSync)
 			assert.NoError(t, err)
@@ -1304,20 +1291,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			objs := []runtime.Object{}
-			fakeKubeClient := fake.NewSimpleClientset(objs...)
 			fakeMasterClient := fakeruntime.NewFakeClient(objs...)
-			roleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
-
-			// manually set lister as we don't want to start informers in the tests
-			fakeKubeInformerProviderForMaster := NewInformerProvider(fakeKubeClient, time.Minute*5)
-			fakeInformerFactoryForClusterRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, metav1.NamespaceAll)
-			fakeInformerFactoryForClusterRole.AddFakeClusterRoleInformer(roleIndexer)
-			fakeKubeInformerProviderForMaster.kubeInformers[metav1.NamespaceAll] = fakeInformerFactoryForClusterRole
-
-			fakeMasterClusterProvider := &ClusterProvider{
-				kubeClient:           fakeKubeClient,
-				kubeInformerProvider: fakeKubeInformerProviderForMaster,
-			}
 
 			seedClients := make(map[string]client.Client)
 			for i := 0; i < test.seedClusters; i++ {
@@ -1326,12 +1300,11 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:                   context.Background(),
-				masterClusterProvider: fakeMasterClusterProvider,
-				projectResources:      test.projectResourcesToSync,
-				client:                fakeMasterClient,
-				restMapper:            getFakeRestMapper(t),
-				seedClientMap:         seedClients,
+				ctx:              context.Background(),
+				projectResources: test.projectResourcesToSync,
+				client:           fakeMasterClient,
+				restMapper:       getFakeRestMapper(t),
+				seedClientMap:    seedClients,
 			}
 			err := target.ensureClusterRBACRoleForResources()
 			assert.Nil(t, err)
@@ -2168,23 +2141,9 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			allObjs = append(allObjs, objs...)
 			allObjs = append(allObjs, kubermaticObjs...)
 
-			fakeMasterKubeClient := fake.NewSimpleClientset(objs...)
-			fakeMasterKubermaticClient := kubermaticfakeclientset.NewSimpleClientset(kubermaticObjs...)
 			fakeMasterClusterClient := fakeruntime.NewFakeClient(allObjs...)
 			// manually set lister as we don't want to start informers in the tests
-			fakeKubeInformerProviderForMaster := NewInformerProvider(fakeMasterKubeClient, time.Minute*5)
-			for _, res := range test.projectResourcesToSync {
-				fakeInformerFactoryForRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeMasterKubeClient, res.namespace)
-				fakeInformerFactoryForRole.AddFakeRoleBindingInformer(roleBindingsIndexer)
-				fakeKubeInformerProviderForMaster.kubeInformers[res.namespace] = fakeInformerFactoryForRole
-			}
-			fakeKubeInformerProviderForMaster.started = true
 
-			fakeMasterClusterProvider := &ClusterProvider{
-				kubeClient:           fakeMasterKubeClient,
-				kubermaticClient:     fakeMasterKubermaticClient,
-				kubeInformerProvider: fakeKubeInformerProviderForMaster,
-			}
 			seedClusterClientMap := make(map[string]client.Client)
 			for i := 0; i < test.seedClusters; i++ {
 				objs := []runtime.Object{}
@@ -2197,12 +2156,11 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:                   context.Background(),
-				masterClusterProvider: fakeMasterClusterProvider,
-				client:                fakeMasterClusterClient,
-				restMapper:            getFakeRestMapper(t),
-				seedClientMap:         seedClusterClientMap,
-				projectResources:      test.projectResourcesToSync,
+				ctx:              context.Background(),
+				client:           fakeMasterClusterClient,
+				restMapper:       getFakeRestMapper(t),
+				seedClientMap:    seedClusterClientMap,
+				projectResources: test.projectResourcesToSync,
 			}
 			err = target.ensureProjectCleanup(test.projectToSync)
 			assert.NoError(t, err)

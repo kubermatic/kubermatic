@@ -167,7 +167,7 @@ func (c *projectController) ensureClusterRBACRoleForResources() error {
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
 		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
@@ -200,7 +200,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
 		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
@@ -313,7 +313,7 @@ func (c *projectController) ensureRBACRoleForResources() error {
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
 		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
@@ -383,7 +383,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(projectName string
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
 		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
@@ -491,7 +491,7 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
 		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
@@ -527,7 +527,7 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 		gvk := projectResource.object.GetObjectKind().GroupVersionKind()
 		rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		for _, groupPrefix := range AllGroupsPrefixes {
