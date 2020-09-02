@@ -379,59 +379,8 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 		if err := seedAdminClient.List(ctx, podMetricsList, &ctrlruntimeclient.ListOptions{Namespace: fmt.Sprintf("cluster-%s", cluster.Name)}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return convertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster)
+		return handlercommon.ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
 	}
-}
-
-func convertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1beta1.NodeMetrics, availableNodesResources map[string]corev1.ResourceList, cluster *kubermaticv1.Cluster) (*apiv1.ClusterMetrics, error) {
-	if podMetrics == nil {
-		return nil, fmt.Errorf("metric list can not be nil")
-	}
-	if cluster == nil {
-		return nil, fmt.Errorf("cluster object can not be nil")
-	}
-	clusterMetrics := &apiv1.ClusterMetrics{
-		Name:                cluster.Name,
-		ControlPlaneMetrics: apiv1.ControlPlaneMetrics{},
-		NodesMetrics:        apiv1.NodesMetric{},
-	}
-
-	for _, m := range nodeMetrics {
-		resourceMetricsInfo := common.ResourceMetricsInfo{
-			Name:      m.Name,
-			Metrics:   m.Usage.DeepCopy(),
-			Available: availableNodesResources[m.Name],
-		}
-
-		availableCPU, foundCPU := resourceMetricsInfo.Available[corev1.ResourceCPU]
-		availableMemory, foundMemory := resourceMetricsInfo.Available[corev1.ResourceMemory]
-		if foundCPU && foundMemory {
-			quantityCPU := resourceMetricsInfo.Metrics[corev1.ResourceCPU]
-			clusterMetrics.NodesMetrics.CPUTotalMillicores += quantityCPU.MilliValue()
-			clusterMetrics.NodesMetrics.CPUAvailableMillicores += availableCPU.MilliValue()
-
-			quantityM := resourceMetricsInfo.Metrics[corev1.ResourceMemory]
-			clusterMetrics.NodesMetrics.MemoryTotalBytes += quantityM.Value() / (1024 * 1024)
-			clusterMetrics.NodesMetrics.MemoryAvailableBytes += availableMemory.Value() / (1024 * 1024)
-		}
-	}
-
-	fractionCPU := float64(clusterMetrics.NodesMetrics.CPUTotalMillicores) / float64(clusterMetrics.NodesMetrics.CPUAvailableMillicores) * 100
-	clusterMetrics.NodesMetrics.CPUUsedPercentage += int64(fractionCPU)
-	fractionMemory := float64(clusterMetrics.NodesMetrics.MemoryTotalBytes) / float64(clusterMetrics.NodesMetrics.MemoryAvailableBytes) * 100
-	clusterMetrics.NodesMetrics.MemoryUsedPercentage += int64(fractionMemory)
-
-	for _, podMetrics := range podMetrics.Items {
-		for _, container := range podMetrics.Containers {
-			usage := container.Usage.DeepCopy()
-			quantityCPU := usage[corev1.ResourceCPU]
-			clusterMetrics.ControlPlaneMetrics.CPUTotalMillicores += quantityCPU.MilliValue()
-			quantityM := usage[corev1.ResourceMemory]
-			clusterMetrics.ControlPlaneMetrics.MemoryTotalBytes += quantityM.Value() / (1024 * 1024)
-		}
-	}
-
-	return clusterMetrics, nil
 }
 
 // AssignSSHKeysReq defines HTTP request data for assignSSHKeyToCluster  endpoint

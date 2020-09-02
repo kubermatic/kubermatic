@@ -19,7 +19,6 @@ package test
 import (
 	"context"
 	"errors"
-
 	"net/http"
 	"time"
 
@@ -132,6 +131,10 @@ type FakeExternalClusterProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
+func (p *FakeExternalClusterProvider) IsMetricServerAvailable(cluster *kubermaticapiv1.ExternalCluster) (bool, error) {
+	return true, nil
+}
+
 func (p *FakeExternalClusterProvider) GetNode(cluster *kubermaticapiv1.ExternalCluster, nodeName string) (*corev1.Node, error) {
 	return GenDefaultExternalClusterNode()
 }
@@ -149,7 +152,7 @@ func (p *FakeExternalClusterProvider) GetVersion(cluster *kubermaticapiv1.Extern
 }
 
 func (p *FakeExternalClusterProvider) GetClient(cluster *kubermaticapiv1.ExternalCluster) (ctrlruntimeclient.Client, error) {
-	return p.Provider.GetClient(cluster)
+	return p.FakeClient, nil
 }
 
 func (p *FakeExternalClusterProvider) List(project *kubermaticapiv1.Project) (*kubermaticapiv1.ExternalClusterList, error) {

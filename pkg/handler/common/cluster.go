@@ -24,6 +24,8 @@ import (
 	"strings"
 	"time"
 
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -705,4 +707,53 @@ func ValidateClusterSpec(clusterType kubermaticv1.ClusterType, updateManager com
 	}
 
 	return fmt.Errorf("invalid cluster: invalid cloud spec: unsupported version %v", body.Cluster.Spec.Version.Version)
+}
+
+func ConvertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1beta1.NodeMetrics, availableNodesResources map[string]corev1.ResourceList, clusterName string) (*apiv1.ClusterMetrics, error) {
+	if podMetrics == nil {
+		return nil, fmt.Errorf("metric list can not be nil")
+	}
+
+	clusterMetrics := &apiv1.ClusterMetrics{
+		Name:                clusterName,
+		ControlPlaneMetrics: apiv1.ControlPlaneMetrics{},
+		NodesMetrics:        apiv1.NodesMetric{},
+	}
+
+	for _, m := range nodeMetrics {
+		resourceMetricsInfo := common.ResourceMetricsInfo{
+			Name:      m.Name,
+			Metrics:   m.Usage.DeepCopy(),
+			Available: availableNodesResources[m.Name],
+		}
+
+		availableCPU, foundCPU := resourceMetricsInfo.Available[corev1.ResourceCPU]
+		availableMemory, foundMemory := resourceMetricsInfo.Available[corev1.ResourceMemory]
+		if foundCPU && foundMemory {
+			quantityCPU := resourceMetricsInfo.Metrics[corev1.ResourceCPU]
+			clusterMetrics.NodesMetrics.CPUTotalMillicores += quantityCPU.MilliValue()
+			clusterMetrics.NodesMetrics.CPUAvailableMillicores += availableCPU.MilliValue()
+
+			quantityM := resourceMetricsInfo.Metrics[corev1.ResourceMemory]
+			clusterMetrics.NodesMetrics.MemoryTotalBytes += quantityM.Value() / (1024 * 1024)
+			clusterMetrics.NodesMetrics.MemoryAvailableBytes += availableMemory.Value() / (1024 * 1024)
+		}
+	}
+
+	fractionCPU := float64(clusterMetrics.NodesMetrics.CPUTotalMillicores) / float64(clusterMetrics.NodesMetrics.CPUAvailableMillicores) * 100
+	clusterMetrics.NodesMetrics.CPUUsedPercentage += int64(fractionCPU)
+	fractionMemory := float64(clusterMetrics.NodesMetrics.MemoryTotalBytes) / float64(clusterMetrics.NodesMetrics.MemoryAvailableBytes) * 100
+	clusterMetrics.NodesMetrics.MemoryUsedPercentage += int64(fractionMemory)
+
+	for _, podMetrics := range podMetrics.Items {
+		for _, container := range podMetrics.Containers {
+			usage := container.Usage.DeepCopy()
+			quantityCPU := usage[corev1.ResourceCPU]
+			clusterMetrics.ControlPlaneMetrics.CPUTotalMillicores += quantityCPU.MilliValue()
+			quantityM := usage[corev1.ResourceMemory]
+			clusterMetrics.ControlPlaneMetrics.MemoryTotalBytes += quantityM.Value() / (1024 * 1024)
+		}
+	}
+
+	return clusterMetrics, nil
 }
