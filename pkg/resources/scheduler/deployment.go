@@ -66,8 +66,6 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				"--client-ca-file", "/etc/kubernetes/pki/ca/ca.crt",
 				// We're going to use the https endpoints for scraping the metrics starting from 1.13. Thus we can deactivate the http endpoint
 				"--port", "0",
-				// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
-				"--authentication-tolerate-lookup-failure", "false",
 			}
 
 			dep.Spec.Replicas = resources.Int32(1)

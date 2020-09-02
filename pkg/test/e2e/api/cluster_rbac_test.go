@@ -46,7 +46,7 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			name:                     "create cluster/role binding",
 			dc:                       "kubermatic",
 			location:                 "do-fra1",
-			version:                  "v1.15.6",
+			version:                  "v1.18.8",
 			credential:               "e2e-digitalocean",
 			replicas:                 1,
 			expectedRoleNames:        []string{"namespace-admin", "namespace-editor", "namespace-viewer"},
