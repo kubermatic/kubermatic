@@ -22,16 +22,17 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	corev1 "k8s.io/api/core/v1"
-
-	"github.com/go-kit/kit/endpoint"
-
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 const errGlue = " & "
@@ -69,8 +70,62 @@ func ListNodesEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider p
 	}
 }
 
+func ListNodesMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listNodesReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		nodeMetrics := make([]apiv1.NodeMetric, 0)
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		isMetricServer, err := clusterProvider.IsMetricServerAvailable(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if isMetricServer {
+			client, err := clusterProvider.GetClient(cluster)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			nodes := &corev1.NodeList{}
+			if err := client.List(ctx, nodes); err != nil {
+				return nil, err
+			}
+			availableResources := make(map[string]corev1.ResourceList)
+			for _, n := range nodes.Items {
+				availableResources[n.Name] = n.Status.Allocatable
+			}
+
+			nodeDeploymentNodesMetrics := make([]v1beta1.NodeMetrics, 0)
+			allNodeMetricsList := &v1beta1.NodeMetricsList{}
+			if err := client.List(ctx, allNodeMetricsList); err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			for _, m := range allNodeMetricsList.Items {
+				if _, ok := availableResources[m.Name]; ok {
+					nodeDeploymentNodesMetrics = append(nodeDeploymentNodesMetrics, m)
+				}
+			}
+			return handlercommon.ConvertNodeMetrics(nodeDeploymentNodesMetrics, availableResources)
+		}
+
+		return nodeMetrics, nil
+	}
+}
+
 // listNodesReq defines HTTP request for listExternalClusterNodes
-// swagger:parameters listExternalClusterNodes
+// swagger:parameters listExternalClusterNodes listExternalClusterNodesMetrics
 type listNodesReq struct {
 	common.ProjectReq
 	// in: path
