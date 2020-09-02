@@ -23,22 +23,24 @@ import (
 	"errors"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
-
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
+
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -296,6 +298,22 @@ func (p *ExternalClusterProvider) GetNode(cluster *kubermaticapiv1.ExternalClust
 	return node, nil
 }
 
+func (p *ExternalClusterProvider) IsMetricServerAvailable(cluster *kubermaticapiv1.ExternalCluster) (bool, error) {
+	client, err := p.GetClient(cluster)
+	if err != nil {
+		return false, err
+	}
+
+	allNodeMetricsList := &v1beta1.NodeMetricsList{}
+	if err := client.List(context.Background(), allNodeMetricsList); err != nil {
+		if _, ok := err.(*meta.NoKindMatchError); ok {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
 func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
 	name := cluster.GetKubeconfigSecretName()
 
@@ -365,7 +383,7 @@ func updateKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 func getRestConfig(cfg *clientcmdapi.Config) (*rest.Config, error) {
 	iconfig := clientcmd.NewNonInteractiveClientConfig(
 		*cfg,
-		resources.KubeconfigDefaultContextKey,
+		"",
 		&clientcmd.ConfigOverrides{},
 		nil,
 	)
