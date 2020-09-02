@@ -106,7 +106,7 @@ func newRunner(scenarios []testScenario, opts *Opts, log *zap.SugaredLogger) *te
 		printGinkoLogs:               opts.printGinkoLogs,
 		onlyTestCreation:             opts.onlyTestCreation,
 		pspEnabled:                   opts.pspEnabled,
-		kubermatcProjectID:           opts.kubermatcProjectID,
+		kubermaticProjectID:          opts.kubermaticProjectID,
 		kubermaticClient:             opts.kubermaticClient,
 		kubermaticAuthenticator:      opts.kubermaticAuthenticator,
 	}
@@ -144,7 +144,7 @@ type testRunner struct {
 	// creating a new one
 	existingClusterLabel string
 
-	kubermatcProjectID      string
+	kubermaticProjectID     string
 	kubermaticClient        *apiclient.KubermaticAPI
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
@@ -531,7 +531,7 @@ func (r *testRunner) executeTests(
 
 func (r *testRunner) deleteCluster(report *reporters.JUnitTestSuite, cluster *kubermaticv1.Cluster, log *zap.SugaredLogger) error {
 	deleteParms := &projectclient.DeleteClusterParams{
-		ProjectID: r.kubermatcProjectID,
+		ProjectID: r.kubermaticProjectID,
 		DC:        r.seed.Name,
 	}
 	deleteTimeout := 15 * time.Minute
@@ -806,7 +806,7 @@ func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario test
 	var existingReplicas int
 
 	nodeDeploymentGetParams := &projectclient.ListNodeDeploymentsParams{
-		ProjectID: r.kubermatcProjectID,
+		ProjectID: r.kubermaticProjectID,
 		ClusterID: clusterName,
 		DC:        r.seed.Name,
 	}
@@ -852,7 +852,7 @@ func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario test
 
 	for _, nd := range nodeDeployments {
 		params := &projectclient.CreateNodeDeploymentParams{
-			ProjectID: r.kubermatcProjectID,
+			ProjectID: r.kubermaticProjectID,
 			ClusterID: clusterName,
 			DC:        r.seed.Name,
 			Body:      &nd,
@@ -950,7 +950,7 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 	cluster.Cluster.Spec.UsePodSecurityPolicyAdmissionPlugin = r.pspEnabled
 
 	params := &projectclient.CreateClusterParams{
-		ProjectID: r.kubermatcProjectID,
+		ProjectID: r.kubermaticProjectID,
 		DC:        r.seed.Name,
 		Body:      cluster,
 	}
@@ -995,6 +995,52 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 	}); err != nil {
 		errs = append(errs, err)
 		return nil, fmt.Errorf("cluster creation failed: %v", utilerror.NewAggregate(errs))
+	}
+
+	// fetch all existing SSH keys
+	keyIDs := []string{}
+
+	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+		body := projectclient.ListSSHKeysParams{
+			ProjectID: r.kubermaticProjectID,
+		}
+		body.SetTimeout(15 * time.Second)
+
+		result, err := r.kubermaticClient.Project.ListSSHKeys(&body, r.kubermaticAuthenticator)
+		if err != nil {
+			log.Errorw("Failed to list project's SSH keys", "error", fmtSwaggerError(err))
+			return false, nil
+		}
+
+		for _, key := range result.Payload {
+			keyIDs = append(keyIDs, key.ID)
+		}
+
+		return true, nil
+	}); err != nil {
+		return nil, fmt.Errorf("failed listing SSH keys in project: %v", err)
+	}
+
+	// assign all keys to the new cluster
+	for _, keyID := range keyIDs {
+		if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+			body := projectclient.AssignSSHKeyToClusterParams{
+				ProjectID: r.kubermaticProjectID,
+				DC:        r.seed.Name,
+				ClusterID: crCluster.Name,
+				KeyID:     keyID,
+			}
+			body.SetTimeout(15 * time.Second)
+
+			if _, err := r.kubermaticClient.Project.AssignSSHKeyToCluster(&body, r.kubermaticAuthenticator); err != nil {
+				log.Errorw("Failed to assign SSH key to cluster", "error", fmtSwaggerError(err))
+				return false, nil
+			}
+
+			return true, nil
+		}); err != nil {
+			return nil, fmt.Errorf("failed assigning SSH keys to cluster: %v", err)
+		}
 	}
 
 	log.Info("Successfully created cluster via Kubermatic API")
@@ -1109,10 +1155,17 @@ func (r *testRunner) getGinkgoRuns(
 	nodeNumberTotal := int32(r.nodeCount)
 
 	ginkgoSkipParallel := `\[Serial\]`
-	if minor := cluster.Spec.Version.Minor(); minor >= 16 && minor <= 18 {
+	if minor := cluster.Spec.Version.Minor(); minor >= 16 && minor <= 19 {
 		// These require the nodes NodePort to be available from the tester, which is not the case for us.
 		// TODO: Maybe add an option to allow the NodePorts in the SecurityGroup?
-		ginkgoSkipParallel += "|Services should be able to change the type from ExternalName to NodePort|Services should be able to create a functioning NodePort service"
+		ginkgoSkipParallel = strings.Join([]string{
+			ginkgoSkipParallel,
+			"Services should be able to change the type from ExternalName to NodePort",
+			"Services should be able to create a functioning NodePort service",
+			"Services should be able to switch session affinity for NodePort service",
+			"Services should have session affinity timeout work for NodePort service",
+			"Services should have session affinity work for NodePort service",
+		}, "|")
 	}
 
 	runs := []struct {
@@ -1144,6 +1197,8 @@ func (r *testRunner) getGinkgoRuns(
 
 		reportsDir := path.Join("/tmp", scenario.Name(), run.name)
 		env := []string{
+			// `kubectl diff` needs to find /usr/bin/diff
+			fmt.Sprintf("PATH=%s", os.Getenv("PATH")),
 			fmt.Sprintf("HOME=%s", r.homeDir),
 			fmt.Sprintf("AWS_SSH_KEY=%s", path.Join(r.homeDir, ".ssh", "google_compute_engine")),
 			fmt.Sprintf("LOCAL_SSH_KEY=%s", path.Join(r.homeDir, ".ssh", "google_compute_engine")),
