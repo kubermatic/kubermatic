@@ -1,3 +1,19 @@
+/*
+Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package gatekeeper
 
 import (
@@ -33,7 +49,17 @@ const (
 
 var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		resources.KubernetesDashboardDeploymentName: {
+		controllerName: {
+			Requests: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("256Mi"),
+				corev1.ResourceCPU:    resource.MustParse("100m"),
+			},
+			Limits: corev1.ResourceList{
+				corev1.ResourceMemory: resource.MustParse("512Mi"),
+				corev1.ResourceCPU:    resource.MustParse("1000m"),
+			},
+		},
+		auditName: {
 			Requests: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("256Mi"),
 				corev1.ResourceCPU:    resource.MustParse("100m"),
@@ -218,18 +244,30 @@ func getControllerContainers(data gatekeeperData, existingContainers []corev1.Co
 		LivenessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/healthz",
-					Port: intstr.FromInt(healthzPort),
+					Path:   "/healthz",
+					Port:   intstr.FromInt(healthzPort),
+					Scheme: corev1.URISchemeHTTP,
 				},
 			},
+			FailureThreshold:    3,
+			InitialDelaySeconds: 15,
+			PeriodSeconds:       10,
+			SuccessThreshold:    1,
+			TimeoutSeconds:      15,
 		},
 		ReadinessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/readyz",
-					Port: intstr.FromInt(healthzPort),
+					Path:   "/readyz",
+					Port:   intstr.FromInt(healthzPort),
+					Scheme: corev1.URISchemeHTTP,
 				},
 			},
+			FailureThreshold:    3,
+			InitialDelaySeconds: 15,
+			PeriodSeconds:       10,
+			SuccessThreshold:    1,
+			TimeoutSeconds:      15,
 		},
 		SecurityContext: &corev1.SecurityContext{
 			AllowPrivilegeEscalation: pointer.BoolPtr(false),
@@ -292,18 +330,30 @@ func getAuditContainers(data gatekeeperData, existingContainers []corev1.Contain
 		LivenessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/healthz",
-					Port: intstr.FromInt(healthzPort),
+					Path:   "/healthz",
+					Port:   intstr.FromInt(healthzPort),
+					Scheme: corev1.URISchemeHTTP,
 				},
 			},
+			FailureThreshold:    3,
+			InitialDelaySeconds: 15,
+			PeriodSeconds:       10,
+			SuccessThreshold:    1,
+			TimeoutSeconds:      15,
 		},
 		ReadinessProbe: &corev1.Probe{
 			Handler: corev1.Handler{
 				HTTPGet: &corev1.HTTPGetAction{
-					Path: "/readyz",
-					Port: intstr.FromInt(healthzPort),
+					Path:   "/readyz",
+					Port:   intstr.FromInt(healthzPort),
+					Scheme: corev1.URISchemeHTTP,
 				},
 			},
+			FailureThreshold:    3,
+			InitialDelaySeconds: 15,
+			PeriodSeconds:       10,
+			SuccessThreshold:    1,
+			TimeoutSeconds:      15,
 		},
 		SecurityContext: &corev1.SecurityContext{
 			AllowPrivilegeEscalation: pointer.BoolPtr(false),
