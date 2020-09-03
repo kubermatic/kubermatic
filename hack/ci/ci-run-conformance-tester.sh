@@ -16,37 +16,48 @@
 
 set -euo pipefail
 
-## CI run conformance tester
+cd $(dirname $0)/../..
 source hack/lib.sh
 
 ### Defaults
-export VERSIONS=${VERSIONS_TO_TEST:-"v1.12.4"}
-export EXCLUDE_DISTRIBUTIONS=${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos,sles,rhel}
+export VERSIONS=${VERSIONS_TO_TEST:-"v1.18.8"}
+export EXCLUDE_DISTRIBUTIONS="${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos,sles,rhel}"
 export ONLY_TEST_CREATION=${ONLY_TEST_CREATION:-false}
-provider=${PROVIDER:-"aws"}
-export WORKER_NAME=${BUILD_ID}
-if [[ "${KUBERMATIC_NO_WORKER_NAME:-}" = "true" ]]; then
+
+export WORKER_NAME="${BUILD_ID}"
+if [ "${KUBERMATIC_NO_WORKER_NAME:-}" = "true" ]; then
   WORKER_NAME=""
 fi
 
-mkdir -p $HOME/.ssh
-if ! [[ -e $HOME/.ssh/id_rsa.pub ]]; then
-  echo 'ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCo3amVmCkIZo4cgj2kjU2arZKlzzOhaOuveH9aJbL4mlVHVsEcVk+RSty4AMK1GQL3+Ii7iGicKWwge4yefc75aOtUncfF01rnBsNvi3lOqJR/6POHy4OnPXJElvEn7jii/pAUeyr8halBezQTUkvRiUtlJo6oEb2dRN5ujyFm5TuIxgM0UFVGBRoD0agGr87GaQsUahf+PE1zHEid+qQPz7EdMo8/eRNtgikhBG1/ae6xRstAi0QU8EgjKvK1ROXOYTlpTBFElApOXZacH91WvG0xgPnyxIXoKtiCCNGeu/0EqDAgiXfmD2HK/WAXwJNwcmRvBaedQUS4H0lNmvj5' \
-    > $HOME/.ssh/id_rsa.pub
-fi
-chmod 0700 $HOME/.ssh
+if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
+  echodate "Getting default SSH pubkey for machines from Vault"
+  export VAULT_ADDR=https://vault.loodse.com/
+  retry 5 vault write \
+    --format=json auth/approle/login \
+    role_id=${VAULT_ROLE_ID} secret_id=${VAULT_SECRET_ID} > /tmp/vault-token-response.json
 
-if [[ -n ${OPENSHIFT:-} ]]; then
+  E2E_SSH_PUBKEY="$(mktemp)"
+  vault kv get -field=pubkey dev/e2e-machine-controller-ssh-key > "${E2E_SSH_PUBKEY}"
+else
+  E2E_SSH_PUBKEY_CONTENT="${E2E_SSH_PUBKEY}"
+  E2E_SSH_PUBKEY="$(mktemp)"
+  echo "${E2E_SSH_PUBKEY_CONTENT}" > "${E2E_SSH_PUBKEY}"
+fi
+
+echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
+
+if [ -n "${OPENSHIFT:-}" ]; then
   OPENSHIFT_ARG="-openshift=true"
-  export VERSIONS=${OPENSHIFT_VERSION}
+  export VERSIONS="${OPENSHIFT_VERSION}"
 fi
 
+provider="${PROVIDER:-aws}"
 if [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
-     -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
+    -aws-secret-access-key=${AWS_E2E_TESTS_SECRET}"
 elif [[ $provider == "packet" ]]; then
   EXTRA_ARGS="-packet-api-key=${PACKET_API_KEY}
-     -packet-project-id=${PACKET_PROJECT_ID}"
+    -packet-project-id=${PACKET_PROJECT_ID}"
 elif [[ $provider == "gcp" ]]; then
   EXTRA_ARGS="-gcp-service-account=${GOOGLE_SERVICE_ACCOUNT}"
 elif [[ $provider == "azure" ]]; then
@@ -70,32 +81,22 @@ elif [[ $provider == "kubevirt" ]]; then
   EXTRA_ARGS="-kubevirt-kubeconfig=${KUBEVIRT_E2E_TESTS_KUBECONFIG}"
 elif [[ $provider == "alibaba" ]]; then
   EXTRA_ARGS="-alibaba-access-key-id=${ALIBABA_E2E_TESTS_KEY_ID}
-     -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}"
-fi
-
-# Needed when running in kind
-which kind && EXTRA_ARGS="$EXTRA_ARGS -create-oidc-token=true"
-
-kubermatic_delete_cluster="true"
-if [ -n "${UPGRADE_TEST_BASE_HASH:-}" ]; then
-  kubermatic_delete_cluster="false"
+    -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}"
 fi
 
 timeout -s 9 90m ./_build/conformance-tests ${EXTRA_ARGS:-} \
-  -debug \
   -worker-name=${WORKER_NAME} \
   -kubeconfig=$KUBECONFIG \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=1 \
   -name-prefix=prow-e2e \
   -reports-root=/reports \
-  -cleanup-on-start=false \
-  -run-kubermatic-controller-manager=false \
+  -create-oidc-token=true \
   -versions="$VERSIONS" \
   -providers=$provider \
   -only-test-creation="${ONLY_TEST_CREATION}" \
+  -node-ssh-pub-key="${E2E_SSH_PUBKEY}" \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
   ${OPENSHIFT_ARG:-} \
-  -kubermatic-delete-cluster=${kubermatic_delete_cluster} \
   -print-ginkgo-logs=true \
   -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091"
