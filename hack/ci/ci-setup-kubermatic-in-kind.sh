@@ -45,6 +45,11 @@ export PATH=$PATH:/usr/local/go/bin
 # This is just used as a const (NB: The CE requires Seeds to be named this way)
 export SEED_NAME=kubermatic
 
+# tell the conformance tester what values we are about to deploy
+export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
+export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
+export KUBERMATIC_OIDC_PASSWORD="password"
+
 if [[ -z ${JOB_NAME} ]]; then
   echo "This script should only be running in a CI environment."
   exit 1
