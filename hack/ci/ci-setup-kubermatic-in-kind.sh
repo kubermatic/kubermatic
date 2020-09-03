@@ -426,6 +426,9 @@ kubermaticOperator:
     tag: "$KUBERMATIC_VERSION"
 EOF
 
+# append custom Dex configuration
+cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
+
 ./_build/kubermatic-installer deploy \
   --config "$KUBERMATIC_CONFIG" \
   --helm-values "$HELM_VALUES_FILE" \
