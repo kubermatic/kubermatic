@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"strconv"
 	"time"
 
 	"go.uber.org/zap"
@@ -30,6 +31,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -42,7 +44,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const ControllerName = "kubermatic_addoninstaller_controller"
+const (
+	ControllerName  = "kubermatic_addoninstaller_controller"
+	addonDefaultKey = ".spec.isDefault"
+)
 
 type Reconciler struct {
 	log              *zap.SugaredLogger
@@ -78,6 +83,14 @@ func Add(
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create controller: %v", err)
+	}
+
+	// Add index on IsDefault flag
+	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), &kubermaticv1.Addon{}, addonDefaultKey, func(rawObj runtime.Object) []string {
+		a := rawObj.(*kubermaticv1.Addon)
+		return []string{strconv.FormatBool(a.Spec.IsDefault)}
+	}); err != nil {
+		return fmt.Errorf("failed to add index on Addon IsDefault flag: %v", err)
 	}
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
@@ -196,7 +209,8 @@ func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, c
 	}
 
 	currentAddons := kubermaticv1.AddonList{}
-	if err := r.List(ctx, &currentAddons, &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}); err != nil {
+	// only list default addons as user added addons should not be deleted
+	if err := r.List(ctx, &currentAddons, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName), ctrlruntimeclient.MatchingFields{addonDefaultKey: "true"}); err != nil {
 		return fmt.Errorf("failed to list cluster addons: %v", err)
 	}
 	for _, currentAddon := range currentAddons.Items {
