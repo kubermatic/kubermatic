@@ -431,6 +431,12 @@ EOF
   --helm-values "$HELM_VALUES_FILE" \
   --helm-binary "helm3"
 
+echodate "Waiting for Kubermatic Operator to deploy master components..."
+# sleep a bit to prevent us from checking the Deployments too early, before
+# the operator had time to reconcile
+sleep 5
+retry 10 check_all_deployments_ready kubermatic
+
             # # We don't need a valid certificate (and can't even get one), but still need
             # # to have the CRDs installed so we can at least create a Certificate resource.
             # TEST_NAME="Deploy cert-manager CRDs"
@@ -686,17 +692,14 @@ EOF
 retry 8 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing Seed"
 
-# wait until the operator has reconciled
-if [[ "${KUBERMATIC_USE_OPERATOR}" = "true" ]]; then
-  sleep 5
-  echodate "Waiting for Kubermatic Operator to deploy seed components..."
-  retry 8 check_all_deployments_ready kubermatic
-  echodate "Kubermatic Seed is ready."
+sleep 5
+echodate "Waiting for Kubermatic Operator to deploy seed components..."
+retry 8 check_all_deployments_ready kubermatic
+echodate "Kubermatic Seed is ready."
 
-  echodate "Waiting for VPA to be ready..."
-  retry 5 check_all_deployments_ready kube-system
-  echodate "VPA is ready."
-fi
+echodate "Waiting for VPA to be ready..."
+retry 8 check_all_deployments_ready kube-system
+echodate "VPA is ready."
 
 function kill_port_forwardings() {
   echodate "Stopping any previous port-forwardings to port $1..."
