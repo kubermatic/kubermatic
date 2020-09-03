@@ -69,8 +69,12 @@ export VAULT_TOKEN=$(vault write \
 
 TEST_NAME="Get Values file from Vault"
 
-export VALUES_FILE=/tmp/values.yaml
-retry 5 vault kv get -field=values.yaml dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
+# get ci values and extract the few relevant settings we need
+export VI_VALUES_FILE=/tmp/civalues.yaml
+retry 5 vault kv get -field=values.yaml dev/seed-clusters/ci.kubermatic.io > $VI_VALUES_FILE
+
+export VALUES_FILE="$(mktemp)"
+echo "{}" > "$VALUES_FILE"
 
 # Set docker config
 echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
