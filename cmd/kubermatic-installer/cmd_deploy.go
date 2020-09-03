@@ -81,6 +81,12 @@ func DeployCommand(logger *logrus.Logger) cli.Command {
 				Usage: "Time to wait for Helm operations to finish",
 				Value: 5 * time.Minute,
 			},
+			cli.StringFlag{
+				Name:   "helm-binary",
+				Usage:  "Full path to the Helm 3 binary to use",
+				Value:  "helm",
+				EnvVar: "HELM_BINARY",
+			},
 		},
 	}
 }
@@ -136,6 +142,7 @@ func DeployAction(logger *logrus.Logger) cli.ActionFunc {
 
 		kubeContext := ctx.String("kube-context")
 		helmTimeout := ctx.Duration("helm-timeout")
+		helmBinary := ctx.String("helm-binary")
 
 		ctrlConfig, err := ctrlruntimeconfig.GetConfigWithContext(kubeContext)
 		if err != nil {
@@ -173,7 +180,7 @@ func DeployAction(logger *logrus.Logger) cli.ActionFunc {
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
 
-		helmClient, err := helm.NewCLI(kubeconfig, kubeContext, helmTimeout, logger)
+		helmClient, err := helm.NewCLI(helmBinary, kubeconfig, kubeContext, helmTimeout, logger)
 		if err != nil {
 			return fmt.Errorf("failed to create Helm client: %v", err)
 		}

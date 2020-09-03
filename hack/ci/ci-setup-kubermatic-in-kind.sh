@@ -58,17 +58,19 @@ fi
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-TEST_NAME="Get Vault token"
+TEST_NAME="Get Vault Data"
 echodate "Getting secrets from Vault"
+
 export VAULT_ADDR=https://vault.loodse.com/
 export VAULT_TOKEN=$(vault write \
   --format=json auth/approle/login \
   role_id=$VAULT_ROLE_ID secret_id=$VAULT_SECRET_ID \
   | jq .auth.client_token -r)
-export VALUES_FILE=/tmp/values.yaml
+
 TEST_NAME="Get Values file from Vault"
-retry 5 vault kv get -field=values.yaml \
-  dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
+
+export VALUES_FILE=/tmp/values.yaml
+retry 5 vault kv get -field=values.yaml dev/seed-clusters/ci.kubermatic.io > $VALUES_FILE
 
 # Set docker config
 echo $IMAGE_PULL_SECRET_DATA | base64 -d > /config.json
@@ -93,7 +95,7 @@ function docker_logs {
 }
 appendTrap docker_logs EXIT
 
-# Wait for it to start
+# Wait for docker to start
 echodate "Waiting for docker"
 retry 5 docker stats --no-stream
 echodate "Docker became ready"
@@ -213,62 +215,61 @@ retry 5 kubectl get storageclasses.storage.k8s.io standard -o json \
   |kubectl apply -f -
 echodate "Successfully created kubermatic-fast storageclass"
 
-INITIAL_MANIFESTS="$(mktemp)"
-cat <<EOF >$INITIAL_MANIFESTS
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: tiller
-  namespace: kube-system
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: tiller
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: cluster-admin
-subjects:
-  - kind: ServiceAccount
-    name: tiller
-    namespace: kube-system
----
-EOF
+          # INITIAL_MANIFESTS="$(mktemp)"
+          # cat <<EOF >$INITIAL_MANIFESTS
+          # apiVersion: v1
+          # kind: ServiceAccount
+          # metadata:
+          #   name: tiller
+          #   namespace: kube-system
+          # ---
+          # apiVersion: rbac.authorization.k8s.io/v1
+          # kind: ClusterRoleBinding
+          # metadata:
+          #   name: tiller
+          # roleRef:
+          #   apiGroup: rbac.authorization.k8s.io
+          #   kind: ClusterRole
+          #   name: cluster-admin
+          # subjects:
+          #   - kind: ServiceAccount
+          #     name: tiller
+          #     namespace: kube-system
+          # ---
+          # EOF
 
-TEST_NAME="Create Helm bindings"
-echodate "Creating Helm bindings"
-retry 5 kubectl apply -f $INITIAL_MANIFESTS
+          # TEST_NAME="Create Helm bindings"
+          # echodate "Creating Helm bindings"
+          # retry 5 kubectl apply -f $INITIAL_MANIFESTS
 
-TEST_NAME="Deploy Tiller"
-if kubectl get deployment -n kube-system tiller-deploy &>/dev/null; then
-  echodate "Tiller is already deployed."
-else
-  echodate "Deploying Tiller"
-  helm init --wait --service-account=tiller
-fi
+          # TEST_NAME="Deploy Tiller"
+          # if kubectl get deployment -n kube-system tiller-deploy &>/dev/null; then
+          #   echodate "Tiller is already deployed."
+          # else
+          #   echodate "Deploying Tiller"
+          #   helm init --wait --service-account=tiller
+          # fi
 
-TEST_NAME="Deploy Dex"
-echodate "Deploying Dex"
+# TEST_NAME="Deploy Dex"
+# echodate "Deploying Dex"
 
-export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
+# export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
+# export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
+# export KUBERMATIC_OIDC_PASSWORD="password"
 
-if kubectl get namespace oauth; then
-  echodate "Dex already deployed"
-else
-  retry 5 helm install --wait --timeout 180 \
-    --values $KUBERMATIC_DEX_VALUES_FILE \
-    --namespace oauth \
-    --name oauth charts/oauth/
-fi
+          # if kubectl get namespace oauth; then
+          #   echodate "Dex already deployed"
+          # else
+          #   retry 5 helm install --wait --timeout 180 \
+          #     --values $KUBERMATIC_DEX_VALUES_FILE \
+          #     --namespace oauth \
+          #     --name oauth charts/oauth/
+          # fi
 
-export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
-export KUBERMATIC_OIDC_PASSWORD="password"
+          # TEST_NAME="Deploy Kubermatic CRDs"
+          # echodate "Deploying Kubermatic CRDs"
 
-TEST_NAME="Deploy Kubermatic CRDs"
-echodate "Deploying Kubermatic CRDs"
-
-retry 5 kubectl apply -f charts/kubermatic/crd/
+          # retry 5 kubectl apply -f charts/kubermatic/crd/
 
 REPOSUFFIX=""
 if [ "$KUBERMATIC_EDITION" != "ce" ]; then
@@ -279,8 +280,8 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   # Build kubermatic binaries and push the image
   OLD_HEAD="$(git rev-parse HEAD)"
   git checkout ${KUBERMATIC_VERSION}
-  echodate "Building containers with tag $KUBERMATIC_VERSION"
-  echodate "Building binaries"
+
+  echodate "Building binaries for $KUBERMATIC_VERSION"
   TEST_NAME="Build Kubermatic binaries"
 
   beforeGoBuild=$(nowms)
@@ -290,7 +291,7 @@ if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
   beforeDockerBuild=$(nowms)
 
   (
-    echodate "Building docker image"
+    echodate "Building Kubermatic image"
     TEST_NAME="Build Kubermatic Docker image"
     IMAGE_NAME="quay.io/kubermatic/kubermatic$REPOSUFFIX:$KUBERMATIC_VERSION"
     time retry 5 docker build -t "$IMAGE_NAME" .
@@ -381,91 +382,9 @@ function check_all_deployments_ready() {
   return 0
 }
 
-# We don't need a valid certificate (and can't even get one), but still need
-# to have the CRDs installed so we can at least create a Certificate resource.
-TEST_NAME="Deploy cert-manager CRDs"
-echodate "Deploying cert-manager CRDs"
-retry 5 kubectl apply -f charts/cert-manager/crd/
-
-if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
-  TEST_NAME="Deploy Kubermatic"
-  echodate "Deploying Kubermatic using Helm..."
-
-  OLD_HEAD="$(git rev-parse HEAD)"
-  if [[ -n ${CHARTS_VERSION:-} ]]; then
-    git checkout "$CHARTS_VERSION"
-  fi
-
-  beforeDeployment=$(nowms)
-
-  # --force is needed in case the first attempt at installing didn't succeed
-  # see https://github.com/helm/helm/pull/3597;
-  # we always override the quay repositories so we don't have to care if the
-  # Helm chart is made for CE or EE
-  retry 3 helm upgrade --install --force --wait --timeout 300 \
-    --set=kubermatic.isMaster=true \
-    --set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
-    --set-string=kubermatic.controller.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
-    --set-string=kubermatic.masterController.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
-    --set-string=kubermatic.api.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
-    --set-string=kubermatic.ui.image.repository="quay.io/kubermatic/dashboard$REPOSUFFIX" \
-    --set-string=kubermatic.controller.addons.kubernetes.image.tag="$KUBERMATIC_VERSION" \
-    --set-string=kubermatic.controller.image.tag="$KUBERMATIC_VERSION" \
-    --set-string=kubermatic.controller.addons.openshift.image.tag="$KUBERMATIC_VERSION" \
-    --set-string=kubermatic.api.image.tag="$KUBERMATIC_VERSION" \
-    --set=kubermatic.controller.datacenterName=${SEED_NAME} \
-    --set=kubermatic.api.replicas=1 \
-    --set-string=kubermatic.masterController.image.tag="$KUBERMATIC_VERSION" \
-    --set-string=kubermatic.ui.image.tag=${UIDOCKERTAG} \
-    --set=kubermatic.ui.replicas="${KUBERMATIC_UI_REPLICAS}" \
-    --set=kubermatic.ingressClass=non-existent \
-    --set=kubermatic.checks.crd.disable=true \
-    --set=kubermatic.datacenters='' \
-    --set=kubermatic.dynamicDatacenters=true \
-    --set=kubermatic.dynamicPresets=true \
-    --set=kubermatic.kubeconfig="$(cat $KUBECONFIG|sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./'|base64 -w0)" \
-    --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556/dex \
-    --set=kubermatic.auth.clientID=kubermatic \
-    --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
-    --set=kubermatic.apiserverDefaultReplicas=1 \
-    --set=kubermatic.deployVPA=false \
-    --namespace=kubermatic \
-    ${ADDITIONAL_HELM_ARGS} \
-    ${OPENSHIFT_HELM_ARGS:-} \
-    --values ${VALUES_FILE} \
-    kubermatic \
-    charts/kubermatic/
-
-  pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment 'method="helm"'
-
-  # Return repo to previous state if we checked out older charts before.
-  if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
-    git checkout ${KUBERMATIC_VERSION}
-  fi
-else
-  TEST_NAME="Deploy Kubermatic"
-  echodate "Installing Kubermatic using operator..."
-
-  beforeDeployment=$(nowms)
-
-  # --force is needed in case the first attempt at installing didn't succeed
-  # see https://github.com/helm/helm/pull/3597
-  retry 3 helm upgrade --install --force --wait --timeout 300 \
-    --set-file "kubermaticOperator.imagePullSecret=/config.json" \
-    --set-string "kubermaticOperator.image.repository=quay.io/kubermatic/kubermatic$REPOSUFFIX" \
-    --set-string "kubermaticOperator.image.tag=$KUBERMATIC_VERSION" \
-    --namespace kubermatic \
-    --values ${VALUES_FILE} \
-    kubermatic-operator \
-    charts/kubermatic-operator/
-
-  echodate "Kubermatic Operator is ready."
-
-  # No need to override any Docker repositories here, as the operator
-  # is already pinned to CE or EE and has the proper default values on board.
-
-  KUBERMATIC_CONFIG="$(mktemp)"
-  cat <<EOF >$KUBERMATIC_CONFIG
+# prepare to run kubermatic-installer
+KUBERMATIC_CONFIG="$(mktemp)"
+cat <<EOF >$KUBERMATIC_CONFIG
 apiVersion: operator.kubermatic.io/v1alpha1
 kind: KubermaticConfiguration
 metadata:
@@ -494,19 +413,138 @@ $(echo "$IMAGE_PULL_SECRET_DATA" | base64 -d | sed 's/^/    /')
     issuerRedirectURL: "http://localhost:8000"
     serviceAccountKey: "$SERVICE_ACCOUNT_KEY"
 EOF
-  echodate "Creating Kubermatic Master..."
-  retry 3 kubectl apply -f $KUBERMATIC_CONFIG
 
-  echodate "Waiting for Kubermatic Operator to deploy master components..."
-  # sleep a bit to prevent us from checking the Deployments too early, before
-  # the operator had time to reconcile
-  sleep 5
-  retry 10 check_all_deployments_ready kubermatic
+./_build/kubermatic-installer deploy \
+  --config "$KUBERMATIC_CONFIG" \
+  --helm-values "$VALUES_FILE" \
+  --helm-binary "helm3"
 
-  echodate "Kubermatic Master is ready."
+            # # We don't need a valid certificate (and can't even get one), but still need
+            # # to have the CRDs installed so we can at least create a Certificate resource.
+            # TEST_NAME="Deploy cert-manager CRDs"
+            # echodate "Deploying cert-manager CRDs"
+            # retry 5 kubectl apply -f charts/cert-manager/crd/
 
-  pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment 'method="operator"'
-fi
+            # if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
+            #   TEST_NAME="Deploy Kubermatic"
+            #   echodate "Deploying Kubermatic using Helm..."
+
+            #   OLD_HEAD="$(git rev-parse HEAD)"
+            #   if [[ -n ${CHARTS_VERSION:-} ]]; then
+            #     git checkout "$CHARTS_VERSION"
+            #   fi
+
+            #   beforeDeployment=$(nowms)
+
+            #   # --force is needed in case the first attempt at installing didn't succeed
+            #   # see https://github.com/helm/helm/pull/3597;
+            #   # we always override the quay repositories so we don't have to care if the
+            #   # Helm chart is made for CE or EE
+            #   retry 3 helm upgrade --install --force --wait --timeout 300 \
+            #     --set=kubermatic.isMaster=true \
+            #     --set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
+            #     --set-string=kubermatic.controller.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
+            #     --set-string=kubermatic.masterController.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
+            #     --set-string=kubermatic.api.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
+            #     --set-string=kubermatic.ui.image.repository="quay.io/kubermatic/dashboard$REPOSUFFIX" \
+            #     --set-string=kubermatic.controller.addons.kubernetes.image.tag="$KUBERMATIC_VERSION" \
+            #     --set-string=kubermatic.controller.image.tag="$KUBERMATIC_VERSION" \
+            #     --set-string=kubermatic.controller.addons.openshift.image.tag="$KUBERMATIC_VERSION" \
+            #     --set-string=kubermatic.api.image.tag="$KUBERMATIC_VERSION" \
+            #     --set=kubermatic.controller.datacenterName=${SEED_NAME} \
+            #     --set=kubermatic.api.replicas=1 \
+            #     --set-string=kubermatic.masterController.image.tag="$KUBERMATIC_VERSION" \
+            #     --set-string=kubermatic.ui.image.tag=${UIDOCKERTAG} \
+            #     --set=kubermatic.ui.replicas="${KUBERMATIC_UI_REPLICAS}" \
+            #     --set=kubermatic.ingressClass=non-existent \
+            #     --set=kubermatic.checks.crd.disable=true \
+            #     --set=kubermatic.datacenters='' \
+            #     --set=kubermatic.dynamicDatacenters=true \
+            #     --set=kubermatic.dynamicPresets=true \
+            #     --set=kubermatic.kubeconfig="$(cat $KUBECONFIG|sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./'|base64 -w0)" \
+            #     --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556/dex \
+            #     --set=kubermatic.auth.clientID=kubermatic \
+            #     --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
+            #     --set=kubermatic.apiserverDefaultReplicas=1 \
+            #     --set=kubermatic.deployVPA=false \
+            #     --namespace=kubermatic \
+            #     ${ADDITIONAL_HELM_ARGS} \
+            #     ${OPENSHIFT_HELM_ARGS:-} \
+            #     --values ${VALUES_FILE} \
+            #     kubermatic \
+            #     charts/kubermatic/
+
+            #   pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment 'method="helm"'
+
+            #   # Return repo to previous state if we checked out older charts before.
+            #   if [[ "${KUBERMATIC_SKIP_BUILDING}" = "false" ]]; then
+            #     git checkout ${KUBERMATIC_VERSION}
+            #   fi
+            # else
+            #   TEST_NAME="Deploy Kubermatic"
+            #   echodate "Installing Kubermatic using operator..."
+
+            #   beforeDeployment=$(nowms)
+
+            #   # --force is needed in case the first attempt at installing didn't succeed
+            #   # see https://github.com/helm/helm/pull/3597
+            #   retry 3 helm upgrade --install --force --wait --timeout 300 \
+            #     --set-file "kubermaticOperator.imagePullSecret=/config.json" \
+            #     --set-string "kubermaticOperator.image.repository=quay.io/kubermatic/kubermatic$REPOSUFFIX" \
+            #     --set-string "kubermaticOperator.image.tag=$KUBERMATIC_VERSION" \
+            #     --namespace kubermatic \
+            #     --values ${VALUES_FILE} \
+            #     kubermatic-operator \
+            #     charts/kubermatic-operator/
+
+            #   echodate "Kubermatic Operator is ready."
+
+            #   # No need to override any Docker repositories here, as the operator
+            #   # is already pinned to CE or EE and has the proper default values on board.
+
+            #   KUBERMATIC_CONFIG="$(mktemp)"
+            #   cat <<EOF >$KUBERMATIC_CONFIG
+            # apiVersion: operator.kubermatic.io/v1alpha1
+            # kind: KubermaticConfiguration
+            # metadata:
+            #   name: e2e
+            #   namespace: kubermatic
+            # spec:
+            #   ingress:
+            #     domain: ci.kubermatic.io
+            #     disable: true
+            #   imagePullSecret: |
+            # $(echo "$IMAGE_PULL_SECRET_DATA" | base64 -d | sed 's/^/    /')
+            #   userCluster:
+            #     apiserverReplicas: 1
+            #   api:
+            #     debugLog: true
+            #   featureGates:
+            #     # VPA won't do anything useful due to missing Prometheus, but we can
+            #     # at least ensure we deploy a working set of Deployments.
+            #     VerticalPodAutoscaler: {}
+            #   ui:
+            #     replicas: $KUBERMATIC_UI_REPLICAS
+            #   # Dex integration
+            #   auth:
+            #     tokenIssuer: "http://dex.oauth:5556/dex"
+            #     clientID: "kubermatic"
+            #     issuerRedirectURL: "http://localhost:8000"
+            #     serviceAccountKey: "$SERVICE_ACCOUNT_KEY"
+            # EOF
+            #   echodate "Creating Kubermatic Master..."
+            #   retry 3 kubectl apply -f $KUBERMATIC_CONFIG
+
+            #   echodate "Waiting for Kubermatic Operator to deploy master components..."
+            #   # sleep a bit to prevent us from checking the Deployments too early, before
+            #   # the operator had time to reconcile
+            #   sleep 5
+            #   retry 10 check_all_deployments_ready kubermatic
+
+            #   echodate "Kubermatic Master is ready."
+
+            #   pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment 'method="operator"'
+            # fi
 
 echodate "Finished installing Kubermatic"
 
