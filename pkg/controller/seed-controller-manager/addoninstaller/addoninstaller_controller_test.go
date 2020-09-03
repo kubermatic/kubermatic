@@ -280,6 +280,116 @@ func TestUpdateAddon(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "successfully created two addons and deleted one",
+			existingClusterAddons: []*kubermaticv1.Addon{
+				{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kubermatic.k8s.io/v1",
+						Kind:       "Addon",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "to-be-deleted",
+						Namespace:       "cluster-" + name,
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         "kubermatic.k8s.io/v1",
+								Kind:               "Cluster",
+								Name:               name,
+								Controller:         truePtr(),
+								BlockOwnerDeletion: truePtr(),
+							},
+						},
+					},
+					Spec: kubermaticv1.AddonSpec{
+						Name: "ToBeDeleted",
+						Cluster: corev1.ObjectReference{
+							Kind: "Cluster",
+							Name: name,
+						},
+						IsDefault: true,
+					},
+				},
+			},
+			expectedClusterAddons: []*kubermaticv1.Addon{
+				{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kubermatic.k8s.io/v1",
+						Kind:       "Addon",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "Foo",
+						Namespace:       "cluster-" + name,
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         "kubermatic.k8s.io/v1",
+								Kind:               "Cluster",
+								Name:               name,
+								Controller:         truePtr(),
+								BlockOwnerDeletion: truePtr(),
+							},
+						},
+					},
+					Spec: kubermaticv1.AddonSpec{
+						Name: "Foo",
+						Cluster: corev1.ObjectReference{
+							Kind: "Cluster",
+							Name: name,
+						},
+						IsDefault: true,
+					},
+				},
+				{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "kubermatic.k8s.io/v1",
+						Kind:       "Addon",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "Bar",
+						Namespace:       "cluster-" + name,
+						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
+						Annotations:     map[string]string{"foo": "bar"},
+						ResourceVersion: "1",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion:         "kubermatic.k8s.io/v1",
+								Kind:               "Cluster",
+								Name:               name,
+								Controller:         truePtr(),
+								BlockOwnerDeletion: truePtr(),
+							},
+						},
+					},
+					Spec: kubermaticv1.AddonSpec{
+						Name: "Bar",
+						Cluster: corev1.ObjectReference{
+							Kind: "Cluster",
+							Name: name,
+						},
+						IsDefault: true,
+					},
+				},
+			},
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: name,
+				},
+				Spec:    kubermaticv1.ClusterSpec{},
+				Address: kubermaticv1.ClusterAddress{},
+				Status: kubermaticv1.ClusterStatus{
+					ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
+
+						Apiserver: kubermaticv1.HealthStatusUp,
+					},
+					NamespaceName: "cluster-" + name,
+				},
+			},
+		},
+		//TODO(irozzo) Add test to ensure that user added addons are not
+		//deleted when the following is merged:
+		// https://github.com/kubernetes-sigs/controller-runtime/pull/800
 	}
 
 	for _, test := range tests {
