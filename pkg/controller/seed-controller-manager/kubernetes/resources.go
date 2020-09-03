@@ -89,7 +89,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
-	if err := r.ensureClusterRoleBindings(ctx, cluster, data); err != nil {
+	if err := r.ensureClusterRoleBindings(ctx, data); err != nil {
 		return err
 	}
 
@@ -363,7 +363,7 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	return nil
 }
 
-func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, data *resources.TemplateData) error {
 	namedClusterRoleBindingCreatorGetters := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		gatekeeper.ClusterRoleBindingCreator(data),
 	}
