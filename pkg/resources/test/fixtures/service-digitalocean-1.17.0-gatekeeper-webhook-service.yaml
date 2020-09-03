@@ -1,0 +1,19 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  labels:
+    app: gatekeeper-controller-manager
+    gatekeeper.sh/system: "yes"
+  name: gatekeeper-webhook-service
+spec:
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: 8443
+  selector:
+    control-plane: controller-manager
+    gatekeeper.sh/operation: webhook
+    gatekeeper.sh/system: "yes"
+status:
+  loadBalancer: {}
