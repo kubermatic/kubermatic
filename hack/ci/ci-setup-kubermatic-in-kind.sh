@@ -418,9 +418,17 @@ $(echo "$IMAGE_PULL_SECRET_DATA" | base64 -d | sed 's/^/    /')
     serviceAccountKey: "$SERVICE_ACCOUNT_KEY"
 EOF
 
+HELM_VALUES_FILE="$(mktemp)"
+cat <<EOF >$HELM_VALUES_FILE
+kubermaticOperator:
+  image:
+    repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
+    tag: "$KUBERMATIC_VERSION"
+EOF
+
 ./_build/kubermatic-installer deploy \
   --config "$KUBERMATIC_CONFIG" \
-  --helm-values "$VALUES_FILE" \
+  --helm-values "$HELM_VALUES_FILE" \
   --helm-binary "helm3"
 
             # # We don't need a valid certificate (and can't even get one), but still need
