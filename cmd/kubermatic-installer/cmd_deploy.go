@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -177,6 +178,10 @@ func DeployAction(logger *logrus.Logger) cli.ActionFunc {
 		}
 
 		if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+			return fmt.Errorf("failed to add scheme: %v", err)
+		}
+
+		if err := certmanagerv1alpha2.AddToScheme(mgr.GetScheme()); err != nil {
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
 
