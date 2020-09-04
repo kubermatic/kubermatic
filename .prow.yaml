@@ -295,6 +295,7 @@ presubmits:
       preset-docker-push: "true"
       preset-vault: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -335,6 +336,7 @@ presubmits:
       preset-docker-push: "true"
       preset-vault: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -375,6 +377,7 @@ presubmits:
       preset-docker-push: "true"
       preset-vault: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -415,6 +418,7 @@ presubmits:
       preset-docker-push: "true"
       preset-vault: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -455,6 +459,7 @@ presubmits:
       preset-docker-push: "true"
       preset-vault: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -464,9 +469,53 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: "ce"
-        - name: KUBERMATIC_USE_OPERATOR
-          value: "true"
         - name: ONLY_TEST_CREATION
+          value: "true"
+        - name: VERSIONS_TO_TEST
+          value: "v1.19.0"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,flatcar,coreos,rhel"
+        - name: SERVICE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: e2e-ci
+              key: serviceAccountSigningKey
+        command:
+        - "./hack/ci/ci-kind-e2e.sh"
+        # docker-in-docker needs privileged mode
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 3.5
+          limits:
+            memory: 4Gi
+
+  - name: pre-kubermatic-e2e-aws-ubuntu-1.19-legacy
+    decorate: true
+    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-aws: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-vault: "true"
+      preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
+        env:
+        - name: KUBERMATIC_EDITION
+          value: "ee"
+        - name: ONLY_TEST_CREATION
+          value: "true"
+        # do not use kubermatic-installer, but instead the `kubermatic` Helm chart (EE-only)
+        - name: USE_LEGACY_HELM_CHART
           value: "true"
         - name: VERSIONS_TO_TEST
           value: "v1.19.0"
@@ -503,6 +552,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -548,6 +598,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -590,6 +641,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -637,6 +689,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -679,6 +732,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -721,6 +775,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -763,6 +818,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -808,6 +864,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -852,6 +909,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -896,6 +954,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -939,6 +998,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -984,6 +1044,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-docker-push: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -1033,6 +1094,7 @@ presubmits:
       preset-docker-pull: "true"
       preset-oidc: "true"
       preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
       preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
@@ -1104,54 +1166,6 @@ presubmits:
             secretKeyRef:
               name: e2e-ci
               key: serviceAccountSigningKey
-
-  #########################################################
-  # Kubermatic Operator
-  #########################################################
-
-  - name: pre-kubermatic-e2e-operator
-    decorate: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|.prow.yaml)"
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-aws: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-vault: "true"
-      preset-repo-ssh: "true"
-      preset-kubeconfig-ci: "true"
-      preset-kind-volume-mounts: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: coreos,centos,sles,rhel,flatcar
-        - name: VERSIONS_TO_TEST
-          value: "v1.19.0"
-        - name: KUBERMATIC_USE_OPERATOR
-          value: "true"
-        - name: ONLY_TEST_CREATION
-          value: "true"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/ci-kind-e2e.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
 
   #########################################################
   # misc

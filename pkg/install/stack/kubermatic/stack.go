@@ -177,6 +177,10 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 		return fmt.Errorf("failed to deploy Helm release: %v", err)
 	}
 
+	if err := waitForCertManagerWebhook(ctx, sublogger, kubeClient); err != nil {
+		return fmt.Errorf("failed to verify that the webhook is functioning: %v", err)
+	}
+
 	logger.Info("✅ Success.")
 
 	return nil
