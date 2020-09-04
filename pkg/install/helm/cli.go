@@ -30,6 +30,7 @@ import (
 )
 
 type cli struct {
+	binary      string
 	kubeconfig  string
 	kubeContext string
 	timeout     time.Duration
@@ -38,12 +39,13 @@ type cli struct {
 
 // NewCLI returns a new Client implementation that uses a local helm
 // binary to perform chart installations.
-func NewCLI(kubeconfig string, kubeContext string, timeout time.Duration, logger logrus.FieldLogger) (Client, error) {
+func NewCLI(binary string, kubeconfig string, kubeContext string, timeout time.Duration, logger logrus.FieldLogger) (Client, error) {
 	if timeout.Seconds() < 10 {
 		return nil, errors.New("timeout must be >= 10 seconds")
 	}
 
 	return &cli{
+		binary:      binary,
 		kubeconfig:  kubeconfig,
 		kubeContext: kubeContext,
 		timeout:     timeout,
@@ -140,7 +142,7 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 		globalArgs = append(globalArgs, "--namespace", namespace)
 	}
 
-	cmd := exec.Command("helm-3.2.3", append(globalArgs, args...)...)
+	cmd := exec.Command(c.binary, append(globalArgs, args...)...)
 	cmd.Env = append(cmd.Env, "KUBECONFIG="+c.kubeconfig)
 
 	c.logger.Debugf("$ KUBECONFIG=%s %s", c.kubeconfig, strings.Join(cmd.Args, " "))

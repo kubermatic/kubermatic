@@ -258,3 +258,43 @@ fatal() {
   echo "$(date) F: $*" >>/dev/stderr
   exit 1
 }
+
+check_all_deployments_ready() {
+  local namespace="$1"
+
+  # check that Deployments have been created
+  local deployments
+  deployments=$(kubectl -n $namespace get deployments -o json)
+
+  if [ $(jq '.items | length' <<< $deployments) -eq 0 ]; then
+    echodate "No Deployments created yet."
+    return 1
+  fi
+
+  # check that all Deployments are ready
+  local unready
+  unready=$(jq -r '[.items[] | select(.spec.replicas > 0) | select (.status.availableReplicas < .spec.replicas) | .metadata.name] | @tsv' <<< $deployments)
+  if [ -n "$unready" ]; then
+    echodate "Not all Deployments have finished rolling out, namely: $unready"
+    return 1
+  fi
+
+  return 0
+}
+
+function cleanup_kubermatic_clusters_in_kind {
+  originalRC=$?
+
+  # Tolerate errors and just continue
+  set +e
+  # Clean up clusters
+  echodate "Cleaning up clusters..."
+  kubectl delete cluster --all --ignore-not-found=true
+  echodate "Done cleaning up clusters"
+
+  # Kill all descendant processes
+  pkill -P $$
+  set -e
+
+  return $originalRC
+}

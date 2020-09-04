@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -80,6 +81,12 @@ func DeployCommand(logger *logrus.Logger) cli.Command {
 				Name:  "helm-timeout",
 				Usage: "Time to wait for Helm operations to finish",
 				Value: 5 * time.Minute,
+			},
+			cli.StringFlag{
+				Name:   "helm-binary",
+				Usage:  "Full path to the Helm 3 binary to use",
+				Value:  "helm",
+				EnvVar: "HELM_BINARY",
 			},
 		},
 	}
@@ -136,6 +143,7 @@ func DeployAction(logger *logrus.Logger) cli.ActionFunc {
 
 		kubeContext := ctx.String("kube-context")
 		helmTimeout := ctx.Duration("helm-timeout")
+		helmBinary := ctx.String("helm-binary")
 
 		ctrlConfig, err := ctrlruntimeconfig.GetConfigWithContext(kubeContext)
 		if err != nil {
@@ -173,7 +181,11 @@ func DeployAction(logger *logrus.Logger) cli.ActionFunc {
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
 
-		helmClient, err := helm.NewCLI(kubeconfig, kubeContext, helmTimeout, logger)
+		if err := certmanagerv1alpha2.AddToScheme(mgr.GetScheme()); err != nil {
+			return fmt.Errorf("failed to add scheme: %v", err)
+		}
+
+		helmClient, err := helm.NewCLI(helmBinary, kubeconfig, kubeContext, helmTimeout, logger)
 		if err != nil {
 			return fmt.Errorf("failed to create Helm client: %v", err)
 		}

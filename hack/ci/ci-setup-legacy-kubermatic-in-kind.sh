@@ -16,8 +16,11 @@ cd $(dirname $0)/../..
 source hack/lib.sh
 
 #############################################################
-## CI Setup Kubermatic in kind                              #
+## CI Setup Kubermatic in kind using legacy Helm chart      #
 ## A simple script to get a Kubermatic setup using kind     #
+## Compared to the ci-setup-kubermatic-in-kind.sh, this     #
+## script does not use the installer, but tests the         #
+## deprecated `kubermatic` Helm chart.                      #
 #############################################################
 
 # This script should be sourced, not called, so callers get the variables it sets
@@ -32,7 +35,7 @@ if [ -z "${PROW_JOB_ID:-}" ]; then
   exit 1
 fi
 
-# The Kubermatic version to build.
+# The kubemaric version to build.
 export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
 
 REPOSUFFIX=""
@@ -187,6 +190,17 @@ retry 5 kubectl get storageclasses.storage.k8s.io standard -o json \
   | kubectl apply -f -
 echodate "Successfully created StorageClass"
 
+TEST_NAME="Deploy Dex"
+echodate "Deploying Dex"
+
+retry 3 kubectl create ns oauth
+retry 5 helm3 --namespace oauth install --atomic --timeout 3m --values $KUBERMATIC_DEX_VALUES_FILE oauth charts/oauth/
+
+TEST_NAME="Deploy Kubermatic CRDs"
+echodate "Deploying Kubermatic CRDs"
+
+retry 5 kubectl apply -f charts/kubermatic/crd/
+
 # Build binaries and load the Docker images into the kind cluster
 echodate "Building binaries for $KUBERMATIC_VERSION"
 TEST_NAME="Build Kubermatic binaries"
@@ -198,7 +212,7 @@ pushElapsed kubermatic_go_build_duration_milliseconds $beforeGoBuild
 beforeDockerBuild=$(nowms)
 
 (
-  echodate "Building Kubermatic Docker image"
+  echodate "Building docker image"
   TEST_NAME="Build Kubermatic Docker image"
   IMAGE_NAME="quay.io/kubermatic/kubermatic$REPOSUFFIX:$KUBERMATIC_VERSION"
   time retry 5 docker build -t "$IMAGE_NAME" .
@@ -217,15 +231,6 @@ beforeDockerBuild=$(nowms)
   TEST_NAME="Build openshift Docker image"
   cd openshift_addons
   IMAGE_NAME="quay.io/kubermatic/openshift-addons:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "${IMAGE_NAME}" .
-  time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
-)
-(
-  echodate "Building nodeport-proxy image"
-  TEST_NAME="Build nodeport-proxy Docker image"
-  cd cmd/nodeport-proxy
-  make build
-  IMAGE_NAME="quay.io/kubermatic/nodeport-proxy:$KUBERMATIC_VERSION"
   time retry 5 docker build -t "${IMAGE_NAME}" .
   time retry 5 kind load docker-image "$IMAGE_NAME" --name ${SEED_NAME}
 )
@@ -257,63 +262,55 @@ beforeDockerBuild=$(nowms)
 )
 
 pushElapsed kubermatic_docker_build_duration_milliseconds $beforeDockerBuild
+
 echodate "Successfully built and loaded all images"
 
-# prepare to run kubermatic-installer
-KUBERMATIC_CONFIG="$(mktemp)"
-cat <<EOF >$KUBERMATIC_CONFIG
-apiVersion: operator.kubermatic.io/v1alpha1
-kind: KubermaticConfiguration
-metadata:
-  name: e2e
-  namespace: kubermatic
-spec:
-  ingress:
-    domain: ci.kubermatic.io
-    disable: true
-  imagePullSecret: |
-$(echo "$IMAGE_PULL_SECRET_DATA" | base64 -d | sed 's/^/    /')
-  userCluster:
-    apiserverReplicas: 1
-  api:
-    replicas: 1
-    debugLog: true
-  featureGates:
-    # VPA won't do anything useful due to missing Prometheus, but we can
-    # at least ensure we deploy a working set of Deployments.
-    VerticalPodAutoscaler: {}
-  ui:
-    replicas: 0
-  # Dex integration
-  auth:
-    tokenIssuer: "http://dex.oauth:5556/dex"
-    issuerRedirectURL: "http://localhost:8000"
-    serviceAccountKey: "$SERVICE_ACCOUNT_KEY"
-EOF
+# We don't need a valid certificate (and can't even get one), but still need
+# to have the CRDs installed so we can at least create a Certificate resource.
+TEST_NAME="Deploy cert-manager CRDs"
+echodate "Deploying cert-manager CRDs"
+retry 5 kubectl apply -f charts/cert-manager/crd/
 
-HELM_VALUES_FILE="$(mktemp)"
-cat <<EOF >$HELM_VALUES_FILE
-kubermaticOperator:
-  image:
-    repository: "quay.io/kubermatic/kubermatic$REPOSUFFIX"
-    tag: "$KUBERMATIC_VERSION"
-EOF
+TEST_NAME="Deploy Kubermatic"
+echodate "Deploying Kubermatic using Helm..."
 
-# append custom Dex configuration
-cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
+beforeDeployment=$(nowms)
 
-# install dependencies and Kubermatic Operator into cluster
-./_build/kubermatic-installer deploy \
-  --config "$KUBERMATIC_CONFIG" \
-  --helm-values "$HELM_VALUES_FILE" \
-  --helm-binary "helm3"
+# we always override the quay repositories so we don't have to care if the
+# Helm chart is made for CE or EE
+retry 3 kubectl create ns kubermatic
+retry 3 helm3 --namespace kubermatic install --atomic --timeout 5m \
+  --set=kubermatic.domain=ci.kubermatic.io \
+  --set=kubermatic.isMaster=true \
+  --set=kubermatic.imagePullSecretData="$IMAGE_PULL_SECRET_DATA" \
+  --set-string=kubermatic.controller.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
+  --set-string=kubermatic.masterController.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
+  --set-string=kubermatic.api.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
+  --set-string=kubermatic.ui.image.repository="quay.io/kubermatic/dashboard$REPOSUFFIX" \
+  --set-string=kubermatic.controller.addons.kubernetes.image.tag="$KUBERMATIC_VERSION" \
+  --set-string=kubermatic.controller.image.tag="$KUBERMATIC_VERSION" \
+  --set-string=kubermatic.controller.addons.openshift.image.tag="$KUBERMATIC_VERSION" \
+  --set-string=kubermatic.api.image.tag="$KUBERMATIC_VERSION" \
+  --set=kubermatic.controller.datacenterName="${SEED_NAME}" \
+  --set=kubermatic.api.replicas=1 \
+  --set-string=kubermatic.masterController.image.tag="$KUBERMATIC_VERSION" \
+  --set-string=kubermatic.ui.image.tag=latest \
+  --set=kubermatic.ui.replicas=0 \
+  --set=kubermatic.ingressClass=non-existent \
+  --set=kubermatic.checks.crd.disable=true \
+  --set=kubermatic.datacenters='' \
+  --set=kubermatic.dynamicDatacenters=true \
+  --set=kubermatic.dynamicPresets=true \
+  --set=kubermatic.kubeconfig="$(cat $KUBECONFIG|sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./'|base64 -w0)" \
+  --set=kubermatic.auth.tokenIssuer=http://dex.oauth:5556/dex \
+  --set=kubermatic.auth.clientID=kubermatic \
+  --set=kubermatic.auth.serviceAccountKey=$SERVICE_ACCOUNT_KEY \
+  --set=kubermatic.apiserverDefaultReplicas=1 \
+  --set=kubermatic.deployVPA=false \
+  kubermatic \
+  charts/kubermatic/
 
-# TODO: The installer should wait for everything to finish reconciling.
-echodate "Waiting for Kubermatic Operator to deploy Master components..."
-# sleep a bit to prevent us from checking the Deployments too early, before
-# the operator had time to reconcile
-sleep 5
-retry 10 check_all_deployments_ready kubermatic
+pushElapsed kubermatic_deployment_duration_milliseconds $beforeDeployment 'method="helm"'
 
 echodate "Finished installing Kubermatic"
 
@@ -443,15 +440,6 @@ EOF
 retry 8 kubectl apply -f $SEED_MANIFEST
 echodate "Finished installing Seed"
 
-sleep 5
-echodate "Waiting for Kubermatic Operator to deploy Seed components..."
-retry 8 check_all_deployments_ready kubermatic
-echodate "Kubermatic Seed is ready."
-
-echodate "Waiting for VPA to be ready..."
-retry 8 check_all_deployments_ready kube-system
-echodate "VPA is ready."
-
 appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 
 TEST_NAME="Expose Dex and Kubermatic API"
@@ -459,5 +447,13 @@ echodate "Exposing Dex and Kubermatic API to localhost..."
 kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 &
 kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 &
 echodate "Finished exposing components"
+
+echodate "Waiting for Dex to be ready"
+retry 5 curl -sSf  http://127.0.0.1:5556/dex/healthz
+echodate "Dex became ready"
+
+echodate "Waiting for Kubermatic API to be ready"
+retry 5 curl -sSf  http://127.0.0.1:8080/api/v1/healthz
+echodate "API became ready"
 
 cd -

@@ -287,7 +287,7 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 	}()
 
 	ctx := context.Background()
-	if r.existingClusterLabel == "" && os.Getenv("KUBERMATIC_USE_EXISTING_CLUSTER") == "" {
+	if r.existingClusterLabel == "" {
 		if err := junitReporterWrapper(
 			"[Kubermatic] Create cluster",
 			report,
