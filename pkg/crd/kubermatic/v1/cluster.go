@@ -107,7 +107,7 @@ type ClusterSpec struct {
 	PauseReason string `json:"pauseReason,omitempty"`
 
 	// Optional component specific overrides
-	ComponentsOverride ComponentSettings `json:"componentsOverride"`
+	ComponentsOverride ComponentSettingsSpec `json:"componentsOverride"`
 
 	OIDC OIDCSettings `json:"oidc,omitempty"`
 
@@ -288,34 +288,6 @@ type OIDCSettings struct {
 
 type AuditLoggingSettings struct {
 	Enabled bool `json:"enabled,omitempty"`
-}
-
-type ComponentSettings struct {
-	Apiserver         APIServerSettings       `json:"apiserver"`
-	ControllerManager DeploymentSettings      `json:"controllerManager"`
-	Scheduler         DeploymentSettings      `json:"scheduler"`
-	Etcd              EtcdStatefulSetSettings `json:"etcd"`
-	Prometheus        StatefulSetSettings     `json:"prometheus"`
-}
-
-type APIServerSettings struct {
-	DeploymentSettings `json:",inline"`
-
-	EndpointReconcilingDisabled *bool `json:"endpointReconcilingDisabled,omitempty"`
-}
-
-type DeploymentSettings struct {
-	Replicas  *int32                       `json:"replicas,omitempty"`
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-}
-
-type StatefulSetSettings struct {
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
-}
-
-type EtcdStatefulSetSettings struct {
-	ClusterSize int                          `json:"clusterSize,omitempty"`
-	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 // ClusterNetworkingConfig specifies the different networking

@@ -1,0 +1,17 @@
+apiVersion: apiVersion: kubermatic.k8s.io/v1
+kind: ComponentSettings
+metadata:
+  name: default
+  namespace: kubermatic
+spec: {}
+  spec:
+    apiserver:
+      endpointReconcilingDisabled: false
+      replicas: 2
+    controllerManager:
+      replicas: 1
+    etcd:
+      clusterSize: 3
+    prometheus: {}
+    scheduler:
+      replicas: 1

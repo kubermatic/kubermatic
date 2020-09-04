@@ -35,13 +35,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/rancher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
 	updatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/update"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	//kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/version"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
-	utilpointer "k8s.io/utils/pointer"
+	//utilpointer "k8s.io/utils/pointer"
 )
 
 // AllControllers stores the list of all controllers that we want to run,
@@ -84,22 +84,12 @@ func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
 }
 
 func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
-	defaultCompontentsOverrides := kubermaticv1.ComponentSettings{
-		Apiserver: kubermaticv1.APIServerSettings{
-			DeploymentSettings:          kubermaticv1.DeploymentSettings{Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.apiServerDefaultReplicas))},
-			EndpointReconcilingDisabled: utilpointer.BoolPtr(ctrlCtx.runOptions.apiServerEndpointReconcilingDisabled),
-		},
-		ControllerManager: kubermaticv1.DeploymentSettings{
-			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.controllerManagerDefaultReplicas))},
-		Scheduler: kubermaticv1.DeploymentSettings{
-			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.schedulerDefaultReplicas))},
-	}
 	return clustercomponentdefaulter.Add(
 		context.Background(),
 		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
-		defaultCompontentsOverrides,
+		ctrlCtx.runOptions.defaultComponentSettings,
 		ctrlCtx.runOptions.workerName,
 	)
 }

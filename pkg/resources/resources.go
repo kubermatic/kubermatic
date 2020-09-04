@@ -984,7 +984,7 @@ func SetResourceRequirements(containers []corev1.Container, defaultRequirements,
 	return nil
 }
 
-func GetOverrides(componentSettings kubermaticv1.ComponentSettings) map[string]*corev1.ResourceRequirements {
+func GetOverrides(componentSettings kubermaticv1.ComponentSettingsSpec) map[string]*corev1.ResourceRequirements {
 	r := map[string]*corev1.ResourceRequirements{}
 	if componentSettings.Apiserver.Resources != nil {
 		r[ApiserverDeploymentName] = componentSettings.Apiserver.Resources.DeepCopy()

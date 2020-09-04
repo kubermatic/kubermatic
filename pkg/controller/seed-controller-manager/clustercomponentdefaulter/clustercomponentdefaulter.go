@@ -28,6 +28,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -44,7 +45,7 @@ type Reconciler struct {
 	log        *zap.SugaredLogger
 	client     ctrlruntimeclient.Client
 	recorder   record.EventRecorder
-	defaults   kubermaticv1.ComponentSettings
+	defaults   types.NamespacedName
 	workerName string
 }
 
@@ -53,7 +54,7 @@ func Add(
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
 	numWorkers int,
-	defaults kubermaticv1.ComponentSettings,
+	defaults types.NamespacedName,
 	workerName string) error {
 
 	reconciler := &Reconciler{
@@ -107,33 +108,38 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	log.Debug("Syncing cluster")
 
+	var d kubermaticv1.ComponentSettings
+	if err := r.client.Get(context.Background(), r.defaults, &d); err != nil {
+		//TODO(irozzo) better error handling
+		return fmt.Errorf("Error occurred while getting the default components settings: %w", err)
+	}
 	targetComponentsOverride := cluster.Spec.ComponentsOverride.DeepCopy()
 	if targetComponentsOverride.Apiserver.Replicas == nil {
-		targetComponentsOverride.Apiserver.Replicas = r.defaults.Apiserver.Replicas
+		targetComponentsOverride.Apiserver.Replicas = d.Spec.Apiserver.Replicas
 	}
 	if targetComponentsOverride.Apiserver.Resources == nil {
-		targetComponentsOverride.Apiserver.Resources = r.defaults.Apiserver.Resources
+		targetComponentsOverride.Apiserver.Resources = d.Spec.Apiserver.Resources
 	}
 	if targetComponentsOverride.Apiserver.EndpointReconcilingDisabled == nil {
-		targetComponentsOverride.Apiserver.EndpointReconcilingDisabled = r.defaults.Apiserver.EndpointReconcilingDisabled
+		targetComponentsOverride.Apiserver.EndpointReconcilingDisabled = d.Spec.Apiserver.EndpointReconcilingDisabled
 	}
 	if targetComponentsOverride.ControllerManager.Replicas == nil {
-		targetComponentsOverride.ControllerManager.Replicas = r.defaults.ControllerManager.Replicas
+		targetComponentsOverride.ControllerManager.Replicas = d.Spec.ControllerManager.Replicas
 	}
 	if targetComponentsOverride.ControllerManager.Resources == nil {
-		targetComponentsOverride.ControllerManager.Resources = r.defaults.ControllerManager.Resources
+		targetComponentsOverride.ControllerManager.Resources = d.Spec.ControllerManager.Resources
 	}
 	if targetComponentsOverride.Scheduler.Replicas == nil {
-		targetComponentsOverride.Scheduler.Replicas = r.defaults.Scheduler.Replicas
+		targetComponentsOverride.Scheduler.Replicas = d.Spec.Scheduler.Replicas
 	}
 	if targetComponentsOverride.Scheduler.Resources == nil {
-		targetComponentsOverride.Scheduler.Resources = r.defaults.Scheduler.Resources
+		targetComponentsOverride.Scheduler.Resources = d.Spec.Scheduler.Resources
 	}
 	if targetComponentsOverride.Etcd.Resources == nil {
-		targetComponentsOverride.Etcd.Resources = r.defaults.Etcd.Resources
+		targetComponentsOverride.Etcd.Resources = d.Spec.Etcd.Resources
 	}
 	if targetComponentsOverride.Prometheus.Resources == nil {
-		targetComponentsOverride.Prometheus.Resources = r.defaults.Prometheus.Resources
+		targetComponentsOverride.Prometheus.Resources = d.Spec.Prometheus.Resources
 	}
 
 	if apiequality.Semantic.DeepEqual(&cluster.Spec.ComponentsOverride, targetComponentsOverride) {

@@ -37,10 +37,43 @@ BUILD_DEST?=_build
 GOTOOLFLAGS?=$(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
 GOBUILDIMAGE?=golang:1.14.6
 DOCKER_BIN := $(shell which docker)
+# Produce CRDs that work back to Kubernetes 1.11 (no version conversion)
+CRD_OPTIONS?="crd:trivialVersions=true,crdVersions=v1beta1"
+
 
 default: all
 
 all: check build test
+
+# Generate manifests e.g. CRD, RBAC etc.
+.PHONY: manifests
+manifests: controller-gen
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) paths="./pkg/crd/kubermatic/v1/doc.go" paths="./pkg/crd/kubermatic/v1/component_settings.go" output:crd:artifacts:config=charts/kubermatic/crd
+
+# Generate code
+.PHONY: generate
+generate: controller-gen
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate/ce/boilerplate.go.txt" paths="./pkg/crd/kubermatic/v1/..."
+
+
+# find or download controller-gen
+# download controller-gen if necessary
+
+controller-gen:
+ifeq (, $(shell which controller-gen))
+	@{ \
+	set -e ;\
+	CONTROLLER_GEN_TMP_DIR=$$(mktemp -d) ;\
+	cd $$CONTROLLER_GEN_TMP_DIR ;\
+	go mod init tmp ;\
+	go get sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.0 ;\
+	rm -rf $$CONTROLLER_GEN_TMP_DIR ;\
+	}
+CONTROLLER_GEN=$(GOBIN)/controller-gen
+else
+CONTROLLER_GEN=$(shell which controller-gen)
+endif
+
 
 .PHONY: $(CMD)
 build: $(CMD)

@@ -39,6 +39,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/net"
 	certutil "k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -78,6 +79,7 @@ type controllerRunOptions struct {
 	etcdLauncherImage                                string
 	dnatControllerImage                              string
 	namespace                                        string
+	defaultComponentSettings                         types.NamespacedName
 	apiServerDefaultReplicas                         int
 	apiServerEndpointReconcilingDisabled             bool
 	controllerManagerDefaultReplicas                 int
@@ -143,6 +145,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", resources.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", resources.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
+	flag.StringVar(&c.defaultComponentSettings.Namespace, "default-component-settings-namespace", "kubermatic", "The namespace of the ComponentSettings holdigng the default values.")
+	flag.StringVar(&c.defaultComponentSettings.Name, "default-component-settings-name", "kubermatic", "The name of the ComponentSettings holding the default values.")
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")
 	flag.BoolVar(&c.apiServerEndpointReconcilingDisabled, "apiserver-reconciling-disabled-by-default", false, "Whether to disable reconciling for the apiserver endpoints by default")
 	flag.IntVar(&c.controllerManagerDefaultReplicas, "controller-manager-default-replicas", 1, "The default number of replicas for usercluster controller managers")

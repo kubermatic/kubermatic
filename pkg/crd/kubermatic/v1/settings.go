@@ -68,8 +68,8 @@ type CustomLink struct {
 }
 
 type CleanupOptions struct {
-	Enabled  bool
-	Enforced bool
+	Enabled  bool `json:"enabled"`
+	Enforced bool `json:"enforced"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
