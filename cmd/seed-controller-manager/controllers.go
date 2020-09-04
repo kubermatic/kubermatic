@@ -99,7 +99,7 @@ func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
 		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
-		defaultCompontentsOverrides,
+		ctrlCtx.seedGetter,
 		ctrlCtx.runOptions.workerName,
 	)
 }

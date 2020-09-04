@@ -24,11 +24,13 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
+	utilpointer "k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -44,7 +46,7 @@ type Reconciler struct {
 	log        *zap.SugaredLogger
 	client     ctrlruntimeclient.Client
 	recorder   record.EventRecorder
-	defaults   kubermaticv1.ComponentSettings
+	seedGetter provider.SeedGetter
 	workerName string
 }
 
@@ -53,7 +55,7 @@ func Add(
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
 	numWorkers int,
-	defaults kubermaticv1.ComponentSettings,
+	seedGetter provider.SeedGetter,
 	workerName string) error {
 
 	reconciler := &Reconciler{
@@ -61,7 +63,7 @@ func Add(
 		log:        log.Named(ControllerName),
 		client:     mgr.GetClient(),
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
-		defaults:   defaults,
+		seedGetter: seedGetter,
 		workerName: workerName,
 	}
 
@@ -107,33 +109,56 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	log.Debug("Syncing cluster")
 
+	s, err := r.seedGetter()
+	if err != nil {
+		return fmt.Errorf("Error occurred while getting seed: %w", err)
+	}
+	defaults := kubermaticv1.ComponentSettings{
+		Apiserver: kubermaticv1.APIServerSettings{
+			DeploymentSettings:          kubermaticv1.DeploymentSettings{Replicas: utilpointer.Int32Ptr(int32(2))},
+			EndpointReconcilingDisabled: utilpointer.BoolPtr(true),
+		},
+		ControllerManager: kubermaticv1.DeploymentSettings{
+			Replicas: utilpointer.Int32Ptr(int32(1))},
+		Scheduler: kubermaticv1.DeploymentSettings{
+			Replicas: utilpointer.Int32Ptr(int32(1))},
+	}
+	// Override hardcoded defaults with default settings in Seed
+	if s.Spec.ComponentSettings != nil {
+		if s, ok := s.Spec.ComponentSettings["default"]; ok {
+			defaults = s
+		}
+	}
+	// TODO(irozzo) The following logic is probably wrong, defaulting should be
+	// done at admission and not here, because it should be edge-driven and not
+	// level-driven, especially when default can change dynamically.
 	targetComponentsOverride := cluster.Spec.ComponentsOverride.DeepCopy()
 	if targetComponentsOverride.Apiserver.Replicas == nil {
-		targetComponentsOverride.Apiserver.Replicas = r.defaults.Apiserver.Replicas
+		targetComponentsOverride.Apiserver.Replicas = defaults.Apiserver.Replicas
 	}
 	if targetComponentsOverride.Apiserver.Resources == nil {
-		targetComponentsOverride.Apiserver.Resources = r.defaults.Apiserver.Resources
+		targetComponentsOverride.Apiserver.Resources = defaults.Apiserver.Resources
 	}
 	if targetComponentsOverride.Apiserver.EndpointReconcilingDisabled == nil {
-		targetComponentsOverride.Apiserver.EndpointReconcilingDisabled = r.defaults.Apiserver.EndpointReconcilingDisabled
+		targetComponentsOverride.Apiserver.EndpointReconcilingDisabled = defaults.Apiserver.EndpointReconcilingDisabled
 	}
 	if targetComponentsOverride.ControllerManager.Replicas == nil {
-		targetComponentsOverride.ControllerManager.Replicas = r.defaults.ControllerManager.Replicas
+		targetComponentsOverride.ControllerManager.Replicas = defaults.ControllerManager.Replicas
 	}
 	if targetComponentsOverride.ControllerManager.Resources == nil {
-		targetComponentsOverride.ControllerManager.Resources = r.defaults.ControllerManager.Resources
+		targetComponentsOverride.ControllerManager.Resources = defaults.ControllerManager.Resources
 	}
 	if targetComponentsOverride.Scheduler.Replicas == nil {
-		targetComponentsOverride.Scheduler.Replicas = r.defaults.Scheduler.Replicas
+		targetComponentsOverride.Scheduler.Replicas = defaults.Scheduler.Replicas
 	}
 	if targetComponentsOverride.Scheduler.Resources == nil {
-		targetComponentsOverride.Scheduler.Resources = r.defaults.Scheduler.Resources
+		targetComponentsOverride.Scheduler.Resources = defaults.Scheduler.Resources
 	}
 	if targetComponentsOverride.Etcd.Resources == nil {
-		targetComponentsOverride.Etcd.Resources = r.defaults.Etcd.Resources
+		targetComponentsOverride.Etcd.Resources = defaults.Etcd.Resources
 	}
 	if targetComponentsOverride.Prometheus.Resources == nil {
-		targetComponentsOverride.Prometheus.Resources = r.defaults.Prometheus.Resources
+		targetComponentsOverride.Prometheus.Resources = defaults.Prometheus.Resources
 	}
 
 	if apiequality.Semantic.DeepEqual(&cluster.Spec.ComponentsOverride, targetComponentsOverride) {

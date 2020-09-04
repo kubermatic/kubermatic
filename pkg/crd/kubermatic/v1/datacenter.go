@@ -75,6 +75,11 @@ type SeedSpec struct {
 	// Each DC must have a globally unique identifier (i.e. names must be unique
 	// across all seeds).
 	Datacenters map[string]Datacenter `json:"datacenters,omitempty"`
+	// ComponentSettings contains the component settings that can be referenced
+	// by user clusters.
+	// The one called `default` is a special case that is used for all clusters
+	// if not specified otherwise.
+	ComponentSettings map[string]ComponentSettings `json:"component_settings,omitempty"`
 	// Optional: This can be used to override the DNS name used for this seed.
 	// By default the seed name is used.
 	SeedDNSOverwrite string `json:"seed_dns_overwrite,omitempty"`
