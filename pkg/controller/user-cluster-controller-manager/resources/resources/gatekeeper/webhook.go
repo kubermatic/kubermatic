@@ -34,7 +34,6 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return resources.GatekeeperValidatingWebhookConfigurationName, func(validatingWebhookConfigurationWebhookConfiguration *admissionregistrationv1beta1.ValidatingWebhookConfiguration) (*admissionregistrationv1beta1.ValidatingWebhookConfiguration, error) {
 			failurePolicyIgnore := admissionregistrationv1beta1.Ignore
-			failurePolicyFail := admissionregistrationv1beta1.Fail
 			sideEffectsNone := admissionregistrationv1beta1.SideEffectClassNone
 			matchPolicyExact := admissionregistrationv1beta1.Exact
 			allScopes := admissionregistrationv1beta1.AllScopes
@@ -46,7 +45,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 					AdmissionReviewVersions: []string{admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					FailurePolicy:           &failurePolicyIgnore,
 					SideEffects:             &sideEffectsNone,
-					TimeoutSeconds:          pointer.Int32Ptr(5),
+					TimeoutSeconds:          pointer.Int32Ptr(2),
 					MatchPolicy:             &matchPolicyExact,
 					NamespaceSelector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
@@ -84,9 +83,9 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 				{
 					Name:                    "check-ignore-label.gatekeeper.sh",
 					AdmissionReviewVersions: []string{admissionregistrationv1beta1.SchemeGroupVersion.Version},
-					FailurePolicy:           &failurePolicyFail,
+					FailurePolicy:           &failurePolicyIgnore,
 					SideEffects:             &sideEffectsNone,
-					TimeoutSeconds:          pointer.Int32Ptr(5),
+					TimeoutSeconds:          pointer.Int32Ptr(2),
 					MatchPolicy:             &matchPolicyExact,
 					NamespaceSelector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
