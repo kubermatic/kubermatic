@@ -41,6 +41,11 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	warningType = "warning"
+	normalType  = "normal"
+)
+
 func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createClusterReq)
@@ -437,6 +442,120 @@ func GetMetricsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider 
 			NodesMetrics:        apiv1.NodesMetric{},
 		}, nil
 	}
+}
+
+func ListEventsEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, clusterProvider provider.ExternalClusterProvider, privilegedClusterProvider provider.PrivilegedExternalClusterProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listEventsReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		cluster, err := getCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project.Name, req.ClusterID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		client, err := clusterProvider.GetClient(cluster)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		eventType := ""
+		events := make([]apiv1.Event, 0)
+
+		switch req.Type {
+		case warningType:
+			eventType = corev1.EventTypeWarning
+		case normalType:
+			eventType = corev1.EventTypeNormal
+		}
+
+		// get nodes events
+		nodes := &corev1.NodeList{}
+		if err := client.List(ctx, nodes); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		for _, node := range nodes.Items {
+			nodeEvents, err := common.GetEvents(ctx, client, &node, "")
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			events = append(events, nodeEvents...)
+		}
+
+		// get pods events from kube-system namespace
+		pods := &corev1.PodList{}
+		if err := client.List(ctx, pods, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		for _, pod := range pods.Items {
+			nodeEvents, err := common.GetEvents(ctx, client, &pod, metav1.NamespaceSystem)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			events = append(events, nodeEvents...)
+		}
+
+		if len(eventType) > 0 {
+			events = common.FilterEventsByType(events, eventType)
+		}
+
+		return events, nil
+	}
+}
+
+// listEventsReq defines HTTP request for listExternalClusterEvents
+// swagger:parameters listExternalClusterEvents
+type listEventsReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+
+	// in: query
+	Type string `json:"type,omitempty"`
+}
+
+func DecodeListEventsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req listEventsReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	req.Type = r.URL.Query().Get("type")
+	if len(req.Type) > 0 {
+		if req.Type == warningType || req.Type == normalType {
+			return req, nil
+		}
+		return nil, fmt.Errorf("wrong query paramater, unsupported type: %s", req.Type)
+	}
+
+	return req, nil
+}
+
+// Validate validates ListNodesEventsEndpoint request
+func (req listEventsReq) Validate() error {
+	if len(req.ProjectID) == 0 {
+		return fmt.Errorf("the project ID cannot be empty")
+	}
+	if len(req.ClusterID) == 0 {
+		return fmt.Errorf("the cluster ID cannot be empty")
+	}
+	return nil
 }
 
 func genExternalCluster(name string) *kubermaticapiv1.ExternalCluster {

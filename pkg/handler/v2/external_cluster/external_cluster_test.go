@@ -639,6 +639,129 @@ func TestGetClusterMetrics(t *testing.T) {
 	}
 }
 
+func TestGetClusterEvents(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		Name                   string
+		ExpectedResponse       string
+		HTTPStatus             int
+		ClusterToGet           string
+		ExistingAPIUser        *apiv1.User
+		ExistingKubermaticObjs []runtime.Object
+		ExistingNodes          []*corev1.Node
+		ExistingNodeEvents     []*corev1.Event
+		QueryParams            string
+	}{
+		// scenario 1
+		{
+			Name:             "scenario 1: gets all cluster events",
+			ExpectedResponse: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObject":{"type":"Node","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObject":{"type":"Node","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+			ClusterToGet:     "clusterAbcID",
+			HTTPStatus:       http.StatusOK,
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus", UID: "venus-1-machine"}},
+			},
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
+			),
+			ExistingNodeEvents: []*corev1.Event{
+				test.GenTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started", "Node", "venus-1-machine"),
+				test.GenTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed", "Node", "venus-1-machine"),
+			},
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			Name:             "scenario 2: gets only warning events",
+			ExpectedResponse: `[{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObject":{"type":"Node","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+			QueryParams:      "?type=warning",
+			ClusterToGet:     "clusterAbcID",
+			HTTPStatus:       http.StatusOK,
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus", UID: "venus-1-machine"}},
+			},
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
+			),
+			ExistingNodeEvents: []*corev1.Event{
+				test.GenTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started", "Node", "venus-1-machine"),
+				test.GenTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed", "Node", "venus-1-machine"),
+			},
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 3
+		{
+			Name:             "scenario 3: the admin John can get any cluster events",
+			ExpectedResponse: `[{"name":"event-1","creationTimestamp":"0001-01-01T00:00:00Z","message":"message started","type":"Normal","involvedObject":{"type":"Node","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1},{"name":"event-2","creationTimestamp":"0001-01-01T00:00:00Z","message":"message killed","type":"Warning","involvedObject":{"type":"Node","namespace":"kube-system","name":"testMachine"},"lastTimestamp":"0001-01-01T00:00:00Z","count":1}]`,
+			ClusterToGet:     "clusterAbcID",
+			HTTPStatus:       http.StatusOK,
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus", UID: "venus-1-machine"}},
+			},
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", true),
+				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			ExistingNodeEvents: []*corev1.Event{
+				test.GenTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started", "Node", "venus-1-machine"),
+				test.GenTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed", "Node", "venus-1-machine"),
+			},
+		},
+		// scenario 4
+		{
+			Name:             "scenario 4: the user John can not get Bob's cluster events",
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			ClusterToGet:     "clusterAbcID",
+			HTTPStatus:       http.StatusForbidden,
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus", UID: "venus-1-machine"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars", UID: "mars-1-machine"}},
+			},
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genUser("John", "john@acme.com", false),
+				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			ExistingNodeEvents: []*corev1.Event{
+				test.GenTestEvent("event-1", corev1.EventTypeNormal, "Started", "message started", "Node", "venus-1-machine"),
+				test.GenTestEvent("event-2", corev1.EventTypeWarning, "Killed", "message killed", "Node", "venus-1-machine"),
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			var kubernetesObj []runtime.Object
+			var kubeObj []runtime.Object
+			var kubermaticObj []runtime.Object
+			for _, existingEvent := range tc.ExistingNodeEvents {
+				kubernetesObj = append(kubernetesObj, existingEvent)
+			}
+			for _, node := range tc.ExistingNodes {
+				kubeObj = append(kubeObj, node)
+			}
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/events%s", test.ProjectName, tc.ClusterToGet, tc.QueryParams), strings.NewReader(""))
+			res := httptest.NewRecorder()
+
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
 func genUser(name, email string, isAdmin bool) *kubermaticv1.User {
 	user := test.GenUser("", name, email)
 	user.Spec.IsAdmin = isAdmin
