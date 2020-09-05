@@ -58,7 +58,7 @@ EOF
 function upload_archive {
   local file="${1}"
   res=$(github_cli \
-    "https://uploads.github.com/repos/$repo/releases/$releaseID/assets?name=${file}" \
+    "https://uploads.github.com/repos/$repo/releases/$releaseID/assets?name=$(basename "${file}")" \
     -H "Accept: application/json" \
     -H 'Content-Type: application/gzip' \
     -s --data-binary "@${file}")
@@ -78,6 +78,30 @@ function upload_archive {
   else
     err "Response did not contain valid JSON: ${res}"
     return 1
+  fi
+}
+
+# always tar'ing and the converting to zip as required
+# saves us from having to handle the filename munging
+# logic twice
+function tar_to_zip() {
+  local archive="$(realpath "$1")"
+
+  tmpdir="$(mktemp -d)"
+  tar xzf "$archive" -C "$tmpdir"
+  rm -- "$archive"
+
+  archive="$(echo "$archive" | sed 's/.tar.gz/.zip/')"
+  (cd "$tmpdir"; zip -r "$archive" .)
+  rm -rf -- "$tmpdir"
+
+  echo "$archive"
+}
+
+function build_installer() {
+  make kubermatic-installer
+  if [ "$GOOS" == "windows" ]; then
+    mv _build/kubermatic-installer _build/kubermatic-installer.exe
   fi
 }
 
@@ -128,80 +152,97 @@ releaseID=$(echo "$releasedata" | jq -r '.id')
 sed -i "s/__DASHBOARD_TAG__/$tag/g" charts/*/*.yaml
 sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/*/*.yaml
 
-echodate "Compiling CE installer..."
-KUBEMATIC_EDITION=ce make kubermatic-installer
+mkdir -p _dist
+for buildTarget in linux-amd64 darwin-amd64 windows-amd64; do
+  rm -rf _build
 
-echodate "Uploading kubermatic CE archive..."
+  export GOOS="$(echo "$buildTarget" | cut -d- -f1)"
+  export GOARCH="$(echo "$buildTarget" | cut -d- -f2)"
 
-archive="kubermatic-ce-$tag.tar.gz"
-# GNU tar is required
-tar czf "$archive" \
-  --transform='flags=r;s|_build/||' \
-  --transform='flags=r;s|charts/values.example.ce.yaml|examples/values.example.yaml|' \
-  --transform='flags=r;s|charts/test/|examples/|' \
-  _build/kubermatic-installer \
-  charts/backup \
-  charts/cert-manager \
-  charts/iap \
-  charts/kubermatic-operator \
-  charts/kubermatic/crd \
-  charts/kubernetes-dashboard \
-  charts/logging/loki \
-  charts/logging/promtail \
-  charts/minio \
-  charts/monitoring \
-  charts/nginx-ingress-controller \
-  charts/nodeport-proxy \
-  charts/oauth \
-  charts/s3-exporter \
-  charts/values.example.ce.yaml \
-  charts/test/kubermatic.example.ce.yaml \
-  charts/test/seed.example.yaml \
-  LICENSE \
-  CHANGELOG.md
+  echodate "Compiling CE installer ($buildTarget)..."
+  KUBERMATIC_EDITION=ce build_installer
 
-upload_archive "$archive"
-rm -- "${archive}"
+  echodate "Uploading kubermatic CE archive..."
 
-echodate "Compiling EE installer..."
-KUBEMATIC_EDITION=ee make kubermatic-installer
+  # switch Docker repository used by the operator to the EE repository
+  yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic'
 
-echodate "Uploading kubermatic EE archive..."
+  archive="_dist/kubermatic-ce-$tag-$buildTarget.tar.gz"
+  # GNU tar is required
+  tar czf "$archive" \
+    --transform='flags=r;s|_build/||' \
+    --transform='flags=r;s|charts/values.example.ce.yaml|examples/values.example.yaml|' \
+    --transform='flags=r;s|charts/test/|examples/|' \
+    _build/kubermatic-installer* \
+    charts/backup \
+    charts/cert-manager \
+    charts/iap \
+    charts/kubermatic-operator \
+    charts/kubermatic/crd \
+    charts/kubernetes-dashboard \
+    charts/logging/loki \
+    charts/logging/promtail \
+    charts/minio \
+    charts/monitoring \
+    charts/nginx-ingress-controller \
+    charts/nodeport-proxy \
+    charts/oauth \
+    charts/s3-exporter \
+    charts/values.example.ce.yaml \
+    charts/test/kubermatic.example.ce.yaml \
+    charts/test/seed.example.yaml \
+    LICENSE \
+    CHANGELOG.md
 
-# switch Docker repository used by the operator to the EE repository
-yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
+  if [ "$GOOS" == "windows" ]; then
+    archive="$(tar_to_zip "$archive")"
+  fi
 
-archive="kubermatic-ee-$tag.tar.gz"
-# GNU tar is required
-tar czf "$archive" \
-  --transform='flags=r;s|_build/||' \
-  --transform='flags=r;s|charts/values.example.ee.yaml|examples/values.example.yaml|' \
-  --transform='flags=r;s|charts/test/|examples/|' \
-  --transform='flags=r;s|pkg/ee/LICENSE|LICENSE.ee|' \
-  _build/kubermatic-installer \
-  charts/backup \
-  charts/cert-manager \
-  charts/iap \
-  charts/kubermatic-operator \
-  charts/kubermatic \
-  charts/kubernetes-dashboard \
-  charts/logging \
-  charts/minio \
-  charts/monitoring \
-  charts/nginx-ingress-controller \
-  charts/nodeport-proxy \
-  charts/oauth \
-  charts/s3-exporter \
-  charts/values.example.ee.yaml \
-  charts/test/kubermatic.example.ee.yaml \
-  charts/test/seed.example.yaml \
-  LICENSE \
-  pkg/ee/LICENSE \
-  CHANGELOG.md
+  upload_archive "$archive"
+  rm -- "${archive}"
 
-git checkout -- charts
+  echodate "Compiling EE installer ($buildTarget)..."
+  KUBERMATIC_EDITION=ee build_installer
 
-upload_archive "$archive"
-rm -- "${archive}"
+  echodate "Uploading kubermatic EE archive..."
+
+  # switch Docker repository used by the operator to the EE repository
+  yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
+
+  archive="_dist/kubermatic-ee-$tag-$buildTarget.tar.gz"
+  # GNU tar is required
+  tar czf "$archive" \
+    --transform='flags=r;s|_build/||' \
+    --transform='flags=r;s|charts/values.example.ee.yaml|examples/values.example.yaml|' \
+    --transform='flags=r;s|charts/test/|examples/|' \
+    --transform='flags=r;s|pkg/ee/LICENSE|LICENSE.ee|' \
+    _build/kubermatic-installer* \
+    charts/backup \
+    charts/cert-manager \
+    charts/iap \
+    charts/kubermatic-operator \
+    charts/kubermatic \
+    charts/kubernetes-dashboard \
+    charts/logging \
+    charts/minio \
+    charts/monitoring \
+    charts/nginx-ingress-controller \
+    charts/nodeport-proxy \
+    charts/oauth \
+    charts/s3-exporter \
+    charts/values.example.ee.yaml \
+    charts/test/kubermatic.example.ee.yaml \
+    charts/test/seed.example.yaml \
+    LICENSE \
+    pkg/ee/LICENSE \
+    CHANGELOG.md
+
+  if [ "$GOOS" == "windows" ]; then
+    archive="$(tar_to_zip "$archive")"
+  fi
+
+  upload_archive "$archive"
+  rm -- "${archive}"
+done
 
 echodate "Done."
