@@ -47,7 +47,7 @@ func GetEvents(ctx context.Context, client ctrlruntimeclient.Client, obj metav1.
 	events := &corev1.EventList{}
 	listOpts := &ctrlruntimeclient.ListOptions{
 		Namespace:     objNamespace,
-		FieldSelector: fields.OneTermEqualSelector("involvedObject.uid", string(obj.GetUID())),
+		FieldSelector: fields.OneTermEqualSelector("involvedObject.name", obj.GetName()),
 	}
 	if err := client.List(ctx, events, listOpts); err != nil {
 		return nil, err

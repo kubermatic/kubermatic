@@ -113,6 +113,8 @@ type ClientService interface {
 
 	ListClustersV2(params *ListClustersV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClustersV2OK, error)
 
+	ListExternalClusterEvents(params *ListExternalClusterEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterEventsOK, error)
+
 	ListExternalClusterNodes(params *ListExternalClusterNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterNodesOK, error)
 
 	ListExternalClusterNodesMetrics(params *ListExternalClusterNodesMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterNodesMetricsOK, error)
@@ -1670,6 +1672,40 @@ func (a *Client) ListClustersV2(params *ListClustersV2Params, authInfo runtime.C
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListClustersV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListExternalClusterEvents gets an external cluster events
+*/
+func (a *Client) ListExternalClusterEvents(params *ListExternalClusterEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClusterEventsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListExternalClusterEventsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listExternalClusterEvents",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/events",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListExternalClusterEventsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListExternalClusterEventsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListExternalClusterEventsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
