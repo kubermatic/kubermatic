@@ -56,7 +56,7 @@ func VersionAction(logger *logrus.Logger) cli.ActionFunc {
 			return nil
 		}
 
-		charts, err := loadCharts("charts")
+		charts, err := loadCharts(ctx.GlobalString("charts-directory"))
 		if err != nil {
 			return fmt.Errorf("failed to determine installer chart state: %v", err)
 		}

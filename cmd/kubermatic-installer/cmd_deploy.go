@@ -196,6 +196,7 @@ func DeployAction(logger *logrus.Logger) cli.ActionFunc {
 			KubermaticConfiguration:    kubermaticConfig,
 			RawKubermaticConfiguration: rawKubermaticConfig,
 			ForceHelmReleaseUpgrade:    ctx.Bool("force"),
+			ChartsDirectory:            ctx.GlobalString("charts-directory"),
 		}
 
 		if err := kubermatic.Deploy(appContext, subLogger, kubeClient, helmClient, opt); err != nil {
