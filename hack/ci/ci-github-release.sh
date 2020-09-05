@@ -81,7 +81,6 @@ function upload_archive {
   fi
 }
 
-
 # this stops execution when we are not on a tagged revision
 tag="$(git describe --tags --exact-match)"
 branch=$(git rev-parse --abbrev-ref HEAD)
@@ -108,6 +107,9 @@ echodate "Release name: $name"
 echodate "Current tag : $tag ($branch @ $head)"
 echodate "Pre-Release : $prerelease"
 
+export KUBERMATICDOCKERTAG="$tag"
+export UIDOCKERTAG="$tag"
+
 # retrieve release info
 echodate "Checking release existence..."
 releasedata="$(github_cli "https://api.github.com/repos/$repo/releases/tags/$tag" -sf || true)"
@@ -123,17 +125,21 @@ fi
 releaseID=$(echo "$releasedata" | jq -r '.id')
 
 # prepare source for archiving
-sed -i "s/__DASHBOARD_TAG__/$tag/g" charts/kubermatic/*.yaml
-sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/kubermatic/*.yaml
-sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/kubermatic-operator/*.yaml
+sed -i "s/__DASHBOARD_TAG__/$tag/g" charts/*/*.yaml
+sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/*/*.yaml
+
+echodate "Compiling CE installer..."
+KUBEMATIC_EDITION=ce make kubermatic-installer
 
 echodate "Uploading kubermatic CE archive..."
 
 archive="kubermatic-ce-$tag.tar.gz"
 # GNU tar is required
 tar czf "$archive" \
+  --transform='flags=r;s|_build/||' \
   --transform='flags=r;s|charts/values.example.ce.yaml|examples/values.example.yaml|' \
   --transform='flags=r;s|charts/test/|examples/|' \
+  _build/kubermatic-installer \
   charts/backup \
   charts/cert-manager \
   charts/iap \
@@ -157,16 +163,22 @@ tar czf "$archive" \
 upload_archive "$archive"
 rm -- "${archive}"
 
+echodate "Compiling EE installer..."
+KUBEMATIC_EDITION=ee make kubermatic-installer
+
 echodate "Uploading kubermatic EE archive..."
 
+# switch Docker repository used by the operator to the EE repository
 yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
 
 archive="kubermatic-ee-$tag.tar.gz"
 # GNU tar is required
 tar czf "$archive" \
+  --transform='flags=r;s|_build/||' \
   --transform='flags=r;s|charts/values.example.ee.yaml|examples/values.example.yaml|' \
   --transform='flags=r;s|charts/test/|examples/|' \
   --transform='flags=r;s|pkg/ee/LICENSE|LICENSE.ee|' \
+  _build/kubermatic-installer \
   charts/backup \
   charts/cert-manager \
   charts/iap \
