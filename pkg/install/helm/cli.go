@@ -131,6 +131,23 @@ func (c *cli) UninstallRelease(namespace string, name string) error {
 	return err
 }
 
+func (c *cli) Version() (*semver.Version, error) {
+	// add --client to gracefully handle Helm 2 (Helm 3 ignores the flag, thankfully);
+	// Helm 2 will output "<no value>", whereas Helm 3 would outright reject the
+	// Helm-2-style templating string "{{ .Client.SemVer }}"
+	output, err := c.run("", "version", "--client", "--template", "{{ .Version }}")
+	if err != nil {
+		return nil, err
+	}
+
+	out := strings.TrimSpace(string(output))
+	if out == "<no value>" {
+		out = "v2.99.99"
+	}
+
+	return semver.NewVersion(out)
+}
+
 func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 	globalArgs := []string{}
 
