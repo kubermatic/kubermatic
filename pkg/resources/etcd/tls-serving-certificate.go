@@ -53,7 +53,8 @@ func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecr
 				},
 			}
 
-			for i := 0; i < 3; i++ {
+			etcdClusterSize := etcdClusterSize(data.Cluster())
+			for i := 0; i < etcdClusterSize; i++ {
 				// Member name
 				podName := fmt.Sprintf("etcd-%d", i)
 				altNames.DNSNames = append(altNames.DNSNames, podName)

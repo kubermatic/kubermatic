@@ -348,11 +348,7 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 }
 
 func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int {
-	etcdClusterSize := data.Cluster().Spec.ComponentsOverride.Etcd.ClusterSize
-	// handle existing clusters that don't have a configured size
-	if etcdClusterSize < kubermaticv1.DefaultEtcdClusterSize {
-		etcdClusterSize = kubermaticv1.DefaultEtcdClusterSize
-	}
+	etcdClusterSize := etcdClusterSize(data.Cluster())
 	if set.Spec.Replicas == nil { // new replicaset
 		return etcdClusterSize
 	}
@@ -384,4 +380,13 @@ func getLauncherArgs(enableCorruptionCheck bool) []string {
 		command = append(command, "-enable-corruption-check")
 	}
 	return command
+}
+
+func etcdClusterSize(data *kubermaticv1.Cluster) int {
+	etcdClusterSize := data.Spec.ComponentsOverride.Etcd.ClusterSize
+	// handle existing clusters that don't have a configured size
+	if etcdClusterSize < kubermaticv1.DefaultEtcdClusterSize {
+		etcdClusterSize = kubermaticv1.DefaultEtcdClusterSize
+	}
+	return etcdClusterSize
 }
