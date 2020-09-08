@@ -25,20 +25,32 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 )
 
+var (
+	verboseFlag = cli.BoolFlag{
+		Name:  "verbose, v",
+		Usage: "enable more verbose output",
+	}
+
+	chartsDirectoryFlag = cli.StringFlag{
+		Name:   "charts-directory",
+		Value:  "charts",
+		Usage:  "filesystem path to the Kubermatic Helm charts",
+		EnvVar: "KUBERMATIC_CHARTS_DIRECTORY",
+	}
+)
+
 func main() {
 	logger := log.NewLogrus()
 	versions := common.NewDefaultVersions()
 
 	app := cli.NewApp()
-	app.Name = "kubermatictl"
-	app.Usage = "Sets up and manages Kubermatic environments"
+	app.Name = "kubermatic-installer"
+	app.Usage = "Installs and updates Kubermatic Kubernetes Platform"
 	app.Version = versions.Kubermatic
 	app.HideVersion = true
 	app.Flags = []cli.Flag{
-		cli.BoolFlag{
-			Name:  "verbose, v",
-			Usage: "enable more verbose output",
-		},
+		verboseFlag,
+		chartsDirectoryFlag,
 	}
 
 	app.Commands = []cli.Command{

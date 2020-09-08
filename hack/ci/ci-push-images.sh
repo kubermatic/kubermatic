@@ -72,8 +72,13 @@ echodate "Successfully finished building binaries"
 
 TEST_NAME="Build and push docker images"
 echodate "Building and pushing quay images"
+
+# prepare Helm charts
+sed -i "s/__KUBERMATIC_TAG__/${KUBERMATICDOCKERTAG}/g" charts/*/*.yaml
+sed -i "s/__DASHBOARD_TAG__/$UIDOCKERTAG/g" charts/*/*.yaml
+
 set -f # prevent globbing, do word splitting
 # shellcheck disable=SC2086
-retry 5 ./hack/push_image.sh $TAGS
+retry 5 ./hack/release-docker-images.sh $TAGS
 echodate "Sucessfully finished building and pushing quay images"
 unset TEST_NAME
