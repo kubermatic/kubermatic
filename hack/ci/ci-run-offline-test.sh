@@ -122,8 +122,14 @@ trap finish EXIT
 docker ps &>/dev/null || start-docker.sh
 
 retry 5 docker login -u ${QUAY_IO_USERNAME} -p ${QUAY_IO_PASSWORD} quay.io
-echodate "Building and pushing quay images"
-retry 5 ./../push_image.sh ${GIT_HEAD_HASH} $(git tag -l --points-at HEAD)
+
+echodate "Building and pushing Docker images"
+
+# prepare Helm charts
+sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" charts/*/*.yaml
+sed -i "s/__DASHBOARD_TAG__/latest/g" charts/*/*.yaml
+
+retry 5 ./../release-docker-images.sh ${GIT_HEAD_HASH} $(git tag -l --points-at HEAD)
 echodate "Sucessfully finished building and pushing quay images"
 
 # Ensure we have pushed the kubermatic chart

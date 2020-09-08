@@ -32,16 +32,20 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 )
 
+var (
+	versionShortFlag = cli.BoolFlag{
+		Name:  "short",
+		Usage: "Omit git and chart information",
+	}
+)
+
 func VersionCommand(logger *logrus.Logger) cli.Command {
 	return cli.Command{
 		Name:   "version",
 		Usage:  "Prints the installer's version",
 		Action: VersionAction(logger),
 		Flags: []cli.Flag{
-			cli.BoolFlag{
-				Name:  "short",
-				Usage: "Omit git and chart information",
-			},
+			versionShortFlag,
 		},
 	}
 }
@@ -51,12 +55,12 @@ func VersionAction(logger *logrus.Logger) cli.ActionFunc {
 		name := fmt.Sprintf("Kubermatic %s Installer", edition.KubermaticEdition)
 		v := common.NewDefaultVersions()
 
-		if ctx.Bool("short") {
+		if ctx.Bool(versionShortFlag.Name) {
 			fmt.Printf("%s %s\n", name, v.Kubermatic)
 			return nil
 		}
 
-		charts, err := loadCharts("charts")
+		charts, err := loadCharts(ctx.GlobalString(chartsDirectoryFlag.Name))
 		if err != nil {
 			return fmt.Errorf("failed to determine installer chart state: %v", err)
 		}

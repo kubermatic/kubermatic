@@ -19,6 +19,7 @@ package kubermatic
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 
@@ -60,6 +61,7 @@ type Options struct {
 	KubermaticConfiguration    *operatorv1alpha1.KubermaticConfiguration
 	RawKubermaticConfiguration *unstructured.Unstructured
 	ForceHelmReleaseUpgrade    bool
+	ChartsDirectory            string
 }
 
 func Deploy(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt Options) error {
@@ -126,7 +128,7 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 	logger.Info("📦 Deploying nginx-ingress-controller…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart("charts/nginx-ingress-controller")
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "nginx-ingress-controller"))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %v", err)
 	}
@@ -154,13 +156,15 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt Options) error {
 	logger.Info("📦 Deploying cert-manager…")
 	sublogger := log.Prefix(logger, "   ")
+	chartDir := filepath.Join(opt.ChartsDirectory, "cert-manager")
 
-	chart, err := helm.LoadChart("charts/cert-manager")
+	chart, err := helm.LoadChart(chartDir)
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %v", err)
 	}
 
-	if err := util.DeployCRDs(ctx, kubeClient, sublogger, "charts/cert-manager/crd"); err != nil {
+	sublogger.Info("Deploying Custom Resource Definitions…")
+	if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(chartDir, "crd")); err != nil {
 		return fmt.Errorf("failed to deploy CRDs: %v", err)
 	}
 
@@ -168,6 +172,7 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 		return fmt.Errorf("failed to create namespace: %v", err)
 	}
 
+	sublogger.Info("Deploying Helm chart…")
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, CertManagerNamespace, CertManagerReleaseName)
 	if err != nil {
 		return fmt.Errorf("failed to check to Helm release: %v", err)
@@ -190,7 +195,7 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 	logger.Info("📦 Deploying Dex…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart("charts/oauth")
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "oauth"))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %v", err)
 	}
@@ -217,12 +222,13 @@ func deployKubermaticOperator(ctx context.Context, logger *logrus.Entry, kubeCli
 	logger.Info("📦 Deploying Kubermatic Operator…")
 	sublogger := log.Prefix(logger, "   ")
 
-	chart, err := helm.LoadChart("charts/kubermatic-operator")
+	chart, err := helm.LoadChart(filepath.Join(opt.ChartsDirectory, "kubermatic-operator"))
 	if err != nil {
 		return fmt.Errorf("failed to load Helm chart: %v", err)
 	}
 
-	if err := util.DeployCRDs(ctx, kubeClient, sublogger, "charts/kubermatic/crd"); err != nil {
+	sublogger.Info("Deploying Custom Resource Definitions…")
+	if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(opt.ChartsDirectory, "kubermatic", "crd")); err != nil {
 		return fmt.Errorf("failed to deploy CRDs: %v", err)
 	}
 
@@ -230,6 +236,7 @@ func deployKubermaticOperator(ctx context.Context, logger *logrus.Entry, kubeCli
 		return fmt.Errorf("failed to create namespace: %v", err)
 	}
 
+	sublogger.Info("Deploying Helm chart…")
 	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, KubermaticOperatorNamespace, KubermaticOperatorReleaseName)
 	if err != nil {
 		return fmt.Errorf("failed to check to Helm release: %v", err)
