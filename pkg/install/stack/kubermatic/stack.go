@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"path/filepath"
+	"time"
 
 	"github.com/sirupsen/logrus"
 
@@ -29,10 +30,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
+	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -88,6 +91,8 @@ func Deploy(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimecli
 	if err := applyKubermaticConfiguration(ctx, logger, kubeClient, opt); err != nil {
 		return fmt.Errorf("failed to apply Kubermatic Configuration: %v", err)
 	}
+
+	showDNSSettings(ctx, logger, kubeClient, opt)
 
 	return nil
 }
@@ -282,4 +287,68 @@ func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kub
 	logger.Info("✅ Success.")
 
 	return err
+}
+
+// showDNSSettings attempts to inform the user about required DNS settings
+// to be made. If errors happen, only warnings areprinted, but the installation
+// can still succeed.
+func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt Options) {
+	logger.Info("📡 Determining DNS settings…")
+	sublogger := log.Prefix(logger, "   ")
+
+	ingressSettings := opt.KubermaticConfiguration.Spec.Ingress
+	if ingressSettings.Disable {
+		sublogger.Info("Ingress creation has been disabled in the KubermaticConfiguration, skipping.")
+		return
+	}
+
+	svcName := types.NamespacedName{
+		Namespace: NginxIngressControllerNamespace,
+		Name:      "nginx-ingress-controller",
+	}
+
+	sublogger.Debugf("Waiting for %q to be ready…", svcName)
+
+	var ingresses []v1.LoadBalancerIngress
+	err := wait.PollImmediate(5*time.Second, 3*time.Minute, func() (bool, error) {
+		svc := v1.Service{}
+		if err := kubeClient.Get(ctx, svcName, &svc); err != nil {
+			return false, err
+		}
+
+		ingresses = svc.Status.LoadBalancer.Ingress
+
+		return len(ingresses) > 0, nil
+	})
+	if err != nil {
+		sublogger.Warnf("Timed out waiting for the LoadBalancer service %q to become ready.", svcName)
+		sublogger.Warn("Please check the Service and, if necessary, reconfigure the")
+		sublogger.Warn("nginx-ingress-controller Helm chart. Re-run the installer to apply")
+		sublogger.Warn("updated configuration afterwards.")
+		return
+	}
+
+	sublogger.Info("The main LoadBalancer is ready.")
+	sublogger.Info("")
+	sublogger.Infof("  Service namespace / name: %s / %s", svcName.Namespace, svcName.Name)
+
+	domain := ingressSettings.Domain
+
+	if hostname := ingresses[0].Hostname; hostname != "" {
+		sublogger.Infof("  Ingress via hostname    : %q.", hostname)
+		sublogger.Info("")
+		sublogger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
+		sublogger.Info("")
+		sublogger.Infof("   %s.    IN  CNAME  %s.", domain, hostname)
+		sublogger.Infof("   *.%s.  IN  CNAME  %s.", domain, hostname)
+	} else if ip := ingresses[0].IP; ip != "" {
+		sublogger.Infof("  Ingress via IP          : %q.", ip)
+		sublogger.Info("")
+		sublogger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
+		sublogger.Info("")
+		sublogger.Infof("   %s.    IN  A  %s", domain, ip)
+		sublogger.Infof("   *.%s.  IN  A  %s", domain, ip)
+	}
+
+	sublogger.Info("")
 }
