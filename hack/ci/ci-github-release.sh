@@ -22,7 +22,18 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
+DRY_RUN=${DRY_RUN:-false}
+
 GITHUB_TOKEN="${GITHUB_TOKEN:-$(cat /etc/github/oauth | tr -d '\n')}"
+export GITHUB_AUTH="Authorization: token $GITHUB_TOKEN"
+
+# this stops execution when GIT_TAG is not overriden and
+# we are not on a tagged revision
+export GIT_TAG="${GIT_TAG:-$(git describe --tags --exact-match)}"
+export GIT_BRANCH="${GIT_BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
+export GIT_HEAD="${GIT_HEAD:-$(git rev-parse HEAD)}"
+export GIT_REPO="${GIT_REPO:-kubermatic/kubermatic}"
+export RELEASE_PLATFORMS="${RELEASE_PLATFORMS:-linux-amd64 darwin-amd64 windows-amd64}"
 
 # utility function setting some curl default values for calling the github API
 # first argument is the URL, the rest of the arguments is used as curl
@@ -105,55 +116,55 @@ function build_installer() {
   fi
 }
 
-# this stops execution when we are not on a tagged revision
-tag="$(git describe --tags --exact-match)"
-branch=$(git rev-parse --abbrev-ref HEAD)
-head="$(git rev-parse HEAD)"
-repo="${repo:-kubermatic/kubermatic}"
-auth="Authorization: token $GITHUB_TOKEN"
-
 # ensure the tag has already been pushed
-if [ -z "$(github_cli "https://api.github.com/repos/$repo/tags" -s | jq ".[] | select(.name==\"$tag\")")" ]; then
-  echodate "Tag $tag has not been pushed to $repo yet."
+if ! $DRY_RUN && [ -z "$(github_cli "https://api.github.com/repos/$GIT_REPO/tags" -s | jq ".[] | select(.name==\"$GIT_TAG\")")" ]; then
+  echodate "Tag $GIT_TAG has not been pushed to $GIT_REPO yet."
   exit 1
 fi
 
 prerelease=false
-if [[ "$tag" =~ "-" ]]; then
+if [[ "$GIT_TAG" =~ "-" ]]; then
   prerelease=true
 fi
 
 # create a nice-sounding release name
-name=$(echo "$tag" | sed -E 's/-beta\.([0-9]+)/ (Beta \1)/')
+name=$(echo "$GIT_TAG" | sed -E 's/-beta\.([0-9]+)/ (Beta \1)/')
 name=$(echo "$name" | sed -E 's/-rc\.([0-9]+)/ (Release Candidate \1)/')
 
 echodate "Release name: $name"
-echodate "Current tag : $tag ($branch @ $head)"
+echodate "Current tag : $GIT_TAG ($GIT_BRANCH @ $GIT_HEAD)"
 echodate "Pre-Release : $prerelease"
 
-export KUBERMATICDOCKERTAG="$tag"
-export UIDOCKERTAG="$tag"
-
-# retrieve release info
-echodate "Checking release existence..."
-releasedata="$(github_cli "https://api.github.com/repos/$repo/releases/tags/$tag" -sf || true)"
-
-if [ -z "$releasedata" ]; then
-  echodate "Creating release..."
-
-  create_release "$tag" "$name" "$prerelease"
-
-  releasedata="$(github_cli "https://api.github.com/repos/$repo/releases/tags/$tag" -sf)"
+if $DRY_RUN; then
+  echodate "This is a dry-run, no actual communication with GitHub happens."
 fi
 
-releaseID=$(echo "$releasedata" | jq -r '.id')
+export KUBERMATICDOCKERTAG="$GIT_TAG"
+export UIDOCKERTAG="$GIT_TAG"
+
+# retrieve release info
+if ! $DRY_RUN; then
+  echodate "Checking release existence..."
+  releasedata="$(github_cli "https://api.github.com/repos/$GIT_REPO/releases/tags/$GIT_TAG" -sf || true)"
+
+  if [ -z "$releasedata" ]; then
+    echodate "Creating release..."
+
+    create_release "$GIT_TAG" "$name" "$prerelease"
+
+    releasedata="$(github_cli "https://api.github.com/repos/$GIT_REPO/releases/tags/$GIT_TAG" -sf)"
+  fi
+
+  releaseID=$(echo "$releasedata" | jq -r '.id')
+fi
 
 # prepare source for archiving
-sed -i "s/__DASHBOARD_TAG__/$tag/g" charts/*/*.yaml
-sed -i "s/__KUBERMATIC_TAG__/$tag/g" charts/*/*.yaml
+sed -i "s/__DASHBOARD_TAG__/$GIT_TAG/g" charts/*/*.yaml
+sed -i "s/__KUBERMATIC_TAG__/$GIT_TAG/g" charts/*/*.yaml
 
 mkdir -p _dist
-for buildTarget in linux-amd64 darwin-amd64 windows-amd64; do
+
+for buildTarget in $RELEASE_PLATFORMS; do
   rm -rf _build
 
   export GOOS="$(echo "$buildTarget" | cut -d- -f1)"
@@ -167,7 +178,7 @@ for buildTarget in linux-amd64 darwin-amd64 windows-amd64; do
   # switch Docker repository used by the operator to the CE repository
   yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic'
 
-  archive="_dist/kubermatic-ce-$tag-$buildTarget.tar.gz"
+  archive="_dist/kubermatic-ce-$GIT_TAG-$buildTarget.tar.gz"
   # GNU tar is required
   tar czf "$archive" \
     --transform='flags=r;s|_build/||' \
@@ -198,8 +209,10 @@ for buildTarget in linux-amd64 darwin-amd64 windows-amd64; do
     archive="$(tar_to_zip "$archive")"
   fi
 
-  upload_archive "$archive"
-  rm -- "${archive}"
+  if ! $DRY_RUN; then
+    upload_archive "$archive"
+    rm -- "$archive"
+  fi
 
   echodate "Compiling EE installer ($buildTarget)..."
   KUBERMATIC_EDITION=ee build_installer
@@ -209,7 +222,7 @@ for buildTarget in linux-amd64 darwin-amd64 windows-amd64; do
   # switch Docker repository used by the operator to the EE repository
   yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
 
-  archive="_dist/kubermatic-ee-$tag-$buildTarget.tar.gz"
+  archive="_dist/kubermatic-ee-$GIT_TAG-$buildTarget.tar.gz"
   # GNU tar is required
   tar czf "$archive" \
     --transform='flags=r;s|_build/||' \
@@ -241,8 +254,10 @@ for buildTarget in linux-amd64 darwin-amd64 windows-amd64; do
     archive="$(tar_to_zip "$archive")"
   fi
 
-  upload_archive "$archive"
-  rm -- "${archive}"
+  if ! $DRY_RUN; then
+    upload_archive "$archive"
+    rm -- "$archive"
+  fi
 done
 
 echodate "Done."

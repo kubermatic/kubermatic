@@ -281,6 +281,22 @@ presubmits:
       imagePullSecrets:
       - name: quay
 
+  - name: pre-kubermatic-github-release
+    optional: true
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
+    spec:
+      containers:
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
+        command:
+        - ./hack/ci/ci-test-github-release.sh
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: 0.5
+
   #########################################################
   # Base Kubernetes Tests (AWS, CoreOS)
   #########################################################
