@@ -164,7 +164,7 @@ for buildTarget in linux-amd64 darwin-amd64 windows-amd64; do
 
   echodate "Uploading kubermatic CE archive..."
 
-  # switch Docker repository used by the operator to the EE repository
+  # switch Docker repository used by the operator to the CE repository
   yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic'
 
   archive="_dist/kubermatic-ce-$tag-$buildTarget.tar.gz"
