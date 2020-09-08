@@ -37,7 +37,7 @@ spec:
         name: dex
         command: ["/usr/local/bin/dex", "serve", "/etc/dex/cfg/config.yaml"]
         {{- if .Values.dex.env }}
-        env: {{ .Values.dex.env | toYaml | trim | nindent 8}}
+        env: {{ toYaml .Values.dex.env | trim | nindent 8 }}
         {{- end }}
         ports:
         - name: https
