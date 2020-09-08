@@ -19,6 +19,7 @@ package kubermatic
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"path/filepath"
 	"time"
 
@@ -296,18 +297,146 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 	logger.Info("📡 Determining DNS settings…")
 	sublogger := log.Prefix(logger, "   ")
 
-	ingressSettings := opt.KubermaticConfiguration.Spec.Ingress
-	if ingressSettings.Disable {
+	if opt.KubermaticConfiguration.Spec.Ingress.Disable {
 		sublogger.Info("Ingress creation has been disabled in the KubermaticConfiguration, skipping.")
 		return
 	}
 
+	hostNetwork, _ := opt.HelmValues.GetBool(yamled.Path{"nginx", "hostNetwork"})
+
+	// in hostNetwork mode, nginx is deployed as a DaemonSet and the DNS
+	// records need to point to one or more worker nodes directly;
+	// normally we're not using the host network, but a regular LoadBalancer
+	if hostNetwork {
+		showHostNetworkDNSSettings(ctx, sublogger, kubeClient, opt)
+	} else {
+		showLoadBalancerDNSSettings(ctx, sublogger, kubeClient, opt)
+	}
+}
+
+type nginxTargetPod struct {
+	pod string
+	ip  string
+	dns string
+}
+
+func (t nginxTargetPod) prefererdTarget() string {
+	if len(t.dns) > 0 {
+		return t.dns
+	}
+
+	return t.ip
+}
+
+func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt Options) {
+	logger.Debugf("Listing nginx-ingress-controller pods…")
+
+	podList := v1.PodList{}
+	err := kubeClient.List(ctx, &podList, &ctrlruntimeclient.ListOptions{
+		Namespace: NginxIngressControllerNamespace,
+	})
+	if err != nil {
+		logger.Warnf("Failed to find any nginx-ingress-controller pods: %v", err)
+		logger.Warn("Please check the DaemonSet and, if necessary, reconfigure the")
+		logger.Warn("nginx-ingress-controller Helm chart. Re-run the installer to apply")
+		logger.Warn("updated configuration afterwards.")
+		return
+	}
+
+	if len(podList.Items) == 0 {
+		logger.Warnf("No nginx-ingress-controller pods were found in the %q namespace.", NginxIngressControllerNamespace)
+		logger.Warn("Please check the DaemonSet and, if necessary, reconfigure the")
+		logger.Warn("nginx-ingress-controller Helm chart. Re-run the installer to apply")
+		logger.Warn("updated configuration afterwards.")
+		return
+	}
+
+	nodeList := v1.NodeList{}
+	err = kubeClient.List(ctx, &nodeList)
+	if err != nil {
+		logger.Warnf("Failed to retrieve nodes: %v", err)
+		return
+	}
+
+	targets := []nginxTargetPod{}
+
+	for _, pod := range podList.Items {
+		hostIP := pod.Status.HostIP
+
+		for _, node := range nodeList.Items {
+			matches := false
+			externalIP := ""
+			externalDNS := ""
+
+			for _, address := range node.Status.Addresses {
+				switch address.Type {
+				case v1.NodeExternalIP:
+					externalIP = address.Address
+				case v1.NodeExternalDNS:
+					externalDNS = address.Address
+				}
+
+				if address.Address == hostIP {
+					matches = true
+					// do not break, so we can try more addresses
+					// to find the external IP and DNS names
+				}
+			}
+
+			if matches && (externalIP != "" || externalDNS != "") {
+				targets = append(targets, nginxTargetPod{
+					pod: pod.Name,
+					ip:  externalIP,
+					dns: externalDNS,
+				})
+			}
+		}
+	}
+
+	if len(targets) == 0 {
+		logger.Warnf("No nginx-ingress-controller pods in the %q namespace are scheduled onto nodes yet.", NginxIngressControllerNamespace)
+		logger.Warn("Please check the DaemonSet and, if necessary, reconfigure the")
+		logger.Warn("nginx-ingress-controller Helm chart. Re-run the installer to apply")
+		logger.Warn("updated configuration afterwards.")
+		return
+	}
+
+	logger.Info("The nginx-ingress-controller pods have been rolled out in your cluster.")
+	logger.Info("")
+
+	logger.Infof("  %-50s    IP / Hostname", "Pod")
+	for _, target := range targets {
+		logger.Infof("  %-50s    %s", target.pod, target.prefererdTarget())
+	}
+
+	domain := opt.KubermaticConfiguration.Spec.Ingress.Domain
+	rand := targets[rand.Intn(len(targets))]
+
+	logger.Info("")
+	logger.Info("Choose a single target for your DNS or configure an external LoadBalancer")
+	logger.Info("to balance between all targets listed above. For a basic setup, choose a")
+	logger.Infof("random target from above, for example %s.", rand.prefererdTarget())
+	logger.Infof("Then ensure your DNS settings for %q include the following records:", domain)
+	logger.Info("")
+
+	if rand.dns != "" {
+		logger.Infof("   %s.    IN  CNAME  %s.", domain, rand.dns)
+		logger.Infof("   *.%s.  IN  CNAME  %s.", domain, rand.dns)
+	} else {
+		logger.Infof("   %s.    IN  A  %s", domain, rand.ip)
+		logger.Infof("   *.%s.  IN  A  %s", domain, rand.ip)
+	}
+
+	logger.Info("")
+}
+
+func showLoadBalancerDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt Options) {
 	svcName := types.NamespacedName{
 		Namespace: NginxIngressControllerNamespace,
 		Name:      "nginx-ingress-controller",
 	}
 
-	sublogger.Debugf("Waiting for %q to be ready…", svcName)
+	logger.Debugf("Waiting for %q to be ready…", svcName)
 
 	var ingresses []v1.LoadBalancerIngress
 	err := wait.PollImmediate(5*time.Second, 3*time.Minute, func() (bool, error) {
@@ -321,34 +450,34 @@ func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlr
 		return len(ingresses) > 0, nil
 	})
 	if err != nil {
-		sublogger.Warnf("Timed out waiting for the LoadBalancer service %q to become ready.", svcName)
-		sublogger.Warn("Please check the Service and, if necessary, reconfigure the")
-		sublogger.Warn("nginx-ingress-controller Helm chart. Re-run the installer to apply")
-		sublogger.Warn("updated configuration afterwards.")
+		logger.Warnf("Timed out waiting for the LoadBalancer service %q to become ready.", svcName)
+		logger.Warn("Please check the Service and, if necessary, reconfigure the")
+		logger.Warn("nginx-ingress-controller Helm chart. Re-run the installer to apply")
+		logger.Warn("updated configuration afterwards.")
 		return
 	}
 
-	sublogger.Info("The main LoadBalancer is ready.")
-	sublogger.Info("")
-	sublogger.Infof("  Service namespace / name: %s / %s", svcName.Namespace, svcName.Name)
+	logger.Info("The main LoadBalancer is ready.")
+	logger.Info("")
+	logger.Infof("  Service             : %s / %s", svcName.Namespace, svcName.Name)
 
-	domain := ingressSettings.Domain
+	domain := opt.KubermaticConfiguration.Spec.Ingress.Domain
 
 	if hostname := ingresses[0].Hostname; hostname != "" {
-		sublogger.Infof("  Ingress via hostname    : %q.", hostname)
-		sublogger.Info("")
-		sublogger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
-		sublogger.Info("")
-		sublogger.Infof("   %s.    IN  CNAME  %s.", domain, hostname)
-		sublogger.Infof("   *.%s.  IN  CNAME  %s.", domain, hostname)
+		logger.Infof("  Ingress via hostname: %s", hostname)
+		logger.Info("")
+		logger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
+		logger.Info("")
+		logger.Infof("   %s.    IN  CNAME  %s.", domain, hostname)
+		logger.Infof("   *.%s.  IN  CNAME  %s.", domain, hostname)
 	} else if ip := ingresses[0].IP; ip != "" {
-		sublogger.Infof("  Ingress via IP          : %q.", ip)
-		sublogger.Info("")
-		sublogger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
-		sublogger.Info("")
-		sublogger.Infof("   %s.    IN  A  %s", domain, ip)
-		sublogger.Infof("   *.%s.  IN  A  %s", domain, ip)
+		logger.Infof("  Ingress via IP      : %s", ip)
+		logger.Info("")
+		logger.Infof("Please ensure your DNS settings for %q include the following records:", domain)
+		logger.Info("")
+		logger.Infof("   %s.    IN  A  %s", domain, ip)
+		logger.Infof("   *.%s.  IN  A  %s", domain, ip)
 	}
 
-	sublogger.Info("")
+	logger.Info("")
 }
