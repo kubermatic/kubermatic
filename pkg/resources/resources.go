@@ -508,6 +508,18 @@ const (
 	ExternalClusterKubeconfig = "kubeconfig"
 )
 
+const (
+	EtcdTrustedCAFile = "/etc/etcd/pki/ca/ca.crt"
+	EtcdCertFile      = "/etc/etcd/pki/tls/etcd-tls.crt"
+	EtcdKetFile       = "/etc/etcd/pki/tls/etcd-tls.key"
+
+	EtcdPeerCertFile = "/etc/etcd/pki/tls/etcd-tls.crt"
+	EtcdPeerKeyFile  = "/etc/etcd/pki/tls/etcd-tls.key"
+
+	EtcdClientCertFile = "/etc/etcd/pki/client/apiserver-etcd-client.crt"
+	EtcdClientKeyFile  = "/etc/etcd/pki/client/apiserver-etcd-client.key"
+)
+
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key
 type ECDSAKeyPair struct {
 	Key  *ecdsa.PrivateKey

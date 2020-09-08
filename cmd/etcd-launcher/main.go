@@ -36,6 +36,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -125,7 +126,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to check cluster membership: %v", err)
 	}
-
 	if isMemeber {
 		for { // reconcile dead members
 			containsUnwantedMembers, err := e.containsUnwantedMembers()
@@ -191,7 +191,7 @@ func clientEndpoints(n int, namespace string) []string {
 }
 
 func (e *etcdCluster) endpoint() string {
-	return fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2379", e.config.podName, e.config.namespace)
+	return "https://127.0.0.1:2379"
 }
 
 func (e *etcdCluster) parseConfigFlags() error {
@@ -248,14 +248,14 @@ func etcdCmd(config *config) []string {
 		fmt.Sprintf("--listen-metrics-urls=http://%s:2378,http://127.0.0.1:2378", config.podIP),
 		fmt.Sprintf("--listen-peer-urls=https://%s:2380", config.podIP),
 		fmt.Sprintf("--initial-advertise-peer-urls=https://%s.etcd.%s.svc.cluster.local:2380", config.podName, config.namespace),
-		"--trusted-ca-file=/etc/etcd/pki/ca/ca.crt",
 		"--client-cert-auth",
-		"--cert-file=/etc/etcd/pki/tls/etcd-tls.crt",
-		"--key-file=/etc/etcd/pki/tls/etcd-tls.key",
+		fmt.Sprintf("--trusted-ca-file=%s", resources.EtcdTrustedCAFile),
+		fmt.Sprintf("--cert-file=%s", resources.EtcdCertFile),
+		fmt.Sprintf("--key-file=%s", resources.EtcdKetFile),
 		"--peer-client-cert-auth",
-		"--peer-cert-file=/etc/etcd/pki/tls/etcd-tls.crt",
-		"--peer-key-file=/etc/etcd/pki/tls/etcd-tls.key",
-		"--peer-trusted-ca-file=/etc/etcd/pki/ca/ca.crt",
+		fmt.Sprintf("--peer-trusted-ca-file=%s", resources.EtcdTrustedCAFile),
+		fmt.Sprintf("--peer-cert-file=%s", resources.EtcdPeerCertFile),
+		fmt.Sprintf("--peer-key-file=%s", resources.EtcdPeerKeyFile),
 		"--auto-compaction-retention=8",
 	}
 
@@ -280,16 +280,15 @@ func (e *etcdCluster) getLocalClient() (*clientv3.Client, error) {
 func (e *etcdCluster) getClientWithEndpoints(eps []string) (*clientv3.Client, error) {
 	var err error
 	tlsInfo := transport.TLSInfo{
-		CertFile:      "/etc/etcd/pki/tls/etcd-tls.crt",
-		KeyFile:       "/etc/etcd/pki/tls/etcd-tls.key",
-		TrustedCAFile: "/etc/etcd/pki/ca/ca.crt",
+		CertFile:       resources.EtcdClientCertFile,
+		KeyFile:        resources.EtcdClientKeyFile,
+		TrustedCAFile:  resources.EtcdTrustedCAFile,
+		ClientCertAuth: true,
 	}
 	tlsConfig, err := tlsInfo.ClientConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate client TLS config: %v", err)
 	}
-	tlsConfig.InsecureSkipVerify = true
-
 	for i := 0; i < 5; i++ {
 		cli, err := clientv3.New(clientv3.Config{
 			Endpoints:   eps,
@@ -329,7 +328,7 @@ func (e *etcdCluster) isClusterMember(name string) (bool, error) {
 	}
 
 	for _, member := range members {
-		if member.Name == name || member.PeerURLs[0] == fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace) {
+		if member.Name == name && member.PeerURLs[0] == fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace) {
 			return true, nil
 		}
 	}
@@ -369,7 +368,7 @@ func (e *etcdCluster) isHealthyWithEndpoints(endpoints []string) (bool, error) {
 	_, err = client.Get(ctx, "healthy")
 	defer cancel()
 	if err != nil && err != rpctypes.ErrPermissionDenied {
-		return false, nil
+		return false, err
 	}
 	return true, nil
 }
@@ -410,8 +409,10 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger) error {
 		if member.Name == e.config.podName {
 			continue
 		}
-		if err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
-			return e.isHealthyWithEndpoints(member.ClientURLs[:1])
+		if err = wait.Poll(1*time.Second, 60*time.Second, func() (bool, error) {
+			// we use the cluster FQDN endpoint url here. Using the IP endpoint will
+			// fail because the certificates don't include Pod IP addresses.
+			return e.isHealthyWithEndpoints(member.ClientURLs[len(member.ClientURLs)-1:])
 		}); err != nil {
 			log.Infow("member is not responding, removing from cluster", "member-name", member.Name)
 			_, err = client.MemberRemove(context.Background(), member.ID)

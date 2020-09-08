@@ -163,15 +163,15 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 						},
 						{
 							Name:  "ETCDCTL_CACERT",
-							Value: "/etc/etcd/pki/ca/ca.crt",
+							Value: resources.EtcdTrustedCAFile,
 						},
 						{
 							Name:  "ETCDCTL_CERT",
-							Value: "/etc/etcd/pki/client/apiserver-etcd-client.crt",
+							Value: resources.EtcdClientCertFile,
 						},
 						{
 							Name:  "ETCDCTL_KEY",
-							Value: "/etc/etcd/pki/client/apiserver-etcd-client.key",
+							Value: resources.EtcdClientKeyFile,
 						},
 					},
 					Ports: []corev1.ContainerPort{
