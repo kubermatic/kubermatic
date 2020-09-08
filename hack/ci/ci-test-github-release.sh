@@ -27,9 +27,23 @@ export GITHUB_TOKEN="none"
 export GIT_TAG="v2.99.99"
 export RELEASE_PLATFORMS="linux-amd64 windows-amd64"
 
-echodate "Simulating GitHub release for version $GIT_TAG..."
+echodate "Simulating GitHub release..."
 
 ./hack/ci/ci-github-release.sh
 
 echodate "Simulation successful."
+
 ls -lah _dist
+echo
+
+for f in _dist/*; do
+  echodate "$(basename "$f")"
+
+  if [[ $f =~ '.zip' ]]; then
+    unzip -ql "$f"
+  else
+    tar tvzf "$f"
+  fi
+
+  echo
+done

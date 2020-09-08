@@ -289,7 +289,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.18
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.21
         command:
         - ./hack/ci/ci-test-github-release.sh
         resources:
