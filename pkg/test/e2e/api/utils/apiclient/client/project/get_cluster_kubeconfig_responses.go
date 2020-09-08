@@ -63,23 +63,21 @@ func NewGetClusterKubeconfigOK() *GetClusterKubeconfigOK {
 Kubeconfig is a clusters kubeconfig
 */
 type GetClusterKubeconfigOK struct {
-	Payload *models.Config
+	Payload []uint8
 }
 
 func (o *GetClusterKubeconfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/kubeconfig][%d] getClusterKubeconfigOK  %+v", 200, o.Payload)
 }
 
-func (o *GetClusterKubeconfigOK) GetPayload() *models.Config {
+func (o *GetClusterKubeconfigOK) GetPayload() []uint8 {
 	return o.Payload
 }
 
 func (o *GetClusterKubeconfigOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Config)
-
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 
