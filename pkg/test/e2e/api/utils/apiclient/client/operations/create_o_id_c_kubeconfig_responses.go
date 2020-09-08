@@ -51,23 +51,21 @@ func NewCreateOIDCKubeconfigOK() *CreateOIDCKubeconfigOK {
 Kubeconfig is a clusters kubeconfig
 */
 type CreateOIDCKubeconfigOK struct {
-	Payload *models.Config
+	Payload []uint8
 }
 
 func (o *CreateOIDCKubeconfigOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/kubeconfig][%d] createOIdCKubeconfigOK  %+v", 200, o.Payload)
 }
 
-func (o *CreateOIDCKubeconfigOK) GetPayload() *models.Config {
+func (o *CreateOIDCKubeconfigOK) GetPayload() []uint8 {
 	return o.Payload
 }
 
 func (o *CreateOIDCKubeconfigOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.Config)
-
 	// response payload
-	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 

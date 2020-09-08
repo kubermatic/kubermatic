@@ -19,10 +19,6 @@ limitations under the License.
 package api
 
 import (
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
 	"regexp"
 	"testing"
 	"time"
@@ -230,24 +226,20 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 
 func TestGetClusterKubeconfig(t *testing.T) {
 	tests := []struct {
-		name         string
-		dc           string
-		location     string
-		version      string
-		credential   string
-		replicas     int32
-		path         string
-		expectedCode int
+		name       string
+		dc         string
+		location   string
+		version    string
+		credential string
+		replicas   int32
 	}{
 		{
-			name:         "kubeconfig contains token",
-			dc:           "kubermatic",
-			location:     "do-fra1",
-			version:      "v1.18.8",
-			credential:   "e2e-digitalocean",
-			replicas:     1,
-			path:         "/api/v1/projects/%s/dc/%s/clusters/%s/kubeconfig",
-			expectedCode: http.StatusOK,
+			name:       "kubeconfig contains token",
+			dc:         "kubermatic",
+			location:   "do-fra1",
+			version:    "v1.18.8",
+			credential: "e2e-digitalocean",
+			replicas:   1,
 		},
 	}
 	for _, tc := range tests {
@@ -288,37 +280,10 @@ func TestGetClusterKubeconfig(t *testing.T) {
 				t.Fatalf("cluster not ready after %d attempts", getDOMaxAttempts)
 			}
 
-			var u url.URL
-			u.Host = getHost()
-			u.Scheme = getScheme()
-			u.Path = fmt.Sprintf(tc.path, project.ID, tc.dc, cluster.ID)
-
-			req, err := http.NewRequest("GET", u.String(), nil)
+			kubeconfig, err := apiRunner.GetKubeconfig(tc.dc, project.ID, cluster.ID)
 			if err != nil {
-				t.Fatalf("can not make GET call due error: %v", err)
+				t.Fatalf("can not get kubeconfig %v", GetErrorResponse(err))
 			}
-
-			req.Header.Set("Cache-Control", "no-cache")
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", masterToken))
-
-			client := &http.Client{Timeout: time.Second * 10}
-
-			resp, err := client.Do(req)
-			if err != nil {
-				t.Fatal("error reading response. ", err)
-			}
-			defer resp.Body.Close()
-
-			if resp.StatusCode != tc.expectedCode {
-				t.Fatalf("expected code %d, got %d", tc.expectedCode, resp.StatusCode)
-			}
-
-			bodyBytes, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			kubeconfig := string(bodyBytes)
 			regex := regexp.MustCompile(`token: [a-z0-9]{6}\.[a-z0-9]{16}`)
 			matches := regex.FindAllString(kubeconfig, -1)
 			if len(matches) != 1 {
