@@ -173,7 +173,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
   echodate "Compiling CE installer ($buildTarget)..."
   KUBERMATIC_EDITION=ce build_installer
 
-  echodate "Uploading kubermatic CE archive..."
+  echodate "Creating CE archive..."
 
   # switch Docker repository used by the operator to the CE repository
   yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic'
@@ -206,10 +206,12 @@ for buildTarget in $RELEASE_PLATFORMS; do
     CHANGELOG.md
 
   if [ "$GOOS" == "windows" ]; then
+    echodate "Converting $archive to Zip..."
     archive="$(tar_to_zip "$archive")"
   fi
 
   if ! $DRY_RUN; then
+    echodate "Upload CE $buildTarget archive..."
     upload_archive "$archive"
     rm -- "$archive"
   fi
@@ -217,7 +219,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
   echodate "Compiling EE installer ($buildTarget)..."
   KUBERMATIC_EDITION=ee build_installer
 
-  echodate "Uploading kubermatic EE archive..."
+  echodate "Creating EE archive..."
 
   # switch Docker repository used by the operator to the EE repository
   yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
@@ -251,10 +253,12 @@ for buildTarget in $RELEASE_PLATFORMS; do
     CHANGELOG.md
 
   if [ "$GOOS" == "windows" ]; then
+    echodate "Converting $archive to Zip..."
     archive="$(tar_to_zip "$archive")"
   fi
 
   if ! $DRY_RUN; then
+    echodate "Upload EE $buildTarget archive..."
     upload_archive "$archive"
     rm -- "$archive"
   fi

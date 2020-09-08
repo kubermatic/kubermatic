@@ -282,7 +282,7 @@ presubmits:
       - name: quay
 
   - name: pre-kubermatic-github-release
-    optional: true
+    run_if_changed: "hack/ci/ci-github-release.sh"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
