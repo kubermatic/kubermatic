@@ -28,7 +28,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	cmdv1 "k8s.io/client-go/tools/clientcmd/api/v1"
 )
 
 // ObjectMeta defines the set of fields that objects returned from the API have
@@ -512,7 +511,7 @@ type Project struct {
 // swagger:response Kubeconfig
 type Kubeconfig struct {
 	// in: body
-	Config cmdv1.Config
+	Config []byte
 }
 
 // OpenstackSize is the object representing openstack's sizes.

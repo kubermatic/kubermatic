@@ -304,7 +304,7 @@ func EncodeKubeconfig(c context.Context, w http.ResponseWriter, response interfa
 		filename = fmt.Sprintf("%s-%s", filename, cfg.Contexts[cfg.CurrentContext].Cluster)
 	}
 
-	w.Header().Set("Content-Type", "application/yaml")
+	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-disposition", fmt.Sprintf("attachment; filename=%s", filename))
 	w.Header().Add("Cache-Control", "no-cache")
 

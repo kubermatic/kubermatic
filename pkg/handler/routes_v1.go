@@ -1908,7 +1908,7 @@ func (r Routing) getClusterEvents() http.Handler {
 //     Gets the kubeconfig for the specified cluster.
 //
 //     Produces:
-//     - application/yaml
+//     - application/octet-stream
 //
 //     Responses:
 //       default: errorResponse
