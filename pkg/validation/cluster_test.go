@@ -19,6 +19,7 @@ package validation
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -132,7 +133,7 @@ func TestValidateUpdateWindow(t *testing.T) {
 				Start:  "invalid",
 				Length: "1h",
 			},
-			err: errors.New("error parsing update window: unable to parse start: invalid time of day \"invalid\": expected integer"),
+			err: errors.New("invalid time of day"),
 		},
 		{
 			name: "invalid length",
@@ -140,14 +141,19 @@ func TestValidateUpdateWindow(t *testing.T) {
 				Start:  "Thu 04:00",
 				Length: "1",
 			},
-			err: errors.New("error parsing update window: unable to parse duration: time: missing unit in duration 1"),
+			err: errors.New("missing unit in duration"),
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			err := ValidateUpdateWindow(&test.updateWindow)
-			if fmt.Sprint(err) != fmt.Sprint(test.err) {
+			if (err != nil) != (test.err != nil) {
 				t.Errorf("Extected err to be %v, got %v", test.err, err)
+			}
+
+			// loosely validate the returned error message
+			if test.err != nil && !strings.Contains(err.Error(), test.err.Error()) {
+				t.Errorf("Extected err to contain \"%v\", but got \"%v\"", test.err, err)
 			}
 		})
 	}
