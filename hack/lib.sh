@@ -266,14 +266,14 @@ check_all_deployments_ready() {
   local deployments
   deployments=$(kubectl -n $namespace get deployments -o json)
 
-  if [ $(echo "$deployments" | jq '.items | length') -eq 0 ]; then
+  if [ $(jq '.items | length' <<< $deployments) -eq 0 ]; then
     echodate "No Deployments created yet."
     return 1
   fi
 
   # check that all Deployments are ready
   local unready
-  unready=$(echo "$deployments" | jq -r '[.items[] | select(.spec.replicas > 0) | select (.status.availableReplicas < .spec.replicas) | .metadata.name] | @tsv')
+  unready=$(jq -r '[.items[] | select(.spec.replicas > 0) | select (.status.availableReplicas < .spec.replicas) | .metadata.name] | @tsv' <<< $deployments)
   if [ -n "$unready" ]; then
     echodate "Not all Deployments have finished rolling out, namely: $unready"
     return 1
