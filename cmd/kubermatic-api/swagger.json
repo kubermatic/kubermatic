@@ -9373,6 +9373,11 @@
       "description": "AddonSpec addon specification",
       "type": "object",
       "properties": {
+        "continuouslyReconcile": {
+          "description": "ContinuouslyReconcile indicates that the addon cannot be deleted or modified outside of the UI after installation",
+          "type": "boolean",
+          "x-go-name": "ContinuouslyReconcile"
+        },
         "isDefault": {
           "description": "IsDefault indicates whether the addon is default",
           "type": "boolean",
