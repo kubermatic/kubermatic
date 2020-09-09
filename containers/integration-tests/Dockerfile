@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.14.2
+FROM golang:1.15.1
 LABEL maintainer="support@kubermatic.com"
 
 RUN os=$(go env GOOS) && \

@@ -41,7 +41,7 @@ func getKubernetesVersion() string {
 	if len(version) > 0 {
 		return version
 	}
-	return "v1.14.2"
+	return "v1.18.8"
 }
 
 func TestCreateAWSCluster(t *testing.T) {

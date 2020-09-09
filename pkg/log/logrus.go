@@ -56,13 +56,16 @@ func (h *prefixHook) Fire(e *logrus.Entry) error {
 }
 
 func Prefix(e *logrus.Entry, prefix string) *logrus.Entry {
-	if e.Context != nil {
-		if oldPrefix := e.Context.Value(prefixKey); oldPrefix != nil {
-			prefix += oldPrefix.(string)
-		}
+	parentCtx := e.Context
+	if parentCtx == nil {
+		parentCtx = context.Background()
 	}
 
-	ctx := context.WithValue(e.Context, prefixKey, prefix)
+	if oldPrefix := parentCtx.Value(prefixKey); oldPrefix != nil {
+		prefix += oldPrefix.(string)
+	}
+
+	ctx := context.WithValue(parentCtx, prefixKey, prefix)
 
 	return e.WithContext(ctx)
 }

@@ -35,7 +35,7 @@ LDFLAGS += -extldflags '-static' \
   -X k8c.io/kubermatic/v2/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
 BUILD_DEST?=_build
 GOTOOLFLAGS?=$(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
-GOBUILDIMAGE?=golang:1.14.6
+GOBUILDIMAGE?=golang:1.15.1
 DOCKER_BIN := $(shell which docker)
 
 default: all
