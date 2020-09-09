@@ -57,7 +57,7 @@ func NewAddonProvider(
 }
 
 // New creates a new addon in the given cluster
-func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension) (*kubermaticv1.Addon, error) {
+func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error) {
 	if !p.accessibleAddons.Has(addonName) {
 		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
 	}
@@ -67,7 +67,7 @@ func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.C
 		return nil, err
 	}
 
-	addon := genAddon(cluster, addonName, variables)
+	addon := genAddon(cluster, addonName, variables, labels)
 
 	if err = seedImpersonatedClient.Create(context.Background(), addon); err != nil {
 		return nil, err
@@ -80,12 +80,12 @@ func (p *AddonProvider) New(userInfo *provider.UserInfo, cluster *kubermaticv1.C
 //
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to create the resource
-func (p *AddonProvider) NewUnsecured(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension) (*kubermaticv1.Addon, error) {
+func (p *AddonProvider) NewUnsecured(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error) {
 	if !p.accessibleAddons.Has(addonName) {
 		return nil, kerrors.NewUnauthorized(fmt.Sprintf("addon not accessible: %v", addonName))
 	}
 
-	addon := genAddon(cluster, addonName, variables)
+	addon := genAddon(cluster, addonName, variables, labels)
 
 	if err := p.clientPrivileged.Create(context.Background(), addon); err != nil {
 		return nil, err
@@ -94,14 +94,17 @@ func (p *AddonProvider) NewUnsecured(cluster *kubermaticv1.Cluster, addonName st
 	return addon, nil
 }
 
-func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension) *kubermaticv1.Addon {
+func genAddon(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) *kubermaticv1.Addon {
 	gv := kubermaticv1.SchemeGroupVersion
+	if labels == nil {
+		labels = map[string]string{}
+	}
 	return &kubermaticv1.Addon{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:            addonName,
 			Namespace:       cluster.Status.NamespaceName,
 			OwnerReferences: []metav1.OwnerReference{*metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))},
-			Labels:          map[string]string{},
+			Labels:          labels,
 		},
 		Spec: kubermaticv1.AddonSpec{
 			Name: addonName,

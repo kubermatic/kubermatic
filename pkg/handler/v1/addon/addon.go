@@ -37,6 +37,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
+const addonEnsureLabelKey = "addons.kubermatic.io/ensure"
+
 // addonReq defines HTTP request for getAddon and deleteAddon
 // swagger:parameters getAddon deleteAddon
 type addonReq struct {
@@ -281,7 +283,11 @@ func CreateAddonEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		addon, err := createAddon(ctx, userInfoGetter, cluster, rawVars, req.ProjectID, req.Body.Name)
+		labels := map[string]string{}
+		if req.Body.Spec.ContinuouslyReconcile {
+			labels[addonEnsureLabelKey] = "true"
+		}
+		addon, err := createAddon(ctx, userInfoGetter, cluster, rawVars, labels, req.ProjectID, req.Body.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -294,21 +300,21 @@ func CreateAddonEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 	}
 }
 
-func createAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, rawVars *runtime.RawExtension, projectID, name string) (*kubermaticapiv1.Addon, error) {
+func createAddon(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticapiv1.Cluster, rawVars *runtime.RawExtension, labels map[string]string, projectID, name string) (*kubermaticapiv1.Addon, error) {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, err
 	}
 	if adminUserInfo.IsAdmin {
 		privilegedAddonProvider := ctx.Value(middleware.PrivilegedAddonProviderContextKey).(provider.PrivilegedAddonProvider)
-		return privilegedAddonProvider.NewUnsecured(cluster, name, rawVars)
+		return privilegedAddonProvider.NewUnsecured(cluster, name, rawVars, labels)
 	}
 	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 	addonProvider := ctx.Value(middleware.AddonProviderContextKey).(provider.AddonProvider)
-	return addonProvider.New(userInfo, cluster, name, rawVars)
+	return addonProvider.New(userInfo, cluster, name, rawVars, labels)
 
 }
 
@@ -435,6 +441,10 @@ func convertInternalAddonToExternal(internalAddon *kubermaticapiv1.Addon) (*apiv
 			return nil, err
 		}
 	}
+	if internalAddon.Labels != nil && internalAddon.Labels[addonEnsureLabelKey] == "true" {
+		result.Spec.ContinuouslyReconcile = true
+	}
+
 	return result, nil
 }
 

@@ -630,7 +630,7 @@ type EventRecorderProvider interface {
 // AddonProvider declares the set of methods for interacting with addons
 type AddonProvider interface {
 	// New creates a new addon in the given cluster
-	New(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension) (*kubermaticv1.Addon, error)
+	New(userInfo *UserInfo, cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error)
 
 	// List gets all addons that belong to the given cluster
 	// If you want to filter the result please take a look at ClusterListOptions
@@ -658,7 +658,7 @@ type PrivilegedAddonProvider interface {
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	NewUnsecured(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension) (*kubermaticv1.Addon, error)
+	NewUnsecured(cluster *kubermaticv1.Cluster, addonName string, variables *runtime.RawExtension, labels map[string]string) (*kubermaticv1.Addon, error)
 
 	// GetUnsecured returns the given addon
 	//

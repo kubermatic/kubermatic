@@ -417,6 +417,38 @@ func TestCreateAddon(t *testing.T) {
 			},
 			ExistingAPIUser: test.GenAPIUser("bob", "bob@acme.com"),
 		},
+		// scenario 4
+		{
+			Name: "scenario 4: create an addon with continuouslyReconcile flag",
+			Body: `{
+				"name": "addon1",
+				"spec": {
+					"variables": null,
+					"continuouslyReconcile": true
+				}
+			}`,
+			ExpectedResponse: apiv1.Addon{
+				ObjectMeta: apiv1.ObjectMeta{
+					ID:   "addon1",
+					Name: "addon1",
+				},
+				Spec: apiv1.AddonSpec{
+					ContinuouslyReconcile: true,
+				},
+			},
+			ExpectedHTTPStatus: http.StatusCreated,
+			ExistingKubermaticObjs: []runtime.Object{
+				/*add projects*/
+				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				/*add cluster*/
+				cluster,
+			},
+			ExistingAPIUser: test.GenAPIUser("john", "john@acme.com"),
+		},
 	}
 
 	for _, tc := range testcases {
