@@ -317,6 +317,13 @@ func (k *NewConstraintTemplateV1SliceWrapper) DecodeOrDie(r io.Reader, t *testin
 	return k
 }
 
+// Sort sorts the collection by Name
+func (k NewConstraintTemplateV1SliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].Name < (k[j].Name)
+	})
+}
+
 // EqualOrDie compares whether expected collection is equal to the actual one
 func (k NewConstraintTemplateV1SliceWrapper) EqualOrDie(expected NewConstraintTemplateV1SliceWrapper, t *testing.T) {
 	t.Helper()

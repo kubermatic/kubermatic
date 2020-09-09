@@ -109,6 +109,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/constrainttemplates").
 		Handler(r.listConstraintTemplates())
+
+	mux.Methods(http.MethodGet).
+		Path("/constrainttemplates/{ct_name}").
+		Handler(r.getConstraintTemplate())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -565,10 +569,34 @@ func (r Routing) listConstraintTemplates() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(constrainttemplate.ListEndpoint(r.userInfoGetter, r.constraintTemplateProvider)),
+		)(constrainttemplate.ListEndpoint(r.constraintTemplateProvider)),
 		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
+// swagger:route GET /api/v2/constrainttemplates/{ct_name} constrainttemplates getConstraintTemplate
+//
+//     Get constraint templates specified by name
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ConstraintTemplate
+//       401: empty
+//       403: empty
+func (r Routing) getConstraintTemplate() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constrainttemplate.GetEndpoint(r.constraintTemplateProvider)),
+		constrainttemplate.DecodeConstraintTemplateRequest,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}

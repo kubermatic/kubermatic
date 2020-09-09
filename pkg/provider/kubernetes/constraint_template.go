@@ -60,7 +60,7 @@ func (p *ConstraintTemplateProvider) Get(name string) (*v1beta1.ConstraintTempla
 
 	constraintTemplate := &v1beta1.ConstraintTemplate{}
 	if err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: name}, constraintTemplate); err != nil {
-		return nil, fmt.Errorf("failed to get constraint template %q : %v", name, err)
+		return nil, err
 	}
 
 	return constraintTemplate, nil

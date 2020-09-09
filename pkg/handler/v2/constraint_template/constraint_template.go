@@ -18,16 +18,20 @@ package constrainttemplate
 
 import (
 	"context"
+	"fmt"
+	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func ListEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
+func ListEndpoint(constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		constraintTemplateList, err := constraintTemplateProvider.List()
 		if err != nil {
@@ -43,10 +47,53 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplateProv
 	}
 }
 
+func GetEndpoint(constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+
+		req := request.(constraintTemplateReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		constraintTemplate, err := constraintTemplateProvider.Get(req.Name)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertCTToAPI(constraintTemplate), nil
+	}
+}
+
 func convertCTToAPI(ct *v1beta1.ConstraintTemplate) *apiv2.ConstraintTemplate {
 	return &apiv2.ConstraintTemplate{
 		Name:   ct.Name,
 		Spec:   ct.Spec,
 		Status: ct.Status,
 	}
+}
+
+// constraintTemplateReq represents a request for a specific constraintTemplate
+type constraintTemplateReq struct {
+	// in: path
+	// required: true
+	Name string `json:"ct_name"`
+}
+
+func DecodeConstraintTemplateRequest(c context.Context, r *http.Request) (interface{}, error) {
+	name := mux.Vars(r)["ct_name"]
+	if name == "" {
+		return "", fmt.Errorf("'ct_name' parameter is required but was not provided")
+	}
+
+	return constraintTemplateReq{
+		Name: name,
+	}, nil
+}
+
+// Validate validates constraintTemplate request
+func (req constraintTemplateReq) Validate() error {
+	if len(req.Name) == 0 {
+		return fmt.Errorf("the constraint template name cannot be empty")
+	}
+	return nil
 }

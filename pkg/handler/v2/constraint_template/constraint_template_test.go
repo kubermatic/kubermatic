@@ -18,6 +18,7 @@ package constrainttemplate_test
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -39,7 +40,7 @@ func TestListConstraintTemplates(t *testing.T) {
 		ExpectedConstraintTemplates []apiv2.ConstraintTemplate
 		HTTPStatus                  int
 		ExistingAPIUser             *apiv1.User
-		ExistingKObjs               []runtime.Object
+		ExistingObjects             []runtime.Object
 	}{
 		// scenario 1
 		{
@@ -49,7 +50,7 @@ func TestListConstraintTemplates(t *testing.T) {
 				test.GenDefaultConstraintTemplate("ct2"),
 			},
 			HTTPStatus: http.StatusOK,
-			ExistingKObjs: test.GenDefaultKubermaticObjects(
+			ExistingObjects: test.GenDefaultKubermaticObjects(
 				genConstraintTemplate("ct1"),
 				genConstraintTemplate("ct2"),
 			),
@@ -65,7 +66,7 @@ func TestListConstraintTemplates(t *testing.T) {
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
-			for _, obj := range tc.ExistingKObjs {
+			for _, obj := range tc.ExistingObjects {
 				err := clientSet.FakeClient.Create(context.Background(), obj)
 				if err != nil {
 					t.Fatalf("failed to create existing objects due to %v", err)
@@ -79,12 +80,72 @@ func TestListConstraintTemplates(t *testing.T) {
 			}
 
 			actualCTs := test.NewConstraintTemplateV1SliceWrapper{}
-			actualCTs.DecodeOrDie(res.Body, t)
+			actualCTs.DecodeOrDie(res.Body, t).Sort()
 
 			wrappedExpectedCTs := test.NewConstraintTemplateV1SliceWrapper(tc.ExpectedConstraintTemplates)
-			//wrappedExpectedCTs.Sort()
+			wrappedExpectedCTs.Sort()
 
 			actualCTs.EqualOrDie(wrappedExpectedCTs, t)
+		})
+	}
+}
+
+func TestGetConstraintTemplates(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name             string
+		CTName           string
+		ExpectedResponse string
+		HTTPStatus       int
+		ExistingAPIUser  *apiv1.User
+		ExistingObjects  []runtime.Object
+	}{
+		{
+			Name:             "scenario 1: get existing constraint template",
+			CTName:           "ct1",
+			ExpectedResponse: `{"name":"ct1","spec":{"crd":{"spec":{"names":{"kind":"labelconstraint","shortNames":["lc"]}}},"targets":[{"target":"admission.k8s.gatekeeper.sh","rego":"\n\t\tpackage k8srequiredlabels\n\n        deny[{\"msg\": msg, \"details\": {\"missing_labels\": missing}}] {\n          provided := {label | input.review.object.metadata.labels[label]}\n          required := {label | label := input.parameters.labels[_]}\n          missing := required - provided\n          count(missing) \u003e 0\n          msg := sprintf(\"you must provide labels: %v\", [missing])\n        }"}]},"status":{}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				genConstraintTemplate("ct1"),
+				genConstraintTemplate("ct2"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			Name:             "scenario 1: get non-existing constraint template",
+			CTName:           "missing",
+			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.templates.gatekeeper.sh \"missing\" not found"}}`,
+			HTTPStatus:       http.StatusNotFound,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				genConstraintTemplate("ct1"),
+				genConstraintTemplate("ct2"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			ep, clientSet, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, nil, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+			for _, obj := range tc.ExistingObjects {
+				err := clientSet.FakeClient.Create(context.Background(), obj)
+				if err != nil {
+					t.Fatalf("failed to create existing objects due to %v", err)
+				}
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
 		})
 	}
 }
