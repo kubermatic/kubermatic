@@ -21,9 +21,9 @@ import (
 	"fmt"
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ConstraintTemplateProvider struct that holds required components in order manage constraint templates
@@ -43,7 +43,7 @@ func NewConstraintTemplateProvider(createMasterImpersonatedClient impersonationC
 	}, nil
 }
 
-// List gets all external clusters that belong to the given project
+// List gets all constraint templates
 func (p *ConstraintTemplateProvider) List() (*v1beta1.ConstraintTemplateList, error) {
 
 	constraintTemplates := &v1beta1.ConstraintTemplateList{}
