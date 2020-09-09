@@ -25,9 +25,45 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	GetConstraintTemplate(params *GetConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*GetConstraintTemplateOK, error)
+
 	ListConstraintTemplates(params *ListConstraintTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListConstraintTemplatesOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  GetConstraintTemplate Get constraint templates specified by name
+*/
+func (a *Client) GetConstraintTemplate(params *GetConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*GetConstraintTemplateOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetConstraintTemplateParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getConstraintTemplate",
+		Method:             "GET",
+		PathPattern:        "/api/v2/constrainttemplates/{ct_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetConstraintTemplateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetConstraintTemplateOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetConstraintTemplateDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
