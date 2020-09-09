@@ -21,6 +21,7 @@ import (
 	"fmt"
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
@@ -52,4 +53,15 @@ func (p *ConstraintTemplateProvider) List() (*v1beta1.ConstraintTemplateList, er
 	}
 
 	return constraintTemplates, nil
+}
+
+// Get gets a constraint template that
+func (p *ConstraintTemplateProvider) Get(name string) (*v1beta1.ConstraintTemplate, error) {
+
+	constraintTemplate := &v1beta1.ConstraintTemplate{}
+	if err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: name}, constraintTemplate); err != nil {
+		return nil, fmt.Errorf("failed to get constraint template %q : %v", name, err)
+	}
+
+	return constraintTemplate, nil
 }

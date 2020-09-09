@@ -199,3 +199,7 @@ type FakeConstraintTemplateProvider struct {
 func (p *FakeConstraintTemplateProvider) List() (*v1beta1.ConstraintTemplateList, error) {
 	return p.Provider.List()
 }
+
+func (p *FakeConstraintTemplateProvider) Get(name string) (*v1beta1.ConstraintTemplate, error) {
+	return p.Provider.Get(name)
+}

@@ -775,4 +775,7 @@ type ConstraintTemplateProvider interface {
 	//
 	// Note that the list is taken from the cache
 	List() (*v1beta1.ConstraintTemplateList, error)
+
+	// Get gets the given constraint template
+	Get(name string) (*v1beta1.ConstraintTemplate, error)
 }

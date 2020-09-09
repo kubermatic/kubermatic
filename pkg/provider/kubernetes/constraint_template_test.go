@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -33,14 +34,14 @@ import (
 
 func TestListConstraintTemplates(t *testing.T) {
 	testCases := []struct {
-		name           string
-		existingCTs    []v1beta1.ConstraintTemplate
-		expectedCTList []v1beta1.ConstraintTemplate
+		name            string
+		existingObjects []runtime.Object
+		expectedCTList  []*v1beta1.ConstraintTemplate
 	}{
 		{
-			name:           "test: list constraint templates",
-			existingCTs:    []v1beta1.ConstraintTemplate{genConstraintTemplate("ct1")},
-			expectedCTList: []v1beta1.ConstraintTemplate{genConstraintTemplate("ct1")},
+			name:            "test: list constraint templates",
+			existingObjects: []runtime.Object{genConstraintTemplate("ct1"), genConstraintTemplate("ct2")},
+			expectedCTList:  []*v1beta1.ConstraintTemplate{genConstraintTemplate("ct1"), genConstraintTemplate("ct2")},
 		},
 	}
 
@@ -53,12 +54,7 @@ func TestListConstraintTemplates(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			kubermaticObjects := []runtime.Object{}
-			for _, ct := range tc.existingCTs {
-				kubermaticObjects = append(kubermaticObjects, &ct)
-			}
-
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubermaticObjects...)
+			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}
@@ -71,8 +67,62 @@ func TestListConstraintTemplates(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if !reflect.DeepEqual(ctList.Items, tc.expectedCTList) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ctList.Items, tc.expectedCTList))
+			if len(tc.expectedCTList) != len(ctList.Items) {
+				t.Fatalf("expected to get %d cts, but got %d", len(tc.expectedCTList), len(ctList.Items))
+			}
+			for _, returnedCT := range ctList.Items {
+				ctFound := false
+				for _, expectedCT := range tc.expectedCTList {
+					if dif := deep.Equal(returnedCT, *expectedCT); dif == nil {
+						ctFound = true
+						break
+					}
+				}
+				if !ctFound {
+					t.Fatalf("returned ct was not found on the list of expected ones, ct = %#v", returnedCT)
+				}
+			}
+		})
+	}
+}
+
+func TestGetConstraintTemplates(t *testing.T) {
+	testCases := []struct {
+		name            string
+		existingObjects []runtime.Object
+		expectedCT      *v1beta1.ConstraintTemplate
+	}{
+		{
+			name:            "test: get constraint template",
+			existingObjects: []runtime.Object{genConstraintTemplate("ct1")},
+			expectedCT:      genConstraintTemplate("ct1"),
+		},
+	}
+
+	if err := v1beta1.AddToSchemes.AddToScheme(scheme.Scheme); err != nil {
+		t.Fatal(err)
+	}
+
+	for idx := range testCases {
+		tc := testCases[idx]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			provider, err := kubernetes.NewConstraintTemplateProvider(fakeImpersonationClient, client)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ct, err := provider.Get("ct1")
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(ct, tc.expectedCT) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
 			}
 		})
 	}
