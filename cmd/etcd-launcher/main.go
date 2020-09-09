@@ -187,25 +187,23 @@ func (e *etcdCluster) updatePeerURL() error {
 	if err != nil {
 		return err
 	}
-	if len(members) == 0 {
-		return nil
-	}
-	client, err := e.getClusterClient()
-	if err != nil {
-		return err
-	}
-	defer client.Close()
 	for _, member := range members {
 		peerURL, err := url.Parse(member.PeerURLs[0])
 		if err != nil {
 			return err
 		}
 		if member.Name == e.config.podName && peerURL.Scheme == "http" {
-			newURL := strings.ReplaceAll(member.PeerURLs[0], "http:", "https:")
-			_, err := client.MemberUpdate(context.Background(), member.ID, []string{newURL})
+			client, err := e.getClusterClient()
 			if err != nil {
 				return err
 			}
+			defer client.Close()
+			peerURL.Scheme = "https"
+			_, err = client.MemberUpdate(context.Background(), member.ID, []string{peerURL.String()})
+			if err != nil {
+				return err
+			}
+			break
 		}
 	}
 	return nil
