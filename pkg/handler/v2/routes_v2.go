@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
+	constrainttemplate "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
 )
 
@@ -103,6 +104,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/events").
 		Handler(r.listExternalClusterEvents())
+
+	// Define a set of endpoints for gatekeeper constraint templates
+	mux.Methods(http.MethodGet).
+		Path("/constrainttemplates").
+		Handler(r.listConstraintTemplates())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -540,3 +546,29 @@ func (r Routing) listExternalClusterEvents() http.Handler {
 		r.defaultServerOptions()...,
 	)
 }
+
+// swagger:route GET /api/v2/constrainttemplates constrainttemplates listConstraintTemplates
+//
+//     List constraint templates.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ConstraintTemplate
+//       401: empty
+//       403: empty
+func (r Routing) listConstraintTemplates() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constrainttemplate.ListEndpoint(r.userInfoGetter, r.constraintTemplateProvider)),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+

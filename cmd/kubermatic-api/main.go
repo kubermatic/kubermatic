@@ -69,6 +69,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version"
 	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
 
+	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
@@ -109,6 +110,9 @@ func main() {
 	}
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", v1beta1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := constrainttemplatev1beta1.AddToSchemes.AddToScheme(scheme.Scheme); err != nil {
+		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", constrainttemplatev1beta1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	providers, err := createInitProviders(options)
@@ -248,7 +252,12 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create user info getter due to %v", err)
+		return providers{}, fmt.Errorf("failed to create external cluster provider due to %v", err)
+	}
+
+	constraintTemplateProvider, err := kubernetesprovider.NewConstraintTemplateProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create constraint template provider due to %v", err)
 	}
 
 	kubeMasterInformerFactory.Start(wait.NeverStop)
@@ -298,6 +307,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		userWatcher:                           userWatcher,
 		externalClusterProvider:               externalClusterProvider,
 		privilegedExternalClusterProvider:     externalClusterProvider,
+		constraintTemplateProvider:            constraintTemplateProvider,
 	}, nil
 }
 
@@ -401,6 +411,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		UserWatcher:                           prov.userWatcher,
 		ExternalClusterProvider:               prov.externalClusterProvider,
 		PrivilegedExternalClusterProvider:     prov.privilegedExternalClusterProvider,
+		ConstraintTemplateProvider:            prov.constraintTemplateProvider,
 	}
 
 	r := handler.NewRouting(routingParams)

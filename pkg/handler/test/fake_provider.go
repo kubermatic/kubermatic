@@ -22,6 +22,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -187,4 +189,13 @@ func (p *FakeExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(c
 
 func (p *FakeExternalClusterProvider) New(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
 	return p.Provider.New(userInfo, project, cluster)
+}
+
+type FakeConstraintTemplateProvider struct {
+	Provider   *kubernetes.ConstraintTemplateProvider
+	FakeClient ctrlruntimeclient.Client
+}
+
+func (p *FakeConstraintTemplateProvider) List() (*v1beta1.ConstraintTemplateList, error) {
+	return p.Provider.List()
 }

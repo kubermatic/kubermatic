@@ -1324,7 +1324,7 @@ func (r Routing) datacentersHandler() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(dc.ListEndpoint(r.seedsGetter, r.userInfoGetter)),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1566,7 +1566,7 @@ func (r Routing) listSeedNames() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(seed.ListSeedNamesEndpoint(r.seedsGetter)),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -1611,7 +1611,7 @@ func (r Routing) getKubermaticVersion() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(v1.GetKubermaticVersion()),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -2350,7 +2350,7 @@ func (r Routing) getCurrentUser() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(user.GetEndpoint(r.userProjectMapper)),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -2374,7 +2374,7 @@ func (r Routing) logoutCurrentUser() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(user.LogoutEndpoint(r.userProvider)),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -2397,7 +2397,7 @@ func (r Routing) getCurrentUserSettings() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(user.GetSettingsEndpoint(r.userProjectMapper)),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -3402,7 +3402,7 @@ func (r Routing) listAccessibleAddons() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(addon.ListAccessibleAddons(r.accessibleAddons)),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -4211,7 +4211,7 @@ func (r Routing) listSystemLabels() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 		)(label.ListSystemLabels()),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -4257,7 +4257,7 @@ func (r Routing) listAddonConfigs() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(addon.ListAddonConfigsEndpoint(r.addonConfigProvider)),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
