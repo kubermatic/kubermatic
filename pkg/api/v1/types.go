@@ -945,6 +945,8 @@ type AddonSpec struct {
 	Variables map[string]interface{} `json:"variables,omitempty"`
 	// IsDefault indicates whether the addon is default
 	IsDefault bool `json:"isDefault,omitempty"`
+	// ContinuouslyReconcile indicates that the addon cannot be deleted or modified outside of the UI after installation
+	ContinuouslyReconcile bool `json:"continuouslyReconcile,omitempty"`
 }
 
 // AddonConfig represents a addon configuration

@@ -15,6 +15,9 @@ import (
 // swagger:model AddonSpec
 type AddonSpec struct {
 
+	// ContinuouslyReconcile indicates that the addon cannot be deleted or modified outside of the UI after installation
+	ContinuouslyReconcile bool `json:"continuouslyReconcile,omitempty"`
+
 	// IsDefault indicates whether the addon is default
 	IsDefault bool `json:"isDefault,omitempty"`
 
