@@ -133,7 +133,7 @@ echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
 
 beforeKindCreate=$(nowms)
-nodeVersion=v1.15.6
+nodeVersion=v1.18.2
 kind create cluster --name ${SEED_NAME} --image=kindest/node:$nodeVersion
 pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$nodeVersion\""
 
@@ -175,10 +175,12 @@ retry 5 curl -s --fail http://127.0.0.1:2047/metrics -o /dev/null
 echodate "Cluster exposer is running"
 
 echodate "Setting up iptables rules for to make nodeports available"
-iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.17.0.2
+KIND_NETWORK_IF=$(ip -br addr | grep -- 'br-' | cut -d' ' -f1)
+
+iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.18.0.2
 # By default all traffic gets dropped unless specified (tested with docker
 # server 18.09.1)
-iptables -t filter -I DOCKER-USER -d 172.17.0.2/32 ! -i docker0 -o docker0 -p tcp -m multiport --dports=30000:33000 -j ACCEPT
+iptables -t filter -I DOCKER-USER -d 172.18.0.2/32 ! -i $KIND_NETWORK_IF -o $KIND_NETWORK_IF -p tcp -m multiport --dports=30000:33000 -j ACCEPT
 
 # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
 echodate "Successfully set up iptables rules for nodeports"
