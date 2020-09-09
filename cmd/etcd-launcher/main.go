@@ -22,6 +22,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -49,6 +50,8 @@ const (
 	defaultClusterSize       = 3
 	defaultEtcdctlAPIVersion = "3"
 	etcdCommandPath          = "/usr/local/bin/etcd"
+	initialStateExisting     = "existing"
+	initialStateNew          = "new"
 )
 
 type config struct {
@@ -95,10 +98,10 @@ func main() {
 	}
 	initialMembers := initialMemberList(e.config.clusterSize, e.config.namespace)
 
-	e.config.initialState = "new"
+	e.config.initialState = initialStateNew
 	// check if the etcd cluster is initialized succcessfully.
 	if k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
-		e.config.initialState = "existing"
+		e.config.initialState = initialStateExisting
 	}
 
 	log.Info("initializing etcd..")
@@ -127,7 +130,12 @@ func main() {
 		log.Fatalf("failed to check cluster membership: %v", err)
 	}
 	if isMemeber {
-		for { // reconcile dead members
+		for {
+			// handle changes to peerURLs
+			if err := e.updatePeerURL(); err != nil {
+				log.Fatalf("failed to update peerURL: %v", err)
+			}
+			// reconcile dead members
 			containsUnwantedMembers, err := e.containsUnwantedMembers()
 			if err != nil {
 				log.Warnw("failed to list memebers ", zap.Error(err))
@@ -172,6 +180,35 @@ func main() {
 	if err = cmd.Wait(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (e *etcdCluster) updatePeerURL() error {
+	members, err := e.listMembers()
+	if err != nil {
+		return err
+	}
+	if len(members) == 0 {
+		return nil
+	}
+	client, err := e.getClusterClient()
+	if err != nil {
+		return err
+	}
+	defer client.Close()
+	for _, member := range members {
+		peerURL, err := url.Parse(member.PeerURLs[0])
+		if err != nil {
+			return err
+		}
+		if member.Name == e.config.podName && peerURL.Scheme == "http" {
+			newURL := strings.ReplaceAll(member.PeerURLs[0], "http:", "https:")
+			_, err := client.MemberUpdate(context.Background(), member.ID, []string{newURL})
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func initialMemberList(n int, namespace string) []string {
@@ -326,9 +363,12 @@ func (e *etcdCluster) isClusterMember(name string) (bool, error) {
 	if len(members) == 0 {
 		return false, nil
 	}
-
 	for _, member := range members {
-		if member.Name == name && member.PeerURLs[0] == fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace) {
+		url, err := url.Parse(member.PeerURLs[0])
+		if err != nil {
+			return false, err
+		}
+		if member.Name == name && url.Host == fmt.Sprintf("%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace) {
 			return true, nil
 		}
 	}
