@@ -39,19 +39,19 @@ export RELEASE_PLATFORMS="${RELEASE_PLATFORMS:-linux-amd64 darwin-amd64 windows-
 # first argument is the URL, the rest of the arguments is used as curl
 # arguments.
 function github_cli {
-  local url=${1}
+  local url="$1"
   curl \
     --retry 5 \
     --connect-timeout 10 \
-    -H "Authorization: token ${GITHUB_TOKEN}" \
-    "${@:2}" "${url}"
+    -H "$GITHUB_AUTH" \
+    "${@:2}" "$url"
 }
 
 # creates a new github release
 function create_release {
-  local tag="${1}"
-  local name="${2}"
-  local prerelease="${3}"
+  local tag="$1"
+  local name="$2"
+  local prerelease="$3"
   data=$(cat << EOF
 {
   "tag_name": "$tag",
@@ -61,33 +61,33 @@ function create_release {
 EOF
 )
   github_cli \
-    "https://api.github.com/repos/${repo}/releases" \
-    -f --data "${data}"
+    "https://api.github.com/repos/$GIT_REPO/releases" \
+    -f --data "$data"
 }
 
 # upload an archive from a file
 function upload_archive {
-  local file="${1}"
+  local file="$1"
   res=$(github_cli \
-    "https://uploads.github.com/repos/$repo/releases/$releaseID/assets?name=$(basename "${file}")" \
+    "https://uploads.github.com/repos/$GIT_REPO/releases/$releaseID/assets?name=$(basename "$file")" \
     -H "Accept: application/json" \
     -H 'Content-Type: application/gzip' \
-    -s --data-binary "@${file}")
-  if echo "${res}" | jq -e; then
-    # it the response contain errors
-    if echo "${res}" | jq -e '.errors[0]'; then
-      for err in $(echo "${res}" | jq -r '.errors[0].code'); do
+    -s --data-binary "@$file")
+  if echo "$res" | jq -e; then
+    # if the response contain errors
+    if echo "$res" | jq -e '.errors[0]'; then
+      for err in $(echo "$res" | jq -r '.errors[0].code'); do
         # if the error code is 'already_exists' do not fail to make this call
         # idempotent. To make it better we should alse check that the content
         # match.
-        [[ "${err}" == "already_exists" ]] && return 0
+        [[ "$err" == "already_exists" ]] && return 0
       done
-      err "Response contains unexpected errors: ${res}"
+      err "Response contains unexpected errors: $res"
       return 1
     fi
     return 0
   else
-    err "Response did not contain valid JSON: ${res}"
+    err "Response did not contain valid JSON: $res"
     return 1
   fi
 }
