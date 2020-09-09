@@ -281,8 +281,6 @@ func loadHelmValues(filename string) (*yamled.Document, error) {
 }
 
 func greeting() string {
-	rand.Seed(time.Now().UnixNano())
-
 	greetings := []string{
 		"Have a nice day!",
 		"Time for a break, maybe? ☺",
