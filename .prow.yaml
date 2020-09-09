@@ -281,7 +281,7 @@ presubmits:
       imagePullSecrets:
       - name: quay
 
-  - name: pre-kubermatic-github-release
+  - name: pre-kubermatic-simulate-github-release
     run_if_changed: "hack/ci/ci-github-release.sh"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
