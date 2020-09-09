@@ -17,4 +17,5 @@
 _artifacts/*
 _build
 _cache
+_dist
 download-gocache
