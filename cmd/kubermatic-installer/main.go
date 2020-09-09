@@ -17,7 +17,9 @@ limitations under the License.
 package main
 
 import (
+	"math/rand"
 	"os"
+	"time"
 
 	"github.com/urfave/cli"
 
@@ -40,6 +42,8 @@ var (
 )
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
+
 	logger := log.NewLogrus()
 	versions := common.NewDefaultVersions()
 
