@@ -100,9 +100,15 @@ type ConstraintList struct {
 
 ```
 
-### Possible extension - Offering the user example constraints based on cluster, project
+### Possible extensions or EE features
 
-As a possible future extension, constraint can be offered to users based on their access to other projects and clusters.
+1. Constraint can be offered to users based on their access to other projects and clusters. We could have a speacial endpoint:
+`/projects/{project_id}/clusters/{cluster_id}/constraints/suggestions` which could compare what constraints the cluster already has,
+and what are the ones used in other clusters and projects the user has access to and suggest the difference. This could
+help users with saving time on adding the same constraints for multiple clusters. 
+
+2. We could have more default constraintTemplates in the EE version. For example CTs that are useful for Kubermatic itself,
+like constraining the MachineDeployment flavors or OS. 
 
 ## Outstanding questions and possible issues
 
