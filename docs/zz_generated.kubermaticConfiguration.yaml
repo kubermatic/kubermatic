@@ -51,7 +51,7 @@ spec:
   # FeatureGates are used to optionally enable certain features.
   featureGates: {}
   # ImagePullSecret is used to authenticate against Docker registries.
-  imagePullSecret: ""
+  imagePullSecret: '{}'
   # Ingress contains settings for making the API and UI accessible remotely.
   ingress:
     # CertificateIssuer is the name of a cert-manager Issuer or ClusterIssuer (default)

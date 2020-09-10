@@ -322,6 +322,14 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 
 	copy := config.DeepCopy()
 
+	if copy.Spec.ImagePullSecret == "" {
+		// This ensures that the created dockercfg Secrets later will contain valid JSON
+		// and that we do not have to make a distinction between unset, empty and full
+		// Docker Pull Secret; instead we *always* create a dockercfg Secret and reference
+		// it everywhere.
+		copy.Spec.ImagePullSecret = "{}"
+	}
+
 	if copy.Spec.ExposeStrategy == "" {
 		copy.Spec.ExposeStrategy = DefaultExposeStrategy
 		logger.Debugw("Defaulting field", "field", "exposeStrategy", "value", copy.Spec.ExposeStrategy)

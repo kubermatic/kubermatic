@@ -65,6 +65,16 @@ const (
 const APIServerSecurePort = 6443
 
 const (
+	// DefaultKubermaticCEImage defines the default Docker repository containing the Kubermatic CE API image.
+	DefaultKubermaticCEImage = "quay.io/kubermatic/kubermatic"
+	// DefaultKubermaticCEImage defines the default Docker repository containing the Kubermatic EE API image.
+	DefaultKubermaticEEImage = "quay.io/kubermatic/kubermatic-ee"
+
+	// DefaultDashboardCEImage defines the default Docker repository containing the dashboard CE API image.
+	DefaultDashboardCEImage = "quay.io/kubermatic/dashboard"
+	// DefaultDashboardEEImage defines the default Docker repository containing the dashboard EE API image.
+	DefaultDashboardEEImage = "quay.io/kubermatic/dashboard-ee"
+
 	// ApiserverDeploymentName is the name of the apiserver deployment
 	ApiserverDeploymentName = "apiserver"
 	//ControllerManagerDeploymentName is the name for the controller manager deployment

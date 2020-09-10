@@ -17,10 +17,9 @@ kubermaticOperator:
     repository: "quay.io/kubermatic/kubermatic"
     tag: "__KUBERMATIC_TAG__"
 
-  imagePullSecret: |
-    {
-      "quay.io": {}
-    }
+  # For Enterprise Editions, configure the Docker Pull Secret as a JSON string here.
+  imagePullSecret: ''
+  # imagePullSecret: '{"quay.io":...}'
 
   debug: false
   resources:

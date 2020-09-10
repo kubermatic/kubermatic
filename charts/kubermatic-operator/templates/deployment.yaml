@@ -35,8 +35,10 @@ spec:
         fluentbit.io/parser: json_iso
     spec:
       serviceAccountName: kubermatic-operator
+      {{- if .Values.kubermaticOperator.imagePullSecret }}
       imagePullSecrets:
       - name: dockercfg
+      {{- end }}
       containers:
       - name: operator
         image: '{{ .Values.kubermaticOperator.image.repository }}:{{ .Values.kubermaticOperator.image.tag | default .Chart.AppVersion }}'

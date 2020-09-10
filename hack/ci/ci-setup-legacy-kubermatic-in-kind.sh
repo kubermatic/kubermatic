@@ -57,9 +57,6 @@ export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
 export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
 export KUBERMATIC_OIDC_PASSWORD="password"
 
-# Set docker config
-echo "$IMAGE_PULL_SECRET_DATA" | base64 -d > /config.json
-
 # Start Docker daemon
 echodate "Starting Docker"
 dockerd > /tmp/docker.log 2>&1 &
@@ -279,12 +276,14 @@ echodate "Deploying Kubermatic using Helm..."
 beforeDeployment=$(nowms)
 
 # we always override the quay repositories so we don't have to care if the
-# Helm chart is made for CE or EE
+# Helm chart is made for CE or EE;
+# We don't configure a real imagePullSecret (e30= = base64("{}")) because
+# all images are built locally and then loaded into the kind cluster already.
 retry 3 kubectl create ns kubermatic
 retry 3 helm3 --namespace kubermatic install --atomic --timeout 5m \
   --set=kubermatic.domain=ci.kubermatic.io \
   --set=kubermatic.isMaster=true \
-  --set=kubermatic.imagePullSecretData="$IMAGE_PULL_SECRET_DATA" \
+  --set-string=kubermatic.imagePullSecretData="e30=" \
   --set-string=kubermatic.controller.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
   --set-string=kubermatic.masterController.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
   --set-string=kubermatic.api.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \

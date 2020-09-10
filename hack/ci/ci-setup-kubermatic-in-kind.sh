@@ -54,9 +54,6 @@ export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
 export KUBERMATIC_OIDC_LOGIN="roxy@loodse.com"
 export KUBERMATIC_OIDC_PASSWORD="password"
 
-# Set docker config
-echo "$IMAGE_PULL_SECRET_DATA" | base64 -d > /config.json
-
 # Start Docker daemon
 echodate "Starting Docker"
 dockerd > /tmp/docker.log 2>&1 &
@@ -263,11 +260,14 @@ metadata:
   name: e2e
   namespace: kubermatic
 spec:
+  # the actual value is not important in e2e tests,
+  # as all images are already loaded into the kind cluster;
+  # but a non-empty value must be provided for testing the
+  # EE version of the operator
+  imagePullSecret: '{}'
   ingress:
     domain: ci.kubermatic.io
     disable: true
-  imagePullSecret: |
-$(echo "$IMAGE_PULL_SECRET_DATA" | base64 -d | sed 's/^/    /')
   userCluster:
     apiserverReplicas: 1
   api:

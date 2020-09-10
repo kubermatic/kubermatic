@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
@@ -29,6 +30,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
@@ -101,9 +103,17 @@ func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmVa
 	}
 
 	path = yamled.Path{"kubermaticOperator", "imagePullSecret"}
-	if value, _ := helmValues.GetString(path); value == "" {
+	if value, _ := helmValues.GetString(path); value == "" && config.Spec.ImagePullSecret != "" {
 		logger.Warnf("Helm values: %s is empty, setting to spec.imagePullSecret from KubermaticConfiguration", path.String())
 		helmValues.Set(path, config.Spec.ImagePullSecret)
+	}
+
+	repoPath := yamled.Path{"kubermaticOperator", "image", "repository"}
+	repo, _ := helmValues.GetString(repoPath)
+	pullSecret, _ := helmValues.GetString(path)
+
+	if repo == resources.DefaultKubermaticEEImage && strings.TrimSpace(pullSecret) == "" {
+		failures = append(failures, fmt.Errorf("Helm values: Need to configure a Docker pull secret in %s, but the configuration is empty", path.String()))
 	}
 
 	defaultedConfig, err := common.DefaultConfiguration(config, zap.NewNop().Sugar())
