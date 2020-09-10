@@ -45,6 +45,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -532,7 +533,10 @@ func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider, privile
 		nodeDeploymentNodesMetrics := make([]v1beta1.NodeMetrics, 0)
 		allNodeMetricsList := &v1beta1.NodeMetricsList{}
 		if err := dynamicCLient.List(ctx, allNodeMetricsList); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			// Happens during cluster creation when the CRD is not setup yet
+			if _, ok := err.(*meta.NoKindMatchError); !ok {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
 		}
 
 		for _, m := range allNodeMetricsList.Items {
