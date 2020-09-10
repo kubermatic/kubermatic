@@ -100,7 +100,8 @@ replace (
 	github.com/go-logr/zapr => github.com/go-logr/zapr v0.2.0
 	// pin to prevent panics in DeepEqual() when comparing envoy objects
 	github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
-	go.etcd.io/etcd/v3 => go.etcd.io/etcd v0.5.0-alpha.5.0.20200520232829-54ba9589114f
+	// pin to avoid tls import errors from the linter.
+	go.etcd.io/etcd/v3 => go.etcd.io/etcd v0.5.0-alpha.5.0.20191023171146-3cf2f69b5738
 	// prevent 2.0.0 dependency because it's a broken release
 	gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.1.0
 	// pin to prevent panics in DeepEqual() when comparing envoy objects
