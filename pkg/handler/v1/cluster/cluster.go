@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/klog"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
@@ -371,13 +372,19 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 
 		allNodeMetricsList := &v1beta1.NodeMetricsList{}
 		if err := dynamicClient.List(ctx, allNodeMetricsList); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			// Happens during cluster creation when the CRD is not setup yet
+			if _, ok := err.(*meta.NoKindMatchError); !ok {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
 		}
 
 		seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
 		podMetricsList := &v1beta1.PodMetricsList{}
 		if err := seedAdminClient.List(ctx, podMetricsList, &ctrlruntimeclient.ListOptions{Namespace: fmt.Sprintf("cluster-%s", cluster.Name)}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			// Happens during cluster creation when the CRD is not setup yet
+			if _, ok := err.(*meta.NoKindMatchError); !ok {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
 		}
 		return handlercommon.ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
 	}
