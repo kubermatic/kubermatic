@@ -64,7 +64,6 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/urfave/cli v1.22.4
 	github.com/vmware/govmomi v0.22.2
-	go.etcd.io/etcd v0.5.0-alpha.5.0.20200819165624-17cef6e3e9d5
 	go.etcd.io/etcd/v3 v3.3.0-rc.0.0.20200728214110-6c81b20ec8de
 	go.uber.org/zap v1.15.0
 	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
@@ -100,8 +99,6 @@ replace (
 	github.com/go-logr/zapr => github.com/go-logr/zapr v0.2.0
 	// pin to prevent panics in DeepEqual() when comparing envoy objects
 	github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
-	// pin to avoid tls import errors from the linter.
-	go.etcd.io/etcd/v3 => go.etcd.io/etcd v0.5.0-alpha.5.0.20191023171146-3cf2f69b5738
 	// prevent 2.0.0 dependency because it's a broken release
 	gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.1.0
 	// pin to prevent panics in DeepEqual() when comparing envoy objects
