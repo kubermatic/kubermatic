@@ -136,11 +136,21 @@ func (p *FakeExternalClusterProvider) IsMetricServerAvailable(cluster *kubermati
 }
 
 func (p *FakeExternalClusterProvider) GetNode(cluster *kubermaticapiv1.ExternalCluster, nodeName string) (*corev1.Node, error) {
-	return GenDefaultExternalClusterNode()
+	node := &corev1.Node{}
+	if err := p.FakeClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: nodeName}, node); err != nil {
+		return nil, err
+	}
+
+	return node, nil
 }
 
 func (p *FakeExternalClusterProvider) ListNodes(cluster *kubermaticapiv1.ExternalCluster) (*corev1.NodeList, error) {
-	return GenDefaultExternalClusterNodes()
+	nodes := &corev1.NodeList{}
+	if err := p.FakeClient.List(context.Background(), nodes); err != nil {
+		return nil, err
+	}
+
+	return nodes, nil
 }
 
 func (p *FakeExternalClusterProvider) Update(userInfo *provider.UserInfo, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
