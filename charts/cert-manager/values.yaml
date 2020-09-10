@@ -40,7 +40,6 @@ certManager:
     nodeSelector: {}
     tolerations: []
 
-
     # Optional additional arguments. Use at your own risk.
     extraArgs: []
     # Must be a list of `--`-denoted args, e.G.:
