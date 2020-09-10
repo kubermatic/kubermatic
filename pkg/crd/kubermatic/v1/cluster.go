@@ -52,6 +52,7 @@ const (
 	UpdatedByVPALabelKey = "updated-by-vpa"
 
 	DefaultEtcdClusterSize = 3
+	MaxEtcdClusterSize     = 9
 )
 
 // ProtectedClusterLabels is a set of labels that must not be set by users on clusters,

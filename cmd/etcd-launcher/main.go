@@ -22,6 +22,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"os/exec"
 	"path"
@@ -31,10 +32,12 @@ import (
 	"go.etcd.io/etcd/v3/clientv3"
 	"go.etcd.io/etcd/v3/etcdserver/api/v3rpc/rpctypes"
 	"go.etcd.io/etcd/v3/etcdserver/etcdserverpb"
+	"go.etcd.io/etcd/v3/pkg/transport"
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -47,6 +50,8 @@ const (
 	defaultClusterSize       = 3
 	defaultEtcdctlAPIVersion = "3"
 	etcdCommandPath          = "/usr/local/bin/etcd"
+	initialStateExisting     = "existing"
+	initialStateNew          = "new"
 )
 
 type config struct {
@@ -62,9 +67,7 @@ type config struct {
 }
 
 type etcdCluster struct {
-	config      *config
-	client      *clientv3.Client
-	localClient *clientv3.Client
+	config *config
 }
 
 func main() {
@@ -95,10 +98,10 @@ func main() {
 	}
 	initialMembers := initialMemberList(e.config.clusterSize, e.config.namespace)
 
-	e.config.initialState = "new"
+	e.config.initialState = initialStateNew
 	// check if the etcd cluster is initialized succcessfully.
 	if k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
-		e.config.initialState = "existing"
+		e.config.initialState = initialStateExisting
 	}
 
 	log.Info("initializing etcd..")
@@ -118,7 +121,7 @@ func main() {
 		log.Fatalf("failed to start etcd: %v", err)
 	}
 
-	if err = wait.Poll(1*time.Second, 30*time.Second, e.isHealthy); err != nil {
+	if err = wait.Poll(1*time.Second, 30*time.Second, e.isClusterHealthy); err != nil {
 		log.Fatalf("manager thread failed to connect to cluster: %v", err)
 	}
 
@@ -126,9 +129,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to check cluster membership: %v", err)
 	}
-
 	if isMemeber {
-		for { // reconcile dead members
+		for {
+			// handle changes to peerURLs
+			if err := e.updatePeerURL(); err != nil {
+				log.Fatalf("failed to update peerURL: %v", err)
+			}
+			// reconcile dead members
 			containsUnwantedMembers, err := e.containsUnwantedMembers()
 			if err != nil {
 				log.Warnw("failed to list memebers ", zap.Error(err))
@@ -158,8 +165,13 @@ func main() {
 		log.Info("removing possibly stale data dir")
 		_ = os.RemoveAll(path.Join(e.config.dataDir, "member"))
 		// join the cluster
+		client, err := e.getClusterClient()
+		if err != nil {
+			log.Fatalf("can't find cluster client: %v", err)
+		}
+		defer client.Close()
 
-		if _, err := e.client.MemberAdd(context.Background(), []string{fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace)}); err != nil {
+		if _, err := client.MemberAdd(context.Background(), []string{fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace)}); err != nil {
 			log.Fatalf("failed to join cluster: %v", err)
 		}
 		log.Info("joined etcd cluster succcessfully.")
@@ -170,10 +182,37 @@ func main() {
 	}
 }
 
+func (e *etcdCluster) updatePeerURL() error {
+	members, err := e.listMembers()
+	if err != nil {
+		return err
+	}
+	for _, member := range members {
+		peerURL, err := url.Parse(member.PeerURLs[0])
+		if err != nil {
+			return err
+		}
+		if member.Name == e.config.podName && peerURL.Scheme == "http" {
+			client, err := e.getClusterClient()
+			if err != nil {
+				return err
+			}
+			defer client.Close()
+			peerURL.Scheme = "https"
+			_, err = client.MemberUpdate(context.Background(), member.ID, []string{peerURL.String()})
+			if err != nil {
+				return err
+			}
+			break
+		}
+	}
+	return nil
+}
+
 func initialMemberList(n int, namespace string) []string {
 	members := []string{}
 	for i := 0; i < n; i++ {
-		members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
+		members = append(members, fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
 	}
 	return members
 }
@@ -181,13 +220,13 @@ func initialMemberList(n int, namespace string) []string {
 func clientEndpoints(n int, namespace string) []string {
 	endpoints := []string{}
 	for i := 0; i < n; i++ {
-		endpoints = append(endpoints, fmt.Sprintf("etcd-%d.etcd.%s.svc.cluster.local:2380", i, namespace))
+		endpoints = append(endpoints, fmt.Sprintf("https://etcd-%d.etcd.%s.svc.cluster.local:2379", i, namespace))
 	}
 	return endpoints
 }
 
 func (e *etcdCluster) endpoint() string {
-	return fmt.Sprintf("%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace)
+	return "https://127.0.0.1:2379"
 }
 
 func (e *etcdCluster) parseConfigFlags() error {
@@ -242,12 +281,16 @@ func etcdCmd(config *config) []string {
 		fmt.Sprintf("--advertise-client-urls=https://%s.etcd.%s.svc.cluster.local:2379,https://%s:2379", config.podName, config.namespace, config.podIP),
 		fmt.Sprintf("--listen-client-urls=https://%s:2379,https://127.0.0.1:2379", config.podIP),
 		fmt.Sprintf("--listen-metrics-urls=http://%s:2378,http://127.0.0.1:2378", config.podIP),
-		fmt.Sprintf("--listen-peer-urls=http://%s:2380", config.podIP),
-		fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380", config.podName, config.namespace),
-		"--trusted-ca-file=/etc/etcd/pki/ca/ca.crt",
+		fmt.Sprintf("--listen-peer-urls=https://%s:2380", config.podIP),
+		fmt.Sprintf("--initial-advertise-peer-urls=https://%s.etcd.%s.svc.cluster.local:2380", config.podName, config.namespace),
 		"--client-cert-auth",
-		"--cert-file=/etc/etcd/pki/tls/etcd-tls.crt",
-		"--key-file=/etc/etcd/pki/tls/etcd-tls.key",
+		fmt.Sprintf("--trusted-ca-file=%s", resources.EtcdTrustedCAFile),
+		fmt.Sprintf("--cert-file=%s", resources.EtcdCertFile),
+		fmt.Sprintf("--key-file=%s", resources.EtcdKetFile),
+		"--peer-client-cert-auth",
+		fmt.Sprintf("--peer-trusted-ca-file=%s", resources.EtcdTrustedCAFile),
+		fmt.Sprintf("--peer-cert-file=%s", resources.EtcdPeerCertFile),
+		fmt.Sprintf("--peer-key-file=%s", resources.EtcdPeerKeyFile),
 		"--auto-compaction-retention=8",
 	}
 
@@ -260,31 +303,32 @@ func etcdCmd(config *config) []string {
 	return cmd
 }
 
-func (e *etcdCluster) getClient() error {
-	if e.client != nil {
-		return nil
-	}
+func (e *etcdCluster) getClusterClient() (*clientv3.Client, error) {
 	endpoints := clientEndpoints(e.config.clusterSize, e.config.namespace)
-	var err error
-	e.client, err = e.getClientWithEndpoints(endpoints)
-	return err
+	return e.getClientWithEndpoints(endpoints)
 }
 
-func (e *etcdCluster) getLocalClient() error {
-	if e.localClient != nil {
-		return nil
-	}
-	var err error
-	e.localClient, err = e.getClientWithEndpoints([]string{e.endpoint()})
-	return err
+func (e *etcdCluster) getLocalClient() (*clientv3.Client, error) {
+	return e.getClientWithEndpoints([]string{e.endpoint()})
 }
 
 func (e *etcdCluster) getClientWithEndpoints(eps []string) (*clientv3.Client, error) {
 	var err error
+	tlsInfo := transport.TLSInfo{
+		CertFile:       resources.EtcdClientCertFile,
+		KeyFile:        resources.EtcdClientKeyFile,
+		TrustedCAFile:  resources.EtcdTrustedCAFile,
+		ClientCertAuth: true,
+	}
+	tlsConfig, err := tlsInfo.ClientConfig()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate client TLS config: %v", err)
+	}
 	for i := 0; i < 5; i++ {
 		cli, err := clientv3.New(clientv3.Config{
 			Endpoints:   eps,
 			DialTimeout: 2 * time.Second,
+			TLS:         tlsConfig,
 		})
 		if err == nil && cli != nil {
 			return cli, nil
@@ -296,10 +340,13 @@ func (e *etcdCluster) getClientWithEndpoints(eps []string) (*clientv3.Client, er
 }
 
 func (e *etcdCluster) listMembers() ([]*etcdserverpb.Member, error) {
-	if e.client == nil {
-		return nil, fmt.Errorf("can't find cluster client")
+	client, err := e.getClientWithEndpoints(clientEndpoints(e.config.clusterSize, e.config.namespace))
+	if err != nil {
+		return nil, fmt.Errorf("can't find cluster client: %v", err)
 	}
-	resp, err := e.client.MemberList(context.Background())
+	defer client.Close()
+
+	resp, err := client.MemberList(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -314,9 +361,12 @@ func (e *etcdCluster) isClusterMember(name string) (bool, error) {
 	if len(members) == 0 {
 		return false, nil
 	}
-
 	for _, member := range members {
-		if member.Name == name || member.PeerURLs[0] == fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace) {
+		url, err := url.Parse(member.PeerURLs[0])
+		if err != nil {
+			return false, err
+		}
+		if member.Name == name && url.Host == fmt.Sprintf("%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace) {
 			return true, nil
 		}
 	}
@@ -341,43 +391,35 @@ membersLoop:
 	return false, nil
 }
 
-func (e *etcdCluster) isHealthy() (bool, error) {
-	if err := e.getClient(); err != nil {
-		return false, err
-	}
-	// just get a key from etcd, this is how `etcdctl endpoint health` works!
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	_, err := e.client.Get(ctx, "healthy")
-	defer cancel()
-	if err != nil && err != rpctypes.ErrPermissionDenied {
-		return false, nil
-	}
-	return true, nil
+func (e *etcdCluster) isClusterHealthy() (bool, error) {
+	return e.isHealthyWithEndpoints(clientEndpoints(e.config.clusterSize, e.config.namespace))
 }
 
-func (e *etcdCluster) isEndpointHealthy(endpoint string) (bool, error) {
-	client, err := e.getClientWithEndpoints([]string{endpoint})
+func (e *etcdCluster) isHealthyWithEndpoints(endpoints []string) (bool, error) {
+	client, err := e.getClientWithEndpoints(endpoints)
 	if err != nil {
 		return false, err
 	}
+	defer client.Close()
 	// just get a key from etcd, this is how `etcdctl endpoint health` works!
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	_, err = client.Get(ctx, "healthy")
 	defer cancel()
 	if err != nil && err != rpctypes.ErrPermissionDenied {
-		return false, nil
+		return false, err
 	}
 	return true, nil
-
 }
 
 func (e *etcdCluster) isLeader() (bool, error) {
-	var err error
-	if err = e.getLocalClient(); err != nil {
+	localClient, err := e.getLocalClient()
+	if err != nil {
 		return false, err
 	}
+	defer localClient.Close()
+
 	for i := 0; i < 10; i++ {
-		resp, err := e.localClient.Status(context.Background(), e.endpoint())
+		resp, err := localClient.Status(context.Background(), e.endpoint())
 		if err != nil || resp.Leader == 0 {
 			time.Sleep(2 * time.Second)
 			continue
@@ -394,16 +436,24 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger) error {
 	if err != nil {
 		return err
 	}
+
+	client, err := e.getClusterClient()
+	if err != nil {
+		return fmt.Errorf("can't find cluster client: %v", err)
+	}
+	defer client.Close()
+
 	for _, member := range members {
 		if member.Name == e.config.podName {
 			continue
 		}
-
-		if err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
-			return e.isEndpointHealthy(member.PeerURLs[0])
+		if err = wait.Poll(1*time.Second, 60*time.Second, func() (bool, error) {
+			// we use the cluster FQDN endpoint url here. Using the IP endpoint will
+			// fail because the certificates don't include Pod IP addresses.
+			return e.isHealthyWithEndpoints(member.ClientURLs[len(member.ClientURLs)-1:])
 		}); err != nil {
 			log.Infow("member is not responding, removing from cluster", "member-name", member.Name)
-			_, err = e.client.MemberRemove(context.Background(), member.ID)
+			_, err = client.MemberRemove(context.Background(), member.ID)
 			return err
 		}
 	}
