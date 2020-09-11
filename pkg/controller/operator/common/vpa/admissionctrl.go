@@ -137,6 +137,7 @@ func AdmissionControllerServiceCreator() reconciling.NamedServiceCreatorGetter {
 			s.Spec.Ports = []corev1.ServicePort{
 				{
 					Port:       443,
+					Protocol:   corev1.ProtocolTCP,
 					TargetPort: intstr.FromInt(8000),
 				},
 			}
