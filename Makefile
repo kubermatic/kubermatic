@@ -12,30 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-export CGO_ENABLED?=0
-export GOFLAGS?=-mod=readonly -trimpath
-export GO111MODULE=on
-export KUBERMATIC_EDITION?=ce
-DOCKER_REPO?=quay.io/kubermatic
-REPO=$(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
-CMD=$(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
-GOBUILDFLAGS?=-v
-GOOS?=$(shell go env GOOS)
-GITTAG=$(shell git describe --tags --always)
-TAGS?=$(GITTAG)
-DOCKERTAGS=$(TAGS) latestbuild
+export CGO_ENABLED ?= 0
+export GOFLAGS ?= -mod=readonly -trimpath
+export GO111MODULE = on
+export KUBERMATIC_EDITION ?= ce
+DOCKER_REPO ?= quay.io/kubermatic
+REPO = $(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && echo "-$(KUBERMATIC_EDITION)" )
+CMD = $(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
+GOBUILDFLAGS ?= -v
+GOOS ?= $(shell go env GOOS)
+GITTAG = $(shell git describe --tags --always)
+TAGS ?= $(GITTAG)
+DOCKERTAGS = $(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
-KUBERMATICCOMMIT?=$(shell git log -1 --format=%H)
-KUBERMATICDOCKERTAG?=$(KUBERMATICCOMMIT)
-UIDOCKERTAG?=NA
+KUBERMATICCOMMIT ?= $(shell git log -1 --format=%H)
+KUBERMATICDOCKERTAG ?= $(KUBERMATICCOMMIT)
+UIDOCKERTAG ?= NA
 LDFLAGS += -extldflags '-static' \
   -X k8c.io/kubermatic/v2/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT) \
   -X k8c.io/kubermatic/v2/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
   -X k8c.io/kubermatic/v2/pkg/controller/operator/common.KUBERMATICDOCKERTAG=$(KUBERMATICDOCKERTAG) \
   -X k8c.io/kubermatic/v2/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
-BUILD_DEST?=_build
-GOTOOLFLAGS?=$(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
-GOBUILDIMAGE?=golang:1.15.1
+BUILD_DEST ?= _build
+GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
+GOBUILDIMAGE ?= golang:1.15.1
 DOCKER_BIN := $(shell which docker)
 
 default: all
