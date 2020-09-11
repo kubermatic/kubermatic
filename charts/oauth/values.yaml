@@ -17,6 +17,16 @@ dex:
     repository: "quay.io/dexidp/dex"
     tag: "v2.24.0"
   replicas: 2
+  # this options allows setting custom envvars in the dex container
+  # this list is directly handed to the container spec
+  env: []
+  #  - name: HTTP_PROXY
+  #    value: "http://USER:PASSWORD@IPADDR:PORT"
+  #  - name: HTTPS_PROXY
+  #    valueFrom:
+  #     secretKeyRef:
+  #       key: HTTPS_PROXY
+  #       name: http-proxy-secret
   ingress:
     # this option is required
     host: ""

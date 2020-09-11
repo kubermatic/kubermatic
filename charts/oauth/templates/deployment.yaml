@@ -39,6 +39,9 @@ spec:
       - image: {{ .Values.dex.image.repository }}:{{ .Values.dex.image.tag }}
         name: dex
         command: ["/usr/local/bin/dex", "serve", "/etc/dex/cfg/config.yaml"]
+        {{- if .Values.dex.env }}
+        env: {{ toYaml .Values.dex.env | trim | nindent 8 }}
+        {{- end }}
         ports:
         - name: https
           containerPort: 5556
