@@ -47,6 +47,7 @@ echodate "Successfully got secrets for dev from Vault"
 
 # deploy Loki as beta
 export DEPLOY_LOKI=true
+export DEPLOY_NODEPORT_PROXY=false
 
 echodate "Deploying ${DEPLOY_STACK} stack to dev"
 TILLER_NAMESPACE=kubermatic-installer ./hack/deploy.sh master ${VALUES_FILE}

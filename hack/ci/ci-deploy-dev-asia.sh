@@ -21,6 +21,7 @@ source ./hack/lib.sh
 
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
+export DEPLOY_NODEPORT_PROXY=false
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
   ./hack/ci/ci-push-images.sh
