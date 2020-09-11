@@ -36,6 +36,10 @@ import (
 
 func TestListNodesEndpoint(t *testing.T) {
 	t.Parallel()
+	defaultNodes, err := test.GenDefaultExternalClusterNodes()
+	if err != nil {
+		t.Fatal(err)
+	}
 	testcases := []struct {
 		Name                   string
 		ExpectedResponse       string
@@ -43,16 +47,19 @@ func TestListNodesEndpoint(t *testing.T) {
 		ProjectToSync          string
 		ClusterToSync          string
 		ExistingKubermaticObjs []runtime.Object
+		ExistingKubeObjs       []runtime.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		{
-			Name:                   "scenario 1: get external cluster nodes",
-			ExpectedResponse:       `[{"id":"node1","name":"node1","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":"v1.15.12-gke.2"}},"status":{"machineName":"","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"290","memory":"687202304"},"nodeInfo":{"kernelVersion":"4.14","containerRuntime":"","containerRuntimeVersion":"containerd://1.2.8","kubeletVersion":"v1.15.12-gke.2","operatingSystem":"linux","architecture":"amd64"}}},{"id":"node2","name":"node2","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":"v1.15.12-gke.2"}},"status":{"machineName":"","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"290","memory":"687202304"},"nodeInfo":{"kernelVersion":"4.14","containerRuntime":"","containerRuntimeVersion":"containerd://1.2.8","kubeletVersion":"v1.15.12-gke.2","operatingSystem":"linux","architecture":"amd64"}}}]`,
-			HTTPStatus:             http.StatusOK,
-			ProjectToSync:          test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
-			ClusterToSync:          "clusterAbcID",
-			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			Name:             "scenario 1: get external cluster nodes",
+			ExpectedResponse: `[{"id":"node1","name":"node1","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":"v1.15.12-gke.2"}},"status":{"machineName":"","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"290","memory":"687202304"},"nodeInfo":{"kernelVersion":"4.14","containerRuntime":"","containerRuntimeVersion":"containerd://1.2.8","kubeletVersion":"v1.15.12-gke.2","operatingSystem":"linux","architecture":"amd64"}}},{"id":"node2","name":"node2","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"cloud":{},"operatingSystem":{},"versions":{"kubelet":"v1.15.12-gke.2"}},"status":{"machineName":"","capacity":{"cpu":"0","memory":"0"},"allocatable":{"cpu":"290","memory":"687202304"},"nodeInfo":{"kernelVersion":"4.14","containerRuntime":"","containerRuntimeVersion":"containerd://1.2.8","kubeletVersion":"v1.15.12-gke.2","operatingSystem":"linux","architecture":"amd64"}}}]`,
+			HTTPStatus:       http.StatusOK,
+			ProjectToSync:    test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
+			ExistingKubeObjs: []runtime.Object{defaultNodes},
+			ClusterToSync:    "clusterAbcID",
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
 			Name:             "scenario 2: the admin John can get Bob's cluster nodes",
@@ -64,8 +71,9 @@ func TestListNodesEndpoint(t *testing.T) {
 				genUser("John", "john@acme.com", true),
 				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
 			),
-			ClusterToSync:   "clusterAbcID",
-			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			ExistingKubeObjs: []runtime.Object{defaultNodes},
+			ClusterToSync:    "clusterAbcID",
+			ExistingAPIUser:  test.GenAPIUser("John", "john@acme.com"),
 		},
 		{
 			Name:             "scenario 3: the user John can not get Bob's cluster nodes",
@@ -90,7 +98,7 @@ func TestListNodesEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, tc.ExistingKubeObjs, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
