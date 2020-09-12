@@ -86,6 +86,10 @@ var (
 		Value:  "helm",
 		EnvVar: "HELM_BINARY",
 	}
+	deployStorageClassFlag = cli.StringFlag{
+		Name:  "storageclass",
+		Usage: fmt.Sprintf("Type of StorageClass to create (one of %v)", kubermatic.SupportedStorageClassProviders().List()),
+	}
 )
 
 func DeployCommand(logger *logrus.Logger) cli.Command {
@@ -101,6 +105,7 @@ func DeployCommand(logger *logrus.Logger) cli.Command {
 			deployKubeContextFlag,
 			deployHelmTimeoutFlag,
 			deployHelmBinaryFlag,
+			deployStorageClassFlag,
 		},
 	}
 }
@@ -144,6 +149,12 @@ func DeployAction(logger *logrus.Logger) cli.ActionFunc {
 		}
 
 		logger.WithFields(fields).Info("🛫 Initializing installer…")
+
+		supportedProviders := kubermatic.SupportedStorageClassProviders()
+		chosenProvider := ctx.String(deployStorageClassFlag.Name)
+		if chosenProvider != "" && !supportedProviders.Has(chosenProvider) {
+			return fmt.Errorf("invalid storage class provider %q given (--%s)", chosenProvider, deployStorageClassFlag.Name)
+		}
 
 		// load config files
 		if len(kubeconfig) == 0 {
@@ -226,6 +237,7 @@ func DeployAction(logger *logrus.Logger) cli.ActionFunc {
 			RawKubermaticConfiguration: rawKubermaticConfig,
 			ForceHelmReleaseUpgrade:    ctx.Bool(deployForceFlag.Name),
 			ChartsDirectory:            ctx.GlobalString(chartsDirectoryFlag.Name),
+			StorageClassProvider:       chosenProvider,
 		}
 
 		if err := kubermatic.Deploy(appContext, subLogger, kubeClient, helmClient, opt); err != nil {
