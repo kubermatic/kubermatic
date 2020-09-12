@@ -182,13 +182,6 @@ iptables -t filter -I DOCKER-USER -d 172.18.0.2/32 ! -i $KIND_NETWORK_IF -o $KIN
 # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
 echodate "Successfully set up iptables rules for nodeports"
 
-echodate "Creating StorageClass kubermatic-fast "
-TEST_NAME="Create StorageClass kubermatic-fast"
-retry 5 kubectl get storageclasses.storage.k8s.io standard -o json \
-  | jq 'del(.metadata)|.metadata.name = "kubermatic-fast"'\
-  | kubectl apply -f -
-echodate "Successfully created StorageClass"
-
 # Build binaries and load the Docker images into the kind cluster
 echodate "Building binaries for $KUBERMATIC_VERSION"
 TEST_NAME="Build Kubermatic binaries"
@@ -306,6 +299,7 @@ cat hack/ci/testdata/oauth_values.yaml >> $HELM_VALUES_FILE
 
 # install dependencies and Kubermatic Operator into cluster
 ./_build/kubermatic-installer deploy \
+  --storageclass copy-default \
   --config "$KUBERMATIC_CONFIG" \
   --helm-values "$HELM_VALUES_FILE" \
   --helm-binary "helm3"

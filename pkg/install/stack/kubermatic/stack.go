@@ -61,6 +61,7 @@ const (
 )
 
 type Options struct {
+	StorageClassProvider       string
 	HelmValues                 *yamled.Document
 	KubermaticConfiguration    *operatorv1alpha1.KubermaticConfiguration
 	RawKubermaticConfiguration *unstructured.Unstructured
@@ -69,7 +70,7 @@ type Options struct {
 }
 
 func Deploy(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt Options) error {
-	if err := deployStorageClass(ctx, logger, kubeClient); err != nil {
+	if err := deployStorageClass(ctx, logger, kubeClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy StorageClass: %v", err)
 	}
 
@@ -98,8 +99,9 @@ func Deploy(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimecli
 	return nil
 }
 
-func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client) error {
+func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt Options) error {
 	logger.Infof("💾 Deploying %s StorageClass…", StorageClassName)
+	sublogger := log.Prefix(logger, "   ")
 
 	cls := storagev1.StorageClass{}
 	key := types.NamespacedName{Name: StorageClassName}
@@ -116,13 +118,23 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 		return fmt.Errorf("failed to check for StorageClass %s: %v", StorageClassName, err)
 	}
 
-	sc := storageClassForProvider(StorageClassName, "gke")
-	if sc == nil {
-		return fmt.Errorf("cannot automatically create StorageClass %s for this cloud provider, please create it manually", StorageClassName)
+	if opt.StorageClassProvider == "" {
+		sublogger.Warnf("The %s StorageClass does not exist yet. Depending on your environment,", StorageClassName)
+		sublogger.Warn("the installer can auto-create a class for you, see the --storageclass CLI flag.")
+		sublogger.Warn("Alternatively, please manually create a StorageClass and then re-run the installer to continue.")
+
+		return fmt.Errorf("no %s StorageClass found", StorageClassName)
 	}
 
-	if err := kubeClient.Create(ctx, sc); err != nil {
-		return fmt.Errorf("failed to create StorageClass %s: %v", StorageClassName, err)
+	factory := storageClassFactories[opt.StorageClassProvider]
+
+	sc, err := factory(ctx, sublogger, kubeClient, StorageClassName)
+	if err != nil {
+		return fmt.Errorf("failed to define StorageClass: %v", err)
+	}
+
+	if err := kubeClient.Create(ctx, &sc); err != nil {
+		return fmt.Errorf("failed to create StorageClass: %v", err)
 	}
 
 	logger.Info("✅ Success.")
