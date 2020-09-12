@@ -103,7 +103,7 @@ function tar_to_zip() {
   rm -- "$archive"
 
   archive="$(echo "$archive" | sed 's/.tar.gz/.zip/')"
-  (cd "$tmpdir"; zip -r "$archive" .)
+  (cd "$tmpdir"; zip -rq "$archive" .)
   rm -rf -- "$tmpdir"
 
   echo "$archive"
