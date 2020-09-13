@@ -140,7 +140,7 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 							Region: "Amsterdam",
 						},
 					},
-					Node: kubermaticv1.NodeSettings{
+					Node: &kubermaticv1.NodeSettings{
 						PauseImage: "pause",
 					},
 				},

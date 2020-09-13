@@ -17,13 +17,10 @@ limitations under the License.
 package main
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math/rand"
-	"os"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -37,13 +34,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
-	"k8c.io/kubermatic/v2/pkg/util/yamled"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/apimachinery/pkg/util/yaml"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -236,48 +230,6 @@ func DeployAction(logger *logrus.Logger) cli.ActionFunc {
 
 		return nil
 	}))
-}
-
-func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, *unstructured.Unstructured, error) {
-	if filename == "" {
-		return nil, nil, errors.New("no file specified via --config flag")
-	}
-
-	content, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	raw := &unstructured.Unstructured{}
-	if err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(content), 1024).Decode(raw); err != nil {
-		return nil, nil, fmt.Errorf("failed to decode %s: %v", filename, err)
-	}
-
-	config := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(content), 1024).Decode(config); err != nil {
-		return nil, raw, fmt.Errorf("failed to decode %s: %v", filename, err)
-	}
-
-	return config, raw, nil
-}
-
-func loadHelmValues(filename string) (*yamled.Document, error) {
-	if filename == "" {
-		return nil, errors.New("no file specified via --helm-values flag")
-	}
-
-	f, err := os.Open(filename)
-	if err != nil {
-		return nil, err
-	}
-	defer f.Close()
-
-	values, err := yamled.Load(f)
-	if err != nil {
-		return nil, fmt.Errorf("failed to decode %s: %v", filename, err)
-	}
-
-	return values, nil
 }
 
 func greeting() string {

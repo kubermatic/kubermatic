@@ -249,7 +249,7 @@ func convertKubermaticConfiguration(values *helmValues, targetNamespace string) 
 	return &config, nil
 }
 
-type datacentersMeta struct {
+type DatacentersMeta struct {
 	Datacenters map[string]provider.DatacenterMeta `json:"datacenters"`
 }
 
@@ -263,19 +263,11 @@ func convertSeeds(values *helmValues, targetNamespace string) ([]runtime.Object,
 		return nil, fmt.Errorf("datacenters are not valid base64: %v", err)
 	}
 
-	dcMetas := datacentersMeta{}
+	dcMetas := DatacentersMeta{}
 	if err := yaml.UnmarshalStrict(datacenters, &dcMetas); err != nil {
 		return nil, fmt.Errorf("failed to parse datacenters.yaml: %v", err)
 	}
 
-	seeds, err := provider.DatacenterMetasToSeeds(dcMetas.Datacenters)
-	if err != nil {
-		return nil, fmt.Errorf("failed to convert datacenters.yaml: %v", err)
-	}
-
-	result := []runtime.Object{}
-
-	// if there is a kubeconfig, try to generate Secrets per seed
 	var kubeconfig *clientcmdapi.Config
 	if values.Kubermatic.Kubeconfig != "" {
 		kubeconfigBytes, err := base64.StdEncoding.DecodeString(values.Kubermatic.Kubeconfig)
@@ -289,23 +281,34 @@ func convertSeeds(values *helmValues, targetNamespace string) ([]runtime.Object,
 		}
 	}
 
+	return ConvertDatacenters(dcMetas.Datacenters, kubeconfig, targetNamespace)
+}
+
+func ConvertDatacenters(datacenterMeta map[string]provider.DatacenterMeta, globalKubeconfig *clientcmdapi.Config, targetNamespace string) ([]runtime.Object, error) {
+	result := []runtime.Object{}
+
+	seeds, err := provider.DatacenterMetasToSeeds(datacenterMeta)
+	if err != nil {
+		return result, fmt.Errorf("failed to convert datacenters.yaml: %v", err)
+	}
+
 	for _, seed := range seeds {
 		seed.APIVersion = kubermaticv1.SchemeGroupVersion.String()
 		seed.Kind = "Seed"
 		seed.Namespace = targetNamespace
 
 		var seedKubeconfig *clientcmdapi.Config
-		if kubeconfig != nil {
-			seedKubeconfig, err = util.SingleSeedKubeconfig(kubeconfig, seed.Name)
+		if globalKubeconfig != nil {
+			seedKubeconfig, err = util.SingleSeedKubeconfig(globalKubeconfig, seed.Name)
 			if err != nil {
-				return nil, fmt.Errorf("kubeconfig does not contain a valid context for seed %s: %v", seed.Name, err)
+				return result, fmt.Errorf("kubeconfig does not contain a valid context for seed %s: %v", seed.Name, err)
 			}
 
 			secretName := fmt.Sprintf("kubeconfig-%s", seed.Name)
 
 			secret, fieldPath, err := util.CreateKubeconfigSecret(seedKubeconfig, secretName, targetNamespace)
 			if err != nil {
-				return nil, fmt.Errorf("failed to create kubeconfig Secret for seed %s: %v", seed.Name, err)
+				return result, fmt.Errorf("failed to create kubeconfig Secret for seed %s: %v", seed.Name, err)
 			}
 			secret.APIVersion = "v1"
 			secret.Kind = "Secret"

@@ -642,12 +642,18 @@ func ConvertInternalDCToExternalSpec(dc *kubermaticv1.Datacenter, seedName strin
 	if err != nil {
 		return nil, err
 	}
+
+	nodeSettings := kubermaticv1.NodeSettings{}
+	if dc.Node != nil {
+		nodeSettings = *dc.Node
+	}
+
 	return &apiv1.DatacenterSpec{
 		Seed:                     seedName,
 		Location:                 dc.Location,
 		Country:                  dc.Country,
 		Provider:                 p,
-		Node:                     dc.Node,
+		Node:                     nodeSettings,
 		Digitalocean:             dc.Spec.Digitalocean,
 		AWS:                      dc.Spec.AWS,
 		BringYourOwn:             dc.Spec.BringYourOwn,
@@ -671,7 +677,7 @@ func convertExternalDCToInternal(datacenter *apiv1.DatacenterSpec) kubermaticv1.
 	return kubermaticv1.Datacenter{
 		Country:  datacenter.Country,
 		Location: datacenter.Location,
-		Node:     datacenter.Node,
+		Node:     &datacenter.Node,
 		Spec: kubermaticv1.DatacenterSpec{
 			Digitalocean:             datacenter.Digitalocean,
 			BringYourOwn:             datacenter.BringYourOwn,
