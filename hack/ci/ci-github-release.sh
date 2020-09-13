@@ -73,7 +73,8 @@ function upload_archive {
     -H "Accept: application/json" \
     -H 'Content-Type: application/gzip' \
     -s --data-binary "@$file")
-  if echo "$res" | jq -e; then
+
+  if echo "$res" | jq -e '.'; then
     # if the response contain errors
     if echo "$res" | jq -e '.errors[0]'; then
       for err in $(echo "$res" | jq -r '.errors[0].code'); do
@@ -82,12 +83,12 @@ function upload_archive {
         # match.
         [[ "$err" == "already_exists" ]] && return 0
       done
-      err "Response contains unexpected errors: $res"
+      echodate "Response contains unexpected errors: $res"
       return 1
     fi
     return 0
   else
-    err "Response did not contain valid JSON: $res"
+    echodate "Response did not contain valid JSON: $res"
     return 1
   fi
 }
