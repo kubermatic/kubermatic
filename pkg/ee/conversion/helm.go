@@ -143,7 +143,13 @@ type kubermaticValues struct {
 	} `yaml:"clusterNamespacePrometheus"`
 }
 
-func HelmValuesFileToCRDs(yamlContent []byte, targetNamespace string) ([]runtime.Object, error) {
+type Options struct {
+	Namespace      string
+	IncludeSeeds   bool
+	IncludePresets bool
+}
+
+func HelmValuesFileToCRDs(yamlContent []byte, opt Options) ([]runtime.Object, error) {
 	values := helmValues{}
 	if err := yaml.Unmarshal(yamlContent, &values); err != nil {
 		return nil, fmt.Errorf("failed to decode file: %v", err)
@@ -151,23 +157,27 @@ func HelmValuesFileToCRDs(yamlContent []byte, targetNamespace string) ([]runtime
 
 	result := []runtime.Object{}
 
-	config, err := convertKubermaticConfiguration(&values, targetNamespace)
+	config, err := convertKubermaticConfiguration(&values, opt.Namespace)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create KubermaticConfiguration: %v", err)
 	}
 	result = append(result, config)
 
-	seeds, err := convertSeeds(&values, targetNamespace)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Seeds: %v", err)
+	if opt.IncludeSeeds {
+		seeds, err := convertSeeds(&values, opt.Namespace)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Seeds: %v", err)
+		}
+		result = append(result, seeds...)
 	}
-	result = append(result, seeds...)
 
-	presets, err := convertPresets(&values, targetNamespace)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create Presets: %v", err)
+	if opt.IncludePresets {
+		presets, err := convertPresets(&values, opt.Namespace)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create Presets: %v", err)
+		}
+		result = append(result, presets...)
 	}
-	result = append(result, presets...)
 
 	return result, nil
 }

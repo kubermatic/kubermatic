@@ -29,6 +29,14 @@ import (
 	"github.com/urfave/cli"
 )
 
+var (
+	targetNamespaceFlag = cli.StringFlag{
+		Name:  "namespace",
+		Usage: "Namespace to use for created resources",
+		Value: "kubermatic",
+	}
+)
+
 func handleErrors(logger *logrus.Logger, action cli.ActionFunc) cli.ActionFunc {
 	return func(ctx *cli.Context) error {
 		err := action(ctx)

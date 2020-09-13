@@ -30,6 +30,7 @@ func commands(logger *logrus.Logger) []cli.Command {
 		VersionCommand(logger),
 		DeployCommand(logger),
 		eeinstaller.ConvertDatacentersCommand(logger),
+		eeinstaller.ConvertHelmValuesCommand(logger),
 	}
 }
 

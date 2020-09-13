@@ -57,6 +57,7 @@ func ConvertDatacentersCommand(logger *logrus.Logger) cli.Command {
 		ArgsUsage: "DATACENTERS_FILE",
 		Flags: []cli.Flag{
 			kubeconfigFlag,
+			targetNamespaceFlag,
 		},
 	}
 }
@@ -94,7 +95,9 @@ func ConvertDatacentersAction(logger *logrus.Logger) cli.ActionFunc {
 				kubeconfigFlag.Name)
 		}
 
-		resources, err := eeconversion.ConvertDatacenters(datacenters, kubeconfig, "kubermatic")
+		namespace := ctx.String(targetNamespaceFlag.Name)
+
+		resources, err := eeconversion.ConvertDatacenters(datacenters, kubeconfig, namespace)
 		if err != nil {
 			return fmt.Errorf("failed to convert: %v", err)
 		}
