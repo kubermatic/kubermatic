@@ -73,7 +73,7 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				},
 			},
 			verify: func(_ map[string]*kubermaticv1.Seed, err error) error {
-				expectedErr := `seedDatacenter "my-seed" used by node datacenter "my-dc" does not exist`
+				expectedErr := `datacenter "my-seed" used by node datacenter "my-dc" does not exist`
 				if err == nil || err.Error() != expectedErr {
 					return fmt.Errorf("Expected error to be %q, was %v", expectedErr, err)
 				}
@@ -88,7 +88,7 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				"my-invalid-datacenter": {Seed: "my-valid-datacenter"},
 			},
 			verify: func(_ map[string]*kubermaticv1.Seed, err error) error {
-				expectedErr := `datacenter "my-valid-datacenter" referenced by node datacenter "my-invalid-datacenter" as its seed is not configured to be a seed`
+				expectedErr := `datacenter "my-valid-datacenter" referenced by node datacenter "my-invalid-datacenter" as its seed, but "my-valid-datacenter" is not configured to be a seed`
 				if err == nil || err.Error() != expectedErr {
 					return fmt.Errorf("expected error to be %q, was %v", expectedErr, err)
 				}

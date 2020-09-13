@@ -53,6 +53,9 @@ func (s *Seed) SetDefaults() {
 	// settings on their own
 	if !s.Spec.ProxySettings.Empty() {
 		for key, dc := range s.Spec.Datacenters {
+			if dc.Node == nil {
+				dc.Node = &NodeSettings{}
+			}
 			s.Spec.ProxySettings.Merge(&dc.Node.ProxySettings)
 			s.Spec.Datacenters[key] = dc
 		}
