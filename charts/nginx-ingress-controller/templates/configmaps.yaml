@@ -23,5 +23,5 @@ metadata:
     app.kubernetes.io/managed-by: helm
 data:
   {{- range $key, $val := .Values.nginx.config }}
-  {{ $key }}: {{ $val }}
+  {{ $key }}: {{ quote $val }}
   {{- end }}
