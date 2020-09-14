@@ -73,6 +73,8 @@ type ClientService interface {
 
 	GetClusterEvents(params *GetClusterEventsParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterEventsOK, error)
 
+	GetClusterEventsV2(params *GetClusterEventsV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterEventsV2OK, error)
+
 	GetClusterHealth(params *GetClusterHealthParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterHealthOK, error)
 
 	GetClusterKubeconfig(params *GetClusterKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterKubeconfigOK, error)
@@ -990,6 +992,40 @@ func (a *Client) GetClusterEvents(params *GetClusterEventsParams, authInfo runti
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*GetClusterEventsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetClusterEventsV2 gets the events related to the specified cluster
+*/
+func (a *Client) GetClusterEventsV2(params *GetClusterEventsV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterEventsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetClusterEventsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getClusterEventsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/events",
+		ProducesMediaTypes: []string{"application/yaml"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetClusterEventsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetClusterEventsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterEventsV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

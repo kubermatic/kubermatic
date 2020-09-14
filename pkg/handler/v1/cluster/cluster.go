@@ -129,38 +129,7 @@ func DeleteEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProv
 func GetClusterEventsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(EventsReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-		client := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
-
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := handlercommon.GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		eventType := ""
-		switch req.Type {
-		case "warning":
-			eventType = corev1.EventTypeWarning
-		case "normal":
-			eventType = corev1.EventTypeNormal
-		}
-
-		events, err := common.GetEvents(ctx, client, cluster, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		if len(eventType) > 0 {
-			events = common.FilterEventsByType(events, eventType)
-		}
-
-		return events, nil
+		return handlercommon.GetClusterEventsEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Type, projectProvider, privilegedProjectProvider)
 	}
 }
 

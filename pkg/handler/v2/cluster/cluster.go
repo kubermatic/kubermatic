@@ -108,6 +108,57 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPr
 	}
 }
 
+func GetClusterEventsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(EventsReq)
+		return handlercommon.GetClusterEventsEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Type, projectProvider, privilegedProjectProvider)
+	}
+}
+
+// EventsReq defines HTTP request for getClusterEventsV2 endpoint
+// swagger:parameters getClusterEventsV2
+type EventsReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+
+	// in: query
+	Type string `json:"type,omitempty"`
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req EventsReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, error) {
+	var req EventsReq
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	req.Type = r.URL.Query().Get("type")
+	if len(req.Type) > 0 {
+		if req.Type == "warning" || req.Type == "normal" {
+			return req, nil
+		}
+		return nil, fmt.Errorf("wrong query paramater, unsupported type: %s", req.Type)
+	}
+
+	return req, nil
+}
+
 // PatchReq defines HTTP request for patchCluster endpoint
 // swagger:parameters patchClusterV2
 type PatchReq struct {

@@ -24,8 +24,6 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
-
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
@@ -52,6 +50,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
+	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 // NodeDeploymentEvent represents type of events related to Node Deployment
@@ -413,6 +412,41 @@ func PatchEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	}
 
 	return convertInternalClusterToExternal(updatedCluster, true), nil
+}
+
+func GetClusterEventsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID, eventType string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	client := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	cluster, err := GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, &provider.ClusterGetOptions{})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	eventTypeAPI := ""
+	switch eventType {
+	case "warning":
+		eventTypeAPI = corev1.EventTypeWarning
+	case "normal":
+		eventTypeAPI = corev1.EventTypeNormal
+	}
+
+	events, err := common.GetEvents(ctx, client, cluster, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if len(eventTypeAPI) > 0 {
+		events = common.FilterEventsByType(events, eventTypeAPI)
+	}
+
+	return events, nil
 }
 
 func UpdateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, clusterSSHKey *kubermaticv1.UserSSHKey, projectID string) error {
