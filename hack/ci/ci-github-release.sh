@@ -35,7 +35,7 @@ export GIT_HEAD="${GIT_HEAD:-$(git rev-parse HEAD)}"
 export GIT_REPO="${GIT_REPO:-kubermatic/kubermatic}"
 export RELEASE_PLATFORMS="${RELEASE_PLATFORMS:-linux-amd64 darwin-amd64 windows-amd64}"
 
-# RELEASE_NAME allos to customize the tag that is used to create the
+# RELEASE_NAME allows to customize the tag that is used to create the
 # Github release for, while the Helm charts and things will still
 # point to GIT_TAG
 export RELEASE_NAME="${RELEASE_NAME:-$GIT_TAG}"

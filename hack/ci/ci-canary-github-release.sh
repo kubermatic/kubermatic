@@ -27,11 +27,16 @@ rootdir="$(pwd)"
 
 export GIT_TAG="$(git rev-parse HEAD)"
 
+git config --global user.email "dev@kubermatic.com"
+git config --global user.name "Prow CI Robot"
+git config --global core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
+ensure_github_host_pubkey
+
 # create a nice looking, sortable, somewhat meaningful release name
 commitDate="$(git show --pretty='%ct' -s "$GIT_TAG")"
-releaseDate="$(date --date="@$commitDate" +"%H%M%S" --utc)"
+releaseDate="$(date --date="@$commitDate" +"%Y-%m-%d-%H%M%S" --utc)"
 
-export RELEASE_NAME="$(git show --pretty="%cs-$releaseDate-%h" -s "$GIT_TAG")"
+export RELEASE_NAME="$releaseDate-$(git rev-parse --short "$GIT_TAG")"
 export GIT_REPO="kubermatic/kubermatic-builds"
 
 # create dummy tag in $GIT_REPO
