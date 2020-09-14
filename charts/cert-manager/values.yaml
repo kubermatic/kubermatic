@@ -26,6 +26,7 @@ certManager:
       repository: quay.io/jetstack/cert-manager-controller
       tag: v0.16.1
       pullPolicy: IfNotPresent
+    pullSecrets: []
 
     resources:
       requests:
