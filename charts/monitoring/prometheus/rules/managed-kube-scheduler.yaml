@@ -15,20 +15,20 @@
 # limitations under the License.
 
 groups:
-- name: kube-scheduler
-  rules:
-  - record: :ready_kube_schedulers:sum
-    expr: |
-      sum (
-        (sum by (pod) (kube_pod_labels{label_component="kube-scheduler"}))
-        * on (pod)
-        (sum by (pod) (kube_pod_status_ready{condition="true"}))
-      )
-  - alert: KubeSchedulerDown
-    annotations:
-      message: No healthy scheduler pods exist inside the cluster.
-      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeschedulerdown
-    expr: absent(:ready_kube_schedulers:sum) or :ready_kube_schedulers:sum == 0
-    for: 10m
-    labels:
-      severity: critical
+  - name: kube-scheduler
+    rules:
+      - record: :ready_kube_schedulers:sum
+        expr: |
+          sum (
+            (sum by (pod) (kube_pod_labels{label_component="kube-scheduler"}))
+            * on (pod)
+            (sum by (pod) (kube_pod_status_ready{condition="true"}))
+          )
+      - alert: KubeSchedulerDown
+        annotations:
+          message: No healthy scheduler pods exist inside the cluster.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubeschedulerdown
+        expr: absent(:ready_kube_schedulers:sum) or :ready_kube_schedulers:sum == 0
+        for: 10m
+        labels:
+          severity: critical
