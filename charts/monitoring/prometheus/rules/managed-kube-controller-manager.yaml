@@ -15,21 +15,20 @@
 # limitations under the License.
 
 groups:
-- name: kube-controller-manager
-  rules:
-  - record: :ready_kube_controller_managers:sum
-    expr: |
-      sum (
-        (sum by (pod) (kube_pod_labels{label_component="kube-controller-manager"}))
-        * on (pod)
-        (sum by (pod) (kube_pod_status_ready{condition="true"}))
-      )
-  - alert: KubeControllerManagerDown
-    annotations:
-      message: No healthy controller-manager pods exist inside the cluster.
-      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubecontrollermanagerdown
-    expr: absent(:ready_kube_controller_managers:sum) or :ready_kube_controller_managers:sum
-      == 0
-    for: 10m
-    labels:
-      severity: critical
+  - name: kube-controller-manager
+    rules:
+      - record: :ready_kube_controller_managers:sum
+        expr: |
+          sum (
+            (sum by (pod) (kube_pod_labels{label_component="kube-controller-manager"}))
+            * on (pod)
+            (sum by (pod) (kube_pod_status_ready{condition="true"}))
+          )
+      - alert: KubeControllerManagerDown
+        annotations:
+          message: No healthy controller-manager pods exist inside the cluster.
+          runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubecontrollermanagerdown
+        expr: absent(:ready_kube_controller_managers:sum) or :ready_kube_controller_managers:sum == 0
+        for: 10m
+        labels:
+          severity: critical
