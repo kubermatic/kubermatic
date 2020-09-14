@@ -26,6 +26,7 @@ import (
 
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
@@ -61,6 +62,10 @@ func validateKubermaticConfiguration(config *operatorv1alpha1.KubermaticConfigur
 	}
 
 	failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
+
+	if err := serviceaccount.ValidateKey([]byte(config.Spec.Auth.ServiceAccountKey)); err != nil {
+		failures = append(failures, fmt.Errorf("spec.auth.serviceAccountKey is invalid: %v", err))
+	}
 
 	if config.Spec.FeatureGates.Has(features.OIDCKubeCfgEndpoint) {
 		failures = validateRandomSecret(config, config.Spec.Auth.IssuerClientSecret, "spec.auth.issuerClientSecret", failures)
