@@ -35,6 +35,11 @@ export GIT_HEAD="${GIT_HEAD:-$(git rev-parse HEAD)}"
 export GIT_REPO="${GIT_REPO:-kubermatic/kubermatic}"
 export RELEASE_PLATFORMS="${RELEASE_PLATFORMS:-linux-amd64 darwin-amd64 windows-amd64}"
 
+# RELEASE_NAME allos to customize the tag that is used to create the
+# Github release for, while the Helm charts and things will still
+# point to GIT_TAG
+export RELEASE_NAME="${RELEASE_NAME:-$GIT_TAG}"
+
 # utility function setting some curl default values for calling the github API
 # first argument is the URL, the rest of the arguments is used as curl
 # arguments.
@@ -74,9 +79,9 @@ function upload_archive {
     -H 'Content-Type: application/gzip' \
     -s --data-binary "@$file")
 
-  if echo "$res" | jq -e '.'; then
+  if echo "$res" | jq -e '.' > /dev/null; then
     # if the response contain errors
-    if echo "$res" | jq -e '.errors[0]'; then
+    if echo "$res" | jq -e '.errors[0]' > /dev/null; then
       for err in $(echo "$res" | jq -r '.errors[0].code'); do
         # if the error code is 'already_exists' do not fail to make this call
         # idempotent. To make it better we should alse check that the content
@@ -118,22 +123,27 @@ function build_installer() {
 }
 
 # ensure the tag has already been pushed
-if ! $DRY_RUN && [ -z "$(github_cli "https://api.github.com/repos/$GIT_REPO/tags" -s | jq ".[] | select(.name==\"$GIT_TAG\")")" ]; then
-  echodate "Tag $GIT_TAG has not been pushed to $GIT_REPO yet."
+if ! $DRY_RUN && [ -z "$(github_cli "https://api.github.com/repos/$GIT_REPO/tags" -s | jq ".[] | select(.name==\"$RELEASE_NAME\")")" ]; then
+  echodate "Tag $RELEASE_NAME has not been pushed to $GIT_REPO yet."
   exit 1
 fi
 
 prerelease=false
-if [[ "$GIT_TAG" =~ "-" ]]; then
+if [[ "$RELEASE_NAME" =~ "-" ]]; then
   prerelease=true
 fi
 
 # create a nice-sounding release name
-name=$(echo "$GIT_TAG" | sed -E 's/-beta\.([0-9]+)/ (Beta \1)/')
+name=$(echo "$RELEASE_NAME" | sed -E 's/-beta\.([0-9]+)/ (Beta \1)/')
 name=$(echo "$name" | sed -E 's/-rc\.([0-9]+)/ (Release Candidate \1)/')
 
 echodate "Release name: $name"
 echodate "Current tag : $GIT_TAG ($GIT_BRANCH @ $GIT_HEAD)"
+
+if [ "$RELEASE_NAME" != "$GIT_TAG" ]; then
+  echodate "GitHub tag  : $RELEASE_NAME"
+fi
+
 echodate "Pre-Release : $prerelease"
 
 if $DRY_RUN; then
@@ -146,14 +156,14 @@ export UIDOCKERTAG="$GIT_TAG"
 # retrieve release info
 if ! $DRY_RUN; then
   echodate "Checking release existence..."
-  releasedata="$(github_cli "https://api.github.com/repos/$GIT_REPO/releases/tags/$GIT_TAG" -sf || true)"
+  releasedata="$(github_cli "https://api.github.com/repos/$GIT_REPO/releases/tags/$RELEASE_NAME" -sf || true)"
 
   if [ -z "$releasedata" ]; then
     echodate "Creating release..."
 
-    create_release "$GIT_TAG" "$name" "$prerelease"
+    create_release "$RELEASE_NAME" "$name" "$prerelease"
 
-    releasedata="$(github_cli "https://api.github.com/repos/$GIT_REPO/releases/tags/$GIT_TAG" -sf)"
+    releasedata="$(github_cli "https://api.github.com/repos/$GIT_REPO/releases/tags/$RELEASE_NAME" -sf)"
   fi
 
   releaseID=$(echo "$releasedata" | jq -r '.id')
@@ -179,7 +189,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
   # switch Docker repository used by the operator to the CE repository
   yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic'
 
-  archive="_dist/kubermatic-ce-$GIT_TAG-$buildTarget.tar.gz"
+  archive="_dist/kubermatic-ce-$RELEASE_NAME-$buildTarget.tar.gz"
   # GNU tar is required
   tar czf "$archive" \
     --transform='flags=r;s|_build/||' \
@@ -225,7 +235,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
   # switch Docker repository used by the operator to the EE repository
   yq w -i charts/kubermatic-operator/values.yaml 'kubermaticOperator.image.repository' 'quay.io/kubermatic/kubermatic-ee'
 
-  archive="_dist/kubermatic-ee-$GIT_TAG-$buildTarget.tar.gz"
+  archive="_dist/kubermatic-ee-$RELEASE_NAME-$buildTarget.tar.gz"
   # GNU tar is required
   tar czf "$archive" \
     --transform='flags=r;s|_build/||' \
