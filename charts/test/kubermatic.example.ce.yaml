@@ -18,13 +18,6 @@ metadata:
   name: kubermatic
   namespace: kubermatic
 spec:
-  # No image pull secret is required for CE, leave it empty.
-  imagePullSecret: |
-    {
-      "auths": {
-        "quay.io": {}
-      }
-    }
 
   ingress:
     # Domain is the base domain where the dashboard shall be available. Even with

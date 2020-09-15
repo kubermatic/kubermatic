@@ -56,11 +56,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
-				{
-					Name: common.DockercfgSecretName,
-				},
-			}
 
 			args := []string{
 				"-logtostderr",
@@ -127,14 +122,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 					},
 				},
 				{
-					Name: "dockercfg",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.DockercfgSecretName,
-						},
-					},
-				},
-				{
 					Name: "seed-webhook-serving-cert",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
@@ -156,15 +143,26 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 					ReadOnly:  true,
 				},
 				{
-					Name:      "dockercfg",
-					MountPath: "/opt/docker/",
-					ReadOnly:  true,
-				},
-				{
 					Name:      "seed-webhook-serving-cert",
 					MountPath: "/opt/seed-webhook-serving-cert/",
 					ReadOnly:  true,
 				},
+			}
+
+			if cfg.Spec.ImagePullSecret != "" {
+				volumes = append(volumes, corev1.Volume{
+					Name: "dockercfg",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: common.DockercfgSecretName,
+						},
+					},
+				})
+				volumeMounts = append(volumeMounts, corev1.VolumeMount{
+					Name:      "dockercfg",
+					MountPath: "/opt/docker/",
+					ReadOnly:  true,
+				})
 			}
 
 			args = append(

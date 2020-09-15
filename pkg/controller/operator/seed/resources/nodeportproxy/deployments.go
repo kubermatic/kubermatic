@@ -68,11 +68,6 @@ func EnvoyDeploymentCreator(seed *kubermaticv1.Seed, versions common.Versions) r
 
 			d.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyAlways
 			d.Spec.Template.Spec.ServiceAccountName = ServiceAccountName
-			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
-				{
-					Name: common.DockercfgSecretName,
-				},
-			}
 
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
@@ -212,11 +207,6 @@ func UpdaterDeploymentCreator(seed *kubermaticv1.Seed, versions common.Versions)
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = ServiceAccountName
-			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
-				{
-					Name: common.DockercfgSecretName,
-				},
-			}
 
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
