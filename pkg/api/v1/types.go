@@ -693,6 +693,11 @@ type ClusterSpec struct {
 
 	// Openshift holds all openshift-specific settings
 	Openshift *kubermaticv1.Openshift `json:"openshift,omitempty"`
+
+	// OPAIntegration is a preview feature that enables OPA integration with Kubermatic for the cluster.
+	// Enabling it causes gatekeeper and its resources to be deployed on the user cluster.
+	// By default it is disabled.
+	OPAIntegration *kubermaticv1.OPAIntegrationSettings `json:"opaIntegration,omitempty"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
