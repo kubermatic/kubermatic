@@ -12,6 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{{ $version := "UNSUPPORTED" }}
+{{ if eq .Cluster.MajorMinorVersion "1.18" }}
+{{ $version = "v1.18.2 "}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.19" }}
+{{ $version = "v1.19.0 "}}
+{{ end }}
+
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -160,7 +168,7 @@ spec:
         app: cluster-autoscaler
     spec:
       containers:
-      - image: k8s.gcr.io/autoscaling/cluster-autoscaler:${AUTOSCALER_VERSION}
+      - image: k8s.gcr.io/autoscaling/cluster-autoscaler:{{ $version }}
         name: cluster-autoscaler
         command:
         - /cluster-autoscaler
