@@ -393,8 +393,11 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 		machinecontroller.MachineSetCRDCreator(),
 		machinecontroller.MachineDeploymentCRDCreator(),
 		machinecontroller.ClusterCRDCreator(),
-		gatekeeper.ConfigCRDCreator(),
-		gatekeeper.ConstraintTemplateCRDCreator(),
+	}
+
+	if r.opaIntegration {
+		creators = append(creators, gatekeeper.ConfigCRDCreator())
+		creators = append(creators, gatekeeper.ConstraintTemplateCRDCreator())
 	}
 
 	if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
@@ -421,8 +424,9 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(
 	ctx context.Context,
 	data reconcileData,
 ) error {
-	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
-		gatekeeper.ValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace),
+	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{}
+	if r.opaIntegration {
+		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {

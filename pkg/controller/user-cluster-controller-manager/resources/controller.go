@@ -71,6 +71,7 @@ func Add(
 	cloudCredentialSecretTemplate *corev1.Secret,
 	openshiftConsoleCallbackURI string,
 	dnsClusterIP string,
+	opaIntegration bool,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		openshift:                     openshift,
@@ -84,6 +85,7 @@ func Add(
 		platform:                      cloudProviderName,
 		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
 		dnsClusterIP:                  dnsClusterIP,
+		opaIntegration:                opaIntegration,
 	}
 
 	if r.openshift {
@@ -224,6 +226,7 @@ type reconciler struct {
 	cloudCredentialSecretTemplate *corev1.Secret
 	openshiftConsoleCallbackURI   string
 	dnsClusterIP                  string
+	opaIntegration                bool
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
