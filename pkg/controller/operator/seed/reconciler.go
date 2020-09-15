@@ -414,10 +414,13 @@ func (r *Reconciler) reconcileSecrets(cfg *operatorv1alpha1.KubermaticConfigurat
 	log.Debug("reconciling Secrets")
 
 	creators := []reconciling.NamedSecretCreatorGetter{
-		common.DockercfgSecretCreator(cfg),
 		common.ExtraFilesSecretCreator(cfg),
 		common.SeedWebhookServingCASecretCreator(cfg),
 		common.SeedWebhookServingCertSecretCreator(cfg, client),
+	}
+
+	if cfg.Spec.ImagePullSecret != "" {
+		creators = append(creators, common.DockercfgSecretCreator(cfg))
 	}
 
 	if cfg.Spec.Auth.CABundle != "" {
@@ -459,6 +462,7 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 
 	volumeLabelModifier := common.VolumeRevisionLabelsModifierFactory(r.ctx, client)
 	modifiers := []reconciling.ObjectModifier{
+		common.ImagePullSecretModifierFactory(cfg),
 		common.OwnershipModifierFactory(seed, r.scheme),
 		volumeLabelModifier,
 	}
