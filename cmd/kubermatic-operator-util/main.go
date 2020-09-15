@@ -54,14 +54,14 @@ func main() {
 		},
 	}
 
-	app.Commands = append([]cli.Command{
+	app.Commands = []cli.Command{
 		{
 			Name:      "defaults",
 			Usage:     "Outputs a KubermaticConfiguration with all default values, optionally applied to a given configuration manifest (YAML)",
 			Action:    defaultsAction,
 			ArgsUsage: "[MANIFEST_FILE]",
 		},
-	}, extraCommands()...)
+	}
 
 	// setup logging
 	app.Before = func(c *cli.Context) error {

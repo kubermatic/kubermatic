@@ -63,12 +63,11 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 			// Kubeconfig object ref is injected during the automated migration.
 		} else {
 			if _, exists := dm[datacenterSpec.Seed]; !exists {
-				return nil, fmt.Errorf("seedDatacenter %q used by node datacenter %q does not exist", datacenterSpec.Seed, dcName)
+				return nil, fmt.Errorf("datacenter %q used by node datacenter %q does not exist", datacenterSpec.Seed, dcName)
 			}
 			if !dm[datacenterSpec.Seed].IsSeed {
-				return nil, fmt.Errorf("datacenter %q referenced by node datacenter %q as its seed is not configured to be a seed",
-					datacenterSpec.Seed, dcName)
-
+				return nil, fmt.Errorf("datacenter %q referenced by node datacenter %q as its seed, but %q is not configured to be a seed",
+					datacenterSpec.Seed, dcName, datacenterSpec.Seed)
 			}
 			// Create entry for SeedDC if not already present
 			if seeds[datacenterSpec.Seed] == nil {
@@ -77,7 +76,6 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 						Datacenters: map[string]kubermaticv1.Datacenter{},
 					},
 				}
-
 			}
 			seeds[datacenterSpec.Seed].Spec.Datacenters[dcName] = kubermaticv1.Datacenter{
 				Country:  datacenterSpec.Country,
@@ -85,7 +83,6 @@ func DatacenterMetasToSeeds(dm map[string]DatacenterMeta) (map[string]*kubermati
 				Node:     datacenterSpec.Node,
 				Spec:     datacenterSpec.Spec,
 			}
-
 		}
 	}
 

@@ -52,9 +52,14 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed calling seedGetter: %v", err)
 	}
-	if seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy.String() != "seed-proxy" {
+
+	nodeSettings := seed.Spec.Datacenters["a"].Node
+	if nodeSettings == nil {
+		t.Fatal("expected the datacenter's node setting to be set, but it's nil")
+	}
+	if nodeSettings.ProxySettings.HTTPProxy.String() != "seed-proxy" {
 		t.Errorf("expected the datacenters http proxy setting to get set but was %v",
-			seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy)
+			nodeSettings.ProxySettings.HTTPProxy)
 	}
 }
 
@@ -85,10 +90,15 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 	if _, exists := seeds[DefaultSeedName]; !exists || len(seeds) != 1 {
 		t.Fatalf("expceted to get a map with exactly one key `my-seed`, got %v", seeds)
 	}
+
 	seed := seeds[DefaultSeedName]
-	if seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy.String() != "seed-proxy" {
+	nodeSettings := seed.Spec.Datacenters["a"].Node
+	if nodeSettings == nil {
+		t.Fatal("expected the datacenter's node setting to be set, but it's nil")
+	}
+	if nodeSettings.ProxySettings.HTTPProxy.String() != "seed-proxy" {
 		t.Errorf("expected the datacenters http proxy setting to get set but was %v",
-			seed.Spec.Datacenters["a"].Node.ProxySettings.HTTPProxy)
+			nodeSettings.ProxySettings.HTTPProxy)
 	}
 }
 

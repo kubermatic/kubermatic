@@ -380,7 +380,7 @@ func GenTestSeed() *kubermaticv1.Seed {
 						},
 						EnforcePodSecurityPolicy: true,
 					},
-					Node: kubermaticv1.NodeSettings{
+					Node: &kubermaticv1.NodeSettings{
 						PauseImage: "image-pause",
 					},
 				},
@@ -438,7 +438,7 @@ func GenTestSeed() *kubermaticv1.Seed {
 					Spec: kubermaticv1.DatacenterSpec{
 						Fake: &kubermaticv1.DatacenterSpecFake{},
 					},
-					Node: kubermaticv1.NodeSettings{
+					Node: &kubermaticv1.NodeSettings{
 						ProxySettings: kubermaticv1.ProxySettings{
 							HTTPProxy: kubermaticv1.NewProxyValue("HTTPProxy"),
 						},

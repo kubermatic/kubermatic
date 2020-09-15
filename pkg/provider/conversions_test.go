@@ -92,7 +92,7 @@ func TestReconcileBinding(t *testing.T) {
 					Fake:                 &kubermaticv1.DatacenterSpecFake{},
 					RequiredEmailDomains: []string{"abc.com", "example.com", "cde.org"},
 				},
-				Node: kubermaticv1.NodeSettings{
+				Node: &kubermaticv1.NodeSettings{
 					ProxySettings: kubermaticv1.ProxySettings{
 						HTTPProxy: kubermaticv1.NewProxyValue("HTTPProxy"),
 					},
@@ -140,7 +140,7 @@ func genTestUSCentalSeed() *kubermaticv1.Seed {
 						},
 						EnforcePodSecurityPolicy: true,
 					},
-					Node: kubermaticv1.NodeSettings{
+					Node: &kubermaticv1.NodeSettings{
 						PauseImage: "image-pause",
 					},
 				},
@@ -212,7 +212,7 @@ func genTestEuropeWestSeed() *kubermaticv1.Seed {
 						Fake:                 &kubermaticv1.DatacenterSpecFake{},
 						RequiredEmailDomains: []string{"abc.com", "example.com", "cde.org"},
 					},
-					Node: kubermaticv1.NodeSettings{
+					Node: &kubermaticv1.NodeSettings{
 						ProxySettings: kubermaticv1.ProxySettings{
 							HTTPProxy: kubermaticv1.NewProxyValue("HTTPProxy"),
 						},

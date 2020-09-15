@@ -243,7 +243,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	return vars, nil
 }
 
-func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings, externalCloudProvider bool) []string {
+func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, externalCloudProvider bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-logtostderr",
@@ -251,22 +251,25 @@ func getFlags(clusterDNSIP string, nodeSettings kubermaticv1.NodeSettings, exter
 		"-cluster-dns", clusterDNSIP,
 		"-internal-listen-address", "0.0.0.0:8085",
 	}
-	if len(nodeSettings.InsecureRegistries) > 0 {
-		flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
-	}
-	if !nodeSettings.HTTPProxy.Empty() {
-		flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
-	}
-	if !nodeSettings.NoProxy.Empty() {
-		flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy.String())
-	}
-	if nodeSettings.PauseImage != "" {
-		flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)
-	}
 
-	// TODO(kron4eg): deprecate and remove this
-	if nodeSettings.HyperkubeImage != "" {
-		flags = append(flags, "-node-hyperkube-image", nodeSettings.HyperkubeImage)
+	if nodeSettings != nil {
+		if len(nodeSettings.InsecureRegistries) > 0 {
+			flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
+		}
+		if !nodeSettings.HTTPProxy.Empty() {
+			flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
+		}
+		if !nodeSettings.NoProxy.Empty() {
+			flags = append(flags, "-node-no-proxy", nodeSettings.NoProxy.String())
+		}
+		if nodeSettings.PauseImage != "" {
+			flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)
+		}
+
+		// TODO(kron4eg): deprecate and remove this
+		if nodeSettings.HyperkubeImage != "" {
+			flags = append(flags, "-node-hyperkube-image", nodeSettings.HyperkubeImage)
+		}
 	}
 
 	if externalCloudProvider {
