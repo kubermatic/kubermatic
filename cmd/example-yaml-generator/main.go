@@ -121,7 +121,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 		Spec: kubermaticv1.SeedSpec{
 			Datacenters: map[string]kubermaticv1.Datacenter{
 				"<<exampledc>>": {
-					Node: kubermaticv1.NodeSettings{
+					Node: &kubermaticv1.NodeSettings{
 						ProxySettings:      proxySettings,
 						InsecureRegistries: []string{},
 					},

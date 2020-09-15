@@ -52,15 +52,8 @@ func main() {
 	app.Usage = "Installs and updates Kubermatic Kubernetes Platform"
 	app.Version = versions.Kubermatic
 	app.HideVersion = true
-	app.Flags = []cli.Flag{
-		verboseFlag,
-		chartsDirectoryFlag,
-	}
-
-	app.Commands = []cli.Command{
-		VersionCommand(logger),
-		DeployCommand(logger),
-	}
+	app.Flags = flags()
+	app.Commands = commands(logger)
 
 	_ = app.Run(os.Args)
 }

@@ -19,18 +19,24 @@ limitations under the License.
 package main
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	util "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-operator-util"
+	eeinstaller "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-installer"
 )
 
-func extraCommands() []cli.Command {
+func commands(logger *logrus.Logger) []cli.Command {
 	return []cli.Command{
-		{
-			Name:      "convert",
-			Usage:     "Convert a Helm values.yaml to a KubermaticConfiguration manifest (YAML)",
-			Action:    util.ConvertAction,
-			ArgsUsage: "VALUES_FILE",
-		},
+		VersionCommand(logger),
+		DeployCommand(logger),
+		eeinstaller.ConvertDatacentersCommand(logger),
+		eeinstaller.ConvertHelmValuesCommand(logger),
+	}
+}
+
+func flags() []cli.Flag {
+	return []cli.Flag{
+		verboseFlag,
+		chartsDirectoryFlag,
 	}
 }

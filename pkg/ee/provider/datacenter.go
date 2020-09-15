@@ -101,7 +101,7 @@ type DatacenterMeta struct {
 	Spec             kubermaticv1.DatacenterSpec `json:"spec"`
 	IsSeed           bool                        `json:"is_seed"`
 	SeedDNSOverwrite string                      `json:"seed_dns_overwrite,omitempty"`
-	Node             kubermaticv1.NodeSettings   `json:"node,omitempty"`
+	Node             *kubermaticv1.NodeSettings  `json:"node,omitempty"`
 }
 
 // datacentersMeta describes a number of Kubermatic datacenters.

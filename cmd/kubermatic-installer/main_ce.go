@@ -19,9 +19,20 @@ limitations under the License.
 package main
 
 import (
+	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 )
 
-func extraCommands() []cli.Command {
-	return nil
+func commands(logger *logrus.Logger) []cli.Command {
+	return []cli.Command{
+		VersionCommand(logger),
+		DeployCommand(logger),
+	}
+}
+
+func flags() []cli.Flag {
+	return []cli.Flag{
+		verboseFlag,
+		chartsDirectoryFlag,
+	}
 }

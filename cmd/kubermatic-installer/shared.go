@@ -17,8 +17,18 @@ limitations under the License.
 package main
 
 import (
+	"bytes"
+	"errors"
+	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/util/yamled"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/util/yaml"
 )
 
 func handleErrors(logger *logrus.Logger, action cli.ActionFunc) cli.ActionFunc {
@@ -41,4 +51,46 @@ func setupLogger(logger *logrus.Logger, action cli.ActionFunc) cli.ActionFunc {
 
 		return action(ctx)
 	}
+}
+
+func loadKubermaticConfiguration(filename string) (*operatorv1alpha1.KubermaticConfiguration, *unstructured.Unstructured, error) {
+	if filename == "" {
+		return nil, nil, errors.New("no file specified via --config flag")
+	}
+
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	raw := &unstructured.Unstructured{}
+	if err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(content), 1024).Decode(raw); err != nil {
+		return nil, nil, fmt.Errorf("failed to decode %s: %v", filename, err)
+	}
+
+	config := &operatorv1alpha1.KubermaticConfiguration{}
+	if err := yaml.NewYAMLOrJSONDecoder(bytes.NewReader(content), 1024).Decode(config); err != nil {
+		return nil, raw, fmt.Errorf("failed to decode %s: %v", filename, err)
+	}
+
+	return config, raw, nil
+}
+
+func loadHelmValues(filename string) (*yamled.Document, error) {
+	if filename == "" {
+		return nil, errors.New("no file specified via --helm-values flag")
+	}
+
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	values, err := yamled.Load(f)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode %s: %v", filename, err)
+	}
+
+	return values, nil
 }

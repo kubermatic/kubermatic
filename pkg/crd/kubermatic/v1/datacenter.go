@@ -53,6 +53,9 @@ func (s *Seed) SetDefaults() {
 	// settings on their own
 	if !s.Spec.ProxySettings.Empty() {
 		for key, dc := range s.Spec.Datacenters {
+			if dc.Node == nil {
+				dc.Node = &NodeSettings{}
+			}
 			s.Spec.ProxySettings.Merge(&dc.Node.ProxySettings)
 			s.Spec.Datacenters[key] = dc
 		}
@@ -122,7 +125,7 @@ type Datacenter struct {
 	// Node holds node-specific settings, like e.g. HTTP proxy, Docker
 	// registries and the like. Proxy settings are inherited from the seed if
 	// not specified here.
-	Node NodeSettings `json:"node"`
+	Node *NodeSettings `json:"node,omitempty"`
 	// Spec describes the cloud provider settings used to manage resources
 	// in this datacenter. Exactly one cloud provider must be defined.
 	Spec DatacenterSpec `json:"spec"`
@@ -158,11 +161,11 @@ type DatacenterSpec struct {
 
 	// EnforceAuditLogging enforces audit logging on every cluster within the DC,
 	// ignoring cluster-specific settings.
-	EnforceAuditLogging bool `json:"enforceAuditLogging"`
+	EnforceAuditLogging bool `json:"enforceAuditLogging,omitempty"`
 
 	// EnforcePodSecurityPolicy enforces pod security policy plugin on every clusters within the DC,
 	// ignoring cluster-specific settings
-	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy"`
+	EnforcePodSecurityPolicy bool `json:"enforcePodSecurityPolicy,omitempty"`
 }
 
 // ImageList defines a map of operating system and the image to use
