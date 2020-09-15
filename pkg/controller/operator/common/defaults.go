@@ -64,6 +64,7 @@ const (
 
 var (
 	DefaultAccessibleAddons = []string{
+		"cluster-autoscaler",
 		"node-exporter",
 		"gatekeeper",
 	}

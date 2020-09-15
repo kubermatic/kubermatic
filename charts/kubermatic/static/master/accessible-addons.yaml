@@ -1,5 +1,6 @@
 # This file has been generated using hack/update-kubermatic-chart.sh, do not edit.
 
 addons:
+- cluster-autoscaler
 - node-exporter
 - gatekeeper
