@@ -23,7 +23,10 @@ import (
 	"fmt"
 
 	"github.com/sirupsen/logrus"
+	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
@@ -101,6 +104,51 @@ func validateHelmValues(config *operatorv1alpha1.KubermaticConfiguration, helmVa
 	if value, _ := helmValues.GetString(path); value == "" {
 		logger.Warnf("Helm values: %s is empty, setting to spec.imagePullSecret from KubermaticConfiguration", path.String())
 		helmValues.Set(path, config.Spec.ImagePullSecret)
+	}
+
+	defaultedConfig, err := common.DefaultConfiguration(config, zap.NewNop().Sugar())
+	if err != nil {
+		failures = append(failures, fmt.Errorf("failed to process KubermaticConfiguration: %v", err))
+		return failures // must stop here, without defaulting the clientID check can be misleading
+	}
+
+	clientID := defaultedConfig.Spec.Auth.ClientID
+	hasDexIssues := false
+
+	clients, ok := helmValues.GetArray(yamled.Path{"dex", "clients"})
+	if !ok {
+		hasDexIssues = true
+		logger.Warn("Helm values: There are no Dex/OAuth clients configured.")
+	} else {
+		hasMatchingClient := false
+
+		for _, client := range clients {
+			if mapSlice, ok := client.(yaml.MapSlice); ok {
+				for _, item := range mapSlice {
+					if item.Key == "id" && item.Value == clientID {
+						hasMatchingClient = true
+						break
+					}
+				}
+			}
+		}
+
+		if !hasMatchingClient {
+			hasDexIssues = true
+			logger.Warnf("Helm values: The Dex configuration does not contain a `%s` client to allow logins to the Kubermatic dashboard.", clientID)
+		}
+	}
+
+	connectors, _ := helmValues.GetArray(yamled.Path{"dex", "connectors"})
+	staticPasswords, _ := helmValues.GetArray(yamled.Path{"dex", "staticPasswords"})
+
+	if len(connectors) == 0 && len(staticPasswords) == 0 {
+		hasDexIssues = true
+		logger.Warn("Helm values: There are no connectors or static passwords configured for Dex.")
+	}
+
+	if hasDexIssues {
+		logger.Warnf("If you intend to use Dex, please refer to the example configuration to define a `%s` client and connectors.", clientID)
 	}
 
 	return failures
