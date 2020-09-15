@@ -37,7 +37,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-const addonEnsureLabelKey = "addons.kubermatic.io/ensure"
+const (
+	addonEnsureLabelKey = "addons.kubermatic.io/ensure"
+	trueFlag            = "true"
+)
 
 // addonReq defines HTTP request for getAddon and deleteAddon
 // swagger:parameters getAddon deleteAddon
@@ -285,7 +288,7 @@ func CreateAddonEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 
 		labels := map[string]string{}
 		if req.Body.Spec.ContinuouslyReconcile {
-			labels[addonEnsureLabelKey] = "true"
+			labels[addonEnsureLabelKey] = trueFlag
 		}
 		addon, err := createAddon(ctx, userInfoGetter, cluster, rawVars, labels, req.ProjectID, req.Body.Name)
 		if err != nil {
@@ -335,6 +338,14 @@ func PatchAddonEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		addon.Spec.Variables = *rawVars
+
+		if addon.Labels == nil {
+			addon.Labels = map[string]string{}
+		}
+		addon.Labels[addonEnsureLabelKey] = "false"
+		if req.Body.Spec.ContinuouslyReconcile {
+			addon.Labels[addonEnsureLabelKey] = trueFlag
+		}
 
 		addon, err = updateAddon(ctx, userInfoGetter, cluster, addon, req.ProjectID)
 		if err != nil {
@@ -441,7 +452,7 @@ func convertInternalAddonToExternal(internalAddon *kubermaticapiv1.Addon) (*apiv
 			return nil, err
 		}
 	}
-	if internalAddon.Labels != nil && internalAddon.Labels[addonEnsureLabelKey] == "true" {
+	if internalAddon.Labels != nil && internalAddon.Labels[addonEnsureLabelKey] == trueFlag {
 		result.Spec.ContinuouslyReconcile = true
 	}
 
