@@ -38,10 +38,9 @@ By using these Constraint CRDs we can set the parameters for the ConstraintTempl
 High level overview on how it would work is that a seed(master) cluster has a list of some default ConstraintTemplates deployed,
 similarly to how RBACs are done. Admins can add more and these are shared across all user clusters which have gatekeeper enabled,
 but admins have the possibility to mark some CTs for example just for AWS datacenter, so they are shared just to AWS DC clusters. 
-There are 2 flags for enabling OPA integration, one is global which admins can set to enable OPA - meaning that user clusters can use 
- gatekeeper, and the other one is user-cluster specific where they choose if to enable OPA or not. When a user cluster with enabled OPA 
-is created it's deployed with Gatekeeper. A controller reconciles all the eligable seed ConstraintTemplates to the user cluster. 
-The user can then manage Configs and Constraints for its cluster using Kubermatic dashboard or API. 
+When a user cluster with enabled "OPA Integration" flag is created it's deployed with Gatekeeper. A controller reconciles all the 
+eligable seed ConstraintTemplates to the user cluster. The user can then manage Configs and Constraints for its cluster using 
+Kubermatic dashboard or API. 
 
 The admin also will have the possibility to set up default constraints that will be applied to user clusters.
 
@@ -50,7 +49,7 @@ which could already have gatekeeper installed. Also when disabling the OPA integ
 exisiting constraints and configs, which will be deleted along with the gatekeeper installation. 
 
 To integrate OPA with Kubermatic we will need to:
-- deploy Gatekeeper based on flag
+- deploy Gatekeeper based on flag in cluster
 - implement a default list of ConstraintTemplates that is deployed with Kubermatic
 - implement API endpoints and API structs for ConstraintTemplates, Configs and Constraints
 - implement a CRD for Constraints, which will be in the user-cluster namespace and a controller which will sync it to the user cluster
