@@ -70,9 +70,9 @@ const (
 	// DefaultKubermaticCEImage defines the default Docker repository containing the Kubermatic EE API image.
 	DefaultKubermaticEEImage = "quay.io/kubermatic/kubermatic-ee"
 
-	// DefaultDashboardCEImage defines the default Docker repository containing the dashboard CE API image.
+	// DefaultDashboardCEImage defines the default Docker repository containing the dashboard CE image.
 	DefaultDashboardCEImage = "quay.io/kubermatic/dashboard"
-	// DefaultDashboardEEImage defines the default Docker repository containing the dashboard EE API image.
+	// DefaultDashboardEEImage defines the default Docker repository containing the dashboard EE image.
 	DefaultDashboardEEImage = "quay.io/kubermatic/dashboard-ee"
 
 	// ApiserverDeploymentName is the name of the apiserver deployment
