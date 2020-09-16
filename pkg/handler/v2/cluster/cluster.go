@@ -115,6 +115,13 @@ func GetClusterEventsEndpoint(projectProvider provider.ProjectProvider, privileg
 	}
 }
 
+func HealthEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetClusterReq)
+		return handlercommon.HealthEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider)
+	}
+}
+
 // EventsReq defines HTTP request for getClusterEventsV2 endpoint
 // swagger:parameters getClusterEventsV2
 type EventsReq struct {
@@ -258,7 +265,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // GetClusterReq defines HTTP request for getCluster endpoint.
-// swagger:parameters getClusterV2
+// swagger:parameters getClusterV2 getClusterHealthV2
 type GetClusterReq struct {
 	common.ProjectReq
 	// in: path

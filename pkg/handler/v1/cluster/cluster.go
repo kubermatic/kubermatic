@@ -136,27 +136,7 @@ func GetClusterEventsEndpoint(projectProvider provider.ProjectProvider, privileg
 func HealthEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		existingCluster, err := handlercommon.GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return apiv1.ClusterHealth{
-			Apiserver:                    existingCluster.Status.ExtendedHealth.Apiserver,
-			Scheduler:                    existingCluster.Status.ExtendedHealth.Scheduler,
-			Controller:                   existingCluster.Status.ExtendedHealth.Controller,
-			MachineController:            existingCluster.Status.ExtendedHealth.MachineController,
-			Etcd:                         existingCluster.Status.ExtendedHealth.Etcd,
-			CloudProviderInfrastructure:  existingCluster.Status.ExtendedHealth.CloudProviderInfrastructure,
-			UserClusterControllerManager: existingCluster.Status.ExtendedHealth.UserClusterControllerManager,
-		}, nil
+		return handlercommon.HealthEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider)
 	}
 }
 

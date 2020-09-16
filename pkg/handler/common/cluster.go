@@ -449,6 +449,30 @@ func GetClusterEventsEndpoint(ctx context.Context, userInfoGetter provider.UserI
 	return events, nil
 }
 
+func HealthEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	existingCluster, err := GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, &provider.ClusterGetOptions{})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return apiv1.ClusterHealth{
+		Apiserver:                    existingCluster.Status.ExtendedHealth.Apiserver,
+		Scheduler:                    existingCluster.Status.ExtendedHealth.Scheduler,
+		Controller:                   existingCluster.Status.ExtendedHealth.Controller,
+		MachineController:            existingCluster.Status.ExtendedHealth.MachineController,
+		Etcd:                         existingCluster.Status.ExtendedHealth.Etcd,
+		CloudProviderInfrastructure:  existingCluster.Status.ExtendedHealth.CloudProviderInfrastructure,
+		UserClusterControllerManager: existingCluster.Status.ExtendedHealth.UserClusterControllerManager,
+	}, nil
+}
+
 func UpdateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, clusterSSHKey *kubermaticv1.UserSSHKey, projectID string) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
