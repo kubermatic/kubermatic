@@ -130,6 +130,7 @@ func main() {
 		log.Fatalf("failed to check cluster membership: %v", err)
 	}
 	if isMemeber {
+		log.Infof("%s is a member", e.config.podName)
 		for {
 			// handle changes to peerURLs
 			if err := e.updatePeerURL(); err != nil {
@@ -215,6 +216,14 @@ func initialMemberList(n int, namespace string) []string {
 		members = append(members, fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
 	}
 	return members
+}
+
+func peerURLsList(n int, namespace string) []string {
+	urls := []string{}
+	for i := 0; i < n; i++ {
+		urls = append(urls, fmt.Sprintf("etcd-%d.etcd.%s.svc.cluster.local:2380", i, namespace))
+	}
+	return urls
 }
 
 func clientEndpoints(n int, namespace string) []string {
@@ -366,7 +375,8 @@ func (e *etcdCluster) isClusterMember(name string) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		if member.Name == name && url.Host == fmt.Sprintf("%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace) {
+		// if the member is not started yet, its name would be empty, in that case, we match for peerURL host.
+		if member.Name == name || url.Host == fmt.Sprintf("%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace) {
 			return true, nil
 		}
 	}
@@ -378,12 +388,18 @@ func (e *etcdCluster) containsUnwantedMembers() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	expectedMembers := initialMemberList(e.config.clusterSize, e.config.namespace)
+	expectedMembers := peerURLsList(e.config.clusterSize, e.config.namespace)
 membersLoop:
 	for _, member := range members {
 		for _, expectedMember := range expectedMembers {
-			if len(member.GetPeerURLs()) == 1 && expectedMember == (member.GetName()+"="+member.GetPeerURLs()[0]) {
-				continue membersLoop
+			if len(member.GetPeerURLs()) == 1 {
+				peerURL, err := url.Parse(member.PeerURLs[0])
+				if err != nil {
+					return false, err
+				}
+				if expectedMember == peerURL.Host {
+					continue membersLoop
+				}
 			}
 		}
 		return true, nil
@@ -406,7 +422,8 @@ func (e *etcdCluster) isHealthyWithEndpoints(endpoints []string) (bool, error) {
 	_, err = client.Get(ctx, "healthy")
 	defer cancel()
 	if err != nil && err != rpctypes.ErrPermissionDenied {
-		return false, err
+		// silently swallow/drop transient errors
+		return false, nil
 	}
 	return true, nil
 }
@@ -447,7 +464,7 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger) error {
 		if member.Name == e.config.podName {
 			continue
 		}
-		if err = wait.Poll(1*time.Second, 60*time.Second, func() (bool, error) {
+		if err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
 			// we use the cluster FQDN endpoint url here. Using the IP endpoint will
 			// fail because the certificates don't include Pod IP addresses.
 			return e.isHealthyWithEndpoints(member.ClientURLs[len(member.ClientURLs)-1:])
