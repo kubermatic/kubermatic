@@ -30,7 +30,7 @@ func TestImagePullSecretModifierFactory(t *testing.T) {
 		name                string
 		cfg                 *operatorv1alpha1.KubermaticConfiguration
 		inputObj            runtime.Object
-		wantErrStr          string
+		wantErr             bool
 		wantImagePullSecret bool
 	}{
 		{
@@ -56,9 +56,8 @@ func TestImagePullSecretModifierFactory(t *testing.T) {
 					ImagePullSecret: "{}",
 				},
 			},
-			wantErrStr:          `type "apps/v1, Kind=StatefulSet" is not supported by ImagePullSecretModifier`,
-			inputObj:            &appsv1.StatefulSet{TypeMeta: metav1.TypeMeta{Kind: "StatefulSet", APIVersion: "apps/v1"}},
-			wantImagePullSecret: true,
+			inputObj: &appsv1.StatefulSet{TypeMeta: metav1.TypeMeta{Kind: "StatefulSet", APIVersion: "apps/v1"}},
+			wantErr:  true,
 		},
 	}
 	for _, tt := range tests {
@@ -66,14 +65,10 @@ func TestImagePullSecretModifierFactory(t *testing.T) {
 			got := ImagePullSecretModifierFactory(tt.cfg)
 			create := got(identityCreator)
 			_, err := create(tt.inputObj)
-			if err != nil {
-				if err.Error() != tt.wantErrStr {
-					t.Fatalf("wanted error message %q, got %q", tt.wantErrStr, err)
-				}
-			} else {
-				if tt.wantErrStr != "" {
-					t.Error("wanted error but none was returned")
-				}
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("wanted error = %v, but got %v", tt.wantErr, err)
+			}
+			if !tt.wantErr {
 				if d, ok := tt.inputObj.(*appsv1.Deployment); ok {
 					var foundImagePullSecret bool
 					for _, ips := range d.Spec.Template.Spec.ImagePullSecrets {
@@ -85,7 +80,7 @@ func TestImagePullSecretModifierFactory(t *testing.T) {
 						t.Errorf("wantImagePullSecret = %v, but got %v", tt.wantImagePullSecret, d.Spec.Template.Spec.ImagePullSecrets)
 					}
 				} else {
-					t.Fatalf("this is an unexpected condition by the test that today only supports Deployments, if support for other resource types has been added please update this test accordingly")
+					t.Fatal("this is an unexpected condition for this test that today only supports Deployments, if support for other resource types has been added please update this test accordingly")
 				}
 			}
 		})

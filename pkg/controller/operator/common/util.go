@@ -159,6 +159,9 @@ func VolumeRevisionLabelsModifierFactory(ctx context.Context, client ctrlruntime
 
 // ImagePullSecretModifierFactory is generating a new ObjectModifier that wraps an ObjectCreator
 // and takes care of adding the ImagePullSecrets when needed.
+//
+// TODO(irozzo) At the moment only Deployments are supported, but
+// this can be extended to whatever Object carrying a PodSpec.
 func ImagePullSecretModifierFactory(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.ObjectModifier {
 	return func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
 		return func(existing runtime.Object) (runtime.Object, error) {
@@ -166,8 +169,6 @@ func ImagePullSecretModifierFactory(cfg *operatorv1alpha1.KubermaticConfiguratio
 			if err != nil {
 				return obj, err
 			}
-			// TODO(irozzo) At the moment only Deployments are supported, but
-			// this can be extended to whatever Object carrying a PodSpec.
 			switch o := obj.(type) {
 			case *appsv1.Deployment:
 				configureImagePullSecrets(&o.Spec.Template.Spec, cfg)
