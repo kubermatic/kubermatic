@@ -149,8 +149,12 @@ type KubermaticSeedControllerConfiguration struct {
 type KubermaticUserClusterConfiguration struct {
 	// KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
 	KubermaticDockerRepository string `json:"kubermaticDockerRepository,omitempty"`
-	// DNATControllerDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
+	// DNATControllerDockerRepository is the repository containing the
+	// dnat-controller image.
 	DNATControllerDockerRepository string `json:"dnatControllerDockerRepository,omitempty"`
+	// EtcdLauncherDockerRepository is the repository containing the Kubermatic
+	// etcd-launcher image.
+	EtcdLauncherDockerRepository string `json:"etcdLauncherDockerRepository,omitempty"`
 	// OverwriteRegistry specifies a custom Docker registry which will be used for all images
 	// used inside user clusters (user cluster control plane + addons). This also applies to
 	// the KubermaticDockerRepository and DNATControllerDockerRepository fields.
