@@ -375,7 +375,7 @@ func (e *etcdCluster) isClusterMember(name string) (bool, error) {
 		if err != nil {
 			return false, err
 		}
-		// if the member is not started yet, it's name would be empty, in that case, we match for peerURL host.
+		// if the member is not started yet, its name would be empty, in that case, we match for peerURL host.
 		if member.Name == name || url.Host == fmt.Sprintf("%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace) {
 			return true, nil
 		}
@@ -422,7 +422,7 @@ func (e *etcdCluster) isHealthyWithEndpoints(endpoints []string) (bool, error) {
 	_, err = client.Get(ctx, "healthy")
 	defer cancel()
 	if err != nil && err != rpctypes.ErrPermissionDenied {
-		// wait.Poll() doesn't retry if we err out
+		// silently swallow/drop transient errors
 		return false, nil
 	}
 	return true, nil
