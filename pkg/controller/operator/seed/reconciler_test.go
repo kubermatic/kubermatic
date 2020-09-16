@@ -379,7 +379,7 @@ func TestBasicReconciling(t *testing.T) {
 					return fmt.Errorf("secret data expected %q but got %q", imagePullSecret, i)
 				}
 
-				// check that image pull secret have been inserted in the pod
+				// check that image pull secret has been inserted in the pod
 				// spec of seed controller manager
 				scm := appsv1.Deployment{}
 				if err := seedClient.Get(reconciler.ctx, types.NamespacedName{
