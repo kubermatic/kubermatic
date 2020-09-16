@@ -27,7 +27,7 @@ const clusterRoleName = "gatekeeper-manager-role"
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return clusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-			cr.Labels = map[string]string{"gatekeeper.sh/system": "\"yes\""}
+			cr.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			cr.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"*"},
