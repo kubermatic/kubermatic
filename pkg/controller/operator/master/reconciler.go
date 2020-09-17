@@ -264,9 +264,13 @@ func (r *Reconciler) reconcileDeployments(config *operatorv1alpha1.KubermaticCon
 	}
 
 	modifiers := []reconciling.ObjectModifier{
-		common.ImagePullSecretModifierFactory(config),
 		common.OwnershipModifierFactory(config, r.scheme),
 		common.VolumeRevisionLabelsModifierFactory(r.ctx, r.Client),
+	}
+	// add the image pull secret wrapper only when an image pull secret is
+	// provided
+	if config.Spec.ImagePullSecret != "" {
+		modifiers = append(modifiers, reconciling.ImagePullSecretsWrapper(common.DockercfgSecretName))
 	}
 
 	if err := reconciling.ReconcileDeployments(r.ctx, creators, config.Namespace, r.Client, modifiers...); err != nil {
