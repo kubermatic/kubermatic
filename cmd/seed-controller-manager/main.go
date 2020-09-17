@@ -126,13 +126,18 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	//Register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
 
-	dockerPullConfigJSON, err := ioutil.ReadFile(options.dockerPullConfigJSONFile)
-	if err != nil {
-		log.Fatalw(
-			"Failed to read docker pull config file",
-			zap.String("file", options.dockerPullConfigJSONFile),
-			zap.Error(err),
-		)
+	// Default to empty JSON object
+	// TODO(irozzo) Do not create secret and image pull secret if empty
+	dockerPullConfigJSON := []byte("{}")
+	if options.dockerPullConfigJSONFile != "" {
+		dockerPullConfigJSON, err = ioutil.ReadFile(options.dockerPullConfigJSONFile)
+		if err != nil {
+			log.Fatalw(
+				"Failed to read docker pull config file",
+				zap.String("file", options.dockerPullConfigJSONFile),
+				zap.Error(err),
+			)
+		}
 	}
 
 	rootCtx := context.Background()
