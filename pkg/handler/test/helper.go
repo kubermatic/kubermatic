@@ -79,9 +79,6 @@ func init() {
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme v1beta1", "error", err)
 	}
-	if err := constrainttemplatev1beta1.AddToSchemes.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to register scheme constraint template v1beta1", "error", err)
-	}
 }
 
 const (

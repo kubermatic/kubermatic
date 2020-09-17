@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -774,8 +773,8 @@ type ConstraintTemplateProvider interface {
 	// List gets a list of constraint templates, by default it returns all resources.
 	//
 	// Note that the list is taken from the cache
-	List() (*v1beta1.ConstraintTemplateList, error)
+	List() (*kubermaticv1.ConstraintTemplateList, error)
 
 	// Get gets the given constraint template
-	Get(name string) (*v1beta1.ConstraintTemplate, error)
+	Get(name string) (*kubermaticv1.ConstraintTemplate, error)
 }

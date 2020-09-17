@@ -22,8 +22,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
-
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -196,10 +194,10 @@ type FakeConstraintTemplateProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeConstraintTemplateProvider) List() (*v1beta1.ConstraintTemplateList, error) {
+func (p *FakeConstraintTemplateProvider) List() (*kubermaticapiv1.ConstraintTemplateList, error) {
 	return p.Provider.List()
 }
 
-func (p *FakeConstraintTemplateProvider) Get(name string) (*v1beta1.ConstraintTemplate, error) {
+func (p *FakeConstraintTemplateProvider) Get(name string) (*kubermaticapiv1.ConstraintTemplate, error) {
 	return p.Provider.Get(name)
 }

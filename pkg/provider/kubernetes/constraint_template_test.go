@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -29,6 +28,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 )
 
@@ -36,17 +36,13 @@ func TestListConstraintTemplates(t *testing.T) {
 	testCases := []struct {
 		name            string
 		existingObjects []runtime.Object
-		expectedCTList  []*v1beta1.ConstraintTemplate
+		expectedCTList  []*kubermaticv1.ConstraintTemplate
 	}{
 		{
 			name:            "test: list constraint templates",
 			existingObjects: []runtime.Object{genConstraintTemplate("ct1"), genConstraintTemplate("ct2")},
-			expectedCTList:  []*v1beta1.ConstraintTemplate{genConstraintTemplate("ct1"), genConstraintTemplate("ct2")},
+			expectedCTList:  []*kubermaticv1.ConstraintTemplate{genConstraintTemplate("ct1"), genConstraintTemplate("ct2")},
 		},
-	}
-
-	if err := v1beta1.AddToSchemes.AddToScheme(scheme.Scheme); err != nil {
-		t.Fatal(err)
 	}
 
 	for idx := range testCases {
@@ -90,17 +86,13 @@ func TestGetConstraintTemplates(t *testing.T) {
 	testCases := []struct {
 		name            string
 		existingObjects []runtime.Object
-		expectedCT      *v1beta1.ConstraintTemplate
+		expectedCT      *kubermaticv1.ConstraintTemplate
 	}{
 		{
 			name:            "test: get constraint template",
 			existingObjects: []runtime.Object{genConstraintTemplate("ct1")},
 			expectedCT:      genConstraintTemplate("ct1"),
 		},
-	}
-
-	if err := v1beta1.AddToSchemes.AddToScheme(scheme.Scheme); err != nil {
-		t.Fatal(err)
 	}
 
 	for idx := range testCases {

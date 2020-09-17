@@ -17,7 +17,6 @@ limitations under the License.
 package constrainttemplate_test
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -29,6 +28,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 )
@@ -62,15 +62,9 @@ func TestListConstraintTemplates(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/v2/constrainttemplates", strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, clientSet, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
-			}
-			for _, obj := range tc.ExistingObjects {
-				err := clientSet.FakeClient.Create(context.Background(), obj)
-				if err != nil {
-					t.Fatalf("failed to create existing objects due to %v", err)
-				}
 			}
 
 			ep.ServeHTTP(res, req)
@@ -114,7 +108,7 @@ func TestGetConstraintTemplates(t *testing.T) {
 		{
 			Name:             "scenario 1: get non-existing constraint template",
 			CTName:           "missing",
-			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.templates.gatekeeper.sh \"missing\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8s.io \"missing\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				genConstraintTemplate("ct1"),
@@ -128,15 +122,9 @@ func TestGetConstraintTemplates(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTName), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, clientSet, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, nil, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
-			}
-			for _, obj := range tc.ExistingObjects {
-				err := clientSet.FakeClient.Create(context.Background(), obj)
-				if err != nil {
-					t.Fatalf("failed to create existing objects due to %v", err)
-				}
 			}
 
 			ep.ServeHTTP(res, req)
@@ -150,8 +138,8 @@ func TestGetConstraintTemplates(t *testing.T) {
 	}
 }
 
-func genConstraintTemplate(name string) *v1beta1.ConstraintTemplate {
-	ct := &v1beta1.ConstraintTemplate{}
+func genConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
+	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name
 	ct.Spec = v1beta1.ConstraintTemplateSpec{
 		CRD: v1beta1.CRD{

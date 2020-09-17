@@ -23,9 +23,9 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
@@ -64,11 +64,10 @@ func GetEndpoint(constraintTemplateProvider provider.ConstraintTemplateProvider)
 	}
 }
 
-func convertCTToAPI(ct *v1beta1.ConstraintTemplate) *apiv2.ConstraintTemplate {
+func convertCTToAPI(ct *kubermaticv1.ConstraintTemplate) *apiv2.ConstraintTemplate {
 	return &apiv2.ConstraintTemplate{
 		Name:   ct.Name,
 		Spec:   ct.Spec,
-		Status: ct.Status,
 	}
 }
 

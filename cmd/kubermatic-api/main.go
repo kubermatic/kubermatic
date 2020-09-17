@@ -49,6 +49,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	cmdutil "k8c.io/kubermatic/v2/cmd/util"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
@@ -69,7 +70,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version"
 	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
 
-	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/informers"
@@ -110,9 +110,6 @@ func main() {
 	}
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", v1beta1.SchemeGroupVersion), zap.Error(err))
-	}
-	if err := constrainttemplatev1beta1.AddToSchemes.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", constrainttemplatev1beta1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	providers, err := createInitProviders(options)

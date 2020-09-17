@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 )
 
@@ -45,9 +45,9 @@ func NewConstraintTemplateProvider(createMasterImpersonatedClient impersonationC
 }
 
 // List gets all constraint templates
-func (p *ConstraintTemplateProvider) List() (*v1beta1.ConstraintTemplateList, error) {
+func (p *ConstraintTemplateProvider) List() (*kubermaticv1.ConstraintTemplateList, error) {
 
-	constraintTemplates := &v1beta1.ConstraintTemplateList{}
+	constraintTemplates := &kubermaticv1.ConstraintTemplateList{}
 	if err := p.clientPrivileged.List(context.Background(), constraintTemplates); err != nil {
 		return nil, fmt.Errorf("failed to list constraint templates: %v", err)
 	}
@@ -56,9 +56,9 @@ func (p *ConstraintTemplateProvider) List() (*v1beta1.ConstraintTemplateList, er
 }
 
 // Get gets a constraint template that
-func (p *ConstraintTemplateProvider) Get(name string) (*v1beta1.ConstraintTemplate, error) {
+func (p *ConstraintTemplateProvider) Get(name string) (*kubermaticv1.ConstraintTemplate, error) {
 
-	constraintTemplate := &v1beta1.ConstraintTemplate{}
+	constraintTemplate := &kubermaticv1.ConstraintTemplate{}
 	if err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: name}, constraintTemplate); err != nil {
 		return nil, err
 	}
