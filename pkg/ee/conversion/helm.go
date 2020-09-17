@@ -307,7 +307,10 @@ func ConvertDatacenters(datacenterMeta map[string]provider.DatacenterMeta, globa
 		seed.APIVersion = kubermaticv1.SchemeGroupVersion.String()
 		seed.Kind = "Seed"
 		seed.Namespace = targetNamespace
-		seed.Spec.PauseProvisioning = pauseProvisioning
+
+		if pauseProvisioning {
+			seed.Annotations[common.SkipReconcilingAnnotation] = "true"
+		}
 
 		var seedKubeconfig *clientcmdapi.Config
 		if globalKubeconfig != nil {

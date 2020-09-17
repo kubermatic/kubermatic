@@ -89,11 +89,6 @@ type SeedSpec struct {
 	ProxySettings *ProxySettings `json:"proxy_settings,omitempty"`
 	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
 	ExposeStrategy corev1.ServiceType `json:"expose_strategy,omitempty"`
-	// PauseProvisioning should only be used when migrating seed clusters, as it
-	// will make the Kubermatic Operator not reconcile the required components
-	// inside the seed cluster (like the seed-controller-manager, webhooks etc.).
-	// This setting does not "disable" a seed or the userclusters on it.
-	PauseProvisioning bool `json:"pauseProvisioning,omitempty"`
 }
 
 type NodeportProxyConfig struct {
