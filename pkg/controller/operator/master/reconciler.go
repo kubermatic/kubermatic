@@ -206,10 +206,13 @@ func (r *Reconciler) reconcileSecrets(config *operatorv1alpha1.KubermaticConfigu
 	logger.Debug("Reconciling Secrets")
 
 	creators := []reconciling.NamedSecretCreatorGetter{
-		common.DockercfgSecretCreator(config),
 		common.SeedWebhookServingCASecretCreator(config),
 		common.SeedWebhookServingCertSecretCreator(config, r.Client),
 		common.ExtraFilesSecretCreator(config),
+	}
+
+	if config.Spec.ImagePullSecret != "" {
+		creators = append(creators, common.DockercfgSecretCreator(config))
 	}
 
 	if config.Spec.Auth.CABundle != "" {
@@ -263,6 +266,11 @@ func (r *Reconciler) reconcileDeployments(config *operatorv1alpha1.KubermaticCon
 	modifiers := []reconciling.ObjectModifier{
 		common.OwnershipModifierFactory(config, r.scheme),
 		common.VolumeRevisionLabelsModifierFactory(r.ctx, r.Client),
+	}
+	// add the image pull secret wrapper only when an image pull secret is
+	// provided
+	if config.Spec.ImagePullSecret != "" {
+		modifiers = append(modifiers, reconciling.ImagePullSecretsWrapper(common.DockercfgSecretName))
 	}
 
 	if err := reconciling.ReconcileDeployments(r.ctx, creators, config.Namespace, r.Client, modifiers...); err != nil {

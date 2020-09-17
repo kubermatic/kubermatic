@@ -69,11 +69,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 			}
 
 			d.Spec.Template.Spec.ServiceAccountName = serviceAccountName
-			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
-				{
-					Name: common.DockercfgSecretName,
-				},
-			}
 
 			volumes := []corev1.Volume{
 				{
