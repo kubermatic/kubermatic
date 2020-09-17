@@ -8190,6 +8190,15 @@
           "constrainttemplates"
         ],
         "operationId": "getConstraintTemplate",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "ct_name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "ConstraintTemplate",

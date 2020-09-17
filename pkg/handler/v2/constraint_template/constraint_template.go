@@ -66,12 +66,13 @@ func GetEndpoint(constraintTemplateProvider provider.ConstraintTemplateProvider)
 
 func convertCTToAPI(ct *kubermaticv1.ConstraintTemplate) *apiv2.ConstraintTemplate {
 	return &apiv2.ConstraintTemplate{
-		Name:   ct.Name,
-		Spec:   ct.Spec,
+		Name: ct.Name,
+		Spec: ct.Spec,
 	}
 }
 
 // constraintTemplateReq represents a request for a specific constraintTemplate
+// swagger:parameters getConstraintTemplate
 type constraintTemplateReq struct {
 	// in: path
 	// required: true

@@ -19,7 +19,7 @@ import (
 // NewGetConstraintTemplateParams creates a new GetConstraintTemplateParams object
 // with the default values initialized.
 func NewGetConstraintTemplateParams() *GetConstraintTemplateParams {
-
+	var ()
 	return &GetConstraintTemplateParams{
 
 		timeout: cr.DefaultTimeout,
@@ -29,7 +29,7 @@ func NewGetConstraintTemplateParams() *GetConstraintTemplateParams {
 // NewGetConstraintTemplateParamsWithTimeout creates a new GetConstraintTemplateParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewGetConstraintTemplateParamsWithTimeout(timeout time.Duration) *GetConstraintTemplateParams {
-
+	var ()
 	return &GetConstraintTemplateParams{
 
 		timeout: timeout,
@@ -39,7 +39,7 @@ func NewGetConstraintTemplateParamsWithTimeout(timeout time.Duration) *GetConstr
 // NewGetConstraintTemplateParamsWithContext creates a new GetConstraintTemplateParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewGetConstraintTemplateParamsWithContext(ctx context.Context) *GetConstraintTemplateParams {
-
+	var ()
 	return &GetConstraintTemplateParams{
 
 		Context: ctx,
@@ -49,7 +49,7 @@ func NewGetConstraintTemplateParamsWithContext(ctx context.Context) *GetConstrai
 // NewGetConstraintTemplateParamsWithHTTPClient creates a new GetConstraintTemplateParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewGetConstraintTemplateParamsWithHTTPClient(client *http.Client) *GetConstraintTemplateParams {
-
+	var ()
 	return &GetConstraintTemplateParams{
 		HTTPClient: client,
 	}
@@ -59,6 +59,10 @@ func NewGetConstraintTemplateParamsWithHTTPClient(client *http.Client) *GetConst
 for the get constraint template operation typically these are written to a http.Request
 */
 type GetConstraintTemplateParams struct {
+
+	/*CtName*/
+	Name string
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -97,6 +101,17 @@ func (o *GetConstraintTemplateParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithName adds the ctName to the get constraint template params
+func (o *GetConstraintTemplateParams) WithName(ctName string) *GetConstraintTemplateParams {
+	o.SetName(ctName)
+	return o
+}
+
+// SetName adds the ctName to the get constraint template params
+func (o *GetConstraintTemplateParams) SetName(ctName string) {
+	o.Name = ctName
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *GetConstraintTemplateParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -104,6 +119,11 @@ func (o *GetConstraintTemplateParams) WriteToRequest(r runtime.ClientRequest, re
 		return err
 	}
 	var res []error
+
+	// path param ct_name
+	if err := r.SetPathParam("ct_name", o.Name); err != nil {
+		return err
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
