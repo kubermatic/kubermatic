@@ -239,15 +239,20 @@ type DatacenterSpecVSphere struct {
 	DefaultDatastore string `json:"datastore"`
 	// The name of the datacenter to use.
 	Datacenter string `json:"datacenter"`
-	// The name of the Kubernetes cluster to use.
+	// Optional: The name of the vSphere cluster to use.
+	// Cluster is deprecated and may be removed in future releases as it is
+	// currently ignored.
+	// The cluster hosting the VMs will be the same VM used as a template is
+	// located.
 	Cluster string `json:"cluster"`
 	// Optional: The root path for cluster specific VM folders. Each cluster gets its own
 	// folder below the root folder. Must be the FQDN (for example
 	// "/datacenter-1/vm/all-kubermatic-vms-in-here") and defaults to the root VM
 	// folder: "/datacenter-1/vm"
 	RootPath string `json:"root_path"`
-	// A list of templates to use for a given operating system. You must define at
-	// least one template.
+	// A list of VM templates to use for a given operating system. You must
+	// define at least one template.
+	// See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
 	Templates ImageList `json:"templates"`
 
 	// Optional: Infra management user is the user that will be used for everything

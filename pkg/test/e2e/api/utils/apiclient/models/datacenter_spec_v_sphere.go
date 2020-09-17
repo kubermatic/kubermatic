@@ -19,7 +19,11 @@ type DatacenterSpecVSphere struct {
 	// If set to true, disables the TLS certificate check against the endpoint.
 	AllowInsecure bool `json:"allow_insecure,omitempty"`
 
-	// The name of the Kubernetes cluster to use.
+	// Optional: The name of the vSphere cluster to use.
+	// Cluster is deprecated and may be removed in future releases as it is
+	// currently ignored.
+	// The cluster hosting the VMs will be the same VM used as a template is
+	// located.
 	Cluster string `json:"cluster,omitempty"`
 
 	// The name of the datacenter to use.
