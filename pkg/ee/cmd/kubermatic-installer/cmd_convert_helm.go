@@ -59,6 +59,7 @@ func ConvertHelmValuesCommand(logger *logrus.Logger) cli.Command {
 			skipDatacentersFlag,
 			skipPresetsFlag,
 			targetNamespaceFlag,
+			pauseSeedsFlag,
 		},
 	}
 }
@@ -88,6 +89,7 @@ func ConvertHelmValuesAction(logger *logrus.Logger) cli.ActionFunc {
 			Namespace:      ctx.String(targetNamespaceFlag.Name),
 			IncludeSeeds:   !ctx.Bool(skipDatacentersFlag.Name),
 			IncludePresets: !ctx.Bool(skipPresetsFlag.Name),
+			PauseSeeds:     ctx.Bool(pauseSeedsFlag.Name),
 		}
 
 		resources, err := eeconversion.HelmValuesFileToCRDs(content, opt)

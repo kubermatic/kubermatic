@@ -93,6 +93,13 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, seedName string) error {
 		return nil
 	}
 
+	// to allow a step-by-step migration of seed clusters, it's possible to
+	// disable the operator's reconciling logic for seeds
+	if seed.Spec.PauseProvisioning {
+		log.Info("seed is marked as paused, skipping reconciliation")
+		return nil
+	}
+
 	// get pre-constructed seed client
 	seedClient, exists := r.seedClients[seedName]
 	if !exists {
