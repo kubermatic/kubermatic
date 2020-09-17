@@ -309,7 +309,7 @@ func ConvertDatacenters(datacenterMeta map[string]provider.DatacenterMeta, globa
 		seed.Namespace = targetNamespace
 
 		if pauseProvisioning {
-			seed.Annotations[common.SkipReconcilingAnnotation] = "true"
+			seed.Annotations[common.SkipReconcilingAnnotation] = ""
 		}
 
 		var seedKubeconfig *clientcmdapi.Config
