@@ -250,6 +250,14 @@ func (p *ClusterProvider) Get(userInfo *provider.UserInfo, clusterName string, o
 	return cluster, nil
 }
 
+// IsCluster checks if cluster exist with the given name
+func (p *ClusterProvider) IsCluster(clusterName string) bool {
+	if err := p.client.Get(context.Background(), types.NamespacedName{Name: clusterName}, &kubermaticv1.Cluster{}); err != nil {
+		return false
+	}
+	return true
+}
+
 // Delete deletes the given cluster
 func (p *ClusterProvider) Delete(userInfo *provider.UserInfo, clusterName string) error {
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)

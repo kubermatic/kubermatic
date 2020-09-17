@@ -328,27 +328,12 @@ func getClusterProvider(ctx context.Context, request interface{}, seedsGetter pr
 }
 
 func getClusterProviderByClusterID(ctx context.Context, seeds map[string]*kubermaticapiv1.Seed, clusterProviderGetter provider.ClusterProviderGetter, clusterID string) (provider.ClusterProvider, context.Context, error) {
-	rawAuthenticatesUser := ctx.Value(AuthenticatedUserContextKey)
-	if rawAuthenticatesUser == nil {
-		return nil, ctx, k8cerrors.New(http.StatusInternalServerError, "no user in context found")
-	}
-	authenticatedUser := rawAuthenticatesUser.(apiv1.User)
-	userInfo := &provider.UserInfo{
-		Email:   authenticatedUser.Email,
-		IsAdmin: authenticatedUser.IsAdmin,
-	}
 	for _, seed := range seeds {
 		clusterProvider, err := clusterProviderGetter(seed)
 		if err != nil {
 			return nil, ctx, k8cerrors.NewNotFound("cluster-provider", clusterID)
 		}
-
-		cluster, err := clusterProvider.Get(userInfo, clusterID, nil)
-		if err != nil && !kerrors.IsNotFound(err) {
-			return nil, ctx, err
-
-		}
-		if cluster != nil {
+		if clusterProvider.IsCluster(clusterID) {
 			return clusterProvider, ctx, nil
 		}
 	}

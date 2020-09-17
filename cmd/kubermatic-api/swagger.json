@@ -739,12 +739,6 @@
             "x-go-name": "UserID",
             "name": "user_id",
             "in": "query"
-          },
-          {
-            "type": "string",
-            "x-go-name": "Datacenter",
-            "name": "datacenter",
-            "in": "query"
           }
         ],
         "responses": {
@@ -8478,6 +8472,96 @@
             "schema": {
               "$ref": "#/definitions/ClusterHealth"
             }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/kubeconfig": {
+      "get": {
+        "produces": [
+          "application/octet-stream"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets the kubeconfig for the specified cluster.",
+        "operationId": "getClusterKubeconfigV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Kubeconfig"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/oidckubeconfig": {
+      "get": {
+        "produces": [
+          "application/yaml"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets the kubeconfig for the specified cluster with oidc authentication.",
+        "operationId": "getOidcClusterKubeconfigV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/Kubeconfig"
           },
           "401": {
             "$ref": "#/responses/empty"
