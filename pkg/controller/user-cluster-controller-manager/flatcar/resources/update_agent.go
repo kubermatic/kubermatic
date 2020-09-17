@@ -47,6 +47,7 @@ func AgentDaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemon
 			}
 
 			labels := map[string]string{"app": AgentDaemonSetName}
+
 			ds.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
 			ds.Spec.Template.ObjectMeta.Labels = labels
 

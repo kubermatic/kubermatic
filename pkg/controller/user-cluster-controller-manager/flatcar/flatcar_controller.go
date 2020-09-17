@@ -19,6 +19,7 @@ package flatcar
 import (
 	"context"
 	"fmt"
+	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar/resources"
 	nodelabelerapi "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler/api"
@@ -31,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
@@ -55,20 +55,17 @@ func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv
 		updateWindow:      updateWindow,
 	}
 
-	ctrlOptions := controller.Options{
-		Reconciler: reconciler,
-		// Only use 1 worker to prevent concurrent operator deployments
-		MaxConcurrentReconciles: 1,
-	}
+	ctrlOptions := controller.Options{Reconciler: reconciler}
 	c, err := controller.New(ControllerName, mgr, ctrlOptions)
 	if err != nil {
 		return err
 	}
 
-	predicates := predicateutil.Factory(func(m metav1.Object, _ runtime.Object) bool {
+	predicate := predicateutil.Factory(func(m metav1.Object, _ runtime.Object) bool {
 		return m.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.FlatcarLabelValue
 	})
-	return c.Watch(&source.Kind{Type: &corev1.Node{}}, &handler.EnqueueRequestForObject{}, predicates)
+
+	return c.Watch(&source.Kind{Type: &corev1.Node{}}, controllerutil.EnqueueConst(""), predicate)
 }
 
 func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
@@ -116,7 +113,7 @@ func (r *Reconciler) reconcileUpdateOperatorResources(ctx context.Context) error
 
 	dsCreators := getDaemonSetCreators(r.overwriteRegistry)
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile the DaemonSet: %v", err)
+		return fmt.Errorf("failed to reconcile the DaemonSets: %v", err)
 	}
 
 	return nil
