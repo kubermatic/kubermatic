@@ -274,6 +274,11 @@ spec:
         requests:
           cpu: 50m
           memory: 32Mi
+  # PauseProvisioning should only be used when migrating seed clusters, as it
+  # will make the Kubermatic Operator not reconcile the required components
+  # inside the seed cluster (like the seed-controller-manager, webhooks etc.).
+  # This setting does not "disable" a seed or the userclusters on it.
+  pauseProvisioning: false
   # Optional: ProxySettings can be used to configure HTTP proxy settings on the
   # worker nodes in user clusters. However, proxy settings on nodes take precedence.
   proxy_settings:
