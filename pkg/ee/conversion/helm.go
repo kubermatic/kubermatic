@@ -147,6 +147,7 @@ type Options struct {
 	Namespace      string
 	IncludeSeeds   bool
 	IncludePresets bool
+	PauseSeeds     bool
 }
 
 func HelmValuesFileToCRDs(yamlContent []byte, opt Options) ([]runtime.Object, error) {
@@ -164,7 +165,7 @@ func HelmValuesFileToCRDs(yamlContent []byte, opt Options) ([]runtime.Object, er
 	result = append(result, config)
 
 	if opt.IncludeSeeds {
-		seeds, err := convertSeeds(&values, opt.Namespace)
+		seeds, err := convertSeeds(&values, opt.Namespace, opt.PauseSeeds)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create Seeds: %v", err)
 		}
@@ -263,7 +264,7 @@ type DatacentersMeta struct {
 	Datacenters map[string]provider.DatacenterMeta `json:"datacenters"`
 }
 
-func convertSeeds(values *helmValues, targetNamespace string) ([]runtime.Object, error) {
+func convertSeeds(values *helmValues, targetNamespace string, pauseProvisioning bool) ([]runtime.Object, error) {
 	if values.Kubermatic.Datacenters == "" {
 		return nil, nil
 	}
@@ -291,10 +292,10 @@ func convertSeeds(values *helmValues, targetNamespace string) ([]runtime.Object,
 		}
 	}
 
-	return ConvertDatacenters(dcMetas.Datacenters, kubeconfig, targetNamespace)
+	return ConvertDatacenters(dcMetas.Datacenters, kubeconfig, targetNamespace, pauseProvisioning)
 }
 
-func ConvertDatacenters(datacenterMeta map[string]provider.DatacenterMeta, globalKubeconfig *clientcmdapi.Config, targetNamespace string) ([]runtime.Object, error) {
+func ConvertDatacenters(datacenterMeta map[string]provider.DatacenterMeta, globalKubeconfig *clientcmdapi.Config, targetNamespace string, pauseProvisioning bool) ([]runtime.Object, error) {
 	result := []runtime.Object{}
 
 	seeds, err := provider.DatacenterMetasToSeeds(datacenterMeta)
@@ -306,6 +307,7 @@ func ConvertDatacenters(datacenterMeta map[string]provider.DatacenterMeta, globa
 		seed.APIVersion = kubermaticv1.SchemeGroupVersion.String()
 		seed.Kind = "Seed"
 		seed.Namespace = targetNamespace
+		seed.Spec.PauseProvisioning = pauseProvisioning
 
 		var seedKubeconfig *clientcmdapi.Config
 		if globalKubeconfig != nil {

@@ -35,6 +35,10 @@ var (
 		Usage: "Namespace to use for created resources",
 		Value: "kubermatic",
 	}
+	pauseSeedsFlag = cli.BoolFlag{
+		Name:  "pause-seeds",
+		Usage: "Set the pauseProvisioning flag on every generated Seed, to facilitate easier incremental seed cluster upgrades",
+	}
 )
 
 func handleErrors(logger *logrus.Logger, action cli.ActionFunc) cli.ActionFunc {
