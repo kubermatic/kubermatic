@@ -31,7 +31,9 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	utilpointer "k8s.io/utils/pointer"
 )
 
@@ -768,4 +770,86 @@ func TestDeploymentStrategyDefaulting(t *testing.T) {
 		})
 	}
 
+}
+
+func TestImagePullSecretsWrapper(t *testing.T) {
+	tests := []struct {
+		name            string
+		secretNames     []string
+		inputObj        runtime.Object
+		wantSecretNames []string
+		wantErr         bool
+	}{
+		{
+			name:            "No secret name provided",
+			secretNames:     []string{},
+			inputObj:        &appsv1.Deployment{},
+			wantSecretNames: []string{},
+		},
+		{
+			name:            "Secret name provided",
+			secretNames:     []string{"secret"},
+			inputObj:        &appsv1.Deployment{},
+			wantSecretNames: []string{"secret"},
+		},
+		{
+			name:            "Secret names provided",
+			secretNames:     []string{"secret_1", "secret_2"},
+			inputObj:        &appsv1.Deployment{},
+			wantSecretNames: []string{"secret_1", "secret_2"},
+		},
+		{
+			name:        "Secret already present",
+			secretNames: []string{"secret_1", "secret_2"},
+			inputObj: &appsv1.Deployment{
+				Spec: appsv1.DeploymentSpec{
+					Template: corev1.PodTemplateSpec{
+						Spec: corev1.PodSpec{
+							ImagePullSecrets: []corev1.LocalObjectReference{
+								{Name: "secret_1"},
+								{Name: "secret_3"},
+							},
+						},
+					},
+				},
+			},
+			wantSecretNames: []string{"secret_1", "secret_2", "secret_3"},
+		},
+		{
+			name:        "Unsupported object type",
+			secretNames: []string{"secret"},
+			inputObj:    &appsv1.StatefulSet{TypeMeta: metav1.TypeMeta{Kind: "StatefulSet", APIVersion: "apps/v1"}},
+			wantErr:     true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ImagePullSecretsWrapper(tt.secretNames...)
+			create := got(identityCreator)
+			_, err := create(tt.inputObj)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("wanted error = %v, but got %v", tt.wantErr, err)
+			}
+			if !tt.wantErr {
+				if d, ok := tt.inputObj.(*appsv1.Deployment); ok {
+					actualSecretNames := sets.NewString()
+					for _, ips := range d.Spec.Template.Spec.ImagePullSecrets {
+						actualSecretNames.Insert(ips.Name)
+					}
+					if len(d.Spec.Template.Spec.ImagePullSecrets) != len(tt.wantSecretNames) || !actualSecretNames.HasAll(tt.wantSecretNames...) {
+						t.Errorf("actual and expected image pull secret names do not match. expected: %v actual: %v", tt.wantSecretNames, actualSecretNames.List())
+					}
+				} else {
+					t.Fatal("this is an unexpected condition for this test that today only supports Deployments, if support for other resource types has been added please update this test accordingly")
+				}
+			}
+		})
+	}
+}
+
+// identityCreator is an ObjectModifier that returns the input object
+// untouched.
+// TODO(irozzo) May be usefule to move this in a test package?
+func identityCreator(obj runtime.Object) (runtime.Object, error) {
+	return obj, nil
 }
