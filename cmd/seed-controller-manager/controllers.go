@@ -205,11 +205,6 @@ func createBackupController(ctrlCtx *controllerContext) error {
 }
 
 func createMonitoringController(ctrlCtx *controllerContext) error {
-	dockerPullConfigJSON, err := ioutil.ReadFile(ctrlCtx.runOptions.dockerPullConfigJSONFile)
-	if err != nil {
-		return fmt.Errorf("failed to load ImagePullSecret from %s: %v", ctrlCtx.runOptions.dockerPullConfigJSONFile, err)
-	}
-
 	return monitoring.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -226,7 +221,7 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
-		dockerPullConfigJSON,
+		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		monitoring.Features{
 			VPA: ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),

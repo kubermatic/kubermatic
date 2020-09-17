@@ -44,11 +44,6 @@ func UIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, versions
 			}
 
 			d.Spec.Template.Labels = d.Spec.Selector.MatchLabels
-			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{
-				{
-					Name: common.DockercfgSecretName,
-				},
-			}
 
 			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				RunAsNonRoot: pointer.BoolPtr(true),
