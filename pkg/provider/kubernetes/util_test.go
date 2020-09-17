@@ -286,7 +286,7 @@ func genCluster(name, clusterType, projectID, workerName, userEmail string) *kub
 func genConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Kind = "ConstraintTemplate"
-	ct.APIVersion = "kubermatic.k8s.io/v1"
+	ct.APIVersion = kubermaticv1.SchemeGroupVersion.String()
 	ct.Name = name
 	ct.Spec = v1beta1.ConstraintTemplateSpec{
 		CRD: v1beta1.CRD{

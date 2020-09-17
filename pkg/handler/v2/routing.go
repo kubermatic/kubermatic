@@ -120,7 +120,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		userWatcher:                           routingParams.UserWatcher,
 		externalClusterProvider:               routingParams.ExternalClusterProvider,
 		privilegedExternalClusterProvider:     routingParams.PrivilegedExternalClusterProvider,
-		constraintTemplateProvider: routingParams.ConstraintTemplateProvider,
+		constraintTemplateProvider:            routingParams.ConstraintTemplateProvider,
 	}
 }
 
