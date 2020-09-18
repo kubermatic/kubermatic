@@ -45,12 +45,15 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/rand"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // NodeDeploymentEvent represents type of events related to Node Deployment
@@ -471,6 +474,53 @@ func HealthEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
 		CloudProviderInfrastructure:  existingCluster.Status.ExtendedHealth.CloudProviderInfrastructure,
 		UserClusterControllerManager: existingCluster.Status.ExtendedHealth.UserClusterControllerManager,
 	}, nil
+}
+
+func GetMetricsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	nodeList := &corev1.NodeList{}
+	if err := client.List(ctx, nodeList); err != nil {
+		return nil, err
+	}
+	availableResources := make(map[string]corev1.ResourceList)
+	for _, n := range nodeList.Items {
+		availableResources[n.Name] = n.Status.Allocatable
+	}
+
+	dynamicClient, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	allNodeMetricsList := &v1beta1.NodeMetricsList{}
+	if err := dynamicClient.List(ctx, allNodeMetricsList); err != nil {
+		// Happens during cluster creation when the CRD is not setup yet
+		if _, ok := err.(*meta.NoKindMatchError); !ok {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+	}
+
+	seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+	podMetricsList := &v1beta1.PodMetricsList{}
+	if err := seedAdminClient.List(ctx, podMetricsList, &ctrlruntimeclient.ListOptions{Namespace: fmt.Sprintf("cluster-%s", cluster.Name)}); err != nil {
+		// Happens during cluster creation when the CRD is not setup yet
+		if _, ok := err.(*meta.NoKindMatchError); !ok {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+	}
+	return ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
 }
 
 func UpdateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, clusterSSHKey *kubermaticv1.UserSSHKey, projectID string) error {
