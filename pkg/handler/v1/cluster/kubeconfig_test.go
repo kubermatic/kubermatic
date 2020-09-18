@@ -31,9 +31,9 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -250,7 +250,6 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 
 				// validate
 				assert.Equal(t, tc.ClusterID, state.ClusterID)
-				assert.Equal(t, tc.Datacenter, state.Datacenter)
 				assert.Equal(t, tc.ProjectID, state.ProjectID)
 				assert.Equal(t, tc.UserID, state.UserID)
 
@@ -467,7 +466,7 @@ func genTestKubeconfigKubermaticObjects() []runtime.Object {
 	}
 }
 
-func marshalEncodeState(oidcState cluster.OIDCState) (string, error) {
+func marshalEncodeState(oidcState handlercommon.OIDCState) (string, error) {
 
 	rawState, err := json.Marshal(oidcState)
 	if err != nil {
@@ -478,10 +477,10 @@ func marshalEncodeState(oidcState cluster.OIDCState) (string, error) {
 
 }
 
-func unmarshalState(rawState []byte) (cluster.OIDCState, error) {
-	oidcState := cluster.OIDCState{}
+func unmarshalState(rawState []byte) (handlercommon.OIDCState, error) {
+	oidcState := handlercommon.OIDCState{}
 	if err := json.Unmarshal(rawState, &oidcState); err != nil {
-		return cluster.OIDCState{}, err
+		return handlercommon.OIDCState{}, err
 	}
 	return oidcState, nil
 }

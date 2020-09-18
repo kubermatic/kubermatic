@@ -190,6 +190,9 @@ type ClusterProvider interface {
 	// GetTokenForCustomerCluster returns a token for the given cluster with permissions granted to group that
 	// user belongs to.
 	GetTokenForCustomerCluster(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (string, error)
+
+	// IsCluster checks if cluster exist with the given name
+	IsCluster(clusterName string) bool
 }
 
 // PrivilegedClusterProvider declares the set of methods for interacting with the seed clusters
