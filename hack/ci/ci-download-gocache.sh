@@ -61,7 +61,7 @@ ARCHIVE_NAME="${CACHE_VERSION}-${GO_VERSION}.tar"
 URL="${GOCACHE_MINIO_ADDRESS}/${ARCHIVE_NAME}"
 
 # Do not go through the retry loop when there is nothing
-if curl --head "${URL}" | grep -q 404; then
+if ! curl --head --silent --fail "${URL}" > /dev/null; then
   echodate "Remote has no gocache ${ARCHIVE_NAME}, exiting"
   exit 0
 fi
