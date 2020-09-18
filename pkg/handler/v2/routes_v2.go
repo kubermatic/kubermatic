@@ -68,7 +68,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.getClusterKubeconfig())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/oidckubeconfig").
+		Path("/projects/{project_id}/clusters/{cluster_id}/oidckubeconfig").
 		Handler(r.getOidcClusterKubeconfig())
 
 	// Defines a set of HTTP endpoints for external cluster that belong to a project.
@@ -331,7 +331,7 @@ func (r Routing) getClusterKubeconfig() http.Handler {
 //     Gets the kubeconfig for the specified cluster with oidc authentication.
 //
 //     Produces:
-//     - application/yaml
+//     - application/octet-stream
 //
 //     Responses:
 //       default: errorResponse

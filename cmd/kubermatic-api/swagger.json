@@ -8536,7 +8536,7 @@
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/oidckubeconfig": {
       "get": {
         "produces": [
-          "application/yaml"
+          "application/octet-stream"
         ],
         "tags": [
           "project"
