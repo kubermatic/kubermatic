@@ -309,6 +309,10 @@ func ConvertDatacenters(datacenterMeta map[string]provider.DatacenterMeta, globa
 		seed.Namespace = targetNamespace
 
 		if pauseProvisioning {
+			if seed.Annotations == nil {
+				seed.Annotations = map[string]string{}
+			}
+
 			seed.Annotations[common.SkipReconcilingAnnotation] = ""
 		}
 
