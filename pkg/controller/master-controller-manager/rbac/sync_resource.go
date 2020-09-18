@@ -47,6 +47,10 @@ const (
 func (c *resourcesController) syncProjectResource(key client.ObjectKey) error {
 	obj := c.objectType.DeepCopyObject()
 	if err := c.client.Get(c.ctx, key, obj); err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
+
 		return err
 	}
 
