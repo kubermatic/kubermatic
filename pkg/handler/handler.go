@@ -60,11 +60,6 @@ type ErrorDetails struct {
 // swagger:response empty
 type EmptyResponse struct{}
 
-func decodeEmptyReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req struct{}
-	return req, nil
-}
-
 func ErrorEncoder(ctx context.Context, err error, w http.ResponseWriter) {
 	var additional []string
 	errorCode := http.StatusInternalServerError

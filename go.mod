@@ -51,6 +51,7 @@ require (
 	github.com/nelsam/hel v0.0.0-20200611165952-2d829bae0c66 // indirect
 	github.com/oklog/run v1.1.0
 	github.com/onsi/ginkgo v1.14.0
+	github.com/open-policy-agent/frameworks/constraint v0.0.0-20200803193800-bcb6432d79b7
 	github.com/packethost/packngo v0.1.1-0.20190410075950-a02c426e4888
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0

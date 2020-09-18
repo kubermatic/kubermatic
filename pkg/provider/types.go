@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -768,4 +769,15 @@ type PrivilegedExternalClusterProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resources
 	UpdateUnsecured(cluster *kubermaticv1.ExternalCluster) (*kubermaticv1.ExternalCluster, error)
+}
+
+// ConstraintTemplateProvider declares the set of method for interacting with gatekeeper's constraint templates
+type ConstraintTemplateProvider interface {
+	// List gets a list of constraint templates, by default it returns all resources.
+	//
+	// Note that the list is taken from the cache
+	List() (*kubermaticv1.ConstraintTemplateList, error)
+
+	// Get gets the given constraint template
+	Get(name string) (*kubermaticv1.ConstraintTemplate, error)
 }

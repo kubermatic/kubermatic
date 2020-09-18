@@ -8139,6 +8139,82 @@
         }
       }
     },
+    "/api/v2/constrainttemplates": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "constrainttemplates"
+        ],
+        "summary": "List constraint templates.",
+        "operationId": "listConstraintTemplates",
+        "responses": {
+          "200": {
+            "description": "ConstraintTemplate",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ConstraintTemplate"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/constrainttemplates/{ct_name}": {
+      "get": {
+        "description": "Get constraint templates specified by name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "constrainttemplates"
+        ],
+        "operationId": "getConstraintTemplate",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "ct_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ConstraintTemplate",
+            "schema": {
+              "$ref": "#/definitions/ConstraintTemplate"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters": {
       "get": {
         "produces": [
@@ -9910,6 +9986,51 @@
       "title": "BringYourOwnCloudSpec specifies access data for a bring your own cluster.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
+    "ByPodStatus": {
+      "description": "ByPodStatus defines the observed state of ConstraintTemplate as seen by\nan individual controller",
+      "type": "object",
+      "properties": {
+        "errors": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CreateCRDError"
+          },
+          "x-go-name": "Errors"
+        },
+        "id": {
+          "description": "a unique identifier for the pod that wrote the status",
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "observedGeneration": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "ObservedGeneration"
+        }
+      },
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+    },
+    "CRD": {
+      "type": "object",
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/CRDSpec"
+        }
+      },
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+    },
+    "CRDSpec": {
+      "type": "object",
+      "properties": {
+        "names": {
+          "$ref": "#/definitions/Names"
+        },
+        "validation": {
+          "$ref": "#/definitions/Validation"
+        }
+      },
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+    },
     "CentOSSpec": {
       "description": "CentOSSpec contains CentOS specific settings",
       "type": "object",
@@ -10247,6 +10368,58 @@
       "format": "int8",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
+    "ConstraintTemplate": {
+      "description": "ConstraintTemplate represents a gatekeeper ConstraintTemplate",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ConstraintTemplateSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/ConstraintTemplateStatus"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ConstraintTemplateSpec": {
+      "description": "ConstraintTemplateSpec defines the desired state of ConstraintTemplate",
+      "type": "object",
+      "properties": {
+        "crd": {
+          "$ref": "#/definitions/CRD"
+        },
+        "targets": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Target"
+          },
+          "x-go-name": "Targets"
+        }
+      },
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+    },
+    "ConstraintTemplateStatus": {
+      "description": "ConstraintTemplateStatus defines the observed state of ConstraintTemplate",
+      "type": "object",
+      "properties": {
+        "byPod": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ByPodStatus"
+          },
+          "x-go-name": "ByPod"
+        },
+        "created": {
+          "type": "boolean",
+          "x-go-name": "Created"
+        }
+      },
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+    },
     "ContainerLinuxSpec": {
       "description": "ContainerLinuxSpec ubuntu linux specific settings",
       "type": "object",
@@ -10277,6 +10450,25 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "CreateCRDError": {
+      "type": "object",
+      "title": "CreateCRDError represents a single error caught during parsing, compiling, etc.",
+      "properties": {
+        "code": {
+          "type": "string",
+          "x-go-name": "Code"
+        },
+        "location": {
+          "type": "string",
+          "x-go-name": "Location"
+        },
+        "message": {
+          "type": "string",
+          "x-go-name": "Message"
+        }
+      },
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
     },
     "CreateClusterSpec": {
       "description": "CreateClusterSpec is the structure that is used to create cluster with its initial node deployment",
@@ -10888,6 +11080,21 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "ExternalDocumentation": {
+      "type": "object",
+      "title": "ExternalDocumentation allows referencing an external resource for extended documentation.",
+      "properties": {
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "url": {
+          "type": "string",
+          "x-go-name": "URL"
+        }
+      },
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+    },
     "FakeCloudSpec": {
       "type": "object",
       "title": "FakeCloudSpec specifies access data for a fake cloud.",
@@ -11310,6 +11517,297 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
+    "JSON": {
+      "description": "These types are supported: bool, int64, float64, string, []interface{}, map[string]interface{} and nil.",
+      "type": "object",
+      "title": "JSON represents any valid JSON value.",
+      "properties": {
+        "Raw": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8"
+          }
+        }
+      },
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+    },
+    "JSONSchemaDefinitions": {
+      "type": "object",
+      "title": "JSONSchemaDefinitions contains the models explicitly defined in this spec.",
+      "additionalProperties": {
+        "$ref": "#/definitions/JSONSchemaProps"
+      },
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+    },
+    "JSONSchemaDependencies": {
+      "type": "object",
+      "title": "JSONSchemaDependencies represent a dependencies property.",
+      "additionalProperties": {
+        "$ref": "#/definitions/JSONSchemaPropsOrStringArray"
+      },
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+    },
+    "JSONSchemaProps": {
+      "type": "object",
+      "title": "JSONSchemaProps is a JSON-Schema following Specification Draft 4 (http://json-schema.org/).",
+      "properties": {
+        "$ref": {
+          "type": "string",
+          "x-go-name": "Ref"
+        },
+        "$schema": {
+          "$ref": "#/definitions/JSONSchemaURL"
+        },
+        "additionalItems": {
+          "$ref": "#/definitions/JSONSchemaPropsOrBool"
+        },
+        "additionalProperties": {
+          "$ref": "#/definitions/JSONSchemaPropsOrBool"
+        },
+        "allOf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/JSONSchemaProps"
+          },
+          "x-go-name": "AllOf"
+        },
+        "anyOf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/JSONSchemaProps"
+          },
+          "x-go-name": "AnyOf"
+        },
+        "default": {
+          "$ref": "#/definitions/JSON"
+        },
+        "definitions": {
+          "$ref": "#/definitions/JSONSchemaDefinitions"
+        },
+        "dependencies": {
+          "$ref": "#/definitions/JSONSchemaDependencies"
+        },
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "enum": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/JSON"
+          },
+          "x-go-name": "Enum"
+        },
+        "example": {
+          "$ref": "#/definitions/JSON"
+        },
+        "exclusiveMaximum": {
+          "type": "boolean",
+          "x-go-name": "ExclusiveMaximum"
+        },
+        "exclusiveMinimum": {
+          "type": "boolean",
+          "x-go-name": "ExclusiveMinimum"
+        },
+        "externalDocs": {
+          "$ref": "#/definitions/ExternalDocumentation"
+        },
+        "format": {
+          "description": "format is an OpenAPI v3 format string. Unknown formats are ignored. The following formats are validated:\n\nbsonobjectid: a bson object ID, i.e. a 24 characters hex string\nuri: an URI as parsed by Golang net/url.ParseRequestURI\nemail: an email address as parsed by Golang net/mail.ParseAddress\nhostname: a valid representation for an Internet host name, as defined by RFC 1034, section 3.1 [RFC1034].\nipv4: an IPv4 IP as parsed by Golang net.ParseIP\nipv6: an IPv6 IP as parsed by Golang net.ParseIP\ncidr: a CIDR as parsed by Golang net.ParseCIDR\nmac: a MAC address as parsed by Golang net.ParseMAC\nuuid: an UUID that allows uppercase defined by the regex (?i)^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$\nuuid3: an UUID3 that allows uppercase defined by the regex (?i)^[0-9a-f]{8}-?[0-9a-f]{4}-?3[0-9a-f]{3}-?[0-9a-f]{4}-?[0-9a-f]{12}$\nuuid4: an UUID4 that allows uppercase defined by the regex (?i)^[0-9a-f]{8}-?[0-9a-f]{4}-?4[0-9a-f]{3}-?[89ab][0-9a-f]{3}-?[0-9a-f]{12}$\nuuid5: an UUID5 that allows uppercase defined by the regex (?i)^[0-9a-f]{8}-?[0-9a-f]{4}-?5[0-9a-f]{3}-?[89ab][0-9a-f]{3}-?[0-9a-f]{12}$\nisbn: an ISBN10 or ISBN13 number string like \"0321751043\" or \"978-0321751041\"\nisbn10: an ISBN10 number string like \"0321751043\"\nisbn13: an ISBN13 number string like \"978-0321751041\"\ncreditcard: a credit card number defined by the regex ^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9][0-9])[0-9]{12}|3[47][0-9]{13}|3(?:0[0-5]|[68][0-9])[0-9]{11}|(?:2131|1800|35\\\\d{3})\\\\d{11})$ with any non digit characters mixed in\nssn: a U.S. social security number following the regex ^\\\\d{3}[- ]?\\\\d{2}[- ]?\\\\d{4}$\nhexcolor: an hexadecimal color code like \"#FFFFFF: following the regex ^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$\nrgbcolor: an RGB color code like rgb like \"rgb(255,255,2559\"\nbyte: base64 encoded binary data\npassword: any kind of string\ndate: a date string like \"2006-01-02\" as defined by full-date in RFC3339\nduration: a duration string like \"22 ns\" as parsed by Golang time.ParseDuration or compatible with Scala duration format\ndatetime: a date time string like \"2014-12-15T19:30:20.000Z\" as defined by date-time in RFC3339.",
+          "type": "string",
+          "x-go-name": "Format"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "items": {
+          "$ref": "#/definitions/JSONSchemaPropsOrArray"
+        },
+        "maxItems": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MaxItems"
+        },
+        "maxLength": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MaxLength"
+        },
+        "maxProperties": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MaxProperties"
+        },
+        "maximum": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Maximum"
+        },
+        "minItems": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MinItems"
+        },
+        "minLength": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MinLength"
+        },
+        "minProperties": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MinProperties"
+        },
+        "minimum": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "Minimum"
+        },
+        "multipleOf": {
+          "type": "number",
+          "format": "double",
+          "x-go-name": "MultipleOf"
+        },
+        "not": {
+          "$ref": "#/definitions/JSONSchemaProps"
+        },
+        "nullable": {
+          "type": "boolean",
+          "x-go-name": "Nullable"
+        },
+        "oneOf": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/JSONSchemaProps"
+          },
+          "x-go-name": "OneOf"
+        },
+        "pattern": {
+          "type": "string",
+          "x-go-name": "Pattern"
+        },
+        "patternProperties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/JSONSchemaProps"
+          },
+          "x-go-name": "PatternProperties"
+        },
+        "properties": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/JSONSchemaProps"
+          },
+          "x-go-name": "Properties"
+        },
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Required"
+        },
+        "title": {
+          "type": "string",
+          "x-go-name": "Title"
+        },
+        "type": {
+          "type": "string",
+          "x-go-name": "Type"
+        },
+        "uniqueItems": {
+          "type": "boolean",
+          "x-go-name": "UniqueItems"
+        },
+        "x-kubernetes-embedded-resource": {
+          "description": "x-kubernetes-embedded-resource defines that the value is an\nembedded Kubernetes runtime.Object, with TypeMeta and\nObjectMeta. The type must be object. It is allowed to further\nrestrict the embedded object. kind, apiVersion and metadata\nare validated automatically. x-kubernetes-preserve-unknown-fields\nis allowed to be true, but does not have to be if the object\nis fully specified (up to kind, apiVersion, metadata).",
+          "type": "boolean",
+          "x-go-name": "XEmbeddedResource"
+        },
+        "x-kubernetes-int-or-string": {
+          "description": "x-kubernetes-int-or-string specifies that this value is\neither an integer or a string. If this is true, an empty\ntype is allowed and type as child of anyOf is permitted\nif following one of the following patterns:\n\n1) anyOf:\ntype: integer\ntype: string\n2) allOf:\nanyOf:\ntype: integer\ntype: string\n... zero or more",
+          "type": "boolean",
+          "x-go-name": "XIntOrString"
+        },
+        "x-kubernetes-list-map-keys": {
+          "description": "x-kubernetes-list-map-keys annotates an array with the x-kubernetes-list-type `map` by specifying the keys used\nas the index of the map.\n\nThis tag MUST only be used on lists that have the \"x-kubernetes-list-type\"\nextension set to \"map\". Also, the values specified for this attribute must\nbe a scalar typed field of the child structure (no nesting is supported).\n\nThe properties specified must either be required or have a default value,\nto ensure those properties are present for all list items.\n\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "XListMapKeys"
+        },
+        "x-kubernetes-list-type": {
+          "description": "x-kubernetes-list-type annotates an array to further describe its topology.\nThis extension must only be used on lists and may have 3 possible values:\n\n1) `atomic`: the list is treated as a single entity, like a scalar.\nAtomic lists will be entirely replaced when updated. This extension\nmay be used on any type of list (struct, scalar, ...).\n2) `set`:\nSets are lists that must not have multiple items with the same value. Each\nvalue must be a scalar, an object with x-kubernetes-map-type `atomic` or an\narray with x-kubernetes-list-type `atomic`.\n3) `map`:\nThese lists are like maps in that their elements have a non-index key\nused to identify them. Order is preserved upon merge. The map tag\nmust only be used on a list with elements of type object.\nDefaults to atomic for arrays.\n+optional",
+          "type": "string",
+          "x-go-name": "XListType"
+        },
+        "x-kubernetes-map-type": {
+          "description": "x-kubernetes-map-type annotates an object to further describe its topology.\nThis extension must only be used when type is object and may have 2 possible values:\n\n1) `granular`:\nThese maps are actual maps (key-value pairs) and each fields are independent\nfrom each other (they can each be manipulated by separate actors). This is\nthe default behaviour for all maps.\n2) `atomic`: the list is treated as a single entity, like a scalar.\nAtomic maps will be entirely replaced when updated.\n+optional",
+          "type": "string",
+          "x-go-name": "XMapType"
+        },
+        "x-kubernetes-preserve-unknown-fields": {
+          "description": "x-kubernetes-preserve-unknown-fields stops the API server\ndecoding step from pruning fields which are not specified\nin the validation schema. This affects fields recursively,\nbut switches back to normal pruning behaviour if nested\nproperties or additionalProperties are specified in the schema.\nThis can either be true or undefined. False is forbidden.",
+          "type": "boolean",
+          "x-go-name": "XPreserveUnknownFields"
+        }
+      },
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+    },
+    "JSONSchemaPropsOrArray": {
+      "description": "JSONSchemaPropsOrArray represents a value that can either be a JSONSchemaProps\nor an array of JSONSchemaProps. Mainly here for serialization purposes.",
+      "type": "object",
+      "properties": {
+        "JSONSchemas": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/JSONSchemaProps"
+          }
+        },
+        "Schema": {
+          "$ref": "#/definitions/JSONSchemaProps"
+        }
+      },
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+    },
+    "JSONSchemaPropsOrBool": {
+      "description": "Defaults to true for the boolean property.",
+      "type": "object",
+      "title": "JSONSchemaPropsOrBool represents JSONSchemaProps or a boolean value.",
+      "properties": {
+        "Allows": {
+          "type": "boolean"
+        },
+        "Schema": {
+          "$ref": "#/definitions/JSONSchemaProps"
+        }
+      },
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+    },
+    "JSONSchemaPropsOrStringArray": {
+      "type": "object",
+      "title": "JSONSchemaPropsOrStringArray represents a JSONSchemaProps or a string array.",
+      "properties": {
+        "Property": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Schema": {
+          "$ref": "#/definitions/JSONSchemaProps"
+        }
+      },
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+    },
+    "JSONSchemaURL": {
+      "type": "string",
+      "title": "JSONSchemaURL represents a schema url.",
+      "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+    },
     "KubermaticVersions": {
       "type": "object",
       "title": "KubermaticVersions describes the versions of running Kubermatic components.",
@@ -11471,6 +11969,23 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "Names": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "shortNames": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "ShortNames"
+        }
+      },
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
     },
     "Namespace": {
       "description": "Namespace defines namespace",
@@ -13194,6 +13709,27 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "Target": {
+      "type": "object",
+      "properties": {
+        "libs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Libs"
+        },
+        "rego": {
+          "type": "string",
+          "x-go-name": "Rego"
+        },
+        "target": {
+          "type": "string",
+          "x-go-name": "Target"
+        }
+      },
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+    },
     "Time": {
       "description": "Programs using times should typically store and pass them as values,\nnot pointers. That is, time variables and struct fields should be of\ntype time.Time, not *time.Time.\n\nA Time value can be used by multiple goroutines simultaneously except\nthat the methods GobDecode, UnmarshalBinary, UnmarshalJSON and\nUnmarshalText are not concurrency-safe.\n\nTime instants can be compared using the Before, After, and Equal methods.\nThe Sub method subtracts two instants, producing a Duration.\nThe Add method adds a Time and a Duration, producing a Time.\n\nThe zero value of type Time is January 1, year 1, 00:00:00.000000000 UTC.\nAs this time is unlikely to come up in practice, the IsZero method gives\na simple way of detecting a time that has not been initialized explicitly.\n\nEach Time has associated with it a Location, consulted when computing the\npresentation form of the time, such as in the Format, Hour, and Year methods.\nThe methods Local, UTC, and In return a Time with a specific location.\nChanging the location in this way changes only the presentation; it does not\nchange the instant in time being denoted and therefore does not affect the\ncomputations described in earlier paragraphs.\n\nRepresentations of a Time value saved by the GobEncode, MarshalBinary,\nMarshalJSON, and MarshalText methods store the Time.Location's offset, but not\nthe location name. They therefore lose information about Daylight Saving Time.\n\nIn addition to the required “wall clock” reading, a Time may contain an optional\nreading of the current process's monotonic clock, to provide additional precision\nfor comparison or subtraction.\nSee the “Monotonic Clocks” section in the package documentation for details.\n\nNote that the Go == operator compares not just the time instant but also the\nLocation and the monotonic clock reading. Therefore, Time values should not\nbe used as map or database keys without first guaranteeing that the\nidentical Location has been set for all values, which can be achieved\nthrough use of the UTC or Local method, and that the monotonic clock reading\nhas been stripped by setting t = t.Round(0). In general, prefer t.Equal(u)\nto t == u, since t.Equal uses the most accurate comparison available and\ncorrectly handles the case when only one of its arguments has a monotonic\nclock reading.",
       "type": "string",
@@ -13436,6 +13972,15 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "Validation": {
+      "type": "object",
+      "properties": {
+        "openAPIV3Schema": {
+          "$ref": "#/definitions/JSONSchemaProps"
+        }
+      },
+      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
     },
     "Version": {
       "type": "object",

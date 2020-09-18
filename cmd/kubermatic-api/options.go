@@ -199,4 +199,5 @@ type providers struct {
 	userWatcher                           watcher.UserWatcher
 	externalClusterProvider               provider.ExternalClusterProvider
 	privilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
+	constraintTemplateProvider            provider.ConstraintTemplateProvider
 }

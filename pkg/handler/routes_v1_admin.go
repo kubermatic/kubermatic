@@ -25,6 +25,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/admin"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 )
 
 //RegisterV1Admin declares all router paths for the admin users
@@ -104,7 +105,7 @@ func (r Routing) getKubermaticSettings() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.KubermaticSettingsEndpoint(r.settingsProvider)),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -125,7 +126,7 @@ func (r Routing) getKubermaticSettings() http.Handler {
 func (r Routing) getKubermaticCustomLinks() http.Handler {
 	return httptransport.NewServer(
 		admin.KubermaticCustomLinksEndpoint(r.settingsProvider),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -173,7 +174,7 @@ func (r Routing) getAdmins() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.GetAdminEndpoint(r.userInfoGetter, r.adminProvider)),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -225,7 +226,7 @@ func (r Routing) listAdmissionPlugins() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.ListAdmissionPluginEndpoint(r.userInfoGetter, r.admissionPluginProvider)),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -324,7 +325,7 @@ func (r Routing) listSeeds() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(admin.ListSeedEndpoint(r.userInfoGetter, r.seedsGetter)),
-		decodeEmptyReq,
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

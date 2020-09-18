@@ -8,6 +8,8 @@ type AddonConfigExpansion interface{}
 
 type ClusterExpansion interface{}
 
+type ConstraintTemplateExpansion interface{}
+
 type ExternalClusterExpansion interface{}
 
 type KubermaticSettingExpansion interface{}

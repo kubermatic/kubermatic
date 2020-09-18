@@ -18,6 +18,10 @@ type AddonConfigListerExpansion interface{}
 // ClusterLister.
 type ClusterListerExpansion interface{}
 
+// ConstraintTemplateListerExpansion allows custom methods to be added to
+// ConstraintTemplateLister.
+type ConstraintTemplateListerExpansion interface{}
+
 // ExternalClusterListerExpansion allows custom methods to be added to
 // ExternalClusterLister.
 type ExternalClusterListerExpansion interface{}
