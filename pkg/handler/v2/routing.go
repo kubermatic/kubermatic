@@ -76,6 +76,7 @@ type Routing struct {
 	userWatcher                           watcher.UserWatcher
 	externalClusterProvider               provider.ExternalClusterProvider
 	privilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
+	constraintTemplateProvider            provider.ConstraintTemplateProvider
 }
 
 // NewV2Routing creates a new Routing.
@@ -119,6 +120,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		userWatcher:                           routingParams.UserWatcher,
 		externalClusterProvider:               routingParams.ExternalClusterProvider,
 		privilegedExternalClusterProvider:     routingParams.PrivilegedExternalClusterProvider,
+		constraintTemplateProvider:            routingParams.ConstraintTemplateProvider,
 	}
 }
 

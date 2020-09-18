@@ -188,3 +188,16 @@ func (p *FakeExternalClusterProvider) CreateOrUpdateKubeconfigSecretForCluster(c
 func (p *FakeExternalClusterProvider) New(userInfo *provider.UserInfo, project *kubermaticapiv1.Project, cluster *kubermaticapiv1.ExternalCluster) (*kubermaticapiv1.ExternalCluster, error) {
 	return p.Provider.New(userInfo, project, cluster)
 }
+
+type FakeConstraintTemplateProvider struct {
+	Provider   *kubernetes.ConstraintTemplateProvider
+	FakeClient ctrlruntimeclient.Client
+}
+
+func (p *FakeConstraintTemplateProvider) List() (*kubermaticapiv1.ConstraintTemplateList, error) {
+	return p.Provider.List()
+}
+
+func (p *FakeConstraintTemplateProvider) Get(name string) (*kubermaticapiv1.ConstraintTemplate, error) {
+	return p.Provider.Get(name)
+}

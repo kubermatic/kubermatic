@@ -49,6 +49,7 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	cmdutil "k8c.io/kubermatic/v2/cmd/util"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
@@ -248,7 +249,12 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 
 	externalClusterProvider, err := kubernetesprovider.NewExternalClusterProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create user info getter due to %v", err)
+		return providers{}, fmt.Errorf("failed to create external cluster provider due to %v", err)
+	}
+
+	constraintTemplateProvider, err := kubernetesprovider.NewConstraintTemplateProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create constraint template provider due to %v", err)
 	}
 
 	kubeMasterInformerFactory.Start(wait.NeverStop)
@@ -298,6 +304,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		userWatcher:                           userWatcher,
 		externalClusterProvider:               externalClusterProvider,
 		privilegedExternalClusterProvider:     externalClusterProvider,
+		constraintTemplateProvider:            constraintTemplateProvider,
 	}, nil
 }
 
@@ -401,6 +408,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		UserWatcher:                           prov.userWatcher,
 		ExternalClusterProvider:               prov.externalClusterProvider,
 		PrivilegedExternalClusterProvider:     prov.privilegedExternalClusterProvider,
+		ConstraintTemplateProvider:            prov.constraintTemplateProvider,
 	}
 
 	r := handler.NewRouting(routingParams)

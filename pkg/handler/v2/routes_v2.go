@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
+	constrainttemplate "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
 )
 
@@ -111,6 +112,15 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/events").
 		Handler(r.listExternalClusterEvents())
+
+	// Define a set of endpoints for gatekeeper constraint templates
+	mux.Methods(http.MethodGet).
+		Path("/constrainttemplates").
+		Handler(r.listConstraintTemplates())
+
+	mux.Methods(http.MethodGet).
+		Path("/constrainttemplates/{ct_name}").
+		Handler(r.getConstraintTemplate())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -598,6 +608,56 @@ func (r Routing) listExternalClusterEvents() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(externalcluster.ListEventsEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.externalClusterProvider, r.privilegedExternalClusterProvider)),
 		externalcluster.DecodeListEventsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/constrainttemplates constrainttemplates listConstraintTemplates
+//
+//     List constraint templates.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ConstraintTemplate
+//       401: empty
+//       403: empty
+func (r Routing) listConstraintTemplates() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constrainttemplate.ListEndpoint(r.constraintTemplateProvider)),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/constrainttemplates/{ct_name} constrainttemplates getConstraintTemplate
+//
+//     Get constraint templates specified by name
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ConstraintTemplate
+//       401: empty
+//       403: empty
+func (r Routing) getConstraintTemplate() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constrainttemplate.GetEndpoint(r.constraintTemplateProvider)),
+		constrainttemplate.DecodeConstraintTemplateRequest,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

@@ -31,10 +31,13 @@ import (
 	"time"
 
 	ver "github.com/Masterminds/semver"
+	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticfakeclentset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
@@ -168,7 +171,9 @@ type newRoutingFunc func(
 	settingsWatcher watcher.SettingsWatcher,
 	userWatcher watcher.UserWatcher,
 	externalClusterProvider provider.ExternalClusterProvider,
-	privilegedExternalClusterProvider provider.PrivilegedExternalClusterProvider) http.Handler
+	privilegedExternalClusterProvider provider.PrivilegedExternalClusterProvider,
+	constraintTemplateProvider provider.ConstraintTemplateProvider,
+) http.Handler
 
 func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	if seedsGetter == nil {
@@ -295,6 +300,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		FakeClient: fakeClient,
 	}
 
+	constraintTemplateProvider, err := kubernetes.NewConstraintTemplateProvider(fakeImpersonationClient, fakeClient)
+	if err != nil {
+		return nil, nil, err
+	}
+	fakeConstraintTemplateProvider := &FakeConstraintTemplateProvider{
+		Provider:   constraintTemplateProvider,
+		FakeClient: fakeClient,
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -346,6 +360,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		userWatcher,
 		fakeExternalClusterProvider,
 		externalClusterProvider,
+		fakeConstraintTemplateProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
@@ -1154,4 +1169,35 @@ func GenDefaultExternalClusterNode() (*corev1.Node, error) {
 			},
 		},
 	}, nil
+}
+
+func GenDefaultConstraintTemplate(name string) apiv2.ConstraintTemplate {
+	return apiv2.ConstraintTemplate{
+		Name: name,
+		Spec: constrainttemplatev1beta1.ConstraintTemplateSpec{
+			CRD: constrainttemplatev1beta1.CRD{
+				Spec: constrainttemplatev1beta1.CRDSpec{
+					Names: constrainttemplatev1beta1.Names{
+						Kind:       "labelconstraint",
+						ShortNames: []string{"lc"},
+					},
+				},
+			},
+			Targets: []constrainttemplatev1beta1.Target{
+				{
+					Target: "admission.k8s.gatekeeper.sh",
+					Rego: `
+		package k8srequiredlabels
+
+        deny[{"msg": msg, "details": {"missing_labels": missing}}] {
+          provided := {label | input.review.object.metadata.labels[label]}
+          required := {label | label := input.parameters.labels[_]}
+          missing := required - provided
+          count(missing) > 0
+          msg := sprintf("you must provide labels: %v", [missing])
+        }`,
+				},
+			},
+		},
+	}
 }
