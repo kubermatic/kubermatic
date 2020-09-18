@@ -62,8 +62,6 @@ type CreateOIDCKubeconfigParams struct {
 
 	/*ClusterID*/
 	ClusterID *string
-	/*Datacenter*/
-	Datacenter *string
 	/*ProjectID*/
 	ProjectID *string
 	/*UserID*/
@@ -118,17 +116,6 @@ func (o *CreateOIDCKubeconfigParams) SetClusterID(clusterID *string) {
 	o.ClusterID = clusterID
 }
 
-// WithDatacenter adds the datacenter to the create o ID c kubeconfig params
-func (o *CreateOIDCKubeconfigParams) WithDatacenter(datacenter *string) *CreateOIDCKubeconfigParams {
-	o.SetDatacenter(datacenter)
-	return o
-}
-
-// SetDatacenter adds the datacenter to the create o ID c kubeconfig params
-func (o *CreateOIDCKubeconfigParams) SetDatacenter(datacenter *string) {
-	o.Datacenter = datacenter
-}
-
 // WithProjectID adds the projectID to the create o ID c kubeconfig params
 func (o *CreateOIDCKubeconfigParams) WithProjectID(projectID *string) *CreateOIDCKubeconfigParams {
 	o.SetProjectID(projectID)
@@ -169,22 +156,6 @@ func (o *CreateOIDCKubeconfigParams) WriteToRequest(r runtime.ClientRequest, reg
 		qClusterID := qrClusterID
 		if qClusterID != "" {
 			if err := r.SetQueryParam("cluster_id", qClusterID); err != nil {
-				return err
-			}
-		}
-
-	}
-
-	if o.Datacenter != nil {
-
-		// query param datacenter
-		var qrDatacenter string
-		if o.Datacenter != nil {
-			qrDatacenter = *o.Datacenter
-		}
-		qDatacenter := qrDatacenter
-		if qDatacenter != "" {
-			if err := r.SetQueryParam("datacenter", qDatacenter); err != nil {
 				return err
 			}
 		}

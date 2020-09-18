@@ -265,7 +265,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // GetClusterReq defines HTTP request for getCluster endpoint.
-// swagger:parameters getClusterV2 getClusterHealthV2
+// swagger:parameters getClusterV2 getClusterHealthV2 getOidcClusterKubeconfigV2 getClusterKubeconfigV2
 type GetClusterReq struct {
 	common.ProjectReq
 	// in: path
