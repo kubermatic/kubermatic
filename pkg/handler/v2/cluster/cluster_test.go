@@ -1159,7 +1159,6 @@ func TestGetClusterMetrics(t *testing.T) {
 
 	testcases := []struct {
 		Name                   string
-		Body                   string
 		ExpectedResponse       string
 		HTTPStatus             int
 		ClusterToGet           string
@@ -1172,7 +1171,6 @@ func TestGetClusterMetrics(t *testing.T) {
 		// scenario 1
 		{
 			Name:             "scenario 1: gets cluster metrics",
-			Body:             ``,
 			ExpectedResponse: `{"name":"defClusterID","controlPlane":{"memoryTotalBytes":1310,"cpuTotalMillicores":580000},"nodes":{"memoryTotalBytes":1310,"memoryAvailableBytes":1310,"memoryUsedPercentage":100,"cpuTotalMillicores":580000,"cpuAvailableMillicores":580000,"cpuUsedPercentage":100}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
@@ -1214,7 +1212,6 @@ func TestGetClusterMetrics(t *testing.T) {
 		// scenario 2
 		{
 			Name:             "scenario 2: the admin John can get any cluster metrics",
-			Body:             ``,
 			ExpectedResponse: `{"name":"defClusterID","controlPlane":{"memoryTotalBytes":1310,"cpuTotalMillicores":580000},"nodes":{"memoryTotalBytes":1310,"memoryAvailableBytes":1310,"memoryUsedPercentage":100,"cpuTotalMillicores":580000,"cpuAvailableMillicores":580000,"cpuUsedPercentage":100}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
@@ -1257,7 +1254,6 @@ func TestGetClusterMetrics(t *testing.T) {
 		// scenario 3
 		{
 			Name:             "scenario 3: the user John can not get Bob's cluster metrics",
-			Body:             ``,
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusForbidden,
@@ -1313,7 +1309,7 @@ func TestGetClusterMetrics(t *testing.T) {
 			for _, node := range tc.ExistingNodes {
 				kubeObj = append(kubeObj, node)
 			}
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/metrics", test.ProjectName, tc.ClusterToGet), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/metrics", test.ProjectName, tc.ClusterToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
