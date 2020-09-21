@@ -55,7 +55,7 @@ func (p *ConstraintTemplateProvider) List() (*kubermaticv1.ConstraintTemplateLis
 	return constraintTemplates, nil
 }
 
-// Get gets a constraint template that
+// Get gets a constraint template
 func (p *ConstraintTemplateProvider) Get(name string) (*kubermaticv1.ConstraintTemplate, error) {
 
 	constraintTemplate := &kubermaticv1.ConstraintTemplate{}
@@ -64,4 +64,14 @@ func (p *ConstraintTemplateProvider) Get(name string) (*kubermaticv1.ConstraintT
 	}
 
 	return constraintTemplate, nil
+}
+
+// Create creates a constraint template
+func (p *ConstraintTemplateProvider) Create(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
+
+	if err := p.clientPrivileged.Create(context.Background(), ct); err != nil {
+		return nil, err
+	}
+
+	return ct, nil
 }
