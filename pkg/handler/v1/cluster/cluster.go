@@ -38,11 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/klog"
-	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func CreateEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter,
@@ -292,50 +288,7 @@ func DetachSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHK
 func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
-		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		nodeList := &corev1.NodeList{}
-		if err := client.List(ctx, nodeList); err != nil {
-			return nil, err
-		}
-		availableResources := make(map[string]corev1.ResourceList)
-		for _, n := range nodeList.Items {
-			availableResources[n.Name] = n.Status.Allocatable
-		}
-
-		dynamicClient, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		allNodeMetricsList := &v1beta1.NodeMetricsList{}
-		if err := dynamicClient.List(ctx, allNodeMetricsList); err != nil {
-			// Happens during cluster creation when the CRD is not setup yet
-			if _, ok := err.(*meta.NoKindMatchError); !ok {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-		}
-
-		seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
-		podMetricsList := &v1beta1.PodMetricsList{}
-		if err := seedAdminClient.List(ctx, podMetricsList, &ctrlruntimeclient.ListOptions{Namespace: fmt.Sprintf("cluster-%s", cluster.Name)}); err != nil {
-			// Happens during cluster creation when the CRD is not setup yet
-			if _, ok := err.(*meta.NoKindMatchError); !ok {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-		}
-		return handlercommon.ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
+		return handlercommon.GetMetricsEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider)
 	}
 }
 
