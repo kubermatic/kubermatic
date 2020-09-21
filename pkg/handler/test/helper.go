@@ -1047,6 +1047,7 @@ func GenDefaultGlobalSettings() *kubermaticv1.KubermaticSetting {
 			DisplayDemoInfo:       true,
 			DisplayAPIDocs:        true,
 			DisplayTermsOfService: true,
+			EnableExternalClusterImport: true,
 		},
 	}
 }
