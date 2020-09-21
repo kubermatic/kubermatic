@@ -21,15 +21,10 @@ package api
 import (
 	"regexp"
 	"testing"
-	"time"
-
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
-
-const getDOMaxAttempts = 24
 
 func TestCreateUpdateDOCluster(t *testing.T) {
 	tests := []struct {
@@ -49,7 +44,7 @@ func TestCreateUpdateDOCluster(t *testing.T) {
 			name:       "create cluster on DigitalOcean",
 			dc:         "kubermatic",
 			location:   "do-fra1",
-			version:    "v1.18.8",
+			version:    getKubernetesVersion(),
 			credential: "e2e-digitalocean",
 			replicas:   1,
 			patch: PatchCluster{
@@ -66,106 +61,59 @@ func TestCreateUpdateDOCluster(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, getDOMaxAttempts)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			sshKey, err := apiRunner.CreateUserSSHKey(project.ID, tc.sshKeyName, tc.publicKey)
 			if err != nil {
-				t.Fatalf("can not get create SSH key due error: %v", err)
+				t.Fatalf("failed to get create SSH key: %v", err)
 			}
 			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
 			if err != nil {
-				t.Fatalf("can not create cluster due to error: %v", err)
+				t.Fatalf("failed to create cluster: %v", err)
 			}
 
-			var clusterReady bool
-			for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
-				healthStatus, err := apiRunner.GetClusterHealthStatus(project.ID, tc.dc, cluster.ID)
-				if err != nil {
-					t.Fatalf("can not get health status %v", GetErrorResponse(err))
+			if err := apiRunner.WaitForClusterHealthy(project.ID, tc.dc, cluster.ID); err != nil {
+				if err := apiRunner.PrintClusterEvents(project.ID, tc.dc, cluster.ID); err != nil {
+					t.Errorf("failed to print cluster events: %v", err)
 				}
 
-				if IsHealthyCluster(healthStatus) {
-					clusterReady = true
-					break
-				}
-				time.Sleep(30 * time.Second)
+				t.Fatalf("cluster not ready: %v", err)
 			}
 
-			if !clusterReady {
-				t.Fatalf("cluster not ready after %d attempts", getDOMaxAttempts)
-			}
-
-			var ndReady bool
-			for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
-				ndList, err := apiRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
-				if err != nil {
-					t.Fatalf("can not get node deployments %v", GetErrorResponse(err))
-				}
-
-				if len(ndList) == 1 {
-					ndReady = true
-					break
-				}
-				time.Sleep(30 * time.Second)
-			}
-			if !ndReady {
-				t.Fatalf("node deployment is not redy after %d attempts", getDOMaxAttempts)
-			}
-
-			if err := apiRunner.AssignSSHKeyToCluster(project.ID, cluster.ID, tc.dc, sshKey.ID); err != nil {
-				t.Fatalf("can not assign SSH key to the cluster due error: %v", err)
-			}
-
-			var replicasReady bool
-			var ndList []apiv1.NodeDeployment
-			for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
-				ndList, err = apiRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
-				if err != nil {
-					t.Fatalf("can not get node deployments %v", GetErrorResponse(err))
-				}
-
-				if ndList[0].Status.AvailableReplicas == tc.replicas {
-					replicasReady = true
-					break
-				}
-				time.Sleep(30 * time.Second)
-			}
-			if !replicasReady {
-				t.Fatalf("the number of nodes is not as expected, available replicas %d", ndList[0].Status.AvailableReplicas)
+			if err := apiRunner.WaitForClusterNodeDeploymentsToByReady(project.ID, tc.dc, cluster.ID, tc.replicas); err != nil {
+				t.Fatalf("cluster nodes not ready: %v", err)
 			}
 
 			_, err = apiRunner.UpdateCluster(project.ID, tc.dc, cluster.ID, tc.patch)
 			if err != nil {
-				t.Fatalf("can not update cluster %v", GetErrorResponse(err))
+				t.Fatalf("failed to update cluster: %v", err)
 			}
 
 			updatedCluster, err := apiRunner.GetCluster(project.ID, tc.dc, cluster.ID)
 			if err != nil {
-				t.Fatalf("can not get cluster %v", GetErrorResponse(err))
+				t.Fatalf("failed to get cluster: %v", err)
 			}
 
 			if updatedCluster.Name != tc.expectedName {
-				t.Fatalf("expected new name %s got %s", tc.expectedName, updatedCluster.Name)
+				t.Fatalf("expected new name %q, but got %q", tc.expectedName, updatedCluster.Name)
 			}
 
 			if !equality.Semantic.DeepEqual(updatedCluster.Labels, tc.expectedLabels) {
-				t.Fatalf("expected labels %v got %v", tc.expectedLabels, updatedCluster.Labels)
+				t.Fatalf("expected labels %v, but got %v", tc.expectedLabels, updatedCluster.Labels)
 			}
 			if err := apiRunner.DetachSSHKeyFromClusterParams(project.ID, cluster.ID, tc.dc, sshKey.ID); err != nil {
-				t.Fatalf("can not detach SSH key to the cluster due error: %v", err)
+				t.Fatalf("failed to detach SSH key to the cluster: %v", err)
 			}
 
 			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
-
 		})
 	}
 }
@@ -183,43 +131,39 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 			name:       "delete cluster before is up",
 			dc:         "kubermatic",
 			location:   "do-fra1",
-			version:    "v1.18.8",
+			version:    getKubernetesVersion(),
 			credential: "e2e-digitalocean",
-			replicas:   1,
+			replicas:   0,
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project %v", GetErrorResponse(err))
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, getDOMaxAttempts)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
 			if err != nil {
-				t.Fatalf("can not create cluster due to error: %v", err)
+				t.Fatalf("failed to create cluster: %v", err)
 			}
 
 			healthStatus, err := apiRunner.GetClusterHealthStatus(project.ID, tc.dc, cluster.ID)
 			if err != nil {
-				t.Fatalf("can not get health status %v", GetErrorResponse(err))
+				t.Fatalf("failed to get health status: %v", err)
 			}
 			if IsHealthyCluster(healthStatus) {
 				t.Fatal("Cluster is ready too fast")
 			}
 
-			time.Sleep(5 * time.Second)
-
 			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
-
 		})
 	}
 }
@@ -237,57 +181,46 @@ func TestGetClusterKubeconfig(t *testing.T) {
 			name:       "kubeconfig contains token",
 			dc:         "kubermatic",
 			location:   "do-fra1",
-			version:    "v1.18.8",
+			version:    getKubernetesVersion(),
 			credential: "e2e-digitalocean",
-			replicas:   1,
+			replicas:   0,
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, getDOMaxAttempts)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
 			if err != nil {
-				t.Fatalf("can not create cluster due to error: %v", err)
+				t.Fatalf("failed to create cluster: %v", err)
 			}
 
-			var clusterReady bool
-			for attempt := 1; attempt <= getDOMaxAttempts; attempt++ {
-				healthStatus, err := apiRunner.GetClusterHealthStatus(project.ID, tc.dc, cluster.ID)
-				if err != nil {
-					t.Fatalf("can not get health status %v", GetErrorResponse(err))
+			if err := apiRunner.WaitForClusterHealthy(project.ID, tc.dc, cluster.ID); err != nil {
+				if err := apiRunner.PrintClusterEvents(project.ID, tc.dc, cluster.ID); err != nil {
+					t.Errorf("failed to print cluster events: %v", err)
 				}
 
-				if IsHealthyCluster(healthStatus) {
-					clusterReady = true
-					break
-				}
-				time.Sleep(30 * time.Second)
-			}
-
-			if !clusterReady {
-				t.Fatalf("cluster not ready after %d attempts", getDOMaxAttempts)
+				t.Fatalf("cluster not ready: %v", err)
 			}
 
 			kubeconfig, err := apiRunner.GetKubeconfig(tc.dc, project.ID, cluster.ID)
 			if err != nil {
-				t.Fatalf("can not get kubeconfig %v", GetErrorResponse(err))
+				t.Fatalf("failed to get kubeconfig: %v", err)
 			}
 			regex := regexp.MustCompile(`token: [a-z0-9]{6}\.[a-z0-9]{16}`)
 			matches := regex.FindAllString(kubeconfig, -1)
 			if len(matches) != 1 {
-				t.Fatalf("expected token in kubeconfig, got %s", kubeconfig)
+				t.Fatalf("expected token in kubeconfig, got %q", kubeconfig)
 			}
 
 			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
