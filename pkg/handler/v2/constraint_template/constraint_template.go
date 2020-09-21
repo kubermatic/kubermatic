@@ -74,15 +74,6 @@ func convertCTToAPI(ct *kubermaticv1.ConstraintTemplate) *apiv2.ConstraintTempla
 	}
 }
 
-func convertAPICTToInternal(ct *apiv2.ConstraintTemplate) *kubermaticv1.ConstraintTemplate {
-	return &kubermaticv1.ConstraintTemplate{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: ct.Name,
-		},
-		Spec: ct.Spec,
-	}
-}
-
 // constraintTemplateReq represents a request for a specific constraintTemplate
 // swagger:parameters getConstraintTemplate
 type constraintTemplateReq struct {
