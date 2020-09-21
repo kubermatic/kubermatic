@@ -43,17 +43,18 @@ type KubermaticSetting struct {
 }
 
 type SettingSpec struct {
-	CustomLinks             CustomLinks    `json:"customLinks"`
-	CleanupOptions          CleanupOptions `json:"cleanupOptions"`
-	DefaultNodeCount        int8           `json:"defaultNodeCount"`
-	ClusterTypeOptions      ClusterType    `json:"clusterTypeOptions"`
-	DisplayDemoInfo         bool           `json:"displayDemoInfo"`
-	DisplayAPIDocs          bool           `json:"displayAPIDocs"`
-	DisplayTermsOfService   bool           `json:"displayTermsOfService"`
-	EnableDashboard         bool           `json:"enableDashboard"`
-	EnableOIDCKubeconfig    bool           `json:"enableOIDCKubeconfig"`
-	UserProjectsLimit       int64          `json:"userProjectsLimit"`
-	RestrictProjectCreation bool           `json:"restrictProjectCreation"`
+	CustomLinks                 CustomLinks    `json:"customLinks"`
+	CleanupOptions              CleanupOptions `json:"cleanupOptions"`
+	DefaultNodeCount            int8           `json:"defaultNodeCount"`
+	ClusterTypeOptions          ClusterType    `json:"clusterTypeOptions"`
+	DisplayDemoInfo             bool           `json:"displayDemoInfo"`
+	DisplayAPIDocs              bool           `json:"displayAPIDocs"`
+	DisplayTermsOfService       bool           `json:"displayTermsOfService"`
+	EnableDashboard             bool           `json:"enableDashboard"`
+	EnableOIDCKubeconfig        bool           `json:"enableOIDCKubeconfig"`
+	UserProjectsLimit           int64          `json:"userProjectsLimit"`
+	RestrictProjectCreation     bool           `json:"restrictProjectCreation"`
+	EnableExternalClusterImport bool           `json:"enableExternalClusterImport"`
 
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
