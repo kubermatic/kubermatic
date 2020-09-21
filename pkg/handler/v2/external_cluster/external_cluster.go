@@ -680,12 +680,12 @@ func updateCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 }
 
 func AreExternalClustersEnabled(provider provider.SettingsProvider) bool {
-	 settings, err := provider.GetGlobalSettings()
-	 if err != nil {
-	 	return false
-	 }
+	settings, err := provider.GetGlobalSettings()
+	if err != nil {
+		return false
+	}
 
-	 return settings.Spec.EnableExternalClusterImport
+	return settings.Spec.EnableExternalClusterImport
 }
 
 type body struct {
