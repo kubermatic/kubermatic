@@ -112,6 +112,23 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 				ServicePort: intstr.FromInt(80),
 			}
 
+			// PathType has been added in Kubernetes 1.18 and defaults to
+			// "ImplementationSpecific". To prevent reconcile loops in previous
+			// Kubernetes versions, this code is carefully written to not
+			// overwrite a PathType that has been defaulted by the apiserver.
+			var pathType *extensionsv1beta1.PathType
+
+			// As we control the entire rule set anyway, it's enough to find
+			// the first pathType -- they will all be identical eventually.
+			if rules := i.Spec.Rules; len(rules) > 0 {
+				if http := rules[0].IngressRuleValue.HTTP; http != nil {
+					for _, path := range http.Paths {
+						pathType = path.PathType
+						break
+					}
+				}
+			}
+
 			i.Spec.Rules = []extensionsv1beta1.IngressRule{
 				{
 					Host: cfg.Spec.Ingress.Domain,
@@ -119,15 +136,17 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
 							Paths: []extensionsv1beta1.HTTPIngressPath{
 								{
-									Path: "/api",
+									Path:     "/api",
+									PathType: pathType,
 									Backend: extensionsv1beta1.IngressBackend{
 										ServiceName: apiServiceName,
 										ServicePort: intstr.FromInt(80),
 									},
 								},
 								{
-									Path:    "/",
-									Backend: *i.Spec.Backend,
+									Path:     "/",
+									PathType: pathType,
+									Backend:  *i.Spec.Backend,
 								},
 							},
 						},
