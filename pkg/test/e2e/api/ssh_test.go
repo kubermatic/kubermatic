@@ -41,24 +41,23 @@ func TestCreateSSHKey(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 1)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			sshKey, err := apiRunner.CreateUserSSHKey(project.ID, tc.keyName, tc.publicKey)
 			if err != nil {
-				t.Fatalf("can not get create SSH key due error: %v", err)
+				t.Fatalf("failed to get create SSH key: %v", err)
 			}
 			sshKeys, err := apiRunner.ListUserSSHKey(project.ID)
 			if err != nil {
-				t.Fatalf("can not list SSH keys due error: %v", err)
+				t.Fatalf("failed to list SSH keys: %v", err)
 			}
 			if len(sshKeys) != 1 {
 				t.Fatalf("expected one SSH key, got %d", len(sshKeys))
@@ -66,12 +65,12 @@ func TestCreateSSHKey(t *testing.T) {
 			if !reflect.DeepEqual(sshKeys[0], sshKey) {
 				t.Fatalf("expected %v, got %v", sshKey, sshKeys[0])
 			}
+
 			// user can't create SSH key with the same name
 			_, err = apiRunner.CreateUserSSHKey(project.ID, tc.keyName, tc.publicKey)
 			if err == nil {
 				t.Fatalf("expected error, shouldn't create SSH key with existing name")
 			}
-
 		})
 	}
 }
@@ -92,33 +91,31 @@ func TestDeleteSSHKey(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 1)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			sshKey, err := apiRunner.CreateUserSSHKey(project.ID, tc.keyName, tc.publicKey)
 			if err != nil {
-				t.Fatalf("can not get create SSH key due error: %v", err)
+				t.Fatalf("failed to get create SSH key: %v", err)
 			}
 
 			if err := apiRunner.DeleteUserSSHKey(project.ID, sshKey.ID); err != nil {
-				t.Fatalf("can not delete SSH key due error: %v", err)
+				t.Fatalf("failed to delete SSH key: %v", err)
 			}
 			sshKeys, err := apiRunner.ListUserSSHKey(project.ID)
 			if err != nil {
-				t.Fatalf("can not list SSH keys due error: %v", err)
+				t.Fatalf("failed to list SSH keys: %v", err)
 			}
 			if len(sshKeys) != 0 {
-				t.Fatalf("found SSH key")
+				t.Fatal("found SSH key")
 			}
-
 		})
 	}
 }

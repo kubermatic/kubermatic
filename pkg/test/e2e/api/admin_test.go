@@ -21,9 +21,6 @@ package api
 import (
 	"reflect"
 	"testing"
-	"time"
-
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -37,7 +34,7 @@ func TestGetProjectByAdmin(t *testing.T) {
 		expectedAdminProjectsNumber int
 	}{
 		{
-			name:                        "admin can get other users projects",
+			name:                        "admin can get other users' projects",
 			expectedProjectsNumber:      1,
 			expectedAdminProjectsNumber: 0,
 		},
@@ -46,46 +43,45 @@ func TestGetProjectByAdmin(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 3)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			// change for admin user
 			adminMasterToken, err := retrieveAdminMasterToken()
 			if err != nil {
-				t.Fatalf("can not get admin master token due error: %v", err)
+				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
 			adminAPIRunner := createRunner(adminMasterToken, t)
 
-			_, err = adminAPIRunner.GetProject(project.ID, 1)
+			_, err = adminAPIRunner.GetProject(project.ID)
 			if err != nil {
-				t.Fatalf("admin can not get other user project: %v", err)
+				t.Fatalf("admin failed to get other user project: %v", err)
 			}
-			projects, err := adminAPIRunner.ListProjects(true, 1)
+
+			projects, err := adminAPIRunner.ListProjects(true)
 			if err != nil {
-				t.Fatalf("admin can not list projects: %v", err)
+				t.Fatalf("admin failed to list projects: %v", err)
 			}
 			if len(projects) != tc.expectedProjectsNumber {
-				t.Fatalf("expected projects number: %d got %d", tc.expectedProjectsNumber, len(projects))
+				t.Fatalf("expected %d projects, but got %d", tc.expectedProjectsNumber, len(projects))
 			}
 
 			// get only admin projects
-			projects, err = adminAPIRunner.ListProjects(false, 1)
+			projects, err = adminAPIRunner.ListProjects(false)
 			if err != nil {
-				t.Fatalf("admin can not list projects: %v", err)
+				t.Fatalf("admin failed to list projects: %v", err)
 			}
 			if len(projects) != tc.expectedAdminProjectsNumber {
-				t.Fatalf("expected projects number: %d got %d", tc.expectedAdminProjectsNumber, len(projects))
+				t.Fatalf("expected %d projects, but got %d", tc.expectedAdminProjectsNumber, len(projects))
 			}
-
 		})
 	}
 }
@@ -104,35 +100,35 @@ func TestUpdateProjectByAdmin(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 3)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			// change for admin user
 			adminMasterToken, err := retrieveAdminMasterToken()
 			if err != nil {
-				t.Fatalf("can not get admin master token due error: %v", err)
+				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
 			adminAPIRunner := createRunner(adminMasterToken, t)
 			project.Name = tc.newProjectName
 			_, err = adminAPIRunner.UpdateProject(project)
 			if err != nil {
-				t.Fatalf("admin can not update other user project: %v", err)
+				t.Fatalf("admin failed to update other user's project: %v", err)
 			}
-			updatedProject, err := adminAPIRunner.GetProject(project.ID, 1)
+
+			updatedProject, err := adminAPIRunner.GetProject(project.ID)
 			if err != nil {
-				t.Fatalf("admin can not get other user project: %v", err)
+				t.Fatalf("admin failed to get other user's project: %v", err)
 			}
 			if updatedProject.Name != tc.newProjectName {
-				t.Fatalf("expected new name %s got %s", tc.newProjectName, updatedProject.Name)
+				t.Fatalf("expected new name %q, but got %q", tc.newProjectName, updatedProject.Name)
 			}
 		})
 	}
@@ -150,25 +146,25 @@ func TestDeleteProjectByAdmin(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
 
 			// change for admin user
 			adminMasterToken, err := retrieveAdminMasterToken()
 			if err != nil {
-				t.Fatalf("can not get admin master token due error: %v", err)
+				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
 			adminAPIRunner := createRunner(adminMasterToken, t)
 			err = adminAPIRunner.DeleteProject(project.ID)
 			if err != nil {
-				t.Fatalf("admin can not delete other user project: %v", err)
+				t.Fatalf("admin failed to delete other user's project: %v", err)
 			}
 		})
 	}
@@ -180,11 +176,11 @@ func TestCreateAndDeleteServiceAccountByAdmin(t *testing.T) {
 		group string
 	}{
 		{
-			name:  "admin can create SA for other users projects",
+			name:  "admin can create editor SA for other users' projects",
 			group: "editors",
 		},
 		{
-			name:  "admin can create SA for other users projects",
+			name:  "admin can create viewer SA for other users' projects",
 			group: "viewers",
 		},
 	}
@@ -192,38 +188,37 @@ func TestCreateAndDeleteServiceAccountByAdmin(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 3)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			// change for admin user
 			adminMasterToken, err := retrieveAdminMasterToken()
 			if err != nil {
-				t.Fatalf("can not get admin master token due error: %v", err)
+				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
 			adminAPIRunner := createRunner(adminMasterToken, t)
+
 			sa, err := adminAPIRunner.CreateServiceAccount(rand.String(10), tc.group, project.ID)
 			if err != nil {
-				t.Fatalf("can not create service account due error: %v", err)
+				t.Fatalf("failed to create service account: %v", err)
 			}
 			saToken, err := apiRunner.AddTokenToServiceAccount(rand.String(10), sa.ID, project.ID)
 			if err != nil {
-				t.Fatalf("can not create token due error: %v", err)
+				t.Fatalf("failed to create token: %v", err)
 			}
-
 			if err := adminAPIRunner.DeleteTokenForServiceAccount(saToken.ID, sa.ID, project.ID); err != nil {
-				t.Fatalf("can not delete token due error: %v", err)
+				t.Fatalf("failed to delete token: %v", err)
 			}
 			if err := adminAPIRunner.DeleteServiceAccount(sa.ID, project.ID); err != nil {
-				t.Fatalf("can not delete service account due error: %v", err)
+				t.Fatalf("failed to delete service account: %v", err)
 			}
 		})
 	}
@@ -244,47 +239,47 @@ func TestManageProjectMembersByAdmin(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 3)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			// change for admin user
 			adminMasterToken, err := retrieveAdminMasterToken()
 			if err != nil {
-				t.Fatalf("can not get admin master token due error: %v", err)
+				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
 			adminAPIRunner := createRunner(adminMasterToken, t)
 			projectUsers, err := adminAPIRunner.GetProjectUsers(project.ID)
 			if err != nil {
-				t.Fatalf("can not get the project user due error: %v", err)
+				t.Fatalf("failed to get the project user: %v", err)
 			}
 
 			if len(projectUsers) != len(tc.expectedUsers) {
-				t.Fatalf("expected %d got %d: %v", len(tc.expectedUsers), len(projectUsers), projectUsers)
+				t.Fatalf("expected %d users, but got %d: %v", len(tc.expectedUsers), len(projectUsers), projectUsers)
 			}
 
 			for _, user := range projectUsers {
 				if !tc.expectedUsers.Has(user.Email) {
-					t.Fatalf("the user %s doesn't belong to the expected user list", user.Email)
+					t.Fatalf("the user %q doesn't belong to the expected user list", user.Email)
 				}
 			}
+
 			err = adminAPIRunner.DeleteUserFromProject(project.ID, projectUsers[0].ID)
 			if err != nil {
-				t.Fatalf("admin can not delete user from the project %v", err)
+				t.Fatalf("admin failed to delete user from the project: %v", err)
 			}
-
 		})
 	}
 }
 
+// creates project + cluster + nodes
 func TestManageClusterByAdmin(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -301,9 +296,9 @@ func TestManageClusterByAdmin(t *testing.T) {
 			name:       "create cluster on DigitalOcean",
 			dc:         "kubermatic",
 			location:   "do-fra1",
-			version:    "v1.18.8",
+			version:    getKubernetesVersion(),
 			credential: "e2e-digitalocean",
-			replicas:   1,
+			replicas:   0,
 			patch: PatchCluster{
 				Name:   "newName",
 				Labels: map[string]string{"a": "b"},
@@ -314,104 +309,54 @@ func TestManageClusterByAdmin(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			var maxAttempts = 24
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 5)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			cluster, err := apiRunner.CreateDOCluster(project.ID, tc.dc, rand.String(10), tc.credential, tc.version, tc.location, tc.replicas)
 			if err != nil {
-				t.Fatalf("can not create cluster due to error: %v", err)
+				t.Fatalf("failed to create cluster: %v", err)
 			}
+
 			// change for admin user
 			adminMasterToken, err := retrieveAdminMasterToken()
 			if err != nil {
-				t.Fatalf("can not get admin master token due error: %v", err)
+				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
 			adminAPIRunner := createRunner(adminMasterToken, t)
-			var clusterReady bool
-			for attempt := 1; attempt <= maxAttempts; attempt++ {
-				healthStatus, err := adminAPIRunner.GetClusterHealthStatus(project.ID, tc.dc, cluster.ID)
-				if err != nil {
-					t.Fatalf("can not get health status %v", GetErrorResponse(err))
-				}
 
-				if IsHealthyCluster(healthStatus) {
-					clusterReady = true
-					break
-				}
-				time.Sleep(30 * time.Second)
-			}
-
-			if !clusterReady {
-				t.Fatalf("cluster not ready after %d attempts", maxAttempts)
-			}
-
-			var ndReady bool
-			for attempt := 1; attempt <= maxAttempts; attempt++ {
-				ndList, err := adminAPIRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
-				if err != nil {
-					t.Fatalf("can not get node deployments %v", GetErrorResponse(err))
-				}
-
-				if len(ndList) == 1 {
-					ndReady = true
-					break
-				}
-				time.Sleep(30 * time.Second)
-			}
-			if !ndReady {
-				t.Fatalf("node deployment is not redy after %d attempts", maxAttempts)
-			}
-
-			var replicasReady bool
-			var ndList []apiv1.NodeDeployment
-			for attempt := 1; attempt <= maxAttempts; attempt++ {
-				ndList, err = adminAPIRunner.GetClusterNodeDeployment(project.ID, tc.dc, cluster.ID)
-				if err != nil {
-					t.Fatalf("can not get node deployments %v", GetErrorResponse(err))
-				}
-
-				if ndList[0].Status.AvailableReplicas == tc.replicas {
-					replicasReady = true
-					break
-				}
-				time.Sleep(30 * time.Second)
-			}
-			if !replicasReady {
-				t.Fatalf("the number of nodes is not as expected, available replicas %d", ndList[0].Status.AvailableReplicas)
+			if err := adminAPIRunner.WaitForClusterHealthy(project.ID, tc.dc, cluster.ID); err != nil {
+				t.Fatalf("cluster not ready: %v", err)
 			}
 
 			_, err = adminAPIRunner.UpdateCluster(project.ID, tc.dc, cluster.ID, tc.patch)
 			if err != nil {
-				t.Fatalf("can not update cluster %v", GetErrorResponse(err))
+				t.Fatalf("failed to update cluster: %v", err)
 			}
 
 			updatedCluster, err := adminAPIRunner.GetCluster(project.ID, tc.dc, cluster.ID)
 			if err != nil {
-				t.Fatalf("can not get cluster %v", GetErrorResponse(err))
+				t.Fatalf("failed to get cluster: %v", err)
 			}
 
 			if updatedCluster.Name != tc.expectedName {
-				t.Fatalf("expected new name %s got %s", tc.expectedName, updatedCluster.Name)
+				t.Fatalf("expected new name %q, but got %q", tc.expectedName, updatedCluster.Name)
 			}
 
 			if !equality.Semantic.DeepEqual(updatedCluster.Labels, tc.expectedLabels) {
-				t.Fatalf("expected labels %v got %v", tc.expectedLabels, updatedCluster.Labels)
+				t.Fatalf("expected labels %v, but got %v", tc.expectedLabels, updatedCluster.Labels)
 			}
 
 			cleanUpCluster(t, apiRunner, project.ID, tc.dc, cluster.ID)
-
 		})
 	}
 }
@@ -432,31 +377,30 @@ func TestManageSSHKeyByAdmin(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
 			if err != nil {
-				t.Fatalf("can not get master token due to error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
 			project, err := apiRunner.CreateProject(rand.String(10))
 			if err != nil {
-				t.Fatalf("can not create project due error: %v", err)
+				t.Fatalf("failed to create project: %v", err)
 			}
-			teardown := cleanUpProject(project.ID, 1)
-			defer teardown(t)
+			defer cleanUpProject(t, project.ID)
 
 			// change for admin user
 			adminMasterToken, err := retrieveAdminMasterToken()
 			if err != nil {
-				t.Fatalf("can not get admin master token due error: %v", err)
+				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
 			adminAPIRunner := createRunner(adminMasterToken, t)
 			sshKey, err := adminAPIRunner.CreateUserSSHKey(project.ID, tc.keyName, tc.publicKey)
 			if err != nil {
-				t.Fatalf("can not get create SSH key due error: %v", err)
+				t.Fatalf("failed to get create SSH key: %v", err)
 			}
 			sshKeys, err := adminAPIRunner.ListUserSSHKey(project.ID)
 			if err != nil {
-				t.Fatalf("can not list SSH keys due error: %v", err)
+				t.Fatalf("failed to list SSH keys: %v", err)
 			}
 			if len(sshKeys) != 1 {
 				t.Fatalf("expected one SSH key, got %v", sshKeys)
@@ -465,14 +409,14 @@ func TestManageSSHKeyByAdmin(t *testing.T) {
 				t.Fatalf("expected %v, got %v", sshKey, sshKeys[0])
 			}
 			if err := adminAPIRunner.DeleteUserSSHKey(project.ID, sshKey.ID); err != nil {
-				t.Fatalf("can not delete SSH key due error: %v", err)
+				t.Fatalf("failed to delete SSH key: %v", err)
 			}
 			sshKeys, err = adminAPIRunner.ListUserSSHKey(project.ID)
 			if err != nil {
-				t.Fatalf("can not list SSH keys due error: %v", err)
+				t.Fatalf("failed to list SSH keys: %v", err)
 			}
 			if len(sshKeys) != 0 {
-				t.Fatalf("found SSH key")
+				t.Fatalf("found SSH key, even though it should have been removed")
 			}
 		})
 	}

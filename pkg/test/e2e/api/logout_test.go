@@ -25,7 +25,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/datacenter"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
-
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
@@ -54,7 +53,7 @@ func TestLogout(t *testing.T) {
 				masterToken, err = retrieveMasterToken()
 			}
 			if err != nil {
-				t.Fatalf("can not get master token due error: %v", err)
+				t.Fatalf("failed to get master token: %v", err)
 			}
 
 			apiRunner := createRunner(masterToken, t)
@@ -62,37 +61,40 @@ func TestLogout(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			// test projection creation
 			_, err = apiRunner.CreateProject(rand.String(10))
 			if err == nil {
-				t.Fatalf("create project: expected error")
+				t.Fatal("create project: expected error")
 			}
 			if _, ok := err.(*project.CreateProjectUnauthorized); !ok {
-				t.Fatalf("create project: expected unauthorized error code")
+				t.Fatalf("create project: expected unauthorized error code, but got %#v", err)
 			}
 
+			// test listing datacenters
 			_, err = apiRunner.ListDC()
 			if err == nil {
-				t.Fatalf("list datacenter: expected error")
+				t.Fatal("list datacenter: expected error")
 			}
-			rawListDatacentersDefaultErr, ok := err.(*datacenter.ListDatacentersDefault)
+			dcErr, ok := err.(*datacenter.ListDatacentersDefault)
 			if !ok {
 				t.Fatalf("list datacenter: expected error")
 			}
-			if rawListDatacentersDefaultErr.Code() != http.StatusUnauthorized {
-				t.Fatalf("list datacenter: expected unauthorized error code")
-			}
-			_, err = apiRunner.ListCredentials("gcp", "gcp-westeurope")
-			if err == nil {
-				t.Fatalf("list credentials: expected error")
-			}
-			rawListCredentialsDefaultErr, ok := err.(*credentials.ListCredentialsDefault)
-			if !ok {
-				t.Fatalf("list credentials: expected error")
-			}
-			if rawListCredentialsDefaultErr.Code() != http.StatusUnauthorized {
-				t.Fatalf("list credentials: expected unauthorized error code")
+			if dcErr.Code() != http.StatusUnauthorized {
+				t.Fatalf("list datacenter: expected unauthorized error code, but got %v", dcErr.Code())
 			}
 
+			// test listing credentials
+			_, err = apiRunner.ListCredentials("gcp", "gcp-westeurope")
+			if err == nil {
+				t.Fatal("list credentials: expected error")
+			}
+			credentialErr, ok := err.(*credentials.ListCredentialsDefault)
+			if !ok {
+				t.Fatalf("list credentials: expected error")
+			}
+			if credentialErr.Code() != http.StatusUnauthorized {
+				t.Fatalf("list credentials: expected unauthorized error code, but got %v", credentialErr.Code())
+			}
 		})
 	}
 }
