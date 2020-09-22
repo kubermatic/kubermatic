@@ -63,7 +63,7 @@ for the create constraint template operation typically these are written to a ht
 type CreateConstraintTemplateParams struct {
 
 	/*Body*/
-	Body *models.Body
+	Body *models.CtBody
 
 	timeout    time.Duration
 	Context    context.Context
@@ -104,13 +104,13 @@ func (o *CreateConstraintTemplateParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithBody adds the body to the create constraint template params
-func (o *CreateConstraintTemplateParams) WithBody(body *models.Body) *CreateConstraintTemplateParams {
+func (o *CreateConstraintTemplateParams) WithBody(body *models.CtBody) *CreateConstraintTemplateParams {
 	o.SetBody(body)
 	return o
 }
 
 // SetBody adds the body to the create constraint template params
-func (o *CreateConstraintTemplateParams) SetBody(body *models.Body) {
+func (o *CreateConstraintTemplateParams) SetBody(body *models.CtBody) {
 	o.Body = body
 }
 

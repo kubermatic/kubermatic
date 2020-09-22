@@ -138,10 +138,10 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePr
 // swagger:parameters createConstraintTemplate
 type createConstraintTemplateReq struct {
 	// in: body
-	Body body
+	Body ctBody
 }
 
-type body struct {
+type ctBody struct {
 	// Name of the constraint template
 	Name string `json:"name"`
 	// ConstraintTemplateSpec Spec of the constraint template
