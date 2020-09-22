@@ -191,7 +191,6 @@ func (c *projectController) ensureClusterRBACRoleForResources() error {
 }
 
 func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName string) error {
-	fmt.Printf("%+v\n", c.projectResources)
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) > 0 {
 			continue
