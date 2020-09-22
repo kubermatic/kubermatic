@@ -2,6 +2,16 @@
 
 ## [v2.15.0-rc.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0-rc.1)
 
+## Supported Kubernetes Versions
+
+* 1.16.13
+* 1.16.14
+* 1.17.9
+* 1.17.11
+* 1.18.6
+* 1.18.8
+* 1.19.0
+
 ## Highlights
 
 - Add support for Kubernetes 1.19, drop Kubernetes 1.15 ([#5794](https://github.com/kubermatic/kubermatic/issues/5794))
