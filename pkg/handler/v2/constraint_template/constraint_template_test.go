@@ -166,7 +166,7 @@ func TestCreateConstraintTemplates(t *testing.T) {
 		{
 			Name:             "scenario 3: admin cannot create invalid constraint template",
 			CTtoCreate:       test.GenDefaultConstraintTemplate("invalid"),
-			ExpectedResponse: `{"error":{"code":400,"message":"Template's name invalid is not equal to the lowercase of CRD's Kind: labelconstraint\n"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"template's name invalid is not equal to the lowercase of CRD's Kind: labelconstraint"}}`,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
 		},
