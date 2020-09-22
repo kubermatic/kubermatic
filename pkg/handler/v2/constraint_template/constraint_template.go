@@ -160,7 +160,7 @@ func DecodeCreateConstraintTemplateRequest(c context.Context, r *http.Request) (
 
 func (req createConstraintTemplateReq) Validate() error {
 	if req.Body.Name != strings.ToLower(req.Body.ConstraintTemplateSpec.CRD.Spec.Names.Kind) {
-		return fmt.Errorf("Template's name %s is not equal to the lowercase of CRD's Kind: %s\n", req.Body.Name, req.Body.ConstraintTemplateSpec.CRD.Spec.Names.Kind)
+		return fmt.Errorf("template's name %s is not equal to the lowercase of CRD's Kind: %s\n", req.Body.Name, req.Body.ConstraintTemplateSpec.CRD.Spec.Names.Kind)
 	}
 	return nil
 }
