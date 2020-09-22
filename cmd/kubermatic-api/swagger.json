@@ -12999,6 +12999,10 @@
           "type": "boolean",
           "x-go-name": "EnableDashboard"
         },
+        "enableExternalClusterImport": {
+          "type": "boolean",
+          "x-go-name": "EnableExternalClusterImport"
+        },
         "enableOIDCKubeconfig": {
           "type": "boolean",
           "x-go-name": "EnableOIDCKubeconfig"

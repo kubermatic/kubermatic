@@ -1027,11 +1027,12 @@ func GenDefaultGlobalSettings() *kubermaticv1.KubermaticSetting {
 				Enabled:  true,
 				Enforced: true,
 			},
-			DefaultNodeCount:      5,
-			ClusterTypeOptions:    5,
-			DisplayDemoInfo:       true,
-			DisplayAPIDocs:        true,
-			DisplayTermsOfService: true,
+			DefaultNodeCount:            5,
+			ClusterTypeOptions:          5,
+			DisplayDemoInfo:             true,
+			DisplayAPIDocs:              true,
+			DisplayTermsOfService:       true,
+			EnableExternalClusterImport: true,
 		},
 	}
 }
