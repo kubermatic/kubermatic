@@ -8174,7 +8174,7 @@
         }
       },
       "post": {
-        "description": "Create constraint templates",
+        "description": "Create constraint template",
         "consumes": [
           "application/json"
         ],
@@ -8233,6 +8233,55 @@
             "name": "ct_name",
             "in": "path",
             "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ConstraintTemplate",
+            "schema": {
+              "$ref": "#/definitions/ConstraintTemplate"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Patch a specified constraint template",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "constrainttemplates"
+        ],
+        "operationId": "patchConstraintTemplate",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "ct_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "object"
+            }
           }
         ],
         "responses": {
