@@ -67,7 +67,7 @@ type PatchConstraintTemplateOK struct {
 }
 
 func (o *PatchConstraintTemplateOK) Error() string {
-	return fmt.Sprintf("[POST /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateOK  %+v", 200, o.Payload)
 }
 
 func (o *PatchConstraintTemplateOK) GetPayload() *models.ConstraintTemplate {
@@ -99,7 +99,7 @@ type PatchConstraintTemplateUnauthorized struct {
 }
 
 func (o *PatchConstraintTemplateUnauthorized) Error() string {
-	return fmt.Sprintf("[POST /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateUnauthorized ", 401)
+	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateUnauthorized ", 401)
 }
 
 func (o *PatchConstraintTemplateUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -120,7 +120,7 @@ type PatchConstraintTemplateForbidden struct {
 }
 
 func (o *PatchConstraintTemplateForbidden) Error() string {
-	return fmt.Sprintf("[POST /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateForbidden ", 403)
+	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplateForbidden ", 403)
 }
 
 func (o *PatchConstraintTemplateForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,7 +151,7 @@ func (o *PatchConstraintTemplateDefault) Code() int {
 }
 
 func (o *PatchConstraintTemplateDefault) Error() string {
-	return fmt.Sprintf("[POST /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplate default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[PATCH /api/v2/constrainttemplates/{ct_name}][%d] patchConstraintTemplate default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *PatchConstraintTemplateDefault) GetPayload() *models.ErrorResponse {

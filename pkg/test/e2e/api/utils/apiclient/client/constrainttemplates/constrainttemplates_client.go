@@ -149,7 +149,7 @@ func (a *Client) PatchConstraintTemplate(params *PatchConstraintTemplateParams, 
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "patchConstraintTemplate",
-		Method:             "POST",
+		Method:             "PATCH",
 		PathPattern:        "/api/v2/constrainttemplates/{ct_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},

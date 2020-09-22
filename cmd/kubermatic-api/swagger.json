@@ -8256,7 +8256,7 @@
           }
         }
       },
-      "post": {
+      "patch": {
         "description": "Patch a specified constraint template",
         "consumes": [
           "application/json"

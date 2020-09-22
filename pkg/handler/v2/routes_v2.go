@@ -728,7 +728,7 @@ func (r Routing) createConstraintTemplate() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v2/constrainttemplates/{ct_name} constrainttemplates patchConstraintTemplate
+// swagger:route PATCH /api/v2/constrainttemplates/{ct_name} constrainttemplates patchConstraintTemplate
 //
 //     Patch a specified constraint template
 //
