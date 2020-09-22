@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -104,6 +105,9 @@ func (req constraintTemplateReq) Validate() error {
 func CreateEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createConstraintTemplateReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
 
 		adminUserInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -152,4 +156,11 @@ func DecodeCreateConstraintTemplateRequest(c context.Context, r *http.Request) (
 	}
 
 	return req, nil
+}
+
+func (req createConstraintTemplateReq) Validate() error {
+	if req.Body.Name != strings.ToLower(req.Body.ConstraintTemplateSpec.CRD.Spec.Names.Kind) {
+		return fmt.Errorf("Template's name %s is not equal to the lowercase of CRD's Kind: %s\n", req.Body.Name, req.Body.ConstraintTemplateSpec.CRD.Spec.Names.Kind)
+	}
+	return nil
 }
