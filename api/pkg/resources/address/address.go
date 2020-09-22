@@ -2,6 +2,7 @@ package address
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 
@@ -16,24 +17,72 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func SyncClusterAddress(ctx context.Context,
-	log *zap.SugaredLogger,
-	cluster *kubermaticv1.Cluster,
-	client ctrlruntimeclient.Client,
-	externalURL string,
-	seed *kubermaticv1.Seed) ([]func(*kubermaticv1.Cluster), error) {
-	var modifiers []func(*kubermaticv1.Cluster)
+type lookupFunction func(host string) ([]net.IP, error)
 
-	subdomain := seed.Name
-	if seed.Spec.SeedDNSOverwrite != "" {
-		subdomain = seed.Spec.SeedDNSOverwrite
+type ModifiersBuilder struct {
+	log         *zap.SugaredLogger
+	client      ctrlruntimeclient.Client
+	cluster     *kubermaticv1.Cluster
+	seed        *kubermaticv1.Seed
+	externalURL string
+	// used to ease unit tests
+	lookupFunction lookupFunction
+}
+
+func NewModifiersBuilder(log *zap.SugaredLogger) *ModifiersBuilder {
+	return &ModifiersBuilder{
+		log:            log,
+		lookupFunction: net.LookupIP,
+	}
+}
+
+func (m *ModifiersBuilder) Client(c ctrlruntimeclient.Client) *ModifiersBuilder {
+	m.client = c
+	return m
+}
+
+func (m *ModifiersBuilder) Cluster(c *kubermaticv1.Cluster) *ModifiersBuilder {
+	m.cluster = c
+	return m
+}
+
+func (m *ModifiersBuilder) Seed(s *kubermaticv1.Seed) *ModifiersBuilder {
+	m.seed = s
+	return m
+}
+
+func (m *ModifiersBuilder) ExternalURL(e string) *ModifiersBuilder {
+	m.externalURL = e
+	return m
+}
+
+func (m *ModifiersBuilder) lookupFunc(l lookupFunction) *ModifiersBuilder {
+	m.lookupFunction = l
+	return m
+}
+
+func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Cluster), error) {
+	var modifiers []func(*kubermaticv1.Cluster)
+	if m.seed == nil {
+		return modifiers, errors.New("providing seed is mandatory for building address modifiers")
+	}
+	if m.cluster == nil {
+		return modifiers, errors.New("providing cluster is mandatory for building address modifiers")
+	}
+	if m.client == nil {
+		return modifiers, errors.New("providing client is mandatory for building address modifiers")
+	}
+
+	subdomain := m.seed.Name
+	if m.seed.Spec.SeedDNSOverwrite != "" {
+		subdomain = m.seed.Spec.SeedDNSOverwrite
 	}
 
 	frontProxyLoadBalancerServiceIP := ""
-	if cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+	if m.cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
 		frontProxyLoadBalancerService := &corev1.Service{}
-		nn := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.FrontLoadBalancerServiceName}
-		if err := client.Get(ctx, nn, frontProxyLoadBalancerService); err != nil {
+		nn := types.NamespacedName{Namespace: m.cluster.Status.NamespaceName, Name: resources.FrontLoadBalancerServiceName}
+		if err := m.client.Get(ctx, nn, frontProxyLoadBalancerService); err != nil {
 			return nil, fmt.Errorf("failed to get the front-loadbalancer service: %v", err)
 		}
 		// Use this as default in case the implementation doesn't populate the status
@@ -48,50 +97,50 @@ func SyncClusterAddress(ctx context.Context,
 
 	// External Name
 	externalName := ""
-	if cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+	if m.cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
 		externalName = frontProxyLoadBalancerServiceIP
 	} else {
-		externalName = fmt.Sprintf("%s.%s.%s", cluster.Name, subdomain, externalURL)
+		externalName = fmt.Sprintf("%s.%s.%s", m.cluster.Name, subdomain, m.externalURL)
 	}
 
-	if cluster.Address.ExternalName != externalName {
+	if m.cluster.Address.ExternalName != externalName {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.ExternalName = externalName
 		})
-		log.Debugw("Set external name for cluster", "externalName", externalName)
+		m.log.Debugw("Set external name for cluster", "externalName", externalName)
 	}
 
 	// Internal name
-	internalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverExternalServiceName, cluster.Status.NamespaceName)
-	if cluster.Address.InternalName != internalName {
+	internalName := fmt.Sprintf("%s.%s.svc.cluster.local.", resources.ApiserverExternalServiceName, m.cluster.Status.NamespaceName)
+	if m.cluster.Address.InternalName != internalName {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.InternalName = internalName
 		})
-		log.Debugw("Set internal name for cluster", "internalName", internalName)
+		m.log.Debugw("Set internal name for cluster", "internalName", internalName)
 	}
 
 	// IP
 	ip := ""
-	if cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+	if m.cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
 		ip = frontProxyLoadBalancerServiceIP
 	} else {
 		var err error
 		// Always lookup IP address, in case it changes (IP's on AWS LB's change)
-		ip, err = getExternalIPv4(log, externalName)
+		ip, err = m.getExternalIPv4(externalName)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if cluster.Address.IP != ip {
+	if m.cluster.Address.IP != ip {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.IP = ip
 		})
-		log.Debugw("Set IP for cluster", "ip", ip)
+		m.log.Debugw("Set IP for cluster", "ip", ip)
 	}
 
 	service := &corev1.Service{}
-	serviceKey := types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: resources.ApiserverExternalServiceName}
-	if err := client.Get(ctx, serviceKey, service); err != nil {
+	serviceKey := types.NamespacedName{Namespace: m.cluster.Status.NamespaceName, Name: resources.ApiserverExternalServiceName}
+	if err := m.client.Get(ctx, serviceKey, service); err != nil {
 		return nil, err
 	}
 	if len(service.Spec.Ports) < 1 {
@@ -100,26 +149,26 @@ func SyncClusterAddress(ctx context.Context,
 
 	// Port
 	port := service.Spec.Ports[0].NodePort
-	if cluster.Address.Port != port {
+	if m.cluster.Address.Port != port {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.Port = port
 		})
-		log.Debugw("Set port for cluster", "port", port)
+		m.log.Debugw("Set port for cluster", "port", port)
 	}
 
 	// URL
 	url := fmt.Sprintf("https://%s:%d", externalName, port)
-	if cluster.Address.URL != url {
+	if m.cluster.Address.URL != url {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.URL = url
 		})
-		log.Debugw("Set URL for cluster", "url", url)
+		m.log.Debugw("Set URL for cluster", "url", url)
 	}
 
-	if cluster.IsOpenshift() {
+	if m.cluster.IsOpenshift() {
 		openshiftConsoleCallBackURL := fmt.Sprintf("https://%s/api/v1/projects/%s/dc/%s/clusters/%s/openshift/console/proxy/auth/callback",
-			externalURL, cluster.Labels[kubermaticv1.ProjectIDLabelKey], seed.Name, cluster.Name)
-		if cluster.Address.OpenshiftConsoleCallBack != openshiftConsoleCallBackURL {
+			m.externalURL, m.cluster.Labels[kubermaticv1.ProjectIDLabelKey], m.seed.Name, m.cluster.Name)
+		if m.cluster.Address.OpenshiftConsoleCallBack != openshiftConsoleCallBackURL {
 			modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 				c.Address.OpenshiftConsoleCallBack = openshiftConsoleCallBackURL
 			})
@@ -129,8 +178,8 @@ func SyncClusterAddress(ctx context.Context,
 	return modifiers, nil
 }
 
-func getExternalIPv4(log *zap.SugaredLogger, hostname string) (string, error) {
-	resolvedIPs, err := net.LookupIP(hostname)
+func (m *ModifiersBuilder) getExternalIPv4(hostname string) (string, error) {
+	resolvedIPs, err := m.lookupFunction(hostname)
 	if err != nil {
 		return "", fmt.Errorf("failed to lookup ip for %s: %v", hostname, err)
 	}
@@ -147,7 +196,7 @@ func getExternalIPv4(log *zap.SugaredLogger, hostname string) (string, error) {
 
 	//Just one ipv4
 	if len(ips) > 1 {
-		log.Debugw("Lookup returned multiple ipv4 addresses. Picking the first one after sorting", "hostname", hostname, "foundAddresses", ips, "pickedAddress", ips[0])
+		m.log.Debugw("Lookup returned multiple ipv4 addresses. Picking the first one after sorting", "hostname", hostname, "foundAddresses", ips, "pickedAddress", ips[0])
 	}
 	return ips[0], nil
 }
