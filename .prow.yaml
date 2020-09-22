@@ -298,10 +298,10 @@ presubmits:
             cpu: 0.5
 
   #########################################################
-  # Base Kubernetes Tests (AWS, CoreOS)
+  # Base Kubernetes Tests (AWS, Flatcar)
   #########################################################
 
-  - name: pre-kubermatic-e2e-aws-coreos-1.16
+  - name: pre-kubermatic-e2e-aws-flatcar-1.16
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -324,7 +324,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.16.14"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -342,7 +342,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-aws-coreos-1.17
+  - name: pre-kubermatic-e2e-aws-flatcar-1.17
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -365,7 +365,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.17.11"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -383,7 +383,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-aws-coreos-1.18
+  - name: pre-kubermatic-e2e-aws-flatcar-1.18
     decorate: true
     run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -406,7 +406,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.18.8"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
