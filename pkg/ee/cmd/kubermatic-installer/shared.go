@@ -25,8 +25,12 @@
 package kubermaticinstaller
 
 import (
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 )
 
 var (
@@ -34,6 +38,10 @@ var (
 		Name:  "namespace",
 		Usage: "Namespace to use for created resources",
 		Value: "kubermatic",
+	}
+	unpauseSeedsFlag = cli.BoolFlag{
+		Name:  "unpause-seeds",
+		Usage: fmt.Sprintf("Do not set the %s annotation on every generated Seed, to facilitate easier incremental seed cluster upgrades", common.SkipReconcilingAnnotation),
 	}
 )
 
