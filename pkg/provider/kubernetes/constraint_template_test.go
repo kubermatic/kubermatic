@@ -159,3 +159,52 @@ func TestCreateConstraintTemplates(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateConstraintTemplates(t *testing.T) {
+	testCases := []struct {
+		name            string
+		ctToUpdate      *kubermaticv1.ConstraintTemplate
+		existingObjects []runtime.Object
+		expectedCT      *kubermaticv1.ConstraintTemplate
+	}{
+		{
+			name: "test: update constraint template",
+			ctToUpdate: func() *kubermaticv1.ConstraintTemplate {
+				defaultCT := genConstraintTemplate("ct1")
+				defaultCT.Spec.CRD.Spec.Names.ShortNames = []string{"lc", "lcon"}
+				return defaultCT
+			}(),
+			existingObjects: []runtime.Object{genConstraintTemplate("ct1")},
+			expectedCT: func() *kubermaticv1.ConstraintTemplate {
+				defaultCT := genConstraintTemplate("ct1")
+				defaultCT.Spec.CRD.Spec.Names.ShortNames = []string{"lc", "lcon"}
+				defaultCT.ResourceVersion = "1"
+				return defaultCT
+			}(),
+		},
+	}
+
+	for idx := range testCases {
+		tc := testCases[idx]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			provider, err := kubernetes.NewConstraintTemplateProvider(fakeImpersonationClient, client)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ct, err := provider.Update(tc.ctToUpdate)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(ct, tc.expectedCT) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
+			}
+		})
+	}
+}

@@ -205,3 +205,7 @@ func (p *FakeConstraintTemplateProvider) Get(name string) (*kubermaticapiv1.Cons
 func (p *FakeConstraintTemplateProvider) Create(ct *kubermaticapiv1.ConstraintTemplate) (*kubermaticapiv1.ConstraintTemplate, error) {
 	return p.Provider.Create(ct)
 }
+
+func (p *FakeConstraintTemplateProvider) Update(ct *kubermaticapiv1.ConstraintTemplate) (*kubermaticapiv1.ConstraintTemplate, error) {
+	return p.Provider.Update(ct)
+}

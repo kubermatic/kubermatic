@@ -75,3 +75,13 @@ func (p *ConstraintTemplateProvider) Create(ct *kubermaticv1.ConstraintTemplate)
 
 	return ct, nil
 }
+
+// Create creates a constraint template
+func (p *ConstraintTemplateProvider) Update(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
+
+	if err := p.clientPrivileged.Update(context.Background(), ct); err != nil {
+		return nil, err
+	}
+
+	return ct, nil
+}
