@@ -2,7 +2,7 @@
 
 ## [v2.15.0-rc.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0-rc.1)
 
-## Supported Kubernetes Versions
+### Supported Kubernetes Versions
 
 * 1.16.13
 * 1.16.14
@@ -12,7 +12,7 @@
 * 1.18.8
 * 1.19.0
 
-## Highlights
+### Highlights
 
 - Add support for Kubernetes 1.19, drop Kubernetes 1.15 ([#5794](https://github.com/kubermatic/kubermatic/issues/5794))
 - Add dynamic datacenter configuration to KKP Dashboard ([#2333](https://github.com/kubermatic/dashboard/issues/2333), [#2353](https://github.com/kubermatic/dashboard/issues/2353), [#5501](https://github.com/kubermatic/kubermatic/issues/5501), [#5551](https://github.com/kubermatic/kubermatic/issues/5551))
