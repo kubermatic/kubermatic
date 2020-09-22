@@ -58,7 +58,7 @@ func ConvertDatacentersCommand(logger *logrus.Logger) cli.Command {
 		Flags: []cli.Flag{
 			kubeconfigFlag,
 			targetNamespaceFlag,
-			pauseSeedsFlag,
+			unpauseSeedsFlag,
 		},
 	}
 }
@@ -97,7 +97,7 @@ func ConvertDatacentersAction(logger *logrus.Logger) cli.ActionFunc {
 		}
 
 		namespace := ctx.String(targetNamespaceFlag.Name)
-		pauseSeeds := ctx.Bool(pauseSeedsFlag.Name)
+		pauseSeeds := !ctx.Bool(unpauseSeedsFlag.Name)
 
 		resources, err := eeconversion.ConvertDatacenters(datacenters, kubeconfig, namespace, pauseSeeds)
 		if err != nil {
