@@ -39,9 +39,9 @@ var (
 		Usage: "Namespace to use for created resources",
 		Value: "kubermatic",
 	}
-	pauseSeedsFlag = cli.BoolFlag{
-		Name:  "pause-seeds",
-		Usage: fmt.Sprintf("Set the %s annotation on every generated Seed, to facilitate easier incremental seed cluster upgrades", common.SkipReconcilingAnnotation),
+	unpauseSeedsFlag = cli.BoolFlag{
+		Name:  "unpause-seeds",
+		Usage: fmt.Sprintf("Do not set the %s annotation on every generated Seed, to facilitate easier incremental seed cluster upgrades", common.SkipReconcilingAnnotation),
 	}
 )
 
