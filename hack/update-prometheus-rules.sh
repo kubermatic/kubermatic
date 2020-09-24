@@ -19,6 +19,8 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
+containerize ./hack/update-prometheus-rules.sh
+
 cd charts/monitoring/prometheus/rules/
 
 # remove old files
