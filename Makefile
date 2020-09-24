@@ -143,6 +143,7 @@ verify:
 	./hack/verify-api-client.sh
 
 check-dependencies:
+	go mod tidy
 	go mod verify
 	git diff --exit-code
 
