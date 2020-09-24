@@ -47,7 +47,7 @@ show_cover_report() {
   go tool cover -"$1"="$profile" "$2"
 }
 
-generate_cover_data "$(go list ./pkg/...)"
+generate_cover_data "$(go list ./cmd/... ./pkg/...)"
 show_cover_report func
 
 case "$1" in
