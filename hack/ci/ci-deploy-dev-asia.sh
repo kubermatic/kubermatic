@@ -44,5 +44,5 @@ kubectl config use-context asia-south1-c
 echodate "Successfully got secrets for dev-asia from Vault"
 
 echodate "Deploying ${DEPLOY_STACK} stack to dev-asia"
-TILLER_NAMESPACE=kubermatic-installer ./hack/deploy.sh seed ${VALUES_FILE}
+TILLER_NAMESPACE=kubermatic-installer ./hack/ci/ci-deploy.sh seed ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to dev-asia"

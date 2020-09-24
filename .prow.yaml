@@ -73,7 +73,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/util:1.4.1
         command:
-        - "./hack/verify-chart-versions.sh"
+        - "./hack/ci/ci-verify-chart-versions.sh"
         resources:
           requests:
             memory: 128Mi
@@ -274,7 +274,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/promtool:2.7.0-3
         command:
-        - "./hack/verify-user-cluster-prometheus-configs.sh"
+        - "./hack/ci/ci-verify-user-cluster-prometheus-configs.sh"
         env:
         - name: KUBERMATIC_EDITION
           value: ee
