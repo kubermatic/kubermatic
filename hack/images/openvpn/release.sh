@@ -14,10 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-TAG=v0.1.0
-IMAGE=quay.io/kubermatic/startup-script
+set -euo pipefail
 
-set -euox pipefail
+cd $(dirname $0)
 
-docker build --no-cache --pull -t ${IMAGE}:${TAG} .
-docker push ${IMAGE}:${TAG}
+REPOSITORY=quay.io/kubermatic/openvpn
+VERSION=2.4.8-r1
+
+docker build --build-arg OPENVPN_VERSION=${VERSION} --no-cache --pull -t "${REPOSITORY}:v${VERSION}" .
+docker push "${REPOSITORY}:v${VERSION}"

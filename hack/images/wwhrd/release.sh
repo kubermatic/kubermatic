@@ -16,7 +16,11 @@
 
 set -euo pipefail
 
-VERSION=1.1.0
+cd $(dirname $0)
 
-docker build --no-cache --pull -t quay.io/kubermatic/grafana-plugins:${VERSION} .
-docker push quay.io/kubermatic/grafana-plugins:${VERSION}
+REPOSITORY=quay.io/kubermatic/wwhrd
+VERSION=0.3.0
+NUMBER=0
+
+docker build --no-cache --pull -t "${REPOSITORY}:${VERSION}-${NUMBER}" .
+docker push "${REPOSITORY}:${VERSION}-${NUMBER}"

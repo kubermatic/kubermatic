@@ -16,11 +16,10 @@
 
 set -euo pipefail
 
-SUFFIX=""
-VERSION=1.4.1
-
 cd $(dirname $0)
 
-set -x
-docker build --no-cache --pull -t quay.io/kubermatic/util:${VERSION}${SUFFIX} .
-docker push quay.io/kubermatic/util:${VERSION}${SUFFIX}
+REPOSITORY=quay.io/kubermatic/grafana-plugins
+VERSION=1.1.0
+
+docker build --no-cache --pull -t "${REPOSITORY}:${VERSION}" .
+docker push "${REPOSITORY}:${VERSION}"

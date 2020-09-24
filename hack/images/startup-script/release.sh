@@ -14,10 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-NUMBER=0
-VERSION=0.3.0
+set -euo pipefail
 
-set -euox pipefail
+cd $(dirname $0)
 
-docker build --no-cache --pull -t quay.io/kubermatic/wwhrd:${VERSION}-${NUMBER} .
-docker push quay.io/kubermatic/wwhrd:${VERSION}-${NUMBER}
+REPOSITORY=quay.io/kubermatic/startup-script
+TAG=v0.1.0
+
+docker build --no-cache --pull -t "${REPOSITORY}:${TAG}" .
+docker push "${REPOSITORY}:${TAG}"

@@ -26,7 +26,6 @@ Hitting the quota is fairly easy when testing too many clusters at once.
 ### Locally
 
 **Requires**
-- `containers/conformance-tests/install.sh` to be run before
 - vault cli to be installed locally & configured for https://vault.loodse.com/
 
 #### Testing all providers

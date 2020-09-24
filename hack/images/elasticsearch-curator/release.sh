@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,10 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM docker:18.09.0-dind
+set -euo pipefail
 
-RUN apk add --no-cache -U ca-certificates wget unzip jq bash
-RUN wget https://releases.hashicorp.com/vault/1.1.3/vault_1.1.3_linux_amd64.zip && \
-    unzip vault_1.1.3_linux_amd64.zip && \
-    rm vault_1.1.3_linux_amd64.zip && \
-    mv vault /bin/
+cd $(dirname $0)
+
+REPOSITORY=quay.io/kubermatic/elasticsearch-curator
+VERSION=5.7.4
+NUMBER=1
+
+docker build --no-cache --pull -t "${REPOSITORY}:${VERSION}-${NUMBER}" .
+docker push "${REPOSITORY}:${VERSION}-${NUMBER}"
