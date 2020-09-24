@@ -17,6 +17,9 @@
 set -euo pipefail
 
 cd $(dirname $0)/..
+source hack/lib.sh
+
+CONTAINERIZE_IMAGE=golang:1.15.1 containerize ./hack/update-docs.sh
 
 go run cmd/addon-godoc-generator/main.go > docs/zz_generated.addondata.go.txt
 

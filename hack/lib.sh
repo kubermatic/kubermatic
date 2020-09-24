@@ -96,7 +96,7 @@ containerize() {
     exec docker run \
       -v $PWD:/go/src/k8c.io/kubermatic \
       -w /go/src/k8c.io/kubermatic \
-      -e "$gocache" \
+      -e "GOCACHE=$gocache" \
       -u "$(id -u):$(id -g)" \
       --rm \
       -it \
