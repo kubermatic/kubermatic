@@ -40,7 +40,7 @@ DOCKER_BIN := $(shell which docker)
 
 default: all
 
-all: check build test
+all: build test
 
 .PHONY: $(CMD)
 build: $(CMD)
@@ -53,8 +53,6 @@ install:
 
 showenv:
 	@go env
-
-check: lint
 
 download-gocache:
 	@./hack/ci/ci-download-gocache.sh
@@ -143,6 +141,7 @@ verify:
 	./hack/verify-api-client.sh
 
 check-dependencies:
+	go mod tidy
 	go mod verify
 	git diff --exit-code
 
@@ -155,4 +154,4 @@ ifndef DOCKER_BIN
 endif
 	$(DOCKER_BIN) run --rm -it -v ${PWD}:/go/src/k8c.io/kubermatic -w /go/src/k8c.io/kubermatic $(GOBUILDIMAGE) hack/update-codegen.sh
 
-.PHONY: build install test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture update-codegen-in-docker run-tests build-tests $(TARGET)
+.PHONY: build install test cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture update-codegen-in-docker run-tests build-tests $(TARGET)
