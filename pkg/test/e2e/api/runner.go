@@ -460,7 +460,7 @@ func (r *runner) DeleteCluster(projectID, dc, clusterID string) error {
 	r.test.Logf("Deleting cluster %s...", clusterID)
 
 	params := &project.DeleteClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
 
 	_, err := r.client.Project.DeleteCluster(params, r.bearerToken)
 	if err != nil {
@@ -1129,7 +1129,7 @@ func (r *runner) UpdateDC(seed, dcToUpdate string, dc *models.Datacenter) (*mode
 		DCToUpdate: dcToUpdate,
 		Seed:       seed,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusBadRequest)
 
 	updatedDC, err := r.client.Datacenter.UpdateDC(params, r.bearerToken)
 	if err != nil {
