@@ -16,7 +16,7 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/..
+cd $(dirname $0)/../..
 source hack/lib.sh
 
 echodate "This script requires write access to /etc/etcd/pki/client & /etc/kubernetes as it needs to write dummy certs."

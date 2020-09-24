@@ -274,7 +274,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/promtool:2.7.0-3
         command:
-        - "./hack/verify-user-cluster-prometheus-configs.sh"
+        - "./hack/ci/ci-verify-user-cluster-prometheus-configs.sh"
         env:
         - name: KUBERMATIC_EDITION
           value: ee
