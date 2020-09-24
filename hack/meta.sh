@@ -14,34 +14,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This README.md generator
+###
+### That generates README.md with all scripts from this directory described.
+
 set -euo pipefail
 
-cd $(dirname $0)/..
-source hack/lib.sh
+cd "$(dirname "$0")/.."
 
-TEMPDIR=_tmp
-DIFFROOT=pkg
-TMP_DIFFROOT="$TEMPDIR/pkg"
+README="hack/README.md"
 
-cleanup() {
-  rm -rf "$TEMPDIR"
-}
-trap "cleanup" EXIT SIGINT
+cat <<EOF >"$README"
+# Scripts list and their description
 
-cleanup
+This file is generated
 
-mkdir -p "${TMP_DIFFROOT}"
-cp -a "${DIFFROOT}"/* "${TMP_DIFFROOT}"
+EOF
 
-./hack/update-codegen.sh
+while IFS= read -r -d '' script_file; do
+    help_text=$(awk -F '### ' '/^###/ {print $2}' "$script_file")
+    if [[ -z "$help_text" ]]; then
+        help_text="TBD"
+    fi
+    cat <<EOF >>"$README"
+## ${script_file}
 
-echodate "Diffing ${DIFFROOT} against freshly generated codegen"
-ret=0
-diff -Naupr "${DIFFROOT}" "${TMP_DIFFROOT}" || ret=$?
-cp -a "${TMP_DIFFROOT}"/* "${DIFFROOT}"
-if [[ $ret -eq 0 ]]; then
-  echodate "${DIFFROOT} up to date."
-else
-  echodate "${DIFFROOT} is out of date. Please run hack/update-codegen.sh"
-  exit 1
-fi
+${help_text}
+
+EOF
+done < <(find "$(dirname "$0")" -name '*.sh' -print0)
