@@ -73,7 +73,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/util:1.4.1
         command:
-        - "./hack/verify-chart-versions.sh"
+        - "./hack/ci/ci-verify-chart-versions.sh"
         resources:
           requests:
             memory: 128Mi

@@ -20,7 +20,7 @@
 
 set -euo pipefail
 
-cd $(dirname $0)/..
+cd $(dirname $0)/../..
 source hack/lib.sh
 
 echodate "Verifying Helm chart versions..."
