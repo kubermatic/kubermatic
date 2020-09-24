@@ -40,7 +40,7 @@ DOCKER_BIN := $(shell which docker)
 
 default: all
 
-all: check build test
+all: build test
 
 .PHONY: $(CMD)
 build: $(CMD)
