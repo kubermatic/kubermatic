@@ -33,8 +33,9 @@ LDFLAGS += -extldflags '-static' \
   -X k8c.io/kubermatic/v2/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
   -X k8c.io/kubermatic/v2/pkg/controller/operator/common.KUBERMATICDOCKERTAG=$(KUBERMATICDOCKERTAG) \
   -X k8c.io/kubermatic/v2/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
+LDFLAGS_EXTRA=-w
 BUILD_DEST ?= _build
-GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '-w $(LDFLAGS)'
+GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFLAGS_EXTRA)
 GOBUILDIMAGE ?= golang:1.15.1
 DOCKER_BIN := $(shell which docker)
 
