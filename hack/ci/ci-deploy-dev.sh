@@ -50,5 +50,5 @@ export DEPLOY_LOKI=true
 export DEPLOY_NODEPORT_PROXY=false
 
 echodate "Deploying ${DEPLOY_STACK} stack to dev"
-TILLER_NAMESPACE=kubermatic-installer ./hack/deploy.sh master ${VALUES_FILE}
+TILLER_NAMESPACE=kubermatic-installer ./hack/ci/ci-deploy.sh master ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to dev"
