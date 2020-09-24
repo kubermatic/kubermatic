@@ -87,7 +87,7 @@ EOF
 
 containerize() {
   local cmd="$1"
-  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:1.4.0}"
+  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:1.4.1}"
   local gocache="${CONTAINERIZE_GOCACHE:-/tmp/.gocache}"
 
   if ! [ -f /.dockerenv ]; then
