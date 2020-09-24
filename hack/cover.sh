@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 #
@@ -14,15 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Generate test coverage statistics for Go packages.
-#
-# Works around the fact that `go test -coverprofile` currently does not work
-# with multiple packages, see https://code.google.com/p/go/issues/detail?id=6909
-#
-# Usage: script/coverage [--html]
-#
-#     --html      Additionally create HTML report and open it in browser
-#
+### Generate test coverage statistics for Go packages.
+###
+### Works around the fact that `go test -coverprofile` currently does not work  
+### with multiple packages, see https://code.google.com/p/go/issues/detail?id=6909
+###
+###     Usage: cover.sh [--html]
+###
+###     --html      Additionally create HTML report and open it in browser
 
 set -e
 

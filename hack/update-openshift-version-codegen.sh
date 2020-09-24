@@ -14,12 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This file can be used to update the generated image names for Openshift.
-# The desired versions msut be configured first in
-# codegen/openshift_versions/main.go and a const for each version must be
-# added to pkg/controller/openshift/resources/const.go
-#
-# Also, executing this script requires access to the ocp quay repo.
+### This script can be used to update the generated image names for Openshift.  
+### The desired versions msut be configured first in  
+### codegen/openshift_versions/main.go and a const for each version must be  
+### added to pkg/controller/openshift/resources/const.go
+###
+### Also, executing this script requires access to the ocp quay repo.
 
 set -euo pipefail
 

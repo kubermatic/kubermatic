@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-### Defaults
+# Defaults
 export VERSIONS=${VERSIONS_TO_TEST:-"v1.18.8"}
 export EXCLUDE_DISTRIBUTIONS="${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos,sles,rhel}"
 export ONLY_TEST_CREATION=${ONLY_TEST_CREATION:-false}
