@@ -54,8 +54,6 @@ install:
 showenv:
 	@go env
 
-check: lint
-
 download-gocache:
 	@./hack/ci/ci-download-gocache.sh
 	@# Prevent this from getting executed multiple times
@@ -156,4 +154,4 @@ ifndef DOCKER_BIN
 endif
 	$(DOCKER_BIN) run --rm -it -v ${PWD}:/go/src/k8c.io/kubermatic -w /go/src/k8c.io/kubermatic $(GOBUILDIMAGE) hack/update-codegen.sh
 
-.PHONY: build install test check cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture update-codegen-in-docker run-tests build-tests $(TARGET)
+.PHONY: build install test cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture update-codegen-in-docker run-tests build-tests $(TARGET)
