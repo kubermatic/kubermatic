@@ -43,5 +43,5 @@ echodate "Deploying ${DEPLOY_STACK} stack to ci.kubermatic.io"
 TILLER_NAMESPACE=kubermatic \
 	DEPLOY_NODEPORT_PROXY=false \
 	DEPLOY_ALERTMANAGER=false \
-	DEPLOY_MINIO=false ./hack/deploy.sh master ${VALUES_FILE}
+	DEPLOY_MINIO=false ./hack/ci/ci-deploy.sh master ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to ci.kubermatic.io"
