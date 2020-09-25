@@ -60,7 +60,7 @@ type etcdStatefulSetCreatorData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
 	EtcdDiskSize() resource.Quantity
-	EtcdLauncherImage() string
+	EtcdLauncherImage() (string, string)
 	GetClusterRef() metav1.OwnerReference
 	SupportsFailureDomainZoneAntiAffinity() bool
 }
@@ -95,10 +95,14 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			}
 			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
 
+			image, tag := data.EtcdLauncherImage()
+			if tag == "" {
+				tag = resources.KUBERMATICCOMMIT
+			}
 			set.Spec.Template.Spec.InitContainers = []corev1.Container{
 				{
 					Name:            "etcd-launcher-init",
-					Image:           data.EtcdLauncherImage() + ":" + resources.KUBERMATICCOMMIT,
+					Image:           image + ":" + tag,
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Command:         []string{"/bin/cp", "/etcd-launcher", "/opt/bin/"},
 					VolumeMounts: []corev1.VolumeMount{

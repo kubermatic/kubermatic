@@ -161,7 +161,8 @@ func (d *TemplateData) EtcdDiskSize() resource.Quantity {
 	return d.etcdDiskSize
 }
 
-func (d *TemplateData) EtcdLauncherImage() string {
+// EtcdLauncherImage returns the etcd launcher image and tag.
+func (d *TemplateData) EtcdLauncherImage() (string, string) {
 	imageSplit := strings.Split(d.etcdLauncherImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(imageSplit) != 3 {
@@ -171,7 +172,11 @@ func (d *TemplateData) EtcdLauncherImage() string {
 		registry = imageSplit[0]
 		imageWithoutRegistry = strings.Join(imageSplit[1:], "/")
 	}
-	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
+	s := strings.Split(imageWithoutRegistry, ":")
+	if len(s) == 2 {
+		return fmt.Sprint(d.ImageRegistry(registry), "/", s[0]), s[1]
+	}
+	return fmt.Sprint(d.ImageRegistry(registry), "/", imageWithoutRegistry), ""
 }
 
 // MonitoringScrapeAnnotationPrefix returns the scrape annotation prefix
@@ -246,11 +251,11 @@ func (d *TemplateData) ProviderName() string {
 }
 
 // ImageRegistry returns the image registry to use or the passed in default if no override is specified
-func (d *TemplateData) ImageRegistry(defaultRegistry string) string {
+func (d *TemplateData) ImageRegistry(registry string) string {
 	if d.OverwriteRegistry != "" {
 		return d.OverwriteRegistry
 	}
-	return defaultRegistry
+	return registry
 }
 
 // GetRootCA returns the root CA of the cluster

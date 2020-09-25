@@ -238,7 +238,8 @@ func (od *openshiftData) EtcdDiskSize() resource.Quantity {
 	return od.etcdDiskSize
 }
 
-func (od *openshiftData) EtcdLauncherImage() string {
+// EtcdLauncherImage returns the etcd launcher image and tag.
+func (od *openshiftData) EtcdLauncherImage() (string, string) {
 	imageSplit := strings.Split(od.etcdLauncherImage, "/")
 	var registry, imageWithoutRegistry string
 	if len(imageSplit) != 3 {
@@ -248,7 +249,11 @@ func (od *openshiftData) EtcdLauncherImage() string {
 		registry = imageSplit[0]
 		imageWithoutRegistry = strings.Join(imageSplit[1:], "/")
 	}
-	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
+	s := strings.Split(imageWithoutRegistry, ":")
+	if len(s) == 2 {
+		return fmt.Sprint(od.ImageRegistry(registry), "/", s[0]), s[1]
+	}
+	return fmt.Sprint(od.ImageRegistry(registry), "/", imageWithoutRegistry), ""
 }
 
 // Openshift has its own DNS cache, so this is always false
