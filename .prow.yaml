@@ -256,10 +256,10 @@ presubmits:
       - name: quay
 
   #########################################################
-  # Base Kubernetes Tests (AWS, CoreOS)
+  # Base Kubernetes Tests (AWS, Flatcar)
   #########################################################
 
-  - name: pre-kubermatic-e2e-aws-coreos-1.15
+  - name: pre-kubermatic-e2e-aws-flatcar-1.15
     decorate: true
     optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -280,7 +280,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.15.11"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -298,7 +298,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-aws-coreos-1.16
+  - name: pre-kubermatic-e2e-aws-flatcar-1.16
     decorate: true
     run_if_changed: "(api/|config/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -319,7 +319,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.16.13"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -337,7 +337,7 @@ presubmits:
           limits:
             memory: 4Gi
 
-  - name: pre-kubermatic-e2e-aws-coreos-1.17
+  - name: pre-kubermatic-e2e-aws-flatcar-1.17
     decorate: true
     run_if_changed: "(api/|config/kubermatic|addons/|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -358,46 +358,7 @@ presubmits:
         - name: VERSIONS_TO_TEST
           value: "v1.17.9"
         - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./api/hack/ci/ci-kind-e2e.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
-
-  - name: pre-kubermatic-e2e-aws-coreos-1.18
-    decorate: true
-    run_if_changed: "(api/|config/kubermatic|addons/|.prow.yaml)"
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    labels:
-      preset-aws: "true"
-      preset-docker-pull: "true"
-      preset-docker-push: "true"
-      preset-vault: "true"
-      preset-repo-ssh: "true"
-      preset-kubeconfig-ci: "true"
-      preset-kind-volume-mounts: "true"
-    spec:
-      containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.16
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.18.6"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,flatcar,rhel"
+          value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -1080,7 +1041,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: EXCLUDE_DISTRIBUTIONS
-          value: ubuntu,centos,sles,rhel,flatcar
+          value: ubuntu,centos,sles,rhel,coreos
         - name: VERSIONS_TO_TEST
           value: "v1.18.6"
         - name: KUBERMATIC_USE_OPERATOR
