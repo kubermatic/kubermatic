@@ -24,7 +24,7 @@ boilerplate \
   -boilerplates hack/boilerplate/ce \
   -exclude addons/canal/canal.yaml \
   -exclude pkg/controller/seed-controller-manager/addon/testdata/istio \
-  -exclude containers/startup-script/manage-startup-script.sh \
+  -exclude hack/images/startup-script/manage-startup-script.sh \
   -exclude pkg/resources/certificates/triple/triple.go \
   -exclude pkg/ee
 
