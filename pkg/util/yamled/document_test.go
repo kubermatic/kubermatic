@@ -17,7 +17,9 @@ limitations under the License.
 package yamled
 
 import (
+	"fmt"
 	"io/ioutil"
+	"sort"
 	"strings"
 	"testing"
 
@@ -381,6 +383,9 @@ func TestFillTwoNewRootKeys(t *testing.T) {
 		t.Fatal("should have been able to fill in stuff")
 	}
 
+	// as Fill is iterating over a map we don't have ordering guarantees, we
+	// sort the document to have a predictable output
+	sort.Sort(byKeyString(*doc.root))
 	assertEqualYAML(t, doc, expected)
 }
 
@@ -442,4 +447,21 @@ func TestMarshalling(t *testing.T) {
 	doc, expected := loadTestcase(t, "")
 
 	assertEqualYAML(t, doc, expected)
+}
+
+type byKeyString yaml.MapSlice
+
+// Len is part of sort.Interface.
+func (b byKeyString) Len() int {
+	return len(b)
+}
+
+// Swap is part of sort.Interface.
+func (b byKeyString) Swap(i, j int) {
+	b[i], b[j] = b[j], b[i]
+}
+
+// Less is part of sort.Interface.
+func (b byKeyString) Less(i, j int) bool {
+	return fmt.Sprintf("%s", b[i].Key) < fmt.Sprintf("%s", b[j].Key)
 }
