@@ -404,7 +404,7 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.18.9"
+          value: "v1.18.8"
         - name: EXCLUDE_DISTRIBUTIONS
           value: "centos,ubuntu,coreos,rhel"
         - name: SERVICE_ACCOUNT_KEY
@@ -1168,7 +1168,7 @@ presubmits:
         - "./hack/ci/ci-run-api-e2e.sh"
         env:
         - name: VERSION_TO_TEST
-          value: v1.18.9
+          value: v1.18.8
         securityContext:
           privileged: true
         resources:
