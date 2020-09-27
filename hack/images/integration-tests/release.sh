@@ -14,10 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-NUMBER=4
-VERSION=18.09.0
+set -euo pipefail
 
-set -euox pipefail
+cd $(dirname $0)
 
-docker build --no-cache --pull -t quay.io/kubermatic/docker:${VERSION}-${NUMBER} .
-docker push quay.io/kubermatic/docker:${VERSION}-${NUMBER}
+REPOSITORY=quay.io/kubermatic/integration-tests
+VERSION=3
+BUILD_SUFFIX=1
+
+docker build --no-cache --pull -t "$REPOSITORY:$VERSION-$BUILD_SUFFIX" .
+docker push "$REPOSITORY:$VERSION-$BUILD_SUFFIX"
