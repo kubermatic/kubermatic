@@ -128,9 +128,8 @@ fi
 releaseID=$(echo "$releasedata" | jq -r '.id')
 
 # prepare source for archiving
-sed -i "s/__DASHBOARD_TAG__/$tag/g" config/kubermatic/*.yaml
-sed -i "s/__KUBERMATIC_TAG__/$tag/g" config/kubermatic/*.yaml
-sed -i "s/__KUBERMATIC_TAG__/$tag/g" config/kubermatic-operator/*.yaml
+sed -i "s/__DASHBOARD_TAG__/$tag/g" config/*/*.yaml
+sed -i "s/__KUBERMATIC_TAG__/$tag/g" config/*/*.yaml
 
 echodate "Uploading kubermatic CE archive..."
 
