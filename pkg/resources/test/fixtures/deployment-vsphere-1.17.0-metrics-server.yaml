@@ -53,7 +53,7 @@ spec:
         - '{"command":"/metrics-server","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--kubelet-port","10250","--kubelet-insecure-tls","--kubelet-preferred-address-types","ExternalIP,InternalIP","--v","1","--logtostderr","--tls-cert-file","/etc/serving-cert/serving.crt","--tls-private-key-file","/etc/serving-cert/serving.key"]}'
         command:
         - /http-prober-bin/http-prober
-        image: gcr.io/google_containers/metrics-server-amd64:v0.3.6
+        image: k8s.gcr.io/metrics-server-amd64:v0.3.6
         name: metrics-server
         resources:
           limits:
