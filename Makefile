@@ -149,10 +149,4 @@ check-dependencies:
 gen-api-client:
 	./hack/gen-api-client.sh
 
-update-codegen-in-docker:
-ifndef DOCKER_BIN
-	$(error "Docker not available in your environment, please install it and retry.")
-endif
-	$(DOCKER_BIN) run --rm -it -v ${PWD}:/go/src/k8c.io/kubermatic -w /go/src/k8c.io/kubermatic $(GOBUILDIMAGE) hack/update-codegen.sh
-
-.PHONY: build install test cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture update-codegen-in-docker run-tests build-tests $(TARGET)
+.PHONY: build install test cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture run-tests build-tests $(TARGET)

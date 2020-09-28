@@ -87,6 +87,27 @@ write_junit() {
 EOF
 }
 
+containerize() {
+  local cmd="$1"
+  local image="${CONTAINERIZE_IMAGE:-quay.io/kubermatic/util:1.4.1}"
+  local gocache="${CONTAINERIZE_GOCACHE:-/tmp/.gocache}"
+
+  if ! [ -f /.dockerenv ]; then
+    echodate "Running $cmd in a Docker container using $image..."
+
+    exec docker run \
+      -v $PWD:/go/src/k8c.io/kubermatic \
+      -w /go/src/k8c.io/kubermatic \
+      -e "GOCACHE=$gocache" \
+      -u "$(id -u):$(id -g)" \
+      --rm \
+      -it \
+      $image $cmd $@
+
+    exit $?
+  fi
+}
+
 ensure_github_host_pubkey() {
   # check whether we already have a known_hosts entry for Github
   if ssh-keygen -F github.com >/dev/null 2>&1; then
