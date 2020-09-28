@@ -19,6 +19,20 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
+containerize ./hack/update-prometheus-rules.sh
+
+promtool=promtool
+if ! [ -x "$(command -v $promtool)" ]; then
+  version=2.21.0
+  url="https://github.com/prometheus/prometheus/releases/download/v$version/prometheus-$version.linux-amd64.tar.gz"
+  promtool=/tmp/promtool
+
+	echodate "Downloading promtool v$version..."
+  wget -O- "$url" | tar xzOf - prometheus-$version.linux-amd64/promtool > $promtool
+  chmod +x $promtool
+	echodate "Done!"
+fi
+
 cd charts/monitoring/prometheus/rules/
 
 # remove old files
@@ -35,4 +49,4 @@ for file in */*.yaml; do
 done
 
 cd ..
-promtool check rules *.yaml
+$promtool check rules *.yaml
