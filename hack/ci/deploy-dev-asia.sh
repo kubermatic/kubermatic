@@ -17,13 +17,14 @@
 set -euo pipefail
 
 cd $(dirname $0)/../..
-source hack/lib.sh
+source ./hack/lib.sh
 
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
+export DEPLOY_NODEPORT_PROXY=false
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
-  ./hack/ci/ci-push-images.sh
+  ./hack/ci/push-images.sh
 fi
 
 echodate "Getting secrets from Vault"
@@ -34,21 +35,14 @@ retry 5 vault write \
 export VAULT_TOKEN="$(cat /tmp/vault-token-response.json| jq .auth.client_token -r)"
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
-export DOCKER_CONFIG=/tmp/dockercfg
-export KUBERMATIC_CONFIG=/tmp/kubermatic.yaml
 export USE_KUBERMATIC_OPERATOR=true
 
-# deploy to dev
+# deploy to dev-asia
 vault kv get -field=kubeconfig dev/seed-clusters/dev.kubermatic.io > ${KUBECONFIG}
-vault kv get -field=europe-west3-c-values.yaml dev/seed-clusters/dev.kubermatic.io > ${VALUES_FILE}
-vault kv get -field=.dockerconfigjson dev/seed-clusters/dev.kubermatic.io > ${DOCKER_CONFIG}
-vault kv get -field=kubermatic.yaml dev/seed-clusters/dev.kubermatic.io > ${KUBERMATIC_CONFIG}
-echodate "Successfully got secrets for dev from Vault"
+vault kv get -field=asia-south1-c-values.yaml dev/seed-clusters/dev.kubermatic.io > ${VALUES_FILE}
+kubectl config use-context asia-south1-c
+echodate "Successfully got secrets for dev-asia from Vault"
 
-# deploy Loki as beta
-export DEPLOY_LOKI=true
-export DEPLOY_NODEPORT_PROXY=false
-
-echodate "Deploying ${DEPLOY_STACK} stack to dev"
-TILLER_NAMESPACE=kubermatic-installer ./hack/ci/ci-deploy.sh master ${VALUES_FILE}
-echodate "Successfully deployed ${DEPLOY_STACK} stack to dev"
+echodate "Deploying ${DEPLOY_STACK} stack to dev-asia"
+TILLER_NAMESPACE=kubermatic-installer ./hack/ci/deploy.sh seed ${VALUES_FILE}
+echodate "Successfully deployed ${DEPLOY_STACK} stack to dev-asia"

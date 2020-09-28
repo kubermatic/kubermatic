@@ -42,4 +42,4 @@ while IFS= read -r -d '' script_file; do
 ${help_text}
 
 EOF
-done < <(find "$(dirname "$0")" -name '*.sh' -print0)
+done < <(find hack/ -name '*.sh' -not -path 'hack/images/*' -print0 | sort --zero-terminated)

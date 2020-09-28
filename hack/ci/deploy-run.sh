@@ -23,7 +23,7 @@ export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
-  ./hack/ci/ci-push-images.sh
+  ./hack/ci/push-images.sh
 fi
 
 echodate "Getting secrets from Vault"
@@ -35,11 +35,11 @@ export VAULT_TOKEN="$(cat /tmp/vault-token-response.json| jq .auth.client_token 
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 
-# deploy to run-2-lab cluster
-vault kv get -field=kubeconfig dev/seed-clusters/run-2.lab.kubermatic.io > ${KUBECONFIG}
-vault kv get -field=values.yaml dev/seed-clusters/run-2.lab.kubermatic.io > ${VALUES_FILE}
+# deploy to dev
+vault kv get -field=kubeconfig dev/seed-clusters/run.kubermatic.io > ${KUBECONFIG}
+vault kv get -field=values.yaml dev/seed-clusters/run.kubermatic.io > ${VALUES_FILE}
 echodate "Successfully got secrets for run from Vault"
 
-echodate "Deploying ${DEPLOY_STACK} stack to run-2.lab.kubermatic.io"
-TILLER_NAMESPACE=kubermatic ./hack/ci/ci-deploy.sh master ${VALUES_FILE}
-echodate "Successfully deployed ${DEPLOY_STACK} stack to run-2.lab.kubermatic.io"
+echodate "Deploying ${DEPLOY_STACK} stack to run.kubermatic.io"
+TILLER_NAMESPACE=kube-system ./hack/ci/deploy.sh master ${VALUES_FILE}
+echodate "Successfully deployed ${DEPLOY_STACK} stack to run.kubermatic.io"

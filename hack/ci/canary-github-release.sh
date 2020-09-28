@@ -52,6 +52,6 @@ git push --force origin "$RELEASE_NAME"
 echodate "Creating canary release..."
 
 cd "$rootdir"
-./hack/ci/ci-github-release.sh
+./hack/ci/github-release.sh
 
 echodate "Done, find the new release at https://github.com/$GIT_REPO/releases/tag/$RELEASE_NAME"

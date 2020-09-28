@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source ./hack/lib.sh
 
-source ./hack/ci/ci-setup-kubermatic-in-kind.sh
+source ./hack/ci/setup-kubermatic-in-kind.sh
 
 echodate "Creating UI Azure preset..."
 cat <<EOF > preset-azure.yaml
