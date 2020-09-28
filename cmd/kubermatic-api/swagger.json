@@ -8172,6 +8172,48 @@
             }
           }
         }
+      },
+      "post": {
+        "description": "Create constraint templates",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "constrainttemplates"
+        ],
+        "operationId": "createConstraintTemplate",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ctBody"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ConstraintTemplate",
+            "schema": {
+              "$ref": "#/definitions/ConstraintTemplate"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v2/constrainttemplates/{ct_name}": {
@@ -14054,6 +14096,20 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
+    },
+    "ctBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the constraint template",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ConstraintTemplateSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"
     },
     "errorResponse": {
       "description": "ErrorResponse is the default representation of an error",
