@@ -170,7 +170,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePro
 
 		adminUserInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
-			return nil, err
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		if !adminUserInfo.IsAdmin {
 			return nil, errors.New(http.StatusForbidden,
@@ -198,6 +198,9 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePro
 
 		var patched *apiv2.ConstraintTemplate
 		err = json.Unmarshal(patchedJSON, &patched)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshall patch ct: %v", err))
+		}
 
 		// validate
 		if patched.Name != originalCT.Name {
