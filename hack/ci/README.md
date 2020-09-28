@@ -134,10 +134,6 @@ it sets.
 This script is run as a postsubmit to copy the generated API client
 into the github.com/kubermatic/go-kubermatic repository.
 
-## sync-charts.sh
-
-TBD
-
 ## test-github-release.sh
 
 This script is used for an optional presubmit to test changes to
