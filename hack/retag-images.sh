@@ -14,6 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script takes YAML on stdin and tries to find all references
+### to Docker images. The found images will then be pulled, retagged
+### with `$TARGET_REGISTRY` as their registry and pushed to said target
+### registry.
+###
+### The purpose of this is to mirror all images used in a KKP setup
+### to prewarm a local Docker registry, for example in offline setups.
+
 set -euo pipefail
 
 TARGET_REGISTRY=${TARGET_REGISTRY:-127.0.0.1:5000}

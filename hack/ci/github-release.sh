@@ -14,8 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is run for every tagged revision and will create
-# the appropriate GitHub release and upload source archives.
+### This script is run for every tagged revision and will create
+### the appropriate GitHub release and upload source archives. It can be
+### tweaked by setting a number of environment variables, most importantly:
+###
+### * `DRY_RUN=false` - set to `true` to not actually talk to GitHub
+### * `GITHUB_TOKEN` - the OAuth token to use
+###
+### Whenever this is changed, run the optional `pre-kubermatic-simulate-github-release`
+### job to (mostly) ensure that the changes will work.
 
 set -euo pipefail
 

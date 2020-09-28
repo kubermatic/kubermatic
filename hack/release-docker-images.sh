@@ -14,6 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Builds and pushes all KKP Docker images:
+###
+### * quay.io/kubermatic/kubermatic[-ee]
+### * quay.io/kubermatic/addons
+### * quay.io/kubermatic/openshift-addons
+### * quay.io/kubermatic/nodeport-proxy
+### * quay.io/kubermatic/kubeletdnat-controller
+### * quay.io/kubermatic/user-ssh-keys-agent
+### * quay.io/kubermatic/etcd-launcher
+###
+### The images are tagged with all arguments given to the script, i.e
+### `./release-docker-images.sh foo bar` will tag `kubermatic:foo` and
+### `kubermatic:bar`.
+###
+### Before running this script, all binaries in `cmd/` must have been
+### built already by running `make build`.
+
 set -euo pipefail
 
 if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then

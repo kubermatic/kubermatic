@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This ensures that the Prometheus rules deployed into userclusters
+### are valid Prometheus rules.
+
 set -euo pipefail
 
 cd $(dirname $0)/../..

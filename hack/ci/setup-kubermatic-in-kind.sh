@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script creates a local kind cluster, compiles the KKP binaries,
+### creates all Docker images and loads them into the kind cluster,
+### then installs KKP using the KKP installer + operator and sets up a
+### single shared master/seed system.
+### This serves as the precursor for all other tests.
+###
+### This script should be sourced, not called, so callers get the variables
+### it sets.
+
 cd $(dirname $0)/../..
 source hack/lib.sh
-
-#############################################################
-## CI Setup Kubermatic in kind                              #
-## A simple script to get a Kubermatic setup using kind     #
-#############################################################
-
-# This script should be sourced, not called, so callers get the variables it sets
 
 if [ -z "${JOB_NAME:-}" ]; then
   echodate "This script should only be running in a CI environment."

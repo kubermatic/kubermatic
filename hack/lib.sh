@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Contains commonly used functions for the other scripts.
+
 # Required for signal propagation to work so
 # the cleanup trap gets executed when a script
 # receives a SIGINT

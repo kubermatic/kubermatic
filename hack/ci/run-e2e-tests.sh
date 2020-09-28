@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script sets up a local KKP installation in kind and then
+### runs the conformance-tester to create userclusters and check their
+### Kubernetes conformance.
+
 set -euo pipefail
 
 cd $(dirname $0)/../..

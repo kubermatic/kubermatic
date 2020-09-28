@@ -14,6 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script was used to run KKP conformance tests inside an offline
+### environment.
+###
+### TODO: This needs to be cleaned up greatly and adjusted to the KKP
+### Operator. The presubmit job for this script is currently not used.
+
 set -euo pipefail
 # Required for signal propagation to work so
 # the cleanup trap gets executed when the script

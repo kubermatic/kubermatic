@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script sets up a local KKP installation in kind, deploys a
+### couple of test Presets and Users and then runs the e2e tests for the
+### API.
+
 set -euo pipefail
 
 cd $(dirname $0)/../..

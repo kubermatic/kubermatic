@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script compiles the KKP binaries and then builds and pushes all
+### Docker images by using `hack/release-docker-images.sh`. It is only
+### useful as part of another script to setup KKP for testing.
+
 set -eu
 
 cd $(dirname $0)/../..
