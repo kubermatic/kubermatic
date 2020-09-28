@@ -24,7 +24,7 @@ cd "$(dirname "$0")/"
 source ../lib.sh
 
 # Build and push images
-./ci-push-images.sh
+./push-images.sh
 
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
@@ -108,7 +108,7 @@ HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tille
   DEPLOY_STACK=kubermatic \
   DEPLOY_NODEPORT_PROXY=false \
   TILLER_NAMESPACE="kube-system" \
-  ./hack/ci/ci-deploy.sh \
+  ./hack/ci/deploy.sh \
   master \
   ${VALUES_FILE} \
   ${HELM_EXTRA_ARGS}
@@ -117,7 +117,7 @@ HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tille
   DEPLOY_STACK=monitoring \
   DEPLOY_ALERTMANAGER=false \
   TILLER_NAMESPACE="kube-system" \
-  ./hack/ci/ci-deploy.sh \
+  ./hack/ci/deploy.sh \
   master \
   ${VALUES_FILE} \
   ${HELM_EXTRA_ARGS}
@@ -127,7 +127,7 @@ HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tille
   DEPLOY_LOKI=true \
   DEPLOY_ELASTIC=false \
   TILLER_NAMESPACE="kube-system" \
-  ./hack/ci/ci-deploy.sh \
+  ./hack/ci/deploy.sh \
   master \
   ${VALUES_FILE} \
   ${HELM_EXTRA_ARGS}

@@ -73,7 +73,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/util:1.4.1
         command:
-        - "./hack/ci/ci-verify-chart-versions.sh"
+        - "./hack/ci/verify-chart-versions.sh"
         resources:
           requests:
             memory: 128Mi
@@ -274,7 +274,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/promtool:2.7.0-3
         command:
-        - "./hack/ci/ci-verify-user-cluster-prometheus-configs.sh"
+        - "./hack/ci/verify-user-cluster-prometheus-configs.sh"
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -282,7 +282,7 @@ presubmits:
       - name: quay
 
   - name: pre-kubermatic-simulate-github-release
-    run_if_changed: "hack/ci/ci-github-release.sh"
+    run_if_changed: "hack/ci/github-release.sh"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -291,7 +291,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.21
         command:
-        - ./hack/ci/ci-test-github-release.sh
+        - ./hack/ci/test-github-release.sh
         resources:
           requests:
             memory: 1Gi
@@ -331,7 +331,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -372,7 +372,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -413,7 +413,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -454,7 +454,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -497,7 +497,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -543,7 +543,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -592,7 +592,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -636,7 +636,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -683,7 +683,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -727,7 +727,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -770,7 +770,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -813,7 +813,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -859,7 +859,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -904,7 +904,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -949,7 +949,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -992,7 +992,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -1038,7 +1038,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -1082,7 +1082,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -1130,7 +1130,7 @@ presubmits:
               name: e2e-ci
               key: serviceAccountSigningKey
         command:
-        - "./hack/ci/ci-kind-e2e.sh"
+        - "./hack/ci/run-e2e-tests.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -1165,7 +1165,7 @@ presubmits:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.21
         imagePullPolicy: Always
         command:
-        - "./hack/ci/ci-run-api-e2e.sh"
+        - "./hack/ci/run-api-e2e.sh"
         env:
         - name: VERSION_TO_TEST
           value: v1.18.8
@@ -1203,7 +1203,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/go-docker:15.1-1903-0
         command:
-        - "./hack/ci/ci-run-offline-test.sh"
+        - "./hack/ci/run-offline-test.sh"
         # docker-in-docker needs privileged mode
         securityContext:
           privileged: true
@@ -1236,7 +1236,7 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/go-docker:15.1-1903-0
         command:
-        - ./hack/ci/ci-deploy-ci-kubermatic-io.sh
+        - ./hack/ci/deploy-ci-kubermatic-io.sh
         env:
         - name: KUBERMATIC_EDITION
           value: ee
