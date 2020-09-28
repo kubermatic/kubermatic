@@ -1,16 +1,32 @@
 # Kubermatic 2.15
 
+## [v2.15.0-rc.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0-rc.2)
+
+### Misc
+
+- Add Kubernetes 1.16.15, 1.17.12, 1.19.2 ([#5927](https://github.com/kubermatic/kubermatic/issues/5927))
+- Add `operator.kubermatic.io/skip-reconciling` annotation to Seeds to allow step-by-step seed cluster upgrades ([#5883](https://github.com/kubermatic/kubermatic/issues/5883))
+- Add option to enable/disable external cluster import feature from admin settings in KKP dashboard ([#2644](https://github.com/kubermatic/dashboard/issues/2644))
+- Allow controlling external cluster functionality with global settings ([#5912](https://github.com/kubermatic/kubermatic/issues/5912))
+- Fix KKP Operator getting stuck in Kubernetes 1.18 clusters when reconciling Ingresses ([#5915](https://github.com/kubermatic/kubermatic/issues/5915))
+- Fix creation of RHEL8 machines ([#5950](https://github.com/kubermatic/kubermatic/issues/5950))
+- Fix loading of the access rights in the SSH keys view ([#2645](https://github.com/kubermatic/dashboard/issues/2645))
+- Fix cluster wizard rendering in Safari ([#2661](https://github.com/kubermatic/dashboard/issues/2661))
+
 ## [v2.15.0-rc.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0-rc.1)
 
 ### Supported Kubernetes Versions
 
 * 1.16.13
 * 1.16.14
+* 1.16.15
 * 1.17.9
 * 1.17.11
+* 1.17.12
 * 1.18.6
 * 1.18.8
 * 1.19.0
+* 1.19.2
 
 ### Highlights
 
