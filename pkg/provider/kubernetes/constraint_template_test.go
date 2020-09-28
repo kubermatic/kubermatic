@@ -119,3 +119,43 @@ func TestGetConstraintTemplates(t *testing.T) {
 		})
 	}
 }
+
+func TestCreateConstraintTemplates(t *testing.T) {
+	testCases := []struct {
+		name       string
+		ctToCreate *kubermaticv1.ConstraintTemplate
+		expectedCT *kubermaticv1.ConstraintTemplate
+	}{
+		{
+			name:       "test: create constraint template",
+			ctToCreate: genConstraintTemplate("ct1"),
+			expectedCT: genConstraintTemplate("ct1"),
+		},
+	}
+
+	for idx := range testCases {
+		tc := testCases[idx]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			provider, err := kubernetes.NewConstraintTemplateProvider(fakeImpersonationClient, client)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ct, err := provider.Create(tc.ctToCreate)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// set the RV because it gets set when created
+			tc.expectedCT.ResourceVersion = "1"
+			if !reflect.DeepEqual(ct, tc.expectedCT) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
+			}
+		})
+	}
+}

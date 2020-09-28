@@ -780,4 +780,7 @@ type ConstraintTemplateProvider interface {
 
 	// Get gets the given constraint template
 	Get(name string) (*kubermaticv1.ConstraintTemplate, error)
+
+	// Create a Constraint Template
+	Create(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
 }
