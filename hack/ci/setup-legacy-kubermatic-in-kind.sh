@@ -16,9 +16,9 @@ cd $(dirname $0)/../..
 source hack/lib.sh
 
 #############################################################
-## CI Setup Kubermatic in kind using legacy Helm chart      #
+## Setup Kubermatic in kind using legacy Helm chart         #
 ## A simple script to get a Kubermatic setup using kind     #
-## Compared to the ci-setup-kubermatic-in-kind.sh, this     #
+## Compared to the setup-kubermatic-in-kind.sh, this        #
 ## script does not use the installer, but tests the         #
 ## deprecated `kubermatic` Helm chart.                      #
 #############################################################

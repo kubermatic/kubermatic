@@ -14,36 +14,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is run for every tagged revision and will create
-# the appropriate GitHub release and upload source archives.
-
 set -euo pipefail
 
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-export DRY_RUN=true
-export GITHUB_TOKEN="none"
-export GIT_TAG="v2.99.99"
-export RELEASE_PLATFORMS="linux-amd64 windows-amd64"
+export GIT_HEAD_HASH="$(git rev-parse HEAD)"
+export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
 
-echodate "Simulating GitHub release..."
+echodate "Setting up Kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 
-./hack/ci/ci-github-release.sh
+beforeKubermaticSetup=$(nowms)
+if [ -n "${USE_LEGACY_HELM_CHART:-}" ]; then
+  source hack/ci/setup-legacy-kubermatic-in-kind.sh
+else
+  source hack/ci/setup-kubermatic-in-kind.sh
+fi
+pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
 
-echodate "Simulation successful."
+echodate "Done setting up Kubermatic in kind"
 
-ls -lah _dist
-echo
-
-for f in _dist/*; do
-  echodate "$(basename "$f")"
-
-  if [[ $f =~ '.zip' ]]; then
-    unzip -ql "$f"
-  else
-    tar tvzf "$f"
-  fi
-
-  echo
-done
+echodate "Running conformance tests"
+KUBERMATIC_NO_WORKER_NAME=true ./hack/ci/run-conformance-tester.sh

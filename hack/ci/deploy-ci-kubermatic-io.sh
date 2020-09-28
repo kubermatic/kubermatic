@@ -23,7 +23,7 @@ export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
-  ./hack/ci/ci-push-images.sh
+  ./hack/ci/push-images.sh
 fi
 
 echodate "Getting secrets from Vault"
@@ -43,5 +43,5 @@ echodate "Deploying ${DEPLOY_STACK} stack to ci.kubermatic.io"
 TILLER_NAMESPACE=kubermatic \
 	DEPLOY_NODEPORT_PROXY=false \
 	DEPLOY_ALERTMANAGER=false \
-	DEPLOY_MINIO=false ./hack/ci/ci-deploy.sh master ${VALUES_FILE}
+	DEPLOY_MINIO=false ./hack/ci/deploy.sh master ${VALUES_FILE}
 echodate "Successfully deployed ${DEPLOY_STACK} stack to ci.kubermatic.io"

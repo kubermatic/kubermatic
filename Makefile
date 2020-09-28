@@ -56,7 +56,7 @@ showenv:
 	@go env
 
 download-gocache:
-	@./hack/ci/ci-download-gocache.sh
+	@./hack/ci/download-gocache.sh
 	@# Prevent this from getting executed multiple times
 	@touch download-gocache
 
@@ -116,7 +116,7 @@ gittag:
 	@echo $(GITTAG)
 
 lint:
-	./hack/ci/ci-run-lint.sh
+	./hack/ci/run-lint.sh
 
 shellcheck:
 	shellcheck $$(find . -name '*.sh')
