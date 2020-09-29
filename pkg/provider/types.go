@@ -783,4 +783,7 @@ type ConstraintTemplateProvider interface {
 
 	// Create a Constraint Template
 	Create(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
+
+	// Update a Constraint Template
+	Update(ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
 }

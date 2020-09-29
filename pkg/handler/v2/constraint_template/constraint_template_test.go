@@ -166,9 +166,9 @@ func TestCreateConstraintTemplates(t *testing.T) {
 		{
 			Name:             "scenario 3: admin cannot create invalid constraint template",
 			CTtoCreate:       test.GenDefaultConstraintTemplate("invalid"),
-			ExpectedResponse: `{"error":{"code":400,"message":"template's name invalid is not equal to the lowercase of CRD's Kind: labelconstraint"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"create ct validation failed: template's name invalid is not equal to the lowercase of CRD's Kind: labelconstraint"}}`,
 			HTTPStatus:       http.StatusBadRequest,
-			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 	}
 
@@ -188,6 +188,86 @@ func TestCreateConstraintTemplates(t *testing.T) {
 			req := httptest.NewRequest("POST", "/api/v2/constrainttemplates", bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, []runtime.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
+func TestPatchConstraintTemplates(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name             string
+		RawPatch         string
+		CTName           string
+		ExpectedResponse string
+		HTTPStatus       int
+		ExistingAPIUser  *apiv1.User
+		ExistingObjects  []runtime.Object
+	}{
+		{
+			Name:             "scenario 1: admin can patch constraint template",
+			RawPatch:         `{"spec":{"crd":{"spec":{"names":{"kind":"labelconstraint","shortNames":["lc", "lcon"]}}}}}`,
+			CTName:           "labelconstraint",
+			ExpectedResponse: `{"name":"labelconstraint","spec":{"crd":{"spec":{"names":{"kind":"labelconstraint","shortNames":["lc","lcon"]}}},"targets":[{"target":"admission.k8s.gatekeeper.sh","rego":"\n\t\tpackage k8srequiredlabels\n\n        deny[{\"msg\": msg, \"details\": {\"missing_labels\": missing}}] {\n          provided := {label | input.review.object.metadata.labels[label]}\n          required := {label | label := input.parameters.labels[_]}\n          missing := required - provided\n          count(missing) \u003e 0\n          msg := sprintf(\"you must provide labels: %v\", [missing])\n        }"}]},"status":{}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+			ExistingObjects:  []runtime.Object{genConstraintTemplate("labelconstraint")},
+		},
+		{
+			Name:             "scenario 2: non-admin can not patch constraint template",
+			RawPatch:         `{"spec":{"crd":{"spec":{"names":{"kind":"labelconstraint","shortNames":["lc", "lcon"]}}}}}`,
+			CTName:           "labelconstraint",
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			ExistingObjects:  []runtime.Object{genConstraintTemplate("labelconstraint")},
+		},
+		{
+			Name:             "scenario 3: cannot patch invalid constraint template",
+			RawPatch:         `{"spec":{"crd":{"spec":{"names":{"kind":"different","shortNames":["lc"]}}}}}`,
+			CTName:           "labelconstraint",
+			ExpectedResponse: `{"error":{"code":400,"message":"patched ct validation failed: template's name labelconstraint is not equal to the lowercase of CRD's Kind: different"}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+			ExistingObjects:  []runtime.Object{genConstraintTemplate("labelconstraint")},
+		},
+		{
+			Name:             "scenario 4: cannot change constraint template name",
+			RawPatch:         `{"name":"changedname","spec":{"crd":{"spec":{"names":{"kind":"labelconstraint","shortNames":["lc"]}}}}}`,
+			CTName:           "labelconstraint",
+			ExpectedResponse: `{"error":{"code":400,"message":"Changing ct name is not allowed: \"labelconstraint\" to \"changedname\""}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+			ExistingObjects:  []runtime.Object{genConstraintTemplate("labelconstraint")},
+		},
+		{
+			Name:             "scenario 5: cannot patch non-existing constraint template",
+			RawPatch:         `{"spec":{"crd":{"spec":{"names":{"kind":"labelconstraint","shortNames":["lc", "lcon"]}}}}}`,
+			CTName:           "doesnotexist",
+			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8s.io \"doesnotexist\" not found"}}`,
+			HTTPStatus:       http.StatusNotFound,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+			ExistingObjects:  []runtime.Object{genConstraintTemplate("labelconstraint")},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
+
+			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTName), strings.NewReader(tc.RawPatch))
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

@@ -20,9 +20,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strings"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
@@ -105,9 +107,6 @@ func (req constraintTemplateReq) Validate() error {
 func CreateEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createConstraintTemplateReq)
-		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest(err.Error())
-		}
 
 		adminUserInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -123,6 +122,10 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePr
 				Name: req.Body.Name,
 			},
 			Spec: req.Body.ConstraintTemplateSpec,
+		}
+
+		if err := validateConstraintTemplate(ct); err != nil {
+			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("create ct validation failed: %v", err))
 		}
 
 		ct, err = constraintTemplateProvider.Create(ct)
@@ -158,9 +161,102 @@ func DecodeCreateConstraintTemplateRequest(c context.Context, r *http.Request) (
 	return req, nil
 }
 
-func (req createConstraintTemplateReq) Validate() error {
-	if req.Body.Name != strings.ToLower(req.Body.ConstraintTemplateSpec.CRD.Spec.Names.Kind) {
-		return fmt.Errorf("template's name %s is not equal to the lowercase of CRD's Kind: %s", req.Body.Name, req.Body.ConstraintTemplateSpec.CRD.Spec.Names.Kind)
+func PatchEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchConstraintTemplateReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if !adminUserInfo.IsAdmin {
+			return nil, errors.New(http.StatusForbidden,
+				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
+		}
+
+		// get CT
+		originalCT, err := constraintTemplateProvider.Get(req.Name)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		originalAPICT := convertCTToAPI(originalCT)
+
+		// patch
+		originalJSON, err := json.Marshal(originalAPICT)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current ct: %v", err))
+		}
+
+		patchedJSON, err := jsonpatch.MergePatch(originalJSON, req.Patch)
+		if err != nil {
+			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch ct: %v", err))
+		}
+
+		var patched *apiv2.ConstraintTemplate
+		err = json.Unmarshal(patchedJSON, &patched)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshall patch ct: %v", err))
+		}
+
+		// validate
+		if patched.Name != originalCT.Name {
+			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Changing ct name is not allowed: %q to %q", originalCT.Name, patched.Name))
+		}
+
+		patchedCT := &kubermaticv1.ConstraintTemplate{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: patched.Name,
+			},
+			Spec: patched.Spec,
+		}
+
+		if err := validateConstraintTemplate(patchedCT); err != nil {
+			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("patched ct validation failed: %v", err))
+		}
+
+		// apply patch
+		patchedCT, err = constraintTemplateProvider.Update(patchedCT)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertCTToAPI(patchedCT), nil
+	}
+}
+
+func validateConstraintTemplate(ct *kubermaticv1.ConstraintTemplate) error {
+	if ct.Name != strings.ToLower(ct.Spec.CRD.Spec.Names.Kind) {
+		return fmt.Errorf("template's name %s is not equal to the lowercase of CRD's Kind: %s", ct.Name,
+			ct.Spec.CRD.Spec.Names.Kind)
 	}
 	return nil
+}
+
+// patchConstraintTemplateReq defines HTTP request for patching constraint templates
+// swagger:parameters patchConstraintTemplate
+type patchConstraintTemplateReq struct {
+	constraintTemplateReq
+	// in: body
+	Patch json.RawMessage
+}
+
+// DecodePatchCTReq decodes http request into patchConstraintTemplateReq
+func DecodePatchConstraintTemplateReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchConstraintTemplateReq
+
+	ctReq, err := DecodeConstraintTemplateRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.constraintTemplateReq = ctReq.(constraintTemplateReq)
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
