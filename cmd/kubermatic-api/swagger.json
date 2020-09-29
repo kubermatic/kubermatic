@@ -8256,6 +8256,42 @@
           }
         }
       },
+      "delete": {
+        "description": "Deletes the specified cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "constrainttemplates"
+        ],
+        "operationId": "deleteConstraintTemplate",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "ct_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
       "patch": {
         "description": "Patch a specified constraint template",
         "consumes": [
