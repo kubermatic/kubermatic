@@ -12,18 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script creates a local kind cluster, compiles the KKP binaries,
+### creates all Docker images and loads them into the kind cluster,
+### then installs KKP using the legacy `kubermatic` Helm chart and sets up a
+### single shared master/seed system.
+### This serves as the precursor for all other tests.
+###
+### This script should be sourced, not called, so callers get the variables
+### it sets.
+
 cd $(dirname $0)/../..
 source hack/lib.sh
-
-#############################################################
-## Setup Kubermatic in kind using legacy Helm chart         #
-## A simple script to get a Kubermatic setup using kind     #
-## Compared to the setup-kubermatic-in-kind.sh, this        #
-## script does not use the installer, but tests the         #
-## deprecated `kubermatic` Helm chart.                      #
-#############################################################
-
-# This script should be sourced, not called, so callers get the variables it sets
 
 if [ -z "${JOB_NAME:-}" ]; then
   echodate "This script should only be running in a CI environment."
@@ -35,7 +34,7 @@ if [ -z "${PROW_JOB_ID:-}" ]; then
   exit 1
 fi
 
-# The kubemaric version to build.
+# The Kubermatic version to build.
 export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
 
 REPOSUFFIX=""

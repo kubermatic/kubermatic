@@ -14,10 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is run for every commit to master and will create
-# a dummy release in a dedicated GitHub repo. The purpose is to
-# a) test that releasing code actually works, and
-# b) to provide test builds for internal purposes.
+### This script is run for every commit to master and will create
+### a dummy release in a dedicated GitHub repo. The purpose is to
+###
+### * test that releasing code actually works, and
+### * to provide test builds for internal purposes.
 
 set -euo pipefail
 

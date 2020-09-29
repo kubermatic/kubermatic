@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script is used by all other `deploy-*` scripts to handle the
+### common deployment logic. It can setup the main, monitoring and logging
+### stacks by updating the Helm charts on the target cluster.
+
 set -euo pipefail
 
 if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then

@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Releases a new quay.io/kubermatic/s3-exporter Docker image; must be
+### run manually whenever ths s3-exporter is updated.
+
 set -euo pipefail
 
 cd $(dirname $0)/..

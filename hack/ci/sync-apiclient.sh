@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script is run as a postsubmit to copy the generated API client
+### into the github.com/kubermatic/go-kubermatic repository.
+
 set -euo pipefail
 
 cd $(dirname $0)/../..
@@ -22,34 +25,34 @@ source hack/lib.sh
 URL="git@github.com:kubermatic/go-kubermatic.git"
 
 commit_and_push() {
-    local repodir branch source_sha
-    repodir="$1"
-    branch="$2"
-    source_sha="$3"
+  local repodir branch source_sha
+  repodir="$1"
+  branch="$2"
+  source_sha="$3"
 
-    (
-        cd "$repodir"
+  (
+    cd "$repodir"
 
-        git config --local user.email "dev@kubermatic.com"
-        git config --local user.name "Prow CI Robot"
-        git config --local core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
+    git config --local user.email "dev@kubermatic.com"
+    git config --local user.name "Prow CI Robot"
+    git config --local core.sshCommand 'ssh -o CheckHostIP=no -i /ssh/id_rsa'
 
-        git add .
-        if ! git status | grep -q 'nothing to commit'; then
-            git commit -m "Syncing client from Kubermatic $source_sha"
-            git push origin "$branch"
-        fi
-    )
+    git add .
+    if ! git status | grep -q 'nothing to commit'; then
+      git commit -m "Syncing client from Kubermatic $source_sha"
+      git push origin "$branch"
+    fi
+  )
 }
 
 if [ -z "${PULL_BASE_REF=}" ]; then
-    echo "\$PULL_BASE_REF undefined, I don't know which branch to sync."
-    exit 1
+  echo "\$PULL_BASE_REF undefined, I don't know which branch to sync."
+  exit 1
 fi
 
 if [ -n "$(git rev-parse --show-prefix)" ]; then
-    echo "You must run this script from repo root"
-    exit 1
+  echo "You must run this script from repo root"
+  exit 1
 fi
 
 # Ensure Github's host key is available and disable IP checking.
@@ -60,8 +63,8 @@ tempdir="$(mktemp -d)"
 trap "rm -rf '$tempdir'" EXIT
 GIT_SSH_COMMAND="ssh -o CheckHostIP=no -i /ssh/id_rsa" git clone "$URL" "$tempdir"
 (
-    cd "$tempdir"
-    git checkout "$PULL_BASE_REF" || git checkout -b "$PULL_BASE_REF"
+  cd "$tempdir"
+  git checkout "$PULL_BASE_REF" || git checkout -b "$PULL_BASE_REF"
 )
 
 # rewrite all the import paths

@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script is used as a postsubmit job and updates the offline
+### test cluster.
+
 set -euo pipefail
 # Required for signal propagation to work so
 # the cleanup trap gets executed when the script

@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is run for every tagged revision and will create
-# the appropriate GitHub release and upload source archives.
+### This script is used for an optional presubmit to test changes to
+### the GitHub release logic before they are merged. The script will
+### perform all steps for a release *except* actually communicating
+### with GitHub.
 
 set -euo pipefail
 

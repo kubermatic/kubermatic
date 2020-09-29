@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script is used as a postsubmit job and updates the dev master
+### cluster after every commit to master.
+
 set -euo pipefail
 
 cd $(dirname $0)/../..
