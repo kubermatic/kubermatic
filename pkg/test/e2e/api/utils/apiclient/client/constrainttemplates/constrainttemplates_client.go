@@ -31,11 +31,13 @@ type ClientService interface {
 
 	ListConstraintTemplates(params *ListConstraintTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListConstraintTemplatesOK, error)
 
+	PatchConstraintTemplate(params *PatchConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*PatchConstraintTemplateOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
 /*
-  CreateConstraintTemplate Create constraint templates
+  CreateConstraintTemplate Create constraint template
 */
 func (a *Client) CreateConstraintTemplate(params *CreateConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*CreateConstraintTemplateOK, error) {
 	// TODO: Validate the params before sending
@@ -133,6 +135,40 @@ func (a *Client) ListConstraintTemplates(params *ListConstraintTemplatesParams, 
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListConstraintTemplatesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchConstraintTemplate Patch a specified constraint template
+*/
+func (a *Client) PatchConstraintTemplate(params *PatchConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*PatchConstraintTemplateOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchConstraintTemplateParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchConstraintTemplate",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/constrainttemplates/{ct_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchConstraintTemplateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchConstraintTemplateOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchConstraintTemplateDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
