@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Runs golangci-lint to validate that no issues have been introduced
+### into the codebase.
+
 set -euo pipefail
 
 cd $(dirname $0)/../..

@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### After having set up a local KKP installation, this script is then
+### used to run the conformance-tester for a given cloud provider.
+
 set -euo pipefail
 
 cd $(dirname $0)/../..

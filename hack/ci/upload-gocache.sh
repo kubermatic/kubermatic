@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Runs as a postsubmit and refreshes the gocache by downloading the
+### previous version, compiling everything and then tar'ing up the
+### Go cache again.
+
 set -euo pipefail
 
 # Required for signal propagation to work so

@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This script is used as a presubmit to check that Helm chart versions
-# have been updated if charts have been modified. Without the Prow env
-# vars, this script won't run properly.
+### This script is used as a presubmit to check that Helm chart versions
+### have been updated if charts have been modified. Without the Prow env
+### vars, this script won't run properly.
 
 set -euo pipefail
 

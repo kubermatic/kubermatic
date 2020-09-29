@@ -14,6 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### Generates the KKP API Swagger spec and client. The generated client is then
+### used in the api-e2e tests and published into https://github.com/kubermatic/go-kubermatic
+
 set -euo pipefail
 
 cd $(dirname $0)/..

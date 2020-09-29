@@ -14,6 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+### This script is used when building Go binaries to download a prewarmed
+### cache for `$GOCACHE`. This is an uncompressed tar archive in a local
+### S3-compatible storage, which is just downloaded and extracted. This
+### significantly speeds up CI jobs, as much fewer packages have to be
+### compiled.
+###
+### A dedicated postsubmit job that runs after every change to the master
+### branch is keeping the cache up-to-date.
+
 set -euo pipefail
 
 # Required for signal propagation to work so
