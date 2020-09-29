@@ -48,6 +48,9 @@ dex:
     userID: 08a8684b-db88-4b73-90a9-3cd1661f5466
 
   # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
+  # If you want to deploy your own certificate without relying on cert-manager
+  # uncomment the next line and remove subsequent certIssuer configuration.
+  # certIssuer: null
   certIssuer:
     # For generating a certificate signed by a trusted root authority replace
     # with "letsencrypt-prod".

@@ -87,6 +87,9 @@ dex:
   tolerations: []
 
   # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
+  # If you want to deploy your own certificate without relying on cert-manager
+  # uncomment the next line and remove subsequent certIssuer configuration.
+  # certIssuer: null
   certIssuer:
     name: letsencrypt-prod
     kind: ClusterIssuer

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-{{ if ne .Values.dex.ingress.class "non-existent" }}
+{{ if and (ne .Values.dex.ingress.class "non-existent") .Values.dex.certIssuer }}
 apiVersion: cert-manager.io/v1alpha2
 kind: Certificate
 metadata:
