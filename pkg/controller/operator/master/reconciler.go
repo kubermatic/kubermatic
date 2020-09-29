@@ -337,6 +337,11 @@ func (r *Reconciler) reconcileCertificates(config *operatorv1alpha1.KubermaticCo
 		return nil
 	}
 
+	if config.Spec.Ingress.CertificateIssuer.Name == "" {
+		logger.Debug("Skipping Certificate creation because no certificateIssuer has been configured")
+		return nil
+	}
+
 	logger.Debug("Reconciling Certificates")
 
 	creators := []reconciling.NamedCertificateCreatorGetter{
