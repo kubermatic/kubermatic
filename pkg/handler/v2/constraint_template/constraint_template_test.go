@@ -310,7 +310,7 @@ func TestDeleteConstraintTemplates(t *testing.T) {
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
-			Name:             "scenario 23: delete non-existing ct should fail",
+			Name:             "scenario 3: delete non-existing ct should fail",
 			CTToDeleteName:   "idontexist",
 			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8s.io \"idontexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
@@ -335,13 +335,6 @@ func TestDeleteConstraintTemplates(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
 
-			//actualCTs := test.NewConstraintTemplateV1SliceWrapper{}
-			//actualCTs.DecodeOrDie(res.Body, t).Sort()
-			//
-			//wrappedExpectedCTs := test.NewConstraintTemplateV1SliceWrapper(tc.ExpectedConstraintTemplates)
-			//wrappedExpectedCTs.Sort()
-			//
-			//actualCTs.EqualOrDie(wrappedExpectedCTs, t)
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
 		})
 	}

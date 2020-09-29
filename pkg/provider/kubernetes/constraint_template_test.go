@@ -216,7 +216,7 @@ func TestDeleteConstraintTemplates(t *testing.T) {
 		CTtoDelete      *kubermaticv1.ConstraintTemplate
 	}{
 		{
-			name:            "test: get constraint template",
+			name:            "test: delete constraint template",
 			existingObjects: []runtime.Object{genConstraintTemplate("ct1")},
 			CTtoDelete:      genConstraintTemplate("ct1"),
 		},
