@@ -85,3 +85,8 @@ func (p *ConstraintTemplateProvider) Update(ct *kubermaticv1.ConstraintTemplate)
 
 	return ct, nil
 }
+
+// Delete deletes a constraint template
+func (p *ConstraintTemplateProvider) Delete(ct *kubermaticv1.ConstraintTemplate) error {
+	return p.clientPrivileged.Delete(context.Background(), ct)
+}
