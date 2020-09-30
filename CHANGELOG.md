@@ -148,6 +148,20 @@
 
 # Kubermatic 2.14
 
+## v2.14.6
+
+### Bugfixes
+
+- Fix creation of RHEL8 machines ([#5951](https://github.com/kubermatic/kubermatic/issues/5951))
+
+### Misc
+
+- Allow custom envvar definitions for Dex to be passed via the `oauth` chart, key in `values.yaml` is `dex.env` ([#5847](https://github.com/kubermatic/kubermatic/issues/5847))
+- Provide a way of skipping Certificate cert-manager resources in `oauth` and `kubermatic` charts ([#5972](https://github.com/kubermatic/kubermatic/issues/5972))
+
+
+
+
 ## v2.14.5
 
 ### Bugfixes
