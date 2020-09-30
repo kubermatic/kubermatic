@@ -71,11 +71,11 @@ spec:
         - -accessible-addons={{- (.Files.Get "static/master/accessible-addons.yaml" | fromYaml).addons | join "," }}
         {{- end }}
         - -feature-gates={{ .Values.kubermatic.api.featureGates }}
-        # the following flags enable oidc kubeconfig feature/endpoint
-        {{- if regexMatch ".*OIDCKubeCfgEndpoint=true.*" (default "" .Values.kubermatic.api.featureGates) }}
         {{- if .Values.kubermatic.auth.caBundle }}
         - -oidc-ca-file=/opt/dex-ca/caBundle.pem
         {{- end }}
+        # the following flags enable oidc kubeconfig feature/endpoint
+        {{- if regexMatch ".*OIDCKubeCfgEndpoint=true.*" (default "" .Values.kubermatic.api.featureGates) }}
         - -oidc-issuer-redirect-uri={{ .Values.kubermatic.auth.issuerRedirectURL }}
         - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
         - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
