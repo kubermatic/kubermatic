@@ -348,6 +348,15 @@
 
 # Kubermatic 2.13
 
+## v2.13.8
+
+### Bugfixes
+
+- Fix `componentsOverride` of a cluster affecting other clusters ([#5702](https://github.com/kubermatic/kubermatic/issues/5702))
+
+
+
+
 ## v2.13.7
 
 - Added Kubernetes v1.16.13, and removed v1.16.2-7 in default version configuration ([#5661](https://github.com/kubermatic/kubermatic/issues/5661))
