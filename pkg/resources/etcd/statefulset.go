@@ -101,7 +101,8 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			}
 			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
 
-			if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
+			launcherEnabled := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]
+			if launcherEnabled {
 				set.Spec.Template.Spec.InitContainers = []corev1.Container{
 					{
 						Name:            "etcd-launcher-init",
@@ -117,7 +118,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 					},
 				}
 			}
-			etcdStartCmd, err := getEtcdCommand(data, data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks)
+			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks, launcherEnabled)
 			if err != nil {
 				return nil, err
 			}
@@ -391,8 +392,8 @@ type commandTplData struct {
 	EnableCorruptionCheck bool
 }
 
-func getEtcdCommand(data etcdStatefulSetCreatorData, name, namespace string, enableCorruptionCheck bool) ([]string, error) {
-	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
+func getEtcdCommand(name, namespace string, enableCorruptionCheck, launcherEnabled bool) ([]string, error) {
+	if launcherEnabled {
 		command := []string{"/opt/bin/etcd-launcher",
 			"-namespace", "$(NAMESPACE)",
 			"-etcd-cluster-size", "$(ETCD_CLUSTER_SIZE)",
