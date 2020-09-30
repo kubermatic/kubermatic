@@ -78,7 +78,7 @@ func convertCTToAPI(ct *kubermaticv1.ConstraintTemplate) *apiv2.ConstraintTempla
 }
 
 // constraintTemplateReq represents a request for a specific constraintTemplate
-// swagger:parameters getConstraintTemplate
+// swagger:parameters getConstraintTemplate deleteConstraintTemplate
 type constraintTemplateReq struct {
 	// in: path
 	// required: true
@@ -259,4 +259,32 @@ func DecodePatchConstraintTemplateReq(c context.Context, r *http.Request) (inter
 	}
 
 	return req, nil
+}
+
+func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(constraintTemplateReq)
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !adminUserInfo.IsAdmin {
+			return nil, errors.New(http.StatusForbidden,
+				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
+		}
+
+		ct := &kubermaticv1.ConstraintTemplate{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: req.Name,
+			},
+		}
+
+		err = constraintTemplateProvider.Delete(ct)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return nil, nil
+	}
 }

@@ -209,3 +209,7 @@ func (p *FakeConstraintTemplateProvider) Create(ct *kubermaticapiv1.ConstraintTe
 func (p *FakeConstraintTemplateProvider) Update(ct *kubermaticapiv1.ConstraintTemplate) (*kubermaticapiv1.ConstraintTemplate, error) {
 	return p.Provider.Update(ct)
 }
+
+func (p *FakeConstraintTemplateProvider) Delete(ct *kubermaticapiv1.ConstraintTemplate) error {
+	return p.Provider.Delete(ct)
+}
