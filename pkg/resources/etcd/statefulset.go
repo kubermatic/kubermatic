@@ -23,6 +23,7 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig"
+
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -100,16 +101,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			}
 			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
 
-			// luancher feature gate was added later in the process. So there is the possiblity to have some clusters with
-			// laucher enabled by default. We check here to make sure it's not going to reverted.
-			hasLauncher := false
-			for _, c := range set.Spec.Template.Spec.InitContainers {
-				if c.Name == "etcd-launcher-init" {
-					hasLauncher = true
-					break
-				}
-			}
-			if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]; flag || hasLauncher {
+			if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
 				set.Spec.Template.Spec.InitContainers = []corev1.Container{
 					{
 						Name:            "etcd-launcher-init",
@@ -125,7 +117,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 					},
 				}
 			}
-			etcdStartCmd, err := getEtcdCommand(data, data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks, hasLauncher)
+			etcdStartCmd, err := getEtcdCommand(data, data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks)
 			if err != nil {
 				return nil, err
 			}
@@ -358,7 +350,7 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 }
 
 func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int {
-	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]; !flag {
+	if !data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
 		return kubermaticv1.DefaultEtcdClusterSize
 	}
 	etcdClusterSize := data.Cluster().Spec.ComponentsOverride.Etcd.ClusterSize
@@ -399,8 +391,8 @@ type commandTplData struct {
 	EnableCorruptionCheck bool
 }
 
-func getEtcdCommand(data etcdStatefulSetCreatorData, name, namespace string, enableCorruptionCheck, hasLauncher bool) ([]string, error) {
-	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]; flag || hasLauncher {
+func getEtcdCommand(data etcdStatefulSetCreatorData, name, namespace string, enableCorruptionCheck bool) ([]string, error) {
+	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
 		command := []string{"/opt/bin/etcd-launcher",
 			"-namespace", "$(NAMESPACE)",
 			"-etcd-cluster-size", "$(ETCD_CLUSTER_SIZE)",
@@ -457,6 +449,7 @@ exec /usr/local/bin/etcd \
     --advertise-client-urls "https://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379,https://${POD_IP}:2379" \
     --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
     --listen-peer-urls "http://${POD_IP}:2380" \
+    --listen-metrics-urls "http://${POD_IP}:2378,http://127.0.0.1:2378" \
     --initial-advertise-peer-urls "http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
     --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
     --client-cert-auth \
