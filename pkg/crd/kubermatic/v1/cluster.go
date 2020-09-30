@@ -139,6 +139,8 @@ const (
 	// It will deploy a Rancher Server Managegment plane on the seed cluster and import the user cluster into it.
 	ClusterFeatureRancherIntegration = "rancherIntegration"
 
+	// ClusterFeatureEtcdLauncher enables features related to the experimental etcd-launcher. This includes user-cluster
+	// etcd scaling, automatic volume recovery and new backup/restore contorllers.
 	ClusterFeatureEtcdLauncher = "etcdLauncher"
 )
 

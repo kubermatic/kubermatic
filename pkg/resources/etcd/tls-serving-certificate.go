@@ -53,7 +53,7 @@ func TLSCertificateCreator(data tlsCertificateCreatorData) reconciling.NamedSecr
 				},
 			}
 			etcdClusterSize := kubermaticv1.DefaultEtcdClusterSize
-			if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]; flag {
+			if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
 				etcdClusterSize = kubermaticv1.MaxEtcdClusterSize
 			}
 			// TODO: make this dynamic based on existing pod count
