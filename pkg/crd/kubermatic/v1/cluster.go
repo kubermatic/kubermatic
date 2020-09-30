@@ -138,6 +138,8 @@ const (
 	// ClusterFeatureRancherIntegration enables the rancher server integration feature.
 	// It will deploy a Rancher Server Managegment plane on the seed cluster and import the user cluster into it.
 	ClusterFeatureRancherIntegration = "rancherIntegration"
+
+	ClusterFeatureEtcdLauncher = "etcdLauncher"
 )
 
 // ClusterConditionType is used to indicate the type of a cluster condition. For all condition

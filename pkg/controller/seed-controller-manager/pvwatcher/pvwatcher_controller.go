@@ -111,6 +111,9 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if cluster.Labels[kubermaticv1.WorkerNameLabelKey] != r.workerName || cluster.Spec.Pause {
 		return reconcile.Result{}, nil
 	}
+	if flag := cluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]; !flag {
+		return reconcile.Result{}, nil
+	}
 	result, err := r.reconcile(ctx, log, request)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
