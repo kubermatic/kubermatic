@@ -67,7 +67,7 @@ function upload_archive {
     -H "Accept: application/json" \
     -H 'Content-Type: application/gzip' \
     -s --data-binary "@${file}")
-  if echo "${res}" | jq -e; then
+  if echo "${res}" | jq -e '.'; then
     # it the response contain errors
     if echo "${res}" | jq -e '.errors[0]'; then
       for err in $(echo "${res}" | jq -r '.errors[0].code'); do
