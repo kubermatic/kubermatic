@@ -283,6 +283,63 @@ func TestPatchConstraintTemplates(t *testing.T) {
 	}
 }
 
+func TestDeleteConstraintTemplates(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name             string
+		CTToDeleteName   string
+		ExpectedResponse string
+		HTTPStatus       int
+		ExistingAPIUser  *apiv1.User
+		ExistingObjects  []runtime.Object
+	}{
+		{
+			Name:             "scenario 1: admin can delete constraint templates",
+			CTToDeleteName:   "labelconstraint",
+			ExpectedResponse: `{}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingObjects:  []runtime.Object{genConstraintTemplate("labelconstraint")},
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			Name:             "scenario 2: non-admin cannot delete constraint templates",
+			CTToDeleteName:   "labelconstraint",
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingObjects:  []runtime.Object{genConstraintTemplate("labelconstraint")},
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			Name:             "scenario 3: delete non-existing ct should fail",
+			CTToDeleteName:   "idontexist",
+			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8s.io \"idontexist\" not found"}}`,
+			HTTPStatus:       http.StatusNotFound,
+			ExistingObjects:  []runtime.Object{genConstraintTemplate("labelconstraint")},
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/constrainttemplates/%s", tc.CTToDeleteName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
 func genConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name

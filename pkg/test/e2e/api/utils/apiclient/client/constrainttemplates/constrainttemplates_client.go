@@ -27,6 +27,8 @@ type Client struct {
 type ClientService interface {
 	CreateConstraintTemplate(params *CreateConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*CreateConstraintTemplateOK, error)
 
+	DeleteConstraintTemplate(params *DeleteConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteConstraintTemplateOK, error)
+
 	GetConstraintTemplate(params *GetConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*GetConstraintTemplateOK, error)
 
 	ListConstraintTemplates(params *ListConstraintTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListConstraintTemplatesOK, error)
@@ -67,6 +69,40 @@ func (a *Client) CreateConstraintTemplate(params *CreateConstraintTemplateParams
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateConstraintTemplateDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteConstraintTemplate Deletes the specified cluster
+*/
+func (a *Client) DeleteConstraintTemplate(params *DeleteConstraintTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteConstraintTemplateOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteConstraintTemplateParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteConstraintTemplate",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/constrainttemplates/{ct_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteConstraintTemplateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteConstraintTemplateOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteConstraintTemplateDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

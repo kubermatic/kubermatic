@@ -208,3 +208,38 @@ func TestUpdateConstraintTemplates(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteConstraintTemplates(t *testing.T) {
+	testCases := []struct {
+		name            string
+		existingObjects []runtime.Object
+		CTtoDelete      *kubermaticv1.ConstraintTemplate
+	}{
+		{
+			name:            "test: delete constraint template",
+			existingObjects: []runtime.Object{genConstraintTemplate("ct1")},
+			CTtoDelete:      genConstraintTemplate("ct1"),
+		},
+	}
+
+	for idx := range testCases {
+		tc := testCases[idx]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			provider, err := kubernetes.NewConstraintTemplateProvider(fakeImpersonationClient, client)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = provider.Delete(tc.CTtoDelete)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
