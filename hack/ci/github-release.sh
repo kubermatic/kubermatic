@@ -77,7 +77,7 @@ function create_release {
     jq --null-input \
        --arg tag_name "$tag" \
        --arg name "$name" \
-       --arg prerelease "$prerelease" \
+       --argjson prerelease "$prerelease" \
        --arg body "$body" \
        '{"tag_name":$tag_name,"name":$name,"prerelease":$prerelease,"body":$body}'
   )"
