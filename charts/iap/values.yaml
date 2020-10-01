@@ -15,9 +15,11 @@
 iap:
   image:
     repository: quay.io/oauth2-proxy/oauth2-proxy
-    tag: v6.0.0
+    tag: v6.1.1
     pullPolicy: IfNotPresent
 
+  # custom_provider_ca_secret: provider-ca-secret 
+  
   oidc_issuer_url: https://kubermatic.tld/dex
   port: 3000
 
