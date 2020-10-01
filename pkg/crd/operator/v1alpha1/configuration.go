@@ -229,6 +229,8 @@ type KubermaticIngressConfiguration struct {
 	// that will be used to acquire the certificate for the configured domain.
 	// To use a namespaced Issuer, set the Kind to "Issuer" and manually create the
 	// matching Issuer in Kubermatic's namespace.
+	// Setting an empty name disables the automatic creation of certificates and disables
+	// the TLS settings on the Kubermatic Ingress.
 	CertificateIssuer corev1.TypedLocalObjectReference `json:"certificateIssuer,omitempty"`
 }
 
