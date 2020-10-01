@@ -21,7 +21,6 @@
 ### This script should be sourced, not called, so callers get the variables
 ### it sets.
 
-cd $(dirname $0)/../..
 source hack/lib.sh
 
 if [ -z "${JOB_NAME:-}" ]; then
