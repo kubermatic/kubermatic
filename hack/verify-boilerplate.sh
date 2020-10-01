@@ -26,6 +26,7 @@ boilerplate \
   -exclude pkg/controller/seed-controller-manager/addon/testdata/istio \
   -exclude containers/startup-script/manage-startup-script.sh \
   -exclude pkg/resources/certificates/triple/triple.go \
+  -exclude pkg/resources/etcd/testdata \
   -exclude pkg/ee
 
 echodate "Checking Kubermatic EE licenses..."

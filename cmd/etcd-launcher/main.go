@@ -172,7 +172,7 @@ func main() {
 		}
 		defer client.Close()
 
-		if _, err := client.MemberAdd(context.Background(), []string{fmt.Sprintf("https://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace)}); err != nil {
+		if _, err := client.MemberAdd(context.Background(), []string{fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace)}); err != nil {
 			log.Fatalf("failed to join cluster: %v", err)
 		}
 		log.Info("joined etcd cluster succcessfully.")
@@ -193,13 +193,13 @@ func (e *etcdCluster) updatePeerURL() error {
 		if err != nil {
 			return err
 		}
-		if member.Name == e.config.podName && peerURL.Scheme == "http" {
+		if member.Name == e.config.podName && peerURL.Scheme == "https" {
 			client, err := e.getClusterClient()
 			if err != nil {
 				return err
 			}
 			defer client.Close()
-			peerURL.Scheme = "https"
+			peerURL.Scheme = "http"
 			_, err = client.MemberUpdate(context.Background(), member.ID, []string{peerURL.String()})
 			if err != nil {
 				return err
@@ -213,7 +213,7 @@ func (e *etcdCluster) updatePeerURL() error {
 func initialMemberList(n int, namespace string) []string {
 	members := []string{}
 	for i := 0; i < n; i++ {
-		members = append(members, fmt.Sprintf("etcd-%d=https://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
+		members = append(members, fmt.Sprintf("etcd-%d=http://etcd-%d.etcd.%s.svc.cluster.local:2380", i, i, namespace))
 	}
 	return members
 }
@@ -290,16 +290,12 @@ func etcdCmd(config *config) []string {
 		fmt.Sprintf("--advertise-client-urls=https://%s.etcd.%s.svc.cluster.local:2379,https://%s:2379", config.podName, config.namespace, config.podIP),
 		fmt.Sprintf("--listen-client-urls=https://%s:2379,https://127.0.0.1:2379", config.podIP),
 		fmt.Sprintf("--listen-metrics-urls=http://%s:2378,http://127.0.0.1:2378", config.podIP),
-		fmt.Sprintf("--listen-peer-urls=https://%s:2380", config.podIP),
-		fmt.Sprintf("--initial-advertise-peer-urls=https://%s.etcd.%s.svc.cluster.local:2380", config.podName, config.namespace),
+		fmt.Sprintf("--listen-peer-urls=http://%s:2380", config.podIP),
+		fmt.Sprintf("--initial-advertise-peer-urls=http://%s.etcd.%s.svc.cluster.local:2380", config.podName, config.namespace),
 		"--client-cert-auth",
 		fmt.Sprintf("--trusted-ca-file=%s", resources.EtcdTrustedCAFile),
 		fmt.Sprintf("--cert-file=%s", resources.EtcdCertFile),
 		fmt.Sprintf("--key-file=%s", resources.EtcdKetFile),
-		"--peer-client-cert-auth",
-		fmt.Sprintf("--peer-trusted-ca-file=%s", resources.EtcdTrustedCAFile),
-		fmt.Sprintf("--peer-cert-file=%s", resources.EtcdPeerCertFile),
-		fmt.Sprintf("--peer-key-file=%s", resources.EtcdPeerKeyFile),
 		"--auto-compaction-retention=8",
 	}
 
