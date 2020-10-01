@@ -1,8 +1,11 @@
 # Kubermatic 2.15
 
-## [v2.15.0-rc.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0-rc.2)
+## [v2.15.0-rc.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0-rc.3)
 
-### Misc
+- Add feature flag `etcdLauncher` around etcd-launcher ([#5973](https://github.com/kubermatic/kubermatic/issues/5973))
+- Provide a way of skipping Certificate cert-manager resources ([#5962](https://github.com/kubermatic/kubermatic/issues/5962), [#5969](https://github.com/kubermatic/kubermatic/issues/5969))
+
+## [v2.15.0-rc.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0-rc.2)
 
 - Add Kubernetes 1.16.15, 1.17.12, 1.19.2 ([#5927](https://github.com/kubermatic/kubermatic/issues/5927))
 - Add `operator.kubermatic.io/skip-reconciling` annotation to Seeds to allow step-by-step seed cluster upgrades ([#5883](https://github.com/kubermatic/kubermatic/issues/5883))
