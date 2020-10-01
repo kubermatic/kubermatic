@@ -19,6 +19,7 @@ package etcd
 import (
 	"flag"
 	"fmt"
+	"strings"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -67,7 +68,10 @@ func TestGetEtcdCommand(t *testing.T) {
 			if len(args) != test.expectedArgs {
 				t.Fatalf("got less/more arguments than expected. got %d expected %d", len(args), test.expectedArgs)
 			}
-			cmd := args[2]
+			cmd := strings.Join(args, " ")
+			if !test.launcherEnabled {
+				cmd = args[2]
+			}
 
 			testhelper.CompareOutput(t, fmt.Sprintf("etcd-command-%s", test.name), cmd, *update, ".sh")
 		})
