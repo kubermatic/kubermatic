@@ -17,8 +17,12 @@ limitations under the License.
 package etcd
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
+	"text/template"
+
+	"github.com/Masterminds/sprig"
 
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -35,6 +39,8 @@ import (
 
 const (
 	name = "etcd"
+
+	dataDir = "/var/run/etcd/pod_${POD_NAME}/"
 	// ImageTag defines the image tag to use for the etcd image
 	etcdImageTagV33 = "v3.3.18"
 	etcdImageTagV34 = "v3.4.3"
@@ -95,28 +101,34 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 			}
 			set.Spec.Template.Spec.ServiceAccountName = rbac.EtcdLauncherServiceAccountName
 
-			set.Spec.Template.Spec.InitContainers = []corev1.Container{
-				{
-					Name:            "etcd-launcher-init",
-					Image:           data.EtcdLauncherImage() + ":" + resources.KUBERMATICCOMMIT,
-					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/bin/cp", "/etcd-launcher", "/opt/bin/"},
-					VolumeMounts: []corev1.VolumeMount{
-						{
-							Name:      "launcher",
-							MountPath: "/opt/bin/",
+			launcherEnabled := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]
+			if launcherEnabled {
+				set.Spec.Template.Spec.InitContainers = []corev1.Container{
+					{
+						Name:            "etcd-launcher-init",
+						Image:           data.EtcdLauncherImage() + ":" + resources.KUBERMATICCOMMIT,
+						ImagePullPolicy: corev1.PullIfNotPresent,
+						Command:         []string{"/bin/cp", "/etcd-launcher", "/opt/bin/"},
+						VolumeMounts: []corev1.VolumeMount{
+							{
+								Name:      "launcher",
+								MountPath: "/opt/bin/",
+							},
 						},
 					},
-				},
+				}
 			}
-
+			etcdStartCmd, err := getEtcdCommand(data.Cluster().Name, data.Cluster().Status.NamespaceName, enableDataCorruptionChecks, launcherEnabled)
+			if err != nil {
+				return nil, err
+			}
 			set.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name: resources.EtcdStatefulSetName,
 
 					Image:           data.ImageRegistry(resources.RegistryGCR) + "/etcd-development/etcd:" + ImageTag(data.Cluster()),
 					ImagePullPolicy: corev1.PullIfNotPresent,
-					Command:         []string{"/opt/bin/etcd-launcher"}, Args: getLauncherArgs(enableDataCorruptionChecks),
+					Command:         etcdStartCmd,
 					Env: []corev1.EnvVar{
 						{
 							Name: "POD_NAME",
@@ -339,6 +351,9 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 }
 
 func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int {
+	if !data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
+		return kubermaticv1.DefaultEtcdClusterSize
+	}
 	etcdClusterSize := data.Cluster().Spec.ComponentsOverride.Etcd.ClusterSize
 	// handle existing clusters that don't have a configured size
 	if etcdClusterSize < kubermaticv1.DefaultEtcdClusterSize {
@@ -368,16 +383,83 @@ func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) i
 	return replicas
 }
 
-func getLauncherArgs(enableCorruptionCheck bool) []string {
-	command := []string{"-namespace", "$(NAMESPACE)",
-		"-etcd-cluster-size", "$(ETCD_CLUSTER_SIZE)",
-		"-pod-name", "$(POD_NAME)",
-		"-pod-ip", "$(POD_IP)",
-		"-api-version", "$(ETCDCTL_API)",
-		"-token", "$(TOKEN)",
-	}
-	if enableCorruptionCheck {
-		command = append(command, "-enable-corruption-check")
-	}
-	return command
+type commandTplData struct {
+	ServiceName           string
+	Namespace             string
+	Token                 string
+	DataDir               string
+	Migrate               bool
+	EnableCorruptionCheck bool
 }
+
+func getEtcdCommand(name, namespace string, enableCorruptionCheck, launcherEnabled bool) ([]string, error) {
+	if launcherEnabled {
+		command := []string{"/opt/bin/etcd-launcher",
+			"-namespace", "$(NAMESPACE)",
+			"-etcd-cluster-size", "$(ETCD_CLUSTER_SIZE)",
+			"-pod-name", "$(POD_NAME)",
+			"-pod-ip", "$(POD_IP)",
+			"-api-version", "$(ETCDCTL_API)",
+			"-token", "$(TOKEN)"}
+		if enableCorruptionCheck {
+			command = append(command, "-enable-corruption-check")
+		}
+		return command, nil
+	}
+
+	tpl, err := template.New("base").Funcs(sprig.TxtFuncMap()).Parse(etcdStartCommandTpl)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse etcd command template: %v", err)
+	}
+
+	tplData := commandTplData{
+		ServiceName:           resources.EtcdServiceName,
+		Token:                 name,
+		Namespace:             namespace,
+		DataDir:               dataDir,
+		EnableCorruptionCheck: enableCorruptionCheck,
+	}
+
+	buf := bytes.Buffer{}
+	if err := tpl.Execute(&buf, tplData); err != nil {
+		return nil, err
+	}
+
+	return []string{
+		"/bin/sh",
+		"-ec",
+		buf.String(),
+	}, nil
+}
+
+const (
+	etcdStartCommandTpl = `export MASTER_ENDPOINT="https://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379"
+
+export INITIAL_STATE="new"
+export INITIAL_CLUSTER="etcd-0=http://etcd-0.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-1=http://etcd-1.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380,etcd-2=http://etcd-2.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380"
+
+echo "initial-state: ${INITIAL_STATE}"
+echo "initial-cluster: ${INITIAL_CLUSTER}"
+
+exec /usr/local/bin/etcd \
+    --name=${POD_NAME} \
+    --data-dir="{{ .DataDir }}" \
+    --initial-cluster=${INITIAL_CLUSTER} \
+    --initial-cluster-token="{{ .Token }}" \
+    --initial-cluster-state=${INITIAL_STATE} \
+    --advertise-client-urls "https://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2379,https://${POD_IP}:2379" \
+    --listen-client-urls "https://${POD_IP}:2379,https://127.0.0.1:2379" \
+    --listen-peer-urls "http://${POD_IP}:2380" \
+    --listen-metrics-urls "http://${POD_IP}:2378,http://127.0.0.1:2378" \
+    --initial-advertise-peer-urls "http://${POD_NAME}.{{ .ServiceName }}.{{ .Namespace }}.svc.cluster.local:2380" \
+    --trusted-ca-file /etc/etcd/pki/ca/ca.crt \
+    --client-cert-auth \
+    --cert-file /etc/etcd/pki/tls/etcd-tls.crt \
+    --key-file /etc/etcd/pki/tls/etcd-tls.key \
+{{- if .EnableCorruptionCheck }}
+    --experimental-initial-corrupt-check=true \
+    --experimental-corrupt-check-time=10m \
+{{- end }}
+    --auto-compaction-retention=8
+`
+)
