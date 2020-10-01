@@ -79,7 +79,7 @@ function create_release {
        --arg name "$name" \
        --arg prerelease "$prerelease" \
        --arg body "$body" \
-       '$ARGS.named'
+       '{"tag_name":$tag_name,"name":$name,"prerelease":$prerelease,"body":$body}'
   )"
 
   github_cli \
