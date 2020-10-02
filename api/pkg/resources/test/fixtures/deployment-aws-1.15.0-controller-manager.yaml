@@ -129,7 +129,7 @@ spec:
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
         - name: no_proxy
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
-        image: gcr.io/google_containers/hyperkube-amd64:v1.15.0
+        image: k8s.gcr.io/hyperkube-amd64:v1.15.0
         livenessProbe:
           failureThreshold: 8
           httpGet:

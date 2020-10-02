@@ -108,7 +108,7 @@ spec:
         - '{"command":"/hyperkube","args":["kube-scheduler","--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--client-ca-file","/etc/kubernetes/pki/ca/ca.crt","--port","0","--authentication-tolerate-lookup-failure","false"]}'
         command:
         - /http-prober-bin/http-prober
-        image: gcr.io/google_containers/hyperkube-amd64:v1.18.0
+        image: k8s.gcr.io/hyperkube-amd64:v1.18.0
         livenessProbe:
           failureThreshold: 8
           httpGet:
