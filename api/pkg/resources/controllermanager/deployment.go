@@ -171,7 +171,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				*openvpnSidecar,
 				{
 					Name:    resources.ControllerManagerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryGCR) + "/google_containers/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
+					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
 					Command: []string{"/hyperkube", "kube-controller-manager"},
 					Args:    flags,
 					Env:     envVars,
