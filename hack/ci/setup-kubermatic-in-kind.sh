@@ -452,5 +452,3 @@ echodate "Exposing Dex and Kubermatic API to localhost..."
 kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 >/dev/null &
 kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 >/dev/null &
 echodate "Finished exposing components"
-
-cd -

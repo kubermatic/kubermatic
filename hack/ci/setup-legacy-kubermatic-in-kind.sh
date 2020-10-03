@@ -451,5 +451,3 @@ echodate "Dex became ready"
 echodate "Waiting for Kubermatic API to be ready"
 retry 5 curl -sSf  http://127.0.0.1:8080/api/v1/healthz
 echodate "API became ready"
-
-cd -
