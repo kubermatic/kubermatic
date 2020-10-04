@@ -43,7 +43,7 @@ spec:
         emptyDir: {}
       containers:
       - name: metrics-server
-        image: '{{ Registry "gcr.io" }}/google_containers/metrics-server-amd64:v0.2.1'
+        image: '{{ Registry "k8s.gcr.io" }}/metrics-server-amd64:v0.2.1'
         command:
         - /metrics-server
         - '--source=kubernetes.summary_api:https://kubernetes.default.svc?kubeletHttps=true&kubeletPort=10250&insecure=true'
