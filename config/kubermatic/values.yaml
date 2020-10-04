@@ -326,7 +326,7 @@ kubermatic:
   vpa:
     updater:
       image:
-        repository: gcr.io/google_containers/vpa-updater
+        repository: k8s.gcr.io/vpa-updater
         tag: 0.5.0
       resources:
         requests:
@@ -341,7 +341,7 @@ kubermatic:
 
     recommender:
       image:
-        repository: gcr.io/google_containers/vpa-recommender
+        repository: k8s.gcr.io/vpa-recommender
         tag: 0.5.0
       resources:
         requests:
@@ -356,7 +356,7 @@ kubermatic:
 
     admissioncontroller:
       image:
-        repository: gcr.io/google_containers/vpa-admission-controller
+        repository: k8s.gcr.io/vpa-admission-controller
         tag: 0.5.0
       resources:
         requests:

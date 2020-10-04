@@ -12,7 +12,7 @@ kubeStateMetrics:
 
   resizer:
     image:
-      repository: gcr.io/google_containers/addon-resizer
+      repository: k8s.gcr.io/addon-resizer
       tag: '1.8.4' # is still the recommended version
     resources:
       requests:
