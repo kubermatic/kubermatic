@@ -41,6 +41,10 @@ const (
 	// --experimental-initial-corrupt-check=true +
 	// --experimental-corrupt-check-time=10m
 	EtcdDataCorruptionChecks = "EtcdDataCorruptionChecks"
+
+	// EtcdLauncher if enabled will apply the cluster level etcd-launcher feature flag on all clusters,
+	// unless it's explicitly disabled on the cluster level
+	EtcdLauncher = "EtcdLauncher"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.
