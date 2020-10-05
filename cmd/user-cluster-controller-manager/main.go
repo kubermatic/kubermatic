@@ -33,6 +33,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	clusterrolelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
+	constrainttemplate "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/constraint-template-controller"
 	containerlinux "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/container-linux"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ipam"
 	nodelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler"
@@ -306,6 +307,11 @@ func main() {
 		log.Fatalw("Failed to register ownerbindingcreator controller", zap.Error(err))
 	}
 	log.Info("Registered ownerbindingcreator controller")
+
+	if err := constrainttemplate.Add(ctx, log, mgr, seedMgr); err != nil {
+		log.Fatalw("Failed to register constraint template controller", zap.Error(err))
+	}
+	log.Info("Registered constraint template controller")
 
 	// This group is forever waiting in a goroutine for signals to stop
 	{
