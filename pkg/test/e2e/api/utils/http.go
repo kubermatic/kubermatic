@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package api
+package utils
 
 import (
 	"bytes"
@@ -28,11 +28,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+const (
+	apiRequestTimeout = 10 * time.Second
+)
+
 type requestParameterHolder interface {
 	SetHTTPClient(*http.Client)
 }
 
-func setupParams(t *testing.T, p requestParameterHolder, interval time.Duration, timeout time.Duration, ignoredStatusCodes ...int) {
+func SetupParams(t *testing.T, p requestParameterHolder, interval time.Duration, timeout time.Duration, ignoredStatusCodes ...int) {
 	p.SetHTTPClient(newHTTPClient(t, interval, timeout, ignoredStatusCodes...))
 }
 
@@ -71,7 +75,9 @@ func (r *relaxedRoundtripper) RoundTrip(request *http.Request) (*http.Response, 
 		}
 	}
 
-	r.test.Logf("%s %s", request.Method, request.URL.Path)
+	if r.test != nil {
+		r.test.Logf("%s %s", request.Method, request.URL.Path)
+	}
 
 	attempts := 0
 	err := wait.PollImmediate(r.interval, r.timeout, func() (bool, error) {

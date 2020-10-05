@@ -111,10 +111,6 @@ var (
 )
 
 func initMetrics(endpoint string, prowjob string, instance string) {
-	if endpoint == "" {
-		return
-	}
-
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(kubermaticLoginDurationMetric)
 	registry.MustRegister(kubermaticReconciliationDurationMetric)
@@ -129,6 +125,14 @@ func initMetrics(endpoint string, prowjob string, instance string) {
 	registry.MustRegister(pvctestAttemptsMetric)
 	registry.MustRegister(lbtestRuntimeMetric)
 	registry.MustRegister(lbtestAttemptsMetric)
+
+	// make sure prowjob and instance are always defined, so that the
+	// metrics are properly defined; otherwise all the surrounding code
+	// would need to carefully check the metrics to avoid calling
+	// WithLabelValues(), which will panic if the label values are empty.
+	if prowjob == "" {
+		prowjob = "local"
+	}
 
 	prowjobLabel := prometheus.Labels{
 		"prowjob": prowjob,
@@ -147,6 +151,11 @@ func initMetrics(endpoint string, prowjob string, instance string) {
 	pvctestAttemptsMetric = pvctestAttemptsMetric.MustCurryWith(prowjobLabel)
 	lbtestRuntimeMetric = lbtestRuntimeMetric.MustCurryWith(prowjobLabel)
 	lbtestAttemptsMetric = lbtestAttemptsMetric.MustCurryWith(prowjobLabel)
+
+	// skip setting up the metricsPusher if no endpoint is defined
+	if endpoint == "" {
+		return
+	}
 
 	metricsPusher = push.New(endpoint, "conformancetest")
 	metricsPusher.Grouping("instance", instance)

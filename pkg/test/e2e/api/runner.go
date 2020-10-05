@@ -28,11 +28,11 @@ import (
 	"github.com/Masterminds/semver"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
-	"github.com/go-openapi/strfmt"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/admin"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/credentials"
@@ -58,7 +58,15 @@ type runner struct {
 }
 
 func createRunner(token string, t *testing.T) *runner {
-	client := apiclient.New(httptransport.New(getHost(), "", []string{getScheme()}), strfmt.Default)
+	endpoint, err := getAPIEndpoint()
+	if err != nil {
+		t.Fatalf("Failed to get API endpoint: %v", err)
+	}
+
+	client, err := NewKubermaticClient(endpoint)
+	if err != nil {
+		t.Fatalf("Failed to create API client: %v", err)
+	}
 
 	bearerTokenAuth := httptransport.BearerToken(token)
 	return &runner{
@@ -74,7 +82,7 @@ func (r *runner) CreateProject(name string) (*apiv1.Project, error) {
 	timeout := 30 * time.Second
 
 	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: name}}
-	setupParams(r.test, params, 1*time.Second, timeout)
+	utils.SetupParams(r.test, params, 1*time.Second, timeout)
 
 	r.test.Logf("Creating project %s...", name)
 
@@ -103,7 +111,7 @@ func (r *runner) CreateProject(name string) (*apiv1.Project, error) {
 // retries if the API returns errors.
 func (r *runner) GetProject(id string) (*apiv1.Project, error) {
 	params := &project.GetProjectParams{ProjectID: id}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusUnauthorized)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusUnauthorized)
 
 	project, err := r.client.Project.GetProject(params, r.bearerToken)
 	if err != nil {
@@ -116,7 +124,7 @@ func (r *runner) GetProject(id string) (*apiv1.Project, error) {
 // ListProjects gets projects
 func (r *runner) ListProjects(displayAll bool) ([]*apiv1.Project, error) {
 	params := &project.ListProjectsParams{DisplayAll: &displayAll}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	projects, err := r.client.Project.ListProjects(params, r.bearerToken)
 	if err != nil {
@@ -138,7 +146,7 @@ func (r *runner) ListProjects(displayAll bool) ([]*apiv1.Project, error) {
 // UpdateProject updates the given project
 func (r *runner) UpdateProject(projectToUpdate *apiv1.Project) (*apiv1.Project, error) {
 	params := &project.UpdateProjectParams{ProjectID: projectToUpdate.ID, Body: &models.Project{Name: projectToUpdate.Name}}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	r.test.Log("Updating project...")
 
@@ -172,7 +180,7 @@ func (r *runner) DeleteProject(id string) error {
 	r.test.Log("Deleting project...")
 
 	params := &project.DeleteProjectParams{ProjectID: id}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
 
 	_, err := r.client.Project.DeleteProject(params, r.bearerToken)
 	if err != nil {
@@ -187,7 +195,7 @@ func (r *runner) DeleteProject(id string) error {
 // amount of time for it to become active.
 func (r *runner) CreateServiceAccount(name, group, projectID string) (*apiv1.ServiceAccount, error) {
 	params := &serviceaccounts.AddServiceAccountToProjectParams{ProjectID: projectID, Body: &models.ServiceAccount{Name: name, Group: group}}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	r.test.Logf("Creating ServiceAccount %q in group %q...", name, group)
 
@@ -214,7 +222,7 @@ func (r *runner) CreateServiceAccount(name, group, projectID string) (*apiv1.Ser
 // GetServiceAccount returns service account for given ID and project
 func (r *runner) GetServiceAccount(saID, projectID string) (*apiv1.ServiceAccount, error) {
 	params := &serviceaccounts.ListServiceAccountsParams{ProjectID: projectID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	saList, err := r.client.Serviceaccounts.ListServiceAccounts(params, r.bearerToken)
 	if err != nil {
@@ -238,7 +246,7 @@ func (r *runner) DeleteServiceAccount(saID, projectID string) error {
 		ProjectID:        projectID,
 		ServiceAccountID: saID,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	_, err := r.client.Serviceaccounts.DeleteServiceAccount(params, r.bearerToken)
 	if err != nil {
@@ -270,7 +278,7 @@ func (r *runner) AddTokenToServiceAccount(name, saID, projectID string) (*apiv1.
 	r.test.Logf("Adding token %s to ServiceAccount %s...", name, saID)
 
 	params := &tokens.AddTokenToServiceAccountParams{ProjectID: projectID, ServiceAccountID: saID, Body: &models.ServiceAccountToken{Name: name}}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
 
 	token, err := r.client.Tokens.AddTokenToServiceAccount(params, r.bearerToken)
 	if err != nil {
@@ -287,7 +295,7 @@ func (r *runner) DeleteTokenForServiceAccount(tokenID, saID, projectID string) e
 	r.test.Logf("Deleting token %s from ServiceAccount %s...", tokenID, saID)
 
 	params := &tokens.DeleteServiceAccountTokenParams{ProjectID: projectID, ServiceAccountID: saID, TokenID: tokenID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	_, err := r.client.Tokens.DeleteServiceAccountToken(params, r.bearerToken)
 	if err != nil {
@@ -316,7 +324,7 @@ func convertServiceAccountToken(saToken *models.ServiceAccountToken) (*apiv1.Ser
 // ListCredentials returns list of credential names for the provider
 func (r *runner) ListCredentials(providerName, datacenter string) ([]string, error) {
 	params := &credentials.ListCredentialsParams{ProviderName: providerName, Datacenter: &datacenter}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	credentialsResponse, err := r.client.Credentials.ListCredentials(params, r.bearerToken)
 	if err != nil {
@@ -382,7 +390,7 @@ func (r *runner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKe
 	r.test.Logf("Creating AWS cluster %q (%s, %d nodes)...", name, version, replicas)
 
 	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	clusterResponse, err := r.client.Project.CreateCluster(params, r.bearerToken)
 	if err != nil {
@@ -441,7 +449,7 @@ func (r *runner) CreateDOCluster(projectID, dc, name, credential, version, locat
 	}
 
 	params := &project.CreateClusterParams{ProjectID: projectID, DC: dc, Body: clusterSpec}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	r.test.Logf("Creating DigitalOcean cluster %q (%s, %d nodes)...", name, version, replicas)
 
@@ -460,7 +468,7 @@ func (r *runner) DeleteCluster(projectID, dc, clusterID string) error {
 	r.test.Logf("Deleting cluster %s...", clusterID)
 
 	params := &project.DeleteClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
 
 	_, err := r.client.Project.DeleteCluster(params, r.bearerToken)
 	if err != nil {
@@ -474,7 +482,7 @@ func (r *runner) DeleteCluster(projectID, dc, clusterID string) error {
 // GetCluster cluster getter
 func (r *runner) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster, error) {
 	params := &project.GetClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	cluster, err := r.client.Project.GetCluster(params, r.bearerToken)
 	if err != nil {
@@ -487,7 +495,7 @@ func (r *runner) GetCluster(projectID, dc, clusterID string) (*apiv1.Cluster, er
 // GetClusterEvents returns the cluster events
 func (r *runner) GetClusterEvents(projectID, dc, clusterID string) ([]*models.Event, error) {
 	params := &project.GetClusterEventsParams{ProjectID: projectID, DC: dc, ClusterID: clusterID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	events, err := r.client.Project.GetClusterEvents(params, r.bearerToken)
 	if err != nil {
@@ -516,7 +524,7 @@ func (r *runner) PrintClusterEvents(projectID, dc, clusterID string) error {
 // GetClusterHealthStatus gets the cluster status
 func (r *runner) GetClusterHealthStatus(projectID, dc, clusterID string) (*apiv1.ClusterHealth, error) {
 	params := &project.GetClusterHealthParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	response, err := r.client.Project.GetClusterHealth(params, r.bearerToken)
 	if err != nil {
@@ -565,7 +573,7 @@ func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
 // GetClusterNodeDeployments returns the cluster node deployments
 func (r *runner) GetClusterNodeDeployments(projectID, dc, clusterID string) ([]apiv1.NodeDeployment, error) {
 	params := &project.ListNodeDeploymentsParams{ClusterID: clusterID, ProjectID: projectID, DC: dc}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	response, err := r.client.Project.ListNodeDeployments(params, r.bearerToken)
 	if err != nil {
@@ -642,7 +650,7 @@ func convertCluster(cluster *models.Cluster) (*apiv1.Cluster, error) {
 // ListGCPZones returns list of GCP zones
 func (r *runner) ListGCPZones(credential, dc string) ([]string, error) {
 	params := &gcp.ListGCPZonesParams{Credential: &credential, DC: dc}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	zonesResponse, err := r.client.Gcp.ListGCPZones(params, r.bearerToken)
 	if err != nil {
@@ -660,7 +668,7 @@ func (r *runner) ListGCPZones(credential, dc string) ([]string, error) {
 // ListGCPDiskTypes returns list of GCP disk types
 func (r *runner) ListGCPDiskTypes(credential, zone string) ([]string, error) {
 	params := &gcp.ListGCPDiskTypesParams{Credential: &credential, Zone: &zone}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	typesResponse, err := r.client.Gcp.ListGCPDiskTypes(params, r.bearerToken)
 	if err != nil {
@@ -678,7 +686,7 @@ func (r *runner) ListGCPDiskTypes(credential, zone string) ([]string, error) {
 // ListGCPSizes returns list of GCP sizes
 func (r *runner) ListGCPSizes(credential, zone string) ([]apiv1.GCPMachineSize, error) {
 	params := &gcp.ListGCPSizesParams{Credential: &credential, Zone: &zone}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	sizesResponse, err := r.client.Gcp.ListGCPSizes(params, r.bearerToken)
 	if err != nil {
@@ -712,7 +720,7 @@ func IsHealthyCluster(healthStatus *apiv1.ClusterHealth) bool {
 
 func (r *runner) DeleteUserFromProject(projectID, userID string) error {
 	params := &users.DeleteUserFromProjectParams{ProjectID: projectID, UserID: userID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	_, err := r.client.Users.DeleteUserFromProject(params, r.bearerToken)
 	return err
@@ -720,7 +728,7 @@ func (r *runner) DeleteUserFromProject(projectID, userID string) error {
 
 func (r *runner) GetProjectUsers(projectID string) ([]apiv1.User, error) {
 	params := &users.GetUsersForProjectParams{ProjectID: projectID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
 
 	response, err := r.client.Users.GetUsersForProject(params, r.bearerToken)
 	if err != nil {
@@ -751,7 +759,7 @@ func (r *runner) AddProjectUser(projectID, email, name, group string) (*apiv1.Us
 			},
 		},
 	}}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusForbidden)
 
 	responseUser, err := r.client.Users.AddUserToProject(params, r.bearerToken)
 	if err != nil {
@@ -771,7 +779,7 @@ func (r *runner) AddProjectUser(projectID, email, name, group string) (*apiv1.Us
 
 func (r *runner) GetGlobalSettings() (*apiv1.GlobalSettings, error) {
 	params := &admin.GetKubermaticSettingsParams{}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	responseSettings, err := r.client.Admin.GetKubermaticSettings(params, r.bearerToken)
 	if err != nil {
@@ -785,7 +793,7 @@ func (r *runner) UpdateGlobalSettings(patch json.RawMessage) (*apiv1.GlobalSetti
 	params := &admin.PatchKubermaticSettingsParams{
 		Patch: &patch,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	responseSettings, err := r.client.Admin.PatchKubermaticSettings(params, r.bearerToken)
 	if err != nil {
@@ -829,7 +837,7 @@ func (r *runner) SetAdmin(email string, isAdmin bool) error {
 			IsAdmin: isAdmin,
 		},
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	_, err := r.client.Admin.SetAdmin(params, r.bearerToken)
 	return err
@@ -837,7 +845,7 @@ func (r *runner) SetAdmin(email string, isAdmin bool) error {
 
 func (r *runner) GetRoles(projectID, dc, clusterID string) ([]apiv1.RoleName, error) {
 	params := &project.ListRoleNamesParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	response, err := r.client.Project.ListRoleNames(params, r.bearerToken)
 	if err != nil {
@@ -864,7 +872,7 @@ func (r *runner) BindUserToRole(projectID, dc, clusterID, roleName, namespace, u
 		ProjectID: projectID,
 		RoleID:    roleName,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	response, err := r.client.Project.BindUserToRole(params, r.bearerToken)
 	if err != nil {
@@ -879,7 +887,7 @@ func (r *runner) BindUserToRole(projectID, dc, clusterID, roleName, namespace, u
 
 func (r *runner) GetClusterRoles(projectID, dc, clusterID string) ([]apiv1.ClusterRoleName, error) {
 	params := &project.ListClusterRoleNamesParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	response, err := r.client.Project.ListClusterRoleNames(params, r.bearerToken)
 	if err != nil {
@@ -905,7 +913,7 @@ func (r *runner) BindUserToClusterRole(projectID, dc, clusterID, roleName, user 
 		ProjectID: projectID,
 		RoleID:    roleName,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	response, err := r.client.Project.BindUserToClusterRole(params, r.bearerToken)
 	if err != nil {
@@ -919,7 +927,7 @@ func (r *runner) BindUserToClusterRole(projectID, dc, clusterID, roleName, user 
 
 func (r *runner) GetClusterBindings(projectID, dc, clusterID string) ([]apiv1.ClusterRoleBinding, error) {
 	params := &project.ListClusterRoleBindingParams{DC: dc, ProjectID: projectID, ClusterID: clusterID}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	response, err := r.client.Project.ListClusterRoleBinding(params, r.bearerToken)
 	if err != nil {
@@ -948,7 +956,7 @@ func (r *runner) GetClusterBindings(projectID, dc, clusterID string) ([]apiv1.Cl
 
 func (r *runner) UpdateCluster(projectID, dc, clusterID string, patch PatchCluster) (*apiv1.Cluster, error) {
 	params := &project.PatchClusterParams{ProjectID: projectID, DC: dc, ClusterID: clusterID, Patch: patch}
-	setupParams(r.test, params, 1*time.Second, 5*time.Minute, http.StatusConflict)
+	utils.SetupParams(r.test, params, 1*time.Second, 5*time.Minute, http.StatusConflict)
 
 	cluster, err := r.client.Project.PatchCluster(params, r.bearerToken)
 	if err != nil {
@@ -974,7 +982,7 @@ func (r *runner) CreateUserSSHKey(projectID, keyName, publicKey string) (*apiv1.
 		},
 		ProjectID: projectID,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	key, err := r.client.Project.CreateSSHKey(params, r.bearerToken)
 	if err != nil {
@@ -989,7 +997,7 @@ func (r *runner) ListUserSSHKey(projectID string) ([]*apiv1.SSHKey, error) {
 	params := &project.ListSSHKeysParams{
 		ProjectID: projectID,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	keyList, err := r.client.Project.ListSSHKeys(params, r.bearerToken)
 	if err != nil {
@@ -1012,7 +1020,7 @@ func (r *runner) DeleteUserSSHKey(projectID, keyID string) error {
 	}
 	// consider HTTP 403 (Forbidden) to be transient, as it can take a few
 	// moments for the UserProjectBindings to be properly reconciled
-	setupParams(r.test, params, 1*time.Second, 1*time.Minute, http.StatusForbidden)
+	utils.SetupParams(r.test, params, 1*time.Second, 1*time.Minute, http.StatusForbidden)
 
 	_, err := r.client.Project.DeleteSSHKey(params, r.bearerToken)
 	return err
@@ -1026,7 +1034,7 @@ func (r *runner) AssignSSHKeyToCluster(projectID, clusterID, dc, keyID string) e
 		KeyID:     keyID,
 		ProjectID: projectID,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	_, err := r.client.Project.AssignSSHKeyToCluster(params, r.bearerToken)
 	return err
@@ -1040,7 +1048,7 @@ func (r *runner) DetachSSHKeyFromClusterParams(projectID, clusterID, dc, keyID s
 		KeyID:     keyID,
 		ProjectID: projectID,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	_, err := r.client.Project.DetachSSHKeyFromCluster(params, r.bearerToken)
 	return err
@@ -1065,7 +1073,7 @@ func (r *runner) ListDCForProvider(provider string) ([]*models.Datacenter, error
 	params := &datacenter.ListDCForProviderParams{
 		Provider: provider,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	list, err := r.client.Datacenter.ListDCForProvider(params, r.bearerToken)
 	if err != nil {
@@ -1080,7 +1088,7 @@ func (r *runner) GetDCForProvider(provider, dc string) (*models.Datacenter, erro
 		Provider:   provider,
 		Datacenter: dc,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	receivedDC, err := r.client.Datacenter.GetDCForProvider(params, r.bearerToken)
 	if err != nil {
@@ -1098,7 +1106,7 @@ func (r *runner) CreateDC(seed string, dc *models.Datacenter) (*models.Datacente
 		},
 		Seed: seed,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	createdDC, err := r.client.Datacenter.CreateDC(params, r.bearerToken)
 	if err != nil {
@@ -1114,7 +1122,7 @@ func (r *runner) DeleteDC(seed, dc string) error {
 		DC:   dc,
 	}
 	// HTTP400 is returned when the DC is not yet available in the Seed
-	setupParams(r.test, params, 1*time.Second, 5*time.Minute, http.StatusBadRequest)
+	utils.SetupParams(r.test, params, 1*time.Second, 5*time.Minute, http.StatusBadRequest)
 
 	_, err := r.client.Datacenter.DeleteDC(params, r.bearerToken)
 	return err
@@ -1129,7 +1137,7 @@ func (r *runner) UpdateDC(seed, dcToUpdate string, dc *models.Datacenter) (*mode
 		DCToUpdate: dcToUpdate,
 		Seed:       seed,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusBadRequest)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusBadRequest)
 
 	updatedDC, err := r.client.Datacenter.UpdateDC(params, r.bearerToken)
 	if err != nil {
@@ -1145,7 +1153,7 @@ func (r *runner) PatchDC(seed, dcToPatch, patch string) (*models.Datacenter, err
 		DCToPatch: dcToPatch,
 		Seed:      seed,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	patchedDC, err := r.client.Datacenter.PatchDC(params, r.bearerToken)
 	if err != nil {
@@ -1160,7 +1168,7 @@ func (r *runner) GetDCForSeed(seed, dc string) (*models.Datacenter, error) {
 		Seed: seed,
 		DC:   dc,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusNotFound)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusNotFound)
 
 	receivedDC, err := r.client.Datacenter.GetDCForSeed(params, r.bearerToken)
 	if err != nil {
@@ -1174,7 +1182,7 @@ func (r *runner) ListDCForSeed(seed string) ([]*models.Datacenter, error) {
 	params := &datacenter.ListDCForSeedParams{
 		Seed: seed,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	list, err := r.client.Datacenter.ListDCForSeed(params, r.bearerToken)
 	if err != nil {
@@ -1188,7 +1196,7 @@ func (r *runner) GetDC(dc string) (*models.Datacenter, error) {
 	params := &datacenter.GetDatacenterParams{
 		DC: dc,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	receivedDC, err := r.client.Datacenter.GetDatacenter(params, r.bearerToken)
 	if err != nil {
@@ -1200,7 +1208,7 @@ func (r *runner) GetDC(dc string) (*models.Datacenter, error) {
 
 func (r *runner) ListDC() ([]*models.Datacenter, error) {
 	params := &datacenter.ListDatacentersParams{}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	list, err := r.client.Datacenter.ListDatacenters(params, r.bearerToken)
 	if err != nil {
@@ -1212,7 +1220,7 @@ func (r *runner) ListDC() ([]*models.Datacenter, error) {
 
 func (r *runner) Logout() error {
 	params := &users.LogoutCurrentUserParams{}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	_, err := r.client.Users.LogoutCurrentUser(params, r.bearerToken)
 	return err
@@ -1224,7 +1232,7 @@ func (r *runner) GetKubeconfig(dc, projectID, clusterID string) (string, error) 
 		DC:        dc,
 		ProjectID: projectID,
 	}
-	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
+	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
 	conf, err := r.client.Project.GetClusterKubeconfig(params, r.bearerToken)
 	if err != nil {

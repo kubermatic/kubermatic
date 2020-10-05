@@ -54,6 +54,7 @@ if [ -n "${OPENSHIFT:-}" ]; then
   export VERSIONS="${OPENSHIFT_VERSION}"
 fi
 
+EXTRA_ARGS=""
 provider="${PROVIDER:-aws}"
 if [[ $provider == "aws" ]]; then
   EXTRA_ARGS="-aws-access-key-id=${AWS_E2E_TESTS_KEY_ID}
@@ -87,12 +88,14 @@ elif [[ $provider == "alibaba" ]]; then
     -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}"
 fi
 
-timeout -s 9 90m ./_build/conformance-tests ${EXTRA_ARGS:-} \
-  -worker-name=${WORKER_NAME} \
+timeout -s 9 90m ./_build/conformance-tests $EXTRA_ARGS \
+  -worker-name=$WORKER_NAME \
+  -name-prefix=prow-e2e \
   -kubeconfig=$KUBECONFIG \
+  -kubermatic-seed-cluster="$SEED_NAME" \
+  -kubermatic-endpoint="$KUBERMATIC_API_ENDPOINT" \
   -kubermatic-nodes=3 \
   -kubermatic-parallel-clusters=1 \
-  -name-prefix=prow-e2e \
   -reports-root=/reports \
   -create-oidc-token=true \
   -versions="$VERSIONS" \
@@ -100,6 +103,8 @@ timeout -s 9 90m ./_build/conformance-tests ${EXTRA_ARGS:-} \
   -only-test-creation="${ONLY_TEST_CREATION}" \
   -node-ssh-pub-key="${E2E_SSH_PUBKEY}" \
   -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
+  -dex-helm-values-file="$KUBERMATIC_DEX_VALUES_FILE" \
+  -enable-psp="${KUBERMATIC_PSP_ENABLED:-false}" \
   ${OPENSHIFT_ARG:-} \
   -print-ginkgo-logs=true \
   -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091"

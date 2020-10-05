@@ -106,6 +106,17 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 			expectedCode:   http.StatusOK,
 		},
 	}
+
+	endpoint, err := getAPIEndpoint()
+	if err != nil {
+		t.Fatalf("failed to determine Kubermatic API endpoint: %v", err)
+	}
+
+	u, err := url.Parse(endpoint)
+	if err != nil {
+		t.Fatalf("failed to parse URL: %v", err)
+	}
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			masterToken, err := retrieveMasterToken()
@@ -113,14 +124,11 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			var u url.URL
-			u.Host = getHost()
-			u.Scheme = getScheme()
 			u.Path = tc.path
 
 			req, err := http.NewRequest("GET", u.String(), nil)
 			if err != nil {
-				t.Fatalf("failed to make GET call: %v", err)
+				t.Fatalf("failed to create request: %v", err)
 			}
 
 			req.Header.Set("Cache-Control", "no-cache")

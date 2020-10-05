@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"path"
@@ -45,6 +46,7 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
 	projectclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
@@ -329,7 +331,8 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 						return false, nil
 					}
 
-					missingConditions, success := kubermaticv1helper.ClusterReconciliationSuccessful(cluster)
+					// ignore Kubermatic version in this check, to allow running against a 3rd party setup
+					missingConditions, success := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, true)
 					if len(missingConditions) > 0 {
 						log.Infof("Waiting for the following conditions: %v", missingConditions)
 					}
@@ -935,8 +938,9 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 			ImagePullSecret: r.openshiftPullSecret,
 		}
 	}
+
 	// The cluster name must be unique per project.
-	// We build up a understandable name with the various cli parameters & add a random string in the end to ensure
+	// We build up a readable name with the various cli parameters & add a random string in the end to ensure
 	// we really have a unique name
 	if r.namePrefix != "" {
 		cluster.Cluster.Name = r.namePrefix + "-"
@@ -954,96 +958,64 @@ func (r *testRunner) createCluster(log *zap.SugaredLogger, scenario testScenario
 		DC:        r.seed.Name,
 		Body:      cluster,
 	}
-	params.SetTimeout(15 * time.Second)
+	utils.SetupParams(nil, params, 3*time.Second, 1*time.Minute, http.StatusConflict)
 
+	response, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterID := response.Payload.ID
 	crCluster := &kubermaticv1.Cluster{}
-	var selector labels.Selector
-	var err error
-	if r.workerName != "" {
-		selector, err = labels.Parse(fmt.Sprintf("worker-name=%s", r.workerName))
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse selector: %v", err)
-		}
-	}
 
-	var errs []error
-	if err := wait.PollImmediate(5*time.Second, 45*time.Second, func() (bool, error) {
-		// For some reason the cluster doesn't have the name we set via ID on creation
-		clusterList := &kubermaticv1.ClusterList{}
-		opts := &ctrlruntimeclient.ListOptions{LabelSelector: selector}
-		if err := r.seedClusterClient.List(r.ctx, clusterList, opts); err != nil {
-			return false, err
-		}
-		numFoundClusters := len(clusterList.Items)
+	if err := wait.PollImmediate(2*time.Second, 1*time.Minute, func() (bool, error) {
+		key := types.NamespacedName{Name: clusterID}
 
-		switch {
-		case numFoundClusters < 1:
-			if _, err := r.kubermaticClient.Project.CreateCluster(params, r.kubermaticAuthenticator); err != nil {
-				// Log the error but don't return it, we want to retry
-				err = errors.New(fmtSwaggerError(err))
-				errs = append(errs, err)
-				log.Errorw("Failed to create cluster via Kubermatic API", zap.Error(err))
+		if err := r.seedClusterClient.Get(r.ctx, key, crCluster); err != nil {
+			if kerrors.IsNotFound(err) {
+				return false, nil
 			}
-			// Always return here, our clusterList is not up to date anymore
-			return false, nil
-		case numFoundClusters > 1:
-			return false, fmt.Errorf("had more than one cluster (%d) with our worker-name, how is this possible?! ", numFoundClusters)
-		default:
-			crCluster = &clusterList.Items[0]
-			return true, err
-		}
-	}); err != nil {
-		errs = append(errs, err)
-		return nil, fmt.Errorf("cluster creation failed: %v", utilerror.NewAggregate(errs))
-	}
 
-	// fetch all existing SSH keys
-	keyIDs := []string{}
-
-	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
-		body := projectclient.ListSSHKeysParams{
-			ProjectID: r.kubermaticProjectID,
-		}
-		body.SetTimeout(15 * time.Second)
-
-		result, err := r.kubermaticClient.Project.ListSSHKeys(&body, r.kubermaticAuthenticator)
-		if err != nil {
-			log.Errorw("Failed to list project's SSH keys", "error", fmtSwaggerError(err))
-			return false, nil
-		}
-
-		for _, key := range result.Payload {
-			keyIDs = append(keyIDs, key.ID)
+			return false, err
 		}
 
 		return true, nil
 	}); err != nil {
-		return nil, fmt.Errorf("failed listing SSH keys in project: %v", err)
+		return nil, fmt.Errorf("failed to wait for Cluster to appear: %v", err)
+	}
+
+	// fetch all existing SSH keys
+	listKeysBody := &projectclient.ListSSHKeysParams{
+		ProjectID: r.kubermaticProjectID,
+	}
+	utils.SetupParams(nil, listKeysBody, 3*time.Second, 1*time.Minute, http.StatusConflict, http.StatusNotFound)
+
+	result, err := r.kubermaticClient.Project.ListSSHKeys(listKeysBody, r.kubermaticAuthenticator)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list project's SSH keys: %v", err)
+	}
+
+	keyIDs := []string{}
+	for _, key := range result.Payload {
+		keyIDs = append(keyIDs, key.ID)
 	}
 
 	// assign all keys to the new cluster
 	for _, keyID := range keyIDs {
-		if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
-			body := projectclient.AssignSSHKeyToClusterParams{
-				ProjectID: r.kubermaticProjectID,
-				DC:        r.seed.Name,
-				ClusterID: crCluster.Name,
-				KeyID:     keyID,
-			}
-			body.SetTimeout(15 * time.Second)
+		assignKeyBody := &projectclient.AssignSSHKeyToClusterParams{
+			ProjectID: r.kubermaticProjectID,
+			DC:        r.seed.Name,
+			ClusterID: crCluster.Name,
+			KeyID:     keyID,
+		}
+		utils.SetupParams(nil, assignKeyBody, 3*time.Second, 1*time.Minute, http.StatusConflict, http.StatusNotFound, http.StatusForbidden)
 
-			if _, err := r.kubermaticClient.Project.AssignSSHKeyToCluster(&body, r.kubermaticAuthenticator); err != nil {
-				log.Errorw("Failed to assign SSH key to cluster", "error", fmtSwaggerError(err))
-				return false, nil
-			}
-
-			return true, nil
-		}); err != nil {
-			return nil, fmt.Errorf("failed assigning SSH keys to cluster: %v", err)
+		if _, err := r.kubermaticClient.Project.AssignSSHKeyToCluster(assignKeyBody, r.kubermaticAuthenticator); err != nil {
+			return nil, fmt.Errorf("failed to assign SSH key to cluster: %v", err)
 		}
 	}
 
-	log.Info("Successfully created cluster via Kubermatic API")
+	log.Infof("Successfully created cluster %s", crCluster.Name)
 	return crCluster, nil
 }
 

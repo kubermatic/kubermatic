@@ -44,6 +44,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	kubermaticsignals "k8c.io/kubermatic/v2/pkg/signals"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api"
 	apitest "k8c.io/kubermatic/v2/pkg/test/e2e/api"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
@@ -97,7 +98,11 @@ type Opts struct {
 	pspEnabled                   bool
 	createOIDCToken              bool
 	dexHelmValuesFile            string
+	kubermaticNamespace          string
+	kubermaticEndpoint           string
+	kubermaticSeedName           string
 	kubermaticProjectID          string
+	kubermaticOIDCToken          string
 	kubermaticClient             *apiclient.KubermaticAPI
 	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
 	scenarioOptions              string
@@ -171,23 +176,19 @@ var (
 
 func main() {
 	opts := Opts{
-		providers:  sets.NewString(),
-		publicKeys: [][]byte{},
-		versions:   []*semver.Semver{},
+		providers:           sets.NewString(),
+		publicKeys:          [][]byte{},
+		versions:            []*semver.Semver{},
+		kubermaticNamespace: "kubermatic",
+		kubermaticSeedName:  "kubermatic",
 	}
 
 	defaultTimeoutMinutes := 10
 
-	rawLog := kubermaticlog.New(true, kubermaticlog.FormatJSON)
-	log := rawLog.Sugar()
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
+	logOpts := kubermaticlog.NewDefaultOptions()
+	logOpts.AddFlags(flag.CommandLine)
 
 	cli.Hello(log, "Conformance Tests", true)
-
 	// user.Current does not work in Alpine
 	pubkeyPath := path.Join(os.Getenv("HOME"), ".ssh/id_rsa.pub")
 
@@ -196,8 +197,14 @@ func main() {
 	flag.StringVar(&providers, "providers", "aws,digitalocean,openstack,hetzner,vsphere,azure,packet,gcp", "comma separated list of providers to test")
 	flag.StringVar(&opts.namePrefix, "name-prefix", "", "prefix used for all cluster names")
 	flag.StringVar(&opts.repoRoot, "repo-root", "/opt/kube-test/", "Root path for the different kubernetes repositories")
+	flag.StringVar(&opts.kubermaticEndpoint, "kubermatic-endpoint", "http://localhost:8080", "scheme://host[:port] of the Kubermatic API endpoint to talk to")
+	flag.StringVar(&opts.kubermaticProjectID, "kubermatic-project-id", "", "Kubermatic project to use; leave empty to create a new one")
+	flag.StringVar(&opts.kubermaticOIDCToken, "kubermatic-oidc-token", "", "Token to authenticate against the Kubermatic API")
+	flag.StringVar(&opts.kubermaticSeedName, "kubermatic-seed-cluster", opts.kubermaticSeedName, "Seed cluster name to create test cluster in")
+	flag.StringVar(&opts.kubermaticNamespace, "kubermatic-namespace", opts.kubermaticNamespace, "Namespace where Kubermatic is installed to")
+	flag.BoolVar(&opts.createOIDCToken, "create-oidc-token", false, "Whether to create a OIDC token. If false, -kubermatic-project-id and -kubermatic-oidc-token must be set")
 	flag.IntVar(&opts.nodeCount, "kubermatic-nodes", 3, "number of worker nodes")
-	flag.IntVar(&opts.clusterParallelCount, "kubermatic-parallel-clusters", 5, "number of clusters to test in parallel")
+	flag.IntVar(&opts.clusterParallelCount, "kubermatic-parallel-clusters", 1, "number of clusters to test in parallel")
 	flag.StringVar(&opts.reportsRoot, "reports-root", "/opt/reports", "Root for reports")
 	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", defaultTimeout, "cluster creation timeout")
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
@@ -209,13 +216,12 @@ func main() {
 	flag.BoolVar(&opts.openshift, "openshift", false, "Whether to create an openshift cluster")
 	flag.BoolVar(&opts.printGinkoLogs, "print-ginkgo-logs", false, "Whether to print ginkgo logs when ginkgo encountered failures")
 	flag.BoolVar(&opts.onlyTestCreation, "only-test-creation", false, "Only test if nodes become ready. Does not perform any extended checks like conformance tests")
-	flag.BoolVar(&opts.createOIDCToken, "create-oidc-token", false, "Whether to create a OIDC token. If false, environment vars for projectID and OIDC token must be set.")
-	// This won't be used directly for backwards compatibility in upgrade-tests;
-	// instead the KUBERMATIC_DEX_VALUES_FILE env variable will be used.
+	flag.BoolVar(&opts.pspEnabled, "enable-psp", false, "When set, enables the Pod Security Policy plugin in the user cluster")
 	flag.StringVar(&opts.dexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
 	flag.StringVar(&opts.scenarioOptions, "scenario-options", "", "Additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
 	flag.StringVar(&opts.pushgatewayEndpoint, "pushgateway-endpoint", "", "host:port of a Prometheus Pushgateway to send runtime metrics to")
 
+	// cloud provider credentials
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
 	flag.StringVar(&opts.secrets.Digitalocean.Token, "digitalocean-token", "", "Digitalocean: API Token")
@@ -239,13 +245,24 @@ func main() {
 	flag.StringVar(&opts.secrets.Kubevirt.Kubeconfig, "kubevirt-kubeconfig", "", "Kubevirt: Cluster Kubeconfig")
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeyID, "alibaba-access-key-id", "", "Alibaba: AccessKeyID")
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeySecret, "alibaba-access-key-secret", "", "Alibaba: AccessKeySecret")
+
 	flag.Parse()
 
-	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute
-
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	if opts.workerName != "" {
-		log = log.With("worker-name", opts.workerName)
+		rawLog = rawLog.Named(opts.workerName)
 	}
+
+	log := rawLog.Sugar()
+	defer func() {
+		if err := log.Sync(); err != nil {
+			fmt.Println(err)
+		}
+	}()
+
+	cmdutil.Hello(log, "Conformance Tests", true)
+
+	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute
 
 	if opts.excludeSelectorRaw != "" {
 		excludedDistributions := strings.Split(opts.excludeSelectorRaw, ",")
@@ -276,53 +293,55 @@ func main() {
 		opts.versions = append(opts.versions, semver.NewSemverOrDie(s))
 	}
 
-	kubermaticAPIServerAddress := os.Getenv("KUBERMATIC_HOST")
-	if kubermaticAPIServerAddress == "" {
-		log.Fatal("Kubermatic apiserver address must be set via KUBERMATIC_HOST env var")
+	kubermaticClient, err := api.NewKubermaticClient(opts.kubermaticEndpoint)
+	if err != nil {
+		log.Fatalf("Failed to create Kubermatic API client: %v", err)
 	}
-	kubermaticAPIServerScheme := os.Getenv("KUBERMATIC_SCHEME")
-	if kubermaticAPIServerScheme == "" {
-		log.Fatal("Kubermatic apiserver protocol must be set via KUBERMATIC_SCHEME env var")
-	}
-	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{kubermaticAPIServerScheme}), nil)
+
+	opts.kubermaticClient = kubermaticClient
 	opts.secrets.kubermaticClient = opts.kubermaticClient
-	// May be empty if creating an OIDC token
-	opts.kubermaticProjectID = strings.TrimSpace(os.Getenv("KUBERMATIC_PROJECT_ID"))
 
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
 
+	// collect runtime metrics if there is a pushgateway URL configured
+	// and these variables are set
 	initMetrics(opts.pushgatewayEndpoint, os.Getenv("JOB_NAME"), os.Getenv("PROW_JOB_ID"))
 	defer updateMetrics(log)
 
 	if !opts.createOIDCToken {
 		if opts.kubermaticProjectID == "" {
-			log.Fatal("Kubermatic project id must be set via KUBERMATIC_PROJECT_ID env var")
-		}
-		kubermaticServiceaAccountToken := os.Getenv("KUBERMATIC_SERVICEACCOUNT_TOKEN")
-		if kubermaticServiceaAccountToken == "" {
-			log.Fatal("A Kubermatic serviceAccountToken must be set via KUBERMATIC_SERVICEACCOUNT_TOKEN env var")
-		}
-		opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
-	} else {
-		// fallback to the KUBERMATIC_DEX_HELM_VALUES_FILE env var if the CLI flag
-		// was not specified due to backwards compatibility
-		if opts.dexHelmValuesFile == "" {
-			opts.dexHelmValuesFile = os.Getenv("KUBERMATIC_DEX_VALUES_FILE")
+			log.Fatal("Kubermatic project ID must be set via the -kubermatic-project-id flag")
 		}
 
+		if opts.kubermaticOIDCToken == "" {
+			log.Fatal("An existing OIDC token must be set via the -kubermatic-oidc-token flag")
+		}
+
+		opts.kubermaticAuthenticator = httptransport.BearerToken(opts.kubermaticOIDCToken)
+	} else {
 		dexClient, err := dex.NewClientFromHelmValues(opts.dexHelmValuesFile, "kubermatic", log)
 		if err != nil {
 			log.Fatalw("Failed to create OIDC client", zap.Error(err))
 		}
 
-		var login, password, token string
+		// OIDC credentials are passed in as environment variables instead of
+		// CLI flags because having the password as a flag might be a security
+		// issue and then it also makes sense to handle the login name in the
+		// same way.
+		// Also, the API E2E tests use environment variables to get the values
+		// into the `go test` runs.
+		login, password, err := apitest.OIDCCredentials()
+		if err != nil {
+			log.Fatalf("Invalid OIDC credentials: %v", err)
+		}
+
+		var token string
 
 		if err := measureTime(
 			kubermaticLoginDurationMetric.WithLabelValues(),
 			log,
 			func() error {
-				login, password = apitest.OIDCCredentials()
 				token, err = dexClient.Login(rootCtx, login, password)
 				return err
 			},
@@ -347,21 +366,8 @@ func main() {
 	if opts.openshift {
 		opts.openshiftPullSecret = os.Getenv("OPENSHIFT_IMAGE_PULL_SECRET")
 		if opts.openshiftPullSecret == "" {
-			log.Fatal("Testing openshift requires the `OPENSHIFT_IMAGE_PULL_SECRET` env var to be set")
+			log.Fatal("Testing openshift requires the $OPENSHIFT_IMAGE_PULL_SECRET env var to be set")
 		}
-	}
-
-	if val := os.Getenv("KUBERMATIC_PSP_ENABLED"); val == "true" {
-		opts.pspEnabled = true
-		log.Info("Enabling PSPs")
-	}
-
-	// We use environment variables instead of flags for compatibility reasons, because during upgrade tests we
-	// run two versions of the conformance tester with the same set of flags, which breaks if the older version
-	// doesn't have all flags
-	seedName := os.Getenv("SEED_NAME")
-	if seedName == "" {
-		log.Fatal("The name of the seed dc must be configured via the SEED_NAME env var")
 	}
 
 	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
@@ -429,12 +435,7 @@ func main() {
 	}
 	opts.seedGeneratedClient = seedGeneratedClient
 
-	namespaceName := os.Getenv("NAMESPACE")
-	if namespaceName == "" {
-		log.Warn("Environment variable `NAMESPACE` was unset, defaulting to `kubermatic`")
-		namespaceName = "kubermatic"
-	}
-	seedGetter, err := provider.SeedGetterFactory(context.Background(), seedClusterClient, seedName, namespaceName)
+	seedGetter, err := provider.SeedGetterFactory(context.Background(), seedClusterClient, opts.kubermaticSeedName, opts.kubermaticNamespace)
 	if err != nil {
 		log.Fatalw("Failed to construct seedGetter", zap.Error(err))
 	}
