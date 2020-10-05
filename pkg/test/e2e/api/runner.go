@@ -47,10 +47,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 )
 
-const (
-	apiRequestTimeout = 10 * time.Second
-)
-
 type runner struct {
 	client      *apiclient.KubermaticAPI
 	bearerToken runtime.ClientAuthInfoWriter

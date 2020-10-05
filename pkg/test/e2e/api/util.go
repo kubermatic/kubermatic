@@ -24,7 +24,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Masterminds/semver"
 	httptransport "github.com/go-openapi/runtime/client"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
@@ -32,7 +34,7 @@ import (
 func getAPIEndpoint() (string, error) {
 	endpoint := os.Getenv("KUBERMATIC_API_ENDPOINT")
 	if len(endpoint) == 0 {
-		return "", errors.New("no $KUBERMATIC_API_ENDPOINT (scheme://host:port) environment variable set.")
+		return "", errors.New("no $KUBERMATIC_API_ENDPOINT (scheme://host:port) environment variable set")
 	}
 
 	return endpoint, nil
@@ -56,11 +58,13 @@ func NewKubermaticClient(endpointURL string) (*client.KubermaticAPI, error) {
 }
 
 func getKubernetesVersion() string {
-	version := os.Getenv("VERSION_TO_TEST")
-	if len(version) > 0 {
-		return version
+	version := common.DefaultKubernetesVersioning.Default
+
+	if v := os.Getenv("VERSION_TO_TEST"); v != "" {
+		version = semver.MustParse(v)
 	}
-	return "v1.18.8"
+
+	return "v" + version.String()
 }
 
 func cleanUpProject(t *testing.T, id string) {

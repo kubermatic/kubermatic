@@ -28,9 +28,11 @@ import (
 	"math/rand"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"go.uber.org/zap"
@@ -39,10 +41,11 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
 	kubermaticsignals "k8c.io/kubermatic/v2/pkg/signals"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api"
 	apitest "k8c.io/kubermatic/v2/pkg/test/e2e/api"
@@ -87,7 +90,7 @@ type Opts struct {
 	clusterParallelCount         int
 	workerName                   string
 	homeDir                      string
-	versions                     []*semver.Semver
+	versions                     []*kubermativsemver.Semver
 	excludeSelector              excludeSelector
 	excludeSelectorRaw           string
 	existingClusterLabel         string
@@ -178,7 +181,7 @@ func main() {
 	opts := Opts{
 		providers:           sets.NewString(),
 		publicKeys:          [][]byte{},
-		versions:            []*semver.Semver{},
+		versions:            []*kubermativsemver.Semver{},
 		kubermaticNamespace: "kubermatic",
 		kubermaticSeedName:  "kubermatic",
 	}
@@ -191,6 +194,8 @@ func main() {
 	cli.Hello(log, "Conformance Tests", true)
 	// user.Current does not work in Alpine
 	pubkeyPath := path.Join(os.Getenv("HOME"), ".ssh/id_rsa.pub")
+
+	supportedVersions := getLatestMinorVersions(common.DefaultKubernetesVersioning.Versions)
 
 	flag.StringVar(&opts.kubeconfigPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
 	flag.StringVar(&opts.existingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
@@ -210,7 +215,7 @@ func main() {
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
-	flag.StringVar(&sversions, "versions", "v1.16.14,v1.17.11,v1.18.8,v1.19.0", "a comma-separated list of versions to test")
+	flag.StringVar(&sversions, "versions", strings.Join(supportedVersions, ","), "a comma-separated list of versions to test")
 	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
 	flag.IntVar(&defaultTimeoutMinutes, "default-timeout-minutes", 10, "The default timeout in minutes")
 	flag.BoolVar(&opts.openshift, "openshift", false, "Whether to create an openshift cluster")
@@ -290,7 +295,7 @@ func main() {
 	}
 
 	for _, s := range strings.Split(sversions, ",") {
-		opts.versions = append(opts.versions, semver.NewSemverOrDie(s))
+		opts.versions = append(opts.versions, kubermativsemver.NewSemverOrDie(s))
 	}
 
 	kubermaticClient, err := api.NewKubermaticClient(opts.kubermaticEndpoint)
@@ -687,4 +692,24 @@ func createSSHKeys(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAu
 	}
 
 	return nil
+}
+
+func getLatestMinorVersions(versions []*semver.Version) []string {
+	minorMap := map[int64]*semver.Version{}
+
+	for i, version := range versions {
+		minor := version.Minor()
+
+		if existing := minorMap[minor]; existing == nil || existing.LessThan(version) {
+			minorMap[minor] = versions[i]
+		}
+	}
+
+	list := []string{}
+	for _, v := range minorMap {
+		list = append(list, "v"+v.String())
+	}
+	sort.Strings(list)
+
+	return list
 }
