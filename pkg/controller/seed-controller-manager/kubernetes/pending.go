@@ -43,6 +43,11 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		return nil, err
 	}
 
+	// Apply etcdLauncher flag
+	if err := r.ensureEtcdLauncherFeatureFlag(ctx, cluster); err != nil {
+		return nil, err
+	}
+
 	// Deploy & Update master components for Kubernetes
 	if err := r.ensureResourcesAreDeployed(ctx, cluster); err != nil {
 		return nil, err
@@ -110,6 +115,21 @@ func (r *Reconciler) ensureClusterNetworkDefaults(ctx context.Context, cluster *
 	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		for _, modify := range modifiers {
 			modify(c)
+		}
+	})
+}
+
+// ensureEtcdLauncherFeatureFlag will apply seed controller etcdLauncher setting on the cluster level
+func (r *Reconciler) ensureEtcdLauncherFeatureFlag(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		if r.features.EtcdLauncher { // enabled at the controller level
+			// we only modify the cluster feature flag if it's not explicitly set, regardless of the value
+			if _, set := c.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]; !set {
+				if c.Spec.Features == nil {
+					c.Spec.Features = make(map[string]bool)
+				}
+				c.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] = true
+			}
 		}
 	})
 }
