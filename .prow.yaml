@@ -323,8 +323,8 @@ presubmits:
           value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.17.13"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,coreos,rhel"
+        - name: DISTRIBUTIONS
+          value: flatcar
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -364,8 +364,8 @@ presubmits:
           value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.18.10"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,ubuntu,coreos,rhel"
+        - name: DISTRIBUTIONS
+          value: flatcar
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -405,8 +405,8 @@ presubmits:
           value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.19.3"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,flatcar,coreos,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -448,8 +448,8 @@ presubmits:
           value: "true"
         - name: VERSIONS_TO_TEST
           value: "v1.19.3"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,flatcar,coreos,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -494,8 +494,8 @@ presubmits:
           value: "true"
         - name: VERSIONS_TO_TEST
           value: "v1.19.3"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,flatcar,coreos,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -539,8 +539,8 @@ presubmits:
           value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.19.3"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,coreos,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: PROVIDER
           value: "azure"
         - name: DEFAULT_TIMEOUT_MINUTES
@@ -587,8 +587,8 @@ presubmits:
           value: "v1.19.3"
         - name: PROVIDER
           value: "gcp"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,coreos,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -630,8 +630,8 @@ presubmits:
           value: "v1.19.3"
         - name: PROVIDER
           value: "gcp"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,coreos,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: KUBERMATIC_PSP_ENABLED
           value: "true"
         - name: ONLY_TEST_CREATION
@@ -676,8 +676,8 @@ presubmits:
           value: ee
         - name: VERSIONS_TO_TEST
           value: "v1.19.3"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "ubuntu,coreos,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: centos
         - name: PROVIDER
           value: "digitalocean"
         - name: SERVICE_ACCOUNT_KEY
@@ -721,8 +721,8 @@ presubmits:
           value: "v1.19.3"
         - name: PROVIDER
           value: "packet"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,coreos,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -764,8 +764,8 @@ presubmits:
           value: "v1.19.3"
         - name: PROVIDER
           value: "kubevirt"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "ubuntu,coreos,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: centos
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -807,9 +807,8 @@ presubmits:
           value: "v1.19.3"
         - name: PROVIDER
           value: "hetzner"
-        # Hetzner doesn't support coreos
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,coreos,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: SERVICE_ACCOUNT_KEY
@@ -853,8 +852,8 @@ presubmits:
           value: "v1.19.3"
         - name: PROVIDER
           value: "openstack"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,coreos,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
         - name: SERVICE_ACCOUNT_KEY
@@ -900,8 +899,8 @@ presubmits:
           value: "openstack"
         - name: DEFAULT_TIMEOUT_MINUTES
           value: "20"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "coreos,ubuntu,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: centos
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -943,8 +942,8 @@ presubmits:
           value: "v1.19.3"
         - name: PROVIDER
           value: "vsphere"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,coreos,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:
             secretKeyRef:
@@ -987,8 +986,8 @@ presubmits:
           value: "v1.19.3"
         - name: PROVIDER
           value: "vsphere"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,coreos,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: SCENARIO_OPTIONS
           value: "custom-folder"
         - name: SERVICE_ACCOUNT_KEY
@@ -1033,8 +1032,8 @@ presubmits:
           value: "v1.19.3"
         - name: PROVIDER
           value: "vsphere"
-        - name: EXCLUDE_DISTRIBUTIONS
-          value: "centos,coreos,flatcar,rhel"
+        - name: DISTRIBUTIONS
+          value: ubuntu
         - name: SCENARIO_OPTIONS
           value: "datastore-cluster"
         - name: SERVICE_ACCOUNT_KEY
@@ -1083,7 +1082,7 @@ presubmits:
           value: ee
         - name: OPENSHIFT
           value: "true"
-        - name: OPENSHIFT_VERSION
+        - name: VERSIONS_TO_TEST
           value: "4.1.18"
         - name: SERVICE_ACCOUNT_KEY
           valueFrom:

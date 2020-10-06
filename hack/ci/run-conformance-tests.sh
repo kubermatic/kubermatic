@@ -22,11 +22,6 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-# Defaults
-export VERSIONS=${VERSIONS_TO_TEST:-"v1.18.8"}
-export EXCLUDE_DISTRIBUTIONS="${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos,sles,rhel}"
-export ONLY_TEST_CREATION=${ONLY_TEST_CREATION:-false}
-
 export WORKER_NAME="${BUILD_ID}"
 if [ "${KUBERMATIC_NO_WORKER_NAME:-}" = "true" ]; then
   WORKER_NAME=""
@@ -48,11 +43,6 @@ else
 fi
 
 echodate "SSH public key will be $(head -c 25 ${E2E_SSH_PUBKEY})...$(tail -c 25 ${E2E_SSH_PUBKEY})"
-
-if [ -n "${OPENSHIFT:-}" ]; then
-  OPENSHIFT_ARG="-openshift=true"
-  export VERSIONS="${OPENSHIFT_VERSION}"
-fi
 
 EXTRA_ARGS=""
 provider="${PROVIDER:-aws}"
@@ -98,13 +88,14 @@ timeout -s 9 90m ./_build/conformance-tests $EXTRA_ARGS \
   -kubermatic-parallel-clusters=1 \
   -reports-root=/reports \
   -create-oidc-token=true \
-  -versions="$VERSIONS" \
+  -versions="$VERSIONS_TO_TEST" \
   -providers=$provider \
-  -only-test-creation="${ONLY_TEST_CREATION}" \
-  -node-ssh-pub-key="${E2E_SSH_PUBKEY}" \
-  -exclude-distributions="${EXCLUDE_DISTRIBUTIONS}" \
+  -node-ssh-pub-key="$E2E_SSH_PUBKEY" \
+  -distributions="${DISTRIBUTIONS:-}" \
+  -exclude-distributions="${EXCLUDE_DISTRIBUTIONS:-}" \
   -dex-helm-values-file="$KUBERMATIC_DEX_VALUES_FILE" \
-  -enable-psp="${KUBERMATIC_PSP_ENABLED:-false}" \
-  ${OPENSHIFT_ARG:-} \
+  -only-test-creation=${ONLY_TEST_CREATION:-false} \
+  -enable-psp=${KUBERMATIC_PSP_ENABLED:-false} \
+  -openshift=${OPENSHIFT:-false} \
   -print-ginkgo-logs=true \
   -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091"

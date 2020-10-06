@@ -22,10 +22,12 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"os"
 	"path"
 	"sort"
@@ -49,6 +51,7 @@ import (
 	kubermaticsignals "k8c.io/kubermatic/v2/pkg/signals"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api"
 	apitest "k8c.io/kubermatic/v2/pkg/test/e2e/api"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
@@ -64,12 +67,6 @@ import (
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
-
-//TODO: Move Kubernetes versions into this as well
-type excludeSelector struct {
-	// The value in this map is never used, we use the keys only to have a simple set mechanism
-	Distributions map[providerconfig.OperatingSystem]bool
-}
 
 // Opts represent combination of flags and ENV options
 type Opts struct {
@@ -91,8 +88,7 @@ type Opts struct {
 	workerName                   string
 	homeDir                      string
 	versions                     []*kubermativsemver.Semver
-	excludeSelector              excludeSelector
-	excludeSelectorRaw           string
+	distributions                map[providerconfig.OperatingSystem]struct{}
 	existingClusterLabel         string
 	openshift                    bool
 	openshiftPullSecret          string
@@ -172,12 +168,16 @@ const (
 var defaultTimeout = 10 * time.Minute
 
 var (
-	providers  string
-	pubKeyPath string
-	sversions  string
+	providers             string
+	pubKeyPath            string
+	sversions             string
+	sdistributions        string
+	sexcludeDistributions string
 )
 
 func main() {
+	var err error
+
 	opts := Opts{
 		providers:           sets.NewString(),
 		publicKeys:          [][]byte{},
@@ -216,7 +216,8 @@ func main() {
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
 	flag.StringVar(&sversions, "versions", strings.Join(supportedVersions, ","), "a comma-separated list of versions to test")
-	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
+	flag.StringVar(&sdistributions, "distributions", "", "a comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")
+	flag.StringVar(&sexcludeDistributions, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests (cannot be used in conjunction with -distributions)")
 	flag.IntVar(&defaultTimeoutMinutes, "default-timeout-minutes", 10, "The default timeout in minutes")
 	flag.BoolVar(&opts.openshift, "openshift", false, "Whether to create an openshift cluster")
 	flag.BoolVar(&opts.printGinkoLogs, "print-ginkgo-logs", false, "Whether to print ginkgo logs when ginkgo encountered failures")
@@ -266,37 +267,41 @@ func main() {
 	}()
 
 	cmdutil.Hello(log, "Conformance Tests", true)
+	log.Infow("Kubermatic API Endpoint", "endpoint", opts.kubermaticEndpoint)
 
 	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute
 
-	if opts.excludeSelectorRaw != "" {
-		excludedDistributions := strings.Split(opts.excludeSelectorRaw, ",")
-		if opts.excludeSelector.Distributions == nil {
-			opts.excludeSelector.Distributions = map[providerconfig.OperatingSystem]bool{}
+	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
+		log.Fatal("-cluster-parallel-count must be 1 when testing an existing cluster")
+	}
+
+	if opts.openshift {
+		// Openshift is only supported on CentOS
+		opts.distributions = map[providerconfig.OperatingSystem]struct{}{
+			providerconfig.OperatingSystemCentOS: {},
 		}
-		for _, excludedDistribution := range excludedDistributions {
-			switch excludedDistribution {
-			case "ubuntu":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] = true
-			case "centos":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] = true
-			case "coreos":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
-			case "sles":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemSLES] = true
-			case "rhel":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemRHEL] = true
-			case "flatcar":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemFlatcar] = true
-			default:
-				log.Fatalf("Unknown distribution '%s' in '-exclude-distributions' param", excludedDistribution)
-			}
+	} else {
+		opts.distributions, err = getEffectiveDistributions(sdistributions, sexcludeDistributions)
+		if err != nil {
+			log.Fatalw("Failed to determine distribution list", zap.Error(err))
+		}
+
+		if len(opts.distributions) == 0 {
+			log.Fatal("No distribution to use in tests remained after evaluating -distributions and -exclude-distributions")
 		}
 	}
+
+	osNames := []string{}
+	for dist := range opts.distributions {
+		osNames = append(osNames, string(dist))
+	}
+	sort.Strings(osNames)
+	log.Infow("Enabled operating system", "distributions", osNames)
 
 	for _, s := range strings.Split(sversions, ",") {
 		opts.versions = append(opts.versions, kubermativsemver.NewSemverOrDie(s))
 	}
+	log.Infow("Enabled versions", "versions", opts.versions)
 
 	kubermaticClient, err := api.NewKubermaticClient(opts.kubermaticEndpoint)
 	if err != nil {
@@ -319,6 +324,8 @@ func main() {
 			log.Fatal("Kubermatic project ID must be set via the -kubermatic-project-id flag")
 		}
 
+		log.Infow("Using pre-existing project", "project", opts.kubermaticProjectID)
+
 		if opts.kubermaticOIDCToken == "" {
 			log.Fatal("An existing OIDC token must be set via the -kubermatic-oidc-token flag")
 		}
@@ -340,6 +347,8 @@ func main() {
 		if err != nil {
 			log.Fatalf("Invalid OIDC credentials: %v", err)
 		}
+
+		log.Infow("Creating login token", "login", login, "provider", dexClient.ProviderURI, "client", dexClient.ClientID)
 
 		var token string
 
@@ -365,23 +374,24 @@ func main() {
 			}
 			opts.kubermaticProjectID = projectID
 		}
+
+		log.Infow("Using project", "project", opts.kubermaticProjectID)
 	}
 	opts.secrets.kubermaticAuthenticator = opts.kubermaticAuthenticator
 
 	if opts.openshift {
 		opts.openshiftPullSecret = os.Getenv("OPENSHIFT_IMAGE_PULL_SECRET")
 		if opts.openshiftPullSecret == "" {
-			log.Fatal("Testing openshift requires the $OPENSHIFT_IMAGE_PULL_SECRET env var to be set")
+			log.Fatal("Testing OpenShift requires the $OPENSHIFT_IMAGE_PULL_SECRET env var to be set")
 		}
-	}
 
-	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
-		log.Fatal("-cluster-parallel-count must be 1 when testing an existing cluster")
+		log.Info("Testing OpenShift")
 	}
 
 	for _, s := range strings.Split(providers, ",") {
 		opts.providers.Insert(strings.ToLower(strings.TrimSpace(s)))
 	}
+	log.Infow("Enabled cloud providers", "providers", opts.providers.List())
 
 	if pubKeyPath != "" {
 		keyData, err := ioutil.ReadFile(pubKeyPath)
@@ -466,16 +476,6 @@ func main() {
 }
 
 func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
-	if opts.openshift {
-		// Openshift is only supported on CentOS
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] = true
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] = false
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemSLES] = true
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemRHEL] = true
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemFlatcar] = true
-	}
-
 	scenarioOptions := strings.Split(opts.scenarioOptions, ",")
 
 	var scenarios []testScenario
@@ -520,38 +520,31 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 		scenarios = append(scenarios, getAlibabaScenarios(opts.versions)...)
 	}
 
+	hasDistribution := func(distribution providerconfig.OperatingSystem) bool {
+		_, ok := opts.distributions[distribution]
+		return ok
+	}
+
 	var filteredScenarios []testScenario
 	for _, scenario := range scenarios {
 		osspec := scenario.OS()
-		if osspec.Ubuntu != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.Ubuntu != nil && hasDistribution(providerconfig.OperatingSystemUbuntu) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
-		if osspec.ContainerLinux != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.ContainerLinux != nil && hasDistribution(providerconfig.OperatingSystemCoreos) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
-		if osspec.Flatcar != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemFlatcar] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.Flatcar != nil && hasDistribution(providerconfig.OperatingSystemFlatcar) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
-		if osspec.Centos != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.Centos != nil && hasDistribution(providerconfig.OperatingSystemCentOS) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
-		if osspec.Sles != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemSLES] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.Sles != nil && hasDistribution(providerconfig.OperatingSystemSLES) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
-		if osspec.Rhel != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemRHEL] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.Rhel != nil && hasDistribution(providerconfig.OperatingSystemRHEL) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
 	}
 
@@ -628,24 +621,20 @@ func shuffle(vals []testScenario) []testScenario {
 }
 
 func createProject(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, log *zap.SugaredLogger) (string, error) {
-	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: "kubermatic-conformance-tester"}}
-	params.WithTimeout(15 * time.Second)
+	log.Info("Creating Kubermatic project...")
 
-	var projectID string
-	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
-		result, err := client.Project.CreateProject(params, bearerToken)
-		if err != nil {
-			log.Errorw("Failed to create project", "error", fmtSwaggerError(err))
-			return false, nil
-		}
-		projectID = result.Payload.ID
-		return true, nil
-	}); err != nil {
-		return "", fmt.Errorf("failed waiting for project to get successfully created: %v", err)
+	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: "kubermatic-conformance-tester"}}
+	utils.SetupParams(nil, params, 3*time.Second, 1*time.Minute, http.StatusConflict)
+
+	result, err := client.Project.CreateProject(params, bearerToken)
+	if err != nil {
+		return "", fmt.Errorf("failed to create project: %v", err)
 	}
+	projectID := result.Payload.ID
 
 	getProjectParams := &project.GetProjectParams{ProjectID: projectID}
-	getProjectParams.WithTimeout(15 * time.Second)
+	utils.SetupParams(nil, params, 3*time.Second, 1*time.Minute, http.StatusConflict)
+
 	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
 		response, err := client.Project.GetProject(getProjectParams, bearerToken)
 		if err != nil {
@@ -656,7 +645,6 @@ func createProject(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAu
 			log.Infow("Project not active yet", "project-status", response.Payload.Status)
 			return false, nil
 		}
-		log.Info("Successfully got project")
 		return true, nil
 	}); err != nil {
 		return "", fmt.Errorf("failed to wait for project to be ready: %v", err)
@@ -668,26 +656,20 @@ func createProject(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAu
 func createSSHKeys(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, opts *Opts, log *zap.SugaredLogger) error {
 	for i, key := range opts.publicKeys {
 		log.Infow("Creating UserSSHKey", "pubkey", string(key))
-		if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
-			body := project.CreateSSHKeyParams{
-				ProjectID: opts.kubermaticProjectID,
-				Key: &models.SSHKey{
-					Name: fmt.Sprintf("SSH Key No. %d", i+1),
-					Spec: &models.SSHKeySpec{
-						PublicKey: string(key),
-					},
+
+		body := &project.CreateSSHKeyParams{
+			ProjectID: opts.kubermaticProjectID,
+			Key: &models.SSHKey{
+				Name: fmt.Sprintf("SSH Key No. %d", i+1),
+				Spec: &models.SSHKeySpec{
+					PublicKey: string(key),
 				},
-			}
-			body.WithTimeout(15 * time.Second)
+			},
+		}
+		utils.SetupParams(nil, body, 3*time.Second, 1*time.Minute, http.StatusConflict)
 
-			if _, err := client.Project.CreateSSHKey(&body, bearerToken); err != nil {
-				log.Errorw("Failed to create SSH key", "error", fmtSwaggerError(err))
-				return false, nil
-			}
-
-			return true, nil
-		}); err != nil {
-			return fmt.Errorf("failed creating SSH key: %v", err)
+		if _, err := client.Project.CreateSSHKey(body, bearerToken); err != nil {
+			return fmt.Errorf("failed to create SSH key: %v", err)
 		}
 	}
 
@@ -712,4 +694,54 @@ func getLatestMinorVersions(versions []*semver.Version) []string {
 	sort.Strings(list)
 
 	return list
+}
+
+func getEffectiveDistributions(distributions string, excludeDistributions string) (map[providerconfig.OperatingSystem]struct{}, error) {
+	all := providerconfig.AllOperatingSystems
+
+	if distributions == "" && excludeDistributions == "" {
+		return nil, fmt.Errorf("either -distributions or -exclude-distributions must be given (each is a comma-separated list of %v)", all)
+	}
+
+	if distributions != "" && excludeDistributions != "" {
+		return nil, errors.New("-distributions and -exclude-distributions must not be given at the same time")
+	}
+
+	chosen := map[providerconfig.OperatingSystem]struct{}{}
+
+	if distributions != "" {
+		for _, value := range strings.Split(distributions, ",") {
+			exists := false
+			for _, os := range all {
+				if string(os) == value {
+					exists = true
+					break
+				}
+			}
+
+			if !exists {
+				return nil, fmt.Errorf("unknown distribution %q specified", value)
+			}
+
+			chosen[providerconfig.OperatingSystem(value)] = struct{}{}
+		}
+	} else {
+		excluded := strings.Split(excludeDistributions, ",")
+
+		for _, os := range all {
+			exclude := false
+			for _, ex := range excluded {
+				if string(os) == ex {
+					exclude = true
+					break
+				}
+			}
+
+			if !exclude {
+				chosen[os] = struct{}{}
+			}
+		}
+	}
+
+	return chosen, nil
 }

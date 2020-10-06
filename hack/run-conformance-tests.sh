@@ -133,7 +133,6 @@ if [ -n "${SEED_NAME:-}" ]; then
   extraArgs="$extraArgs -kubermatic-seed-cluster=$SEED_NAME"
 fi
 
-exclDistributions="${EXCLUDE_DISTRIBUTIONS:-ubuntu,centos,coreos,sles,rhel}"
 endpoint="${KUBERMATIC_API_ENDPOINT:-https://dev.kubermatic.io}"
 oidcToken="${KUBEMATIC_OIDC_TOKEN:-}"
 
@@ -177,5 +176,5 @@ docker run \
       -kubermatic-oidc-token="$oidcToken" \
       -kubermatic-delete-cluster=true \
       -providers="$provider" \
-      -exclude-distributions="$exclDistributions" \
+      -distributions="flatcar" \
       $@
