@@ -1,5 +1,3 @@
-// +build integration
-
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 
@@ -23,11 +21,9 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestEnsureEtcdLauncherFeatureFlag(t *testing.T) {
@@ -63,52 +59,6 @@ func TestEnsureEtcdLauncherFeatureFlag(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
-			env := &envtest.Environment{
-				// Uncomment this to get the logs from etcd+apiserver
-				// AttachControlPlaneOutput: true,
-				KubeAPIServerFlags: []string{
-					"--etcd-servers={{ if .EtcdURL }}{{ .EtcdURL.String }}{{ end }}",
-					"--cert-dir={{ .CertDir }}",
-					"--insecure-port={{ if .URL }}{{ .URL.Port }}{{ end }}",
-					"--insecure-bind-address={{ if .URL }}{{ .URL.Hostname }}{{ end }}",
-					"--secure-port={{ if .SecurePort }}{{ .SecurePort }}{{ end }}",
-					"--admission-control=AlwaysAdmit",
-					// Upstream does not have `--allow-privileged`,
-					"--allow-privileged",
-				},
-			}
-			cfg, err := env.Start()
-			if err != nil {
-				t.Fatalf("failed to start testenv: %v", err)
-			}
-			defer func() {
-				if err := env.Stop(); err != nil {
-					t.Fatalf("failed to stop testenv: %v", err)
-				}
-			}()
-
-			mgr, err := manager.New(cfg, manager.Options{})
-			if err != nil {
-				t.Fatalf("failed to construct manager: %v", err)
-			}
-
-			crdInstallOpts := envtest.CRDInstallOptions{
-				Paths:              []string{"../../../../charts/kubermatic/crd"},
-				ErrorIfPathMissing: true,
-			}
-			if _, err := envtest.InstallCRDs(cfg, crdInstallOpts); err != nil {
-				t.Fatalf("failed install crds: %v", err)
-			}
-
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
-			go func() {
-				if err := mgr.Start(ctx.Done()); err != nil {
-					t.Errorf("failed to start manager: %v", err)
-				}
-			}()
-
 			cluster := &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "test-cluster",
@@ -117,17 +67,13 @@ func TestEnsureEtcdLauncherFeatureFlag(t *testing.T) {
 					Features: test.clusterFeatures,
 				},
 			}
-			if err := mgr.GetClient().Create(ctx, cluster); err != nil {
-				t.Fatalf("failed to create testcluster: %v", err)
-			}
-
 			r := &Reconciler{
-				Client: mgr.GetClient(),
+				Client: ctrlruntimefakeclient.NewFakeClient(cluster),
 				features: Features{
 					EtcdLauncher: test.seedEtcdLauncher,
 				},
 			}
-			if err := r.ensureEtcdLauncherFeatureFlag(ctx, cluster); err != nil {
+			if err := r.ensureEtcdLauncherFeatureFlag(context.Background(), cluster); err != nil {
 				t.Fatal(err)
 			}
 			if cluster.Spec.Features != nil && cluster.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] != test.expectedEtcdLauncher {
