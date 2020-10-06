@@ -123,9 +123,8 @@ func (r *Reconciler) ensureClusterNetworkDefaults(ctx context.Context, cluster *
 func (r *Reconciler) ensureEtcdLauncherFeatureFlag(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		if r.features.EtcdLauncher { // enabled at the controller level
-			// we only modify the cluster feature flag if it's not explicitly set, regardless if the value
-			_, set := c.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]
-			if !set {
+			// we only modify the cluster feature flag if it's not explicitly set, regardless of the value
+			if _, set := c.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher]; !set {
 				if c.Spec.Features == nil {
 					c.Spec.Features = make(map[string]bool)
 				}
