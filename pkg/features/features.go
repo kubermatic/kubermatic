@@ -43,7 +43,7 @@ const (
 	EtcdDataCorruptionChecks = "EtcdDataCorruptionChecks"
 
 	// EtcdLauncher if enabled will apply the cluster level etcd-launcher feature flag on all clusters,
-	// unless it's explicitly disabled on the cluster level
+	// unless it's explicitly disabled at the cluster level
 	EtcdLauncher = "EtcdLauncher"
 )
 
