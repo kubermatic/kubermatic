@@ -446,12 +446,14 @@ func (r *testRunner) executeTests(
 		return fmt.Errorf("failed to setup nodes: %v", err)
 	}
 
-	defer logEventsForAllMachines(context.Background(), log, userClusterClient)
-	defer logUserClusterPodEventsAndLogs(
-		log,
-		r.clusterClientProvider,
-		cluster.DeepCopy(),
-	)
+	if r.printContainerLogs {
+		defer logEventsForAllMachines(context.Background(), log, userClusterClient)
+		defer logUserClusterPodEventsAndLogs(
+			log,
+			r.clusterClientProvider,
+			cluster.DeepCopy(),
+		)
+	}
 
 	var overallTimeout = 20 * time.Minute
 	var timeoutLeft time.Duration
@@ -1318,7 +1320,7 @@ func executeGinkgoRun(parentLog *zap.SugaredLogger, run *ginkgoRun, client ctrlr
 
 	combinedReport.Time = time.Since(started).Seconds()
 
-	log.Debugf("Ginkgo run '%s' took %s", run.name, time.Since(started))
+	log.Infof("Ginkgo run '%s' took %s", run.name, time.Since(started))
 	return &ginkgoResult{
 		logfile:  file.Name(),
 		report:   combinedReport,
