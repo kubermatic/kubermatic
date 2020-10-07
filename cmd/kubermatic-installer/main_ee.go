@@ -29,6 +29,7 @@ func commands(logger *logrus.Logger) []cli.Command {
 	return []cli.Command{
 		VersionCommand(logger),
 		DeployCommand(logger),
+		ConvertKubeconfigCommand(logger),
 		eeinstaller.ConvertDatacentersCommand(logger),
 		eeinstaller.ConvertHelmValuesCommand(logger),
 	}
