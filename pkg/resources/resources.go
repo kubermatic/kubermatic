@@ -126,7 +126,7 @@ const (
 	OpenVPNServerServiceName = "openvpn-server"
 	//MachineControllerWebhookServiceName is the name of the machine-controller webhook service
 	MachineControllerWebhookServiceName = "machine-controller-webhook"
-	//GatekeeperServiceName is the name of the gatekeeper webhook service
+	//GatekeeperWebhookServiceName is the name of the gatekeeper webhook service
 	GatekeeperWebhookServiceName = "gatekeeper-webhook-service"
 
 	// MetricsServerAPIServiceName is the name for the metrics-server APIService
@@ -362,7 +362,7 @@ const (
 	ClusterCRDName = "clusters.cluster.k8s.io"
 	// GatekeeperConfigCRDName defines the CRD name for gatekeeper config objects
 	GatekeeperConfigCRDName = "configs.config.gatekeeper.sh"
-	// GatekeeperConfigCRDName defines the CRD name for gatekeeper constraint template objects
+	// GatekeeperConstraintTemplateCRDName defines the CRD name for gatekeeper constraint template objects
 	GatekeeperConstraintTemplateCRDName = "constrainttemplates.templates.gatekeeper.sh"
 
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook

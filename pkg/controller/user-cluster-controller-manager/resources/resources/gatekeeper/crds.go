@@ -17,10 +17,10 @@ limitations under the License.
 package gatekeeper
 
 import (
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 )
 
 const (
@@ -37,7 +37,6 @@ func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
 			crd.Annotations = map[string]string{"controller-gen.kubebuilder.io/version": "v0.2.4"}
 			crd.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
 			crd.Spec.Group = configAPIGroup
-			crd.Spec.Version = configAPIVersion
 			crd.Spec.Versions = []apiextensionsv1beta1.CustomResourceDefinitionVersion{
 				{Name: configAPIVersion, Served: true, Storage: true},
 			}
@@ -59,7 +58,6 @@ func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCre
 			crd.Annotations = map[string]string{"controller-gen.kubebuilder.io/version": "v0.2.4"}
 			crd.Labels = map[string]string{"gatekeeper.sh/system": "yes", "controller-tools.k8s.io": "1.0"}
 			crd.Spec.Group = constraintTemplateAPIGroup
-			crd.Spec.Version = constraintTemplateAPIVersion
 			crd.Spec.Versions = []apiextensionsv1beta1.CustomResourceDefinitionVersion{
 				{Name: constraintTemplateAPIVersion, Served: true, Storage: true},
 				{Name: "v1alpha1", Served: true, Storage: false},

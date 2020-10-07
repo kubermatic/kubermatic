@@ -17,11 +17,11 @@ limitations under the License.
 package gatekeeper
 
 import (
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // ServiceCreator returns the function to reconcile the gatekeeper service
@@ -32,6 +32,7 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 			labels := resources.BaseAppLabels(controllerName, map[string]string{"gatekeeper.sh/system": "yes"})
 			se.Labels = labels
 
+			se.Spec.Type = corev1.ServiceTypeClusterIP
 			se.Spec.Selector = gatekeeperControllerLabels
 			se.Spec.Ports = []corev1.ServicePort{
 				{
