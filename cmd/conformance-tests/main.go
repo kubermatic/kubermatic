@@ -93,6 +93,7 @@ type Opts struct {
 	openshift                    bool
 	openshiftPullSecret          string
 	printGinkoLogs               bool
+	printContainerLogs           bool
 	onlyTestCreation             bool
 	pspEnabled                   bool
 	createOIDCToken              bool
@@ -221,6 +222,7 @@ func main() {
 	flag.IntVar(&defaultTimeoutMinutes, "default-timeout-minutes", 10, "The default timeout in minutes")
 	flag.BoolVar(&opts.openshift, "openshift", false, "Whether to create an openshift cluster")
 	flag.BoolVar(&opts.printGinkoLogs, "print-ginkgo-logs", false, "Whether to print ginkgo logs when ginkgo encountered failures")
+	flag.BoolVar(&opts.printContainerLogs, "print-container-logs", false, "Whether to print the logs of all controlplane containers after the test (even in case of success)")
 	flag.BoolVar(&opts.onlyTestCreation, "only-test-creation", false, "Only test if nodes become ready. Does not perform any extended checks like conformance tests")
 	flag.BoolVar(&opts.pspEnabled, "enable-psp", false, "When set, enables the Pod Security Policy plugin in the user cluster")
 	flag.StringVar(&opts.dexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
@@ -320,12 +322,6 @@ func main() {
 	defer updateMetrics(log)
 
 	if !opts.createOIDCToken {
-		if opts.kubermaticProjectID == "" {
-			log.Fatal("Kubermatic project ID must be set via the -kubermatic-project-id flag")
-		}
-
-		log.Infow("Using pre-existing project", "project", opts.kubermaticProjectID)
-
 		if opts.kubermaticOIDCToken == "" {
 			log.Fatal("An existing OIDC token must be set via the -kubermatic-oidc-token flag")
 		}
@@ -366,18 +362,19 @@ func main() {
 		log.Info("Successfully retrieved master token")
 
 		opts.kubermaticAuthenticator = httptransport.BearerToken(token)
-
-		if opts.kubermaticProjectID == "" {
-			projectID, err := createProject(opts.kubermaticClient, opts.kubermaticAuthenticator, log)
-			if err != nil {
-				log.Fatalw("Failed to create project", zap.Error(err))
-			}
-			opts.kubermaticProjectID = projectID
-		}
-
-		log.Infow("Using project", "project", opts.kubermaticProjectID)
 	}
 	opts.secrets.kubermaticAuthenticator = opts.kubermaticAuthenticator
+
+	if opts.kubermaticProjectID == "" {
+		projectID, err := createProject(opts.kubermaticClient, opts.kubermaticAuthenticator, log)
+		if err != nil {
+			log.Fatalw("Failed to create project", zap.Error(err))
+		}
+
+		opts.kubermaticProjectID = projectID
+	}
+
+	log.Infow("Using project", "project", opts.kubermaticProjectID)
 
 	if opts.openshift {
 		opts.openshiftPullSecret = os.Getenv("OPENSHIFT_IMAGE_PULL_SECRET")
@@ -632,17 +629,21 @@ func createProject(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAu
 	}
 	projectID := result.Payload.ID
 
-	getProjectParams := &project.GetProjectParams{ProjectID: projectID}
-	utils.SetupParams(nil, params, 3*time.Second, 1*time.Minute, http.StatusConflict)
+	// we have to wait a moment for the RBAC stuff to be reconciled, and to try to avoid
+	// logging a misleading error in the following loop, we just wait a few seconds
+	time.Sleep(3 * time.Second)
 
-	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+	getProjectParams := &project.GetProjectParams{ProjectID: projectID}
+	utils.SetupParams(nil, getProjectParams, 2*time.Second, 1*time.Minute, http.StatusConflict)
+
+	if err := wait.PollImmediate(2*time.Second, 1*time.Minute, func() (bool, error) {
 		response, err := client.Project.GetProject(getProjectParams, bearerToken)
 		if err != nil {
-			log.Errorw("Failed to get project", "error", fmtSwaggerError(err))
+			log.Errorw("Failed to get project", zap.Error(err))
 			return false, nil
 		}
 		if response.Payload.Status != kubermaticv1.ProjectActive {
-			log.Infow("Project not active yet", "project-status", response.Payload.Status)
+			log.Warnw("Project not active yet", "project-status", response.Payload.Status)
 			return false, nil
 		}
 		return true, nil

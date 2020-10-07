@@ -106,6 +106,7 @@ func newRunner(scenarios []testScenario, opts *Opts, log *zap.SugaredLogger) *te
 		openshift:                    opts.openshift,
 		openshiftPullSecret:          opts.openshiftPullSecret,
 		printGinkoLogs:               opts.printGinkoLogs,
+		printContainerLogs:           opts.printContainerLogs,
 		onlyTestCreation:             opts.onlyTestCreation,
 		pspEnabled:                   opts.pspEnabled,
 		kubermaticProjectID:          opts.kubermaticProjectID,
@@ -128,6 +129,7 @@ type testRunner struct {
 	openshift           bool
 	openshiftPullSecret string
 	printGinkoLogs      bool
+	printContainerLogs  bool
 	onlyTestCreation    bool
 	pspEnabled          bool
 
@@ -365,9 +367,11 @@ func (r *testRunner) executeTests(
 	// We must store the name here because the cluster object may be nil on error
 	clusterName := cluster.Name
 
-	// Print all controlplane logs to both make debugging easier and show issues
-	// that didn't result in test failures.
-	defer r.printAllControlPlaneLogs(log, clusterName)
+	if r.printContainerLogs {
+		// Print all controlplane logs to both make debugging easier and show issues
+		// that didn't result in test failures.
+		defer r.printAllControlPlaneLogs(log, clusterName)
+	}
 
 	var err error
 
@@ -449,7 +453,7 @@ func (r *testRunner) executeTests(
 		cluster.DeepCopy(),
 	)
 
-	var overallTimeout = 10 * time.Minute
+	var overallTimeout = 20 * time.Minute
 	var timeoutLeft time.Duration
 	if cluster.IsOpenshift() {
 		// Openshift installs a lot more during node provisioning, hence this may take longer
@@ -1151,7 +1155,7 @@ func (r *testRunner) getGinkgoRuns(
 			name:          "parallel",
 			ginkgoFocus:   `\[Conformance\]`,
 			ginkgoSkip:    ginkgoSkipParallel,
-			parallelTests: int(nodeNumberTotal) * 10,
+			parallelTests: int(nodeNumberTotal) * 3,
 			timeout:       30 * time.Minute,
 		},
 		{
