@@ -54,6 +54,7 @@ const (
 	DefaultVPAUpdaterDockerRepository             = "gcr.io/google_containers/vpa-updater"
 	DefaultVPAAdmissionControllerDockerRepository = "gcr.io/google_containers/vpa-admission-controller"
 	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-alpine"
+	DefaultMaximumParallelReconciles              = 10
 
 	// DefaultNoProxy is a set of domains/networks that should never be
 	// routed through a proxy. All user-supplied values are appended to
@@ -328,6 +329,11 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	if copy.Spec.ExposeStrategy == "" {
 		copy.Spec.ExposeStrategy = DefaultExposeStrategy
 		logger.Debugw("Defaulting field", "field", "exposeStrategy", "value", copy.Spec.ExposeStrategy)
+	}
+
+	if copy.Spec.SeedController.MaximumParallelReconciles == 0 {
+		copy.Spec.SeedController.MaximumParallelReconciles = DefaultMaximumParallelReconciles
+		logger.Debugw("Defaulting field", "field", "seedController.maximumParallelReconciles", "value", copy.Spec.SeedController.MaximumParallelReconciles)
 	}
 
 	if copy.Spec.SeedController.BackupStoreContainer == "" {
