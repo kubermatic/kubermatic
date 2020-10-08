@@ -523,6 +523,34 @@ func GetMetricsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGet
 	return ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
 }
 
+func ListNamespaceEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	namespaceList := &corev1.NamespaceList{}
+	if err := client.List(ctx, namespaceList); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	var apiNamespaces []apiv1.Namespace
+
+	for _, namespace := range namespaceList.Items {
+		apiNamespace := apiv1.Namespace{Name: namespace.Name}
+		apiNamespaces = append(apiNamespaces, apiNamespace)
+	}
+
+	return apiNamespaces, nil
+}
+
 func UpdateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, clusterSSHKey *kubermaticv1.UserSSHKey, projectID string) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
