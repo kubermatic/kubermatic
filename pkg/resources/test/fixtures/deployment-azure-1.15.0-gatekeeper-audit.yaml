@@ -1,0 +1,144 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  annotations:
+    container.seccomp.security.alpha.kubernetes.io/manager: runtime/default
+  creationTimestamp: null
+  labels:
+    app: gatekeeper-audit
+    control-plane: audit
+    gatekeeper.sh/operation: audit
+    gatekeeper.sh/system: "yes"
+  name: gatekeeper-audit
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gatekeeper-audit
+      control-plane: audit
+      gatekeeper.sh/operation: audit
+      gatekeeper.sh/system: "yes"
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        admin-kubeconfig-secret-revision: "123456"
+        app: gatekeeper-audit
+        cluster: de-test-01
+        control-plane: audit
+        gatekeeper.sh/operation: audit
+        gatekeeper.sh/system: "yes"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: gatekeeper-audit
+                  cluster: cluster-de-test-01
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: gatekeeper-audit
+              topologyKey: kubernetes.io/hostname
+            weight: 10
+      containers:
+      - args:
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local./healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
+        - -command
+        - '{"command":"/manager","args":["--logtostderr","--operation=audit","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig"]}'
+        command:
+        - /http-prober-bin/http-prober
+        env:
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        image: quay.io/open-policy-agent/gatekeeper:v3.1.0-beta.9
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /healthz
+            port: 9090
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        name: gatekeeper-audit
+        ports:
+        - containerPort: 8888
+          protocol: TCP
+        - containerPort: 9090
+          protocol: TCP
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /readyz
+            port: 9090
+            scheme: HTTP
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        resources:
+          limits:
+            cpu: "1"
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - all
+          runAsGroup: 999
+          runAsNonRoot: true
+          runAsUser: 1000
+        volumeMounts:
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: admin-kubeconfig
+          readOnly: true
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      initContainers:
+      - command:
+        - /bin/cp
+        - /usr/local/bin/http-prober
+        - /http-prober-bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.3.1
+        name: copy-http-prober
+        resources: {}
+        volumeMounts:
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      nodeSelector:
+        kubernetes.io/os: linux
+      serviceAccountName: gatekeeper-admin
+      terminationGracePeriodSeconds: 60
+      volumes:
+      - name: admin-kubeconfig
+        secret:
+          secretName: admin-kubeconfig
+      - emptyDir: {}
+        name: http-prober-bin
+status: {}

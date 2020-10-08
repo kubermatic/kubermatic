@@ -99,6 +99,10 @@ const (
 	MetricsScraperDeploymentName = "dashboard-metrics-scraper"
 	// MetricsScraperServiceName is the name of dashboard-metrics-scraper service
 	MetricsScraperServiceName = "dashboard-metrics-scraper"
+	// GatekeeperControllerDeploymentName is the name of the gatekeeper controller deployment
+	GatekeeperControllerDeploymentName = "gatekeeper-controller-manager"
+	// GatekeeperAuditDeploymentName is the name of the gatekeeper audit deployment
+	GatekeeperAuditDeploymentName = "gatekeeper-audit"
 
 	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
@@ -122,6 +126,8 @@ const (
 	OpenVPNServerServiceName = "openvpn-server"
 	//MachineControllerWebhookServiceName is the name of the machine-controller webhook service
 	MachineControllerWebhookServiceName = "machine-controller-webhook"
+	//GatekeeperWebhookServiceName is the name of the gatekeeper webhook service
+	GatekeeperWebhookServiceName = "gatekeeper-webhook-service"
 
 	// MetricsServerAPIServiceName is the name for the metrics-server APIService
 	MetricsServerAPIServiceName = "v1beta1.metrics.k8s.io"
@@ -158,6 +164,8 @@ const (
 	ClusterAutoscalerKubeconfigSecretName = "cluster-autoscaler-kubeconfig"
 	// KubernetesDashboardKubeconfigSecretName is the name of the kubeconfig secret user for Kubernetes Dashboard
 	KubernetesDashboardKubeconfigSecretName = "kubernetes-dashboard-kubeconfig"
+	// GatekeeperWebhookServerCertSecretName is the name of the gatekeeper webhook cert secret name
+	GatekeeperWebhookServerCertSecretName = "gatekeeper-webhook-server-cert"
 
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
@@ -352,10 +360,18 @@ const (
 	MachineDeploymentCRDName = "machinedeployments.cluster.k8s.io"
 	// ClusterCRDName defines the CRD name for cluster objects
 	ClusterCRDName = "clusters.cluster.k8s.io"
+	// GatekeeperConfigCRDName defines the CRD name for gatekeeper config objects
+	GatekeeperConfigCRDName = "configs.config.gatekeeper.sh"
+	// GatekeeperConstraintTemplateCRDName defines the CRD name for gatekeeper constraint template objects
+	GatekeeperConstraintTemplateCRDName = "constrainttemplates.templates.gatekeeper.sh"
 
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration
 	MachineControllerMutatingWebhookConfigurationName = "machine-controller.kubermatic.io"
+
+	// GatekeeperValidatingWebhookConfigurationName is the name of the gatekeeper validating webhook
+	// configuration
+	GatekeeperValidatingWebhookConfigurationName = "gatekeeper-validating-webhook-configuration"
 
 	// InternalUserClusterAdminKubeconfigSecretName is the name of the secret containing an admin kubeconfig that can only be used from
 	// within the seed cluster

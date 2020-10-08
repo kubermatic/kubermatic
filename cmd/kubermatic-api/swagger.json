@@ -10552,6 +10552,9 @@
         "oidc": {
           "$ref": "#/definitions/OIDCSettings"
         },
+        "opaIntegration": {
+          "$ref": "#/definitions/OPAIntegrationSettings"
+        },
         "openshift": {
           "$ref": "#/definitions/Openshift"
         },
@@ -12661,6 +12664,16 @@
         "usernameClaim": {
           "type": "string",
           "x-go-name": "UsernameClaim"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "OPAIntegrationSettings": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"

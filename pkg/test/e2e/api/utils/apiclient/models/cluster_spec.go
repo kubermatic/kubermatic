@@ -39,6 +39,9 @@ type ClusterSpec struct {
 	// oidc
 	Oidc *OIDCSettings `json:"oidc,omitempty"`
 
+	// opa integration
+	OpaIntegration *OPAIntegrationSettings `json:"opaIntegration,omitempty"`
+
 	// openshift
 	Openshift *Openshift `json:"openshift,omitempty"`
 
@@ -66,6 +69,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateOidc(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOpaIntegration(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -154,6 +161,24 @@ func (m *ClusterSpec) validateOidc(formats strfmt.Registry) error {
 		if err := m.Oidc.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("oidc")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) validateOpaIntegration(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.OpaIntegration) { // not required
+		return nil
+	}
+
+	if m.OpaIntegration != nil {
+		if err := m.OpaIntegration.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("opaIntegration")
 			}
 			return err
 		}

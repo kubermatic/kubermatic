@@ -82,6 +82,7 @@ type controllerRunOptions struct {
 	updateWindowStart             string
 	updateWindowLength            string
 	dnsClusterIP                  string
+	opaIntegration                bool
 }
 
 func main() {
@@ -110,6 +111,7 @@ func main() {
 	flag.StringVar(&runOp.ownerEmail, "owner-email", "", "An email address of the user who created the cluster. Used as default subject for the admin cluster role binding")
 	flag.StringVar(&runOp.updateWindowStart, "update-window-start", "", "The start time of the update window, e.g. 02:00")
 	flag.StringVar(&runOp.updateWindowLength, "update-window-length", "", "The length of the update window, e.g. 1h")
+	flag.BoolVar(&runOp.opaIntegration, "opa-integration", false, "Enable OPA integration in user cluster")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -226,6 +228,7 @@ func main() {
 		cloudCredentialSecretTemplate,
 		runOp.openshiftConsoleCallbackURI,
 		runOp.dnsClusterIP,
+		runOp.opaIntegration,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
