@@ -38,6 +38,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
@@ -571,6 +572,11 @@ func Bool(v bool) *bool {
 // String returns a pointer to the string value passed in.
 func String(v string) *string {
 	return &v
+}
+
+// IntOrString returns a pointer to the IntOrString value passed in.
+func IntOrString(i intstr.IntOrString) *intstr.IntOrString {
+	return &i
 }
 
 // UserClusterDNSResolverIP returns the 9th usable IP address

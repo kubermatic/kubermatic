@@ -82,11 +82,19 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Apiserver.Replicas
 			}
 
+			if *dep.Spec.Replicas > 1 {
+				// Avoid creating additional Apiserver PODs when rolling up a new
+				// version.
+				dep.Spec.Strategy.RollingUpdate = &appsv1.RollingUpdateDeployment{
+					MaxUnavailable: resources.IntOrString(intstr.FromInt(1)),
+					MaxSurge:       resources.IntOrString(intstr.FromInt(0)),
+				}
+			}
+
 			dep.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: resources.BaseAppLabels(name, nil),
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
-
 			volumes := getVolumes()
 			volumeMounts := getVolumeMounts()
 
