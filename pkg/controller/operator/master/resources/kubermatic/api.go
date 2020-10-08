@@ -121,6 +121,25 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				args = append(args, "-v=2")
 			}
 
+			if cfg.Spec.Auth.CABundle != "" {
+				args = append(args, "-oidc-ca-file=/opt/dex-ca/caBundle.pem")
+
+				volumes = append(volumes, corev1.Volume{
+					Name: "dex-ca",
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: common.DexCASecretName,
+						},
+					},
+				})
+
+				volumeMounts = append(volumeMounts, corev1.VolumeMount{
+					Name:      "dex-ca",
+					MountPath: "/opt/dex-ca",
+					ReadOnly:  true,
+				})
+			}
+
 			if cfg.Spec.FeatureGates.Has(features.OIDCKubeCfgEndpoint) {
 				args = append(
 					args,
@@ -129,25 +148,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 					fmt.Sprintf("-oidc-issuer-client-secret=%s", cfg.Spec.Auth.IssuerClientSecret),
 					fmt.Sprintf("-oidc-issuer-cookie-hash-key=%s", cfg.Spec.Auth.IssuerCookieKey),
 				)
-
-				if cfg.Spec.Auth.CABundle != "" {
-					args = append(args, "-oidc-ca-file=/opt/dex-ca/caBundle.pem")
-
-					volumes = append(volumes, corev1.Volume{
-						Name: "dex-ca",
-						VolumeSource: corev1.VolumeSource{
-							Secret: &corev1.SecretVolumeSource{
-								SecretName: common.DexCASecretName,
-							},
-						},
-					})
-
-					volumeMounts = append(volumeMounts, corev1.VolumeMount{
-						Name:      "dex-ca",
-						MountPath: "/opt/dex-ca",
-						ReadOnly:  true,
-					})
-				}
 			}
 
 			if workerName != "" {
