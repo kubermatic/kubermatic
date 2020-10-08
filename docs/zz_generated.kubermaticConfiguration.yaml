@@ -189,6 +189,9 @@ spec:
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic seed-controller-manager image.
     dockerRepository: quay.io/kubermatic/kubermatic
+    # MaximumParallelReconciles limits the number of cluster reconciliations
+    # that are active at any given time.
+    maximumParallelReconciles: 10
     # PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
     # data. This port is never exposed from the container and only available via port-forwardings.
     pprofEndpoint: :6600

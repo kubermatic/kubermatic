@@ -89,7 +89,7 @@ type kubermaticValues struct {
 	APIServerDefaultReplicas             *string `yaml:"apiserverDefaultReplicas"`
 	ControllerManagerDefaultReplicas     *string `yaml:"controllerManagerDefaultReplicas"`
 	SchedulerDefaultReplicas             *string `yaml:"schedulerDefaultReplicas"`
-	MaxParallelReconcile                 string  `yaml:"maxParallelReconcile"`
+	MaxParallelReconcile                 *string `yaml:"maxParallelReconcile"`
 	APIServerEndpointReconcilingDisabled bool    `yaml:"apiserverEndpointReconcilingDisabled"`
 	DynamicDatacenters                   bool    `yaml:"dynamicDatacenters"`
 	DynamicPresets                       bool    `yaml:"dynamicPresets"`
@@ -429,13 +429,22 @@ func convertSeedController(values *kubermaticValues) (*operatorv1alpha1.Kubermat
 		cleanupContainer = ""
 	}
 
+	maxParallelReconciles := 0
+	if values.MaxParallelReconcile != nil && *values.MaxParallelReconcile != "" {
+		maxParallelReconciles, err = numericValue(*values.MaxParallelReconcile)
+		if err != nil {
+			return nil, fmt.Errorf("invalid maxParallelReconcile: %v", err)
+		}
+	}
+
 	return &operatorv1alpha1.KubermaticSeedControllerConfiguration{
-		DockerRepository:       strIfChanged(values.Controller.Image.Repository, resources.DefaultKubermaticImage),
-		BackupStoreContainer:   storeContainer,
-		BackupCleanupContainer: cleanupContainer,
-		PProfEndpoint:          getPProfEndpoint(values.Controller.PProfEndpoint),
-		Replicas:               replicas,
-		Resources:              convertResources(values.Controller.Resources, common.DefaultSeedControllerMgrResources),
+		MaximumParallelReconciles: maxParallelReconciles,
+		DockerRepository:          strIfChanged(values.Controller.Image.Repository, resources.DefaultKubermaticImage),
+		BackupStoreContainer:      storeContainer,
+		BackupCleanupContainer:    cleanupContainer,
+		PProfEndpoint:             getPProfEndpoint(values.Controller.PProfEndpoint),
+		Replicas:                  replicas,
+		Resources:                 convertResources(values.Controller.Resources, common.DefaultSeedControllerMgrResources),
 	}, nil
 }
 
