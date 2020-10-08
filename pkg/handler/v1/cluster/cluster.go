@@ -632,31 +632,7 @@ func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, er
 func ListNamespaceEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		namespaceList := &corev1.NamespaceList{}
-		if err := client.List(ctx, namespaceList); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		var apiNamespaces []apiv1.Namespace
-
-		for _, namespace := range namespaceList.Items {
-			apiNamespace := apiv1.Namespace{Name: namespace.Name}
-			apiNamespaces = append(apiNamespaces, apiNamespace)
-		}
-
-		return apiNamespaces, nil
+		return handlercommon.ListNamespaceEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider)
 	}
 }
 

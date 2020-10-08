@@ -133,6 +133,8 @@ type ClientService interface {
 
 	ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceOK, error)
 
+	ListNamespaceV2(params *ListNamespaceV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceV2OK, error)
+
 	ListNodeDeploymentNodes(params *ListNodeDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentNodesOK, error)
 
 	ListNodeDeploymentNodesEvents(params *ListNodeDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentNodesEventsOK, error)
@@ -2022,6 +2024,40 @@ func (a *Client) ListNamespace(params *ListNamespaceParams, authInfo runtime.Cli
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListNamespaceDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListNamespaceV2 Lists all namespaces in the cluster
+*/
+func (a *Client) ListNamespaceV2(params *ListNamespaceV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListNamespaceV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listNamespaceV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/namespaces",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListNamespaceV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListNamespaceV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNamespaceV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
