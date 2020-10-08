@@ -127,6 +127,11 @@ type ClusterSpec struct {
 	AdmissionPlugins                    []string `json:"admissionPlugins,omitempty"`
 
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
+
+	// OPAIntegration is a preview feature that enables OPA integration with Kubermatic for the cluster.
+	// Enabling it causes gatekeeper and its resources to be deployed on the user cluster.
+	// By default it is disabled.
+	OPAIntegration *OPAIntegrationSettings `json:"opaIntegration,omitempty"`
 }
 
 const (
@@ -292,6 +297,10 @@ type OIDCSettings struct {
 }
 
 type AuditLoggingSettings struct {
+	Enabled bool `json:"enabled,omitempty"`
+}
+
+type OPAIntegrationSettings struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 

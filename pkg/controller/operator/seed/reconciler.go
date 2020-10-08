@@ -25,6 +25,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common/vpa"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/gatekeeper"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -356,7 +357,9 @@ func (r *Reconciler) reconcileRoleBindings(cfg *operatorv1alpha1.KubermaticConfi
 func (r *Reconciler) reconcileClusterRoles(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling ClusterRoles")
 
-	creators := []reconciling.NamedClusterRoleCreatorGetter{}
+	creators := []reconciling.NamedClusterRoleCreatorGetter{
+		gatekeeper.ClusterRoleCreator(),
+	}
 
 	if !seed.Spec.NodeportProxy.Disable {
 		creators = append(creators, nodeportproxy.ClusterRoleCreator(cfg))
