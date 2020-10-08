@@ -134,6 +134,9 @@ type KubermaticSeedControllerConfiguration struct {
 	BackupStoreContainer string `json:"backupStoreContainer,omitempty"`
 	// BackupCleanupContainer is the container used for removing expired backups from the storage location.
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
+	// MaximumParallelReconciles limits the number of cluster reconciliations
+	// that are active at any given time.
+	MaximumParallelReconciles int `json:"maximumParallelReconciles,omitempty"`
 	// PProfEndpoint controls the port the seed-controller-manager should listen on to provide pprof
 	// data. This port is never exposed from the container and only available via port-forwardings.
 	PProfEndpoint *string `json:"pprofEndpoint,omitempty"`
