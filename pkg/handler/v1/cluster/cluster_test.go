@@ -35,13 +35,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/diff"
-	clienttesting "k8s.io/client-go/testing"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -649,7 +646,7 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			res := httptest.NewRecorder()
 			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -661,31 +658,6 @@ func TestAssignSSHKeyToClusterEndpoint(t *testing.T) {
 			}
 
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
-
-			kubermaticClient := clientsSets.FakeKubermaticClient
-			validatedActions := 0
-			if tc.HTTPStatus == http.StatusCreated {
-				for _, action := range kubermaticClient.Actions() {
-					if action.Matches("update", "usersshkeies") {
-						updateAction, ok := action.(clienttesting.CreateAction)
-						if !ok {
-							t.Fatalf("unexpected action %#v", action)
-						}
-						for _, expectedSSHKey := range tc.ExpectedSSHKeys {
-							sshKeyFromAction := updateAction.GetObject().(*kubermaticv1.UserSSHKey)
-							if sshKeyFromAction.Name == expectedSSHKey.Name {
-								validatedActions++
-								if !equality.Semantic.DeepEqual(updateAction.GetObject().(*kubermaticv1.UserSSHKey), expectedSSHKey) {
-									t.Fatalf("%v", diff.ObjectDiff(expectedSSHKey, updateAction.GetObject().(*kubermaticv1.UserSSHKey)))
-								}
-							}
-						}
-					}
-				}
-				if validatedActions != len(tc.ExpectedSSHKeys) {
-					t.Fatalf("not all update actions were validated, expected to validate %d but validated only %d", len(tc.ExpectedSSHKeys), validatedActions)
-				}
-			}
 		})
 	}
 }

@@ -136,6 +136,98 @@ func ListNamespaceEndpoint(projectProvider provider.ProjectProvider, privilegedP
 	}
 }
 
+func AssignSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AssignSSHKeysReq)
+		return handlercommon.AssignSSHKeyEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.KeyID, projectProvider, privilegedProjectProvider, sshKeyProvider, privilegedSSHKeyProvider)
+	}
+}
+
+func DetachSSHKeyEndpoint(sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AssignSSHKeysReq)
+		return handlercommon.DetachSSHKeyEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.KeyID, projectProvider, privilegedProjectProvider, sshKeyProvider, privilegedSSHKeyProvider)
+	}
+}
+
+func ListSSHKeysEndpoint(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(ListSSHKeysReq)
+		return handlercommon.ListSSHKeysEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider, sshKeyProvider)
+	}
+}
+
+// ListSSHKeysReq defines HTTP request data for listSSHKeysAssignedToClusterV2 endpoint
+// swagger:parameters listSSHKeysAssignedToClusterV2
+type ListSSHKeysReq struct {
+	common.ProjectReq
+	// in: path
+	ClusterID string `json:"cluster_id"`
+}
+
+func DecodeListSSHKeysReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req ListSSHKeysReq
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+	return req, nil
+}
+
+// GetSeedCluster returns the AssignSSHKeysReq object
+func (req ListSSHKeysReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+// AssignSSHKeysReq defines HTTP request data for assignSSHKeyToClusterV2  endpoint
+// swagger:parameters assignSSHKeyToClusterV2 detachSSHKeyFromClusterV2
+type AssignSSHKeysReq struct {
+	common.ProjectReq
+	// in: path
+	ClusterID string `json:"cluster_id"`
+	// in: path
+	KeyID string `json:"key_id"`
+}
+
+// GetSeedCluster returns the AssignSSHKeysReq object
+func (req AssignSSHKeysReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+func DecodeAssignSSHKeyReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req AssignSSHKeysReq
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+
+	keyID, err := common.DecodeSSHKeyID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.KeyID = keyID
+
+	return req, nil
+}
+
 // EventsReq defines HTTP request for getClusterEventsV2 endpoint
 // swagger:parameters getClusterEventsV2
 type EventsReq struct {

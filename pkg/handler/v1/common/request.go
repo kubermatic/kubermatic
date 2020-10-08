@@ -135,3 +135,12 @@ func DecodeClusterID(c context.Context, r *http.Request) (string, error) {
 type UserIDGetter interface {
 	GetUserID() string
 }
+
+func DecodeSSHKeyID(c context.Context, r *http.Request) (string, error) {
+	keyID := mux.Vars(r)["key_id"]
+	if keyID == "" {
+		return "", fmt.Errorf("'key_id' parameter is required but was not provided")
+	}
+
+	return keyID, nil
+}

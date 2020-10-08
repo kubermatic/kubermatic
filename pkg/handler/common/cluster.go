@@ -551,6 +551,131 @@ func ListNamespaceEndpoint(ctx context.Context, userInfoGetter provider.UserInfo
 	return apiNamespaces, nil
 }
 
+func AssignSSHKeyEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID, keyID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	if len(keyID) == 0 {
+		return nil, errors.NewBadRequest("please provide an SSH key")
+	}
+
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	_, err = GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, &provider.ClusterGetOptions{})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	// sanity check, make sure that the key belongs to the project
+	// alternatively we could examine the owner references
+	{
+		projectSSHKeys, err := sshKeyProvider.List(project, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		found := false
+		for _, projectSSHKey := range projectSSHKeys {
+			if projectSSHKey.Name == keyID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("the given ssh key %s does not belong to the given project %s (%s)", keyID, project.Spec.Name, project.Name)
+		}
+	}
+
+	sshKey, err := getSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, projectID, keyID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	apiKey := apiv1.SSHKey{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                sshKey.Name,
+			Name:              sshKey.Spec.Name,
+			CreationTimestamp: apiv1.NewTime(sshKey.CreationTimestamp.Time),
+		},
+	}
+
+	if sshKey.IsUsedByCluster(clusterID) {
+		return apiKey, nil
+	}
+	sshKey.AddToCluster(clusterID)
+	if err := UpdateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, sshKey, projectID); err != nil {
+		return nil, err
+	}
+
+	return apiKey, nil
+}
+
+func DetachSSHKeyEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID, keyID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	_, err = GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, &provider.ClusterGetOptions{})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	// sanity check, make sure that the key belongs to the project
+	// alternatively we could examine the owner references
+	{
+		projectSSHKeys, err := sshKeyProvider.List(project, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		found := false
+		for _, projectSSHKey := range projectSSHKeys {
+			if projectSSHKey.Name == keyID {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil, errors.NewNotFound("sshkey", keyID)
+		}
+	}
+
+	clusterSSHKey, err := getSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, projectID, keyID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	clusterSSHKey.RemoveFromCluster(clusterID)
+	if err := UpdateClusterSSHKey(ctx, userInfoGetter, sshKeyProvider, privilegedSSHKeyProvider, clusterSSHKey, projectID); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	return nil, nil
+}
+
+func ListSSHKeysEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, sshKeyProvider provider.SSHKeyProvider) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	_, err = GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, &provider.ClusterGetOptions{})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	apiKeys := common.ConvertInternalSSHKeysToExternal(keys)
+	return apiKeys, nil
+}
+
 func UpdateClusterSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, clusterSSHKey *kubermaticv1.UserSSHKey, projectID string) error {
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
@@ -892,4 +1017,19 @@ func ConvertClusterMetrics(podMetrics *v1beta1.PodMetricsList, nodeMetrics []v1b
 	}
 
 	return clusterMetrics, nil
+}
+
+func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectID, keyName string) (*kubermaticv1.UserSSHKey, error) {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, err.Error())
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedSSHKeyProvider.GetUnsecured(keyName)
+	}
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, err.Error())
+	}
+	return sshKeyProvider.Get(userInfo, keyName)
 }
