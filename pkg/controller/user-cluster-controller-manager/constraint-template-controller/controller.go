@@ -118,7 +118,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.ConstraintTemplateCleanupFinalizer) {
 		kuberneteshelper.AddFinalizer(constraintTemplate, kubermaticapiv1.ConstraintTemplateCleanupFinalizer)
 		if err := r.seedClient.Update(r.ctx, constraintTemplate); err != nil {
-
+			return reconcile.Result{}, fmt.Errorf("failed to set constraint template finalizer: %v", err)
 		}
 	}
 
