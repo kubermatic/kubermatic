@@ -49,10 +49,10 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "role binding created with cluster owner subject",
 			clusterRole: &rbacv1.ClusterRole{ObjectMeta: metav1.ObjectMeta{
-				Name:   "admin",
+				Name:   "cluster-admin",
 				Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
 			}},
-			requestName: "admin",
+			requestName: "cluster-admin",
 			ownerEmail:  "test@test.com",
 			expectedBinding: rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
@@ -62,7 +62,7 @@ func TestReconcile(t *testing.T) {
 				RoleRef: rbacv1.RoleRef{
 					APIGroup: rbacv1.GroupName,
 					Kind:     "ClusterRole",
-					Name:     "admin",
+					Name:     "cluster-admin",
 				},
 				Subjects: []rbacv1.Subject{
 					{

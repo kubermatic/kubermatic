@@ -48,7 +48,7 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			credential:               "e2e-digitalocean",
 			replicas:                 0,
 			expectedRoleNames:        []string{"namespace-admin", "namespace-editor", "namespace-viewer"},
-			expectedClusterRoleNames: []string{"admin", "edit", "view"},
+			expectedClusterRoleNames: []string{"cluster-admin", "edit", "view"},
 		},
 	}
 	for _, tc := range tests {
