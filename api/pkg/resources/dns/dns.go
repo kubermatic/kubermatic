@@ -105,11 +105,17 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 				return nil, fmt.Errorf("failed to get openvpn sidecar for dns resolver: %v", err)
 			}
 
+			image, err := resources.CoreDNS.Image(data,
+				resources.ContainersList(dep.Spec.Template.Spec.Containers).GetImage(resources.DNSResolverDeploymentName))
+			if err != nil {
+				return nil, fmt.Errorf("failed to get coredns image: %v", err)
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
 					Name:  resources.DNSResolverDeploymentName,
-					Image: data.ImageRegistry(resources.RegistryK8SGCR) + "/coredns:1.3.1",
+					Image: image,
 					Args:  []string{"-conf", "/etc/coredns/Corefile"},
 					VolumeMounts: []corev1.VolumeMount{
 						{

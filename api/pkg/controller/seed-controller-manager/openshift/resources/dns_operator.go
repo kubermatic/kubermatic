@@ -127,6 +127,7 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 	}
 }
 
+//nolint:interfacer
 func openshiftDNSOperatorEnv(data openshiftData) ([]corev1.EnvVar, error) {
 	openshiftVersion := data.Cluster().Spec.Version.String()
 	cliImageValue, err := cliImage(openshiftVersion, data.ImageRegistry(""))

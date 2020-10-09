@@ -131,6 +131,7 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 	}
 }
 
+//nolint:interfacer
 func openshiftNetworkOperatorEnv(data openshiftData) ([]corev1.EnvVar, error) {
 	openshiftVersion := data.Cluster().Spec.Version.String()
 	nodeImageValue, err := nodeImage(openshiftVersion, data.ImageRegistry(""))

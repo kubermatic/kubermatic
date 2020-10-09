@@ -167,11 +167,17 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				Port:   intstr.FromInt(10257),
 			}
 
+			image, err := resources.Hyperkube.Image(data,
+				resources.ContainersList(dep.Spec.Template.Spec.Containers).GetImage(resources.ControllerManagerDeploymentName))
+			if err != nil {
+				return nil, fmt.Errorf("failed to get hyperkube image: %v", err)
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
 					Name:    resources.ControllerManagerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
+					Image:   image,
 					Command: []string{"/hyperkube", "kube-controller-manager"},
 					Args:    flags,
 					Env:     envVars,

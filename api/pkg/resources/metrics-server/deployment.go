@@ -53,8 +53,6 @@ const (
 	// serving cert.
 	ServingCertSecretName  = "metrics-server-serving-cert"
 	servingCertMountFolder = "/etc/serving-cert"
-
-	tag = "v0.3.6"
 )
 
 // metricsServerData is the data needed to construct the metrics-server components
@@ -115,10 +113,16 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
 
+			image, err := resources.MetricsServer.Image(data,
+				resources.ContainersList(dep.Spec.Template.Spec.Containers).GetImage(name))
+			if err != nil {
+				return nil, fmt.Errorf("failed to get metricsserver image: %v", err)
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/metrics-server-amd64:" + tag,
+					Image:   image,
 					Command: []string{"/metrics-server"},
 					Args: []string{
 						"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",

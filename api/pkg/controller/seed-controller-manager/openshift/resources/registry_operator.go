@@ -99,6 +99,7 @@ func RegistryOperatorFactory(data openshiftData) reconciling.NamedDeploymentCrea
 	}
 }
 
+//nolint:interfacer
 func registryOperatorEnv(data openshiftData) ([]corev1.EnvVar, error) {
 	openshiftVersion := data.Cluster().Spec.Version.String()
 	image, err := dockerRegistryImage(openshiftVersion, data.ImageRegistry(""))

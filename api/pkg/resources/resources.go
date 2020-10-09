@@ -498,6 +498,72 @@ const (
 	TokenBlacklist = "token-blacklist"
 )
 
+// ImageContextGetter provides the data necessary to determine the image to be
+// used for a specific component.
+type ImageContextGetter interface {
+	Cluster() *kubermaticv1.Cluster
+	ImageRegistry(string) string
+}
+
+type KubernetesComponent int
+
+const (
+	Hyperkube KubernetesComponent = iota
+	CoreDNS
+	MetricsServer
+)
+
+// Image returns the image for a specific KubernetesComponent.
+func (kc KubernetesComponent) Image(cg ImageContextGetter, currentImage string) (string, error) {
+	cluster := cg.Cluster()
+	if cluster == nil {
+		return "", errors.New("cannot build kubernetes component image if input cluster is nil")
+	}
+	// Format used by images in the new repository.
+	image := fmt.Sprintf("%s/%s:%s", cg.ImageRegistry(RegistryK8SGCR), kc.imageName(), kc.imageTag(*cluster))
+	// Format used by images in the old depracated repository.
+	legacyImage := fmt.Sprintf("%s/google_containers/%s:%s", cg.ImageRegistry(RegistryGCR), kc.imageName(), kc.imageTag(*cluster))
+	// Tolerate current image pointing to the legacy registry. This avoids
+	// unnecessary rollouts.
+	if currentImage == legacyImage {
+		return currentImage, nil
+	}
+	return image, nil
+}
+
+// ImageOrDie returns the image for a specific KubernetesComponent.
+func (kc KubernetesComponent) ImageOrDie(cg ImageContextGetter, currentImage string) string {
+	i, err := kc.Image(cg, currentImage)
+	if err != nil {
+		panic(err)
+	}
+	return i
+}
+
+func (kc KubernetesComponent) imageName() string {
+	switch kc {
+	case Hyperkube:
+		return "hyperkube-amd64"
+	case CoreDNS:
+		return "coredns"
+	case MetricsServer:
+		return "metrics-server-amd64"
+	default:
+		return ""
+	}
+}
+
+func (kc KubernetesComponent) imageTag(c kubermaticv1.Cluster) string {
+	switch kc {
+	case CoreDNS:
+		return "1.3.1"
+	case MetricsServer:
+		return "v0.3.6"
+	default:
+		return fmt.Sprintf("v%s", c.Spec.Version.String())
+	}
+}
+
 // ECDSAKeyPair is a ECDSA x509 certifcate and private key
 type ECDSAKeyPair struct {
 	Key  *ecdsa.PrivateKey
@@ -1015,4 +1081,28 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 	}
 
 	return len(nodeList.Items) != 0, nil
+}
+
+// ContainersList is a type adding some utility methods on top of slices of
+// corev1.Container.
+type ContainersList []corev1.Container
+
+// Find returns the container with the given name and `true` if it exists or
+// default container and `false` otherwise.
+func (cl ContainersList) Find(name string) (corev1.Container, bool) {
+	for _, c := range cl {
+		if c.Name == name {
+			return c, true
+		}
+	}
+	return corev1.Container{}, false
+}
+
+// GetImage returns the image of the container with the provided name or an
+// empty string if such container does not exist.
+func (cl ContainersList) GetImage(name string) string {
+	if c, ok := cl.Find(name); ok {
+		return c.Image
+	}
+	return ""
 }

@@ -20,11 +20,10 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-
+	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
+	"github.com/kubermatic/kubermatic/api/pkg/semver"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-
-	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 )
 
 func TestInClusterApiserverIP(t *testing.T) {
@@ -578,4 +577,132 @@ func TestSetResourceRequirementsDoesNotChangeDefaults(t *testing.T) {
 	if diff := deep.Equal(backup, defaults); diff != nil {
 		t.Fatalf("The defaults have changed: %v\n", diff)
 	}
+}
+
+func TestKubernetesComponentImage(t *testing.T) {
+	tests := []struct {
+		name         string
+		kc           KubernetesComponent
+		cg           ImageContextGetter
+		currentImage string
+		wantErr      bool
+		want         string
+	}{
+		{
+			name: "Hyperkube image when nil cluster is returned by ImageContextGetter",
+			kc:   Hyperkube,
+			cg: &fakeImageContextGetter{
+				cluster:  nil,
+				registry: "my-registry.org",
+			},
+			currentImage: "",
+			wantErr:      true,
+		},
+		{
+			name: "Hyperkube image when current image is empty",
+			kc:   Hyperkube,
+			cg: &fakeImageContextGetter{
+				cluster: &kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						Version: *semver.NewSemverOrDie("1.18.5"),
+					},
+				},
+				registry: "my-registry.org",
+			},
+			currentImage: "",
+			want:         "my-registry.org/hyperkube-amd64:v1.18.5",
+		},
+		{
+			name: "Hyperkube image when current image is using legacy repository",
+			kc:   Hyperkube,
+			cg: &fakeImageContextGetter{
+				cluster: &kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						Version: *semver.NewSemverOrDie("1.18.5"),
+					},
+				},
+				registry: "my-registry.org",
+			},
+			currentImage: "my-registry.org/google_containers/hyperkube-amd64:v1.18.5",
+			want:         "my-registry.org/google_containers/hyperkube-amd64:v1.18.5",
+		},
+		{
+			name: "Hyperkube when current image is using legacy repository, but version does not match",
+			kc:   Hyperkube,
+			cg: &fakeImageContextGetter{
+				cluster: &kubermaticv1.Cluster{
+					Spec: kubermaticv1.ClusterSpec{
+						Version: *semver.NewSemverOrDie("1.18.6"),
+					},
+				},
+				registry: "my-registry.org",
+			},
+			currentImage: "my-registry.org/google_containers/hyperkube-amd64:v1.18.5",
+			want:         "my-registry.org/hyperkube-amd64:v1.18.6",
+		},
+		{
+			name: "CoreDNS image when current image is empty",
+			kc:   CoreDNS,
+			cg: &fakeImageContextGetter{
+				cluster:  &kubermaticv1.Cluster{},
+				registry: "my-registry.org",
+			},
+			currentImage: "",
+			want:         "my-registry.org/coredns:1.3.1",
+		},
+		{
+			name: "CoreDNS image when current image is using legacy repository",
+			kc:   CoreDNS,
+			cg: &fakeImageContextGetter{
+				cluster:  &kubermaticv1.Cluster{},
+				registry: "my-registry.org",
+			},
+			currentImage: "my-registry.org/google_containers/coredns:1.3.1",
+			want:         "my-registry.org/google_containers/coredns:1.3.1",
+		},
+		{
+			name: "MetricsServer image when current image is empty",
+			kc:   MetricsServer,
+			cg: &fakeImageContextGetter{
+				cluster:  &kubermaticv1.Cluster{},
+				registry: "my-registry.org",
+			},
+			currentImage: "",
+			want:         "my-registry.org/metrics-server-amd64:v0.3.6",
+		},
+		{
+			name: "MetricsServer image when current image is using legacy repository",
+			kc:   MetricsServer,
+			cg: &fakeImageContextGetter{
+				cluster:  &kubermaticv1.Cluster{},
+				registry: "my-registry.org",
+			},
+			currentImage: "my-registry.org/google_containers/metrics-server-amd64:v0.3.6",
+			want:         "my-registry.org/google_containers/metrics-server-amd64:v0.3.6",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.kc.Image(tt.cg, tt.currentImage)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Error expected = %v, but got: %v", tt.wantErr, err)
+			}
+			if got != tt.want {
+				t.Errorf("Expected %q, but got %q", tt.want, got)
+			}
+		})
+	}
+}
+
+type fakeImageContextGetter struct {
+	cluster  *kubermaticv1.Cluster
+	registry string
+}
+
+func (f *fakeImageContextGetter) ImageRegistry(string) string {
+	return f.registry
+}
+
+func (f *fakeImageContextGetter) Cluster() *kubermaticv1.Cluster {
+	return f.cluster
 }

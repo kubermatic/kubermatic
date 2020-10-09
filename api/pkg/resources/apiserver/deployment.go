@@ -153,12 +153,18 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				return nil, err
 			}
 
+			image, err := resources.Hyperkube.Image(data,
+				resources.ContainersList(dep.Spec.Template.Spec.Containers).GetImage(resources.ApiserverDeploymentName))
+			if err != nil {
+				return nil, fmt.Errorf("failed to get hyperkube image: %v", err)
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				*dnatControllerSidecar,
 				{
 					Name:    resources.ApiserverDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/hyperkube-amd64:v" + data.Cluster().Spec.Version.String(),
+					Image:   image,
 					Command: []string{"/hyperkube", "kube-apiserver"},
 					Env:     envVars,
 					Args:    flags,

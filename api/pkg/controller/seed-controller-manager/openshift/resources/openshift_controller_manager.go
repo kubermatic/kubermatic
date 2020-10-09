@@ -77,6 +77,7 @@ servingInfo:
 `
 )
 
+//nolint:interfacer
 func OpenshiftControllerManagerConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreatorGetter {
 	openshiftVersion := data.Cluster().Spec.Version.String()
 	return func() (string, reconciling.ConfigMapCreator) {
