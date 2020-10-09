@@ -308,11 +308,12 @@ func main() {
 	}
 	log.Info("Registered ownerbindingcreator controller")
 
-	if err := constrainttemplate.Add(ctx, log, mgr, seedMgr); err != nil {
-		log.Fatalw("Failed to register constraint template controller", zap.Error(err))
+	if runOp.opaIntegration {
+		if err := constrainttemplate.Add(ctx, log, mgr, seedMgr); err != nil {
+			log.Fatalw("Failed to register constraint template controller", zap.Error(err))
+		}
+		log.Info("Registered constraint template controller")
 	}
-	log.Info("Registered constraint template controller")
-
 	// This group is forever waiting in a goroutine for signals to stop
 	{
 		g.Add(func() error {
