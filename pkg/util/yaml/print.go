@@ -26,7 +26,7 @@ import (
 
 // Encode takes a runtime object and creates a YAML encoded version in the
 // given output. The special aspect of this function is that it does not
-// output the creationTimestamp when marshalling a syntetic resource. This
+// output the creationTimestamp when marshalling a synthetic resource. This
 // just makes the YAML look nicer when presented to the enduser.
 func Encode(resource interface{}, output io.Writer) error {
 	encoder := yaml3.NewEncoder(output)

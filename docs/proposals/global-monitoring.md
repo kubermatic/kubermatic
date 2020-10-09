@@ -10,11 +10,11 @@ still missing.
 
 ## Motivation
 
-* Currently, user-cluster monitoring is severly lacking; while some data is federated,
+* Currently, user-cluster monitoring is severely lacking; while some data is federated,
   we only have a single etcd dashboard that actually uses it. Prometheus is mainly used
   for alerting right now.
 * Due to performance issues when ingesting *all* metrics, we decided to pre-compute the
-  metrics neccessary for the etcd dashboard and only federate those. This has the massive
+  metrics necessary for the etcd dashboard and only federate those. This has the massive
   downside that none of the other dashboards (e.g. for kube-state-metrics) can work for
   user clusters.
 * Likewise, the interesting user-cluster metrics are gone after a few hours or after the
@@ -96,10 +96,10 @@ complicated than Thanos's.
 * **Keep User-Cluster Prometheus stateless.**
 
   We could give every Prometheus a 10Gi disk, but this would quickly balloon. And
-  balloon unneccesarily because the data is streamed somewhere else anyway in order to
+  balloon unnecessarily because the data is streamed somewhere else anyway in order to
   eventually make it durable.
 
-* **Be able to scale to accomodate many user clusters.**
+* **Be able to scale to accommodate many user clusters.**
 
   If for example the Seed-Prometheus would scrape all User-Cluster Prometheus instances,
   it would quickly eat more memory than we're willing to give it. If it then also has to

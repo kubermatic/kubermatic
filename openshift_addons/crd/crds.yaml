@@ -1315,7 +1315,7 @@
                 "type": "object"
               },
               "paused": {
-                "description": "If set to true all actions on the underlaying managed objects are not goint to be performed, except for delete actions.",
+                "description": "If set to true all actions on the underlying managed objects are not goint to be performed, except for delete actions.",
                 "type": "boolean"
               },
               "podMetadata": {
@@ -2116,7 +2116,7 @@
                 "type": "integer"
               },
               "paused": {
-                "description": "Represents whether any actions on the underlaying managed objects are being performed. Only delete actions will be performed.",
+                "description": "Represents whether any actions on the underlying managed objects are being performed. Only delete actions will be performed.",
                 "type": "boolean"
               },
               "replicas": {
@@ -4207,7 +4207,7 @@
                       "spec": {
                         "properties": {
                           "clusterPermissions": {
-                            "description": "Cluster permissions needed by the deployement to run correctly",
+                            "description": "Cluster permissions needed by the deployment to run correctly",
                             "items": {
                               "properties": {
                                 "rules": {
@@ -4333,7 +4333,7 @@
                             "type": "array"
                           },
                           "permissions": {
-                            "description": "Permissions needed by the deployement to run correctly",
+                            "description": "Permissions needed by the deployment to run correctly",
                             "items": {
                               "properties": {
                                 "rules": {
@@ -4695,7 +4695,7 @@
                 "type": "object"
               },
               "overrides": {
-                "description": "overrides is list of overides for components that are managed by cluster version operator. Marking a component unmanaged will prevent the operator from creating or updating the object.",
+                "description": "overrides is list of overrides for components that are managed by cluster version operator. Marking a component unmanaged will prevent the operator from creating or updating the object.",
                 "items": {
                   "properties": {
                     "group": {
@@ -4703,7 +4703,7 @@
                       "type": "string"
                     },
                     "kind": {
-                      "description": "kind indentifies which object to override.",
+                      "description": "kind identifies which object to override.",
                       "type": "string"
                     },
                     "name": {
@@ -6255,7 +6255,7 @@
                 "type": "string"
               },
               "sourceNamespace": {
-                "description": "Namespace that contains the preffered CatalogSource",
+                "description": "Namespace that contains the preferred CatalogSource",
                 "type": "string"
               }
             },
@@ -11363,7 +11363,7 @@
                             "type": "integer"
                           },
                           "regex": {
-                            "description": "Regular expression against which the extracted value is matched. defailt is '(.*)'",
+                            "description": "Regular expression against which the extracted value is matched. default is '(.*)'",
                             "type": "string"
                           },
                           "replacement": {
@@ -12253,7 +12253,7 @@
                 "type": "integer"
               },
               "paused": {
-                "description": "Represents whether any actions on the underlaying managed objects are being performed. Only delete actions will be performed.",
+                "description": "Represents whether any actions on the underlying managed objects are being performed. Only delete actions will be performed.",
                 "type": "boolean"
               },
               "replicas": {
@@ -13052,7 +13052,7 @@
             "type": "object"
           },
           "seccompProfiles": {
-            "description": "SeccompProfiles lists the allowed profiles that may be set for the pod or container's seccomp annotations.  An unset (nil) or empty value means that no profiles may be specifid by the pod or container.\tThe wildcard '*' may be used to allow all profiles.  When used to generate a value for a pod the first non-wildcard profile will be used as the default.",
+            "description": "SeccompProfiles lists the allowed profiles that may be set for the pod or container's seccomp annotations.  An unset (nil) or empty value means that no profiles may be specified by the pod or container.\the wildcard '*' may be used to allow all profiles.  When used to generate a value for a pod the first non-wildcard profile will be used as the default.",
             "items": {
               "type": "string"
             },
@@ -13759,7 +13759,7 @@
                             "type": "integer"
                           },
                           "regex": {
-                            "description": "Regular expression against which the extracted value is matched. defailt is '(.*)'",
+                            "description": "Regular expression against which the extracted value is matched. default is '(.*)'",
                             "type": "string"
                           },
                           "replacement": {
@@ -13816,7 +13816,7 @@
                             "type": "integer"
                           },
                           "regex": {
-                            "description": "Regular expression against which the extracted value is matched. defailt is '(.*)'",
+                            "description": "Regular expression against which the extracted value is matched. default is '(.*)'",
                             "type": "string"
                           },
                           "replacement": {
@@ -14037,7 +14037,7 @@
     },
     "validation": {
       "openAPIV3Schema": {
-        "description": "Subscribes service catalog to a source and channel to recieve updates for packages.",
+        "description": "Subscribes service catalog to a source and channel to receive updates for packages.",
         "properties": {
           "spec": {
             "description": "Spec for a Subscription",
@@ -14131,7 +14131,7 @@
             "type": "object"
           },
           "status": {
-            "description": "Status is the current state of Tuned.  This cannot be overriden.",
+            "description": "Status is the current state of Tuned.  This cannot be overridden.",
             "type": "object"
           }
         }

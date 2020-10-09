@@ -143,7 +143,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())
 			if err != nil {
-				return nil, fmt.Errorf("faild to get label args value: %v", err)
+				return nil, fmt.Errorf("failed to get label args value: %v", err)
 			}
 			if labelArgsValue != "" {
 				args = append(args, "-node-labels", labelArgsValue)

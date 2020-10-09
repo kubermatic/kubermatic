@@ -202,7 +202,7 @@ const (
 	DexCASecretName = "dex-ca"
 	// DexCAFileName is the name of Dex CA bundle file
 	DexCAFileName = "caBundle.pem"
-	// GoogleServiceAccountSecretName is the name of the secret that contains the Google Service Acccount.
+	// GoogleServiceAccountSecretName is the name of the secret that contains the Google Service Account.
 	GoogleServiceAccountSecretName = "google-service-account"
 	// GoogleServiceAccountVolumeName is the name of the volume containing the Google Service Account secret.
 	GoogleServiceAccountVolumeName = "google-service-account-volume"
@@ -228,7 +228,7 @@ const (
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
 	//OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster
 	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
-	//ClusterInfoConfigMapName is the name for the ConfigMap containing the cluster-info used by the bootstrap token machanism
+	//ClusterInfoConfigMapName is the name for the ConfigMap containing the cluster-info used by the bootstrap token mechanism
 	ClusterInfoConfigMapName = "cluster-info"
 	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
@@ -408,10 +408,10 @@ const (
 	TokensSecretKey = "tokens.csv"
 	// ViewersTokenSecretKey viewersToken
 	ViewerTokenSecretKey = "viewerToken"
-	// OpenVPNCACertKey cert.pem, must match CACertSecretKey, otherwise getClusterCAFromLister doesnt work as it has
+	// OpenVPNCACertKey cert.pem, must match CACertSecretKey, otherwise getClusterCAFromLister doesn't work as it has
 	// the key hardcoded
 	OpenVPNCACertKey = CACertSecretKey
-	// OpenVPNCAKeyKey key.pem, must match CAKeySecretKey, otherwise getClusterCAFromLister doesnt work as it has
+	// OpenVPNCAKeyKey key.pem, must match CAKeySecretKey, otherwise getClusterCAFromLister doesn't work as it has
 	// the key hardcoded
 	OpenVPNCAKeyKey = CAKeySecretKey
 	// OpenVPNServerKeySecretKey server.key
@@ -538,7 +538,7 @@ const (
 	EtcdClientKeyFile  = "/etc/etcd/pki/client/apiserver-etcd-client.key"
 )
 
-// ECDSAKeyPair is a ECDSA x509 certifcate and private key
+// ECDSAKeyPair is a ECDSA x509 certificate and private key
 type ECDSAKeyPair struct {
 	Key  *ecdsa.PrivateKey
 	Cert *x509.Certificate

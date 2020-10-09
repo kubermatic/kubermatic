@@ -131,7 +131,7 @@ case "${DEPLOY_STACK}" in
     fi
 
     # Prometheus can take a long time to become ready, depending on the WAL size.
-    # We try to accomodate by waiting for 15 instead of 5 minutes.
+    # We try to accommodate by waiting for 15 instead of 5 minutes.
     deploy "prometheus" "monitoring" charts/monitoring/prometheus/ 900
     ;;
 

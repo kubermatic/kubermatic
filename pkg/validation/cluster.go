@@ -72,7 +72,7 @@ func validateMachineNetworksFromClusterSpec(spec *kubermaticv1.ClusterSpec) erro
 	}
 
 	if len(networks) > 0 && spec.Version.Semver().Minor() < 9 {
-		return errors.New("cant specify machinenetworks on kubernetes <= 1.9.0")
+		return errors.New("can't specify machinenetworks on kubernetes <= 1.9.0")
 	}
 
 	if len(networks) > 0 && spec.Cloud.VSphere == nil {

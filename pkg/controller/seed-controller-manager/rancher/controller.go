@@ -264,12 +264,12 @@ func (r *Reconciler) getRancherClient(ctx context.Context, namespace string) (*r
 	}
 	rancherClient, err = rancherclient.New(opts)
 	if err != nil {
-		r.log.Debugw("faild to login updated credentials:", zap.Error(err))
+		r.log.Debugw("failed to login updated credentials:", zap.Error(err))
 		// fall back to the default password
 		opts.SecretKey = "admin"
 		rancherClient, err = rancherclient.New(opts)
 		if err != nil {
-			return nil, fmt.Errorf("failed to loging to rancher server: %v", err)
+			return nil, fmt.Errorf("failed to logging to rancher server: %v", err)
 		}
 	}
 	return rancherClient, nil

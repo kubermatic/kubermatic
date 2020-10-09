@@ -79,7 +79,7 @@ func ClusterVersionCreatorGetter(clusterNamespaceName string) reconciling.NamedU
 			u.Object["spec"] = struct {
 				// Used by the AWS CloudCredentialActuator to tag resources:
 				// https://github.com/openshift/cloud-credential-operator/blob/ec6f38d73a7921e79d0ca7555da3a864e808e681/pkg/aws/actuator/actuator.go#L192
-				// We could the `cluster-` prefix but it allows us to identify our tags and wont harm.
+				// We could the `cluster-` prefix but it allows us to identify our tags and won't harm.
 				ClusterID string `json:"clusterID"`
 			}{
 				ClusterID: clusterNamespaceName,

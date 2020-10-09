@@ -48,7 +48,7 @@ func LabelSelector(workerName string) (labels.Selector, error) {
 
 // Predicates returns a predicate func to only process objects with a matching worker-name label
 // This works regardless of the underlying type
-// Once https://github.com/kubernetes-sigs/controller-runtime/issues/244 is fixed we wont
+// Once https://github.com/kubernetes-sigs/controller-runtime/issues/244 is fixed we won't
 // need this anymore
 func Predicates(workerName string) predicate.Funcs {
 	return kubermaticpred.Factory(func(m metav1.Object, r runtime.Object) bool {

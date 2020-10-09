@@ -119,7 +119,7 @@ func TestAutomaticUpdate(t *testing.T) {
 
 			if len(tc.expectedError) > 0 {
 				if err == nil {
-					t.Fatalf("Epected error")
+					t.Fatalf("Expected error")
 				}
 				if tc.expectedError != err.Error() {
 					t.Fatalf("Expected error: %s got %v", tc.expectedError, err)

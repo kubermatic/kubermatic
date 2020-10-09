@@ -48,7 +48,7 @@ type TokenExtractor interface {
 
 // TokenVerifier knows how to verify a token
 type TokenVerifier interface {
-	// Verify parses a raw ID Token, verifies it's been signed by the provider, preforms
+	// Verify parses a raw ID Token, verifies it's been signed by the provider, performs
 	// any additional checks depending on the Config, and returns the payload as TokenClaims.
 	Verify(ctx context.Context, token string) (TokenClaims, error)
 }

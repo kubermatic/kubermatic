@@ -62,7 +62,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error
 		Reconciler: r,
 		// This controller is not safe to run with more than one worker
 		// as it looks at the state of the whole cluster, which may result
-		// in race bahaviour if there are more.
+		// in race behaviour if there are more.
 		MaxConcurrentReconciles: 1,
 	})
 	if err != nil {

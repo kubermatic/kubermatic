@@ -3727,7 +3727,7 @@ spec:
               type: object
             ca:
               description: CA configures this issuer to sign certificates using a
-                signing CA keypair stored in a Secret resource. This is used to build
+                signing CA key pair stored in a Secret resource. This is used to build
                 internal PKIs that are managed by cert-manager.
               properties:
                 crlDistributionPoints:
@@ -5606,7 +5606,7 @@ spec:
               type: object
             ca:
               description: CA configures this issuer to sign certificates using a
-                signing CA keypair stored in a Secret resource. This is used to build
+                signing CA key pair stored in a Secret resource. This is used to build
                 internal PKIs that are managed by cert-manager.
               properties:
                 crlDistributionPoints:

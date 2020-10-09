@@ -10,7 +10,7 @@ The addon-controller is a controller written in Go to replace the existing addon
 
 ## Motivation and Background
 
-The current approaches to deploy and manage addons withing user clusters comes with several downsides:
+The current approaches to deploy and manage addons within user clusters comes with several downsides:
 
 *   One addon-manager pod per user cluster
 *   Only limited to kube-system namespace
@@ -42,7 +42,7 @@ spec:
     kind: Cluster
     name: xptj6dqmvt
     uid: cda65e12-6423-11e8-a141-42010a9c00c6
-  # Name of the addon to install. Needs to exist as a folder accessable by the addon-controller. Contains all manifests
+  # Name of the addon to install. Needs to exist as a folder accessible by the addon-controller. Contains all manifests
   name: canal
   # Generic variables to add. Can be used in the manifest templates
   variables:

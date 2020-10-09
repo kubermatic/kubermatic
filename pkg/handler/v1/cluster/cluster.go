@@ -486,7 +486,7 @@ func DecodeGetClusterEvents(c context.Context, r *http.Request) (interface{}, er
 		if req.Type == "warning" || req.Type == "normal" {
 			return req, nil
 		}
-		return nil, fmt.Errorf("wrong query paramater, unsupported type: %s", req.Type)
+		return nil, fmt.Errorf("wrong query parameter, unsupported type: %s", req.Type)
 	}
 
 	return req, nil

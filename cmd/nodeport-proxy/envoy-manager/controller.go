@@ -395,7 +395,7 @@ func (r *reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod
 			readyPods = append(readyPods, &servicePods.Items[idx])
 		} else {
 			// Only log when we do not add pods as the caller is responsible for logging the final pods
-			r.log.Debugf("Skipping pod %s/%s for service %s/%s. The pod ist not ready", pod.Namespace, pod.Name, service.Namespace, service.Name)
+			r.log.Debugf("Skipping pod %s/%s for service %s/%s. The pod is not ready", pod.Namespace, pod.Name, service.Namespace, service.Name)
 		}
 	}
 

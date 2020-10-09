@@ -23,7 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
-// DefaultCreateClusterSpec defalts the cluster spec when creating a new cluster
+// DefaultCreateClusterSpec defaults the cluster spec when creating a new cluster
 func DefaultCreateClusterSpec(
 	spec *kubermaticv1.ClusterSpec,
 	cloudProvider provider.CloudProvider) error {

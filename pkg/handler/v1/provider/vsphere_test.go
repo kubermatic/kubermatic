@@ -80,7 +80,7 @@ func TestVsphereEndpoint(t *testing.T) {
 	mock := &vSphereMock{}
 	err := mock.tearUp()
 	if err != nil {
-		t.Fatalf("couldnt setup vsphere mock: %v", err)
+		t.Fatalf("couldn't setup vsphere mock: %v", err)
 	}
 
 	defer mock.tearDown()

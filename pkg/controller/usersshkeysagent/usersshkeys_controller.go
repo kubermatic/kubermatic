@@ -240,7 +240,7 @@ func updateOwnAndPermissions(path string) error {
 	userHome := strings.TrimSuffix(sshPath, "/.ssh")
 	fileInfo, err := os.Stat(userHome)
 	if err != nil {
-		return fmt.Errorf("faild describing the authorized_keys file in path %s: %v", userHome, err)
+		return fmt.Errorf("failed describing the authorized_keys file in path %s: %v", userHome, err)
 	}
 
 	uid := fileInfo.Sys().(*syscall.Stat_t).Uid

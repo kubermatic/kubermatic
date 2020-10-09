@@ -70,7 +70,7 @@ import (
 
 const ControllerName = "openshift_controller"
 
-// Check if the Reconciler fullfills the interface
+// Check if the Reconciler fulfills the interface
 // at compile time
 var _ reconcile.Reconciler = &Reconciler{}
 
@@ -705,7 +705,7 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	return nil
 }
 
-// A cheap helper because I am too lazy to type this everytime
+// A cheap helper because I am too lazy to type this every time
 func nn(namespace, name string) types.NamespacedName {
 	return types.NamespacedName{Namespace: namespace, Name: name}
 }

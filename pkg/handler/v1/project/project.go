@@ -451,7 +451,7 @@ func DecodeList(c context.Context, r *http.Request) (interface{}, error) {
 	if queryParam != "" {
 		displayAll, err = strconv.ParseBool(queryParam)
 		if err != nil {
-			return nil, fmt.Errorf("wrong query paramater: %v", err)
+			return nil, fmt.Errorf("wrong query parameter: %v", err)
 		}
 	}
 	req.DisplayAll = displayAll

@@ -61,5 +61,5 @@ log.Errorw("Failed to reconcile cluster", zap.Error(err))
 ## Handling old code
 
 We've not followed that guidelines in the past, thus we might encounter code which does not apply to the above mentioned guidelines.
-This code should be converted as soon as it get's modified.
+This code should be converted as soon as it gets modified.
 It is the responsibility of the individual PR author & reviewer to make sure, modified code parts adhere to the guidelines.

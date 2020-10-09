@@ -115,7 +115,7 @@ velero:
   #    config:
   #      region: eu-west-1
 
-  # glob expressions to find schedule defitions
+  # glob expressions to find schedule definitions
   schedulesPath: schedules/*
 
   # Only kube2iam: change the AWS_ACCOUNT_ID and HEPTIO_VELERO_ROLE_NAME

@@ -78,7 +78,7 @@ func TestRuleGeneration(t *testing.T) {
 	}
 	for i, expectedRule := range expectedRules {
 		if rules[i] != expectedRule {
-			t.Errorf("unexpected rule #%d. expeceted: %q", i, rules[i])
+			t.Errorf("unexpected rule #%d. expected: %q", i, rules[i])
 		}
 	}
 }
