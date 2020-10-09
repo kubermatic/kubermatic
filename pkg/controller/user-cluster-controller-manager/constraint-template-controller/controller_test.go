@@ -22,12 +22,12 @@ import (
 	"testing"
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
-	"k8s.io/apimachinery/pkg/util/diff"
 
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"

@@ -20,13 +20,17 @@ import (
 	"context"
 	"fmt"
 
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"go.uber.org/zap"
+
+	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -72,7 +76,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, userMgr, seedMgr manager.M
 	}
 
 	// Watch for changes to ConstraintTemplates
-	if err = c.Watch(&source.Kind{Type: &v1.ConstraintTemplate{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	if err = c.Watch(ctSource, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to establish watch for the ConstraintTemplates %v", err)
 	}
 
@@ -90,6 +94,32 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			return reconcile.Result{}, nil
 		}
 		return reconcile.Result{}, fmt.Errorf("failed to get constraint template: %v", err)
+	}
+
+	if constraintTemplate.DeletionTimestamp != nil {
+		if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.ConstraintTemplateCleanupFinalizer) {
+			return reconcile.Result{}, nil
+		}
+		if err := r.userClient.Delete(r.ctx, &v1beta1.ConstraintTemplate{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: constraintTemplate.Name,
+			},
+		}); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to delete constraint template: %v", err)
+		}
+
+		kuberneteshelper.RemoveFinalizer(constraintTemplate, kubermaticapiv1.ConstraintTemplateCleanupFinalizer)
+		if err := r.seedClient.Update(r.ctx, constraintTemplate); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to remove constraint template finalizer: %v", err)
+		}
+		return reconcile.Result{}, nil
+	}
+
+	if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.ConstraintTemplateCleanupFinalizer) {
+		kuberneteshelper.AddFinalizer(constraintTemplate, kubermaticapiv1.ConstraintTemplateCleanupFinalizer)
+		if err := r.seedClient.Update(r.ctx, constraintTemplate); err != nil {
+
+		}
 	}
 
 	err := r.reconcile(constraintTemplate)
