@@ -27,6 +27,8 @@ type Client struct {
 type ClientService interface {
 	AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, authInfo runtime.ClientAuthInfoWriter) (*AssignSSHKeyToClusterCreated, error)
 
+	AssignSSHKeyToClusterV2(params *AssignSSHKeyToClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*AssignSSHKeyToClusterV2Created, error)
+
 	BindUserToClusterRole(params *BindUserToClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleOK, error)
 
 	BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleOK, error)
@@ -68,6 +70,8 @@ type ClientService interface {
 	DeleteSSHKey(params *DeleteSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteSSHKeyOK, error)
 
 	DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DetachSSHKeyFromClusterOK, error)
+
+	DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*DetachSSHKeyFromClusterV2OK, error)
 
 	GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterOK, error)
 
@@ -155,6 +159,8 @@ type ClientService interface {
 
 	ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClusterParams, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysAssignedToClusterOK, error)
 
+	ListSSHKeysAssignedToClusterV2(params *ListSSHKeysAssignedToClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysAssignedToClusterV2OK, error)
+
 	PatchCluster(params *PatchClusterParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterOK, error)
 
 	PatchClusterRole(params *PatchClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterRoleOK, error)
@@ -213,6 +219,40 @@ func (a *Client) AssignSSHKeyToCluster(params *AssignSSHKeyToClusterParams, auth
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*AssignSSHKeyToClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  AssignSSHKeyToClusterV2 Assigns an existing ssh key to the given cluster
+*/
+func (a *Client) AssignSSHKeyToClusterV2(params *AssignSSHKeyToClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*AssignSSHKeyToClusterV2Created, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewAssignSSHKeyToClusterV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "assignSSHKeyToClusterV2",
+		Method:             "PUT",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &AssignSSHKeyToClusterV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*AssignSSHKeyToClusterV2Created)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*AssignSSHKeyToClusterV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -934,6 +974,40 @@ func (a *Client) DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, 
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DetachSSHKeyFromClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DetachSSHKeyFromClusterV2 Unassignes an ssh key from the given cluster
+*/
+func (a *Client) DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*DetachSSHKeyFromClusterV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDetachSSHKeyFromClusterV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "detachSSHKeyFromClusterV2",
+		Method:             "DELETE",
+		PathPattern:        "/api/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DetachSSHKeyFromClusterV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DetachSSHKeyFromClusterV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DetachSSHKeyFromClusterV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -2405,6 +2479,41 @@ func (a *Client) ListSSHKeysAssignedToCluster(params *ListSSHKeysAssignedToClust
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListSSHKeysAssignedToClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListSSHKeysAssignedToClusterV2 Lists ssh keys that are assigned to the cluster
+The returned collection is sorted by creation timestamp.
+*/
+func (a *Client) ListSSHKeysAssignedToClusterV2(params *ListSSHKeysAssignedToClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysAssignedToClusterV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListSSHKeysAssignedToClusterV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listSSHKeysAssignedToClusterV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/sshkeys",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListSSHKeysAssignedToClusterV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListSSHKeysAssignedToClusterV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListSSHKeysAssignedToClusterV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
