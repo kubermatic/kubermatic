@@ -854,7 +854,7 @@ func getNodeDeploymentDisplayName(nd *apiv1.NodeDeployment) string {
 }
 
 func GetInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {
-	adminUserInfo, err := userInfoGetter(ctx, "")
+o	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
