@@ -22,7 +22,7 @@ const (
 	fakeClusterNamespaceName = "cluster-ns"
 	// This must be the A record for *.europe-west3c.dev.kubermatic.io and
 	// *.alias-europe-west3-c.dev.kubermatic.io
-	externalIP = "35.198.93.90"
+	externalIP = "34.89.181.151"
 	// Henrik created 2 dns entries for dns-test @ OVH.com. dns-test.kubermatic.io points to:
 	// - 192.168.1.1
 	// - 192.168.1.2
