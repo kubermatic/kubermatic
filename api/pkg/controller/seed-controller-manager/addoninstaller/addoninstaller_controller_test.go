@@ -65,11 +65,10 @@ func TestCreateAddon(t *testing.T) {
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "Bar",
-						Namespace:       "cluster-" + name,
-						ResourceVersion: "1",
-						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
-						Annotations:     map[string]string{"foo": "bar"},
+						Name:        "Bar",
+						Namespace:   "cluster-" + name,
+						Labels:      map[string]string{"addons.kubermatic.io/ensure": "true"},
+						Annotations: map[string]string{"foo": "bar"},
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion:         "kubermatic.k8s.io/v1",
@@ -157,9 +156,8 @@ func TestUpdateAddon(t *testing.T) {
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "Bar",
-						Namespace:       "cluster-" + name,
-						ResourceVersion: "1",
+						Name:      "Bar",
+						Namespace: "cluster-" + name,
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion:         "kubermatic.k8s.io/v1",
@@ -182,14 +180,9 @@ func TestUpdateAddon(t *testing.T) {
 			},
 			expectedClusterAddons: []*kubermaticv1.Addon{
 				{
-					TypeMeta: metav1.TypeMeta{
-						APIVersion: "kubermatic.k8s.io/v1",
-						Kind:       "Addon",
-					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "Foo",
-						Namespace:       "cluster-" + name,
-						ResourceVersion: "1",
+						Name:      "Foo",
+						Namespace: "cluster-" + name,
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion:         "kubermatic.k8s.io/v1",
@@ -215,11 +208,10 @@ func TestUpdateAddon(t *testing.T) {
 						Kind:       "Addon",
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "Bar",
-						Namespace:       "cluster-" + name,
-						Labels:          map[string]string{"addons.kubermatic.io/ensure": "true"},
-						Annotations:     map[string]string{"foo": "bar"},
-						ResourceVersion: "2",
+						Name:        "Bar",
+						Namespace:   "cluster-" + name,
+						Labels:      map[string]string{"addons.kubermatic.io/ensure": "true"},
+						Annotations: map[string]string{"foo": "bar"},
 						OwnerReferences: []metav1.OwnerReference{
 							{
 								APIVersion:         "kubermatic.k8s.io/v1",
