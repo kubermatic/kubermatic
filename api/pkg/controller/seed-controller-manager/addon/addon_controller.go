@@ -259,6 +259,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	if err := r.ensureFinalizerIsSet(ctx, addon); err != nil {
 		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer existis on the addon: %v", err)
 	}
+	if err := r.ensureResourcesCreatedConditionIsSet(ctx, addon); err != nil {
+		return nil, fmt.Errorf("failed to set add ResourcesCreated Condition: %v", err)
+	}
 	return nil, nil
 }
 
