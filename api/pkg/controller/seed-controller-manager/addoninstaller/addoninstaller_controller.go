@@ -170,7 +170,9 @@ func (r *Reconciler) createAddon(ctx context.Context, log *zap.SugaredLogger, ad
 
 	addon.Namespace = cluster.Status.NamespaceName
 	addon.OwnerReferences = []metav1.OwnerReference{*metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))}
-	addon.Labels = map[string]string{}
+	if addon.Labels == nil {
+		addon.Labels = map[string]string{}
+	}
 	addon.Spec.Name = addon.Name
 	addon.Spec.Cluster = corev1.ObjectReference{
 		Name:       cluster.Name,

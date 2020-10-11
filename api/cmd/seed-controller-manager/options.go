@@ -13,6 +13,8 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/kubermatic/kubermatic/api/pkg/cluster/client"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
+	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/addon"
 	backupcontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/backup"
 	kubermaticv1 "github.com/kubermatic/kubermatic/api/pkg/crd/kubermatic/v1"
 	"github.com/kubermatic/kubermatic/api/pkg/features"
@@ -285,6 +287,15 @@ func loadAddons(listOpt, fileOpt string) (kubermaticv1.AddonList, error) {
 	}
 	if listOpt != "" {
 		for _, addonName := range strings.Split(listOpt, ",") {
+			// check if this addon is on the ensured list
+			for _, ensuredAddon := range common.KubernetesEnsuredDefaultAddons {
+				if ensuredAddon == addonName {
+					addonList.Items = append(addonList.Items, kubermaticv1.Addon{ObjectMeta: metav1.ObjectMeta{Name: addonName, Labels: map[string]string{
+						addon.AddonEnsureLabelKey: "true",
+					}}})
+					continue
+				}
+			}
 			addonList.Items = append(addonList.Items, kubermaticv1.Addon{ObjectMeta: metav1.ObjectMeta{Name: addonName}})
 		}
 	}
