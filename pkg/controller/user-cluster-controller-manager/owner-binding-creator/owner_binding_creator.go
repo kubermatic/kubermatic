@@ -123,10 +123,10 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRoleName string) e
 				Name:     clusterRoleName,
 			},
 		}
-		// Bind user who created the cluster to the `admin` ClusterRole.
+		// Bind user who created the cluster to the `cluster-admin` ClusterRole.
 		// Add cluster owner only once when binding doesn't exist yet.
 		// Later the user can remove/add subjects from the binding using the API.
-		if clusterRoleName == "admin" {
+		if clusterRoleName == "cluster-admin" {
 			crb.Subjects = []rbacv1.Subject{
 				{
 					Kind:     rbacv1.UserKind,
