@@ -287,14 +287,10 @@ func loadAddons(listOpt, fileOpt string) (kubermaticv1.AddonList, error) {
 	}
 	if listOpt != "" {
 		for _, addonName := range strings.Split(listOpt, ",") {
-			// check if this addon is on the ensured list
-			for _, ensuredAddon := range common.KubernetesEnsuredDefaultAddons {
-				if ensuredAddon == addonName {
-					addonList.Items = append(addonList.Items, kubermaticv1.Addon{ObjectMeta: metav1.ObjectMeta{Name: addonName, Labels: map[string]string{
-						addon.AddonEnsureLabelKey: "true",
-					}}})
-					continue
-				}
+			if isEnsuredAddon(addonName) {
+				addonList.Items = append(addonList.Items, kubermaticv1.Addon{ObjectMeta: metav1.ObjectMeta{Name: addonName, Labels: map[string]string{
+					addon.AddonEnsureLabelKey: "true"}}})
+				continue
 			}
 			addonList.Items = append(addonList.Items, kubermaticv1.Addon{ObjectMeta: metav1.ObjectMeta{Name: addonName}})
 		}
@@ -310,4 +306,13 @@ func loadAddons(listOpt, fileOpt string) (kubermaticv1.AddonList, error) {
 	}
 
 	return addonList, nil
+}
+
+func isEnsuredAddon(name string) bool {
+	for _, ensuredAddon := range common.KubernetesEnsuredDefaultAddons {
+		if name == ensuredAddon {
+			return true
+		}
+	}
+	return false
 }
