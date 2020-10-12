@@ -1539,6 +1539,7 @@ func TestFinalization(t *testing.T) {
 			}
 			if tc.cleanupContainerDefined {
 				reconciler.cleanupContainer = genCleanupContainer()
+				reconciler.deleteContainer = nil
 			}
 
 			reconcileAfter, err := reconciler.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Namespace: backupConfig.Namespace, Name: backupConfig.Name}})

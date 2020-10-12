@@ -652,7 +652,7 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 
 	canRemoveFinalizer := true
 
-	if r.cleanupContainer != nil {
+	if r.cleanupContainer != nil && r.deleteContainer == nil {
 		// Need to run, track and delete a cleanup job
 
 		cleanupJobName := fmt.Sprintf("%s-backup-%s-cleanup", cluster.Name, backupConfig.Name)
