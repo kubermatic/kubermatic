@@ -2,9 +2,8 @@
 	font-family: 'Ubuntu';
 	font-style: normal;
 	font-weight: 500;
-	src:
-			url('ubuntu-500.woff2') format('woff2'),
-			url('ubuntu-500.woff') format('woff');
+	src: url('ubuntu-500.woff2') format('woff2'),
+	     url('ubuntu-500.woff') format('woff');
 }
 
 .theme-body {
@@ -24,7 +23,6 @@
 }
 
 .theme-navbar__logo {
-	content: url("logo.svg");
 	background-size: 30px;
 	margin-top: 13px;
 	margin-left: 26px;
