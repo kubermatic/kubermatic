@@ -31,6 +31,8 @@ data:
         inCluster: true
     web:
       http: 0.0.0.0:5556
+    frontend:
+      logoURL: theme/logo.svg
     telemetry:
       http: 0.0.0.0:5558
     # this is a requirement for static passwords, so we just enable it by default
