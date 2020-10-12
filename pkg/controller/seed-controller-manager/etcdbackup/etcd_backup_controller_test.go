@@ -33,6 +33,7 @@ import (
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sort"
 	"testing"
 	"time"
 
@@ -593,11 +594,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 				t.Errorf("backups differ from expected, diff: %v", diff)
 			}
 
-			jobs := batchv1.JobList{}
-			if err := reconciler.List(context.Background(), &jobs); err != nil {
-				t.Fatalf("Error reading created jobs: %v", err)
-			}
-			if diff := deep.Equal(jobs.Items, tc.expectedJobs); diff != nil {
+			if diff := deep.Equal(getSortedJobs(t, reconciler), tc.expectedJobs); diff != nil {
 				t.Errorf("jobs differ from expected ones: %v", diff)
 			}
 
@@ -729,11 +726,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				t.Errorf("backups differ from expected, diff: %v", diff)
 			}
 
-			jobs := batchv1.JobList{}
-			if err := reconciler.List(context.Background(), &jobs); err != nil {
-				t.Fatalf("Error reading created jobs: %v", err)
-			}
-			if diff := deep.Equal(jobs.Items, tc.expectedJobs); diff != nil {
+			if diff := deep.Equal(getSortedJobs(t, reconciler), tc.expectedJobs); diff != nil {
 				t.Errorf("jobs differ from expected ones: %v", diff)
 			}
 
@@ -1246,11 +1239,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 				t.Errorf("backups differ from expected, diff: %v", diff)
 			}
 
-			jobs := batchv1.JobList{}
-			if err := reconciler.List(context.Background(), &jobs); err != nil {
-				t.Fatalf("Error reading created jobs: %v", err)
-			}
-			if diff := deep.Equal(jobs.Items, tc.expectedJobs); diff != nil {
+			if diff := deep.Equal(getSortedJobs(t, reconciler), tc.expectedJobs); diff != nil {
 				t.Errorf("jobs differ from expected ones: %v", diff)
 			}
 
@@ -1556,11 +1545,7 @@ func TestFinalization(t *testing.T) {
 				t.Errorf("backups differ from expected, diff: %v", diff)
 			}
 
-			jobs := batchv1.JobList{}
-			if err := reconciler.List(context.Background(), &jobs); err != nil {
-				t.Fatalf("Error reading created jobs: %v", err)
-			}
-			if diff := deep.Equal(jobs.Items, tc.expectedJobs); diff != nil {
+			if diff := deep.Equal(getSortedJobs(t, reconciler), tc.expectedJobs); diff != nil {
 				t.Errorf("jobs differ from expected ones: %v", diff)
 			}
 
@@ -1573,6 +1558,18 @@ func TestFinalization(t *testing.T) {
 			}
 		})
 	}
+}
+
+func getSortedJobs(t *testing.T, reconciler Reconciler) []batchv1.Job {
+	jobList := batchv1.JobList{}
+	if err := reconciler.List(context.Background(), &jobList); err != nil {
+		t.Fatalf("Error reading created jobList: %v", err)
+	}
+	jobs := jobList.DeepCopy().Items
+	sort.Slice(jobs, func(i, j int) bool {
+		return jobs[i].Name < jobs[j].Name
+	})
+	return jobs
 }
 
 func intPtr(i int) *int {
