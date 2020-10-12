@@ -135,6 +135,9 @@ spec:
         - -apiserver-reconciling-disabled-by-default=false
         {{- end }}
         - -pprof-listen-address={{ .Values.kubermatic.controller.pprofEndpoint }}
+        {{- if .Values.kubermatic.disableAddonEnforce }}
+        - -addon-enforce-interval=0
+        {{- end }}
         image: '{{ .Values.kubermatic.controller.image.repository }}:{{ .Values.kubermatic.controller.image.tag }}'
         imagePullPolicy: {{ .Values.kubermatic.controller.image.pullPolicy }}
         env:
