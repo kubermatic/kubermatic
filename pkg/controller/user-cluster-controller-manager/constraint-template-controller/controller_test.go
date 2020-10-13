@@ -30,42 +30,43 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+const ctName = "requiredlabels"
+
 func TestReconcile(t *testing.T) {
+	sch, err := v1beta1.SchemeBuilder.Build()
+	if err != nil {
+		t.Fatalf("building gatekeeper scheme failed: %v", err)
+	}
+
 	testCases := []struct {
-		name               string
-		constraintTemplate *v1.ConstraintTemplate
-		requestName        string
-		expectedCT         *v1.ConstraintTemplate
+		name        string
+		requestName string
+		expectedCT  *v1.ConstraintTemplate
+		seedClient  client.Client
+		userClient  client.Client
 	}{
 		{
-			name:               "sync ct to user cluster",
-			constraintTemplate: genConstraintTemplate("requiredlabels"),
-			requestName:        "requiredlabels",
-			expectedCT:         genConstraintTemplate("requiredlabels"),
+			name:        "sync ct to user cluster",
+			requestName: ctName,
+			expectedCT:  genConstraintTemplate(ctName),
+			seedClient:  fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genConstraintTemplate(ctName)),
+			userClient:  fakectrlruntimeclient.NewFakeClientWithScheme(sch),
 		},
 	}
 
-	for idx := range testCases {
-		tc := testCases[idx]
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-
-			sch, err := v1beta1.SchemeBuilder.Build()
-			if err != nil {
-				t.Fatalf("building gatekeeper scheme failed: %v", err)
-			}
-			seedClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.constraintTemplate)
-			userClient := fakectrlruntimeclient.NewFakeClientWithScheme(sch)
 
 			r := &reconciler{
 				ctx:        context.Background(),
 				log:        kubermaticlog.Logger,
-				userClient: userClient,
-				seedClient: seedClient,
+				userClient: tc.userClient,
+				seedClient: tc.seedClient,
 				recorder:   record.NewFakeRecorder(10),
 			}
 
@@ -75,7 +76,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			ct := &v1beta1.ConstraintTemplate{}
-			if err := userClient.Get(context.Background(), request.NamespacedName, ct); err != nil {
+			if err := tc.userClient.Get(context.Background(), request.NamespacedName, ct); err != nil {
 				t.Fatalf("failed to get constraint template: %v", err)
 			}
 

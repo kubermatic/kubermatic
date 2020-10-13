@@ -42,7 +42,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraint templates to gatekeeper constraint templates on the user cluster.
-	controllerName = "constraint_template_controller"
+	controllerName = "gatekeeper_constraint_template_controller"
 )
 
 type reconciler struct {
@@ -84,42 +84,16 @@ func Add(ctx context.Context, log *zap.SugaredLogger, userMgr, seedMgr manager.M
 }
 
 func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("ConstraintTemplate", request.Name)
+	log := r.log.With("ConstraintTemplate", request)
 	log.Debug("Reconciling")
 
 	constraintTemplate := &v1.ConstraintTemplate{}
 	if err := r.seedClient.Get(r.ctx, request.NamespacedName, constraintTemplate); err != nil {
 		if kerrors.IsNotFound(err) {
-			log.Debug("constraint template not found, returning")
+			log.Debugw("constraint template not found, returning", "constraint-name", constraintTemplate.Name)
 			return reconcile.Result{}, nil
 		}
-		return reconcile.Result{}, fmt.Errorf("failed to get constraint template: %v", err)
-	}
-
-	if constraintTemplate.DeletionTimestamp != nil {
-		if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.ConstraintTemplateCleanupFinalizer) {
-			return reconcile.Result{}, nil
-		}
-		if err := r.userClient.Delete(r.ctx, &v1beta1.ConstraintTemplate{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: constraintTemplate.Name,
-			},
-		}); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to delete constraint template: %v", err)
-		}
-
-		kuberneteshelper.RemoveFinalizer(constraintTemplate, kubermaticapiv1.ConstraintTemplateCleanupFinalizer)
-		if err := r.seedClient.Update(r.ctx, constraintTemplate); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to remove constraint template finalizer: %v", err)
-		}
-		return reconcile.Result{}, nil
-	}
-
-	if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.ConstraintTemplateCleanupFinalizer) {
-		kuberneteshelper.AddFinalizer(constraintTemplate, kubermaticapiv1.ConstraintTemplateCleanupFinalizer)
-		if err := r.seedClient.Update(r.ctx, constraintTemplate); err != nil {
-			return reconcile.Result{}, fmt.Errorf("failed to set constraint template finalizer: %v", err)
-		}
+		return reconcile.Result{}, fmt.Errorf("failed to get constraint template %s: %v", constraintTemplate.Name, err)
 	}
 
 	err := r.reconcile(constraintTemplate)
@@ -132,9 +106,35 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 // reconcile reconciles the kubermatic constraint template on the seed cluster to the gatekeeper one on the user cluster.
 // For now without filters but can be added.
-func (r *reconciler) reconcile(ct *v1.ConstraintTemplate) error {
+func (r *reconciler) reconcile(constraintTemplate *v1.ConstraintTemplate) error {
+
+	if constraintTemplate.DeletionTimestamp != nil {
+		if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer) {
+			return nil
+		}
+		if err := r.userClient.Delete(r.ctx, &v1beta1.ConstraintTemplate{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: constraintTemplate.Name,
+			},
+		}); err != nil {
+			return fmt.Errorf("failed to delete constraint template %s: %v", constraintTemplate.Name, err)
+		}
+
+		kuberneteshelper.RemoveFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer)
+		if err := r.seedClient.Update(r.ctx, constraintTemplate); err != nil {
+			return fmt.Errorf("failed to remove constraint template finalizer %s: %v", constraintTemplate.Name, err)
+		}
+		return nil
+	}
+
+	if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer) {
+		kuberneteshelper.AddFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer)
+		if err := r.seedClient.Update(r.ctx, constraintTemplate); err != nil {
+			return fmt.Errorf("failed to set constraint template finalizer %s: %v", constraintTemplate.Name, err)
+		}
+	}
 	ctCreatorGetters := []reconciling.NamedConstraintTemplateCreatorGetter{
-		constraintTemplateCreatorGetter(ct),
+		constraintTemplateCreatorGetter(constraintTemplate),
 	}
 
 	return reconciling.ReconcileConstraintTemplates(r.ctx, ctCreatorGetters, "", r.userClient)

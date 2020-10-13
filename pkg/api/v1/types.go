@@ -1625,8 +1625,8 @@ const (
 	UserClusterRoleCleanupFinalizer = "kubermatic.io/user-cluster-role"
 	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup
 	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.io/cleanup-kubeconfig-secret"
-	// ConstraintTemplateCleanupFinalizer indicates that synced Constraint Templates on user cluster need cleanup
-	ConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-constraint-templates"
+	// GatekeeperConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on user cluster need cleanup
+	GatekeeperConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-constraint-templates"
 )
 
 func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {
