@@ -260,7 +260,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer existis on the addon: %v", err)
 	}
 	if err := r.ensureResourcesCreatedConditionIsSet(ctx, addon); err != nil {
-		return nil, fmt.Errorf("failed to set add ResourcesCreated Condition: %v", err)
+		return nil, fmt.Errorf("failed to set ResourcesCreated Condition: %v", err)
 	}
 	return nil, nil
 }
@@ -600,10 +600,7 @@ func getAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditi
 
 func addonResourcesCreated(addon *kubermaticv1.Addon) bool {
 	_, cond := getAddonCondition(addon, kubermaticv1.AddonResourcesCreated)
-	if cond != nil && cond.Status == corev1.ConditionTrue {
-		return true
-	}
-	return false
+	return cond != nil && cond.Status == corev1.ConditionTrue
 }
 
 func hasEnsureResourcesLabel(addon *kubermaticv1.Addon) bool {
