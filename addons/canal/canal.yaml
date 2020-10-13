@@ -1,4 +1,4 @@
-# Source: https://docs.projectcalico.org/v3.8/manifests/canal.yaml
+# Source: https://docs.projectcalico.org/v3.16/manifests/canal.yaml
 # 3 modification:
 #   - The ClusterRoleBinding canal-calico was renamed to canal-calico-node as upstream changed it in a way that we cannot roll out via kubectl apply
 #   - All images now use the canonical name
@@ -408,7 +408,7 @@ spec:
         # This container installs the CNI binaries
         # and CNI network config file on each node.
         - name: install-cni
-          image: docker.io/calico/cni:v3.8.0
+          image: docker.io/calico/cni:v3.16.3
           command: ["/install-cni.sh"]
           env:
             # Name of the CNI config file to create.
@@ -438,7 +438,7 @@ spec:
         # container programs network policy and routes on each
         # host.
         - name: calico-node
-          image: docker.io/calico/node:v3.8.0
+          image: docker.io/calico/node:v3.16.3
           env:
             # Use Kubernetes API as the backing datastore.
             - name: DATASTORE_TYPE
@@ -522,7 +522,7 @@ spec:
         # This container runs flannel using the kube-subnet-mgr backend
         # for allocating subnets.
         - name: kube-flannel
-          image: quay.io/coreos/flannel:v0.11.0
+          image: quay.io/coreos/flannel:v0.12.0
           command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
           securityContext:
             privileged: true
