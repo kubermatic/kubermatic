@@ -11295,7 +11295,7 @@
           "x-go-name": "Datacenter"
         },
         "datastore": {
-          "description": "The name of the default Datastore to be used for provisioning volumes\nusing storage classes/dynamic provisioning and for storing virtual\nmachine files in case no `Datastore` or `DatastoreCluster` is provided\nwith the `VSphereCloudSpec`.",
+          "description": "The default Datastore to be used for provisioning volumes using storage\nclasses/dynamic provisioning and for storing virtual machine files in\ncase no `Datastore` or `DatastoreCluster` is provided at Cluster level.",
           "type": "string",
           "x-go-name": "DefaultDatastore"
         },
@@ -14319,12 +14319,12 @@
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
         "datastore": {
-          "description": "Datastore to be used for storing virtual machines, it is mutually\nexclusive with DatastoreCluster.\n+optional",
+          "description": "Datastore to be used for storing virtual machines and as a default for\ndynamic volume provisioning, it is mutually exclusive with\nDatastoreCluster.\n+optional",
           "type": "string",
           "x-go-name": "Datastore"
         },
         "datastoreCluster": {
-          "description": "DatastoreCluster to be used for determining the Datastore for virtual\nmachines, it is mutually exclusive with Datastore.\n+optional",
+          "description": "DatastoreCluster to be used for storing virtual machines, it is mutually\nexclusive with Datastore.\n+optional",
           "type": "string",
           "x-go-name": "DatastoreCluster"
         },
