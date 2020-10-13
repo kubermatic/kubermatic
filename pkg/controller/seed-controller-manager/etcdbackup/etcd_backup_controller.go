@@ -42,7 +42,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/record"
 	utilpointer "k8s.io/utils/pointer"
-	"reflect"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -55,8 +54,8 @@ import (
 )
 
 const (
-	ControllerName     = "kubermatic_etcd_backup_controller"
-	defaultClusterSize = 3
+	// ControllerName name of etcd backup controller.
+	ControllerName = "kubermatic_etcd_backup_controller"
 
 	// DeleteAllBackupsFinalizer indicates that the backups still need to be deleted in the backend
 	DeleteAllBackupsFinalizer = "kubermatic.io/delete-all-backups"
@@ -152,6 +151,7 @@ func Add(
 	return c.Watch(&source.Kind{Type: &kubermaticv1.EtcdBackupConfig{}}, &handler.EnqueueRequestForObject{})
 }
 
+// Reconcile handle etcd backups reconciliation.
 func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -241,10 +241,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, back
 
 	totalReconcile = minReconcile(totalReconcile, nextReconcile)
 
-	//if backupConfig.DeletionTimestamp != nil {
-	//	totalReconcile = minReconcile(totalReconcile, &reconcile.Result{RequeueAfter: 30 * time.Second})
-	//}
-
 	return totalReconcile, nil
 }
 
@@ -288,20 +284,18 @@ func (r *Reconciler) ensureNextBackupIsScheduled(ctx context.Context, backupConf
 
 		return nil, nil
 
-	} else {
-		if r.setBackupConfigCondition(
-			backupConfig,
-			kubermaticv1.EtcdBackupConfigConditionSchedulingActive,
-			corev1.ConditionTrue,
-			"",
-			"") {
+	} else if r.setBackupConfigCondition(
+		backupConfig,
+		kubermaticv1.EtcdBackupConfigConditionSchedulingActive,
+		corev1.ConditionTrue,
+		"",
+		"") {
 
-			// condition changed, need to persist and generate an event
-			if err := r.Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
-				return nil, errors.Wrap(err, "failed to update backup config")
-			}
-			r.recorder.Event(backupConfig, corev1.EventTypeNormal, "NotTooManyActiveBackups", "backup count low enough; scheduling new backups")
+		// condition changed, need to persist and generate an event
+		if err := r.Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackupConfig)); err != nil {
+			return nil, errors.Wrap(err, "failed to update backup config")
 		}
+		r.recorder.Event(backupConfig, corev1.EventTypeNormal, "NotTooManyActiveBackups", "backup count low enough; scheduling new backups")
 	}
 
 	if backupConfig.Spec.Schedule == "" {
@@ -311,15 +305,13 @@ func (r *Reconciler) ensureNextBackupIsScheduled(ctx context.Context, backupConf
 			durationToScheduledTime := backupConfig.Status.CurrentBackups[0].ScheduledTime.Sub(r.clock.Now())
 			if durationToScheduledTime >= 0 {
 				return &reconcile.Result{Requeue: true, RequeueAfter: durationToScheduledTime}, nil
-			} else {
-				return nil, nil
 			}
-		} else {
-			backupConfig.Status.CurrentBackups = []kubermaticv1.BackupStatus{{}}
-			backupToSchedule = &backupConfig.Status.CurrentBackups[0]
-			backupToSchedule.ScheduledTime = &metav1.Time{Time: r.clock.Now()}
-			backupToSchedule.BackupName = backupConfig.Name
+			return nil, nil
 		}
+		backupConfig.Status.CurrentBackups = []kubermaticv1.BackupStatus{{}}
+		backupToSchedule = &backupConfig.Status.CurrentBackups[0]
+		backupToSchedule.ScheduledTime = &metav1.Time{Time: r.clock.Now()}
+		backupToSchedule.BackupName = backupConfig.Name
 
 	} else {
 		schedule, err := parseCronSchedule(backupConfig.Spec.Schedule)
@@ -367,10 +359,9 @@ func (r *Reconciler) setBackupConfigCondition(backupConfig *kubermaticv1.EtcdBac
 		if cond.Type == conditionType {
 			if cond.Status == status {
 				return false
-			} else {
-				*cond = newCond
-				return true
 			}
+			*cond = newCond
+			return true
 		}
 	}
 
@@ -562,12 +553,14 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 		backupJobDeleted := false
 		if backup.BackupFinishedTime != nil {
 			var retentionTime time.Duration
-			if backupConfig.DeletionTimestamp != nil {
+			switch {
+			case backupConfig.DeletionTimestamp != nil:
 				retentionTime = 0
-			} else if backup.BackupPhase == kubermaticv1.BackupStatusPhaseCompleted {
+			case backup.BackupPhase == kubermaticv1.BackupStatusPhaseCompleted:
 				retentionTime = succeededJobRetentionTime
-			} else {
+			default:
 				retentionTime = failedJobRetentionTime
+
 			}
 
 			age := r.clock.Now().Sub(backup.BackupFinishedTime.Time)
@@ -581,16 +574,19 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 				job := &batchv1.Job{}
 
 				err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: backup.JobName}, job)
-				if kerrors.IsNotFound(err) {
+				switch {
+				case kerrors.IsNotFound(err):
 					backupJobDeleted = true
-				} else if err == nil {
-					if err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
+				case err == nil:
+					err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground))
+					if err != nil && !kerrors.IsNotFound(err) {
 						return nil, errors.Wrapf(err, "backup %s: failed to delete backup job %s", backup.BackupName, backup.JobName)
 					}
 					backupJobDeleted = true
-				} else if !kerrors.IsNotFound(err) {
+				case !kerrors.IsNotFound(err):
 					return nil, errors.Wrapf(err, "backup %s: failed to get backup job %s", backup.BackupName, backup.JobName)
 				}
+
 			}
 		}
 
@@ -614,14 +610,16 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 				job := &batchv1.Job{}
 
 				err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: backup.DeleteJobName}, job)
-				if kerrors.IsNotFound(err) {
+				switch {
+				case kerrors.IsNotFound(err):
 					deleteJobDeleted = true
-				} else if err == nil {
-					if err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
+				case err == nil:
+					err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground))
+					if err != nil && !kerrors.IsNotFound(err) {
 						return nil, errors.Wrapf(err, "backup %s: failed to delete job %s", backup.BackupName, backup.DeleteJobName)
 					}
 					deleteJobDeleted = true
-				} else if !kerrors.IsNotFound(err) {
+				case !kerrors.IsNotFound(err):
 					return nil, errors.Wrapf(err, "backup %s: failed to get job %s", backup.BackupName, backup.DeleteJobName)
 				}
 			}
@@ -922,15 +920,6 @@ func (r *Reconciler) ensureEtcdClientSecret(ctx context.Context, cluster *kuberm
 	return nil
 }
 
-func (r *Reconciler) updateBackupConfig(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, modify func(*kubermaticv1.EtcdBackupConfig)) error {
-	oldBackup := backupConfig.DeepCopy()
-	modify(backupConfig)
-	if reflect.DeepEqual(oldBackup, backupConfig) {
-		return nil
-	}
-	return r.Client.Patch(ctx, backupConfig, ctrlruntimeclient.MergeFrom(oldBackup))
-}
-
 func parseCronSchedule(scheduleString string) (cron.Schedule, error) {
 	var validationErrors []error
 	var schedule cron.Schedule
@@ -966,11 +955,10 @@ func parseCronSchedule(scheduleString string) (cron.Schedule, error) {
 func getJobConditionIfTrue(job *batchv1.Job, condType batchv1.JobConditionType) *batchv1.JobCondition {
 	if len(job.Status.Conditions) == 0 {
 		return nil
-	} else {
-		for _, cond := range job.Status.Conditions {
-			if cond.Type == condType && cond.Status == corev1.ConditionTrue {
-				return cond.DeepCopy()
-			}
+	}
+	for _, cond := range job.Status.Conditions {
+		if cond.Type == condType && cond.Status == corev1.ConditionTrue {
+			return cond.DeepCopy()
 		}
 	}
 	return nil

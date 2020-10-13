@@ -438,16 +438,12 @@ const (
 	// EtcdTLSKeySecretKey etcd-tls.key
 	EtcdTLSKeySecretKey = "etcd-tls.key"
 
-	// EtcdRestoreS3CredentialsSecret names the secret expected in seed kube-system that must contain S3 credentials for etcd backup restores,
-	// as well as the secret that will be created in the cluster-xxx namespace and mounted by the etcd launcher, containing the S3
-	// credentials as well as the bucket and endpoint names
+	// EtcdRestoreS3CredentialsSecret names the secret expected in seed kube-system that must contain S3 credentials for etcd backup restores
 	EtcdRestoreS3CredentialsSecret     = "s3-credentials"
-	EtcdRestoreS3AccessKeyIdKey        = "ACCESS_KEY_ID"
+	EtcdRestoreS3AccessKeyIDKey        = "ACCESS_KEY_ID"
 	EtcdRestoreS3SecretKeyAccessKeyKey = "SECRET_ACCESS_KEY"
 
 	// EtcdRestoreS3SettingsConfigMap names the configmap expected in seed kube-system that must contain S3 bucket and endpoint names.
-	// Will be copied along with the credentials to the secret named EtcdRestoreS3CredentialsSecret in the cluster-xxx namespace, to be
-	// mounted by the etcd launcher
 	EtcdRestoreS3SettingsConfigMap = "s3-settings"
 	EtcdRestoreS3BucketNameKey     = "BUCKET_NAME"
 	EtcdRestoreS3EndpointKey       = "ENDPOINT"
@@ -1138,6 +1134,9 @@ func GetHostCACertVolumeMounts() []corev1.VolumeMount {
 	}
 }
 
+// GetEtcdRestoreS3Client returns an S3 client for downloading the backup for a given EtcdRestore.
+// If the EtcdRestore doesn't reference a secret containing the credentials and endpoint and bucket name data,
+// one can optionally be created from a well-known secret and configmap in kube-system.
 func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdRestore, createSecretIfMissing bool, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*minio.Client, string, error) {
 	secretData := make(map[string]string)
 
@@ -1203,7 +1202,7 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		}
 	}
 
-	accessKeyId := secretData[EtcdRestoreS3AccessKeyIdKey]
+	accessKeyID := secretData[EtcdRestoreS3AccessKeyIDKey]
 	secretAccessKey := secretData[EtcdRestoreS3SecretKeyAccessKeyKey]
 	bucketName := secretData[EtcdRestoreS3BucketNameKey]
 	endpoint := secretData[EtcdRestoreS3EndpointKey]
@@ -1215,7 +1214,7 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		endpoint = EtcdRestoreDefaultS3SEndpoint
 	}
 
-	s3Client, err := minio.New(endpoint, accessKeyId, secretAccessKey, true)
+	s3Client, err := minio.New(endpoint, accessKeyID, secretAccessKey, true)
 	if err != nil {
 		return nil, "", fmt.Errorf("error creating s3 client: %w", err)
 	}
