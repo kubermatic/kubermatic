@@ -57,7 +57,7 @@
       "strokeWidth": 1,
       "targets": [
         {
-          "expr": "count by (type) (kubermatic_cluster_info)",
+          "expr": "count by (type) (count by (name, type) (kubermatic_cluster_info))",
           "instant": true,
           "legendFormat": "{{ type }}",
           "refId": "A"
@@ -106,7 +106,7 @@
       "strokeWidth": 1,
       "targets": [
         {
-          "expr": "count by (cloud_provider) (kubermatic_cluster_info)",
+          "expr": "count by (cloud_provider) (count by (name, cloud_provider) (kubermatic_cluster_info))",
           "instant": true,
           "legendFormat": "{{ cloud_provider }}",
           "refId": "A"
@@ -155,7 +155,7 @@
       "strokeWidth": 1,
       "targets": [
         {
-          "expr": "count by (datacenter) (kubermatic_cluster_info)",
+          "expr": "count by (datacenter) (count by (name, datacenter) (kubermatic_cluster_info))",
           "instant": true,
           "legendFormat": "{{ datacenter }}",
           "refId": "A"
@@ -211,7 +211,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count by (type) (kubermatic_cluster_info)",
+          "expr": "count by (type) (count by (name, type) (kubermatic_cluster_info))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ type }}",
@@ -303,7 +303,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count by (cloud_provider) (kubermatic_cluster_info)",
+          "expr": "count by (cloud_provider) (count by (name, cloud_provider) (kubermatic_cluster_info))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ cloud_provider }}",
@@ -395,7 +395,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count by (datacenter) (kubermatic_cluster_info)",
+          "expr": "count by (datacenter) (count by (name, datacenter) (kubermatic_cluster_info))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ datacenter }}",
@@ -491,7 +491,7 @@
       "strokeWidth": 1,
       "targets": [
         {
-          "expr": "count by (master_version) (label_replace(kubermatic_cluster_info{type=\"kubernetes\"}, \"master_version\", \"$1\", \"master_version\", \"([0-9]+\\\\.[0-9]+).*\"))",
+          "expr": "count by (master_version) (count by (name, master_version) (label_replace(kubermatic_cluster_info{type=\"kubernetes\"}, \"master_version\", \"$1\", \"master_version\", \"([0-9]+\\\\.[0-9]+).*\")))",
           "instant": true,
           "legendFormat": "{{ master_version }}",
           "refId": "A"
@@ -538,7 +538,7 @@
       "strokeWidth": 1,
       "targets": [
         {
-          "expr": "count by (master_version) (kubermatic_cluster_info{type=\"kubernetes\"})",
+          "expr": "count by (master_version) (count by (name, master_version) (kubermatic_cluster_info{type=\"kubernetes\"}))",
           "instant": true,
           "legendFormat": "{{ master_version }}",
           "refId": "A"
@@ -594,7 +594,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count by (master_version) (label_replace(kubermatic_cluster_info{type=\"kubernetes\"}, \"master_version\", \"$1\", \"master_version\", \"([0-9]+\\\\.[0-9]+).*\"))",
+          "expr": "count by (master_version) (count by (name, master_version) (label_replace(kubermatic_cluster_info{type=\"kubernetes\"}, \"master_version\", \"$1\", \"master_version\", \"([0-9]+\\.[0-9]+).*\")))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ master_version }}",
@@ -686,7 +686,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count by (master_version) (kubermatic_cluster_info{type=\"kubernetes\"})",
+          "expr": "count by (master_version) (count by (name, master_version) (kubermatic_cluster_info{type=\"kubernetes\"}))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ master_version }}",
@@ -782,7 +782,7 @@
       "strokeWidth": 1,
       "targets": [
         {
-          "expr": "count by (master_version) (label_replace(kubermatic_cluster_info{type=\"openshift\"}, \"master_version\", \"$1\", \"master_version\", \"([0-9]+\\\\.[0-9]+).*\"))",
+          "expr": "count by (master_version) (count by (name, master_version) (count by (name, master_version) (label_replace(kubermatic_cluster_info{type=\"openshift\"}, \"master_version\", \"$1\", \"master_version\", \"([0-9]+\\.[0-9]+).*\"))))",
           "instant": true,
           "legendFormat": "{{ master_version }}",
           "refId": "A"
@@ -829,7 +829,7 @@
       "strokeWidth": 1,
       "targets": [
         {
-          "expr": "count by (master_version) (kubermatic_cluster_info{type=\"openshift\"})",
+          "expr": "count by (master_version) (count by (name, master_version) (kubermatic_cluster_info{type=\"openshift\"}))",
           "instant": true,
           "legendFormat": "{{ master_version }}",
           "refId": "A"
@@ -885,7 +885,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count by (master_version) (label_replace(kubermatic_cluster_info{type=\"openshift\"}, \"master_version\", \"$1\", \"master_version\", \"([0-9]+\\\\.[0-9]+).*\"))",
+          "expr": "count by (master_version) (count by (name, master_version) (label_replace(kubermatic_cluster_info{type=\"openshift\"}, \"master_version\", \"$1\", \"master_version\", \"([0-9]+\\\\.[0-9]+).*\")))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ master_version }}",
@@ -977,7 +977,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "count by (master_version) (kubermatic_cluster_info{type=\"openshift\"})",
+          "expr": "count by (master_version) (count by (name, master_version) (kubermatic_cluster_info{type=\"openshift\"}))",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{ master_version }}",
