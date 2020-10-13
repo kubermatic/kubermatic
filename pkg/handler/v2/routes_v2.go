@@ -80,6 +80,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/namespaces").
 		Handler(r.listNamespace())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/upgrades").
+		Handler(r.getClusterUpgrades())
+
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}").
@@ -441,6 +445,32 @@ func (r Routing) listNamespace() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListNamespaceEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		cluster.DecodeGetClusterReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/upgrades project getClusterUpgradesV2
+//
+//    Gets possible cluster upgrades
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []MasterVersion
+//       401: empty
+//       403: empty
+func (r Routing) getClusterUpgrades() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.GetUpgradesEndpoint(r.updateManager, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeGetClusterReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

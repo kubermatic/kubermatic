@@ -35,79 +35,18 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 	"k8c.io/kubermatic/v2/pkg/version"
 
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 		req, ok := request.(common.GetClusterReq)
 		if !ok {
 			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
 		}
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-		if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
-			// Happens during cluster creation when the CRD is not setup yet
-			if _, ok := err.(*meta.NoKindMatchError); ok {
-				return nil, nil
-			}
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		clusterType := apiv1.KubernetesClusterType
-		if cluster.IsOpenshift() {
-			clusterType = apiv1.OpenShiftClusterType
-		}
-
-		versions, err := updateManager.GetPossibleUpdates(cluster.Spec.Version.String(), clusterType)
-		if err != nil {
-			return nil, err
-		}
-
-		upgrades := make([]*apiv1.MasterVersion, 0)
-		for _, v := range versions {
-			isRestricted := false
-			if clusterType == apiv1.KubernetesClusterType {
-				isRestricted, err = isRestrictedByKubeletVersions(v, machineDeployments.Items)
-				if err != nil {
-					return nil, err
-				}
-			}
-
-			upgrades = append(upgrades, &apiv1.MasterVersion{
-				Version:                    v.Version,
-				RestrictedByKubeletVersion: isRestricted,
-			})
-		}
-
-		return upgrades, nil
+		return handlercommon.GetUpgradesEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider, updateManager)
 	}
-}
-
-func isRestrictedByKubeletVersions(controlPlaneVersion *version.Version, mds []clusterv1alpha1.MachineDeployment) (bool, error) {
-	for _, md := range mds {
-		kubeletVersion, err := semver.NewVersion(md.Spec.Template.Spec.Versions.Kubelet)
-		if err != nil {
-			return false, err
-		}
-
-		if err = nodeupdate.EnsureVersionCompatible(controlPlaneVersion.Version, kubeletVersion); err != nil {
-			return true, nil
-		}
-	}
-	return false, nil
 }
 
 // NodeUpgradesReq defines HTTP request for getNodeUpgrades
