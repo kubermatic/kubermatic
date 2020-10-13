@@ -232,10 +232,9 @@ type DatacenterSpecVSphere struct {
 	Endpoint string `json:"endpoint"`
 	// If set to true, disables the TLS certificate check against the endpoint.
 	AllowInsecure bool `json:"allow_insecure"`
-	// The name of the default Datastore to be used for provisioning volumes
-	// using storage classes/dynamic provisioning and for storing virtual
-	// machine files in case no `Datastore` or `DatastoreCluster` is provided
-	// with the `VSphereCloudSpec`.
+	// The default Datastore to be used for provisioning volumes using storage
+	// classes/dynamic provisioning and for storing virtual machine files in
+	// case no `Datastore` or `DatastoreCluster` is provided at Cluster level.
 	DefaultDatastore string `json:"datastore"`
 	// The name of the datacenter to use.
 	Datacenter string `json:"datacenter"`
