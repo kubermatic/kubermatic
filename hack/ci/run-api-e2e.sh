@@ -23,6 +23,16 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
+TEST_NAME="Pre-warm Go build cache"
+echodate "Attempting to pre-warm Go build cache"
+
+beforeGocache=$(nowms)
+make download-gocache
+pushElapsed gocache_download_duration_milliseconds $beforeGocache
+
+export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
+
+source hack/ci/setup-kind-cluster.sh
 source hack/ci/setup-kubermatic-in-kind.sh
 
 echodate "Creating UI Azure preset..."
@@ -123,7 +133,6 @@ appendTrap print_kubermatic_logs EXIT
 
 echodate "Running API E2E tests..."
 
-export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)
 go test -tags="create,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
 go test -tags="e2e,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v
 go test -tags="logout,$KUBERMATIC_EDITION" -timeout 20m ./pkg/test/e2e/api -v

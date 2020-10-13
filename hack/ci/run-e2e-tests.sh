@@ -26,6 +26,17 @@ source hack/lib.sh
 export GIT_HEAD_HASH="$(git rev-parse HEAD)"
 export KUBERMATIC_VERSION="${GIT_HEAD_HASH}"
 
+TEST_NAME="Pre-warm Go build cache"
+echodate "Attempting to pre-warm Go build cache"
+
+beforeGocache=$(nowms)
+make download-gocache
+pushElapsed gocache_download_duration_milliseconds $beforeGocache
+
+echodate "Creating kind cluster"
+export KIND_CLUSTER_NAME="${SEED_NAME:-kubermatic}"
+source hack/ci/setup-kind-cluster.sh
+
 echodate "Setting up Kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 
 beforeKubermaticSetup=$(nowms)
@@ -36,7 +47,5 @@ else
 fi
 pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
 
-echodate "Done setting up Kubermatic in kind"
-
 echodate "Running conformance tests"
-KUBERMATIC_NO_WORKER_NAME=true ./hack/ci/run-conformance-tests.sh
+./hack/ci/run-conformance-tests.sh
