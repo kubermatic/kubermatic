@@ -17,12 +17,15 @@ limitations under the License.
 package vsphere
 
 import (
+	"strings"
 	"testing"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+
+	"github.com/vmware/govmomi/simulator"
 )
 
 func TestGetCredentialsForCluster(t *testing.T) {
@@ -161,4 +164,167 @@ func testVsphereCloudSpec(user, password, infraManagementUser, infraManagementUs
 			},
 		},
 	}
+}
+
+func TestProviderValidateCloudSpec(t *testing.T) {
+	tests := []struct {
+		name    string
+		dc      *kubermaticv1.DatacenterSpecVSphere
+		spec    kubermaticv1.CloudSpec
+		wantErr bool
+	}{
+		{
+			name: "No datastore at Datacenter level nor datastore or datastore cluster at cluster level",
+			dc:   &kubermaticv1.DatacenterSpecVSphere{},
+			spec: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{},
+			},
+			wantErr: true,
+		},
+		{
+			name: "No datastore at Datacenter level but datastore at cluster level",
+			dc:   &kubermaticv1.DatacenterSpecVSphere{},
+			spec: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{
+					Datastore: "LocalDS_0",
+				},
+			},
+		},
+		{
+			name: "No datastore at Datacenter level but datastore cluster at cluster level",
+			dc:   &kubermaticv1.DatacenterSpecVSphere{},
+			spec: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{
+					DatastoreCluster: "DC0_POD0",
+				},
+			},
+		},
+		{
+			name: "Both datastore and datastore cluster at cluster level",
+			dc:   &kubermaticv1.DatacenterSpecVSphere{},
+			spec: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{
+					Datastore:        "LocalDS_0",
+					DatastoreCluster: "DC0_POD0",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Default datastore at datacenter level",
+			dc: &kubermaticv1.DatacenterSpecVSphere{
+				DefaultDatastore: "LocalDS_0",
+			},
+			spec: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{},
+			},
+		},
+		{
+			name: "Non existing default datastore at datacenter level",
+			dc: &kubermaticv1.DatacenterSpecVSphere{
+				DefaultDatastore: "whao",
+			},
+			spec: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Default datastore at datacenter overridden at cluster level",
+			dc: &kubermaticv1.DatacenterSpecVSphere{
+				DefaultDatastore: "LocalDS_0",
+			},
+			spec: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{
+					Datastore: "LocalDS_0",
+				},
+			},
+		},
+		{
+			name: "Default datastore at datacenter level overridden at cluster level by non existing datastore",
+			dc: &kubermaticv1.DatacenterSpecVSphere{
+				DefaultDatastore: "LocalDS_0",
+			},
+			spec: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{
+					Datastore: "i-do-not-exist",
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "Default datastore at datacenter and datastore cluster at cluster level",
+			dc: &kubermaticv1.DatacenterSpecVSphere{
+				DefaultDatastore: "LocalDS_0",
+			},
+			spec: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{
+					DatastoreCluster: "DC0_POD0",
+				},
+			},
+		},
+		{
+			name: "Default datastore at datacenter level overridden at cluster level by non existing Datastore",
+			dc: &kubermaticv1.DatacenterSpecVSphere{
+				DefaultDatastore: "LocalDS_0",
+			},
+			spec: kubermaticv1.CloudSpec{
+				VSphere: &kubermaticv1.VSphereCloudSpec{
+					DatastoreCluster: "i-do-not--exist",
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sim := vSphereSimulator{t: t}
+			sim.setUp()
+			defer sim.tearDown()
+			sim.fillClientInfo(tt.dc)
+			v := &Provider{
+				dc: tt.dc,
+			}
+			if err := v.ValidateCloudSpec(tt.spec); (err != nil) != tt.wantErr {
+				t.Errorf("Provider.ValidateCloudSpec() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// The following resources are made available:
+// * Datastore named: LocalDS_0
+// * Datastore cluster named: DC0_POD0
+type vSphereSimulator struct {
+	t      *testing.T
+	model  *simulator.Model
+	server *simulator.Server
+}
+
+func (v *vSphereSimulator) setUp() {
+	v.model = simulator.VPX()
+	// Pod == StoragePod == DatastoreCluster
+	v.model.Pod++
+	v.model.Cluster++
+
+	err := v.model.Create()
+	if err != nil {
+		v.t.Fatal(err)
+	}
+
+	v.server = v.model.Service.NewServer()
+}
+
+func (v *vSphereSimulator) tearDown() {
+	v.model.Remove()
+	v.server.Close()
+}
+
+func (v *vSphereSimulator) fillClientInfo(dc *kubermaticv1.DatacenterSpecVSphere) {
+	dc.Endpoint = strings.TrimSuffix(v.server.URL.String(), "/sdk")
+	dc.InfraManagementUser = &kubermaticv1.VSphereCredentials{
+		Username: simulator.DefaultLogin.Username(),
+	}
+	dc.InfraManagementUser.Password, _ = simulator.DefaultLogin.Password()
+	dc.Datacenter = "DC0"
 }
