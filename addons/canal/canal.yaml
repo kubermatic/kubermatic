@@ -23,6 +23,9 @@ data:
   # the pod network.
   masquerade: "true"
 
+  # Configure the MTU to use
+  veth_mtu: "1450"
+
   # The CNI network configuration to install on each node.  The special
   # values in this config will be automatically populated.
   cni_network_config: |-
@@ -303,6 +306,11 @@ rules:
     verbs:
       - create
       - update
+  - apiGroups: [""]
+    resources:
+      - configmaps
+    verbs:
+      - get
 ---
 # Flannel ClusterRole
 # Pulled from https://github.com/coreos/flannel/blob/master/Documentation/kube-flannel-rbac.yml
