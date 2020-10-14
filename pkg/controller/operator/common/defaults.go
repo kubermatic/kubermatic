@@ -188,22 +188,26 @@ var (
 	}
 
 	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
-		Default: semver.MustParse("v1.18.8"),
+		Default: semver.MustParse("v1.18.10"),
 		Versions: []*semver.Version{
 			// Kubernetes 1.16
 			semver.MustParse("v1.16.13"),
 			semver.MustParse("v1.16.14"),
 			semver.MustParse("v1.16.15"),
+			semver.MustParse("v1.16.16"),
 			// Kubernetes 1.17
 			semver.MustParse("v1.17.9"),
 			semver.MustParse("v1.17.11"),
 			semver.MustParse("v1.17.12"),
+			semver.MustParse("v1.17.13"),
 			// Kubernetes 1.18
 			semver.MustParse("v1.18.6"),
 			semver.MustParse("v1.18.8"),
+			semver.MustParse("v1.18.10"),
 			// Kubernetes 1.19
 			semver.MustParse("v1.19.0"),
 			semver.MustParse("v1.19.2"),
+			semver.MustParse("v1.19.3"),
 		},
 		Updates: []operatorv1alpha1.Update{
 			// ======= 1.15 =======

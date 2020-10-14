@@ -8,20 +8,28 @@ versions:
 - type: kubernetes
   version: 1.16.15
 - type: kubernetes
+  version: 1.16.16
+- type: kubernetes
   version: 1.17.9
 - type: kubernetes
   version: 1.17.11
 - type: kubernetes
   version: 1.17.12
 - type: kubernetes
+  version: 1.17.13
+- type: kubernetes
   version: 1.18.6
+- type: kubernetes
+  version: 1.18.8
 - default: true
   type: kubernetes
-  version: 1.18.8
+  version: 1.18.10
 - type: kubernetes
   version: 1.19.0
 - type: kubernetes
   version: 1.19.2
+- type: kubernetes
+  version: 1.19.3
 - type: openshift
   version: 4.1.9
 - default: true
