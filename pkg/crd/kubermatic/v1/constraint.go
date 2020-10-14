@@ -17,7 +17,7 @@ type Constraint struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	ConstraintSpec ConstraintSpec `json:"spec,omitempty"`
+	Spec ConstraintSpec `json:"spec,omitempty"`
 }
 
 type ConstraintSpec struct {

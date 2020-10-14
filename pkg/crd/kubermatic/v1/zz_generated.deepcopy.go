@@ -858,7 +858,7 @@ func (in *Constraint) DeepCopyInto(out *Constraint) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	in.ObjectMeta.DeepCopyInto(&out.ObjectMeta)
-	in.ConstraintSpec.DeepCopyInto(&out.ConstraintSpec)
+	in.Spec.DeepCopyInto(&out.Spec)
 	return
 }
 
