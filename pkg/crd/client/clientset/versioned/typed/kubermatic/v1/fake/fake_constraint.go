@@ -7,6 +7,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	labels "k8s.io/apimachinery/pkg/labels"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	types "k8s.io/apimachinery/pkg/types"
 	watch "k8s.io/apimachinery/pkg/watch"
@@ -42,7 +43,18 @@ func (c *FakeConstraints) List(ctx context.Context, opts v1.ListOptions) (result
 	if obj == nil {
 		return nil, err
 	}
-	return obj.(*kubermaticv1.ConstraintList), err
+
+	label, _, _ := testing.ExtractFromListOptions(opts)
+	if label == nil {
+		label = labels.Everything()
+	}
+	list := &kubermaticv1.ConstraintList{ListMeta: obj.(*kubermaticv1.ConstraintList).ListMeta}
+	for _, item := range obj.(*kubermaticv1.ConstraintList).Items {
+		if label.Matches(labels.Set(item.Labels)) {
+			list.Items = append(list.Items, item)
+		}
+	}
+	return list, err
 }
 
 // Watch returns a watch.Interface that watches the requested constraints.

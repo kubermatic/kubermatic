@@ -14,8 +14,8 @@ const (
 //+genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 type Constraint struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta   `json:",inline"`
+	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	ConstraintSpec ConstraintSpec `json:"spec,omitempty"`
 }
@@ -41,7 +41,8 @@ type Kind struct {
 	ApiGroups string `json:"apiGroups,omitempty"`
 }
 
-type Parameters interface {
+type Parameters struct {
+	RawJSON string `json:"rawJSON,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
