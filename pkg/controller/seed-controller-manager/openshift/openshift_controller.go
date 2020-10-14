@@ -445,6 +445,19 @@ func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) er
 	return reconciling.ReconcileStatefulSets(ctx, creators, osData.Cluster().Status.NamespaceName, r.Client)
 }
 
+func GetEtcdBackupConfigCreators(osData *openshiftData) []reconciling.NamedEtcdBackupConfigCreatorGetter {
+	creators := []reconciling.NamedEtcdBackupConfigCreatorGetter{
+		etcd.BackupConfigCreator(osData),
+	}
+	return creators
+}
+
+func (r *Reconciler) etcdBackupConfigs(ctx context.Context, c *kubermaticv1.Cluster, osData *openshiftData) error {
+	creators := GetEtcdBackupConfigCreators(osData)
+
+	return reconciling.ReconcileEtcdBackupConfigs(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+}
+
 func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedConfigMapCreatorGetter {
 	return []reconciling.NamedConfigMapCreatorGetter{
 		openshiftresources.APIServerOauthMetadataConfigMapCreator(osData),

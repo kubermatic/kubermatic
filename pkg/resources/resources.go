@@ -105,6 +105,8 @@ const (
 	PrometheusStatefulSetName = "prometheus"
 	//EtcdStatefulSetName is the name for the etcd StatefulSet
 	EtcdStatefulSetName = "etcd"
+	// EtcdDefaultBackupConfigName is the name for the default (preinstalled) EtcdBackupConfig of a cluster
+	EtcdDefaultBackupConfigName = "default-backups"
 
 	//ApiserverServiceName is the name for the apiserver service
 	ApiserverServiceName = "apiserver-external"

@@ -1,0 +1,14 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+spec:
+  cluster:
+    apiVersion: kubermatic.k8s.io/v1
+    kind: Cluster
+    name: de-test-01
+    uid: "1234567890"
+  keep: 20
+  name: default-backups
+  schedule: '*/20 * * * *'
+status: {}

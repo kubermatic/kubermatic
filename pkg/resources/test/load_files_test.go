@@ -705,6 +705,21 @@ func TestLoadFiles(t *testing.T) {
 
 					checkTestResult(t, fixturePath, res)
 				}
+
+				for _, creatorGetter := range kubernetescontroller.GetEtcdBackupConfigCreators(data) {
+					_, create := creatorGetter()
+					res, err := create(&kubermaticv1.EtcdBackupConfig{})
+					if err != nil {
+						t.Fatalf("failed to create EtcdBackupConfig: %v", err)
+					}
+
+					fixturePath := fmt.Sprintf("etcdbackupconfig-%s-%s-%s", prov, ver.Version.String(), res.Name)
+					if err != nil {
+						t.Fatalf("failed to create EtcdBackupConfig for %s: %v", fixturePath, err)
+					}
+
+					checkTestResult(t, fixturePath, res)
+				}
 			})
 		}
 	}

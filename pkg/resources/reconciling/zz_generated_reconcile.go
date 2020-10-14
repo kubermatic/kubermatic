@@ -841,6 +841,43 @@ func ReconcileCertificates(ctx context.Context, namedGetters []NamedCertificateC
 	return nil
 }
 
+// EtcdBackupConfigCreator defines an interface to create/update EtcdBackupConfigs
+type EtcdBackupConfigCreator = func(existing *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+
+// NamedEtcdBackupConfigCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedEtcdBackupConfigCreatorGetter = func() (name string, create EtcdBackupConfigCreator)
+
+// EtcdBackupConfigObjectWrapper adds a wrapper so the EtcdBackupConfigCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func EtcdBackupConfigObjectWrapper(create EtcdBackupConfigCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.EtcdBackupConfig))
+		}
+		return create(&kubermaticv1.EtcdBackupConfig{})
+	}
+}
+
+// ReconcileEtcdBackupConfigs will create and update the EtcdBackupConfigs coming from the passed EtcdBackupConfigCreator slice
+func ReconcileEtcdBackupConfigs(ctx context.Context, namedGetters []NamedEtcdBackupConfigCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := EtcdBackupConfigObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.EtcdBackupConfig{}, false); err != nil {
+			return fmt.Errorf("failed to ensure EtcdBackupConfig %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
 // ConstraintTemplateCreator defines an interface to create/update ConstraintTemplates
 type ConstraintTemplateCreator = func(existing *gatekeeperv1beta1.ConstraintTemplate) (*gatekeeperv1beta1.ConstraintTemplate, error)
 

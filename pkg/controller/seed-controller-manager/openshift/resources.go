@@ -95,6 +95,10 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cluster *kubermatic
 		return fmt.Errorf("failed to reconcile StatefulSets: %v", err)
 	}
 
+	if err := r.etcdBackupConfigs(ctx, osData.Cluster(), osData); err != nil {
+		return err
+	}
+
 	// Wait until the cloud provider infra is ready before attempting
 	// to render the cloud-config
 	// TODO: Model resource deployment as a DAG so we don't need hacks

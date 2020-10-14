@@ -96,6 +96,10 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
+	if err := r.ensureEtcdBackupConfigs(ctx, cluster, data); err != nil {
+		return err
+	}
+
 	// Wait until the cloud provider infra is ready before attempting
 	// to render the cloud-config
 	// TODO: Model resource deployment as a DAG so we don't need hacks
@@ -415,6 +419,14 @@ func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionCh
 	return creators
 }
 
+// GetEtcdBackupConfigCreators returns all EtcdBackupConfigCreators that are currently in use
+func GetEtcdBackupConfigCreators(data *resources.TemplateData) []reconciling.NamedEtcdBackupConfigCreatorGetter {
+	creators := []reconciling.NamedEtcdBackupConfigCreatorGetter{
+		etcd.BackupConfigCreator(data),
+	}
+	return creators
+}
+
 // GetPodDisruptionBudgetCreators returns all PodDisruptionBudgetCreators that are currently in use
 func GetPodDisruptionBudgetCreators(data *resources.TemplateData) []reconciling.NamedPodDisruptionBudgetCreatorGetter {
 	return []reconciling.NamedPodDisruptionBudgetCreatorGetter{
@@ -486,4 +498,10 @@ func (r *Reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context, data *re
 	}
 
 	return nil
+}
+
+func (r *Reconciler) ensureEtcdBackupConfigs(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	creators := GetEtcdBackupConfigCreators(data)
+
+	return reconciling.ReconcileEtcdBackupConfigs(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
