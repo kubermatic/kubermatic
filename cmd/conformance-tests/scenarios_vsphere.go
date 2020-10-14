@@ -18,6 +18,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
@@ -84,7 +85,7 @@ type vSphereScenario struct {
 }
 
 func (s *vSphereScenario) Name() string {
-	return fmt.Sprintf("vsphere-%s-%s", getOSNameFromSpec(s.nodeOsSpec), s.version.String())
+	return fmt.Sprintf("vsphere-%s-%s", getOSNameFromSpec(s.nodeOsSpec), strings.Replace(s.version.String(), ".", "-", -1))
 }
 
 func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
