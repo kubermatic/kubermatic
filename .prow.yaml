@@ -292,7 +292,7 @@ presubmits:
   # e2e tests for Kubernetes 1.15
   #########################################################
 
-  - name: pre-kubermatic-e2e-aws-coreos-1.15
+  - name: pre-kubermatic-e2e-aws-ubuntu-1.15
     decorate: true
     run_if_changed: "(api/|config/kubermatic|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -308,6 +308,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
         env:
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "coreos,centos"
         - name: VERSIONS_TO_TEST
           value: "v1.15.6"
         - name: SERVICE_ACCOUNT_KEY
@@ -884,7 +886,7 @@ presubmits:
   # e2e tests for Kubernetes 1.17
   #########################################################
 
-  - name: pre-kubermatic-e2e-aws-coreos-1.17
+  - name: pre-kubermatic-e2e-aws-ubuntu-1.17
     decorate: true
     run_if_changed: "(api/|config/kubermatic|.prow.yaml)"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
@@ -900,6 +902,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
         env:
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,coreos"
         - name: VERSIONS_TO_TEST
           value: "v1.17.9"
         - name: SERVICE_ACCOUNT_KEY
@@ -1061,6 +1065,8 @@ presubmits:
       containers:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.14
         env:
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,coreos"
         - name: VERSIONS_TO_TEST
           value: "v1.17.9"
         - name: KUBERMATIC_USE_OPERATOR

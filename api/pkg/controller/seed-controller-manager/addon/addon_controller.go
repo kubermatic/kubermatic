@@ -27,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1unstructured "k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -48,6 +49,7 @@ const (
 
 	addonLabelKey        = "kubermatic-addon"
 	cleanupFinalizerName = "cleanup-manifests"
+	AddonEnsureLabelKey  = "addons.kubermatic.io/ensure"
 )
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig
@@ -58,12 +60,13 @@ type KubeconfigProvider interface {
 
 // Reconciler stores necessary components that are required to manage in-cluster Add-On's
 type Reconciler struct {
-	log                *zap.SugaredLogger
-	workerName         string
-	addonVariables     map[string]interface{}
-	kubernetesAddonDir string
-	openshiftAddonDir  string
-	overwriteRegistry  string
+	log                  *zap.SugaredLogger
+	workerName           string
+	addonEnforceInterval int
+	addonVariables       map[string]interface{}
+	kubernetesAddonDir   string
+	openshiftAddonDir    string
+	overwriteRegistry    string
 	ctrlruntimeclient.Client
 	recorder                 record.EventRecorder
 	KubeconfigProvider       KubeconfigProvider
@@ -77,6 +80,7 @@ func Add(
 	log *zap.SugaredLogger,
 	numWorkers int,
 	workerName string,
+	addonEnforceInterval int,
 	addonCtxVariables map[string]interface{},
 	kubernetesAddonDir,
 	openshiftAddonDir,
@@ -90,6 +94,7 @@ func Add(
 	reconciler := &Reconciler{
 		log:                      log,
 		addonVariables:           addonCtxVariables,
+		addonEnforceInterval:     addonEnforceInterval,
 		kubernetesAddonDir:       kubernetesAddonDir,
 		openshiftAddonDir:        openshiftAddonDir,
 		KubeconfigProvider:       kubeconfigProvider,
@@ -196,7 +201,13 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 			"failed to reconcile Addon %q: %v", addon.Name, err)
 	}
 	if result == nil {
+		// we check for this after the ClusterReconcileWrapper() call because otherwise the cluster would never reconcile since we always requeue
 		result = &reconcile.Result{}
+		if r.addonEnforceInterval != 0 { // addon enforce is enabled.
+			// All is well, requeue in addonEnforceInterval minutes. We do this to enforce default addons and prevent cluster admins from disabling them.
+			result.RequeueAfter = time.Duration(r.addonEnforceInterval) * time.Minute
+		}
+
 	}
 	return *result, err
 }
@@ -234,6 +245,12 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		}
 		return nil, nil
 	}
+	// This is true when the addon: 1) is fully deployed, 2) doesn't have a `AddonEnsureLabelKey` set to true.
+	// we do this to allow users to "edit/delete" resources deployed by unlabeled addons,
+	// while we enforce the labeled ones
+	if addonResourcesCreated(addon) && !hasEnsureResourcesLabel(addon) {
+		return nil, nil
+	}
 
 	// Reconciling
 	if err := r.ensureIsInstalled(ctx, log, addon, cluster); err != nil {
@@ -242,7 +259,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	if err := r.ensureFinalizerIsSet(ctx, addon); err != nil {
 		return nil, fmt.Errorf("failed to ensure that the cleanup finalizer existis on the addon: %v", err)
 	}
-
+	if err := r.ensureResourcesCreatedConditionIsSet(ctx, addon); err != nil {
+		return nil, fmt.Errorf("failed to set ResourcesCreated Condition: %v", err)
+	}
 	return nil, nil
 }
 
@@ -539,4 +558,51 @@ func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *
 
 func deleteCommand(ctx context.Context, kubeconfigFilename, manifestFilename string) *exec.Cmd {
 	return exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "delete", "-f", manifestFilename, "--ignore-not-found")
+}
+
+func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, addon *kubermaticv1.Addon) error {
+	_, cond := getAddonCondition(addon, kubermaticv1.AddonResourcesCreated)
+	if cond != nil && cond.Status == corev1.ConditionTrue {
+		return nil
+	}
+	oldAddon := addon.DeepCopy()
+	setAddonCodition(addon, kubermaticv1.AddonResourcesCreated, corev1.ConditionTrue)
+	return r.Client.Patch(ctx, addon, ctrlruntimeclient.MergeFrom(oldAddon))
+}
+
+func setAddonCodition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType, status corev1.ConditionStatus) {
+	idx, cond := getAddonCondition(a, condType)
+	if cond == nil {
+		cond = &kubermaticv1.AddonCondition{}
+		cond.Type = condType
+		cond.Status = status
+		cond.LastHeartbeatTime = metav1.Now()
+		cond.LastTransitionTime = metav1.Now()
+		a.Status.Conditions = append(a.Status.Conditions, *cond)
+		return
+	}
+	if cond.Status != status {
+		cond.LastTransitionTime = metav1.Now()
+		cond.Status = status
+	}
+	cond.LastHeartbeatTime = metav1.Now()
+	a.Status.Conditions[idx] = *cond
+}
+
+func getAddonCondition(a *kubermaticv1.Addon, condType kubermaticv1.AddonConditionType) (int, *kubermaticv1.AddonCondition) {
+	for i, c := range a.Status.Conditions {
+		if c.Type == condType {
+			return i, &c
+		}
+	}
+	return -1, nil
+}
+
+func addonResourcesCreated(addon *kubermaticv1.Addon) bool {
+	_, cond := getAddonCondition(addon, kubermaticv1.AddonResourcesCreated)
+	return cond != nil && cond.Status == corev1.ConditionTrue
+}
+
+func hasEnsureResourcesLabel(addon *kubermaticv1.Addon) bool {
+	return addon.Labels[AddonEnsureLabelKey] == "true"
 }

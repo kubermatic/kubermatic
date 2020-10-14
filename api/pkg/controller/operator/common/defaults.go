@@ -45,6 +45,18 @@ var (
 		"logrotate",
 	}
 
+	KubernetesEnsuredDefaultAddons = []string{
+		"canal",
+		"csi",
+		"dns",
+		"kube-proxy",
+		"openvpn",
+		"rbac",
+		"nodelocal-dns-cache",
+		"pod-security-policy",
+		"logrotate",
+	}
+
 	DefaultAccessibleAddons = []string{
 		"node-exporter",
 	}

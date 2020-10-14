@@ -48,6 +48,9 @@ kubermatic:
   # Whether to load the presets from CRDs dynamically during runtime
   dynamicPresets: false
 
+  # Whether to enabled or disable default addon enforce option
+  disableAddonEnforce: true
+
   # helm hooks/checks
   checks:
     # Checks if the last release contains the kubermatic CRD's.
