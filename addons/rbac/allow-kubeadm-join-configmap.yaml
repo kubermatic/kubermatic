@@ -21,7 +21,6 @@ rules:
 - apiGroups:
   - ""
   resourceNames:
-  - kubelet-config-1.16
   - kubelet-config-1.17
   - kubelet-config-1.18
   - kubelet-config-1.19

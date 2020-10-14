@@ -190,11 +190,6 @@ var (
 	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
 		Default: semver.MustParse("v1.18.10"),
 		Versions: []*semver.Version{
-			// Kubernetes 1.16
-			semver.MustParse("v1.16.13"),
-			semver.MustParse("v1.16.14"),
-			semver.MustParse("v1.16.15"),
-			semver.MustParse("v1.16.16"),
 			// Kubernetes 1.17
 			semver.MustParse("v1.17.9"),
 			semver.MustParse("v1.17.11"),
@@ -210,28 +205,11 @@ var (
 			semver.MustParse("v1.19.3"),
 		},
 		Updates: []operatorv1alpha1.Update{
-			// ======= 1.15 =======
 			{
-				// Allow to change to any patch version
-				From: "1.15.*",
-				To:   "1.15.*",
-			},
-			{
-				// CVE-2019-11247, CVE-2019-11249, CVE-2019-9512, CVE-2019-9514, CVE-2019-11253
-				From:      "<= 1.15.4, >= 1.15.0",
-				To:        "1.15.5",
+				// Auto-upgrade unsupported clusters
+				From:      "1.15.*",
+				To:        "1.16.*",
 				Automatic: pointer.BoolPtr(true),
-			},
-			{
-				// Released with broken Anago
-				From:      "1.15.8",
-				To:        "1.15.9",
-				Automatic: pointer.BoolPtr(true),
-			},
-			{
-				// Allow to next minor release
-				From: "1.15.*",
-				To:   "1.16.*",
 			},
 
 			// ======= 1.16 =======

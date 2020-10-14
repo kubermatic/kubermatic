@@ -414,21 +414,13 @@ spec:
       updates:
         - # Automatic controls whether this update is executed automatically
           # for the control plane of all matching user clusters.
-          automatic: false
+          automatic: true
           # Automatic controls whether this update is executed automatically
           # for the worker nodes of all matching user clusters.
           automaticNodeUpdate: false
           # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
           from: 1.15.*
           # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-          to: 1.15.*
-        - automatic: true
-          from: <= 1.15.4, >= 1.15.0
-          to: 1.15.5
-        - automatic: true
-          from: 1.15.8
-          to: 1.15.9
-        - from: 1.15.*
           to: 1.16.*
         - from: 1.16.*
           to: 1.16.*
@@ -455,10 +447,6 @@ spec:
           to: 1.19.*
       # Versions lists the available versions.
       versions:
-        - 1.16.13
-        - 1.16.14
-        - 1.16.15
-        - 1.16.16
         - 1.17.9
         - 1.17.11
         - 1.17.12
