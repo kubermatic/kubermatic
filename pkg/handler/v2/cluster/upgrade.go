@@ -18,8 +18,11 @@ package cluster
 
 import (
 	"context"
+	"encoding/json"
+	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -35,4 +38,53 @@ func GetUpgradesEndpoint(updateManager common.UpdateManager, projectProvider pro
 		}
 		return handlercommon.GetUpgradesEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider, updateManager)
 	}
+}
+
+func UpgradeNodeDeploymentsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(UpgradeNodeDeploymentsReq)
+		if !ok {
+			return nil, errors.NewWrongRequest(request, common.GetClusterReq{})
+		}
+		return handlercommon.UpgradeNodeDeploymentsEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, req.Body, projectProvider, privilegedProjectProvider)
+	}
+}
+
+// UpgradeNodeDeploymentsReq defines HTTP request for upgradeClusterNodeDeploymentsV2 endpoint
+// swagger:parameters upgradeClusterNodeDeploymentsV2
+type UpgradeNodeDeploymentsReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+
+	// in: body
+	Body apiv1.MasterVersion
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req UpgradeNodeDeploymentsReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+func DecodeUpgradeNodeDeploymentsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req UpgradeNodeDeploymentsReq
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
