@@ -25,7 +25,12 @@ func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cl
 		r.log.Infow("Created admin token for cluster", "cluster", cluster.Name)
 	}
 
-	modifiers, err := address.SyncClusterAddress(ctx, log, cluster, r.Client, r.externalURL, seed)
+	modifiers, err := address.NewModifiersBuilder(log).
+		Cluster(cluster).
+		Client(r.Client).
+		ExternalURL(r.externalURL).
+		Seed(seed).
+		Build(ctx)
 	if err != nil {
 		return err
 	}
