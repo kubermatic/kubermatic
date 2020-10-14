@@ -18,6 +18,9 @@ package common
 
 import (
 	"context"
+	"net/http"
+
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"github.com/Masterminds/semver"
 
@@ -84,6 +87,48 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 	}
 
 	return upgrades, nil
+}
+
+func UpgradeNodeDeploymentsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, version apiv1.MasterVersion, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	requestedKubeletVersion, err := semver.NewVersion(version.Version.String())
+	if err != nil {
+		return nil, errors.NewBadRequest(err.Error())
+	}
+
+	if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Version, requestedKubeletVersion); err != nil {
+		return nil, errors.NewBadRequest(err.Error())
+	}
+
+	client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+	if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	var updateErrors []string
+	for _, machineDeployment := range machineDeployments.Items {
+		machineDeployment.Spec.Template.Spec.Versions.Kubelet = version.Version.String()
+		if err := client.Update(ctx, &machineDeployment); err != nil {
+			updateErrors = append(updateErrors, err.Error())
+		}
+	}
+
+	if len(updateErrors) > 0 {
+		return nil, errors.NewWithDetails(http.StatusInternalServerError, "failed to update some node deployments", updateErrors)
+	}
+
+	return nil, nil
 }
 
 func isRestrictedByKubeletVersions(controlPlaneVersion *version.Version, mds []clusterv1alpha1.MachineDeployment) (bool, error) {

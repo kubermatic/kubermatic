@@ -17,10 +17,12 @@ limitations under the License.
 package cluster_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -378,6 +380,114 @@ func TestGetClusterUpgrades(t *testing.T) {
 			}
 
 			test.CompareVersions(t, gotUpdates, testStruct.wantUpdates)
+		})
+	}
+}
+
+func TestUpgradeClusterNodeDeployments(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		Name                       string
+		Body                       string
+		HTTPStatus                 int
+		ExpectedVersion            string
+		ProjectIDToSync            string
+		ClusterIDToSync            string
+		ExistingProject            *kubermaticv1.Project
+		ExistingKubermaticUser     *kubermaticv1.User
+		ExistingAPIUser            *apiv1.User
+		ExistingCluster            *kubermaticv1.Cluster
+		ExistingMachineDeployments []runtime.Object
+		ExistingKubermaticObjs     []runtime.Object
+	}{
+		{
+			Name:            "scenario 1: upgrade node deployments",
+			Body:            `{"version":"1.11.1"}`,
+			HTTPStatus:      http.StatusOK,
+			ExpectedVersion: "1.11.1",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
+				cluster := test.GenDefaultCluster()
+				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+				return cluster
+			}()),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []runtime.Object{
+				test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+				test.GenTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
+			},
+		},
+		{
+			Name:            "scenario 2: fail to upgrade node deployments",
+			Body:            `{"version":"1.11.1"}`,
+			HTTPStatus:      http.StatusBadRequest,
+			ExpectedVersion: "v9.9.9",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
+				cluster := test.GenDefaultCluster()
+				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.1.1")
+				return cluster
+			}()), ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []runtime.Object{
+				test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+				test.GenTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
+			},
+		},
+		{
+			Name:            "scenario 3: the admin John can upgrade Bob's node deployments",
+			Body:            `{"version":"1.11.1"}`,
+			HTTPStatus:      http.StatusOK,
+			ExpectedVersion: "1.11.1",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
+				cluster := test.GenDefaultCluster()
+				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+				return cluster
+			}(), genUser("John", "john@acme.com", true)),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			ExistingMachineDeployments: []runtime.Object{
+				test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+				test.GenTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Logf("entering")
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/nodes/upgrades",
+				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			var kubermaticObj []runtime.Object
+			var machineObj []runtime.Object
+			var kubernetesObj []runtime.Object
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			machineObj = append(machineObj, tc.ExistingMachineDeployments...)
+			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			mds := &clusterv1alpha1.MachineDeploymentList{}
+			if err := cs.FakeClient.List(context.TODO(), mds); err != nil {
+				t.Fatalf("failed to list machine deployments: %v", err)
+			}
+
+			for _, md := range mds.Items {
+				if md.Spec.Template.Spec.Versions.Kubelet != tc.ExpectedVersion {
+					t.Fatalf("version %s does not match expected version %s: %v", md.Spec.Template.Spec.Versions.Kubelet, tc.ExpectedVersion, err)
+				}
+			}
 		})
 	}
 }

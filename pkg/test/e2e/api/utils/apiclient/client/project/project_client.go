@@ -187,6 +187,8 @@ type ClientService interface {
 
 	UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*UpgradeClusterNodeDeploymentsOK, error)
 
+	UpgradeClusterNodeDeploymentsV2(params *UpgradeClusterNodeDeploymentsV2Params, authInfo runtime.ClientAuthInfoWriter) (*UpgradeClusterNodeDeploymentsV2OK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -2959,6 +2961,40 @@ func (a *Client) UpgradeClusterNodeDeployments(params *UpgradeClusterNodeDeploym
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*UpgradeClusterNodeDeploymentsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  UpgradeClusterNodeDeploymentsV2 Upgrades node deployments in a cluster
+*/
+func (a *Client) UpgradeClusterNodeDeploymentsV2(params *UpgradeClusterNodeDeploymentsV2Params, authInfo runtime.ClientAuthInfoWriter) (*UpgradeClusterNodeDeploymentsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpgradeClusterNodeDeploymentsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "upgradeClusterNodeDeploymentsV2",
+		Method:             "PUT",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/nodes/upgrades",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpgradeClusterNodeDeploymentsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*UpgradeClusterNodeDeploymentsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpgradeClusterNodeDeploymentsV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
