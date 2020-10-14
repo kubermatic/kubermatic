@@ -225,6 +225,10 @@ func migrateClusterUserLabel(cluster *kubermaticv1.Cluster, cleanupContext *clea
 }
 
 func createSecretsForCredentials(cluster *kubermaticv1.Cluster, cleanupContext *cleanupContext) error {
+	if cluster.GetDeletionTimestamp() != nil {
+		return nil
+	}
+
 	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(cleanupContext.ctx, cleanupContext.client, cluster); err != nil {
 		return err
 	}
