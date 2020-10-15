@@ -54,7 +54,7 @@ type Match struct {
 
 type Kind struct {
 	Kinds     string `json:"kinds,omitempty"`
-	ApiGroups string `json:"apiGroups,omitempty"`
+	APIGroups string `json:"apiGroups,omitempty"`
 }
 
 type Parameters struct {

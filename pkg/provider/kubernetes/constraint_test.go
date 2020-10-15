@@ -168,7 +168,7 @@ func genConstraint(name, namespace string) *kubermaticv1.Constraint {
 		ConstraintType: "requiredlabels",
 		Match: kubermaticv1.Match{
 			Kinds: []kubermaticv1.Kind{
-				{Kinds: "namespace", ApiGroups: ""},
+				{Kinds: "namespace", APIGroups: ""},
 			},
 		},
 		Parameters: kubermaticv1.Parameters{

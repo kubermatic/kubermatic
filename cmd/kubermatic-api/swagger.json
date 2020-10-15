@@ -12278,7 +12278,7 @@
       "properties": {
         "apiGroups": {
           "type": "string",
-          "x-go-name": "ApiGroups"
+          "x-go-name": "APIGroups"
         },
         "kinds": {
           "type": "string",

@@ -15,7 +15,7 @@ import (
 // swagger:model Kind
 type Kind struct {
 
-	// Api groups
+	// API groups
 	APIGroups string `json:"apiGroups,omitempty"`
 
 	// kinds
