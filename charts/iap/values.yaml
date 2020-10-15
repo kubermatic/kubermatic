@@ -18,6 +18,7 @@ iap:
     tag: v6.1.1
     pullPolicy: IfNotPresent
 
+  # secret which holds the CA certificates that should be used when connecting to the provider  
   # custom_provider_ca_secret: provider-ca-secret 
   
   oidc_issuer_url: https://kubermatic.tld/dex
