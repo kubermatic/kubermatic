@@ -95,6 +95,8 @@ kubermatic:
     #   If enabled the cluster-controller will enable the VerticalPodAutoscaler for all control plane components
     # - EtcdDataCorruptionChecks
     #   If enabled the all etcd clusters will be started with --experimental-initial-corrupt-check=true --experimental-corrupt-check-time=10m
+    # - EtcdLauncher
+    #   If enabled will apply the cluster level etcd-launcher feature flag on all clusters, unless it's explicitly disabled at the cluster level
     # For example:
     # featureGates: "OpenIDAuthPlugin=true,VerticalPodAutoscaler=true"
     featureGates: ""
