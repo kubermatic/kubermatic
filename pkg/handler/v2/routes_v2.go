@@ -993,7 +993,7 @@ func (r Routing) deleteConstraintTemplate() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: ConstraintList
+//       200: []Constraint
 //       401: empty
 //       403: empty
 func (r Routing) listConstraints() http.Handler {

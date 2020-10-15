@@ -9185,6 +9185,112 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Lists constraints for the specified cluster.",
+        "operationId": "listConstraints",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Constraint",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Constraint"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints/{constraint_name}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets an specified constraint for the given cluster.",
+        "operationId": "getConstraint",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "constraint_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Constraint",
+            "schema": {
+              "$ref": "#/definitions/Constraint"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/events": {
       "get": {
         "produces": [
@@ -10668,6 +10774,65 @@
       "format": "int8",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
+    "Constraint": {
+      "description": "Constraint represents a gatekeeper Constraint",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ConstraintSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ConstraintSpec": {
+      "type": "object",
+      "properties": {
+        "constraintType": {
+          "description": "type of gatekeeper constraint that the constraint applies to",
+          "type": "string",
+          "x-go-name": "ConstraintType"
+        },
+        "excludedNamespaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "ExcludedNamespaces"
+        },
+        "kinds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Kind"
+          },
+          "x-go-name": "Kinds"
+        },
+        "labelSelector": {
+          "$ref": "#/definitions/LabelSelector"
+        },
+        "namespaceSelector": {
+          "$ref": "#/definitions/LabelSelector"
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Namespaces"
+        },
+        "parameters": {
+          "$ref": "#/definitions/Parameters"
+        },
+        "scope": {
+          "type": "string",
+          "x-go-name": "Scope"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "ConstraintTemplate": {
       "description": "ConstraintTemplate represents a gatekeeper ConstraintTemplate",
       "type": "object",
@@ -12108,6 +12273,20 @@
       "title": "JSONSchemaURL represents a schema url.",
       "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
     },
+    "Kind": {
+      "type": "object",
+      "properties": {
+        "apiGroups": {
+          "type": "string",
+          "x-go-name": "ApiGroups"
+        },
+        "kinds": {
+          "type": "string",
+          "x-go-name": "Kinds"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "KubermaticVersions": {
       "type": "object",
       "title": "KubermaticVersions describes the versions of running Kubermatic components.",
@@ -12185,6 +12364,57 @@
         "type": "string"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "LabelSelector": {
+      "description": "A label selector is a label query over a set of resources. The result of matchLabels and\nmatchExpressions are ANDed. An empty label selector matches all objects. A null\nlabel selector matches no objects.",
+      "type": "object",
+      "properties": {
+        "matchExpressions": {
+          "description": "matchExpressions is a list of label selector requirements. The requirements are ANDed.\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/LabelSelectorRequirement"
+          },
+          "x-go-name": "MatchExpressions"
+        },
+        "matchLabels": {
+          "description": "matchLabels is a map of {key,value} pairs. A single {key,value} in the matchLabels\nmap is equivalent to an element of matchExpressions, whose key field is \"key\", the\noperator is \"In\", and the values array contains only \"value\". The requirements are ANDed.\n+optional",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "MatchLabels"
+        }
+      },
+      "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
+    },
+    "LabelSelectorOperator": {
+      "type": "string",
+      "title": "A label selector operator is the set of operators that can be used in a selector requirement.",
+      "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
+    },
+    "LabelSelectorRequirement": {
+      "description": "A label selector requirement is a selector that contains values, a key, and an operator that\nrelates the key and values.",
+      "type": "object",
+      "properties": {
+        "key": {
+          "description": "key is the label key that the selector applies to.\n+patchMergeKey=key\n+patchStrategy=merge",
+          "type": "string",
+          "x-go-name": "Key"
+        },
+        "operator": {
+          "$ref": "#/definitions/LabelSelectorOperator"
+        },
+        "values": {
+          "description": "values is an array of string values. If the operator is In or NotIn,\nthe values array must be non-empty. If the operator is Exists or DoesNotExist,\nthe values array must be empty. This array is replaced during a strategic\nmerge patch.\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Values"
+        }
+      },
+      "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
     },
     "MachineDeploymentStatus": {
       "description": "[MachineDeploymentStatus]\nMachineDeploymentStatus defines the observed state of MachineDeployment",
@@ -12269,6 +12499,43 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "Match": {
+      "type": "object",
+      "properties": {
+        "excludedNamespaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "ExcludedNamespaces"
+        },
+        "kinds": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Kind"
+          },
+          "x-go-name": "Kinds"
+        },
+        "labelSelector": {
+          "$ref": "#/definitions/LabelSelector"
+        },
+        "namespaceSelector": {
+          "$ref": "#/definitions/LabelSelector"
+        },
+        "namespaces": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Namespaces"
+        },
+        "scope": {
+          "type": "string",
+          "x-go-name": "Scope"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "Names": {
       "type": "object",
@@ -13239,6 +13506,16 @@
         "$ref": "#/definitions/PacketSize"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "Parameters": {
+      "type": "object",
+      "properties": {
+        "rawJSON": {
+          "type": "string",
+          "x-go-name": "RawJSON"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "PolicyRule": {
       "description": "PolicyRule holds information that describes a policy rule, but does not contain information\nabout who the rule applies to or which namespace the rule applies to.",
