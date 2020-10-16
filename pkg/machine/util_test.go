@@ -29,7 +29,7 @@ func TestCredentialEndpoint(t *testing.T) {
 	testcases := []struct {
 		name           string
 		distribution   *apiv1.OperatingSystemSpec
-		cloudProvider  *apiv1.NodeCloudSpec
+		cloudProvider  *apiv1.MachineCloudSpec
 		expectedResult string
 	}{
 		{
@@ -38,8 +38,8 @@ func TestCredentialEndpoint(t *testing.T) {
 				Ubuntu: &apiv1.UbuntuSpec{DistUpgradeOnBoot: false},
 			},
 
-			cloudProvider: &apiv1.NodeCloudSpec{
-				AWS: &apiv1.AWSNodeSpec{},
+			cloudProvider: &apiv1.MachineCloudSpec{
+				AWS: &apiv1.AWSMachineSpec{},
 			},
 			expectedResult: "ubuntu",
 		},
@@ -49,8 +49,8 @@ func TestCredentialEndpoint(t *testing.T) {
 				ContainerLinux: &apiv1.ContainerLinuxSpec{},
 			},
 
-			cloudProvider: &apiv1.NodeCloudSpec{
-				VSphere: &apiv1.VSphereNodeSpec{},
+			cloudProvider: &apiv1.MachineCloudSpec{
+				VSphere: &apiv1.VSphereMachineSpec{},
 			},
 			expectedResult: "core",
 		},
@@ -60,8 +60,8 @@ func TestCredentialEndpoint(t *testing.T) {
 				CentOS: &apiv1.CentOSSpec{},
 			},
 
-			cloudProvider: &apiv1.NodeCloudSpec{
-				Openstack: &apiv1.OpenstackNodeSpec{},
+			cloudProvider: &apiv1.MachineCloudSpec{
+				Openstack: &apiv1.OpenstackMachineSpec{},
 			},
 			expectedResult: "centos",
 		},

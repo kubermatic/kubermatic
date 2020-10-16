@@ -251,8 +251,8 @@ func outputNode(node corev1.Node) (*apiv1.Node, error) {
 			Name:              displayName,
 			CreationTimestamp: apiv1.NewTime(node.CreationTimestamp.Time),
 		},
-		Spec: apiv1.NodeSpec{
-			Versions: apiv1.NodeVersionInfo{
+		Spec: apiv1.MachineSpec{
+			Versions: apiv1.MachineVersionInfo{
 				Kubelet: node.Status.NodeInfo.KubeletVersion,
 			},
 			Labels: node.Labels,

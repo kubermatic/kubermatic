@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// CreateClusterSpec CreateClusterSpec is the structure that is used to create cluster with its initial node deployment
+// CreateClusterSpec CreateClusterSpec is the structure that is used to create cluster with its initial machine deployment
 //
 // swagger:model CreateClusterSpec
 type CreateClusterSpec struct {
@@ -19,8 +19,8 @@ type CreateClusterSpec struct {
 	// cluster
 	Cluster *Cluster `json:"cluster,omitempty"`
 
-	// node deployment
-	NodeDeployment *NodeDeployment `json:"nodeDeployment,omitempty"`
+	// machine deployment
+	MachineDeployment *MachineDeployment `json:"machineDeployment,omitempty"`
 }
 
 // Validate validates this create cluster spec
@@ -31,7 +31,7 @@ func (m *CreateClusterSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateNodeDeployment(formats); err != nil {
+	if err := m.validateMachineDeployment(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -59,16 +59,16 @@ func (m *CreateClusterSpec) validateCluster(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *CreateClusterSpec) validateNodeDeployment(formats strfmt.Registry) error {
+func (m *CreateClusterSpec) validateMachineDeployment(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.NodeDeployment) { // not required
+	if swag.IsZero(m.MachineDeployment) { // not required
 		return nil
 	}
 
-	if m.NodeDeployment != nil {
-		if err := m.NodeDeployment.Validate(formats); err != nil {
+	if m.MachineDeployment != nil {
+		if err := m.MachineDeployment.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("nodeDeployment")
+				return ve.ValidateName("machineDeployment")
 			}
 			return err
 		}

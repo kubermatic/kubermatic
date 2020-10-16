@@ -62,7 +62,7 @@ var userNameMap = map[string]string{
 }
 
 // GetSSHUserName returns SSH login name for the provider and distribution
-func GetSSHUserName(distribution *apiv1.OperatingSystemSpec, cloudProvider *apiv1.NodeCloudSpec) (string, error) {
+func GetSSHUserName(distribution *apiv1.OperatingSystemSpec, cloudProvider *apiv1.MachineCloudSpec) (string, error) {
 
 	distributionName, err := getDistributionName(distribution)
 	if err != nil {
@@ -95,7 +95,7 @@ func getDistributionName(distribution *apiv1.OperatingSystemSpec) (string, error
 	return "", fmt.Errorf("no operating system set")
 }
 
-func getProviderName(cloudProvider *apiv1.NodeCloudSpec) (string, error) {
+func getProviderName(cloudProvider *apiv1.MachineCloudSpec) (string, error) {
 	val := reflect.ValueOf(cloudProvider).Elem()
 
 	for i := 0; i < val.NumField(); i++ {

@@ -85,16 +85,16 @@ func (s *gcpScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *gcpScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
+func (s *gcpScenario) MachineDeployments(num int, secrets secrets) ([]apimodels.MachineDeployment, error) {
 	replicas := int32(num)
 
-	return []apimodels.NodeDeployment{
+	return []apimodels.MachineDeployment{
 		{
-			Spec: &apimodels.NodeDeploymentSpec{
+			Spec: &apimodels.MachineDeploymentSpec{
 				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Gcp: &apimodels.GCPNodeSpec{
+				Template: &apimodels.MachineSpec{
+					Cloud: &apimodels.MachineCloudSpec{
+						Gcp: &apimodels.GCPMachineSpec{
 							Zone:        secrets.GCP.Zone,
 							MachineType: "n1-standard-2",
 							DiskType:    "pd-standard",
@@ -105,7 +105,7 @@ func (s *gcpScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 							},
 						},
 					},
-					Versions: &apimodels.NodeVersionInfo{
+					Versions: &apimodels.MachineVersionInfo{
 						Kubelet: s.version.String(),
 					},
 					OperatingSystem: &s.nodeOsSpec,

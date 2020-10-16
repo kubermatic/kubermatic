@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// NodeDeployment NodeDeployment represents a set of worker nodes that is part of a cluster
+// MachineDeployment MachineDeployment represents a set of worker nodes that is part of a cluster
 //
-// swagger:model NodeDeployment
-type NodeDeployment struct {
+// swagger:model MachineDeployment
+type MachineDeployment struct {
 
 	// CreationTimestamp is a timestamp representing the server time when this object was created.
 	// Format: date-time
@@ -32,14 +32,14 @@ type NodeDeployment struct {
 	Name string `json:"name,omitempty"`
 
 	// spec
-	Spec *NodeDeploymentSpec `json:"spec,omitempty"`
+	Spec *MachineDeploymentSpec `json:"spec,omitempty"`
 
 	// status
 	Status *MachineDeploymentStatus `json:"status,omitempty"`
 }
 
-// Validate validates this node deployment
-func (m *NodeDeployment) Validate(formats strfmt.Registry) error {
+// Validate validates this machine deployment
+func (m *MachineDeployment) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCreationTimestamp(formats); err != nil {
@@ -64,7 +64,7 @@ func (m *NodeDeployment) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeDeployment) validateCreationTimestamp(formats strfmt.Registry) error {
+func (m *MachineDeployment) validateCreationTimestamp(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.CreationTimestamp) { // not required
 		return nil
@@ -77,7 +77,7 @@ func (m *NodeDeployment) validateCreationTimestamp(formats strfmt.Registry) erro
 	return nil
 }
 
-func (m *NodeDeployment) validateDeletionTimestamp(formats strfmt.Registry) error {
+func (m *MachineDeployment) validateDeletionTimestamp(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.DeletionTimestamp) { // not required
 		return nil
@@ -90,7 +90,7 @@ func (m *NodeDeployment) validateDeletionTimestamp(formats strfmt.Registry) erro
 	return nil
 }
 
-func (m *NodeDeployment) validateSpec(formats strfmt.Registry) error {
+func (m *MachineDeployment) validateSpec(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Spec) { // not required
 		return nil
@@ -108,7 +108,7 @@ func (m *NodeDeployment) validateSpec(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeDeployment) validateStatus(formats strfmt.Registry) error {
+func (m *MachineDeployment) validateStatus(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Status) { // not required
 		return nil
@@ -127,7 +127,7 @@ func (m *NodeDeployment) validateStatus(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *NodeDeployment) MarshalBinary() ([]byte, error) {
+func (m *MachineDeployment) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -135,8 +135,8 @@ func (m *NodeDeployment) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *NodeDeployment) UnmarshalBinary(b []byte) error {
-	var res NodeDeployment
+func (m *MachineDeployment) UnmarshalBinary(b []byte) error {
+	var res MachineDeployment
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

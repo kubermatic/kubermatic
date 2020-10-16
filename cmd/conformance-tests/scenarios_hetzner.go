@@ -72,21 +72,21 @@ func (s *hetznerScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 	}
 }
 
-func (s *hetznerScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
+func (s *hetznerScenario) MachineDeployments(num int, _ secrets) ([]apimodels.MachineDeployment, error) {
 	replicas := int32(num)
 	nodeType := "cx31"
 
-	return []apimodels.NodeDeployment{
+	return []apimodels.MachineDeployment{
 		{
-			Spec: &apimodels.NodeDeploymentSpec{
+			Spec: &apimodels.MachineDeploymentSpec{
 				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Hetzner: &apimodels.HetznerNodeSpec{
+				Template: &apimodels.MachineSpec{
+					Cloud: &apimodels.MachineCloudSpec{
+						Hetzner: &apimodels.HetznerMachineSpec{
 							Type: &nodeType,
 						},
 					},
-					Versions: &apimodels.NodeVersionInfo{
+					Versions: &apimodels.MachineVersionInfo{
 						Kubelet: s.version.String(),
 					},
 					OperatingSystem: &s.nodeOsSpec,

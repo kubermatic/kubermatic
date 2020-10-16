@@ -30,16 +30,16 @@ func TestGetVSphereProviderSpec(t *testing.T) {
 	tests := []struct {
 		name        string
 		cluster     *kubermaticv1.Cluster
-		nodeSpec    apiv1.NodeSpec
+		nodeSpec    apiv1.MachineSpec
 		dc          *kubermaticv1.Datacenter
 		wantRawConf vsphere.RawConfig
 		wantErr     bool
 	}{
 		{
 			name: "Datastore",
-			nodeSpec: apiv1.NodeSpec{
-				Cloud: apiv1.NodeCloudSpec{
-					VSphere: &apiv1.VSphereNodeSpec{},
+			nodeSpec: apiv1.MachineSpec{
+				Cloud: apiv1.MachineCloudSpec{
+					VSphere: &apiv1.VSphereMachineSpec{},
 				},
 			},
 			cluster: &kubermaticv1.Cluster{
@@ -62,9 +62,9 @@ func TestGetVSphereProviderSpec(t *testing.T) {
 		},
 		{
 			name: "Default datastore",
-			nodeSpec: apiv1.NodeSpec{
-				Cloud: apiv1.NodeCloudSpec{
-					VSphere: &apiv1.VSphereNodeSpec{},
+			nodeSpec: apiv1.MachineSpec{
+				Cloud: apiv1.MachineCloudSpec{
+					VSphere: &apiv1.VSphereMachineSpec{},
 				},
 			},
 			cluster: &kubermaticv1.Cluster{
@@ -89,9 +89,9 @@ func TestGetVSphereProviderSpec(t *testing.T) {
 		},
 		{
 			name: "Datastore cluster",
-			nodeSpec: apiv1.NodeSpec{
-				Cloud: apiv1.NodeCloudSpec{
-					VSphere: &apiv1.VSphereNodeSpec{},
+			nodeSpec: apiv1.MachineSpec{
+				Cloud: apiv1.MachineCloudSpec{
+					VSphere: &apiv1.VSphereMachineSpec{},
 				},
 			},
 			cluster: &kubermaticv1.Cluster{

@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// NodeDeploymentSpec NodeDeploymentSpec node deployment specification
+// MachineDeploymentSpec MachineDeploymentSpec node deployment specification
 //
-// swagger:model NodeDeploymentSpec
-type NodeDeploymentSpec struct {
+// swagger:model MachineDeploymentSpec
+type MachineDeploymentSpec struct {
 
 	// dynamic config
 	DynamicConfig bool `json:"dynamicConfig,omitempty"`
@@ -29,11 +29,11 @@ type NodeDeploymentSpec struct {
 
 	// template
 	// Required: true
-	Template *NodeSpec `json:"template"`
+	Template *MachineSpec `json:"template"`
 }
 
-// Validate validates this node deployment spec
-func (m *NodeDeploymentSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this machine deployment spec
+func (m *MachineDeploymentSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateReplicas(formats); err != nil {
@@ -50,7 +50,7 @@ func (m *NodeDeploymentSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeDeploymentSpec) validateReplicas(formats strfmt.Registry) error {
+func (m *MachineDeploymentSpec) validateReplicas(formats strfmt.Registry) error {
 
 	if err := validate.Required("replicas", "body", m.Replicas); err != nil {
 		return err
@@ -59,7 +59,7 @@ func (m *NodeDeploymentSpec) validateReplicas(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeDeploymentSpec) validateTemplate(formats strfmt.Registry) error {
+func (m *MachineDeploymentSpec) validateTemplate(formats strfmt.Registry) error {
 
 	if err := validate.Required("template", "body", m.Template); err != nil {
 		return err
@@ -78,7 +78,7 @@ func (m *NodeDeploymentSpec) validateTemplate(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *NodeDeploymentSpec) MarshalBinary() ([]byte, error) {
+func (m *MachineDeploymentSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -86,8 +86,8 @@ func (m *NodeDeploymentSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *NodeDeploymentSpec) UnmarshalBinary(b []byte) error {
-	var res NodeDeploymentSpec
+func (m *MachineDeploymentSpec) UnmarshalBinary(b []byte) error {
+	var res MachineDeploymentSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

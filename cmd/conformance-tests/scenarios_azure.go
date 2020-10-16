@@ -84,20 +84,20 @@ func (s *azureScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *azureScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
+func (s *azureScenario) MachineDeployments(num int, _ secrets) ([]apimodels.MachineDeployment, error) {
 	replicas := int32(num)
 	size := "Standard_F2"
-	return []apimodels.NodeDeployment{
+	return []apimodels.MachineDeployment{
 		{
-			Spec: &apimodels.NodeDeploymentSpec{
+			Spec: &apimodels.MachineDeploymentSpec{
 				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Azure: &apimodels.AzureNodeSpec{
+				Template: &apimodels.MachineSpec{
+					Cloud: &apimodels.MachineCloudSpec{
+						Azure: &apimodels.AzureMachineSpec{
 							Size: &size,
 						},
 					},
-					Versions: &apimodels.NodeVersionInfo{
+					Versions: &apimodels.MachineVersionInfo{
 						Kubelet: s.version.String(),
 					},
 					OperatingSystem: &s.nodeOsSpec,

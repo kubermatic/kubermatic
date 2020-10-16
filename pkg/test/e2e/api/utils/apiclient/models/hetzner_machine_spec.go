@@ -12,18 +12,18 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// HetznerNodeSpec HetznerNodeSpec Hetzner node settings
+// HetznerMachineSpec HetznerMachineSpec Hetzner node settings
 //
-// swagger:model HetznerNodeSpec
-type HetznerNodeSpec struct {
+// swagger:model HetznerMachineSpec
+type HetznerMachineSpec struct {
 
 	// server type
 	// Required: true
 	Type *string `json:"type"`
 }
 
-// Validate validates this hetzner node spec
-func (m *HetznerNodeSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this hetzner machine spec
+func (m *HetznerMachineSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateType(formats); err != nil {
@@ -36,7 +36,7 @@ func (m *HetznerNodeSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *HetznerNodeSpec) validateType(formats strfmt.Registry) error {
+func (m *HetznerMachineSpec) validateType(formats strfmt.Registry) error {
 
 	if err := validate.Required("type", "body", m.Type); err != nil {
 		return err
@@ -46,7 +46,7 @@ func (m *HetznerNodeSpec) validateType(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *HetznerNodeSpec) MarshalBinary() ([]byte, error) {
+func (m *HetznerMachineSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -54,8 +54,8 @@ func (m *HetznerNodeSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *HetznerNodeSpec) UnmarshalBinary(b []byte) error {
-	var res HetznerNodeSpec
+func (m *HetznerMachineSpec) UnmarshalBinary(b []byte) error {
+	var res HetznerMachineSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

@@ -78,7 +78,7 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 	}
 }
 
-func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
+func (s *kubevirtScenario) MachineDeployments(num int, _ secrets) ([]apimodels.MachineDeployment, error) {
 	var sourceURL string
 
 	switch {
@@ -90,13 +90,13 @@ func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) ([]apimodels.Node
 		s.logger.Error("coreos operating system is not supported")
 	}
 
-	return []apimodels.NodeDeployment{
+	return []apimodels.MachineDeployment{
 		{
-			Spec: &apimodels.NodeDeploymentSpec{
+			Spec: &apimodels.MachineDeploymentSpec{
 				Replicas: utilpointer.Int32Ptr(int32(num)),
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Kubevirt: &apimodels.KubevirtNodeSpec{
+				Template: &apimodels.MachineSpec{
+					Cloud: &apimodels.MachineCloudSpec{
+						Kubevirt: &apimodels.KubevirtMachineSpec{
 							Memory:           utilpointer.StringPtr("1024M"),
 							Namespace:        utilpointer.StringPtr("kube-system"),
 							SourceURL:        utilpointer.StringPtr(sourceURL),
@@ -105,7 +105,7 @@ func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) ([]apimodels.Node
 							CPUs:             utilpointer.StringPtr("1"),
 						},
 					},
-					Versions: &apimodels.NodeVersionInfo{
+					Versions: &apimodels.MachineVersionInfo{
 						Kubelet: s.version.String(),
 					},
 					OperatingSystem: s.nodeOsSpec,

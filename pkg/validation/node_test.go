@@ -38,14 +38,14 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 	cases := []struct {
 		Name       string
 		Cluster    *kubermaticv1.Cluster
-		Spec       *apiv1.NodeSpec
+		Spec       *apiv1.MachineSpec
 		Datacenter *kubermaticv1.Datacenter
 		Expected   error
 	}{
 		{
 			"should pass validation when openstack provider not used",
 			&kubermaticv1.Cluster{},
-			&apiv1.NodeSpec{},
+			&apiv1.MachineSpec{},
 			&kubermaticv1.Datacenter{},
 			nil,
 		},
@@ -60,9 +60,9 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 					},
 				},
 			},
-			&apiv1.NodeSpec{
-				Cloud: apiv1.NodeCloudSpec{
-					Openstack: &apiv1.OpenstackNodeSpec{UseFloatingIP: false},
+			&apiv1.MachineSpec{
+				Cloud: apiv1.MachineCloudSpec{
+					Openstack: &apiv1.OpenstackMachineSpec{UseFloatingIP: false},
 				},
 			},
 			&kubermaticv1.Datacenter{
@@ -83,9 +83,9 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 					},
 				},
 			},
-			&apiv1.NodeSpec{
-				Cloud: apiv1.NodeCloudSpec{
-					Openstack: &apiv1.OpenstackNodeSpec{UseFloatingIP: false},
+			&apiv1.MachineSpec{
+				Cloud: apiv1.MachineCloudSpec{
+					Openstack: &apiv1.OpenstackMachineSpec{UseFloatingIP: false},
 				},
 			},
 			&kubermaticv1.Datacenter{
@@ -106,9 +106,9 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 					},
 				},
 			},
-			&apiv1.NodeSpec{
-				Cloud: apiv1.NodeCloudSpec{
-					Openstack: &apiv1.OpenstackNodeSpec{UseFloatingIP: true},
+			&apiv1.MachineSpec{
+				Cloud: apiv1.MachineCloudSpec{
+					Openstack: &apiv1.OpenstackMachineSpec{UseFloatingIP: true},
 				},
 			},
 			&kubermaticv1.Datacenter{
@@ -129,9 +129,9 @@ func TestValidateCreateNodeSpec(t *testing.T) {
 					},
 				},
 			},
-			&apiv1.NodeSpec{
-				Cloud: apiv1.NodeCloudSpec{
-					Openstack: &apiv1.OpenstackNodeSpec{UseFloatingIP: true},
+			&apiv1.MachineSpec{
+				Cloud: apiv1.MachineCloudSpec{
+					Openstack: &apiv1.OpenstackMachineSpec{UseFloatingIP: true},
 				},
 			},
 			&kubermaticv1.Datacenter{

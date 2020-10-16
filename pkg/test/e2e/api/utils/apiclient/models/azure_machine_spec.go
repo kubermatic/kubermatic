@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// AzureNodeSpec AzureNodeSpec describes settings for an Azure node
+// AzureMachineSpec AzureMachineSpec describes settings for an Azure node
 //
-// swagger:model AzureNodeSpec
-type AzureNodeSpec struct {
+// swagger:model AzureMachineSpec
+type AzureMachineSpec struct {
 
 	// should the machine have a publicly accessible IP address
 	AssignPublicIP bool `json:"assignPublicIP,omitempty"`
@@ -40,8 +40,8 @@ type AzureNodeSpec struct {
 	Zones []string `json:"zones"`
 }
 
-// Validate validates this azure node spec
-func (m *AzureNodeSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this azure machine spec
+func (m *AzureMachineSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateSize(formats); err != nil {
@@ -54,7 +54,7 @@ func (m *AzureNodeSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AzureNodeSpec) validateSize(formats strfmt.Registry) error {
+func (m *AzureMachineSpec) validateSize(formats strfmt.Registry) error {
 
 	if err := validate.Required("size", "body", m.Size); err != nil {
 		return err
@@ -64,7 +64,7 @@ func (m *AzureNodeSpec) validateSize(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *AzureNodeSpec) MarshalBinary() ([]byte, error) {
+func (m *AzureMachineSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -72,8 +72,8 @@ func (m *AzureNodeSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *AzureNodeSpec) UnmarshalBinary(b []byte) error {
-	var res AzureNodeSpec
+func (m *AzureMachineSpec) UnmarshalBinary(b []byte) error {
+	var res AzureMachineSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

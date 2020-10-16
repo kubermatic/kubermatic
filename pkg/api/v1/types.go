@@ -631,11 +631,11 @@ type MasterVersion struct {
 	RestrictedByKubeletVersion bool `json:"restrictedByKubeletVersion,omitempty"`
 }
 
-// CreateClusterSpec is the structure that is used to create cluster with its initial node deployment
+// CreateClusterSpec is the structure that is used to create cluster with its initial machine deployment
 // swagger:model CreateClusterSpec
 type CreateClusterSpec struct {
-	Cluster        Cluster         `json:"cluster"`
-	NodeDeployment *NodeDeployment `json:"nodeDeployment,omitempty"`
+	Cluster           Cluster            `json:"cluster"`
+	MachineDeployment *MachineDeployment `json:"machineDeployment,omitempty"`
 }
 
 const (
@@ -970,23 +970,23 @@ type ClusterList []Cluster
 // swagger:model Node
 type Node struct {
 	ObjectMeta `json:",inline"`
-	Spec       NodeSpec   `json:"spec"`
-	Status     NodeStatus `json:"status"`
+	Spec       MachineSpec `json:"spec"`
+	Status     NodeStatus  `json:"status"`
 }
 
-// NodeCloudSpec represents the collection of cloud provider specific settings. Only one must be set at a time.
-// swagger:model NodeCloudSpec
-type NodeCloudSpec struct {
-	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
-	AWS          *AWSNodeSpec          `json:"aws,omitempty"`
-	Azure        *AzureNodeSpec        `json:"azure,omitempty"`
-	Openstack    *OpenstackNodeSpec    `json:"openstack,omitempty"`
-	Packet       *PacketNodeSpec       `json:"packet,omitempty"`
-	Hetzner      *HetznerNodeSpec      `json:"hetzner,omitempty"`
-	VSphere      *VSphereNodeSpec      `json:"vsphere,omitempty"`
-	GCP          *GCPNodeSpec          `json:"gcp,omitempty"`
-	Kubevirt     *KubevirtNodeSpec     `json:"kubevirt,omitempty"`
-	Alibaba      *AlibabaNodeSpec      `json:"alibaba,omitempty"`
+// MachineCloudSpec represents the collection of cloud provider specific settings. Only one must be set at a time.
+// swagger:model MachineCloudSpec
+type MachineCloudSpec struct {
+	Digitalocean *DigitaloceanMachineSpec `json:"digitalocean,omitempty"`
+	AWS          *AWSMachineSpec          `json:"aws,omitempty"`
+	Azure        *AzureMachineSpec        `json:"azure,omitempty"`
+	Openstack    *OpenstackMachineSpec    `json:"openstack,omitempty"`
+	Packet       *PacketMachineSpec       `json:"packet,omitempty"`
+	Hetzner      *HetznerMachineSpec      `json:"hetzner,omitempty"`
+	VSphere      *VSphereMachineSpec      `json:"vsphere,omitempty"`
+	GCP          *GCPMachineSpec          `json:"gcp,omitempty"`
+	Kubevirt     *KubevirtMachineSpec     `json:"kubevirt,omitempty"`
+	Alibaba      *AlibabaMachineSpec      `json:"alibaba,omitempty"`
 }
 
 // UbuntuSpec ubuntu specific settings
@@ -1044,9 +1044,9 @@ type OperatingSystemSpec struct {
 	Flatcar        *FlatcarSpec        `json:"flatcar,omitempty"`
 }
 
-// NodeVersionInfo node version information
-// swagger:model NodeVersionInfo
-type NodeVersionInfo struct {
+// MachineVersionInfo node version information
+// swagger:model MachineVersionInfo
+type MachineVersionInfo struct {
 	Kubelet string `json:"kubelet"`
 }
 
@@ -1057,17 +1057,17 @@ type TaintSpec struct {
 	Effect string `json:"effect"`
 }
 
-// NodeSpec node specification
-// swagger:model NodeSpec
-type NodeSpec struct {
+// MachineSpec node specification
+// swagger:model MachineSpec
+type MachineSpec struct {
 	// required: true
-	Cloud NodeCloudSpec `json:"cloud"`
+	Cloud MachineCloudSpec `json:"cloud"`
 	// required: true
 	OperatingSystem OperatingSystemSpec `json:"operatingSystem"`
 	// required: false
 	SSHUserName string `json:"sshUserName,omitempty"`
 	// required: true
-	Versions NodeVersionInfo `json:"versions,omitempty"`
+	Versions MachineVersionInfo `json:"versions,omitempty"`
 	// Map of string keys and values that can be used to organize and categorize (scope and select) objects.
 	// It will be applied to Nodes allowing users run their apps on specific Node using labelSelector.
 	// required: false
@@ -1076,9 +1076,9 @@ type NodeSpec struct {
 	Taints []TaintSpec `json:"taints,omitempty"`
 }
 
-// DigitaloceanNodeSpec digitalocean node settings
-// swagger:model DigitaloceanNodeSpec
-type DigitaloceanNodeSpec struct {
+// DigitaloceanMachineSpec digitalocean node settings
+// swagger:model DigitaloceanMachineSpec
+type DigitaloceanMachineSpec struct {
 	// droplet size slug
 	// required: true
 	Size string `json:"size"`
@@ -1092,17 +1092,17 @@ type DigitaloceanNodeSpec struct {
 	Tags []string `json:"tags"`
 }
 
-// HetznerNodeSpec Hetzner node settings
-// swagger:model HetznerNodeSpec
-type HetznerNodeSpec struct {
+// HetznerMachineSpec Hetzner node settings
+// swagger:model HetznerMachineSpec
+type HetznerMachineSpec struct {
 	// server type
 	// required: true
 	Type string `json:"type"`
 }
 
-// AzureNodeSpec describes settings for an Azure node
-// swagger:model AzureNodeSpec
-type AzureNodeSpec struct {
+// AzureMachineSpec describes settings for an Azure node
+// swagger:model AzureMachineSpec
+type AzureMachineSpec struct {
 	// VM size
 	// required: true
 	Size string `json:"size"`
@@ -1124,18 +1124,18 @@ type AzureNodeSpec struct {
 	ImageID string   `json:"imageID"`
 }
 
-// VSphereNodeSpec VSphere node settings
-// swagger:model VSphereNodeSpec
-type VSphereNodeSpec struct {
+// VSphereMachineSpec VSphere node settings
+// swagger:model VSphereMachineSpec
+type VSphereMachineSpec struct {
 	CPUs       int    `json:"cpus"`
 	Memory     int    `json:"memory"`
 	DiskSizeGB *int64 `json:"diskSizeGB,omitempty"`
 	Template   string `json:"template"`
 }
 
-// OpenstackNodeSpec openstack node settings
-// swagger:model OpenstackNodeSpec
-type OpenstackNodeSpec struct {
+// OpenstackMachineSpec openstack node settings
+// swagger:model OpenstackMachineSpec
+type OpenstackMachineSpec struct {
 	// instance flavor
 	// required: true
 	Flavor string `json:"flavor"`
@@ -1156,9 +1156,9 @@ type OpenstackNodeSpec struct {
 	AvailabilityZone string `json:"availabilityZone"`
 }
 
-// AWSNodeSpec aws specific node settings
-// swagger:model AWSNodeSpec
-type AWSNodeSpec struct {
+// AWSMachineSpec aws specific node settings
+// swagger:model AWSMachineSpec
+type AWSMachineSpec struct {
 	// instance type. for example: t2.micro
 	// required: true
 	InstanceType string `json:"instanceType"`
@@ -1182,9 +1182,9 @@ type AWSNodeSpec struct {
 	AssignPublicIP *bool `json:"assignPublicIP"`
 }
 
-// PacketNodeSpec specifies packet specific node settings
-// swagger:model PacketNodeSpec
-type PacketNodeSpec struct {
+// PacketMachineSpec specifies packet specific node settings
+// swagger:model PacketMachineSpec
+type PacketMachineSpec struct {
 	// InstanceType denotes the plan to which the device will be provisioned.
 	// required: true
 	InstanceType string `json:"instanceType"`
@@ -1193,9 +1193,9 @@ type PacketNodeSpec struct {
 	Tags []string `json:"tags"`
 }
 
-// GCPNodeSpec gcp specific node settings
-// swagger:model GCPNodeSpec
-type GCPNodeSpec struct {
+// GCPMachineSpec gcp specific node settings
+// swagger:model GCPMachineSpec
+type GCPMachineSpec struct {
 	Zone        string            `json:"zone"`
 	MachineType string            `json:"machineType"`
 	DiskSize    int64             `json:"diskSize"`
@@ -1206,9 +1206,9 @@ type GCPNodeSpec struct {
 	CustomImage string            `json:"customImage"`
 }
 
-// KubevirtNodeSpec kubevirt specific node settings
-// swagger:model KubevirtNodeSpec
-type KubevirtNodeSpec struct {
+// KubevirtMachineSpec kubevirt specific node settings
+// swagger:model KubevirtMachineSpec
+type KubevirtMachineSpec struct {
 	// CPUs states how many cpus the kubevirt node will have.
 	// required: true
 	CPUs string `json:"cpus"`
@@ -1229,9 +1229,9 @@ type KubevirtNodeSpec struct {
 	PVCSize string `json:"pvcSize"`
 }
 
-// AlibabaNodeSpec alibaba specific node settings
-// swagger:model AlibabaNodeSpec
-type AlibabaNodeSpec struct {
+// AlibabaMachineSpec alibaba specific node settings
+// swagger:model AlibabaMachineSpec
+type AlibabaMachineSpec struct {
 	InstanceType            string            `json:"instanceType"`
 	DiskSize                string            `json:"diskSize"`
 	DiskType                string            `json:"diskType"`
@@ -1338,22 +1338,22 @@ type NodeMetric struct {
 	CPUUsedPercentage int64 `json:"cpuUsedPercentage,omitempty"`
 }
 
-// NodeDeployment represents a set of worker nodes that is part of a cluster
-// swagger:model NodeDeployment
-type NodeDeployment struct {
+// MachineDeployment represents a set of worker nodes that is part of a cluster
+// swagger:model MachineDeployment
+type MachineDeployment struct {
 	ObjectMeta `json:",inline"`
 
-	Spec   NodeDeploymentSpec               `json:"spec"`
+	Spec   MachineDeploymentSpec            `json:"spec"`
 	Status v1alpha1.MachineDeploymentStatus `json:"status"`
 }
 
-// NodeDeploymentSpec node deployment specification
-// swagger:model NodeDeploymentSpec
-type NodeDeploymentSpec struct {
+// MachineDeploymentSpec node deployment specification
+// swagger:model MachineDeploymentSpec
+type MachineDeploymentSpec struct {
 	// required: true
 	Replicas int32 `json:"replicas,omitempty"`
 	// required: true
-	Template NodeSpec `json:"template"`
+	Template MachineSpec `json:"template"`
 	// required: false
 	Paused *bool `json:"paused,omitempty"`
 	// required: false

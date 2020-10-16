@@ -60,23 +60,23 @@ func NewPatchNodeDeploymentOK() *PatchNodeDeploymentOK {
 
 /*PatchNodeDeploymentOK handles this case with default header values.
 
-NodeDeployment
+MachineDeployment
 */
 type PatchNodeDeploymentOK struct {
-	Payload *models.NodeDeployment
+	Payload *models.MachineDeployment
 }
 
 func (o *PatchNodeDeploymentOK) Error() string {
 	return fmt.Sprintf("[PATCH /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] patchNodeDeploymentOK  %+v", 200, o.Payload)
 }
 
-func (o *PatchNodeDeploymentOK) GetPayload() *models.NodeDeployment {
+func (o *PatchNodeDeploymentOK) GetPayload() *models.MachineDeployment {
 	return o.Payload
 }
 
 func (o *PatchNodeDeploymentOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.NodeDeployment)
+	o.Payload = new(models.MachineDeployment)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

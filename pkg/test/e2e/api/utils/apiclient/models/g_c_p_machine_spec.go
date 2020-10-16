@@ -10,10 +10,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// GCPNodeSpec GCPNodeSpec gcp specific node settings
+// GCPMachineSpec GCPMachineSpec gcp specific node settings
 //
-// swagger:model GCPNodeSpec
-type GCPNodeSpec struct {
+// swagger:model GCPMachineSpec
+type GCPMachineSpec struct {
 
 	// custom image
 	CustomImage string `json:"customImage,omitempty"`
@@ -40,13 +40,13 @@ type GCPNodeSpec struct {
 	Zone string `json:"zone,omitempty"`
 }
 
-// Validate validates this g c p node spec
-func (m *GCPNodeSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this g c p machine spec
+func (m *GCPMachineSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *GCPNodeSpec) MarshalBinary() ([]byte, error) {
+func (m *GCPMachineSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -54,8 +54,8 @@ func (m *GCPNodeSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *GCPNodeSpec) UnmarshalBinary(b []byte) error {
-	var res GCPNodeSpec
+func (m *GCPMachineSpec) UnmarshalBinary(b []byte) error {
+	var res GCPMachineSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

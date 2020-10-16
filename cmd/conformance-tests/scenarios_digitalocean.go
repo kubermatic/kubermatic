@@ -82,20 +82,20 @@ func (s *digitaloceanScenario) Cluster(secrets secrets) *apimodels.CreateCluster
 	}
 }
 
-func (s *digitaloceanScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
+func (s *digitaloceanScenario) MachineDeployments(num int, _ secrets) ([]apimodels.MachineDeployment, error) {
 	replicas := int32(num)
 	size := "4gb"
-	return []apimodels.NodeDeployment{
+	return []apimodels.MachineDeployment{
 		{
-			Spec: &apimodels.NodeDeploymentSpec{
+			Spec: &apimodels.MachineDeploymentSpec{
 				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Digitalocean: &apimodels.DigitaloceanNodeSpec{
+				Template: &apimodels.MachineSpec{
+					Cloud: &apimodels.MachineCloudSpec{
+						Digitalocean: &apimodels.DigitaloceanMachineSpec{
 							Size: &size,
 						},
 					},
-					Versions: &apimodels.NodeVersionInfo{
+					Versions: &apimodels.MachineVersionInfo{
 						Kubelet: s.version.String(),
 					},
 					OperatingSystem: &s.nodeOsSpec,

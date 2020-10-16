@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// AWSNodeSpec AWSNodeSpec aws specific node settings
+// AWSMachineSpec AWSMachineSpec aws specific node settings
 //
-// swagger:model AWSNodeSpec
-type AWSNodeSpec struct {
+// swagger:model AWSMachineSpec
+type AWSMachineSpec struct {
 
 	// ami to use. Will be defaulted to a ami for your selected operating system and region. Only set this when you know what you do.
 	AMI string `json:"ami,omitempty"`
@@ -46,8 +46,8 @@ type AWSNodeSpec struct {
 	VolumeType *string `json:"volumeType"`
 }
 
-// Validate validates this a w s node spec
-func (m *AWSNodeSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this a w s machine spec
+func (m *AWSMachineSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateInstanceType(formats); err != nil {
@@ -68,7 +68,7 @@ func (m *AWSNodeSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AWSNodeSpec) validateInstanceType(formats strfmt.Registry) error {
+func (m *AWSMachineSpec) validateInstanceType(formats strfmt.Registry) error {
 
 	if err := validate.Required("instanceType", "body", m.InstanceType); err != nil {
 		return err
@@ -77,7 +77,7 @@ func (m *AWSNodeSpec) validateInstanceType(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AWSNodeSpec) validateVolumeSize(formats strfmt.Registry) error {
+func (m *AWSMachineSpec) validateVolumeSize(formats strfmt.Registry) error {
 
 	if err := validate.Required("diskSize", "body", m.VolumeSize); err != nil {
 		return err
@@ -86,7 +86,7 @@ func (m *AWSNodeSpec) validateVolumeSize(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *AWSNodeSpec) validateVolumeType(formats strfmt.Registry) error {
+func (m *AWSMachineSpec) validateVolumeType(formats strfmt.Registry) error {
 
 	if err := validate.Required("volumeType", "body", m.VolumeType); err != nil {
 		return err
@@ -96,7 +96,7 @@ func (m *AWSNodeSpec) validateVolumeType(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *AWSNodeSpec) MarshalBinary() ([]byte, error) {
+func (m *AWSMachineSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -104,8 +104,8 @@ func (m *AWSNodeSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *AWSNodeSpec) UnmarshalBinary(b []byte) error {
-	var res AWSNodeSpec
+func (m *AWSMachineSpec) UnmarshalBinary(b []byte) error {
+	var res AWSMachineSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

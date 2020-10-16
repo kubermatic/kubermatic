@@ -64,7 +64,7 @@ const (
 type createNodeDeploymentReq struct {
 	common.GetClusterReq
 	// in: body
-	Body apiv1.NodeDeployment
+	Body apiv1.MachineDeployment
 }
 
 func DecodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
@@ -160,7 +160,7 @@ func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvide
 	}
 }
 
-func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.NodeDeployment, error) {
+func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.MachineDeployment, error) {
 	nodeStatus := apiv1.NodeStatus{}
 	nodeStatus.MachineName = md.Name
 
@@ -191,19 +191,19 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 
 	hasDynamicConfig := md.Spec.Template.Spec.ConfigSource != nil
 
-	return &apiv1.NodeDeployment{
+	return &apiv1.MachineDeployment{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                md.Name,
 			Name:              md.Name,
 			DeletionTimestamp: deletionTimestamp,
 			CreationTimestamp: apiv1.NewTime(md.CreationTimestamp.Time),
 		},
-		Spec: apiv1.NodeDeploymentSpec{
+		Spec: apiv1.MachineDeploymentSpec{
 			Replicas: *md.Spec.Replicas,
-			Template: apiv1.NodeSpec{
+			Template: apiv1.MachineSpec{
 				Labels: label.FilterLabels(label.NodeDeploymentResourceType, md.Spec.Template.Spec.Labels),
 				Taints: taints,
-				Versions: apiv1.NodeVersionInfo{
+				Versions: apiv1.MachineVersionInfo{
 					Kubelet: md.Spec.Template.Spec.Versions.Kubelet,
 				},
 				OperatingSystem: *operatingSystemSpec,
@@ -261,17 +261,17 @@ func ListNodeDeployments(projectProvider provider.ProjectProvider, privilegedPro
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		nodeDeployments := make([]*apiv1.NodeDeployment, 0, len(machineDeployments.Items))
+		apiMachineDeployments := make([]*apiv1.MachineDeployment, 0, len(machineDeployments.Items))
 		for i := range machineDeployments.Items {
 			nd, err := outputMachineDeployment(&machineDeployments.Items[i])
 			if err != nil {
 				return nil, fmt.Errorf("failed to output machine deployment %s: %v", machineDeployments.Items[i].Name, err)
 			}
 
-			nodeDeployments = append(nodeDeployments, nd)
+			apiMachineDeployments = append(apiMachineDeployments, nd)
 		}
 
-		return nodeDeployments, nil
+		return apiMachineDeployments, nil
 	}
 }
 
@@ -612,7 +612,7 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 		}
 
 		// We cannot use machineClient.ClusterV1alpha1().MachineDeployments().Patch() method as we are not exposing
-		// MachineDeployment type directly. API uses NodeDeployment type and we cannot ensure compatibility here.
+		// MachineDeployment type directly. API uses MachineDeployment type and we cannot ensure compatibility here.
 		machineDeployment := &clusterv1alpha1.MachineDeployment{}
 		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: req.NodeDeploymentID}, machineDeployment); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -633,7 +633,7 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, fmt.Errorf("cannot patch node deployment: %v", err)
 		}
 
-		var patchedNodeDeployment *apiv1.NodeDeployment
+		var patchedNodeDeployment *apiv1.MachineDeployment
 		if err := json.Unmarshal(patchedNodeDeploymentJSON, &patchedNodeDeployment); err != nil {
 			return nil, fmt.Errorf("cannot decode patched cluster: %v", err)
 		}
@@ -671,7 +671,7 @@ func PatchNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider
 			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
 		}
 
-		// Only the fields from NodeDeploymentSpec will be updated by a patch.
+		// Only the fields from MachineDeploymentSpec will be updated by a patch.
 		// It ensures that the name and resource version are set and the selector stays the same.
 		machineDeployment.Spec.Template.Spec = patchedMachineDeployment.Spec.Template.Spec
 		machineDeployment.Spec.Replicas = patchedMachineDeployment.Spec.Replicas
@@ -946,8 +946,8 @@ func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInit
 			DeletionTimestamp: deletionTimestamp,
 			CreationTimestamp: apiv1.NewTime(machine.CreationTimestamp.Time),
 		},
-		Spec: apiv1.NodeSpec{
-			Versions: apiv1.NodeVersionInfo{
+		Spec: apiv1.MachineSpec{
+			Versions: apiv1.MachineVersionInfo{
 				Kubelet: machine.Spec.Versions.Kubelet,
 			},
 			OperatingSystem: *operatingSystemSpec,

@@ -99,7 +99,7 @@ func (s *awsScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
+func (s *awsScenario) MachineDeployments(num int, secrets secrets) ([]apimodels.MachineDeployment, error) {
 	instanceType := "t2.medium"
 	volumeType := "gp2"
 	volumeSize := int64(100)
@@ -154,12 +154,12 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 		return nil, fmt.Errorf("wanted three subnets in different AZs, got only %d", n)
 	}
 
-	nds := []apimodels.NodeDeployment{
+	nds := []apimodels.MachineDeployment{
 		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Aws: &apimodels.AWSNodeSpec{
+			Spec: &apimodels.MachineDeploymentSpec{
+				Template: &apimodels.MachineSpec{
+					Cloud: &apimodels.MachineCloudSpec{
+						Aws: &apimodels.AWSMachineSpec{
 							InstanceType:     &instanceType,
 							VolumeType:       &volumeType,
 							VolumeSize:       &volumeSize,
@@ -167,7 +167,7 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 							SubnetID:         subnets[0].ID,
 						},
 					},
-					Versions: &apimodels.NodeVersionInfo{
+					Versions: &apimodels.MachineVersionInfo{
 						Kubelet: s.version.String(),
 					},
 					OperatingSystem: &s.nodeOsSpec,
@@ -175,10 +175,10 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 			},
 		},
 		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Aws: &apimodels.AWSNodeSpec{
+			Spec: &apimodels.MachineDeploymentSpec{
+				Template: &apimodels.MachineSpec{
+					Cloud: &apimodels.MachineCloudSpec{
+						Aws: &apimodels.AWSMachineSpec{
 							InstanceType:     &instanceType,
 							VolumeType:       &volumeType,
 							VolumeSize:       &volumeSize,
@@ -186,7 +186,7 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 							SubnetID:         subnets[1].ID,
 						},
 					},
-					Versions: &apimodels.NodeVersionInfo{
+					Versions: &apimodels.MachineVersionInfo{
 						Kubelet: s.version.String(),
 					},
 					OperatingSystem: &s.nodeOsSpec,
@@ -194,10 +194,10 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 			},
 		},
 		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Aws: &apimodels.AWSNodeSpec{
+			Spec: &apimodels.MachineDeploymentSpec{
+				Template: &apimodels.MachineSpec{
+					Cloud: &apimodels.MachineCloudSpec{
+						Aws: &apimodels.AWSMachineSpec{
 							InstanceType:     &instanceType,
 							VolumeType:       &volumeType,
 							VolumeSize:       &volumeSize,
@@ -205,7 +205,7 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 							SubnetID:         subnets[2].ID,
 						},
 					},
-					Versions: &apimodels.NodeVersionInfo{
+					Versions: &apimodels.MachineVersionInfo{
 						Kubelet: s.version.String(),
 					},
 					OperatingSystem: &s.nodeOsSpec,

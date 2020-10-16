@@ -10,10 +10,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// AlibabaNodeSpec AlibabaNodeSpec alibaba specific node settings
+// AlibabaMachineSpec AlibabaMachineSpec alibaba specific node settings
 //
-// swagger:model AlibabaNodeSpec
-type AlibabaNodeSpec struct {
+// swagger:model AlibabaMachineSpec
+type AlibabaMachineSpec struct {
 
 	// disk size
 	DiskSize string `json:"diskSize,omitempty"`
@@ -37,13 +37,13 @@ type AlibabaNodeSpec struct {
 	ZoneID string `json:"zoneID,omitempty"`
 }
 
-// Validate validates this alibaba node spec
-func (m *AlibabaNodeSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this alibaba machine spec
+func (m *AlibabaMachineSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *AlibabaNodeSpec) MarshalBinary() ([]byte, error) {
+func (m *AlibabaMachineSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -51,8 +51,8 @@ func (m *AlibabaNodeSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *AlibabaNodeSpec) UnmarshalBinary(b []byte) error {
-	var res AlibabaNodeSpec
+func (m *AlibabaMachineSpec) UnmarshalBinary(b []byte) error {
+	var res AlibabaMachineSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

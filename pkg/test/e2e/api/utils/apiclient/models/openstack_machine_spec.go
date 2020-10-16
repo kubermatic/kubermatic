@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// OpenstackNodeSpec OpenstackNodeSpec openstack node settings
+// OpenstackMachineSpec OpenstackMachineSpec openstack node settings
 //
-// swagger:model OpenstackNodeSpec
-type OpenstackNodeSpec struct {
+// swagger:model OpenstackMachineSpec
+type OpenstackMachineSpec struct {
 
 	// if not set, the default AZ from the Datacenter spec will be used
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
@@ -38,8 +38,8 @@ type OpenstackNodeSpec struct {
 	UseFloatingIP bool `json:"useFloatingIP,omitempty"`
 }
 
-// Validate validates this openstack node spec
-func (m *OpenstackNodeSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this openstack machine spec
+func (m *OpenstackMachineSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateFlavor(formats); err != nil {
@@ -56,7 +56,7 @@ func (m *OpenstackNodeSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *OpenstackNodeSpec) validateFlavor(formats strfmt.Registry) error {
+func (m *OpenstackMachineSpec) validateFlavor(formats strfmt.Registry) error {
 
 	if err := validate.Required("flavor", "body", m.Flavor); err != nil {
 		return err
@@ -65,7 +65,7 @@ func (m *OpenstackNodeSpec) validateFlavor(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *OpenstackNodeSpec) validateImage(formats strfmt.Registry) error {
+func (m *OpenstackMachineSpec) validateImage(formats strfmt.Registry) error {
 
 	if err := validate.Required("image", "body", m.Image); err != nil {
 		return err
@@ -75,7 +75,7 @@ func (m *OpenstackNodeSpec) validateImage(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *OpenstackNodeSpec) MarshalBinary() ([]byte, error) {
+func (m *OpenstackMachineSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -83,8 +83,8 @@ func (m *OpenstackNodeSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *OpenstackNodeSpec) UnmarshalBinary(b []byte) error {
-	var res OpenstackNodeSpec
+func (m *OpenstackMachineSpec) UnmarshalBinary(b []byte) error {
+	var res OpenstackMachineSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

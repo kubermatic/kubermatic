@@ -74,13 +74,13 @@ func (s *alibabaScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 	}
 }
 
-func (s *alibabaScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
-	return []apimodels.NodeDeployment{
+func (s *alibabaScenario) MachineDeployments(num int, secrets secrets) ([]apimodels.MachineDeployment, error) {
+	return []apimodels.MachineDeployment{
 		{
-			Spec: &apimodels.NodeDeploymentSpec{
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Alibaba: &apimodels.AlibabaNodeSpec{
+			Spec: &apimodels.MachineDeploymentSpec{
+				Template: &apimodels.MachineSpec{
+					Cloud: &apimodels.MachineCloudSpec{
+						Alibaba: &apimodels.AlibabaMachineSpec{
 							InstanceType:            "ecs.c6.xsmall",
 							DiskSize:                "40",
 							DiskType:                "cloud_efficiency",
@@ -89,7 +89,7 @@ func (s *alibabaScenario) NodeDeployments(num int, secrets secrets) ([]apimodels
 							ZoneID:                  alibabaDC,
 						},
 					},
-					Versions: &apimodels.NodeVersionInfo{
+					Versions: &apimodels.MachineVersionInfo{
 						Kubelet: s.version.String(),
 					},
 					OperatingSystem: &s.nodeOsSpec,

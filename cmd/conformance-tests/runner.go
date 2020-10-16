@@ -75,7 +75,7 @@ func podIsReady(p *corev1.Pod) bool {
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *apimodels.CreateClusterSpec
-	NodeDeployments(num int, secrets secrets) ([]apimodels.NodeDeployment, error)
+	MachineDeployments(num int, secrets secrets) ([]apimodels.MachineDeployment, error)
 	OS() apimodels.OperatingSystemSpec
 }
 
@@ -430,10 +430,10 @@ func (r *testRunner) executeTests(
 	}
 
 	if err := junitReporterWrapper(
-		"[Kubermatic] Create NodeDeployments",
+		"[Kubermatic] Create MachineDeployments",
 		report,
 		func() error {
-			return r.createNodeDeployments(log, scenario, clusterName)
+			return r.createMachineDeployments(log, scenario, clusterName)
 		},
 	); err != nil {
 		return fmt.Errorf("failed to setup nodes: %v", err)
@@ -802,7 +802,7 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *zap.SugaredLogger, scenari
 	return ginkgoRes, err
 }
 
-func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario testScenario, clusterName string) error {
+func (r *testRunner) createMachineDeployments(log *zap.SugaredLogger, scenario testScenario, clusterName string) error {
 	var existingReplicas int
 
 	nodeDeploymentGetParams := &projectclient.ListNodeDeploymentsParams{
@@ -837,10 +837,10 @@ func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario test
 	}
 
 	log.Info("Creating NodeDeployments via Kubermatic API")
-	var nodeDeployments []apimodels.NodeDeployment
+	var nodeDeployments []apimodels.MachineDeployment
 	var err error
 	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
-		nodeDeployments, err = scenario.NodeDeployments(nodeCount, r.secrets)
+		nodeDeployments, err = scenario.MachineDeployments(nodeCount, r.secrets)
 		if err != nil {
 			log.Infow("Getting NodeDeployments from scenario failed", zap.Error(err))
 			return false, nil
@@ -861,16 +861,16 @@ func (r *testRunner) createNodeDeployments(log *zap.SugaredLogger, scenario test
 
 		if err := retryNAttempts(defaultAPIRetries, func(attempt int) error {
 			if _, err := r.kubermaticClient.Project.CreateNodeDeployment(params, r.kubermaticAuthenticator); err != nil {
-				log.Warnf("[Attempt %d/%d] Failed to create NodeDeployment %s: %v. Retrying", attempt, defaultAPIRetries, nd.Name, fmtSwaggerError(err))
+				log.Warnf("[Attempt %d/%d] Failed to create MachineDeployment %s: %v. Retrying", attempt, defaultAPIRetries, nd.Name, fmtSwaggerError(err))
 				return err
 			}
 			return nil
 		}); err != nil {
-			return fmt.Errorf("failed to create NodeDeployment %s via kubermatic api after %d attempts: %q", nd.Name, defaultAPIRetries, fmtSwaggerError(err))
+			return fmt.Errorf("failed to create MachineDeployment %s via kubermatic api after %d attempts: %q", nd.Name, defaultAPIRetries, fmtSwaggerError(err))
 		}
 	}
 
-	log.Infof("Successfully created %d NodeDeployments via Kubermatic API", nodeCount)
+	log.Infof("Successfully created %d MAchineDeployments via Kubermatic API", nodeCount)
 	return nil
 }
 

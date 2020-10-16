@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// KubevirtNodeSpec KubevirtNodeSpec kubevirt specific node settings
+// KubevirtMachineSpec KubevirtMachineSpec kubevirt specific node settings
 //
-// swagger:model KubevirtNodeSpec
-type KubevirtNodeSpec struct {
+// swagger:model KubevirtMachineSpec
+type KubevirtMachineSpec struct {
 
 	// CPUs states how many cpus the kubevirt node will have.
 	// Required: true
@@ -42,8 +42,8 @@ type KubevirtNodeSpec struct {
 	StorageClassName *string `json:"storageClassName"`
 }
 
-// Validate validates this kubevirt node spec
-func (m *KubevirtNodeSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this kubevirt machine spec
+func (m *KubevirtMachineSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCPUs(formats); err != nil {
@@ -76,7 +76,7 @@ func (m *KubevirtNodeSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *KubevirtNodeSpec) validateCPUs(formats strfmt.Registry) error {
+func (m *KubevirtMachineSpec) validateCPUs(formats strfmt.Registry) error {
 
 	if err := validate.Required("cpus", "body", m.CPUs); err != nil {
 		return err
@@ -85,7 +85,7 @@ func (m *KubevirtNodeSpec) validateCPUs(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *KubevirtNodeSpec) validateMemory(formats strfmt.Registry) error {
+func (m *KubevirtMachineSpec) validateMemory(formats strfmt.Registry) error {
 
 	if err := validate.Required("memory", "body", m.Memory); err != nil {
 		return err
@@ -94,7 +94,7 @@ func (m *KubevirtNodeSpec) validateMemory(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *KubevirtNodeSpec) validateNamespace(formats strfmt.Registry) error {
+func (m *KubevirtMachineSpec) validateNamespace(formats strfmt.Registry) error {
 
 	if err := validate.Required("namespace", "body", m.Namespace); err != nil {
 		return err
@@ -103,7 +103,7 @@ func (m *KubevirtNodeSpec) validateNamespace(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *KubevirtNodeSpec) validatePVCSize(formats strfmt.Registry) error {
+func (m *KubevirtMachineSpec) validatePVCSize(formats strfmt.Registry) error {
 
 	if err := validate.Required("pvcSize", "body", m.PVCSize); err != nil {
 		return err
@@ -112,7 +112,7 @@ func (m *KubevirtNodeSpec) validatePVCSize(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *KubevirtNodeSpec) validateSourceURL(formats strfmt.Registry) error {
+func (m *KubevirtMachineSpec) validateSourceURL(formats strfmt.Registry) error {
 
 	if err := validate.Required("sourceURL", "body", m.SourceURL); err != nil {
 		return err
@@ -121,7 +121,7 @@ func (m *KubevirtNodeSpec) validateSourceURL(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *KubevirtNodeSpec) validateStorageClassName(formats strfmt.Registry) error {
+func (m *KubevirtMachineSpec) validateStorageClassName(formats strfmt.Registry) error {
 
 	if err := validate.Required("storageClassName", "body", m.StorageClassName); err != nil {
 		return err
@@ -131,7 +131,7 @@ func (m *KubevirtNodeSpec) validateStorageClassName(formats strfmt.Registry) err
 }
 
 // MarshalBinary interface implementation
-func (m *KubevirtNodeSpec) MarshalBinary() ([]byte, error) {
+func (m *KubevirtMachineSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -139,8 +139,8 @@ func (m *KubevirtNodeSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *KubevirtNodeSpec) UnmarshalBinary(b []byte) error {
-	var res KubevirtNodeSpec
+func (m *KubevirtMachineSpec) UnmarshalBinary(b []byte) error {
+	var res KubevirtMachineSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

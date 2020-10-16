@@ -86,24 +86,24 @@ func (s *openStackScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpe
 	}
 }
 
-func (s *openStackScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
+func (s *openStackScenario) MachineDeployments(num int, _ secrets) ([]apimodels.MachineDeployment, error) {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
 	image := "kubermatic-e2e-" + osName
 	flavor := "m1.small"
 	replicas := int32(num)
 
-	return []apimodels.NodeDeployment{
+	return []apimodels.MachineDeployment{
 		{
-			Spec: &apimodels.NodeDeploymentSpec{
+			Spec: &apimodels.MachineDeploymentSpec{
 				Replicas: &replicas,
-				Template: &apimodels.NodeSpec{
-					Cloud: &apimodels.NodeCloudSpec{
-						Openstack: &apimodels.OpenstackNodeSpec{
+				Template: &apimodels.MachineSpec{
+					Cloud: &apimodels.MachineCloudSpec{
+						Openstack: &apimodels.OpenstackMachineSpec{
 							Flavor: &flavor,
 							Image:  &image,
 						},
 					},
-					Versions: &apimodels.NodeVersionInfo{
+					Versions: &apimodels.MachineVersionInfo{
 						Kubelet: s.version.String(),
 					},
 					OperatingSystem: &s.nodeOsSpec,

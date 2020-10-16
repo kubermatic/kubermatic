@@ -14,10 +14,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// NodeSpec NodeSpec node specification
+// MachineSpec MachineSpec node specification
 //
-// swagger:model NodeSpec
-type NodeSpec struct {
+// swagger:model MachineSpec
+type MachineSpec struct {
 
 	// Map of string keys and values that can be used to organize and categorize (scope and select) objects.
 	// It will be applied to Nodes allowing users run their apps on specific Node using labelSelector.
@@ -31,7 +31,7 @@ type NodeSpec struct {
 
 	// cloud
 	// Required: true
-	Cloud *NodeCloudSpec `json:"cloud"`
+	Cloud *MachineCloudSpec `json:"cloud"`
 
 	// operating system
 	// Required: true
@@ -39,11 +39,11 @@ type NodeSpec struct {
 
 	// versions
 	// Required: true
-	Versions *NodeVersionInfo `json:"versions"`
+	Versions *MachineVersionInfo `json:"versions"`
 }
 
-// Validate validates this node spec
-func (m *NodeSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this machine spec
+func (m *MachineSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateTaints(formats); err != nil {
@@ -68,7 +68,7 @@ func (m *NodeSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeSpec) validateTaints(formats strfmt.Registry) error {
+func (m *MachineSpec) validateTaints(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Taints) { // not required
 		return nil
@@ -93,7 +93,7 @@ func (m *NodeSpec) validateTaints(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeSpec) validateCloud(formats strfmt.Registry) error {
+func (m *MachineSpec) validateCloud(formats strfmt.Registry) error {
 
 	if err := validate.Required("cloud", "body", m.Cloud); err != nil {
 		return err
@@ -111,7 +111,7 @@ func (m *NodeSpec) validateCloud(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeSpec) validateOperatingSystem(formats strfmt.Registry) error {
+func (m *MachineSpec) validateOperatingSystem(formats strfmt.Registry) error {
 
 	if err := validate.Required("operatingSystem", "body", m.OperatingSystem); err != nil {
 		return err
@@ -129,7 +129,7 @@ func (m *NodeSpec) validateOperatingSystem(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeSpec) validateVersions(formats strfmt.Registry) error {
+func (m *MachineSpec) validateVersions(formats strfmt.Registry) error {
 
 	if err := validate.Required("versions", "body", m.Versions); err != nil {
 		return err
@@ -148,7 +148,7 @@ func (m *NodeSpec) validateVersions(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *NodeSpec) MarshalBinary() ([]byte, error) {
+func (m *MachineSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -156,8 +156,8 @@ func (m *NodeSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *NodeSpec) UnmarshalBinary(b []byte) error {
-	var res NodeSpec
+func (m *MachineSpec) UnmarshalBinary(b []byte) error {
+	var res MachineSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

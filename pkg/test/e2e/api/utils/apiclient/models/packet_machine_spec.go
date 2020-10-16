@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// PacketNodeSpec PacketNodeSpec specifies packet specific node settings
+// PacketMachineSpec PacketMachineSpec specifies packet specific node settings
 //
-// swagger:model PacketNodeSpec
-type PacketNodeSpec struct {
+// swagger:model PacketMachineSpec
+type PacketMachineSpec struct {
 
 	// InstanceType denotes the plan to which the device will be provisioned.
 	// Required: true
@@ -25,8 +25,8 @@ type PacketNodeSpec struct {
 	Tags []string `json:"tags"`
 }
 
-// Validate validates this packet node spec
-func (m *PacketNodeSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this packet machine spec
+func (m *PacketMachineSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateInstanceType(formats); err != nil {
@@ -39,7 +39,7 @@ func (m *PacketNodeSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *PacketNodeSpec) validateInstanceType(formats strfmt.Registry) error {
+func (m *PacketMachineSpec) validateInstanceType(formats strfmt.Registry) error {
 
 	if err := validate.Required("instanceType", "body", m.InstanceType); err != nil {
 		return err
@@ -49,7 +49,7 @@ func (m *PacketNodeSpec) validateInstanceType(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *PacketNodeSpec) MarshalBinary() ([]byte, error) {
+func (m *PacketMachineSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -57,8 +57,8 @@ func (m *PacketNodeSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *PacketNodeSpec) UnmarshalBinary(b []byte) error {
-	var res PacketNodeSpec
+func (m *PacketMachineSpec) UnmarshalBinary(b []byte) error {
+	var res PacketMachineSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

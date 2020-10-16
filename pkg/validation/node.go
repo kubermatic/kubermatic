@@ -23,7 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
-func ValidateCreateNodeSpec(c *kubermaticv1.Cluster, spec *apiv1.NodeSpec, dc *kubermaticv1.Datacenter) error {
+func ValidateCreateNodeSpec(c *kubermaticv1.Cluster, spec *apiv1.MachineSpec, dc *kubermaticv1.Datacenter) error {
 	if c.Spec.Cloud.Openstack != nil {
 		if (dc.Spec.Openstack.EnforceFloatingIP || spec.Cloud.Openstack.UseFloatingIP) && len(c.Spec.Cloud.Openstack.FloatingIPPool) == 0 {
 			return errors.New("no floating ip pool specified")

@@ -11,44 +11,44 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NodeCloudSpec NodeCloudSpec represents the collection of cloud provider specific settings. Only one must be set at a time.
+// MachineCloudSpec MachineCloudSpec represents the collection of cloud provider specific settings. Only one must be set at a time.
 //
-// swagger:model NodeCloudSpec
-type NodeCloudSpec struct {
+// swagger:model MachineCloudSpec
+type MachineCloudSpec struct {
 
 	// alibaba
-	Alibaba *AlibabaNodeSpec `json:"alibaba,omitempty"`
+	Alibaba *AlibabaMachineSpec `json:"alibaba,omitempty"`
 
 	// aws
-	Aws *AWSNodeSpec `json:"aws,omitempty"`
+	Aws *AWSMachineSpec `json:"aws,omitempty"`
 
 	// azure
-	Azure *AzureNodeSpec `json:"azure,omitempty"`
+	Azure *AzureMachineSpec `json:"azure,omitempty"`
 
 	// digitalocean
-	Digitalocean *DigitaloceanNodeSpec `json:"digitalocean,omitempty"`
+	Digitalocean *DigitaloceanMachineSpec `json:"digitalocean,omitempty"`
 
 	// gcp
-	Gcp *GCPNodeSpec `json:"gcp,omitempty"`
+	Gcp *GCPMachineSpec `json:"gcp,omitempty"`
 
 	// hetzner
-	Hetzner *HetznerNodeSpec `json:"hetzner,omitempty"`
+	Hetzner *HetznerMachineSpec `json:"hetzner,omitempty"`
 
 	// kubevirt
-	Kubevirt *KubevirtNodeSpec `json:"kubevirt,omitempty"`
+	Kubevirt *KubevirtMachineSpec `json:"kubevirt,omitempty"`
 
 	// openstack
-	Openstack *OpenstackNodeSpec `json:"openstack,omitempty"`
+	Openstack *OpenstackMachineSpec `json:"openstack,omitempty"`
 
 	// packet
-	Packet *PacketNodeSpec `json:"packet,omitempty"`
+	Packet *PacketMachineSpec `json:"packet,omitempty"`
 
 	// vsphere
-	Vsphere *VSphereNodeSpec `json:"vsphere,omitempty"`
+	Vsphere *VSphereMachineSpec `json:"vsphere,omitempty"`
 }
 
-// Validate validates this node cloud spec
-func (m *NodeCloudSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this machine cloud spec
+func (m *MachineCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateAlibaba(formats); err != nil {
@@ -97,7 +97,7 @@ func (m *NodeCloudSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeCloudSpec) validateAlibaba(formats strfmt.Registry) error {
+func (m *MachineCloudSpec) validateAlibaba(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Alibaba) { // not required
 		return nil
@@ -115,7 +115,7 @@ func (m *NodeCloudSpec) validateAlibaba(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeCloudSpec) validateAws(formats strfmt.Registry) error {
+func (m *MachineCloudSpec) validateAws(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Aws) { // not required
 		return nil
@@ -133,7 +133,7 @@ func (m *NodeCloudSpec) validateAws(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeCloudSpec) validateAzure(formats strfmt.Registry) error {
+func (m *MachineCloudSpec) validateAzure(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Azure) { // not required
 		return nil
@@ -151,7 +151,7 @@ func (m *NodeCloudSpec) validateAzure(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeCloudSpec) validateDigitalocean(formats strfmt.Registry) error {
+func (m *MachineCloudSpec) validateDigitalocean(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Digitalocean) { // not required
 		return nil
@@ -169,7 +169,7 @@ func (m *NodeCloudSpec) validateDigitalocean(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeCloudSpec) validateGcp(formats strfmt.Registry) error {
+func (m *MachineCloudSpec) validateGcp(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Gcp) { // not required
 		return nil
@@ -187,7 +187,7 @@ func (m *NodeCloudSpec) validateGcp(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeCloudSpec) validateHetzner(formats strfmt.Registry) error {
+func (m *MachineCloudSpec) validateHetzner(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Hetzner) { // not required
 		return nil
@@ -205,7 +205,7 @@ func (m *NodeCloudSpec) validateHetzner(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeCloudSpec) validateKubevirt(formats strfmt.Registry) error {
+func (m *MachineCloudSpec) validateKubevirt(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Kubevirt) { // not required
 		return nil
@@ -223,7 +223,7 @@ func (m *NodeCloudSpec) validateKubevirt(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeCloudSpec) validateOpenstack(formats strfmt.Registry) error {
+func (m *MachineCloudSpec) validateOpenstack(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Openstack) { // not required
 		return nil
@@ -241,7 +241,7 @@ func (m *NodeCloudSpec) validateOpenstack(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeCloudSpec) validatePacket(formats strfmt.Registry) error {
+func (m *MachineCloudSpec) validatePacket(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Packet) { // not required
 		return nil
@@ -259,7 +259,7 @@ func (m *NodeCloudSpec) validatePacket(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *NodeCloudSpec) validateVsphere(formats strfmt.Registry) error {
+func (m *MachineCloudSpec) validateVsphere(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Vsphere) { // not required
 		return nil
@@ -278,7 +278,7 @@ func (m *NodeCloudSpec) validateVsphere(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *NodeCloudSpec) MarshalBinary() ([]byte, error) {
+func (m *MachineCloudSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -286,8 +286,8 @@ func (m *NodeCloudSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *NodeCloudSpec) UnmarshalBinary(b []byte) error {
-	var res NodeCloudSpec
+func (m *MachineCloudSpec) UnmarshalBinary(b []byte) error {
+	var res MachineCloudSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

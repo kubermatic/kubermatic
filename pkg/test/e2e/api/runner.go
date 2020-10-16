@@ -357,12 +357,12 @@ func (r *runner) CreateAWSCluster(projectID, dc, name, secretAccessKey, accessKe
 		volumeSize := int64(25)
 		volumeType := "standard"
 
-		clusterSpec.NodeDeployment = &models.NodeDeployment{
-			Spec: &models.NodeDeploymentSpec{
+		clusterSpec.MachineDeployment = &models.MachineDeployment{
+			Spec: &models.MachineDeploymentSpec{
 				Replicas: &replicas,
-				Template: &models.NodeSpec{
-					Cloud: &models.NodeCloudSpec{
-						Aws: &models.AWSNodeSpec{
+				Template: &models.MachineSpec{
+					Cloud: &models.MachineCloudSpec{
+						Aws: &models.AWSMachineSpec{
 							AvailabilityZone: availabilityZone,
 							InstanceType:     &instanceType,
 							VolumeSize:       &volumeSize,
@@ -418,12 +418,12 @@ func (r *runner) CreateDOCluster(projectID, dc, name, credential, version, locat
 	if replicas > 0 {
 		instanceSize := "s-1vcpu-1gb"
 
-		clusterSpec.NodeDeployment = &models.NodeDeployment{
-			Spec: &models.NodeDeploymentSpec{
+		clusterSpec.MachineDeployment = &models.MachineDeployment{
+			Spec: &models.MachineDeploymentSpec{
 				Replicas: &replicas,
-				Template: &models.NodeSpec{
-					Cloud: &models.NodeCloudSpec{
-						Digitalocean: &models.DigitaloceanNodeSpec{
+				Template: &models.MachineSpec{
+					Cloud: &models.MachineCloudSpec{
+						Digitalocean: &models.DigitaloceanMachineSpec{
 							Size:       &instanceSize,
 							Backups:    false,
 							IPV6:       false,
@@ -563,7 +563,7 @@ func convertHealthStatus(status models.HealthStatus) kubermaticv1.HealthStatus {
 }
 
 // GetClusterNodeDeployments returns the cluster node deployments
-func (r *runner) GetClusterNodeDeployments(projectID, dc, clusterID string) ([]apiv1.NodeDeployment, error) {
+func (r *runner) GetClusterNodeDeployments(projectID, dc, clusterID string) ([]apiv1.MachineDeployment, error) {
 	params := &project.ListNodeDeploymentsParams{ClusterID: clusterID, ProjectID: projectID, DC: dc}
 	setupParams(r.test, params, 1*time.Second, 3*time.Minute)
 
@@ -572,9 +572,9 @@ func (r *runner) GetClusterNodeDeployments(projectID, dc, clusterID string) ([]a
 		return nil, err
 	}
 
-	list := make([]apiv1.NodeDeployment, 0)
+	list := make([]apiv1.MachineDeployment, 0)
 	for _, nd := range response.Payload {
-		apiNd := apiv1.NodeDeployment{}
+		apiNd := apiv1.MachineDeployment{}
 		apiNd.Name = nd.Name
 		apiNd.ID = nd.ID
 		apiNd.Status = v1alpha1.MachineDeploymentStatus{
@@ -592,16 +592,16 @@ func (r *runner) WaitForClusterNodeDeploymentsToExist(projectID, dc, clusterID s
 	timeout := 30 * time.Second
 	before := time.Now()
 
-	r.test.Logf("Waiting %v for NodeDeployment in cluster %s to exist...", timeout, clusterID)
+	r.test.Logf("Waiting %v for MachineDeployment in cluster %s to exist...", timeout, clusterID)
 
 	if !waitFor(1*time.Second, timeout, func() bool {
 		deployments, _ := r.GetClusterNodeDeployments(projectID, dc, clusterID)
 		return len(deployments) > 0
 	}) {
-		return errors.New("NodeDeployment did not appear")
+		return errors.New("MachineDeployment did not appear")
 	}
 
-	r.test.Logf("NodeDeployment appeared after %v", time.Since(before))
+	r.test.Logf("MachineDeployment appeared after %v", time.Since(before))
 	return nil
 }
 
@@ -609,13 +609,13 @@ func (r *runner) WaitForClusterNodeDeploymentsToByReady(projectID, dc, clusterID
 	timeout := 10 * time.Minute
 	before := time.Now()
 
-	r.test.Logf("Waiting %v for NodeDeployment in cluster %s to become ready...", timeout, clusterID)
+	r.test.Logf("Waiting %v for MachineDeployment in cluster %s to become ready...", timeout, clusterID)
 
 	if !waitFor(5*time.Second, timeout, func() bool {
 		deployments, _ := r.GetClusterNodeDeployments(projectID, dc, clusterID)
 		return len(deployments) > 0 && deployments[0].Status.AvailableReplicas == replicas
 	}) {
-		return fmt.Errorf("NodeDeployment has not reached %d ready replicas", replicas)
+		return fmt.Errorf("MachineDeployment has not reached %d ready replicas", replicas)
 	}
 
 	r.test.Logf("All nodes became ready after %v.", time.Since(before))

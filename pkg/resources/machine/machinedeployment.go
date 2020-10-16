@@ -41,7 +41,7 @@ import (
 )
 
 // Deployment returns a Machine Deployment object for the given Node Deployment spec.
-func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermaticv1.Datacenter, keys []*kubermaticv1.UserSSHKey, data resources.CredentialsData) (*clusterv1alpha1.MachineDeployment, error) {
+func Deployment(c *kubermaticv1.Cluster, nd *apiv1.MachineDeployment, dc *kubermaticv1.Datacenter, keys []*kubermaticv1.UserSSHKey, data resources.CredentialsData) (*clusterv1alpha1.MachineDeployment, error) {
 	md := &clusterv1alpha1.MachineDeployment{}
 
 	if nd.Name != "" {
@@ -131,7 +131,7 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 	return md, nil
 }
 
-func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermaticv1.Datacenter, keys []*kubermaticv1.UserSSHKey, data resources.CredentialsData) (*providerconfig.Config, error) {
+func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.MachineDeployment, dc *kubermaticv1.Datacenter, keys []*kubermaticv1.UserSSHKey, data resources.CredentialsData) (*providerconfig.Config, error) {
 	config := providerconfig.Config{}
 	config.SSHPublicKeys = make([]string, len(keys))
 	for i, key := range keys {
@@ -230,7 +230,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 	return &config, nil
 }
 
-func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) error {
+func getProviderOS(config *providerconfig.Config, nd *apiv1.MachineDeployment) error {
 	var (
 		err   error
 		osExt *runtime.RawExtension
@@ -284,7 +284,7 @@ func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) erro
 
 // Validate if the node deployment structure fulfills certain requirements. It returns node deployment with updated
 // kubelet version if it wasn't specified.
-func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*apiv1.NodeDeployment, error) {
+func Validate(nd *apiv1.MachineDeployment, controlPlaneVersion *semver.Version) (*apiv1.MachineDeployment, error) {
 	if nd.Spec.Template.Cloud.Openstack == nil &&
 		nd.Spec.Template.Cloud.Digitalocean == nil &&
 		nd.Spec.Template.Cloud.AWS == nil &&

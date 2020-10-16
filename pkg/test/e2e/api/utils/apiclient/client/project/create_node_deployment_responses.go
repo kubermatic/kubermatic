@@ -60,23 +60,23 @@ func NewCreateNodeDeploymentCreated() *CreateNodeDeploymentCreated {
 
 /*CreateNodeDeploymentCreated handles this case with default header values.
 
-NodeDeployment
+MachineDeployment
 */
 type CreateNodeDeploymentCreated struct {
-	Payload *models.NodeDeployment
+	Payload *models.MachineDeployment
 }
 
 func (o *CreateNodeDeploymentCreated) Error() string {
 	return fmt.Sprintf("[POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] createNodeDeploymentCreated  %+v", 201, o.Payload)
 }
 
-func (o *CreateNodeDeploymentCreated) GetPayload() *models.NodeDeployment {
+func (o *CreateNodeDeploymentCreated) GetPayload() *models.MachineDeployment {
 	return o.Payload
 }
 
 func (o *CreateNodeDeploymentCreated) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.NodeDeployment)
+	o.Payload = new(models.MachineDeployment)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

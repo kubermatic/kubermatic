@@ -3177,7 +3177,7 @@ func (r Routing) listAlibabaZonesNoCredentials() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: NodeDeployment
+//       201: MachineDeployment
 //       401: empty
 //       403: empty
 func (r Routing) createNodeDeployment() http.Handler {
@@ -3203,7 +3203,7 @@ func (r Routing) createNodeDeployment() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []NodeDeployment
+//       200: []MachineDeployment
 //       401: empty
 //       403: empty
 func (r Routing) listNodeDeployments() http.Handler {
@@ -3229,7 +3229,7 @@ func (r Routing) listNodeDeployments() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: NodeDeployment
+//       200: MachineDeployment
 //       401: empty
 //       403: empty
 func (r Routing) getNodeDeployment() http.Handler {
@@ -3338,7 +3338,7 @@ func (r Routing) listNodeDeploymentNodesEvents() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: NodeDeployment
+//       200: MachineDeployment
 //       401: empty
 //       403: empty
 func (r Routing) patchNodeDeployment() http.Handler {

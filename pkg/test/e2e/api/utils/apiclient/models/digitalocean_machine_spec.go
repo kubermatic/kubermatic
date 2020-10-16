@@ -12,10 +12,10 @@ import (
 	"github.com/go-openapi/validate"
 )
 
-// DigitaloceanNodeSpec DigitaloceanNodeSpec digitalocean node settings
+// DigitaloceanMachineSpec DigitaloceanMachineSpec digitalocean node settings
 //
-// swagger:model DigitaloceanNodeSpec
-type DigitaloceanNodeSpec struct {
+// swagger:model DigitaloceanMachineSpec
+type DigitaloceanMachineSpec struct {
 
 	// enable backups for the droplet
 	Backups bool `json:"backups,omitempty"`
@@ -34,8 +34,8 @@ type DigitaloceanNodeSpec struct {
 	Tags []string `json:"tags"`
 }
 
-// Validate validates this digitalocean node spec
-func (m *DigitaloceanNodeSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this digitalocean machine spec
+func (m *DigitaloceanMachineSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateSize(formats); err != nil {
@@ -48,7 +48,7 @@ func (m *DigitaloceanNodeSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *DigitaloceanNodeSpec) validateSize(formats strfmt.Registry) error {
+func (m *DigitaloceanMachineSpec) validateSize(formats strfmt.Registry) error {
 
 	if err := validate.Required("size", "body", m.Size); err != nil {
 		return err
@@ -58,7 +58,7 @@ func (m *DigitaloceanNodeSpec) validateSize(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *DigitaloceanNodeSpec) MarshalBinary() ([]byte, error) {
+func (m *DigitaloceanMachineSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -66,8 +66,8 @@ func (m *DigitaloceanNodeSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *DigitaloceanNodeSpec) UnmarshalBinary(b []byte) error {
-	var res DigitaloceanNodeSpec
+func (m *DigitaloceanMachineSpec) UnmarshalBinary(b []byte) error {
+	var res DigitaloceanMachineSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

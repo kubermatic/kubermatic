@@ -56,13 +56,13 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NodeDeploymentEvent represents type of events related to Node Deployment
-type NodeDeploymentEvent string
+// MachineDeploymentEvent represents type of events related to Node Deployment
+type MachineDeploymentEvent string
 
 const (
-	nodeDeploymentCreationStart   NodeDeploymentEvent = "NodeDeploymentCreationStart"
-	nodeDeploymentCreationSuccess NodeDeploymentEvent = "NodeDeploymentCreationSuccess"
-	nodeDeploymentCreationFail    NodeDeploymentEvent = "NodeDeploymentCreationFail"
+	machineDeploymentCreationStart   MachineDeploymentEvent = "MachineDeploymentCreationStart"
+	machineDeploymentCreationSuccess MachineDeploymentEvent = "MachineDeploymentCreationSuccess"
+	machineDeploymentCreationFail    MachineDeploymentEvent = "MachineDeploymentCreationFail"
 )
 
 // ClusterTypes holds a list of supported cluster types
@@ -183,7 +183,7 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 	}
 
 	// Create the initial node deployment in the background.
-	if body.NodeDeployment != nil && body.NodeDeployment.Spec.Replicas > 0 {
+	if body.MachineDeployment != nil && body.MachineDeployment.Spec.Replicas > 0 {
 		// for BringYourOwn provider we don't create ND
 		isBYO, err := common.IsBringYourOwnProvider(spec.Cloud)
 		if err != nil {
@@ -192,15 +192,15 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 		if !isBYO {
 			go func() {
 				defer utilruntime.HandleCrash()
-				ndName := getNodeDeploymentDisplayName(body.NodeDeployment)
-				eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "Started creation of initial node deployment %s", ndName)
-				err := createInitialNodeDeploymentWithRetries(ctx, body.NodeDeployment, newCluster, project, sshKeyProvider, seedsGetter, clusterProvider, privilegedClusterProvider, userInfoGetter)
+				ndName := getNodeDeploymentDisplayName(body.MachineDeployment)
+				eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(machineDeploymentCreationStart), "Started creation of initial node deployment %s", ndName)
+				err := createInitialNodeDeploymentWithRetries(ctx, body.MachineDeployment, newCluster, project, sshKeyProvider, seedsGetter, clusterProvider, privilegedClusterProvider, userInfoGetter)
 				if err != nil {
-					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "Failed to create initial node deployment %s: %v", ndName, err)
+					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(machineDeploymentCreationFail), "Failed to create initial node deployment %s: %v", ndName, err)
 					klog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
 					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "datacenter": body.Cluster.Spec.Cloud.DatacenterName}).Add(1)
 				} else {
-					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationSuccess), "Successfully created initial node deployment %s", ndName)
+					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(machineDeploymentCreationSuccess), "Successfully created initial node deployment %s", ndName)
 					klog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
 				}
 			}()
@@ -774,7 +774,7 @@ func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGette
 	return clusterProvider.New(project, userInfo, cluster)
 }
 
-func createInitialNodeDeploymentWithRetries(endpointContext context.Context, nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
+func createInitialNodeDeploymentWithRetries(endpointContext context.Context, nodeDeployment *apiv1.MachineDeployment, cluster *kubermaticv1.Cluster,
 	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider,
 	seedsGetter provider.SeedsGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, userInfoGetter provider.UserInfoGetter) error {
 	return wait.Poll(5*time.Second, 30*time.Minute, func() (bool, error) {
@@ -793,7 +793,7 @@ func createInitialNodeDeploymentWithRetries(endpointContext context.Context, nod
 	})
 }
 
-func createInitialNodeDeployment(endpointContext context.Context, nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
+func createInitialNodeDeployment(endpointContext context.Context, nodeDeployment *apiv1.MachineDeployment, cluster *kubermaticv1.Cluster,
 	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider,
 	seedsGetter provider.SeedsGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, userInfoGetter provider.UserInfoGetter) error {
 	ctx, cancelCtx := context.WithCancel(context.Background())
@@ -845,7 +845,7 @@ func createInitialNodeDeployment(endpointContext context.Context, nodeDeployment
 	return client.Create(ctx, md)
 }
 
-func getNodeDeploymentDisplayName(nd *apiv1.NodeDeployment) string {
+func getNodeDeploymentDisplayName(nd *apiv1.MachineDeployment) string {
 	if len(nd.Name) != 0 {
 		return " " + nd.Name
 	}

@@ -60,23 +60,23 @@ func NewGetNodeDeploymentOK() *GetNodeDeploymentOK {
 
 /*GetNodeDeploymentOK handles this case with default header values.
 
-NodeDeployment
+MachineDeployment
 */
 type GetNodeDeploymentOK struct {
-	Payload *models.NodeDeployment
+	Payload *models.MachineDeployment
 }
 
 func (o *GetNodeDeploymentOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments/{nodedeployment_id}][%d] getNodeDeploymentOK  %+v", 200, o.Payload)
 }
 
-func (o *GetNodeDeploymentOK) GetPayload() *models.NodeDeployment {
+func (o *GetNodeDeploymentOK) GetPayload() *models.MachineDeployment {
 	return o.Payload
 }
 
 func (o *GetNodeDeploymentOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
-	o.Payload = new(models.NodeDeployment)
+	o.Payload = new(models.MachineDeployment)
 
 	// response payload
 	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {

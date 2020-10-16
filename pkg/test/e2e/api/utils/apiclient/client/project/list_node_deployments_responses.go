@@ -60,17 +60,17 @@ func NewListNodeDeploymentsOK() *ListNodeDeploymentsOK {
 
 /*ListNodeDeploymentsOK handles this case with default header values.
 
-NodeDeployment
+MachineDeployment
 */
 type ListNodeDeploymentsOK struct {
-	Payload []*models.NodeDeployment
+	Payload []*models.MachineDeployment
 }
 
 func (o *ListNodeDeploymentsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/nodedeployments][%d] listNodeDeploymentsOK  %+v", 200, o.Payload)
 }
 
-func (o *ListNodeDeploymentsOK) GetPayload() []*models.NodeDeployment {
+func (o *ListNodeDeploymentsOK) GetPayload() []*models.MachineDeployment {
 	return o.Payload
 }
 

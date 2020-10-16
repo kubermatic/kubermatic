@@ -63,7 +63,7 @@ for the create node deployment operation typically these are written to a http.R
 type CreateNodeDeploymentParams struct {
 
 	/*Body*/
-	Body *models.NodeDeployment
+	Body *models.MachineDeployment
 	/*ClusterID*/
 	ClusterID string
 	/*Dc*/
@@ -110,13 +110,13 @@ func (o *CreateNodeDeploymentParams) SetHTTPClient(client *http.Client) {
 }
 
 // WithBody adds the body to the create node deployment params
-func (o *CreateNodeDeploymentParams) WithBody(body *models.NodeDeployment) *CreateNodeDeploymentParams {
+func (o *CreateNodeDeploymentParams) WithBody(body *models.MachineDeployment) *CreateNodeDeploymentParams {
 	o.SetBody(body)
 	return o
 }
 
 // SetBody adds the body to the create node deployment params
-func (o *CreateNodeDeploymentParams) SetBody(body *models.NodeDeployment) {
+func (o *CreateNodeDeploymentParams) SetBody(body *models.MachineDeployment) {
 	o.Body = body
 }
 

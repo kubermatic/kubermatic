@@ -32,7 +32,7 @@ type Node struct {
 	Name string `json:"name,omitempty"`
 
 	// spec
-	Spec *NodeSpec `json:"spec,omitempty"`
+	Spec *MachineSpec `json:"spec,omitempty"`
 
 	// status
 	Status *NodeStatus `json:"status,omitempty"`

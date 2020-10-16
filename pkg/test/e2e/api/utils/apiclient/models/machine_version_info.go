@@ -10,22 +10,22 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// NodeVersionInfo NodeVersionInfo node version information
+// MachineVersionInfo MachineVersionInfo node version information
 //
-// swagger:model NodeVersionInfo
-type NodeVersionInfo struct {
+// swagger:model MachineVersionInfo
+type MachineVersionInfo struct {
 
 	// kubelet
 	Kubelet string `json:"kubelet,omitempty"`
 }
 
-// Validate validates this node version info
-func (m *NodeVersionInfo) Validate(formats strfmt.Registry) error {
+// Validate validates this machine version info
+func (m *MachineVersionInfo) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *NodeVersionInfo) MarshalBinary() ([]byte, error) {
+func (m *MachineVersionInfo) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -33,8 +33,8 @@ func (m *NodeVersionInfo) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *NodeVersionInfo) UnmarshalBinary(b []byte) error {
-	var res NodeVersionInfo
+func (m *MachineVersionInfo) UnmarshalBinary(b []byte) error {
+	var res MachineVersionInfo
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

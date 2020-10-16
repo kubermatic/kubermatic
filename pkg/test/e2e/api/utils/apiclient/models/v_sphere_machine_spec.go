@@ -10,10 +10,10 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// VSphereNodeSpec VSphereNodeSpec VSphere node settings
+// VSphereMachineSpec VSphereMachineSpec VSphere node settings
 //
-// swagger:model VSphereNodeSpec
-type VSphereNodeSpec struct {
+// swagger:model VSphereMachineSpec
+type VSphereMachineSpec struct {
 
 	// c p us
 	CPUs int64 `json:"cpus,omitempty"`
@@ -28,13 +28,13 @@ type VSphereNodeSpec struct {
 	Template string `json:"template,omitempty"`
 }
 
-// Validate validates this v sphere node spec
-func (m *VSphereNodeSpec) Validate(formats strfmt.Registry) error {
+// Validate validates this v sphere machine spec
+func (m *VSphereMachineSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *VSphereNodeSpec) MarshalBinary() ([]byte, error) {
+func (m *VSphereMachineSpec) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -42,8 +42,8 @@ func (m *VSphereNodeSpec) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *VSphereNodeSpec) UnmarshalBinary(b []byte) error {
-	var res VSphereNodeSpec
+func (m *VSphereMachineSpec) UnmarshalBinary(b []byte) error {
+	var res VSphereMachineSpec
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}
