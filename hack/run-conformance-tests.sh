@@ -184,7 +184,7 @@ else
     --tty \
     --volume $PWD/reports:/reports \
     --volume $PWD:/go/src/k8c.io/kubermatic \
-    --volume $KUBECONFIG:/kubeconfig \
+    --volume "$(realpath "$KUBECONFIG"):/kubeconfig" \
     --volume $HOME:/usrhome \
     --workdir /go/src/k8c.io/kubermatic \
     --user "$(id -u):$(id -g)" \
