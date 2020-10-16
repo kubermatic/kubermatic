@@ -796,21 +796,8 @@ type ConstraintProvider interface {
 	// List gets a list of constraints
 	//
 	// Note that the list is taken from the cache
-	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error)
+	List(cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error)
 
 	// Get gets the given constraints
-	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error)
-}
-
-// PrivilegedConstraintProvider declares the set of method for interacting with constraints using a privileged client
-type PrivilegedConstraintProvider interface {
-	// List gets a list of constraints
-	//
-	// Note that this function:
-	// is unsafe in a sense that it uses privileged account to get the resources
-	ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error)
-
-	// Note that this function:
-	// is unsafe in a sense that it uses privileged account to get the resources
-	GetUnsecured(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error)
+	Get(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error)
 }

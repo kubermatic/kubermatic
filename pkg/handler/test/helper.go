@@ -174,7 +174,6 @@ type newRoutingFunc func(
 	privilegedExternalClusterProvider provider.PrivilegedExternalClusterProvider,
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
 	constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider,
 ) http.Handler
 
 func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
@@ -311,7 +310,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		FakeClient: fakeClient,
 	}
 
-	constraintProvider, err := kubernetes.NewConstraintProvider(fakeImpersonationClient, fakeClient)
+	constraintProvider, err := kubernetes.NewConstraintProvider(fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -373,7 +372,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		externalClusterProvider,
 		fakeConstraintTemplateProvider,
 		fakeConstraintProvider,
-		constraintProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

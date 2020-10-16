@@ -219,10 +219,10 @@ type FakeConstraintProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakeConstraintProvider) List(userInfo *provider.UserInfo, cluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.ConstraintList, error) {
-	return p.Provider.List(userInfo, cluster)
+func (p *FakeConstraintProvider) List(cluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.ConstraintList, error) {
+	return p.Provider.List(cluster)
 }
 
-func (p *FakeConstraintProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticapiv1.Cluster, name string) (*kubermaticapiv1.Constraint, error) {
-	return p.Provider.Get(userInfo, cluster, name)
+func (p *FakeConstraintProvider) Get(cluster *kubermaticapiv1.Cluster, name string) (*kubermaticapiv1.Constraint, error) {
+	return p.Provider.Get(cluster, name)
 }

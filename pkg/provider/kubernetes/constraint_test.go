@@ -24,13 +24,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/diff"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
-	restclient "k8s.io/client-go/rest"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -42,7 +39,6 @@ func TestListConstraints(t *testing.T) {
 	testCases := []struct {
 		name                string
 		existingObjects     []runtime.Object
-		userInfo            *provider.UserInfo
 		cluster             *kubermaticv1.Cluster
 		expectedConstraints []*kubermaticv1.Constraint
 	}{
@@ -53,14 +49,6 @@ func TestListConstraints(t *testing.T) {
 				genConstraint("ct2", testNamespace),
 				genConstraint("ct3", "other-ns"),
 			},
-			userInfo: func() *provider.UserInfo {
-				user := createAuthenitactedUser()
-				return &provider.UserInfo{
-					Email:   user.Spec.Email,
-					Group:   "owners-abcd",
-					IsAdmin: user.Spec.IsAdmin,
-				}
-			}(),
 			cluster:             genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
 			expectedConstraints: []*kubermaticv1.Constraint{genConstraint("ct1", testNamespace), genConstraint("ct2", testNamespace)},
 		},
@@ -72,15 +60,12 @@ func TestListConstraints(t *testing.T) {
 			t.Parallel()
 
 			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
-			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
-				return client, nil
-			}
-			constraintProvider, err := kubernetes.NewConstraintProvider(fakeImpersonationClient, client)
+			constraintProvider, err := kubernetes.NewConstraintProvider(client)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			constraintList, err := constraintProvider.List(tc.userInfo, tc.cluster)
+			constraintList, err := constraintProvider.List(tc.cluster)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -109,7 +94,6 @@ func TestGetConstraint(t *testing.T) {
 	testCases := []struct {
 		name               string
 		existingObjects    []runtime.Object
-		userInfo           *provider.UserInfo
 		cluster            *kubermaticv1.Cluster
 		expectedConstraint *kubermaticv1.Constraint
 	}{
@@ -120,14 +104,6 @@ func TestGetConstraint(t *testing.T) {
 				genConstraint("ct2", testNamespace),
 				genConstraint("ct3", "other-ns"),
 			},
-			userInfo: func() *provider.UserInfo {
-				user := createAuthenitactedUser()
-				return &provider.UserInfo{
-					Email:   user.Spec.Email,
-					Group:   "owners-abcd",
-					IsAdmin: user.Spec.IsAdmin,
-				}
-			}(),
 			cluster:            genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
 			expectedConstraint: genConstraint("ct1", testNamespace),
 		},
@@ -139,15 +115,12 @@ func TestGetConstraint(t *testing.T) {
 			t.Parallel()
 
 			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
-			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
-				return client, nil
-			}
-			constraintProvider, err := kubernetes.NewConstraintProvider(fakeImpersonationClient, client)
+			constraintProvider, err := kubernetes.NewConstraintProvider(client)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			constraint, err := constraintProvider.Get(tc.userInfo, tc.cluster, tc.expectedConstraint.Name)
+			constraint, err := constraintProvider.Get(tc.cluster, tc.expectedConstraint.Name)
 			if err != nil {
 				t.Fatal(err)
 			}

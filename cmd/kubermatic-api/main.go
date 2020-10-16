@@ -257,7 +257,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create constraint template provider due to %v", err)
 	}
 
-	constraintProvider, err := kubernetesprovider.NewConstraintProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
+	constraintProvider, err := kubernetesprovider.NewConstraintProvider(mgr.GetClient())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create constraint provider due to %v", err)
 	}
@@ -311,7 +311,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		privilegedExternalClusterProvider:     externalClusterProvider,
 		constraintTemplateProvider:            constraintTemplateProvider,
 		constraintProvider:                    constraintProvider,
-		privilegedConstraintProvider:          constraintProvider,
 	}, nil
 }
 
@@ -417,7 +416,6 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		PrivilegedExternalClusterProvider:     prov.privilegedExternalClusterProvider,
 		ConstraintTemplateProvider:            prov.constraintTemplateProvider,
 		ConstraintProvider:                    prov.constraintProvider,
-		PrivilegedConstraintProvider:          prov.privilegedConstraintProvider,
 	}
 
 	r := handler.NewRouting(routingParams)

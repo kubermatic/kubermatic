@@ -33,8 +33,7 @@ import (
 )
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
-	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider) endpoint.Endpoint {
+	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listConstraintsReq)
 
@@ -42,7 +41,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		if err != nil {
 			return nil, err
 		}
-		constraintList, err := getConstraintList(ctx, userInfoGetter, clus, req.ProjectID, constraintProvider, privilegedConstraintProvider)
+		constraintList, err := constraintProvider.List(clus)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -54,33 +53,6 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 
 		return apiC, nil
 	}
-}
-
-func getConstraintList(ctx context.Context, userInfoGetter provider.UserInfoGetter,
-	clus *v1.Cluster, projectID string, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider) (*v1.ConstraintList, error) {
-
-	adminUserInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, err
-	}
-	if adminUserInfo.IsAdmin {
-		constraintList, err := privilegedConstraintProvider.ListUnsecured(clus)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		return constraintList, nil
-	}
-
-	userInfo, err := userInfoGetter(ctx, projectID)
-	if err != nil {
-		return nil, err
-	}
-	constraintList, err := constraintProvider.List(userInfo, clus)
-	if err != nil {
-		return nil, err
-	}
-	return constraintList, nil
 }
 
 func convertCToAPI(c *v1.Constraint) *apiv2.Constraint {
@@ -110,8 +82,7 @@ func DecodeListConstraintsReq(c context.Context, r *http.Request) (interface{}, 
 }
 
 func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
-	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider) endpoint.Endpoint {
+	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getConstraintReq)
 
@@ -120,40 +91,13 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 			return nil, err
 		}
 
-		constraint, err := getConstraint(ctx, userInfoGetter, clus, req.Name, req.ProjectID, constraintProvider, privilegedConstraintProvider)
+		constraint, err := constraintProvider.Get(clus, req.Name)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
 		return convertCToAPI(constraint), nil
 	}
-}
-
-func getConstraint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
-	clus *v1.Cluster, constraintName, projectID string, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider) (*v1.Constraint, error) {
-
-	adminUserInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, err
-	}
-	if adminUserInfo.IsAdmin {
-		constraint, err := privilegedConstraintProvider.GetUnsecured(clus, constraintName)
-		if err != nil {
-			return nil, err
-		}
-		return constraint, nil
-	}
-
-	userInfo, err := userInfoGetter(ctx, projectID)
-	if err != nil {
-		return nil, err
-	}
-	constraint, err := constraintProvider.Get(userInfo, clus, constraintName)
-	if err != nil {
-		return nil, err
-	}
-	return constraint, nil
 }
 
 // getConstraintReq defines HTTP request for get constraint endpoint
