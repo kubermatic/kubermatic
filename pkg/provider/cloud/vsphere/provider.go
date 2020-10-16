@@ -80,7 +80,7 @@ func newSession(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, use
 		return nil, err
 	}
 
-	client, err := govmomi.NewClient(context.Background(), u, dc.AllowInsecure)
+	client, err := govmomi.NewClient(ctx, u, dc.AllowInsecure)
 	if err != nil {
 		return nil, err
 	}
@@ -90,8 +90,12 @@ func newSession(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, use
 		user = url.UserPassword(dc.InfraManagementUser.Username, dc.InfraManagementUser.Password)
 	}
 
-	if err = client.Login(ctx, user); err != nil {
-		return nil, err
+	// If already logged with credentials provided with the URL and we got the
+	// same credentials skip login.
+	if u.User == nil || *u.User != *user {
+		if err = client.Login(ctx, user); err != nil {
+			return nil, fmt.Errorf("failed to login: %v", err)
+		}
 	}
 
 	finder := find.NewFinder(client.Client, true)
@@ -196,7 +200,6 @@ func GetVMFolders(dc *kubermaticv1.DatacenterSpecVSphere, username, password str
 		if !strings.HasPrefix(folderRef.InventoryPath, rootPath+"/") && folderRef.InventoryPath != rootPath {
 			continue
 		}
-
 		folder := Folder{Path: folderRef.Common.InventoryPath}
 		folders = append(folders, folder)
 	}
@@ -209,22 +212,45 @@ func (v *Provider) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// ValidateCloudSpec validates whether a vsphere client can be constructued for the passed cloudspec.
+// ValidateCloudSpec validates whether a vsphere client can be constructued for
+// the passed cloudspec and perform some additional checks on datastore config.
 func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	username, password, err := GetCredentialsForCluster(spec, v.secretKeySelector, v.dc)
 	if err != nil {
 		return err
 	}
 
+	if v.dc.DefaultDatastore == "" && spec.VSphere.DatastoreCluster == "" && spec.VSphere.Datastore == "" {
+		return errors.New("no default datastore provided at datacenter nor datastore/datastore cluster at cluster level")
+	}
+
 	if spec.VSphere.DatastoreCluster != "" && spec.VSphere.Datastore != "" {
 		return errors.New("either datastore or datastore cluster can be selected")
 	}
 
-	session, err := newSession(context.TODO(), v.dc, username, password)
+	ctx := context.Background()
+	session, err := newSession(ctx, v.dc, username, password)
 	if err != nil {
 		return fmt.Errorf("failed to create vCenter session: %v", err)
 	}
 	defer session.Logout()
+
+	if ds := v.dc.DefaultDatastore; ds != "" {
+		if _, err := session.Finder.Datastore(ctx, ds); err != nil {
+			return fmt.Errorf("failed to get default datastore provided by datacenter spec %q: %v", ds, err)
+		}
+	}
+
+	if dc := spec.VSphere.DatastoreCluster; dc != "" {
+		if _, err := session.Finder.DatastoreCluster(ctx, spec.VSphere.DatastoreCluster); err != nil {
+			return fmt.Errorf("failed to get datastore cluster provided by cluste spec %q: %v", dc, err)
+		}
+	}
+	if ds := spec.VSphere.Datastore; ds != "" {
+		if _, err = session.Finder.Datastore(ctx, ds); err != nil {
+			return fmt.Errorf("failed to get datastore cluster provided by cluste spec %q: %v", ds, err)
+		}
+	}
 	return nil
 }
 
