@@ -351,6 +351,15 @@
 
 # Kubermatic 2.13
 
+## [v2.13.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.13.9)
+
+### Misc
+
+- Add a configuration flag for seed-controller-manager to enforce default addons on userclusters. Disabled by default ([#5987](https://github.com/kubermatic/kubermatic/issues/5987))
+
+
+
+
 ## v2.13.8
 
 ### Bugfixes
