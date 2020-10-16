@@ -151,6 +151,21 @@
 
 # Kubermatic 2.14
 
+## [v2.14.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.7)
+
+This release includes an important change to the Docker registry used for fetching the Kubernetes control plane
+components. The change will require that all user-clusters reconcile their control planes, which can cause
+significant load on the seed clusters. Refer to the
+[general upgrade guidelines](https://docs.kubermatic.com/kubermatic/master/upgrading/guidelines/) for more
+information on how to limit the impact of such changes during KKP upgrades.
+
+### Misc
+
+- ACTION REQUIRED: Migrate from google_containers to k8s.gcr.io Docker registry ([#5986](https://github.com/kubermatic/kubermatic/issues/5986))
+
+
+
+
 ## v2.14.6
 
 ### Bugfixes
