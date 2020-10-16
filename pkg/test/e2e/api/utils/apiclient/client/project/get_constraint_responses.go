@@ -67,7 +67,7 @@ type GetConstraintOK struct {
 }
 
 func (o *GetConstraintOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints/{constraint_name}][%d] getConstraintOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] getConstraintOK  %+v", 200, o.Payload)
 }
 
 func (o *GetConstraintOK) GetPayload() *models.Constraint {
@@ -99,7 +99,7 @@ type GetConstraintUnauthorized struct {
 }
 
 func (o *GetConstraintUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints/{constraint_name}][%d] getConstraintUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] getConstraintUnauthorized ", 401)
 }
 
 func (o *GetConstraintUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -120,7 +120,7 @@ type GetConstraintForbidden struct {
 }
 
 func (o *GetConstraintForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints/{constraint_name}][%d] getConstraintForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] getConstraintForbidden ", 403)
 }
 
 func (o *GetConstraintForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,7 +151,7 @@ func (o *GetConstraintDefault) Code() int {
 }
 
 func (o *GetConstraintDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints/{constraint_name}][%d] getConstraint default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}][%d] getConstraint default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *GetConstraintDefault) GetPayload() *models.ErrorResponse {

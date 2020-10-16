@@ -166,11 +166,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 
 	// Define a set of endpoints for gatekeeper constraints
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints").
+		Path("/projects/{project_id}/clusters/{cluster_id}/constraints").
 		Handler(r.listConstraints())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints/{constraint_name}").
+		Path("/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}").
 		Handler(r.getConstraint())
 }
 
@@ -984,7 +984,7 @@ func (r Routing) deleteConstraintTemplate() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints project listConstraints
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints project listConstraints
 //
 //     Lists constraints for the specified cluster.
 //
@@ -1010,7 +1010,7 @@ func (r Routing) listConstraints() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints/{constraint_name} project getConstraint
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name} project getConstraint
 //
 //     Gets an specified constraint for the given cluster.
 //

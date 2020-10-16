@@ -67,7 +67,7 @@ type ListConstraintsOK struct {
 }
 
 func (o *ListConstraintsOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints][%d] listConstraintsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraintsOK  %+v", 200, o.Payload)
 }
 
 func (o *ListConstraintsOK) GetPayload() []*models.Constraint {
@@ -97,7 +97,7 @@ type ListConstraintsUnauthorized struct {
 }
 
 func (o *ListConstraintsUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints][%d] listConstraintsUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraintsUnauthorized ", 401)
 }
 
 func (o *ListConstraintsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -118,7 +118,7 @@ type ListConstraintsForbidden struct {
 }
 
 func (o *ListConstraintsForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints][%d] listConstraintsForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraintsForbidden ", 403)
 }
 
 func (o *ListConstraintsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -149,7 +149,7 @@ func (o *ListConstraintsDefault) Code() int {
 }
 
 func (o *ListConstraintsDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints][%d] listConstraints default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints][%d] listConstraints default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *ListConstraintsDefault) GetPayload() *models.ErrorResponse {

@@ -1430,7 +1430,7 @@ func (a *Client) GetConstraint(params *GetConstraintParams, authInfo runtime.Cli
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getConstraint",
 		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints/{constraint_name}",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -1940,7 +1940,7 @@ func (a *Client) ListConstraints(params *ListConstraintsParams, authInfo runtime
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "listConstraints",
 		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/kubernetes/clusters/{cluster_id}/constraints",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/constraints",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

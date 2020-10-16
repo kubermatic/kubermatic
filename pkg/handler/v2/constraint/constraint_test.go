@@ -93,7 +93,7 @@ func TestListConstraints(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/constraints",
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints",
 				tc.ProjectID, tc.ClusterID), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
@@ -181,7 +181,7 @@ func TestGetConstraints(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/constraints/%s",
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints/%s",
 				tc.ProjectID, tc.ClusterID, tc.ConstraintName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
