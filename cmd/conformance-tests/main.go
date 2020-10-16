@@ -711,35 +711,35 @@ func getEffectiveDistributions(distributions string, excludeDistributions string
 	chosen := map[providerconfig.OperatingSystem]struct{}{}
 
 	if distributions != "" {
-		for _, value := range strings.Split(distributions, ",") {
+		for _, distribution := range strings.Split(distributions, ",") {
 			exists := false
-			for _, os := range all {
-				if string(os) == value {
+			for _, dist := range all {
+				if string(dist) == distribution {
 					exists = true
 					break
 				}
 			}
 
 			if !exists {
-				return nil, fmt.Errorf("unknown distribution %q specified", value)
+				return nil, fmt.Errorf("unknown distribution %q specified", distribution)
 			}
 
-			chosen[providerconfig.OperatingSystem(value)] = struct{}{}
+			chosen[providerconfig.OperatingSystem(distribution)] = struct{}{}
 		}
 	} else {
 		excluded := strings.Split(excludeDistributions, ",")
 
-		for _, os := range all {
+		for _, dist := range all {
 			exclude := false
 			for _, ex := range excluded {
-				if string(os) == ex {
+				if string(dist) == ex {
 					exclude = true
 					break
 				}
 			}
 
 			if !exclude {
-				chosen[os] = struct{}{}
+				chosen[dist] = struct{}{}
 			}
 		}
 	}
