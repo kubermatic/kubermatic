@@ -140,7 +140,7 @@ function build_installer() {
 }
 
 # ensure the tag has already been pushed
-if ! $DRY_RUN && [ -z "$(github_cli "https://api.github.com/repos/$GIT_REPO/git/ref/tags/$RELEASE_NAME" --silent --fail)" ]; then
+if ! $DRY_RUN && ! github_cli "https://api.github.com/repos/$GIT_REPO/git/ref/tags/$RELEASE_NAME" --silent --fail >/dev/null; then
   echodate "Tag $RELEASE_NAME has not been pushed to $GIT_REPO yet."
   exit 1
 fi
