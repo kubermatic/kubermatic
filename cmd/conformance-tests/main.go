@@ -162,12 +162,6 @@ type secrets struct {
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 
-const (
-	defaultAPIRetries = 100
-
-	controlPlaneReadyPollPeriod = 5 * time.Second
-)
-
 var (
 	providers             string
 	pubKeyPath            string
