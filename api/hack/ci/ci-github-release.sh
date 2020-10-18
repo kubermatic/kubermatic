@@ -95,7 +95,7 @@ repo="${repo:-kubermatic/kubermatic}"
 auth="Authorization: token $GITHUB_TOKEN"
 
 # ensure the tag has already been pushed
-if [ -z "$(github_cli "https://api.github.com/repos/$repo/tags" -s | jq ".[] | select(.name==\"$tag\")")" ]; then
+if ! github_cli "https://api.github.com/repos/$repo/git/ref/tags/$tag" --silent --fail >/dev/null; then
   echodate "Tag $tag has not been pushed to $repo yet."
   exit 1
 fi
