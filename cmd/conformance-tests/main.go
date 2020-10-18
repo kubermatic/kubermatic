@@ -73,6 +73,9 @@ type Opts struct {
 	namePrefix                   string
 	providers                    sets.String
 	controlPlaneReadyWaitTimeout time.Duration
+	nodeReadyTimeout             time.Duration
+	customTestTimeout            time.Duration
+	userClusterPollInterval      time.Duration
 	deleteClusterAfterTests      bool
 	kubeconfigPath               string
 	nodeCount                    int
@@ -160,13 +163,10 @@ type secrets struct {
 }
 
 const (
-	defaultUserClusterPollInterval = 10 * time.Second
-	defaultAPIRetries              = 100
+	defaultAPIRetries = 100
 
 	controlPlaneReadyPollPeriod = 5 * time.Second
 )
-
-var defaultTimeout = 10 * time.Minute
 
 var (
 	providers             string
@@ -186,8 +186,6 @@ func main() {
 		kubermaticNamespace: "kubermatic",
 		kubermaticSeedName:  "kubermatic",
 	}
-
-	defaultTimeoutMinutes := 10
 
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
@@ -212,14 +210,15 @@ func main() {
 	flag.IntVar(&opts.nodeCount, "kubermatic-nodes", 3, "number of worker nodes")
 	flag.IntVar(&opts.clusterParallelCount, "kubermatic-parallel-clusters", 1, "number of clusters to test in parallel")
 	flag.StringVar(&opts.reportsRoot, "reports-root", "/opt/reports", "Root for reports")
-	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", defaultTimeout, "cluster creation timeout")
+	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", 10*time.Minute, "cluster creation timeout")
+	flag.DurationVar(&opts.nodeReadyTimeout, "node-ready-timeout", 20*time.Minute, "base time to wait for machines to join the cluster")
+	flag.DurationVar(&opts.customTestTimeout, "custom-test-timeout", 10*time.Minute, "timeout for Kubermatic-specific PVC/LB tests")
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
 	flag.StringVar(&sversions, "versions", strings.Join(supportedVersions, ","), "a comma-separated list of versions to test")
 	flag.StringVar(&sdistributions, "distributions", "", "a comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")
 	flag.StringVar(&sexcludeDistributions, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests (cannot be used in conjunction with -distributions)")
-	flag.IntVar(&defaultTimeoutMinutes, "default-timeout-minutes", 10, "The default timeout in minutes")
 	flag.BoolVar(&opts.openshift, "openshift", false, "Whether to create an openshift cluster")
 	flag.BoolVar(&opts.printGinkoLogs, "print-ginkgo-logs", false, "Whether to print ginkgo logs when ginkgo encountered failures")
 	flag.BoolVar(&opts.printContainerLogs, "print-container-logs", false, "Whether to print the logs of all controlplane containers after the test (even in case of success)")
@@ -270,8 +269,6 @@ func main() {
 
 	cmdutil.Hello(log, "Conformance Tests", true)
 	log.Infow("Kubermatic API Endpoint", "endpoint", opts.kubermaticEndpoint)
-
-	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute
 
 	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
 		log.Fatal("-cluster-parallel-count must be 1 when testing an existing cluster")

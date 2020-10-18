@@ -125,7 +125,7 @@ func (r *testRunner) testPVC(log *zap.SugaredLogger, userClusterClient ctrlrunti
 	}
 
 	log.Info("Waiting until the StatefulSet is ready...")
-	err := wait.Poll(10*time.Second, 10*time.Minute, func() (done bool, err error) {
+	err := wait.Poll(10*time.Second, r.customTestTimeout, func() (done bool, err error) {
 		currentSet := &appsv1.StatefulSet{}
 		name := types.NamespacedName{Namespace: ns.Name, Name: set.Name}
 		if err := userClusterClient.Get(context.Background(), name, currentSet); err != nil {
@@ -209,7 +209,7 @@ func (r *testRunner) testLB(log *zap.SugaredLogger, userClusterClient ctrlruntim
 
 	var host string
 	log.Debug("Waiting until the Service has a public IP/Name...")
-	err := wait.Poll(10*time.Second, defaultTimeout, func() (done bool, err error) {
+	err := wait.Poll(10*time.Second, r.customTestTimeout, func() (done bool, err error) {
 		currentService := &corev1.Service{}
 		if err := userClusterClient.Get(context.Background(), types.NamespacedName{Namespace: ns.Name, Name: service.Name}, currentService); err != nil {
 			log.Warnf("Failed to load Service %s/%s from API server during LB test: %v", ns.Name, service.Name, err)
@@ -238,7 +238,7 @@ func (r *testRunner) testLB(log *zap.SugaredLogger, userClusterClient ctrlruntim
 
 	hostURL := fmt.Sprintf("http://%s:80", host)
 	log.Debug("Waiting until the pod is available via the LB...")
-	err = wait.Poll(30*time.Second, defaultTimeout, func() (done bool, err error) {
+	err = wait.Poll(10*time.Second, r.customTestTimeout, func() (done bool, err error) {
 		resp, err := http.Get(hostURL)
 		if err != nil {
 			log.Warnf("Failed to call Pod via LB (%s) during LB test: %v", hostURL, err)
@@ -381,7 +381,7 @@ func (r *testRunner) testUserClusterPodAndNodeMetrics(log *zap.SugaredLogger, cl
 		return fmt.Errorf("failed to create Pod: %v", err)
 	}
 
-	err := wait.Poll(defaultUserClusterPollInterval, defaultTimeout, func() (done bool, err error) {
+	err := wait.Poll(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
 		metricPod := &corev1.Pod{}
 		if err := userClusterClient.Get(context.Background(),
 			types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, metricPod); err != nil {
@@ -400,7 +400,7 @@ func (r *testRunner) testUserClusterPodAndNodeMetrics(log *zap.SugaredLogger, cl
 	}
 
 	// check pod metrics
-	err = wait.Poll(defaultUserClusterPollInterval, defaultTimeout, func() (done bool, err error) {
+	err = wait.Poll(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
 		podMetrics := &v1beta1.PodMetrics{}
 		if err := userClusterClient.Get(r.ctx,
 			types.NamespacedName{Namespace: pod.Namespace, Name: pod.Name}, podMetrics); err != nil {

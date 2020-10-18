@@ -86,6 +86,9 @@ func newRunner(scenarios []testScenario, opts *Opts, log *zap.SugaredLogger) *te
 		ctx:                          context.Background(),
 		scenarios:                    scenarios,
 		controlPlaneReadyWaitTimeout: opts.controlPlaneReadyWaitTimeout,
+		nodeReadyTimeout:             opts.nodeReadyTimeout,
+		customTestTimeout:            opts.customTestTimeout,
+		userClusterPollInterval:      opts.userClusterPollInterval,
 		deleteClusterAfterTests:      opts.deleteClusterAfterTests,
 		secrets:                      opts.secrets,
 		namePrefix:                   opts.namePrefix,
@@ -134,6 +137,9 @@ type testRunner struct {
 	pspEnabled          bool
 
 	controlPlaneReadyWaitTimeout time.Duration
+	nodeReadyTimeout             time.Duration
+	customTestTimeout            time.Duration
+	userClusterPollInterval      time.Duration
 	deleteClusterAfterTests      bool
 	nodeCount                    int
 	clusterParallelCount         int
@@ -455,8 +461,7 @@ func (r *testRunner) executeTests(
 		)
 	}
 
-	var overallTimeout = 20 * time.Minute
-	var timeoutLeft time.Duration
+	overallTimeout := r.nodeReadyTimeout
 	if cluster.IsOpenshift() {
 		// Openshift installs a lot more during node provisioning, hence this may take longer
 		overallTimeout += 5 * time.Minute
@@ -471,6 +476,8 @@ func (r *testRunner) executeTests(
 		overallTimeout += 5 * time.Minute
 	}
 
+	var timeoutRemaining time.Duration
+
 	if err := junitReporterWrapper(
 		"[Kubermatic] Wait for machines to get a node",
 		report,
@@ -479,7 +486,7 @@ func (r *testRunner) executeTests(
 			log,
 			func() error {
 				var err error
-				timeoutLeft, err = waitForMachinesToJoinCluster(log, userClusterClient, overallTimeout)
+				timeoutRemaining, err = waitForMachinesToJoinCluster(log, userClusterClient, overallTimeout)
 				return err
 			},
 		),
@@ -497,7 +504,7 @@ func (r *testRunner) executeTests(
 				// Getting ready just implies starting the CNI deamonset, so that should
 				// be quick.
 				var err error
-				timeoutLeft, err = waitForNodesToBeReady(log, userClusterClient, timeoutLeft)
+				timeoutRemaining, err = waitForNodesToBeReady(log, userClusterClient, timeoutRemaining)
 				return err
 			},
 		),
@@ -512,7 +519,7 @@ func (r *testRunner) executeTests(
 			seedControlplaneDurationMetric.With(prometheus.Labels{"scenario": scenario.Name()}),
 			log,
 			func() error {
-				return r.waitUntilAllPodsAreReady(log, userClusterClient, timeoutLeft)
+				return r.waitUntilAllPodsAreReady(log, userClusterClient, timeoutRemaining)
 			},
 		),
 	); err != nil {
@@ -772,7 +779,7 @@ func (r *testRunner) executeGinkgoRunWithRetries(log *zap.SugaredLogger, scenari
 	}()
 
 	for attempts = 1; attempts <= maxAttempts; attempts++ {
-		ginkgoRes, err = executeGinkgoRun(log, run, client)
+		ginkgoRes, err = r.executeGinkgoRun(log, run, client)
 
 		if ginkgoRes != nil {
 			ginkgoRuntimeMetric.With(prometheus.Labels{
@@ -1079,7 +1086,7 @@ func (r *testRunner) waitUntilAllPodsAreReady(log *zap.SugaredLogger, userCluste
 	log.Debug("Waiting for all pods to be ready...")
 	started := time.Now()
 
-	err := wait.Poll(defaultUserClusterPollInterval, timeout, func() (done bool, err error) {
+	err := wait.Poll(r.userClusterPollInterval, timeout, func() (done bool, err error) {
 		podList := &corev1.PodList{}
 		if err := userClusterClient.List(context.Background(), podList); err != nil {
 			log.Warnw("Failed to load pod list while waiting until all pods are running", zap.Error(err))
@@ -1234,10 +1241,10 @@ func (r *testRunner) getGinkgoRuns(
 	return ginkgoRuns, nil
 }
 
-func executeGinkgoRun(parentLog *zap.SugaredLogger, run *ginkgoRun, client ctrlruntimeclient.Client) (*ginkgoResult, error) {
+func (r *testRunner) executeGinkgoRun(parentLog *zap.SugaredLogger, run *ginkgoRun, client ctrlruntimeclient.Client) (*ginkgoResult, error) {
 	log := parentLog.With("reports-dir", run.reportsDir)
 
-	if err := deleteAllNonDefaultNamespaces(log, client); err != nil {
+	if err := r.deleteAllNonDefaultNamespaces(log, client); err != nil {
 		return nil, fmt.Errorf("failed to cleanup namespaces before the Ginkgo run: %v", err)
 	}
 
