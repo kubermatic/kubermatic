@@ -174,11 +174,15 @@ func main() {
 	var err error
 
 	opts := Opts{
-		providers:           sets.NewString(),
-		publicKeys:          [][]byte{},
-		versions:            []*kubermativsemver.Semver{},
-		kubermaticNamespace: "kubermatic",
-		kubermaticSeedName:  "kubermatic",
+		providers:                    sets.NewString(),
+		publicKeys:                   [][]byte{},
+		versions:                     []*kubermativsemver.Semver{},
+		kubermaticNamespace:          "kubermatic",
+		kubermaticSeedName:           "kubermatic",
+		controlPlaneReadyWaitTimeout: 10 * time.Minute,
+		nodeReadyTimeout:             20 * time.Minute,
+		customTestTimeout:            10 * time.Minute,
+		userClusterPollInterval:      5 * time.Second,
 	}
 
 	logOpts := kubermaticlog.NewDefaultOptions()
@@ -204,9 +208,10 @@ func main() {
 	flag.IntVar(&opts.nodeCount, "kubermatic-nodes", 3, "number of worker nodes")
 	flag.IntVar(&opts.clusterParallelCount, "kubermatic-parallel-clusters", 1, "number of clusters to test in parallel")
 	flag.StringVar(&opts.reportsRoot, "reports-root", "/opt/reports", "Root for reports")
-	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", 10*time.Minute, "cluster creation timeout")
-	flag.DurationVar(&opts.nodeReadyTimeout, "node-ready-timeout", 20*time.Minute, "base time to wait for machines to join the cluster")
-	flag.DurationVar(&opts.customTestTimeout, "custom-test-timeout", 10*time.Minute, "timeout for Kubermatic-specific PVC/LB tests")
+	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", opts.controlPlaneReadyWaitTimeout, "cluster creation timeout")
+	flag.DurationVar(&opts.nodeReadyTimeout, "node-ready-timeout", opts.nodeReadyTimeout, "base time to wait for machines to join the cluster")
+	flag.DurationVar(&opts.customTestTimeout, "custom-test-timeout", opts.customTestTimeout, "timeout for Kubermatic-specific PVC/LB tests")
+	flag.DurationVar(&opts.userClusterPollInterval, "user-cluster-poll-interval", opts.userClusterPollInterval, "poll interval when checking user-cluster conditions")
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
