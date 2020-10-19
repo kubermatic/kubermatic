@@ -49,8 +49,13 @@ import (
 const (
 	ControllerName = "kubermatic_etcd_restore_controller"
 
-	// RebuildStatefulsetFinalizer indicates that the restore is rebuilding the etcd statefulset
-	RebuildStatefulsetFinalizer = "kubermatic.io/rebuild-statefulset"
+	// FinishRestoreFinalizer indicates that the restore is rebuilding the etcd statefulset
+	FinishRestoreFinalizer = "kubermatic.io/finish-restore"
+
+	// ActiveRestoreAnnotationName is the cluster annotation that records the EtcdRestore resource that's currently
+	// being restored into the cluster, if any. This is also used for mutual exclusion, i.e. to make sure that not
+	// more than one EtcdRestore resource is active for the cluster at the same time.
+	ActiveRestoreAnnotationName = "kubermatic.io/active-restore"
 )
 
 // Reconciler stores necessary components that are required to restore etcd backups
@@ -142,14 +147,39 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, restore *kubermaticv1.EtcdRestore, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	log.Infof("performing etcd restore from backup %v", restore.Spec.BackupName)
-
-	if restore.DeletionTimestamp != nil || cluster.DeletionTimestamp != nil {
+	if restore.Status.Phase == kubermaticv1.EtcdRestorePhaseCompleted {
 		return nil, nil
 	}
 
-	if restore.Status.Phase == kubermaticv1.EtcdRestorePhaseCompleted {
-		return nil, nil
+	log.Infof("performing etcd restore from backup %v", restore.Spec.BackupName)
+
+	if restore.DeletionTimestamp == nil {
+		if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
+			kuberneteshelper.AddFinalizer(restore, FinishRestoreFinalizer)
+		}); err != nil {
+			return nil, fmt.Errorf("failed to add finalizer: %v", err)
+		}
+	}
+
+	// before proceeding, ensure restore's namespace/name is stored in the ActiveRestoreAnnotationName cluster annotation
+	// unless some other restore is already stored there
+	thisRestore := fmt.Sprintf("%s/%s", restore.Namespace, restore.Name)
+	activeRestore := cluster.Annotations[ActiveRestoreAnnotationName]
+	if activeRestore != "" {
+		if activeRestore != thisRestore {
+			return &reconcile.Result{RequeueAfter: 1 * time.Minute}, nil
+		}
+	} else {
+		if cluster.Annotations == nil {
+			cluster.Annotations = map[string]string{}
+		}
+		cluster.Annotations[ActiveRestoreAnnotationName] = thisRestore
+		if err := r.Client.Update(ctx, cluster); err != nil {
+			if kerrors.IsConflict(err) {
+				return &reconcile.Result{RequeueAfter: 1 * time.Minute}, nil
+			}
+			return nil, fmt.Errorf("error updating cluster active restore annotation: %v", err)
+		}
 	}
 
 	if restore.Status.Phase == kubermaticv1.EtcdRestorePhaseStsRebuilding {
@@ -176,7 +206,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 
 	if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
 		restore.Status.Phase = kubermaticv1.EtcdRestorePhaseStarted
-		kuberneteshelper.AddFinalizer(restore, RebuildStatefulsetFinalizer)
 	}); err != nil {
 		return nil, fmt.Errorf("failed to add finalizer: %v", err)
 	}
@@ -250,9 +279,15 @@ func (r *Reconciler) rebuildEtcdStatefulset(ctx context.Context, log *zap.Sugare
 		return &reconcile.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
+	if err := r.updateCluster(ctx, cluster, func(cluster *kubermaticv1.Cluster) {
+		delete(cluster.Annotations, ActiveRestoreAnnotationName)
+	}); err != nil {
+		return nil, fmt.Errorf("failed to clear cluster active restore annotation: %v", err)
+	}
+
 	if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
 		restore.Status.Phase = kubermaticv1.EtcdRestorePhaseCompleted
-		kuberneteshelper.RemoveFinalizer(restore, RebuildStatefulsetFinalizer)
+		kuberneteshelper.RemoveFinalizer(restore, FinishRestoreFinalizer)
 	}); err != nil {
 		return nil, fmt.Errorf("failed to mark restore completed: %v", err)
 	}
