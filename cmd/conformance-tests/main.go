@@ -38,7 +38,6 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	cmdutil "k8c.io/kubermatic/v2/cmd/util"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -50,6 +49,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/dex"
+	"k8c.io/kubermatic/v2/pkg/util/cli"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -186,7 +186,7 @@ func main() {
 		}
 	}()
 
-	cmdutil.Hello(log, "Conformance Tests", true)
+	cli.Hello(log, "Conformance Tests", true)
 
 	// user.Current does not work in Alpine
 	pubkeyPath := path.Join(os.Getenv("HOME"), ".ssh/id_rsa.pub")

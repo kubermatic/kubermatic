@@ -50,7 +50,6 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 
-	cmdutil "k8c.io/kubermatic/v2/cmd/util"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
@@ -67,6 +66,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
+	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version"
 	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
 
@@ -103,7 +103,7 @@ func main() {
 	}()
 	kubermaticlog.Logger = log
 
-	cmdutil.Hello(log, "API", options.log.Debug)
+	cli.Hello(log, "API", options.log.Debug)
 
 	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))

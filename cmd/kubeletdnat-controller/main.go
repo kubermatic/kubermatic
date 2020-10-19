@@ -24,10 +24,10 @@ import (
 
 	"go.uber.org/zap"
 
-	cmdutil "k8c.io/kubermatic/v2/cmd/util"
 	"k8c.io/kubermatic/v2/pkg/controller/kubeletdnat"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
+	"k8c.io/kubermatic/v2/pkg/util/cli"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -54,7 +54,7 @@ func main() {
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 
-	cmdutil.Hello(log, "Kubelet DNAT-Controller", logOpts.Debug)
+	cli.Hello(log, "Kubelet DNAT-Controller", logOpts.Debug)
 
 	_, network, err := net.ParseCIDR(*networkFlag)
 	if err != nil {
