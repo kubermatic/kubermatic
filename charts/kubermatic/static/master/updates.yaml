@@ -1,18 +1,8 @@
 # This file has been generated using hack/update-kubermatic-chart.sh, do not edit.
 
 updates:
-- from: 1.15.*
-  to: 1.15.*
-  type: kubernetes
 - automatic: true
-  from: <= 1.15.4, >= 1.15.0
-  to: 1.15.5
-  type: kubernetes
-- automatic: true
-  from: 1.15.8
-  to: 1.15.9
-  type: kubernetes
-- from: 1.15.*
+  from: 1.15.*
   to: 1.16.*
   type: kubernetes
 - from: 1.16.*
