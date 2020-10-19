@@ -32,7 +32,6 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	cmdutil "k8c.io/kubermatic/v2/cmd/util"
 	clusterrolelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
 	containerlinux "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/container-linux"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ipam"
@@ -49,6 +48,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/util/cli"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -117,7 +117,7 @@ func main() {
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 
-	cmdutil.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug)
+	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug)
 
 	if runOp.ownerEmail == "" {
 		log.Fatal("-owner-email must be set")
