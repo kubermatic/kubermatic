@@ -26,9 +26,9 @@ import (
 	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
-	cmdutil "k8c.io/kubermatic/v2/cmd/util"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/util/cli"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -83,7 +83,7 @@ func main() {
 		}
 	}()
 
-	cmdutil.Hello(log, "LoadBalancer Updater", logOpts.Debug)
+	cli.Hello(log, "LoadBalancer Updater", logOpts.Debug)
 
 	config, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {

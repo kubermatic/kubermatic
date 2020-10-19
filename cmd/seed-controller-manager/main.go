@@ -29,7 +29,6 @@ import (
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	cmdutil "k8c.io/kubermatic/v2/cmd/util"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/collectors"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -37,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
+	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/restmapper"
 	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -81,7 +81,7 @@ func main() {
 		}
 	}()
 
-	cmdutil.Hello(log, "Seed Controller-Manager", logOpts.Debug)
+	cli.Hello(log, "Seed Controller-Manager", logOpts.Debug)
 
 	// Set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))

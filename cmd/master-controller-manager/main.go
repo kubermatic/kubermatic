@@ -24,12 +24,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
-	cmdutil "k8c.io/kubermatic/v2/cmd/util"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
 
@@ -101,7 +101,7 @@ func main() {
 	ctrlCtx.log = log
 	ctrlCtx.workerName = runOpts.workerName
 
-	cmdutil.Hello(log, "Master Controller-Manager", logOpts.Debug)
+	cli.Hello(log, "Master Controller-Manager", logOpts.Debug)
 
 	// TODO remove label selector when everything is migrated to controller-runtime
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
