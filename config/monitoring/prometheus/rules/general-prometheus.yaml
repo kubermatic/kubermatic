@@ -13,7 +13,7 @@ groups:
       severity: warning
   - alert: PromBadConfig
     annotations:
-      mesage: Prometheus failed to reload config.
+      message: Prometheus failed to reload config.
       runbook_url: https://docs.loodse.com/kubermatic/master/monitoring/runbook/#alert-prombadconfig
     expr: prometheus_config_last_reload_successful{job="prometheus"} == 0
     for: 15m
