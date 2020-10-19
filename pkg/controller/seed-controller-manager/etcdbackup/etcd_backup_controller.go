@@ -395,6 +395,9 @@ func (r *Reconciler) startPendingBackupJobs(ctx context.Context, backupConfig *k
 						backup.BackupPhase = kubermaticv1.BackupStatusPhaseFailed
 						backup.BackupMessage = cond.Message
 						backup.BackupFinishedTime = &cond.LastTransitionTime
+					} else {
+						// job still running
+						returnReconcile = minReconcile(returnReconcile, &reconcile.Result{RequeueAfter: assumedJobRuntime})
 					}
 				}
 

@@ -549,6 +549,35 @@ func TestStartPendingBackupJobs(t *testing.T) {
 					batchv1.JobFailed, corev1.ConditionTrue, time.Unix(80, 0).UTC(), "Job has reached the specified backoff limit"),
 			},
 		},
+		{
+			name:        "still-running backup job is not changed, reconcile after assumed job runtime",
+			currentTime: time.Unix(90, 0).UTC(),
+			existingBackups: []kubermaticv1.BackupStatus{
+				{
+					ScheduledTime: &metav1.Time{Time: time.Unix(60, 0).UTC()},
+					BackupName:    "testbackup-1970-01-01t00-01-00",
+					JobName:       "testcluster-backup-testbackup-create-aaaa",
+					DeleteJobName: "testcluster-backup-testbackup-delete-aaaa",
+					BackupPhase:   kubermaticv1.BackupStatusPhaseRunning,
+				},
+			},
+			existingJobs: []batchv1.Job{
+				*genBackupJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
+			},
+			expectedBackups: []kubermaticv1.BackupStatus{
+				{
+					ScheduledTime: &metav1.Time{Time: time.Unix(60, 0).UTC()},
+					BackupName:    "testbackup-1970-01-01t00-01-00",
+					JobName:       "testcluster-backup-testbackup-create-aaaa",
+					DeleteJobName: "testcluster-backup-testbackup-delete-aaaa",
+					BackupPhase:   kubermaticv1.BackupStatusPhaseRunning,
+				},
+			},
+			expectedReconcile: &reconcile.Result{RequeueAfter: assumedJobRuntime},
+			expectedJobs: []batchv1.Job{
+				*genBackupJob("testbackup-1970-01-01t00-01-00", "testcluster-backup-testbackup-create-aaaa"),
+			},
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -714,7 +743,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 				},
 			},
 			expectedReconcile: nil,
-			expectedJobs: nil,
+			expectedJobs:      nil,
 		},
 	}
 	for _, tc := range testCases {
