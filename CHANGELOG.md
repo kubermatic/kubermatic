@@ -1,39 +1,26 @@
 # Kubermatic 2.15
 
-## [v2.15.0-rc.3](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0-rc.3)
+## [v2.15.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0)
 
-- Add feature flag `etcdLauncher` around etcd-launcher ([#5973](https://github.com/kubermatic/kubermatic/issues/5973))
-- Provide a way of skipping Certificate cert-manager resources ([#5962](https://github.com/kubermatic/kubermatic/issues/5962), [#5969](https://github.com/kubermatic/kubermatic/issues/5969))
-
-## [v2.15.0-rc.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0-rc.2)
-
-- Add Kubernetes 1.16.15, 1.17.12, 1.19.2 ([#5927](https://github.com/kubermatic/kubermatic/issues/5927))
-- Add `operator.kubermatic.io/skip-reconciling` annotation to Seeds to allow step-by-step seed cluster upgrades ([#5883](https://github.com/kubermatic/kubermatic/issues/5883))
-- Add option to enable/disable external cluster import feature from admin settings in KKP dashboard ([#2644](https://github.com/kubermatic/dashboard/issues/2644))
-- Allow controlling external cluster functionality with global settings ([#5912](https://github.com/kubermatic/kubermatic/issues/5912))
-- Fix KKP Operator getting stuck in Kubernetes 1.18 clusters when reconciling Ingresses ([#5915](https://github.com/kubermatic/kubermatic/issues/5915))
-- Fix creation of RHEL8 machines ([#5950](https://github.com/kubermatic/kubermatic/issues/5950))
-- Fix loading of the access rights in the SSH keys view ([#2645](https://github.com/kubermatic/dashboard/issues/2645))
-- Fix cluster wizard rendering in Safari ([#2661](https://github.com/kubermatic/dashboard/issues/2661))
-
-## [v2.15.0-rc.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0-rc.1)
+Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.15/upgrading/guidelines/)
+as well as the [2.15 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.15/upgrading/2.14_to_2.15/).
 
 ### Supported Kubernetes Versions
 
-* 1.16.13
-* 1.16.14
-* 1.16.15
 * 1.17.9
 * 1.17.11
 * 1.17.12
+* 1.17.13
 * 1.18.6
 * 1.18.8
+* 1.18.10
 * 1.19.0
 * 1.19.2
+* 1.19.3
 
 ### Highlights
 
-- Add support for Kubernetes 1.19, drop Kubernetes 1.15 ([#5794](https://github.com/kubermatic/kubermatic/issues/5794))
+- Add support for Kubernetes 1.19, drop Kubernetes 1.15 and 1.16 ([#5794](https://github.com/kubermatic/kubermatic/issues/5794), [#6032](https://github.com/kubermatic/kubermatic/issues/6032))
 - Add dynamic datacenter configuration to KKP Dashboard ([#2333](https://github.com/kubermatic/dashboard/issues/2333), [#2353](https://github.com/kubermatic/dashboard/issues/2353), [#5501](https://github.com/kubermatic/kubermatic/issues/5501), [#5551](https://github.com/kubermatic/kubermatic/issues/5551))
 - Add preliminary support for managing external clusters ([#2608](https://github.com/kubermatic/dashboard/issues/2608), [#5689](https://github.com/kubermatic/kubermatic/issues/5689), [#5720](https://github.com/kubermatic/kubermatic/issues/5720), [#5753](https://github.com/kubermatic/kubermatic/issues/5753), [#5757](https://github.com/kubermatic/kubermatic/issues/5757), [#5772](https://github.com/kubermatic/kubermatic/issues/5772), [#5783](https://github.com/kubermatic/kubermatic/issues/5783), [#5796](https://github.com/kubermatic/kubermatic/issues/5796), [#5798](https://github.com/kubermatic/kubermatic/issues/5798), [#5802](https://github.com/kubermatic/kubermatic/issues/5802), [#5809](https://github.com/kubermatic/kubermatic/issues/5809), [#5819](https://github.com/kubermatic/kubermatic/issues/5819))
 - It's now possible to enable PodSecurityPolicy on a datacenter level ([#5351](https://github.com/kubermatic/kubermatic/issues/5351))
@@ -64,6 +51,7 @@
 - Add custom image property to GCP clusters ([#5315](https://github.com/kubermatic/kubermatic/issues/5315))
 - Add endpoint to list openstack availability zones ([#5535](https://github.com/kubermatic/kubermatic/issues/5535))
 - Add image ID property to Azure clusters ([#5315](https://github.com/kubermatic/kubermatic/issues/5315))
+- Add `MaximumParallelReconciles` option to KubermaticConfiguration ([#6002](https://github.com/kubermatic/kubermatic/issues/6002))
 - Add missing CSI DaemonSet on Flatcar ([#5698](https://github.com/kubermatic/kubermatic/issues/5698))
 - Add new logout endpoint: `POST /api/v1/me/logout` ([#5540](https://github.com/kubermatic/kubermatic/issues/5540))
 - Add new v2 endpoint for cluster creation: `POST /api/v2/projects/{project_id}/clusters` ([#5635](https://github.com/kubermatic/kubermatic/issues/5635))
@@ -78,6 +66,7 @@
 - Allow admin to manage members for any project ([#5319](https://github.com/kubermatic/kubermatic/issues/5319))
 - Allow controlling external cluster functionality with global settings ([#5912](https://github.com/kubermatic/kubermatic/issues/5912))
 - Allow custom envvar definitions for dex to be passed via the oauth chart ([#5829](https://github.com/kubermatic/kubermatic/issues/5829))
+- Always mount CABundle for Dex into the kubermatic-api, even when `OIDCKubeCfgEndpoint` is disabled ([#5968](https://github.com/kubermatic/kubermatic/issues/5968))
 - Bugfix: implement missing annotation syncing from nodeport settings in Seed CRD to the created LoadBalancer service ([#5730](https://github.com/kubermatic/kubermatic/issues/5730))
 - Create an hourly schedule Velero backup for all namespaces and cluster resources ([#5327](https://github.com/kubermatic/kubermatic/issues/5327))
 - Docker image size was reduced by removing development binaries ([#5586](https://github.com/kubermatic/kubermatic/issues/5586))
@@ -89,6 +78,7 @@
 - Fix Seed validation for Community Edition ([#5611](https://github.com/kubermatic/kubermatic/issues/5611))
 - Fix componentsOverride of a cluster affecting other clusters ([#5702](https://github.com/kubermatic/kubermatic/issues/5702))
 - Fix master-controller-manager being too verbose ([#5889](https://github.com/kubermatic/kubermatic/issues/5889))
+- Fix missing logo in Dex login screens ([#6019](https://github.com/kubermatic/kubermatic/issues/6019))
 - Fix nodes sometimes not having the correct distribution label applied ([#5437](https://github.com/kubermatic/kubermatic/issues/5437))
 - Fix overflowing `kubermatic.io/cleaned-up-loadbalancers` annotation on Cluster objects ([#5744](https://github.com/kubermatic/kubermatic/issues/5744))
 - Fix the KubeClientCertificateExpiration Prometheus Alert which did not alert in for expiring certificates ([#5737](https://github.com/kubermatic/kubermatic/issues/5737))
@@ -139,12 +129,37 @@
 - Karma v0.68 ([#5789](https://github.com/kubermatic/kubermatic/issues/5789))
 - kube-state-metrics v1.9.7 ([#5790](https://github.com/kubermatic/kubermatic/issues/5790))
 - Kubernetes Dashboard v2.0.4 ([#5820](https://github.com/kubermatic/kubermatic/issues/5820))
-- machine-controller 1.17.1 ([#5794](https://github.com/kubermatic/kubermatic/issues/5794))
+- machine-controller 1.19.0 ([#5794](https://github.com/kubermatic/kubermatic/issues/5794))
 - nginx-ingress-controller 0.34.1 ([#5780](https://github.com/kubermatic/kubermatic/issues/5780))
 - node-exporter 1.0.1 (includes the usercluster addon) ([#5791](https://github.com/kubermatic/kubermatic/issues/5791))
 - Minio RELEASE.2020-09-10T22-02-45Z ([#5854](https://github.com/kubermatic/kubermatic/issues/5854))
 - Prometheus 2.20.1 ([#5781](https://github.com/kubermatic/kubermatic/issues/5781))
 - Velero 1.4.2 ([#5775](https://github.com/kubermatic/kubermatic/issues/5775))
+
+### Changes since v2.15.0-rc.1
+
+- Add Kubernetes 1.16.15, 1.17.12, 1.19.2 ([#5927](https://github.com/kubermatic/kubermatic/issues/5927))
+- Add `operator.kubermatic.io/skip-reconciling` annotation to Seeds to allow step-by-step seed cluster upgrades ([#5883](https://github.com/kubermatic/kubermatic/issues/5883))
+- Add option to enable/disable external cluster import feature from admin settings in KKP dashboard ([#2644](https://github.com/kubermatic/dashboard/issues/2644))
+- Allow controlling external cluster functionality with global settings ([#5912](https://github.com/kubermatic/kubermatic/issues/5912))
+- Fix KKP Operator getting stuck in Kubernetes 1.18 clusters when reconciling Ingresses ([#5915](https://github.com/kubermatic/kubermatic/issues/5915))
+- Fix creation of RHEL8 machines ([#5950](https://github.com/kubermatic/kubermatic/issues/5950))
+- Fix loading of the access rights in the SSH keys view ([#2645](https://github.com/kubermatic/dashboard/issues/2645))
+- Fix cluster wizard rendering in Safari ([#2661](https://github.com/kubermatic/dashboard/issues/2661))
+
+### Changes since v2.15.0-rc.2
+
+- Add feature flag `etcdLauncher` around etcd-launcher ([#5973](https://github.com/kubermatic/kubermatic/issues/5973))
+- Provide a way of skipping Certificate cert-manager resources ([#5962](https://github.com/kubermatic/kubermatic/issues/5962), [#5969](https://github.com/kubermatic/kubermatic/issues/5969))
+
+### Changes since v2.15.0-rc.3
+
+- Add Kubernetes 1.17.13, 1.18.10, 1.19.3, Remove Kubernetes 1.16 ([#5927](https://github.com/kubermatic/kubermatic/issues/5927))
+- Always mount CABundle for Dex into the kubermatic-api, even when `OIDCKubeCfgEndpoint` is disabled ([#5968](https://github.com/kubermatic/kubermatic/issues/5968))
+- Add a new feature gate to the seed-controller to enable etcd-launcher for all user clusters ([#5997](https://github.com/kubermatic/kubermatic/issues/5997))
+- Add MaximumParallelReconciles option to KubermaticConfiguration ([#6002](https://github.com/kubermatic/kubermatic/issues/6002))
+- Fix missing logo in Dex login screens ([#6019](https://github.com/kubermatic/kubermatic/issues/6019))
+- Bump machine-controller to v1.19.0 ([#6050](https://github.com/kubermatic/kubermatic/issues/6050))
 
 
 
