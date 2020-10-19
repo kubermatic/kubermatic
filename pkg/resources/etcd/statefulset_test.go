@@ -95,13 +95,6 @@ func TestGetImageTag(t *testing.T) {
 			expectedResult: etcdImageTagV33,
 		},
 		{
-			name: "Kubernetes 1.16",
-			cluster: &kubermaticv1.Cluster{
-				Spec: kubermaticv1.ClusterSpec{Version: *semver.NewSemverOrDie("1.16.0")},
-			},
-			expectedResult: etcdImageTagV33,
-		},
-		{
 			name: "Kubernetes 1.17",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{Version: *semver.NewSemverOrDie("1.17.0")},
