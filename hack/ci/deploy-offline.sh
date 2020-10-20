@@ -56,7 +56,7 @@ export KUBECONFIG="/tmp/kubeconfig"
 kubectl config set clusters.kubernetes.server https://127.0.0.1:6443
 
 # port-forward the Docker registry and Kubernetes API
-ssh ${SSH_OPTS} -M -S /tmp/proxy-socket -fNT -L 5000:${REGISTRY}:5000 root@${PROXY_EXTERNAL_ADDR}
+ssh ${SSH_OPTS} -M -S /tmp/proxy-socket -fNT -L 5000:${REGISTRY} root@${PROXY_EXTERNAL_ADDR}
 ssh ${SSH_OPTS} -M -S /tmp/controller-socket -fNT -L 6443:127.0.0.1:6443 ${SSH_OPTS} \
   -o ProxyCommand="ssh ${SSH_OPTS} -W %h:%p root@${PROXY_EXTERNAL_ADDR}" \
   root@${KUBERNETES_CONTROLLER_ADDR}
