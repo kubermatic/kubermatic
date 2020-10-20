@@ -44,7 +44,7 @@ func TestRetagImageForAllVersions(t *testing.T) {
 
 	imageSet := sets.NewString()
 	for _, v := range versions {
-		images, err := getImagesForVersion(log, v, addonPath)
+		images, err := getImagesForVersion(log, v, config, addonPath)
 		if err != nil {
 			t.Errorf("Error calling getImagesForVersion: %v", err)
 		}
