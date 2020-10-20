@@ -23,8 +23,9 @@ import "github.com/Masterminds/semver"
 // perform a Kubermatic installation.
 type Client interface {
 	Version() (*semver.Version, error)
-	InstallChart(namespace string, releaseName string, chartDirectory, valuesFile string, values map[string]string, flags []string) error
+	InstallChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string, flags []string) error
 	GetRelease(namespace string, name string) (*Release, error)
 	ListReleases(namespace string) ([]Release, error)
 	UninstallRelease(namespace string, name string) error
+	RenderChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string) ([]byte, error)
 }

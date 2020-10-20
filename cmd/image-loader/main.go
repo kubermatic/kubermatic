@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"flag"
@@ -24,8 +25,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
+	"sort"
+	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/sirupsen/logrus"
 	"go.uber.org/zap"
 	"gopkg.in/yaml.v2"
 
@@ -38,10 +43,12 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/docker"
+	"k8c.io/kubermatic/v2/pkg/install/helm"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
+	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -76,6 +83,9 @@ type opts struct {
 	dryRun            bool
 	addonsPath        string
 	addonsImage       string
+	chartsPath        string
+	helmValuesPath    string
+	helmBinary        string
 }
 
 func main() {
@@ -93,6 +103,9 @@ func main() {
 	flag.BoolVar(&o.dryRun, "dry-run", false, "Only print the names of found images")
 	flag.StringVar(&o.addonsPath, "addons-path", "", "Path to a directory containing the KKP addons, if not given, falls back to -addons-image, then the Docker image configured in the KubermaticConfiguration")
 	flag.StringVar(&o.addonsImage, "addons-image", "", "Docker image containing KKP addons, if not given, falls back to the Docker image configured in the KubermaticConfiguration")
+	flag.StringVar(&o.chartsPath, "charts-path", "", "Path to the folder containing all Helm charts")
+	flag.StringVar(&o.helmValuesPath, "helm-values-file", "", "Use this values.yaml file when rendering the Helm charts (-charts-path)")
+	flag.StringVar(&o.helmBinary, "helm-binary", "helm", "Helm 3.x binary to use for rendering the charts")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -178,6 +191,16 @@ func main() {
 		images, err := getImagesForVersion(log, version, o.addonsPath)
 		if err != nil {
 			versionLog.Fatalw("failed to get images", zap.Error(err))
+		}
+		imageSet.Insert(images...)
+	}
+
+	if o.chartsPath != "" {
+		log.Infow("Rendering Helm charts", "directory", o.chartsPath)
+
+		images, err := getImagesForHelmCharts(ctx, log, o.chartsPath, o.helmValuesPath, o.helmBinary)
+		if err != nil {
+			log.Fatal("Failed to get images", zap.Error(err))
 		}
 		imageSet.Insert(images...)
 	}
@@ -674,4 +697,90 @@ func loadKubermaticConfiguration(log *zap.SugaredLogger, filename string) (*oper
 	}
 
 	return defaulted, nil
+}
+
+func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, chartsPath string, valuesFile string, helmBinary string) ([]string, error) {
+	if info, err := os.Stat(chartsPath); err != nil || !info.IsDir() {
+		return nil, fmt.Errorf("%s is not a valid directory", chartsPath)
+	}
+
+	chartPaths, err := findHelmCharts(chartsPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find Helm charts: %v", err)
+	}
+
+	helmClient, err := getHelmClient(helmBinary)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Helm client: %v", err)
+	}
+
+	images := []string{}
+	serializer := json.NewSerializer(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, false)
+
+	for _, chartPath := range chartPaths {
+		chartName := filepath.Base(chartPath)
+		chartLog := log.With("path", chartPath, "chart", chartName)
+
+		chartLog.Info("Rendering chart")
+
+		rendered, err := helmClient.RenderChart(mockNamespaceName, chartName, chartPath, valuesFile, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to render Helm chart %q: %v", chartName, err)
+		}
+
+		manifests, err := yamlutil.ParseMultipleDocuments(bytes.NewReader(rendered))
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode YAML: %v", err)
+		}
+
+		for _, manifest := range manifests {
+			manifestImages, err := getImagesFromManifest(log, serializer, manifest.Raw)
+			if err != nil {
+				return nil, fmt.Errorf("failed to parse manifests: %v", err)
+			}
+
+			images = append(images, manifestImages...)
+		}
+	}
+
+	return images, nil
+}
+
+func getHelmClient(binary string) (helm.Client, error) {
+	helmClient, err := helm.NewCLI(binary, "", "", 10*time.Second, logrus.New())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Helm client: %v", err)
+	}
+
+	helmVersion, err := helmClient.Version()
+	if err != nil {
+		return nil, fmt.Errorf("failed to check Helm version: %v", err)
+	}
+
+	if helmVersion.LessThan(semver.MustParse("3.0.0")) {
+		return nil, fmt.Errorf("the image-loader requires Helm 3, detected %s", helmVersion.String())
+	}
+
+	return helmClient, nil
+}
+
+// findHelmCharts walks the root directory and finds Chart.yaml files. It
+// then returns the found directory paths (without the "/Chart.yaml" filename).
+func findHelmCharts(root string) ([]string, error) {
+	charts := []string{}
+
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if info.IsDir() {
+			if _, err := os.Stat(filepath.Join(path, "Chart.yaml")); err == nil {
+				charts = append(charts, path)
+				return filepath.SkipDir
+			}
+		}
+
+		return nil
+	})
+
+	sort.Strings(charts)
+
+	return charts, err
 }
