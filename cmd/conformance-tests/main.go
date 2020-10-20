@@ -22,15 +22,19 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"os"
 	"path"
+	"sort"
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"go.uber.org/zap"
@@ -39,12 +43,15 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/semver"
+	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
 	kubermaticsignals "k8c.io/kubermatic/v2/pkg/signals"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api"
 	apitest "k8c.io/kubermatic/v2/pkg/test/e2e/api"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
@@ -61,17 +68,14 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-//TODO: Move Kubernetes versions into this as well
-type excludeSelector struct {
-	// The value in this map is never used, we use the keys only to have a simple set mechanism
-	Distributions map[providerconfig.OperatingSystem]bool
-}
-
 // Opts represent combination of flags and ENV options
 type Opts struct {
 	namePrefix                   string
 	providers                    sets.String
 	controlPlaneReadyWaitTimeout time.Duration
+	nodeReadyTimeout             time.Duration
+	customTestTimeout            time.Duration
+	userClusterPollInterval      time.Duration
 	deleteClusterAfterTests      bool
 	kubeconfigPath               string
 	nodeCount                    int
@@ -86,18 +90,22 @@ type Opts struct {
 	clusterParallelCount         int
 	workerName                   string
 	homeDir                      string
-	versions                     []*semver.Semver
-	excludeSelector              excludeSelector
-	excludeSelectorRaw           string
+	versions                     []*kubermativsemver.Semver
+	distributions                map[providerconfig.OperatingSystem]struct{}
 	existingClusterLabel         string
 	openshift                    bool
 	openshiftPullSecret          string
 	printGinkoLogs               bool
+	printContainerLogs           bool
 	onlyTestCreation             bool
 	pspEnabled                   bool
 	createOIDCToken              bool
 	dexHelmValuesFile            string
+	kubermaticNamespace          string
+	kubermaticEndpoint           string
+	kubermaticSeedName           string
 	kubermaticProjectID          string
+	kubermaticOIDCToken          string
 	kubermaticClient             *apiclient.KubermaticAPI
 	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
 	scenarioOptions              string
@@ -154,68 +162,71 @@ type secrets struct {
 	kubermaticAuthenticator runtime.ClientAuthInfoWriter
 }
 
-const (
-	defaultUserClusterPollInterval = 10 * time.Second
-	defaultAPIRetries              = 100
-
-	controlPlaneReadyPollPeriod = 5 * time.Second
-)
-
-var defaultTimeout = 10 * time.Minute
-
 var (
-	providers  string
-	pubKeyPath string
-	sversions  string
+	providers             string
+	pubKeyPath            string
+	sversions             string
+	sdistributions        string
+	sexcludeDistributions string
 )
 
 func main() {
+	var err error
+
 	opts := Opts{
-		providers:  sets.NewString(),
-		publicKeys: [][]byte{},
-		versions:   []*semver.Semver{},
+		providers:                    sets.NewString(),
+		publicKeys:                   [][]byte{},
+		versions:                     []*kubermativsemver.Semver{},
+		kubermaticNamespace:          "kubermatic",
+		kubermaticSeedName:           "kubermatic",
+		controlPlaneReadyWaitTimeout: 10 * time.Minute,
+		nodeReadyTimeout:             20 * time.Minute,
+		customTestTimeout:            10 * time.Minute,
+		userClusterPollInterval:      5 * time.Second,
 	}
 
-	defaultTimeoutMinutes := 10
-
-	rawLog := kubermaticlog.New(true, kubermaticlog.FormatJSON)
-	log := rawLog.Sugar()
-	defer func() {
-		if err := log.Sync(); err != nil {
-			fmt.Println(err)
-		}
-	}()
-
-	cli.Hello(log, "Conformance Tests", true)
+	logOpts := kubermaticlog.NewDefaultOptions()
+	logOpts.AddFlags(flag.CommandLine)
 
 	// user.Current does not work in Alpine
 	pubkeyPath := path.Join(os.Getenv("HOME"), ".ssh/id_rsa.pub")
+
+	supportedVersions := getLatestMinorVersions(common.DefaultKubernetesVersioning.Versions)
 
 	flag.StringVar(&opts.kubeconfigPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
 	flag.StringVar(&opts.existingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
 	flag.StringVar(&providers, "providers", "aws,digitalocean,openstack,hetzner,vsphere,azure,packet,gcp", "comma separated list of providers to test")
 	flag.StringVar(&opts.namePrefix, "name-prefix", "", "prefix used for all cluster names")
 	flag.StringVar(&opts.repoRoot, "repo-root", "/opt/kube-test/", "Root path for the different kubernetes repositories")
+	flag.StringVar(&opts.kubermaticEndpoint, "kubermatic-endpoint", "http://localhost:8080", "scheme://host[:port] of the Kubermatic API endpoint to talk to")
+	flag.StringVar(&opts.kubermaticProjectID, "kubermatic-project-id", "", "Kubermatic project to use; leave empty to create a new one")
+	flag.StringVar(&opts.kubermaticOIDCToken, "kubermatic-oidc-token", "", "Token to authenticate against the Kubermatic API")
+	flag.StringVar(&opts.kubermaticSeedName, "kubermatic-seed-cluster", opts.kubermaticSeedName, "Seed cluster name to create test cluster in")
+	flag.StringVar(&opts.kubermaticNamespace, "kubermatic-namespace", opts.kubermaticNamespace, "Namespace where Kubermatic is installed to")
+	flag.BoolVar(&opts.createOIDCToken, "create-oidc-token", false, "Whether to create a OIDC token. If false, -kubermatic-project-id and -kubermatic-oidc-token must be set")
 	flag.IntVar(&opts.nodeCount, "kubermatic-nodes", 3, "number of worker nodes")
-	flag.IntVar(&opts.clusterParallelCount, "kubermatic-parallel-clusters", 5, "number of clusters to test in parallel")
+	flag.IntVar(&opts.clusterParallelCount, "kubermatic-parallel-clusters", 1, "number of clusters to test in parallel")
 	flag.StringVar(&opts.reportsRoot, "reports-root", "/opt/reports", "Root for reports")
-	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", defaultTimeout, "cluster creation timeout")
+	flag.DurationVar(&opts.controlPlaneReadyWaitTimeout, "kubermatic-cluster-timeout", opts.controlPlaneReadyWaitTimeout, "cluster creation timeout")
+	flag.DurationVar(&opts.nodeReadyTimeout, "node-ready-timeout", opts.nodeReadyTimeout, "base time to wait for machines to join the cluster")
+	flag.DurationVar(&opts.customTestTimeout, "custom-test-timeout", opts.customTestTimeout, "timeout for Kubermatic-specific PVC/LB tests")
+	flag.DurationVar(&opts.userClusterPollInterval, "user-cluster-poll-interval", opts.userClusterPollInterval, "poll interval when checking user-cluster conditions")
 	flag.BoolVar(&opts.deleteClusterAfterTests, "kubermatic-delete-cluster", true, "delete test cluster when tests where successful")
 	flag.StringVar(&pubKeyPath, "node-ssh-pub-key", pubkeyPath, "path to a public key which gets deployed onto every node")
 	flag.StringVar(&opts.workerName, "worker-name", "", "name of the worker, if set the 'worker-name' label will be set on all clusters")
-	flag.StringVar(&sversions, "versions", "v1.16.14,v1.17.11,v1.18.8,v1.19.0", "a comma-separated list of versions to test")
-	flag.StringVar(&opts.excludeSelectorRaw, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests")
-	flag.IntVar(&defaultTimeoutMinutes, "default-timeout-minutes", 10, "The default timeout in minutes")
+	flag.StringVar(&sversions, "versions", strings.Join(supportedVersions, ","), "a comma-separated list of versions to test")
+	flag.StringVar(&sdistributions, "distributions", "", "a comma-separated list of distributions to test (cannot be used in conjunction with -exclude-distributions)")
+	flag.StringVar(&sexcludeDistributions, "exclude-distributions", "", "a comma-separated list of distributions that will get excluded from the tests (cannot be used in conjunction with -distributions)")
 	flag.BoolVar(&opts.openshift, "openshift", false, "Whether to create an openshift cluster")
 	flag.BoolVar(&opts.printGinkoLogs, "print-ginkgo-logs", false, "Whether to print ginkgo logs when ginkgo encountered failures")
+	flag.BoolVar(&opts.printContainerLogs, "print-container-logs", false, "Whether to print the logs of all controlplane containers after the test (even in case of success)")
 	flag.BoolVar(&opts.onlyTestCreation, "only-test-creation", false, "Only test if nodes become ready. Does not perform any extended checks like conformance tests")
-	flag.BoolVar(&opts.createOIDCToken, "create-oidc-token", false, "Whether to create a OIDC token. If false, environment vars for projectID and OIDC token must be set.")
-	// This won't be used directly for backwards compatibility in upgrade-tests;
-	// instead the KUBERMATIC_DEX_VALUES_FILE env variable will be used.
+	flag.BoolVar(&opts.pspEnabled, "enable-psp", false, "When set, enables the Pod Security Policy plugin in the user cluster")
 	flag.StringVar(&opts.dexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
 	flag.StringVar(&opts.scenarioOptions, "scenario-options", "", "Additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
 	flag.StringVar(&opts.pushgatewayEndpoint, "pushgateway-endpoint", "", "host:port of a Prometheus Pushgateway to send runtime metrics to")
 
+	// cloud provider credentials
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
 	flag.StringVar(&opts.secrets.AWS.SecretAccessKey, "aws-secret-access-key", "", "AWS: SecretAccessKey")
 	flag.StringVar(&opts.secrets.Digitalocean.Token, "digitalocean-token", "", "Digitalocean: API Token")
@@ -239,90 +250,103 @@ func main() {
 	flag.StringVar(&opts.secrets.Kubevirt.Kubeconfig, "kubevirt-kubeconfig", "", "Kubevirt: Cluster Kubeconfig")
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeyID, "alibaba-access-key-id", "", "Alibaba: AccessKeyID")
 	flag.StringVar(&opts.secrets.Alibaba.AccessKeySecret, "alibaba-access-key-secret", "", "Alibaba: AccessKeySecret")
+
 	flag.Parse()
 
-	defaultTimeout = time.Duration(defaultTimeoutMinutes) * time.Minute
-
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	if opts.workerName != "" {
-		log = log.With("worker-name", opts.workerName)
+		rawLog = rawLog.Named(opts.workerName)
 	}
 
-	if opts.excludeSelectorRaw != "" {
-		excludedDistributions := strings.Split(opts.excludeSelectorRaw, ",")
-		if opts.excludeSelector.Distributions == nil {
-			opts.excludeSelector.Distributions = map[providerconfig.OperatingSystem]bool{}
+	log := rawLog.Sugar()
+	defer func() {
+		if err := log.Sync(); err != nil {
+			fmt.Println(err)
 		}
-		for _, excludedDistribution := range excludedDistributions {
-			switch excludedDistribution {
-			case "ubuntu":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] = true
-			case "centos":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] = true
-			case "coreos":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
-			case "sles":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemSLES] = true
-			case "rhel":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemRHEL] = true
-			case "flatcar":
-				opts.excludeSelector.Distributions[providerconfig.OperatingSystemFlatcar] = true
-			default:
-				log.Fatalf("Unknown distribution '%s' in '-exclude-distributions' param", excludedDistribution)
-			}
+	}()
+
+	cli.Hello(log, "Conformance Tests", true)
+	log.Infow("Kubermatic API Endpoint", "endpoint", opts.kubermaticEndpoint)
+
+	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
+		log.Fatal("-cluster-parallel-count must be 1 when testing an existing cluster")
+	}
+
+	if opts.openshift {
+		// Openshift is only supported on CentOS
+		opts.distributions = map[providerconfig.OperatingSystem]struct{}{
+			providerconfig.OperatingSystemCentOS: {},
+		}
+	} else {
+		opts.distributions, err = getEffectiveDistributions(sdistributions, sexcludeDistributions)
+		if err != nil {
+			log.Fatalw("Failed to determine distribution list", zap.Error(err))
+		}
+
+		if len(opts.distributions) == 0 {
+			log.Fatal("No distribution to use in tests remained after evaluating -distributions and -exclude-distributions")
 		}
 	}
+
+	osNames := []string{}
+	for dist := range opts.distributions {
+		osNames = append(osNames, string(dist))
+	}
+	sort.Strings(osNames)
+	log.Infow("Enabled operating system", "distributions", osNames)
 
 	for _, s := range strings.Split(sversions, ",") {
-		opts.versions = append(opts.versions, semver.NewSemverOrDie(s))
+		opts.versions = append(opts.versions, kubermativsemver.NewSemverOrDie(s))
+	}
+	log.Infow("Enabled versions", "versions", opts.versions)
+
+	kubermaticClient, err := api.NewKubermaticClient(opts.kubermaticEndpoint)
+	if err != nil {
+		log.Fatalf("Failed to create Kubermatic API client: %v", err)
 	}
 
-	kubermaticAPIServerAddress := os.Getenv("KUBERMATIC_HOST")
-	if kubermaticAPIServerAddress == "" {
-		log.Fatal("Kubermatic apiserver address must be set via KUBERMATIC_HOST env var")
-	}
-	kubermaticAPIServerScheme := os.Getenv("KUBERMATIC_SCHEME")
-	if kubermaticAPIServerScheme == "" {
-		log.Fatal("Kubermatic apiserver protocol must be set via KUBERMATIC_SCHEME env var")
-	}
-	opts.kubermaticClient = apiclient.New(httptransport.New(kubermaticAPIServerAddress, "", []string{kubermaticAPIServerScheme}), nil)
+	opts.kubermaticClient = kubermaticClient
 	opts.secrets.kubermaticClient = opts.kubermaticClient
-	// May be empty if creating an OIDC token
-	opts.kubermaticProjectID = strings.TrimSpace(os.Getenv("KUBERMATIC_PROJECT_ID"))
 
 	rootCtx, rootCancel := context.WithCancel(context.Background())
 	defer rootCancel()
 
+	// collect runtime metrics if there is a pushgateway URL configured
+	// and these variables are set
 	initMetrics(opts.pushgatewayEndpoint, os.Getenv("JOB_NAME"), os.Getenv("PROW_JOB_ID"))
 	defer updateMetrics(log)
 
 	if !opts.createOIDCToken {
-		if opts.kubermaticProjectID == "" {
-			log.Fatal("Kubermatic project id must be set via KUBERMATIC_PROJECT_ID env var")
-		}
-		kubermaticServiceaAccountToken := os.Getenv("KUBERMATIC_SERVICEACCOUNT_TOKEN")
-		if kubermaticServiceaAccountToken == "" {
-			log.Fatal("A Kubermatic serviceAccountToken must be set via KUBERMATIC_SERVICEACCOUNT_TOKEN env var")
-		}
-		opts.kubermaticAuthenticator = httptransport.BearerToken(kubermaticServiceaAccountToken)
-	} else {
-		// fallback to the KUBERMATIC_DEX_HELM_VALUES_FILE env var if the CLI flag
-		// was not specified due to backwards compatibility
-		if opts.dexHelmValuesFile == "" {
-			opts.dexHelmValuesFile = os.Getenv("KUBERMATIC_DEX_VALUES_FILE")
+		if opts.kubermaticOIDCToken == "" {
+			log.Fatal("An existing OIDC token must be set via the -kubermatic-oidc-token flag")
 		}
 
+		opts.kubermaticAuthenticator = httptransport.BearerToken(opts.kubermaticOIDCToken)
+	} else {
 		dexClient, err := dex.NewClientFromHelmValues(opts.dexHelmValuesFile, "kubermatic", log)
 		if err != nil {
 			log.Fatalw("Failed to create OIDC client", zap.Error(err))
 		}
 
-		var login, password, token string
+		// OIDC credentials are passed in as environment variables instead of
+		// CLI flags because having the password as a flag might be a security
+		// issue and then it also makes sense to handle the login name in the
+		// same way.
+		// Also, the API E2E tests use environment variables to get the values
+		// into the `go test` runs.
+		login, password, err := apitest.OIDCCredentials()
+		if err != nil {
+			log.Fatalf("Invalid OIDC credentials: %v", err)
+		}
+
+		log.Infow("Creating login token", "login", login, "provider", dexClient.ProviderURI, "client", dexClient.ClientID)
+
+		var token string
 
 		if err := measureTime(
 			kubermaticLoginDurationMetric.WithLabelValues(),
 			log,
 			func() error {
-				login, password = apitest.OIDCCredentials()
 				token, err = dexClient.Login(rootCtx, login, password)
 				return err
 			},
@@ -333,44 +357,33 @@ func main() {
 		log.Info("Successfully retrieved master token")
 
 		opts.kubermaticAuthenticator = httptransport.BearerToken(token)
-
-		if opts.kubermaticProjectID == "" {
-			projectID, err := createProject(opts.kubermaticClient, opts.kubermaticAuthenticator, log)
-			if err != nil {
-				log.Fatalw("Failed to create project", zap.Error(err))
-			}
-			opts.kubermaticProjectID = projectID
-		}
 	}
 	opts.secrets.kubermaticAuthenticator = opts.kubermaticAuthenticator
+
+	if opts.kubermaticProjectID == "" {
+		projectID, err := createProject(opts.kubermaticClient, opts.kubermaticAuthenticator, log)
+		if err != nil {
+			log.Fatalw("Failed to create project", zap.Error(err))
+		}
+
+		opts.kubermaticProjectID = projectID
+	}
+
+	log.Infow("Using project", "project", opts.kubermaticProjectID)
 
 	if opts.openshift {
 		opts.openshiftPullSecret = os.Getenv("OPENSHIFT_IMAGE_PULL_SECRET")
 		if opts.openshiftPullSecret == "" {
-			log.Fatal("Testing openshift requires the `OPENSHIFT_IMAGE_PULL_SECRET` env var to be set")
+			log.Fatal("Testing OpenShift requires the $OPENSHIFT_IMAGE_PULL_SECRET env var to be set")
 		}
-	}
 
-	if val := os.Getenv("KUBERMATIC_PSP_ENABLED"); val == "true" {
-		opts.pspEnabled = true
-		log.Info("Enabling PSPs")
-	}
-
-	// We use environment variables instead of flags for compatibility reasons, because during upgrade tests we
-	// run two versions of the conformance tester with the same set of flags, which breaks if the older version
-	// doesn't have all flags
-	seedName := os.Getenv("SEED_NAME")
-	if seedName == "" {
-		log.Fatal("The name of the seed dc must be configured via the SEED_NAME env var")
-	}
-
-	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
-		log.Fatal("-cluster-parallel-count must be 1 when testing an existing cluster")
+		log.Info("Testing OpenShift")
 	}
 
 	for _, s := range strings.Split(providers, ",") {
 		opts.providers.Insert(strings.ToLower(strings.TrimSpace(s)))
 	}
+	log.Infow("Enabled cloud providers", "providers", opts.providers.List())
 
 	if pubKeyPath != "" {
 		keyData, err := ioutil.ReadFile(pubKeyPath)
@@ -429,12 +442,7 @@ func main() {
 	}
 	opts.seedGeneratedClient = seedGeneratedClient
 
-	namespaceName := os.Getenv("NAMESPACE")
-	if namespaceName == "" {
-		log.Warn("Environment variable `NAMESPACE` was unset, defaulting to `kubermatic`")
-		namespaceName = "kubermatic"
-	}
-	seedGetter, err := provider.SeedGetterFactory(context.Background(), seedClusterClient, seedName, namespaceName)
+	seedGetter, err := provider.SeedGetterFactory(context.Background(), seedClusterClient, opts.kubermaticSeedName, opts.kubermaticNamespace)
 	if err != nil {
 		log.Fatalw("Failed to construct seedGetter", zap.Error(err))
 	}
@@ -460,16 +468,6 @@ func main() {
 }
 
 func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
-	if opts.openshift {
-		// Openshift is only supported on CentOS
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] = true
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] = true
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] = false
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemSLES] = true
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemRHEL] = true
-		opts.excludeSelector.Distributions[providerconfig.OperatingSystemFlatcar] = true
-	}
-
 	scenarioOptions := strings.Split(opts.scenarioOptions, ",")
 
 	var scenarios []testScenario
@@ -514,38 +512,31 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 		scenarios = append(scenarios, getAlibabaScenarios(opts.versions)...)
 	}
 
+	hasDistribution := func(distribution providerconfig.OperatingSystem) bool {
+		_, ok := opts.distributions[distribution]
+		return ok
+	}
+
 	var filteredScenarios []testScenario
 	for _, scenario := range scenarios {
 		osspec := scenario.OS()
-		if osspec.Ubuntu != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemUbuntu] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.Ubuntu != nil && hasDistribution(providerconfig.OperatingSystemUbuntu) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
-		if osspec.ContainerLinux != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemCoreos] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.ContainerLinux != nil && hasDistribution(providerconfig.OperatingSystemCoreos) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
-		if osspec.Flatcar != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemFlatcar] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.Flatcar != nil && hasDistribution(providerconfig.OperatingSystemFlatcar) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
-		if osspec.Centos != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemCentOS] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.Centos != nil && hasDistribution(providerconfig.OperatingSystemCentOS) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
-		if osspec.Sles != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemSLES] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.Sles != nil && hasDistribution(providerconfig.OperatingSystemSLES) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
-		if osspec.Rhel != nil {
-			if !opts.excludeSelector.Distributions[providerconfig.OperatingSystemRHEL] {
-				filteredScenarios = append(filteredScenarios, scenario)
-			}
+		if osspec.Rhel != nil && hasDistribution(providerconfig.OperatingSystemRHEL) {
+			filteredScenarios = append(filteredScenarios, scenario)
 		}
 	}
 
@@ -622,35 +613,34 @@ func shuffle(vals []testScenario) []testScenario {
 }
 
 func createProject(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, log *zap.SugaredLogger) (string, error) {
-	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: "kubermatic-conformance-tester"}}
-	params.WithTimeout(15 * time.Second)
+	log.Info("Creating Kubermatic project...")
 
-	var projectID string
-	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
-		result, err := client.Project.CreateProject(params, bearerToken)
-		if err != nil {
-			log.Errorw("Failed to create project", "error", fmtSwaggerError(err))
-			return false, nil
-		}
-		projectID = result.Payload.ID
-		return true, nil
-	}); err != nil {
-		return "", fmt.Errorf("failed waiting for project to get successfully created: %v", err)
+	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: "kubermatic-conformance-tester"}}
+	utils.SetupParams(nil, params, 3*time.Second, 1*time.Minute, http.StatusConflict)
+
+	result, err := client.Project.CreateProject(params, bearerToken)
+	if err != nil {
+		return "", fmt.Errorf("failed to create project: %v", err)
 	}
+	projectID := result.Payload.ID
+
+	// we have to wait a moment for the RBAC stuff to be reconciled, and to try to avoid
+	// logging a misleading error in the following loop, we just wait a few seconds
+	time.Sleep(3 * time.Second)
 
 	getProjectParams := &project.GetProjectParams{ProjectID: projectID}
-	getProjectParams.WithTimeout(15 * time.Second)
-	if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
+	utils.SetupParams(nil, getProjectParams, 2*time.Second, 1*time.Minute, http.StatusConflict)
+
+	if err := wait.PollImmediate(2*time.Second, 1*time.Minute, func() (bool, error) {
 		response, err := client.Project.GetProject(getProjectParams, bearerToken)
 		if err != nil {
-			log.Errorw("Failed to get project", "error", fmtSwaggerError(err))
+			log.Errorw("Failed to get project", zap.Error(err))
 			return false, nil
 		}
 		if response.Payload.Status != kubermaticv1.ProjectActive {
-			log.Infow("Project not active yet", "project-status", response.Payload.Status)
+			log.Warnw("Project not active yet", "project-status", response.Payload.Status)
 			return false, nil
 		}
-		log.Info("Successfully got project")
 		return true, nil
 	}); err != nil {
 		return "", fmt.Errorf("failed to wait for project to be ready: %v", err)
@@ -662,28 +652,92 @@ func createProject(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAu
 func createSSHKeys(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, opts *Opts, log *zap.SugaredLogger) error {
 	for i, key := range opts.publicKeys {
 		log.Infow("Creating UserSSHKey", "pubkey", string(key))
-		if err := wait.PollImmediate(10*time.Second, time.Minute, func() (bool, error) {
-			body := project.CreateSSHKeyParams{
-				ProjectID: opts.kubermaticProjectID,
-				Key: &models.SSHKey{
-					Name: fmt.Sprintf("SSH Key No. %d", i+1),
-					Spec: &models.SSHKeySpec{
-						PublicKey: string(key),
-					},
+
+		body := &project.CreateSSHKeyParams{
+			ProjectID: opts.kubermaticProjectID,
+			Key: &models.SSHKey{
+				Name: fmt.Sprintf("SSH Key No. %d", i+1),
+				Spec: &models.SSHKeySpec{
+					PublicKey: string(key),
 				},
-			}
-			body.WithTimeout(15 * time.Second)
+			},
+		}
+		utils.SetupParams(nil, body, 3*time.Second, 1*time.Minute, http.StatusConflict)
 
-			if _, err := client.Project.CreateSSHKey(&body, bearerToken); err != nil {
-				log.Errorw("Failed to create SSH key", "error", fmtSwaggerError(err))
-				return false, nil
-			}
-
-			return true, nil
-		}); err != nil {
-			return fmt.Errorf("failed creating SSH key: %v", err)
+		if _, err := client.Project.CreateSSHKey(body, bearerToken); err != nil {
+			return fmt.Errorf("failed to create SSH key: %v", err)
 		}
 	}
 
 	return nil
+}
+
+func getLatestMinorVersions(versions []*semver.Version) []string {
+	minorMap := map[int64]*semver.Version{}
+
+	for i, version := range versions {
+		minor := version.Minor()
+
+		if existing := minorMap[minor]; existing == nil || existing.LessThan(version) {
+			minorMap[minor] = versions[i]
+		}
+	}
+
+	list := []string{}
+	for _, v := range minorMap {
+		list = append(list, "v"+v.String())
+	}
+	sort.Strings(list)
+
+	return list
+}
+
+func getEffectiveDistributions(distributions string, excludeDistributions string) (map[providerconfig.OperatingSystem]struct{}, error) {
+	all := providerconfig.AllOperatingSystems
+
+	if distributions == "" && excludeDistributions == "" {
+		return nil, fmt.Errorf("either -distributions or -exclude-distributions must be given (each is a comma-separated list of %v)", all)
+	}
+
+	if distributions != "" && excludeDistributions != "" {
+		return nil, errors.New("-distributions and -exclude-distributions must not be given at the same time")
+	}
+
+	chosen := map[providerconfig.OperatingSystem]struct{}{}
+
+	if distributions != "" {
+		for _, distribution := range strings.Split(distributions, ",") {
+			exists := false
+			for _, dist := range all {
+				if string(dist) == distribution {
+					exists = true
+					break
+				}
+			}
+
+			if !exists {
+				return nil, fmt.Errorf("unknown distribution %q specified", distribution)
+			}
+
+			chosen[providerconfig.OperatingSystem(distribution)] = struct{}{}
+		}
+	} else {
+		excluded := strings.Split(excludeDistributions, ",")
+
+		for _, dist := range all {
+			exclude := false
+			for _, ex := range excluded {
+				if string(dist) == ex {
+					exclude = true
+					break
+				}
+			}
+
+			if !exclude {
+				chosen[dist] = struct{}{}
+			}
+		}
+	}
+
+	return chosen, nil
 }

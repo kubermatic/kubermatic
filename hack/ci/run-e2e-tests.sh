@@ -39,4 +39,4 @@ pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
 echodate "Done setting up Kubermatic in kind"
 
 echodate "Running conformance tests"
-KUBERMATIC_NO_WORKER_NAME=true ./hack/ci/run-conformance-tester.sh
+KUBERMATIC_NO_WORKER_NAME=true ./hack/ci/run-conformance-tests.sh

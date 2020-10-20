@@ -285,7 +285,7 @@ func TestClusterReconciliatonSuccessful(t *testing.T) {
 			t.Parallel()
 			cluster := clusterWithAllSuccessfulConditions(testCase.openshift)
 			testCase.modify(cluster)
-			if _, result := ClusterReconciliationSuccessful(cluster); result != testCase.expectSuccess {
+			if _, result := ClusterReconciliationSuccessful(cluster, false); result != testCase.expectSuccess {
 				t.Errorf("Expected success: %t, got success: %t", testCase.expectSuccess, result)
 			}
 		})

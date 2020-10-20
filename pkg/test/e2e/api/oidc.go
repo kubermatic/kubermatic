@@ -25,61 +25,73 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/dex"
 )
 
+const (
+	LoginEnvironmentVariable         = "KUBERMATIC_OIDC_LOGIN"
+	PasswordEnvironmentVariable      = "KUBERMATIC_OIDC_PASSWORD"
+	DexValuesFileEnvironmentVariable = "KUBERMATIC_DEX_VALUES_FILE"
+)
+
 // OIDCCredentials takes the login name and password from environment variables and
 // returns them.
-func OIDCCredentials() (string, string) {
-	return os.Getenv("KUBERMATIC_OIDC_LOGIN"), os.Getenv("KUBERMATIC_OIDC_PASSWORD")
+func OIDCCredentials() (string, string, error) {
+	login := os.Getenv(LoginEnvironmentVariable)
+	if len(login) == 0 {
+		return "", "", fmt.Errorf("no OIDC username specified ($%s is unset)", LoginEnvironmentVariable)
+	}
+
+	password := os.Getenv(PasswordEnvironmentVariable)
+	if len(password) == 0 {
+		return "", "", fmt.Errorf("no OIDC password specified ($%s is unset)", PasswordEnvironmentVariable)
+	}
+
+	return login, password, nil
 }
 
 // OIDCAdminCredentials takes the admin login name and password from environment variables and
 // returns them.
-func OIDCAdminCredentials() (string, string) {
-	return "roxy2@loodse.com", os.Getenv("KUBERMATIC_OIDC_PASSWORD")
+func OIDCAdminCredentials() (string, string, error) {
+	password := os.Getenv(PasswordEnvironmentVariable)
+	if len(password) == 0 {
+		return "", "", fmt.Errorf("no OIDC password specified ($%s is unset)", PasswordEnvironmentVariable)
+	}
+
+	return "roxy2@loodse.com", password, nil
 }
 
-var masterToken = ""
+// these variables are runtime caches to not have to login to Dex
+// over and over again
+var (
+	masterToken      = ""
+	adminMasterToken = ""
+)
 
-// this is just a helper to make the tests more readable
 func retrieveMasterToken() (string, error) {
-	// re-use the previous token
-	if masterToken != "" {
-		return masterToken, nil
-	}
-
-	valuesFile := os.Getenv("KUBERMATIC_DEX_VALUES_FILE")
-	if len(valuesFile) == 0 {
-		return "", fmt.Errorf("no Helm values.yaml specified via KUBERMATIC_DEX_VALUES_FILE env variable")
-	}
-
-	logger := log.New(false, log.FormatJSON).Sugar()
-
-	client, err := dex.NewClientFromHelmValues(valuesFile, "kubermatic", logger)
-	if err != nil {
-		return "", fmt.Errorf("failed to create OIDC client: %v", err)
-	}
-
-	login, password := OIDCCredentials()
-
-	masterToken, err = client.Login(context.Background(), login, password)
+	login, password, err := OIDCCredentials()
 	if err != nil {
 		return "", err
 	}
 
-	return masterToken, nil
+	return retrieveToken(&masterToken, login, password)
 }
 
-var adminMasterToken = ""
-
-// this is just a helper to make the tests more readable
 func retrieveAdminMasterToken() (string, error) {
-	// re-use the previous token
-	if adminMasterToken != "" {
-		return adminMasterToken, nil
+	login, password, err := OIDCAdminCredentials()
+	if err != nil {
+		return "", err
 	}
 
-	valuesFile := os.Getenv("KUBERMATIC_DEX_VALUES_FILE")
+	return retrieveToken(&adminMasterToken, login, password)
+}
+
+func retrieveToken(token *string, login string, password string) (string, error) {
+	// re-use the previous token
+	if token != nil && *token != "" {
+		return *token, nil
+	}
+
+	valuesFile := os.Getenv(DexValuesFileEnvironmentVariable)
 	if len(valuesFile) == 0 {
-		return "", fmt.Errorf("no Helm values.yaml specified via KUBERMATIC_DEX_VALUES_FILE env variable")
+		return "", fmt.Errorf("no Helm values.yaml specified via $%s env variable", DexValuesFileEnvironmentVariable)
 	}
 
 	logger := log.New(false, log.FormatJSON).Sugar()
@@ -89,12 +101,13 @@ func retrieveAdminMasterToken() (string, error) {
 		return "", fmt.Errorf("failed to create OIDC client: %v", err)
 	}
 
-	login, password := OIDCAdminCredentials()
-
-	adminMasterToken, err = client.Login(context.Background(), login, password)
+	newToken, err := client.Login(context.Background(), login, password)
 	if err != nil {
 		return "", err
 	}
 
-	return adminMasterToken, nil
+	// update runtime cache
+	*token = newToken
+
+	return newToken, nil
 }

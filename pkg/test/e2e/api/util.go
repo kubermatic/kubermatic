@@ -17,38 +17,54 @@ limitations under the License.
 package api
 
 import (
+	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/Masterminds/semver"
+	httptransport "github.com/go-openapi/runtime/client"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
-func getHost() string {
-	host := os.Getenv("KUBERMATIC_HOST")
-	if len(host) == 0 {
-		fmt.Println("No KUBERMATIC_HOST env variable set.")
-		os.Exit(1)
+func getAPIEndpoint() (string, error) {
+	endpoint := os.Getenv("KUBERMATIC_API_ENDPOINT")
+	if len(endpoint) == 0 {
+		return "", errors.New("no $KUBERMATIC_API_ENDPOINT (scheme://host:port) environment variable set")
 	}
-	return host
+
+	return endpoint, nil
 }
 
-func getScheme() string {
-	scheme := os.Getenv("KUBERMATIC_SCHEME")
-	if len(scheme) == 0 {
-		fmt.Println("No KUBERMATIC_SCHEME env variable set.")
-		os.Exit(1)
+func NewKubermaticClient(endpointURL string) (*client.KubermaticAPI, error) {
+	parsed, err := url.Parse(endpointURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse URL: %v", err)
 	}
-	return scheme
+
+	if parsed.Host == "" || parsed.Scheme == "" {
+		return nil, errors.New("Kubermatic endpoint must be scheme://host[:port]")
+	}
+
+	if parsed.Scheme != "http" && parsed.Scheme != "https" {
+		return nil, errors.New("invalid scheme, must be HTTP or HTTPS")
+	}
+
+	return client.New(httptransport.New(parsed.Host, parsed.Path, []string{parsed.Scheme}), nil), nil
 }
 
 func getKubernetesVersion() string {
-	version := os.Getenv("VERSION_TO_TEST")
-	if len(version) > 0 {
-		return version
+	version := common.DefaultKubernetesVersioning.Default
+
+	if v := os.Getenv("VERSION_TO_TEST"); v != "" {
+		version = semver.MustParse(v)
 	}
-	return "v1.18.8"
+
+	return "v" + version.String()
 }
 
 func cleanUpProject(t *testing.T, id string) {
