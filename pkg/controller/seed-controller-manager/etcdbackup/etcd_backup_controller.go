@@ -48,7 +48,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"sort"
 	"strings"
 	"time"
 )
@@ -427,35 +426,36 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 		return nil, nil
 	}
 
-	// find all backups that have completed or failed but whose delete job haven't started yet
-	var completedBackups []*kubermaticv1.BackupStatus
-	for i := range backupConfig.Status.CurrentBackups {
-		backup := &backupConfig.Status.CurrentBackups[i]
-		if (backup.BackupPhase == kubermaticv1.BackupStatusPhaseCompleted || backup.BackupPhase == kubermaticv1.BackupStatusPhaseFailed) && backup.DeletePhase == "" {
-			completedBackups = append(completedBackups, backup)
-		}
-	}
-
-	toDeleteCount := len(completedBackups) - backupConfig.GetKeptBackupsCount()
+	var backupsToDelete []*kubermaticv1.BackupStatus
+	keepCount := backupConfig.GetKeptBackupsCount()
 	if backupConfig.DeletionTimestamp != nil {
-		toDeleteCount = len(completedBackups)
+		keepCount = 0
 	}
-
-	if toDeleteCount > 0 {
-		sort.Slice(completedBackups, func(i, j int) bool {
-			return completedBackups[i].ScheduledTime.Time.Before(completedBackups[j].ScheduledTime.Time)
-		})
-		for i := 0; i < toDeleteCount; i++ {
-			backup := completedBackups[i]
-			if err := r.createDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
-				return nil, err
+	kept := 0
+	for i := len(backupConfig.Status.CurrentBackups) - 1; i >= 0; i-- {
+		backup := &backupConfig.Status.CurrentBackups[i]
+		if backup.BackupPhase == kubermaticv1.BackupStatusPhaseFailed && backup.DeletePhase == "" {
+			backupsToDelete = append(backupsToDelete, backup)
+		} else if backup.BackupPhase == kubermaticv1.BackupStatusPhaseCompleted {
+			kept++
+			if kept > keepCount && backup.DeletePhase == "" {
+				backupsToDelete = append(backupsToDelete, backup)
 			}
 		}
+	}
 
+	modified := false
+	for _, backup := range backupsToDelete {
+		if err := r.createDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
+			return nil, err
+		}
+		modified = true
+	}
+
+	if modified {
 		if err := r.Update(ctx, backupConfig); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup config")
 		}
-
 		return &reconcile.Result{RequeueAfter: assumedJobRuntime}, nil
 	}
 
