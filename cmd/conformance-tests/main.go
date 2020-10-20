@@ -188,7 +188,6 @@ func main() {
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
 
-	cli.Hello(log, "Conformance Tests", true)
 	// user.Current does not work in Alpine
 	pubkeyPath := path.Join(os.Getenv("HOME"), ".ssh/id_rsa.pub")
 
@@ -266,7 +265,7 @@ func main() {
 		}
 	}()
 
-	cmdutil.Hello(log, "Conformance Tests", true)
+	cli.Hello(log, "Conformance Tests", true)
 	log.Infow("Kubermatic API Endpoint", "endpoint", opts.kubermaticEndpoint)
 
 	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {
