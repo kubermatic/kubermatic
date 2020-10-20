@@ -198,7 +198,7 @@ func main() {
 	if o.chartsPath != "" {
 		log.Infow("Rendering Helm charts", "directory", o.chartsPath)
 
-		images, err := getImagesForHelmCharts(ctx, log, o.chartsPath, o.helmValuesPath, o.helmBinary)
+		images, err := getImagesForHelmCharts(ctx, log, kubermaticConfig, o.chartsPath, o.helmValuesPath, o.helmBinary)
 		if err != nil {
 			log.Fatal("Failed to get images", zap.Error(err))
 		}
@@ -699,7 +699,7 @@ func loadKubermaticConfiguration(log *zap.SugaredLogger, filename string) (*oper
 	return defaulted, nil
 }
 
-func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, chartsPath string, valuesFile string, helmBinary string) ([]string, error) {
+func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, config *operatorv1alpha1.KubermaticConfiguration, chartsPath string, valuesFile string, helmBinary string) ([]string, error) {
 	if info, err := os.Stat(chartsPath); err != nil || !info.IsDir() {
 		return nil, fmt.Errorf("%s is not a valid directory", chartsPath)
 	}
@@ -720,6 +720,14 @@ func getImagesForHelmCharts(ctx context.Context, log *zap.SugaredLogger, chartsP
 	for _, chartPath := range chartPaths {
 		chartName := filepath.Base(chartPath)
 		chartLog := log.With("path", chartPath, "chart", chartName)
+
+		// do not render the Kubermatic chart again, if a Kubermatic configuration
+		// is given; in this case, the operator is used and we determine the images
+		// used via the static creators in Go code.
+		if config != nil && chartName == "kubermatic" {
+			chartLog.Info("Skipping chart because KubermaticConfiguration was given")
+			continue
+		}
 
 		chartLog.Info("Rendering chart")
 
