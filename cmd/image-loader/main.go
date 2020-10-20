@@ -418,18 +418,7 @@ func getVersions(log *zap.SugaredLogger, config *operatorv1alpha1.KubermaticConf
 
 	if config != nil {
 		log.Debug("Loading versions")
-
-		assembleVersions := func(kind string, configuredVersions []*semver.Version) {
-			for i := range configuredVersions {
-				versions = append(versions, &kubermaticversion.Version{
-					Version: configuredVersions[i],
-					Type:    kind,
-				})
-			}
-		}
-
-		assembleVersions("kubernetes", config.Spec.Versions.Kubernetes.Versions)
-		assembleVersions("openshift", config.Spec.Versions.Openshift.Versions)
+		versions = getVersionsFromKubermaticConfiguration(config)
 	} else {
 		if versionsFile == "" {
 			return nil, errors.New("either a KubermaticConfiguration or a versions file must be specified")
@@ -462,6 +451,24 @@ func getVersions(log *zap.SugaredLogger, config *operatorv1alpha1.KubermaticConf
 	}
 
 	return filteredVersions, nil
+}
+
+func getVersionsFromKubermaticConfiguration(config *operatorv1alpha1.KubermaticConfiguration) []*kubermaticversion.Version {
+	versions := []*kubermaticversion.Version{}
+
+	assembleVersions := func(kind string, configuredVersions []*semver.Version) {
+		for i := range configuredVersions {
+			versions = append(versions, &kubermaticversion.Version{
+				Version: configuredVersions[i],
+				Type:    kind,
+			})
+		}
+	}
+
+	assembleVersions("kubernetes", config.Spec.Versions.Kubernetes.Versions)
+	assembleVersions("openshift", config.Spec.Versions.Openshift.Versions)
+
+	return versions
 }
 
 func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
