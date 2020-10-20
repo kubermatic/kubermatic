@@ -20,7 +20,7 @@
 {{ $version = "v1.19.0 "}}
 {{ end }}
 
-{{ if not eq $version "UNSUPPORTED" }}
+{{ if not (eq $version "UNSUPPORTED") }}
 ---
 apiVersion: v1
 kind: ServiceAccount
