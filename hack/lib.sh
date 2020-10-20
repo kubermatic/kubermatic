@@ -59,7 +59,8 @@ actual_retry() {
 }
 
 echodate() {
-  echo "[$(date -Is)]" "$@"
+  # do not use -Is to keep this compatible with macOS
+  echo "[$(date +%Y-%m-%dT%H:%M:%S%:z)]" "$@"
 }
 
 write_junit() {

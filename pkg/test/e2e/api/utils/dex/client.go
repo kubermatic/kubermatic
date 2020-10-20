@@ -32,17 +32,17 @@ import (
 // Client is a Dex client that uses Dex' web UI to acquire an ID token.
 type Client struct {
 	// clientID is the OIDC client ID.
-	clientID string
+	ClientID string
 
 	// redirectURI is one of the registered (allowed) redirect URLs,
 	// used after a successful authentication. Even though there will
 	// be no actual redirect to this URL, it needs to be a valid URL.
-	redirectURI string
+	RedirectURI string
 
 	// providerURI is the actual Dex root URL ("homepage"), where users
 	// can choose which authentication method they'd like to use. In
 	// Dex' case, this is "<protocol>://<host>/dex/auth".
-	providerURI string
+	ProviderURI string
 
 	// client is the HTTP client to use.
 	client *http.Client
@@ -57,9 +57,9 @@ func NewClient(clientID string, redirectURI string, providerURI string, log *zap
 	httpClient.Timeout = 5 * time.Second
 
 	return &Client{
-		clientID:    clientID,
-		redirectURI: redirectURI,
-		providerURI: providerURI,
+		ClientID:    clientID,
+		RedirectURI: redirectURI,
+		ProviderURI: providerURI,
 		client:      httpClient,
 		log:         log.With("client-id", clientID, "provider-uri", providerURI),
 	}, nil
@@ -110,14 +110,14 @@ func (c *Client) tryLogin(ctx context.Context, login string, password string) (s
 
 func (c *Client) fetchLoginURL(ctx context.Context) (*url.URL, error) {
 	// quick&dirty URL clone, so we don't change the u argument
-	loginURL, err := url.Parse(c.providerURI)
+	loginURL, err := url.Parse(c.ProviderURI)
 	if err != nil {
-		return nil, fmt.Errorf("invalid provider URL %q: %v", c.providerURI, err)
+		return nil, fmt.Errorf("invalid provider URL %q: %v", c.ProviderURI, err)
 	}
 
 	params := loginURL.Query()
-	params.Set("client_id", c.clientID)
-	params.Set("redirect_uri", c.redirectURI)
+	params.Set("client_id", c.ClientID)
+	params.Set("redirect_uri", c.RedirectURI)
 	params.Set("response_type", "id_token")
 	params.Set("scope", "openid profile email")
 	params.Set("nonce", "not-actually-a-nonce")

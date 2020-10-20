@@ -47,8 +47,7 @@ export SEED_NAME=kubermatic
 
 # This defines the Kubermatic API endpoint the e2e tests will communicate with.
 # The api service is kubectl-proxied later on.
-export KUBERMATIC_SCHEME="http"
-export KUBERMATIC_HOST="localhost:8080"
+export KUBERMATIC_API_ENDPOINT="http://localhost:8080"
 
 # Tell the conformance tester what dummy account we configure for the e2e tests.
 export KUBERMATIC_DEX_VALUES_FILE=$(realpath hack/ci/testdata/oauth_values.yaml)

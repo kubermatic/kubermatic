@@ -120,7 +120,9 @@ func SetClusterCondition(
 	})
 }
 
-func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster) (missingConditions []kubermaticv1.ClusterConditionType, success bool) {
+// ClusterReconciliationSuccessful checks if cluster has all conditions that are
+// required for it to be healthy. ignoreKubermaticVersion should only be set in tests.
+func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster, ignoreKubermaticVersion bool) (missingConditions []kubermaticv1.ClusterConditionType, success bool) {
 	conditionsToExclude := []kubermaticv1.ClusterConditionType{kubermaticv1.ClusterConditionSeedResourcesUpToDate}
 	if cluster.IsOpenshift() {
 		conditionsToExclude = append(conditionsToExclude, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess)
@@ -134,7 +136,7 @@ func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster) (missingCond
 			continue
 		}
 
-		if !clusterHasCurrentSuccessfullConditionType(cluster, conditionType) {
+		if !clusterHasCurrentSuccessfullConditionType(cluster, conditionType, ignoreKubermaticVersion) {
 			missingConditions = append(missingConditions, conditionType)
 		}
 	}
@@ -157,6 +159,7 @@ func conditionTypeListHasConditionType(
 func clusterHasCurrentSuccessfullConditionType(
 	cluster *kubermaticv1.Cluster,
 	conditionType kubermaticv1.ClusterConditionType,
+	ignoreKubermaticVersion bool,
 ) bool {
 	for _, condition := range cluster.Status.Conditions {
 		if condition.Type != conditionType {
@@ -167,7 +170,7 @@ func clusterHasCurrentSuccessfullConditionType(
 			return false
 		}
 
-		if condition.KubermaticVersion != resources.KUBERMATICGITTAG+"-"+resources.KUBERMATICCOMMIT {
+		if !ignoreKubermaticVersion && (condition.KubermaticVersion != resources.KUBERMATICGITTAG+"-"+resources.KUBERMATICCOMMIT) {
 			return false
 		}
 
@@ -184,7 +187,7 @@ func IsClusterInitialized(cluster *kubermaticv1.Cluster) bool {
 		return true
 	}
 
-	_, success := ClusterReconciliationSuccessful(cluster)
+	_, success := ClusterReconciliationSuccessful(cluster, false)
 	upToDate := cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionSeedResourcesUpToDate, corev1.ConditionTrue)
 	return success && upToDate && cluster.Status.ExtendedHealth.AllHealthy()
 }

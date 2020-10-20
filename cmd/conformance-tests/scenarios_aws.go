@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"k8c.io/kubermatic/v2/pkg/semver"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
 	awsapiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/aws"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
 
@@ -109,10 +110,11 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 		SecretAccessKey: utilpointer.StringPtr(secrets.AWS.SecretAccessKey),
 		DC:              awsDC,
 	}
-	listVPCParams.SetTimeout(15 * time.Second)
+	utils.SetupParams(nil, listVPCParams, 5*time.Second, 1*time.Minute)
+
 	vpcResponse, err := secrets.kubermaticClient.Aws.ListAWSVPCS(listVPCParams, secrets.kubermaticAuthenticator)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get vpcs: %s", fmtSwaggerError(err))
+		return nil, fmt.Errorf("failed to get vpcs: %v", err)
 	}
 	if len(vpcResponse.Payload) < 1 {
 		return nil, errors.New("got zero vpcs back")
@@ -131,10 +133,11 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 		DC:              awsDC,
 		VPC:             utilpointer.StringPtr(vpcID),
 	}
-	listSubnetParams.SetTimeout(15 * time.Second)
+	utils.SetupParams(nil, listSubnetParams, 5*time.Second, 1*time.Minute)
+
 	subnetResponse, err := secrets.kubermaticClient.Aws.ListAWSSubnets(listSubnetParams, secrets.kubermaticAuthenticator)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get subnets: %s", fmtSwaggerError(err))
+		return nil, fmt.Errorf("failed to get subnets: %v", err)
 	}
 	if n := len(subnetResponse.Payload); n < 3 {
 		return nil, fmt.Errorf("expected to get at least three subnets, got %d", n)
