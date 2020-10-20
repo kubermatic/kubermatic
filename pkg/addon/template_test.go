@@ -59,12 +59,15 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 		clusters = append(clusters, cluster)
 	}
 
-	addonBasePath := "../../../addons"
+	addonBasePath := "../../addons"
 	if orchestrator == "openshift" {
-		addonBasePath = "../../../openshift_addons"
+		addonBasePath = "../../openshift_addons"
 	}
 
 	addonPaths, _ := filepath.Glob(filepath.Join(addonBasePath, "*"))
+	if len(addonPaths) == 0 {
+		t.Fatal("unable to find addons in the specified directory")
+	}
 
 	addons := []kubermaticv1.Addon{}
 	for _, addonPath := range addonPaths {
