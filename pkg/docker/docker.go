@@ -28,7 +28,7 @@ import (
 )
 
 // execCommand is an internal helper function to execute commands and log them
-func execCommand(log *zap.Logger, dryRun bool, cmd *exec.Cmd) error {
+func execCommand(log *zap.SugaredLogger, dryRun bool, cmd *exec.Cmd) error {
 	log = log.With(zap.String("command", strings.Join(cmd.Args, " ")))
 	if dryRun {
 		log.Info("Would execute Docker command but this is a dry-run")
@@ -49,7 +49,7 @@ func execCommand(log *zap.Logger, dryRun bool, cmd *exec.Cmd) error {
 
 // DownloadImages pulls all given images using the Docker CLI
 // Invokes DownloadImage for actual pulling
-func DownloadImages(ctx context.Context, log *zap.Logger, dryRun bool, images []string) error {
+func DownloadImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string) error {
 	for _, image := range images {
 		select {
 		case <-ctx.Done():
@@ -65,7 +65,7 @@ func DownloadImages(ctx context.Context, log *zap.Logger, dryRun bool, images []
 }
 
 // DownloadImage invokes the Docker CLI and pulls an image
-func DownloadImage(ctx context.Context, log *zap.Logger, dryRun bool, image string) error {
+func DownloadImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image string) error {
 	log = log.With(zap.String("image", image))
 	log.Info("Downloading image...")
 
@@ -79,7 +79,7 @@ func DownloadImage(ctx context.Context, log *zap.Logger, dryRun bool, image stri
 
 // RetagImages invokes the Docker CLI and tags the given images so they belongs to the given registry.
 // Invokes RetagImage for actual tagging
-func RetagImages(ctx context.Context, log *zap.Logger, dryRun bool, images []string, registry string) ([]string, error) {
+func RetagImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string, registry string) ([]string, error) {
 	var retaggedImages []string
 	for _, image := range images {
 		select {
@@ -99,7 +99,7 @@ func RetagImages(ctx context.Context, log *zap.Logger, dryRun bool, images []str
 }
 
 // RetagImage invokes the Docker CLI and tags the given image so it belongs to the given registry.
-func RetagImage(ctx context.Context, log *zap.Logger, dryRun bool, sourceImage, registry string) (string, error) {
+func RetagImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, sourceImage, registry string) (string, error) {
 	log = log.With(zap.String("source-image", sourceImage))
 	imageRef, err := reference.ParseNamed(sourceImage)
 	if err != nil {
@@ -124,7 +124,7 @@ func RetagImage(ctx context.Context, log *zap.Logger, dryRun bool, sourceImage, 
 
 // PushImages pushes all given images using the Docker CLI
 // Invokes PushImage for actual pushing
-func PushImages(ctx context.Context, log *zap.Logger, dryRun bool, images []string) error {
+func PushImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string) error {
 	for _, image := range images {
 		select {
 		case <-ctx.Done():
@@ -140,7 +140,7 @@ func PushImages(ctx context.Context, log *zap.Logger, dryRun bool, images []stri
 }
 
 // PushImage invokes the Docker CLI and pushes the given image
-func PushImage(ctx context.Context, log *zap.Logger, dryRun bool, image string) error {
+func PushImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image string) error {
 	log = log.With(zap.String("image", image))
 
 	log.Info("Pushing image...")

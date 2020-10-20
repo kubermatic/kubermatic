@@ -18,6 +18,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -25,13 +26,16 @@ import (
 
 	"github.com/Masterminds/semver"
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
 
 	addonutil "k8c.io/kubermatic/v2/pkg/addon"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	containerlinux "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/container-linux"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/docker"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -53,7 +57,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
@@ -65,28 +68,32 @@ var (
 )
 
 type opts struct {
-	versionsFile  string
-	versionFilter string
-	registry      string
-	dryRun        bool
-	addonsPath    string
+	configurationFile string
+	versionsFile      string
+	versionFilter     string
+	registry          string
+	dryRun            bool
+	addonsPath        string
 }
 
 func main() {
-	klog.InitFlags(nil)
+	var err error
 
 	logOpts := kubermaticlog.NewDefaultOptions()
+	logOpts.Format = kubermaticlog.FormatConsole
 	logOpts.AddFlags(flag.CommandLine)
 
 	o := opts{}
-	flag.StringVar(&o.versionsFile, "versions", "charts/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
+	flag.StringVar(&o.configurationFile, "configuration-file", "", "Path to the KubermaticConfiguration YAML file")
+	flag.StringVar(&o.versionsFile, "versions-file", "", "The versions.yaml file path (deprecated, EE-only)")
 	flag.StringVar(&o.versionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
-	flag.StringVar(&o.registry, "registry", "registry.corp.local", "Address of the registry to push to")
+	flag.StringVar(&o.registry, "registry", "", "Address of the registry to push to, for example localhost:5000")
 	flag.BoolVar(&o.dryRun, "dry-run", false, "Only print the names of found images")
 	flag.StringVar(&o.addonsPath, "addons-path", "", "Path to the folder containing the addons")
 	flag.Parse()
 
-	log := kubermaticlog.New(logOpts.Debug, logOpts.Format)
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
+	log := rawLog.Sugar()
 	defer func() {
 		if err := log.Sync(); err != nil {
 			fmt.Println(err)
@@ -102,12 +109,22 @@ func main() {
 	}()
 
 	if o.registry == "" {
-		log.Fatal("Error: registry-name parameter must contain a valid registry address!")
+		log.Fatal("-registry parameter must contain a valid registry address!")
 	}
 
-	versions, err := getVersions(log, o.versionsFile, o.versionFilter)
+	// If given, load the KubermaticConfiguration. It's not yet a required
+	// parameter in order to support Helm-based Enterprise setups.
+	var kubermaticConfig *operatorv1alpha1.KubermaticConfiguration
+	if o.configurationFile != "" {
+		kubermaticConfig, err = loadKubermaticConfiguration(log, o.configurationFile)
+		if err != nil {
+			log.Fatalw("Failed to load KubermaticConfiguration", zap.Error(err))
+		}
+	}
+
+	versions, err := getVersions(log, kubermaticConfig, o.versionsFile, o.versionFilter)
 	if err != nil {
-		log.Fatal("Error loading versions", zap.Error(err))
+		log.Fatalw("Error loading versions", zap.Error(err))
 	}
 
 	// Using a set here for deduplication
@@ -135,7 +152,7 @@ func main() {
 	}
 }
 
-func processImages(ctx context.Context, log *zap.Logger, dryRun bool, images []string, registry string) error {
+func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string, registry string) error {
 	if err := docker.DownloadImages(ctx, log, dryRun, images); err != nil {
 		return fmt.Errorf("failed to download all images: %v", err)
 	}
@@ -151,7 +168,7 @@ func processImages(ctx context.Context, log *zap.Logger, dryRun bool, images []s
 	return nil
 }
 
-func getImagesForVersion(log *zap.Logger, version *kubermaticversion.Version, addonsPath string) (images []string, err error) {
+func getImagesForVersion(log *zap.SugaredLogger, version *kubermaticversion.Version, addonsPath string) (images []string, err error) {
 	templateData, err := getTemplateData(version)
 	if err != nil {
 		return nil, err
@@ -396,15 +413,37 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 	return &secretList
 }
 
-func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kubermaticversion.Version, error) {
-	log = log.With(
-		zap.String("versions-file", versionsFile),
-		zap.String("versions-filter", versionFilter),
-	)
-	log.Debug("Loading versions")
-	versions, err := kubermaticversion.LoadVersions(versionsFile)
-	if err != nil {
-		return nil, err
+func getVersions(log *zap.SugaredLogger, config *operatorv1alpha1.KubermaticConfiguration, versionsFile, versionFilter string) ([]*kubermaticversion.Version, error) {
+	var versions []*kubermaticversion.Version
+
+	log = log.With("versions-filter", versionFilter)
+
+	if config != nil {
+		log.Debug("Loading versions")
+
+		assembleVersions := func(kind string, configuredVersions []*semver.Version) {
+			for i := range configuredVersions {
+				versions = append(versions, &kubermaticversion.Version{
+					Version: configuredVersions[i],
+					Type:    kind,
+				})
+			}
+		}
+
+		assembleVersions("kubernetes", config.Spec.Versions.Kubernetes.Versions)
+		assembleVersions("openshift", config.Spec.Versions.Openshift.Versions)
+	} else {
+		if versionsFile == "" {
+			return nil, errors.New("either a KubermaticConfiguration or a versions file must be specified")
+		}
+
+		var err error
+
+		log.Debug("Loading versions", "file", versionsFile)
+		versions, err = kubermaticversion.LoadVersions(versionsFile)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if versionFilter == "" {
@@ -423,10 +462,11 @@ func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kuberm
 			filteredVersions = append(filteredVersions, ver)
 		}
 	}
+
 	return filteredVersions, nil
 }
 
-func getImagesFromAddons(log *zap.Logger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
+func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
 	credentials := resources.Credentials{}
 
 	addonData, err := addonutil.NewTemplateData(cluster, credentials, "", "", "", nil)
@@ -456,11 +496,11 @@ func getImagesFromAddons(log *zap.Logger, addonsPath string, cluster *kubermatic
 	return images, nil
 }
 
-func getImagesFromAddon(log *zap.Logger, addonPath string, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
+func getImagesFromAddon(log *zap.SugaredLogger, addonPath string, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
 	log = log.With(zap.String("addon", path.Base(addonPath)))
 	log.Debug("Processing manifests...")
 
-	allManifests, err := addonutil.ParseFromFolder(log.Sugar(), "", addonPath, data)
+	allManifests, err := addonutil.ParseFromFolder(log, "", addonPath, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse addon templates in %s: %v", addonPath, err)
 	}
@@ -476,7 +516,7 @@ func getImagesFromAddon(log *zap.Logger, addonPath string, decoder runtime.Decod
 	return images, nil
 }
 
-func getImagesFromManifest(log *zap.Logger, decoder runtime.Decoder, b []byte) ([]string, error) {
+func getImagesFromManifest(log *zap.SugaredLogger, decoder runtime.Decoder, b []byte) ([]string, error) {
 	obj, err := runtime.Decode(decoder, b)
 	if err != nil {
 		if runtime.IsNotRegisteredError(err) {
@@ -554,4 +594,25 @@ func getImagesFromObject(obj runtime.Object) []string {
 	}
 
 	return nil
+}
+
+func loadKubermaticConfiguration(log *zap.SugaredLogger, filename string) (*operatorv1alpha1.KubermaticConfiguration, error) {
+	log.Infow("Loading KubermaticConfiguration", "file", filename)
+
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %v", err)
+	}
+
+	config := &operatorv1alpha1.KubermaticConfiguration{}
+	if err := yaml.Unmarshal(content, &config); err != nil {
+		return nil, fmt.Errorf("failed to parse file as YAML: %v", err)
+	}
+
+	defaulted, err := common.DefaultConfiguration(config, log)
+	if err != nil {
+		return nil, fmt.Errorf("failed to process: %v", err)
+	}
+
+	return defaulted, nil
 }
