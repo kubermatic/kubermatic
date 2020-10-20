@@ -165,7 +165,7 @@ done
 cd ..
 KUBERMATICCOMMIT=${GIT_HEAD_HASH} GITTAG=${GIT_HEAD_HASH} make image-loader
 ./_build/image-loader \
-  -versions charts/kubermatic/static/master/versions.yaml \
+  -configuration-file /dev/null \
   -addons-path addons \
   -registry 127.0.0.1:5000 \
   -log-format=Console
