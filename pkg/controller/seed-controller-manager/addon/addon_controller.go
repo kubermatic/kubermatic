@@ -71,8 +71,8 @@ const (
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig
 type KubeconfigProvider interface {
-	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
-	GetClient(c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
+	GetAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) ([]byte, error)
+	GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
 // Reconciler stores necessary components that are required to manage in-cluster Add-On's
@@ -251,7 +251,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 
 	// Openshift needs some time to create this, so avoid getting into the backoff
 	// while the admin-kubeconfig secret doesn't exist yet
-	if _, err := r.KubeconfigProvider.GetAdminKubeconfig(cluster); err != nil {
+	if _, err := r.KubeconfigProvider.GetAdminKubeconfig(ctx, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Debug("Kubeconfig wasn't found, trying again in 10 seconds")
 			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
@@ -300,7 +300,7 @@ func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.Sugare
 	return nil
 }
 
-func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]runtime.RawExtension, error) {
+func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]runtime.RawExtension, error) {
 	addonDir := r.kubernetesAddonDir
 	if cluster.IsOpenshift() {
 		addonDir = r.openshiftAddonDir
@@ -314,7 +314,7 @@ func (r *Reconciler) getAddonManifests(log *zap.SugaredLogger, addon *kubermatic
 		dnsResolverIP = machinecontroller.NodeLocalDNSCacheAddress
 	}
 
-	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(cluster)
+	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(ctx, cluster)
 	if err != nil {
 		return nil, err
 	}
@@ -439,9 +439,9 @@ func (r *Reconciler) writeCombinedManifest(log *zap.SugaredLogger, manifest *byt
 	return manifestFilename, getFileDeleteFinalizer(log, manifestFilename), nil
 }
 
-func (r *Reconciler) writeAdminKubeconfig(log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
+func (r *Reconciler) writeAdminKubeconfig(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
 	// Write kubeconfig to disk
-	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(cluster)
+	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(ctx, cluster)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get admin kubeconfig for cluster %s: %v", cluster.Name, err)
 	}
@@ -454,8 +454,8 @@ func (r *Reconciler) writeAdminKubeconfig(log *zap.SugaredLogger, addon *kuberma
 	return kubeconfigFilename, getFileDeleteFinalizer(log, kubeconfigFilename), nil
 }
 
-func (r *Reconciler) setupManifestInteraction(log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, string, fileHandlingDone, error) {
-	manifests, err := r.getAddonManifests(log, addon, cluster)
+func (r *Reconciler) setupManifestInteraction(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, string, fileHandlingDone, error) {
+	manifests, err := r.getAddonManifests(ctx, log, addon, cluster)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed to get addon manifests: %v", err)
 	}
@@ -471,7 +471,7 @@ func (r *Reconciler) setupManifestInteraction(log *zap.SugaredLogger, addon *kub
 		return "", "", nil, fmt.Errorf("failed to write all addon resources into a combined manifest file: %v", err)
 	}
 
-	kubeconfigFilename, kubeconfigDone, err := r.writeAdminKubeconfig(log, addon, cluster)
+	kubeconfigFilename, kubeconfigDone, err := r.writeAdminKubeconfig(ctx, log, addon, cluster)
 	if err != nil {
 		return "", "", nil, fmt.Errorf("failed to write the admin kubeconfig to the local filesystem: %v", err)
 	}
@@ -490,7 +490,7 @@ func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, ma
 }
 
 func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(log, addon, cluster)
+	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(ctx, log, addon, cluster)
 	if err != nil {
 		return err
 	}
@@ -541,7 +541,7 @@ func (r *Reconciler) ensureResourcesCreatedConditionIsSet(ctx context.Context, a
 }
 
 func (r *Reconciler) cleanupManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) error {
-	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(log, addon, cluster)
+	kubeconfigFilename, manifestFilename, done, err := r.setupManifestInteraction(ctx, log, addon, cluster)
 	if err != nil {
 		// FIXME: use a dedicated error type and proper error unwrapping when we have the technology to do it
 		if strings.Contains(err.Error(), "no such file or directory") { // if the manifest is already deleted, that's ok
@@ -570,7 +570,7 @@ func (r *Reconciler) ensureRequiredResourceTypesExist(ctx context.Context, log *
 		// Avoid constructing a client we don't need and just return early
 		return nil, nil
 	}
-	userClusterClient, err := r.KubeconfigProvider.GetClient(cluster)
+	userClusterClient, err := r.KubeconfigProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get client for usercluster: %v", err)
 	}

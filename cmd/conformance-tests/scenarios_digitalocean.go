@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -82,7 +83,7 @@ func (s *digitaloceanScenario) Cluster(secrets secrets) *apimodels.CreateCluster
 	}
 }
 
-func (s *digitaloceanScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
+func (s *digitaloceanScenario) NodeDeployments(ctx context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	replicas := int32(num)
 	size := "4gb"
 	return []apimodels.NodeDeployment{
