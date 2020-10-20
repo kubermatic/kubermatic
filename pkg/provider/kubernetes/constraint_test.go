@@ -21,18 +21,20 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"k8s.io/apimachinery/pkg/util/diff"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
-const testClusterName = "test-constraints"
-const testNamespace = "cluster-test-constraints"
+const (
+	testClusterName = "test-constraints"
+	testNamespace   = "cluster-test-constraints"
+)
 
 func TestListConstraints(t *testing.T) {
 
@@ -54,8 +56,7 @@ func TestListConstraints(t *testing.T) {
 		},
 	}
 
-	for idx := range testCases {
-		tc := testCases[idx]
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -109,8 +110,7 @@ func TestGetConstraint(t *testing.T) {
 		},
 	}
 
-	for idx := range testCases {
-		tc := testCases[idx]
+	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 

@@ -13,21 +13,22 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// Match match
+// Match Match contains the constraint to resource matching data
 //
 // swagger:model Match
 type Match struct {
 
-	// excluded namespaces
+	// ExcludedNamespaces is a list of namespace names. If defined, a constraint will only apply to resources not in a listed namespace.
 	ExcludedNamespaces []string `json:"excludedNamespaces"`
 
-	// kinds
+	// Kinds accepts a list of objects with apiGroups and kinds fields that list the groups/kinds of objects to which
+	// the constraint will apply. If multiple groups/kinds objects are specified, only one match is needed for the resource to be in scope
 	Kinds []*Kind `json:"kinds"`
 
-	// namespaces
+	// Namespaces is a list of namespace names. If defined, a constraint will only apply to resources in a listed namespace.
 	Namespaces []string `json:"namespaces"`
 
-	// scope
+	// Scope accepts *, Cluster, or Namespaced which determines if cluster-scoped and/or namesapced-scoped resources are selected. (defaults to *)
 	Scope string `json:"scope,omitempty"`
 
 	// label selector

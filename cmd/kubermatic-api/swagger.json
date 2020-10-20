@@ -10790,45 +10790,18 @@
     },
     "ConstraintSpec": {
       "type": "object",
+      "title": "ConstraintSpec specifies the data for the constraint.",
       "properties": {
         "constraintType": {
-          "description": "type of gatekeeper constraint that the constraint applies to",
+          "description": "ConstraintType specifies the type of gatekeeper constraint that the constraint applies to",
           "type": "string",
           "x-go-name": "ConstraintType"
         },
-        "excludedNamespaces": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "ExcludedNamespaces"
-        },
-        "kinds": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Kind"
-          },
-          "x-go-name": "Kinds"
-        },
-        "labelSelector": {
-          "$ref": "#/definitions/LabelSelector"
-        },
-        "namespaceSelector": {
-          "$ref": "#/definitions/LabelSelector"
-        },
-        "namespaces": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "x-go-name": "Namespaces"
+        "match": {
+          "$ref": "#/definitions/Match"
         },
         "parameters": {
           "$ref": "#/definitions/Parameters"
-        },
-        "scope": {
-          "type": "string",
-          "x-go-name": "Scope"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -12274,13 +12247,16 @@
       "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
     },
     "Kind": {
+      "description": "Kind specifies the resource Kind and APIGroup",
       "type": "object",
       "properties": {
         "apiGroups": {
+          "description": "APIGroups specifies the APIGroup of the resource",
           "type": "string",
           "x-go-name": "APIGroups"
         },
         "kinds": {
+          "description": "Kinds specifies the kind of the resource",
           "type": "string",
           "x-go-name": "Kinds"
         }
@@ -12501,9 +12477,11 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Match": {
+      "description": "Match contains the constraint to resource matching data",
       "type": "object",
       "properties": {
         "excludedNamespaces": {
+          "description": "ExcludedNamespaces is a list of namespace names. If defined, a constraint will only apply to resources not in a listed namespace.",
           "type": "array",
           "items": {
             "type": "string"
@@ -12511,6 +12489,7 @@
           "x-go-name": "ExcludedNamespaces"
         },
         "kinds": {
+          "description": "Kinds accepts a list of objects with apiGroups and kinds fields that list the groups/kinds of objects to which\nthe constraint will apply. If multiple groups/kinds objects are specified, only one match is needed for the resource to be in scope",
           "type": "array",
           "items": {
             "$ref": "#/definitions/Kind"
@@ -12524,6 +12503,7 @@
           "$ref": "#/definitions/LabelSelector"
         },
         "namespaces": {
+          "description": "Namespaces is a list of namespace names. If defined, a constraint will only apply to resources in a listed namespace.",
           "type": "array",
           "items": {
             "type": "string"
@@ -12531,6 +12511,7 @@
           "x-go-name": "Namespaces"
         },
         "scope": {
+          "description": "Scope accepts *, Cluster, or Namespaced which determines if cluster-scoped and/or namesapced-scoped resources are selected. (defaults to *)",
           "type": "string",
           "x-go-name": "Scope"
         }
@@ -13508,9 +13489,11 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Parameters": {
+      "description": "Parameters specifies the parameters used by the constraint template REGO",
       "type": "object",
       "properties": {
         "rawJSON": {
+          "description": "RawJSON contains the raw JSON parameters used by REGO",
           "type": "string",
           "x-go-name": "RawJSON"
         }

@@ -6,38 +6,21 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
-	"strconv"
-
 	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
 
-// ConstraintSpec constraint spec
+// ConstraintSpec ConstraintSpec specifies the data for the constraint.
 //
 // swagger:model ConstraintSpec
 type ConstraintSpec struct {
 
-	// type of gatekeeper constraint that the constraint applies to
+	// ConstraintType specifies the type of gatekeeper constraint that the constraint applies to
 	ConstraintType string `json:"constraintType,omitempty"`
 
-	// excluded namespaces
-	ExcludedNamespaces []string `json:"excludedNamespaces"`
-
-	// kinds
-	Kinds []*Kind `json:"kinds"`
-
-	// namespaces
-	Namespaces []string `json:"namespaces"`
-
-	// scope
-	Scope string `json:"scope,omitempty"`
-
-	// label selector
-	LabelSelector *LabelSelector `json:"labelSelector,omitempty"`
-
-	// namespace selector
-	NamespaceSelector *LabelSelector `json:"namespaceSelector,omitempty"`
+	// match
+	Match *Match `json:"match,omitempty"`
 
 	// parameters
 	Parameters *Parameters `json:"parameters,omitempty"`
@@ -47,15 +30,7 @@ type ConstraintSpec struct {
 func (m *ConstraintSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateKinds(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateLabelSelector(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateNamespaceSelector(formats); err != nil {
+	if err := m.validateMatch(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -69,59 +44,16 @@ func (m *ConstraintSpec) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ConstraintSpec) validateKinds(formats strfmt.Registry) error {
+func (m *ConstraintSpec) validateMatch(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.Kinds) { // not required
+	if swag.IsZero(m.Match) { // not required
 		return nil
 	}
 
-	for i := 0; i < len(m.Kinds); i++ {
-		if swag.IsZero(m.Kinds[i]) { // not required
-			continue
-		}
-
-		if m.Kinds[i] != nil {
-			if err := m.Kinds[i].Validate(formats); err != nil {
-				if ve, ok := err.(*errors.Validation); ok {
-					return ve.ValidateName("kinds" + "." + strconv.Itoa(i))
-				}
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
-func (m *ConstraintSpec) validateLabelSelector(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.LabelSelector) { // not required
-		return nil
-	}
-
-	if m.LabelSelector != nil {
-		if err := m.LabelSelector.Validate(formats); err != nil {
+	if m.Match != nil {
+		if err := m.Match.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("labelSelector")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *ConstraintSpec) validateNamespaceSelector(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.NamespaceSelector) { // not required
-		return nil
-	}
-
-	if m.NamespaceSelector != nil {
-		if err := m.NamespaceSelector.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("namespaceSelector")
+				return ve.ValidateName("match")
 			}
 			return err
 		}

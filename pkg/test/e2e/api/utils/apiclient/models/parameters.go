@@ -10,12 +10,12 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// Parameters parameters
+// Parameters Parameters specifies the parameters used by the constraint template REGO
 //
 // swagger:model Parameters
 type Parameters struct {
 
-	// raw JSON
+	// RawJSON contains the raw JSON parameters used by REGO
 	RawJSON string `json:"rawJSON,omitempty"`
 }
 

@@ -18,7 +18,7 @@ package constraint
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -46,9 +46,9 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		apiC := make([]*apiv2.Constraint, 0)
-		for _, ct := range constraintList.Items {
-			apiC = append(apiC, convertCToAPI(&ct))
+		apiC := make([]*apiv2.Constraint, len(constraintList.Items))
+		for i, ct := range constraintList.Items {
+			apiC[i] = convertCToAPI(&ct)
 		}
 
 		return apiC, nil
@@ -121,7 +121,7 @@ func DecodeGetConstraintReq(c context.Context, r *http.Request) (interface{}, er
 
 	req.Name = mux.Vars(r)["constraint_name"]
 	if req.Name == "" {
-		return "", fmt.Errorf("'constraint_name' parameter is required but was not provided")
+		return "", errors.New("'constraint_name' parameter is required but was not provided")
 	}
 
 	return req, nil

@@ -20,10 +20,10 @@ import (
 	"context"
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
 // ConstraintProvider struct that holds required components in order manage constraints
@@ -48,7 +48,7 @@ func (p *ConstraintProvider) List(cluster *kubermaticv1.Cluster) (*kubermaticv1.
 	return constraints, nil
 }
 
-// GetUnsecured gets a constraint using a privileged client
+// Get gets a constraint using a privileged client
 func (p *ConstraintProvider) Get(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error) {
 
 	constraint := &kubermaticv1.Constraint{}
