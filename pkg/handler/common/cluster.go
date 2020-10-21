@@ -21,11 +21,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	jsonpatch "github.com/evanphx/json-patch"
-	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -39,7 +37,6 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/cluster"
-	machineresource "k8c.io/kubermatic/v2/pkg/resources/machine"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/validation"
 
@@ -47,10 +44,8 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/util/rand"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
-	"k8s.io/klog"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,12 +53,6 @@ import (
 
 // NodeDeploymentEvent represents type of events related to Node Deployment
 type NodeDeploymentEvent string
-
-const (
-	nodeDeploymentCreationStart   NodeDeploymentEvent = "NodeDeploymentCreationStart"
-	nodeDeploymentCreationSuccess NodeDeploymentEvent = "NodeDeploymentCreationSuccess"
-	nodeDeploymentCreationFail    NodeDeploymentEvent = "NodeDeploymentCreationFail"
-)
 
 // ClusterTypes holds a list of supported cluster types
 var ClusterTypes = sets.NewString(apiv1.OpenShiftClusterType, apiv1.KubernetesClusterType)
@@ -80,9 +69,10 @@ type patchCluster struct {
 	Spec          patchClusterSpec `json:"spec"`
 }
 
-func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClusterSpec, sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter,
-	initNodeDeploymentFailures *prometheus.CounterVec, eventRecorderProvider provider.EventRecorderProvider, credentialManager provider.PresetProvider,
-	exposeStrategy corev1.ServiceType, userInfoGetter provider.UserInfoGetter) (interface{}, error) {
+func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClusterSpec,
+	projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider, exposeStrategy corev1.ServiceType,
+	userInfoGetter provider.UserInfoGetter) (interface{}, error) {
 
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
@@ -94,7 +84,6 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	k8sClient := privilegedClusterProvider.GetSeedClusterAdminClient()
 
 	seed, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, body.Cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
@@ -135,11 +124,38 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 	if err = validation.ValidateUpdateWindow(spec.UpdateWindow); err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
+
+	// Start filling cluster object.
 	partialCluster := &kubermaticv1.Cluster{}
 	partialCluster.Labels = body.Cluster.Labels
 	if partialCluster.Labels == nil {
 		partialCluster.Labels = make(map[string]string)
 	}
+
+	// Serialize initial machine deployment request into annotation if it is in the body and provider different than
+	// BringYourOwn was selected. The request will be transformed into machine deployment by the controller once cluster
+	// will be ready. To make it easier to determine if a machine deployment annotation has already been applied to
+	// the user cluster (in case errors happen and the controller needs to re-reconcile), we ensure that the MD
+	// has a proper name instead of relying on the GenerateName.
+	partialCluster.Annotations = make(map[string]string)
+	if body.NodeDeployment != nil {
+		isBYO, err := common.IsBringYourOwnProvider(spec.Cloud)
+		if err != nil {
+			return nil, errors.NewBadRequest("cannot verify the provider due to an invalid spec: %v", err)
+		}
+		if !isBYO {
+			if body.NodeDeployment.Name == "" {
+				body.NodeDeployment.Name = fmt.Sprintf("%s-worker-%s", body.Cluster.Name, rand.String(6))
+			}
+
+			data, err := json.Marshal(body.NodeDeployment)
+			if err != nil {
+				return "", fmt.Errorf("cannot marshal initial machine deployment: %v", err)
+			}
+			partialCluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = string(data)
+		}
+	}
+
 	// Owning project ID must be set early, because it will be inherited by some child objects,
 	// for example the credentials secret.
 	partialCluster.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
@@ -165,7 +181,7 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 		partialCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = true
 	}
 
-	// generate the name here so that it can be used in the secretName below
+	// Generate the name here so that it can be used in the secretName below.
 	partialCluster.Name = rand.String(10)
 
 	if cloudcontroller.ExternalCloudControllerFeatureSupported(dc, partialCluster) {
@@ -180,33 +196,6 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 	newCluster, err := createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, partialCluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	// Create the initial node deployment in the background.
-	if body.NodeDeployment != nil && body.NodeDeployment.Spec.Replicas > 0 {
-		// for BringYourOwn provider we don't create ND
-		isBYO, err := common.IsBringYourOwnProvider(spec.Cloud)
-		if err != nil {
-			return nil, errors.NewBadRequest("failed to create an initial node deployment due to an invalid spec: %v", err)
-		}
-		if !isBYO {
-			go func() {
-				defer utilruntime.HandleCrash()
-				ndName := getNodeDeploymentDisplayName(body.NodeDeployment)
-				eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationStart), "Started creation of initial node deployment %s", ndName)
-				err := createInitialNodeDeploymentWithRetries(ctx, body.NodeDeployment, newCluster, project, sshKeyProvider, seedsGetter, clusterProvider, privilegedClusterProvider, userInfoGetter)
-				if err != nil {
-					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeWarning, string(nodeDeploymentCreationFail), "Failed to create initial node deployment %s: %v", ndName, err)
-					klog.Errorf("failed to create initial node deployment for cluster %s: %v", newCluster.Name, err)
-					initNodeDeploymentFailures.With(prometheus.Labels{"cluster": newCluster.Name, "datacenter": body.Cluster.Spec.Cloud.DatacenterName}).Add(1)
-				} else {
-					eventRecorderProvider.ClusterRecorderFor(k8sClient).Eventf(newCluster, corev1.EventTypeNormal, string(nodeDeploymentCreationSuccess), "Successfully created initial node deployment %s", ndName)
-					klog.V(5).Infof("created initial node deployment for cluster %s", newCluster.Name)
-				}
-			}()
-		} else {
-			klog.V(5).Infof("KubeAdm provider detected an initial node deployment won't be created for cluster %s", newCluster.Name)
-		}
 	}
 
 	log := kubermaticlog.Logger.With("cluster", newCluster.Name)
@@ -772,85 +761,6 @@ func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 	return clusterProvider.New(project, userInfo, cluster)
-}
-
-func createInitialNodeDeploymentWithRetries(endpointContext context.Context, nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
-	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider,
-	seedsGetter provider.SeedsGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, userInfoGetter provider.UserInfoGetter) error {
-	return wait.Poll(5*time.Second, 30*time.Minute, func() (bool, error) {
-		err := createInitialNodeDeployment(endpointContext, nodeDeployment, cluster, project, sshKeyProvider, seedsGetter, clusterProvider, privilegedClusterProvider, userInfoGetter)
-		if err != nil {
-			// unrecoverable
-			if strings.Contains(err.Error(), `admission webhook "machine-controller.kubermatic.io-machinedeployments" denied the request`) {
-				klog.V(4).Infof("giving up creating initial Node Deployments for cluster %s (%s) due to an unrecoverabl err %#v", cluster.Name, cluster.Spec.HumanReadableName, err)
-				return false, err
-			}
-			// Likely recoverable
-			klog.V(4).Infof("retrying creating initial Node Deployments for cluster %s (%s) due to %v", cluster.Name, cluster.Spec.HumanReadableName, err)
-			return false, nil
-		}
-		return true, nil
-	})
-}
-
-func createInitialNodeDeployment(endpointContext context.Context, nodeDeployment *apiv1.NodeDeployment, cluster *kubermaticv1.Cluster,
-	project *kubermaticv1.Project, sshKeyProvider provider.SSHKeyProvider,
-	seedsGetter provider.SeedsGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, userInfoGetter provider.UserInfoGetter) error {
-	ctx, cancelCtx := context.WithCancel(context.Background())
-	defer cancelCtx()
-
-	nd, err := machineresource.Validate(nodeDeployment, cluster.Spec.Version.Semver())
-	if err != nil {
-		return fmt.Errorf("node deployment is not valid: %v", err)
-	}
-
-	cluster, err = GetInternalCluster(endpointContext, userInfoGetter, clusterProvider, privilegedClusterProvider, project, project.Name, cluster.Name, &provider.ClusterGetOptions{CheckInitStatus: true})
-	if err != nil {
-		return err
-	}
-
-	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
-	if err != nil {
-		return err
-	}
-
-	client, err := common.GetClusterClient(endpointContext, userInfoGetter, clusterProvider, cluster, project.Name)
-	if err != nil {
-		return err
-	}
-
-	adminUserInfo, err := userInfoGetter(endpointContext, "")
-	if err != nil {
-		return err
-	}
-	_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
-	if err != nil {
-		return fmt.Errorf("error getting dc: %v", err)
-	}
-
-	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-	if !ok {
-		return errors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create secret")
-	}
-	data := common.CredentialsData{
-		Ctx:               ctx,
-		KubermaticCluster: cluster,
-		Client:            assertedClusterProvider.GetSeedClusterAdminRuntimeClient(),
-	}
-	md, err := machineresource.Deployment(cluster, nd, dc, keys, data)
-	if err != nil {
-		return err
-	}
-
-	return client.Create(ctx, md)
-}
-
-func getNodeDeploymentDisplayName(nd *apiv1.NodeDeployment) string {
-	if len(nd.Name) != 0 {
-		return " " + nd.Name
-	}
-
-	return ""
 }
 
 func GetInternalCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, projectID, clusterID string, options *provider.ClusterGetOptions) (*kubermaticv1.Cluster, error) {

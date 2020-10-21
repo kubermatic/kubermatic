@@ -54,7 +54,7 @@ func (t *Time) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.UTC().Format(time.RFC3339))
 }
 
-// UnmarshalJSON implements the json.Unmarshaller interface.
+// UnmarshalJSON implements the json.Unmarshaler interface.
 func (t *Time) UnmarshalJSON(b []byte) error {
 	if len(b) > 0 && string(b) == "\"0001-01-01T00:00:00Z\"" {
 		t.Time = time.Time{}

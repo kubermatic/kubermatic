@@ -1644,3 +1644,7 @@ func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType 
 	}
 	return kubermaticv1.ClusterTypeAll
 }
+
+const (
+	InitialMachineDeploymentRequestAnnotation = "InitialMachineDeploymentRequest"
+)

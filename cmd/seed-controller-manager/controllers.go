@@ -18,7 +18,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"io/ioutil"
 	"time"
@@ -29,6 +28,7 @@ import (
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/clustercomponentdefaulter"
 	constrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-template-controller"
+	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initialmachinedeployment"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	openshiftcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/openshift"
@@ -62,6 +62,7 @@ var AllControllers = map[string]controllerCreator{
 	rancher.ControllerName:                        createRancherController,
 	pvwatcher.ControllerName:                      createPvWatcherController,
 	constrainttemplatecontroller.ControllerName:   createConstraintTemplateController,
+	initialmachinedeployment.ControllerName:       createInitialMachineDeploymentController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -98,7 +99,7 @@ func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
 			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.schedulerDefaultReplicas))},
 	}
 	return clustercomponentdefaulter.Add(
-		context.Background(),
+		ctrlCtx.ctx,
 		ctrlCtx.log,
 		ctrlCtx.mgr,
 		ctrlCtx.runOptions.workerCount,
@@ -150,7 +151,6 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 }
 
 func createKubernetesController(ctrlCtx *controllerContext) error {
-
 	return kubernetescontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -329,7 +329,6 @@ func createPvWatcherController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 	)
-
 }
 
 func createConstraintTemplateController(ctrlCtx *controllerContext) error {
@@ -340,5 +339,18 @@ func createConstraintTemplateController(ctrlCtx *controllerContext) error {
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.workerCount,
+	)
+}
+
+func createInitialMachineDeploymentController(ctrlCtx *controllerContext) error {
+	return initialmachinedeployment.Add(
+		ctrlCtx.ctx,
+		ctrlCtx.mgr,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.seedGetter,
+		ctrlCtx.clientProvider,
+		ctrlCtx.log,
+		ctrlCtx.versions,
 	)
 }
