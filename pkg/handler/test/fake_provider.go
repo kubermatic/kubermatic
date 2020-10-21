@@ -213,3 +213,16 @@ func (p *FakeConstraintTemplateProvider) Update(ct *kubermaticapiv1.ConstraintTe
 func (p *FakeConstraintTemplateProvider) Delete(ct *kubermaticapiv1.ConstraintTemplate) error {
 	return p.Provider.Delete(ct)
 }
+
+type FakeConstraintProvider struct {
+	Provider   *kubernetes.ConstraintProvider
+	FakeClient ctrlruntimeclient.Client
+}
+
+func (p *FakeConstraintProvider) List(cluster *kubermaticapiv1.Cluster) (*kubermaticapiv1.ConstraintList, error) {
+	return p.Provider.List(cluster)
+}
+
+func (p *FakeConstraintProvider) Get(cluster *kubermaticapiv1.Cluster, name string) (*kubermaticapiv1.Constraint, error) {
+	return p.Provider.Get(cluster, name)
+}

@@ -790,3 +790,14 @@ type ConstraintTemplateProvider interface {
 	// Delete a Constraint Template
 	Delete(ct *kubermaticv1.ConstraintTemplate) error
 }
+
+// ConstraintProvider declares the set of method for interacting with constraints
+type ConstraintProvider interface {
+	// List gets a list of constraints
+	//
+	// Note that the list is taken from the cache
+	List(cluster *kubermaticv1.Cluster) (*kubermaticv1.ConstraintList, error)
+
+	// Get gets the given constraints
+	Get(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error)
+}
