@@ -100,7 +100,7 @@ func main() {
 		}
 	}()
 
-	if (o.configurationFile == "") != (o.versionsFile == "") {
+	if (o.configurationFile == "") == (o.versionsFile == "") {
 		log.Fatal("Either -configuration-file or -versions-file must be specified.")
 	}
 
