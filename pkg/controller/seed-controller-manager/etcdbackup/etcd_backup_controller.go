@@ -48,6 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -74,6 +75,10 @@ const (
 	backupToCreateEnvVarKey = "BACKUP_TO_CREATE"
 	// backupToDeleteEnvVarKey defines the environment variable key for the name of the backup to delete
 	backupToDeleteEnvVarKey = "BACKUP_TO_DELETE"
+	// backupScheduleEnvVarKey defines the environment variable key for the backup schedule
+	backupScheduleEnvVarKey = "BACKUP_SCHEDULE"
+	// backupKeepCountEnvVarKey defines the environment variable key for the number of backups to keep
+	backupKeepCountEnvVarKey = "BACKUP_KEEP_COUNT"
 	// backupConfigEnvVarKey defines the environment variable key for the name of the backup configuration resource
 	backupConfigEnvVarKey = "BACKUP_CONFIG"
 
@@ -714,6 +719,14 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 			Value: backupStatus.BackupName,
 		},
 		corev1.EnvVar{
+			Name:  backupScheduleEnvVarKey,
+			Value: backupConfig.Spec.Schedule,
+		},
+		corev1.EnvVar{
+			Name:  backupKeepCountEnvVarKey,
+			Value: strconv.Itoa(backupConfig.GetKeptBackupsCount()),
+		},
+		corev1.EnvVar{
 			Name:  backupConfigEnvVarKey,
 			Value: backupConfig.Name,
 		})
@@ -798,6 +811,14 @@ func (r *Reconciler) deleteJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 		corev1.EnvVar{
 			Name:  backupToDeleteEnvVarKey,
 			Value: backupStatus.BackupName,
+		},
+		corev1.EnvVar{
+			Name:  backupScheduleEnvVarKey,
+			Value: backupConfig.Spec.Schedule,
+		},
+		corev1.EnvVar{
+			Name:  backupKeepCountEnvVarKey,
+			Value: strconv.Itoa(backupConfig.GetKeptBackupsCount()),
 		},
 		corev1.EnvVar{
 			Name:  backupConfigEnvVarKey,

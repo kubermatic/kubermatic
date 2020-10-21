@@ -83,16 +83,6 @@ func genStoreContainer() *corev1.Container {
 			"-c",
 			"s3cmd ...",
 		},
-		Env: []corev1.EnvVar{
-			{
-				Name:  "FOO",
-				Value: "xx",
-			},
-			{
-				Name:  "BAR",
-				Value: "yy",
-			},
-		},
 	}
 }
 
@@ -104,16 +94,6 @@ func genDeleteContainer() *corev1.Container {
 			"/bin/sh",
 			"-c",
 			"s3cmd ...",
-		},
-		Env: []corev1.EnvVar{
-			{
-				Name:  "FOO",
-				Value: "xx",
-			},
-			{
-				Name:  "BAR",
-				Value: "yy",
-			},
 		},
 	}
 }
@@ -158,6 +138,9 @@ func genBackupJob(backupName string, jobName string) *batchv1.Job {
 	}
 	job := reconciler.backupJob(backupConfig, cluster, backup)
 	job.ResourceVersion = "1"
+	// remove all env variables from the job so they're comparable against the
+	// ones we get from fake clusters during tests, where we strip the variables too
+	job.Spec.Template.Spec.Containers[0].Env = nil
 	return job
 }
 
@@ -178,6 +161,9 @@ func genDeleteJob(backupName string, jobName string) *batchv1.Job {
 	}
 	job := reconciler.deleteJob(backupConfig, cluster, backup)
 	job.ResourceVersion = "1"
+	// remove all env variables from the job so they're comparable against the
+	// ones we get from fake clusters during tests, where we strip the variables too
+	job.Spec.Template.Spec.Containers[0].Env = nil
 	return job
 }
 
@@ -194,6 +180,9 @@ func genCleanupJob(jobName string) *batchv1.Job {
 	}
 	job := reconciler.cleanupJob(backupConfig, cluster, jobName)
 	job.ResourceVersion = "1"
+	// remove all env variables from the job so they're comparable against the
+	// ones we get from fake clusters during tests, where we strip the variables too
+	job.Spec.Template.Spec.Containers[0].Env = nil
 	return job
 }
 
@@ -1739,6 +1728,11 @@ func getSortedJobs(t *testing.T, reconciler Reconciler) []batchv1.Job {
 	sort.Slice(jobs, func(i, j int) bool {
 		return jobs[i].Name < jobs[j].Name
 	})
+	// remove all env variables from the jobs so they're comparable against the
+	// fake ones we generate with the gen*Job functions above
+	for i := range jobs {
+		jobs[i].Spec.Template.Spec.Containers[0].Env = nil
+	}
 	return jobs
 }
 
