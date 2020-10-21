@@ -242,7 +242,7 @@ func getImagesForVersion(log *zap.SugaredLogger, version *kubermaticversion.Vers
 		return nil, err
 	}
 
-	creatorImages, err := getImagesFromCreators(templateData, config)
+	creatorImages, err := getImagesFromCreators(log, templateData, config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get images from internal creator functions: %v", err)
 	}
@@ -257,9 +257,13 @@ func getImagesForVersion(log *zap.SugaredLogger, version *kubermaticversion.Vers
 	return images, nil
 }
 
-func getImagesFromCreators(templateData *resources.TemplateData, config *operatorv1alpha1.KubermaticConfiguration) (images []string, err error) {
+func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *operatorv1alpha1.KubermaticConfiguration) (images []string, err error) {
 	v := common.NewDefaultVersions()
-	seed := &kubermaticv1.Seed{}
+
+	seed, err := common.DefaultSeed(&kubermaticv1.Seed{}, log)
+	if err != nil {
+		return nil, fmt.Errorf("failed to default Seed: %v", err)
+	}
 
 	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false)
 	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
