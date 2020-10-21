@@ -85,7 +85,7 @@ func main() {
 
 	o := opts{}
 	flag.StringVar(&o.configurationFile, "configuration-file", "", "Path to the KubermaticConfiguration YAML file")
-	flag.StringVar(&o.versionsFile, "versions-file", "", "The versions.yaml file path (deprecated, EE-only)")
+	flag.StringVar(&o.versionsFile, "versions-file", "", "The versions.yaml file path (deprecated, EE-only, used only if no -configuration-file is given)")
 	flag.StringVar(&o.versionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
 	flag.StringVar(&o.registry, "registry", "", "Address of the registry to push to, for example localhost:5000")
 	flag.BoolVar(&o.dryRun, "dry-run", false, "Only print the names of found images")
@@ -99,6 +99,10 @@ func main() {
 			fmt.Println(err)
 		}
 	}()
+
+	if (o.configurationFile == "") != (o.versionsFile == "") {
+		log.Fatal("Either -configuration-file or -versions-file must be specified.")
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
