@@ -8,6 +8,8 @@ type AddonConfigExpansion interface{}
 
 type ClusterExpansion interface{}
 
+type ConstraintExpansion interface{}
+
 type ConstraintTemplateExpansion interface{}
 
 type ExternalClusterExpansion interface{}

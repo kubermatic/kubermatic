@@ -13,6 +13,7 @@ type KubermaticV1Interface interface {
 	AddonsGetter
 	AddonConfigsGetter
 	ClustersGetter
+	ConstraintsGetter
 	ConstraintTemplatesGetter
 	ExternalClustersGetter
 	KubermaticSettingsGetter
@@ -37,6 +38,10 @@ func (c *KubermaticV1Client) AddonConfigs() AddonConfigInterface {
 
 func (c *KubermaticV1Client) Clusters() ClusterInterface {
 	return newClusters(c)
+}
+
+func (c *KubermaticV1Client) Constraints(namespace string) ConstraintInterface {
+	return newConstraints(c, namespace)
 }
 
 func (c *KubermaticV1Client) ConstraintTemplates() ConstraintTemplateInterface {

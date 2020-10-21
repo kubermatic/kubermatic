@@ -257,6 +257,11 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to create constraint template provider due to %v", err)
 	}
 
+	constraintProvider, err := kubernetesprovider.NewConstraintProvider(mgr.GetClient())
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create constraint provider due to %v", err)
+	}
+
 	kubeMasterInformerFactory.Start(wait.NeverStop)
 	kubeMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
 	kubermaticMasterInformerFactory.Start(wait.NeverStop)
@@ -305,6 +310,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		externalClusterProvider:               externalClusterProvider,
 		privilegedExternalClusterProvider:     externalClusterProvider,
 		constraintTemplateProvider:            constraintTemplateProvider,
+		constraintProvider:                    constraintProvider,
 	}, nil
 }
 
@@ -409,6 +415,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ExternalClusterProvider:               prov.externalClusterProvider,
 		PrivilegedExternalClusterProvider:     prov.privilegedExternalClusterProvider,
 		ConstraintTemplateProvider:            prov.constraintTemplateProvider,
+		ConstraintProvider:                    prov.constraintProvider,
 	}
 
 	r := handler.NewRouting(routingParams)

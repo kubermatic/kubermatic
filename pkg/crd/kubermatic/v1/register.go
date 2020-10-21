@@ -77,6 +77,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ExternalClusterList{},
 		&ConstraintTemplate{},
 		&ConstraintTemplateList{},
+		&Constraint{},
+		&ConstraintList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
