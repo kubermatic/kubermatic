@@ -8698,6 +8698,64 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments": {
+      "post": {
+        "description": "Creates a machine deployment that will belong to the given cluster",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "createMachineDeployment",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/NodeDeployment"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "NodeDeployment",
+            "schema": {
+              "$ref": "#/definitions/NodeDeployment"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/metrics": {
       "get": {
         "description": "Gets cluster metrics",

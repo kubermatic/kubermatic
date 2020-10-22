@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	constrainttemplate "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 )
 
 // RegisterV2 declares all router paths for v2
@@ -88,6 +89,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}/clusters/{cluster_id}/nodes/upgrades").
 		Handler(r.upgradeClusterNodeDeployments())
+
+	// Defines a set of HTTP endpoint for machine deployments that belong to a cluster
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/machinedeployments").
+		Handler(r.createMachineDeployment())
 
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPut).
@@ -1033,6 +1039,35 @@ func (r Routing) getConstraint() http.Handler {
 		)(constraint.GetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintProvider)),
 		constraint.DecodeGetConstraintReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments project createMachineDeployment
+//
+//     Creates a machine deployment that will belong to the given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: NodeDeployment
+//       401: empty
+//       403: empty
+func (r Routing) createMachineDeployment() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(machine.CreateMachineDeployment(r.sshKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		machine.DecodeCreateNodeDeployment,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
