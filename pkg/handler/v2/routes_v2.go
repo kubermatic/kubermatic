@@ -1066,7 +1066,7 @@ func (r Routing) createMachineDeployment() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(machine.CreateMachineDeployment(r.sshKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
-		machine.DecodeCreateNodeDeployment,
+		machine.DecodeCreateMachineDeployment,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)

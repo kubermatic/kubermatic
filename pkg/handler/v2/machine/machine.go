@@ -46,7 +46,7 @@ type createMachineDeploymentReq struct {
 	Body apiv1.NodeDeployment
 }
 
-func DecodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}, error) {
+func DecodeCreateMachineDeployment(c context.Context, r *http.Request) (interface{}, error) {
 	var req createMachineDeploymentReq
 
 	clusterID, err := common.DecodeClusterID(c, r)
