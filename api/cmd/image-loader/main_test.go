@@ -26,14 +26,14 @@ func TestRetagImageForAllVersions(t *testing.T) {
 
 	imageSet := sets.NewString()
 	for _, v := range versions {
-		images, err := getImagesForVersion(log.Desugar(), v, addonPath)
+		images, err := getImagesForVersion(log, v, addonPath)
 		if err != nil {
 			t.Errorf("Error calling getImagesForVersion: %v", err)
 		}
 		imageSet.Insert(images...)
 	}
 
-	if err := processImages(context.Background(), log.Desugar(), true, imageSet.List(), "test-registry:5000"); err != nil {
+	if err := processImages(context.Background(), log, true, imageSet.List(), "test-registry:5000"); err != nil {
 		t.Errorf("Error calling processImages: %v", err)
 	}
 }

@@ -37,7 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
@@ -57,20 +56,20 @@ type opts struct {
 }
 
 func main() {
-	klog.InitFlags(nil)
-
 	logOpts := kubermaticlog.NewDefaultOptions()
+	logOpts.Format = kubermaticlog.FormatConsole
 	logOpts.AddFlags(flag.CommandLine)
 
 	o := opts{}
 	flag.StringVar(&o.versionsFile, "versions", "../config/kubermatic/static/master/versions.yaml", "The versions.yaml file path")
 	flag.StringVar(&o.versionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
-	flag.StringVar(&o.registry, "registry", "registry.corp.local", "Address of the registry to push to")
+	flag.StringVar(&o.registry, "registry", "", "Address of the registry to push to, for example localhost:5000")
 	flag.BoolVar(&o.dryRun, "dry-run", false, "Only print the names of found images")
 	flag.StringVar(&o.addonsPath, "addons-path", "", "Path to the folder containing the addons")
 	flag.Parse()
 
-	log := kubermaticlog.New(logOpts.Debug, logOpts.Format)
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
+	log := rawLog.Sugar()
 	defer func() {
 		if err := log.Sync(); err != nil {
 			fmt.Println(err)
@@ -86,20 +85,20 @@ func main() {
 	}()
 
 	if o.registry == "" {
-		log.Fatal("Error: registry-name parameter must contain a valid registry address!")
+		log.Fatal("-registry parameter must contain a valid registry address!")
 	}
 
 	versions, err := getVersions(log, o.versionsFile, o.versionFilter)
 	if err != nil {
-		log.Fatal("Error loading versions", zap.Error(err))
+		log.Fatalw("Error loading versions", zap.Error(err))
 	}
 
 	// Using a set here for deduplication
 	imageSet := sets.NewString(staticImages...)
 	for _, version := range versions {
 		versionLog := log.With(
-			zap.String("version", version.Version.String()),
-			zap.String("cluster-type", version.Type),
+			"version", version.Version.String(),
+			"cluster-type", version.Type,
 		)
 		if version.Type != "" && version.Type != apiv1.KubernetesClusterType {
 			// TODO: Implement. https://github.com/kubermatic/kubermatic/issues/3623
@@ -109,17 +108,17 @@ func main() {
 		versionLog.Info("Collecting images...")
 		images, err := getImagesForVersion(log, version, o.addonsPath)
 		if err != nil {
-			versionLog.Fatal("failed to get images", zap.Error(err))
+			versionLog.Fatalw("failed to get images", zap.Error(err))
 		}
 		imageSet.Insert(images...)
 	}
 
 	if err := processImages(ctx, log, o.dryRun, imageSet.List(), o.registry); err != nil {
-		log.Fatal("Failed to process images", zap.Error(err))
+		log.Fatalw("Failed to process images", zap.Error(err))
 	}
 }
 
-func processImages(ctx context.Context, log *zap.Logger, dryRun bool, images []string, registry string) error {
+func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string, registry string) error {
 	if err := docker.DownloadImages(ctx, log, dryRun, images); err != nil {
 		return fmt.Errorf("failed to download all images: %v", err)
 	}
@@ -135,7 +134,7 @@ func processImages(ctx context.Context, log *zap.Logger, dryRun bool, images []s
 	return nil
 }
 
-func getImagesForVersion(log *zap.Logger, version *kubermaticversion.Version, addonsPath string) (images []string, err error) {
+func getImagesForVersion(log *zap.SugaredLogger, version *kubermaticversion.Version, addonsPath string) (images []string, err error) {
 	templateData, err := getTemplateData(version)
 	if err != nil {
 		return nil, err
@@ -388,10 +387,10 @@ func createNamedSecrets(secretNames []string) *corev1.SecretList {
 	return &secretList
 }
 
-func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kubermaticversion.Version, error) {
+func getVersions(log *zap.SugaredLogger, versionsFile, versionFilter string) ([]*kubermaticversion.Version, error) {
 	log = log.With(
-		zap.String("versions-file", versionsFile),
-		zap.String("versions-filter", versionFilter),
+		"versions-file", versionsFile,
+		"versions-filter", versionFilter,
 	)
 	log.Debug("Loading versions")
 	versions, err := kubermaticversion.LoadVersions(versionsFile)
@@ -418,7 +417,7 @@ func getVersions(log *zap.Logger, versionsFile, versionFilter string) ([]*kuberm
 	return filteredVersions, nil
 }
 
-func getImagesFromAddons(log *zap.Logger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
+func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
 	addonData := &addonutil.TemplateData{
 		Cluster:           cluster,
 		MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
@@ -447,11 +446,11 @@ func getImagesFromAddons(log *zap.Logger, addonsPath string, cluster *kubermatic
 	return images, nil
 }
 
-func getImagesFromAddon(log *zap.Logger, addonPath string, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
-	log = log.With(zap.String("addon", path.Base(addonPath)))
+func getImagesFromAddon(log *zap.SugaredLogger, addonPath string, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
+	log = log.With("addon", path.Base(addonPath))
 	log.Debug("Processing manifests...")
 
-	allManifests, err := addonutil.ParseFromFolder(log.Sugar(), "", addonPath, data)
+	allManifests, err := addonutil.ParseFromFolder(log, "", addonPath, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse addon templates in %s: %v", addonPath, err)
 	}
@@ -467,14 +466,14 @@ func getImagesFromAddon(log *zap.Logger, addonPath string, decoder runtime.Decod
 	return images, nil
 }
 
-func getImagesFromManifest(log *zap.Logger, decoder runtime.Decoder, b []byte) ([]string, error) {
+func getImagesFromManifest(log *zap.SugaredLogger, decoder runtime.Decoder, b []byte) ([]string, error) {
 	obj, err := runtime.Decode(decoder, b)
 	if err != nil {
 		if runtime.IsNotRegisteredError(err) {
 			// We must skip custom objects. We try to look up the object info though to give a useful warning
 			metaFactory := &json.SimpleMetaFactory{}
 			if gvk, err := metaFactory.Interpret(b); err == nil {
-				log = log.With(zap.String("gvk", gvk.String()))
+				log = log.With("gvk", gvk.String())
 			}
 
 			log.Debug("Skipping object because its not known")
