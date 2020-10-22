@@ -30,7 +30,7 @@ import (
 
 // execCommand is an internal helper function to execute commands and log them
 func execCommand(log *zap.SugaredLogger, dryRun bool, cmd *exec.Cmd) error {
-	log = log.With(zap.String("command", strings.Join(cmd.Args, " ")))
+	log = log.With("command", strings.Join(cmd.Args, " "))
 	if dryRun {
 		log.Info("Would execute Docker command but this is a dry-run")
 		return nil
@@ -67,7 +67,7 @@ func DownloadImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, im
 
 // DownloadImage invokes the Docker CLI and pulls an image
 func DownloadImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image string) error {
-	log = log.With(zap.String("image", image))
+	log = log.With("image", image)
 	log.Info("Downloading image...")
 
 	cmd := exec.CommandContext(ctx, "docker", "pull", image)
@@ -101,7 +101,7 @@ func RetagImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image
 
 // RetagImage invokes the Docker CLI and tags the given image so it belongs to the given registry.
 func RetagImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, sourceImage, registry string) (string, error) {
-	log = log.With(zap.String("source-image", sourceImage))
+	log = log.With("source-image", sourceImage)
 	imageRef, err := reference.ParseNamed(sourceImage)
 	if err != nil {
 		return "", fmt.Errorf("failed to parse image: %v", err)
@@ -112,7 +112,7 @@ func RetagImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, source
 	}
 
 	targetImage := fmt.Sprintf("%s/%s:%s", registry, reference.Path(imageRef), taggedImageRef.Tag())
-	log = log.With(zap.String("target-image", targetImage))
+	log = log.With("target-image", targetImage)
 
 	log.Info("Tagging image...")
 	cmd := exec.CommandContext(ctx, "docker", "tag", sourceImage, targetImage)
@@ -142,7 +142,7 @@ func PushImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images
 
 // PushImage invokes the Docker CLI and pushes the given image
 func PushImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image string) error {
-	log = log.With(zap.String("image", image))
+	log = log.With("image", image)
 
 	log.Info("Pushing image...")
 	cmd := exec.CommandContext(ctx, "docker", "push", image)
@@ -153,14 +153,14 @@ func PushImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image s
 	return nil
 }
 
-// ExtractDirectory copies the content from a directory out of the
+// Copy copies the content from a directory out of the
 // container onto the host system
-func ExtractDirectory(ctx context.Context, log *zap.SugaredLogger, image string, dst string, src string) error {
+func Copy(ctx context.Context, log *zap.SugaredLogger, image string, dst string, src string) error {
 	var err error
 
-	log = log.With(zap.String("image", image))
+	log = log.With("image", image)
 
-	log.Info("Extracting image...", "src", src, "dst", dst)
+	log.Infow("Extracting image...", "src", src, "dst", dst)
 
 	dst, err = filepath.Abs(dst)
 	if err != nil {
