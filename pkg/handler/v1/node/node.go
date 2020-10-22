@@ -92,71 +92,7 @@ func DecodeCreateNodeDeployment(c context.Context, r *http.Request) (interface{}
 func CreateNodeDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createNodeDeploymentReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, nil)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-
-		isBYO, err := common.IsBringYourOwnProvider(cluster.Spec.Cloud)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		if isBYO {
-			return nil, k8cerrors.NewBadRequest("You cannot create a node deployment for KubeAdm provider")
-		}
-
-		keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: req.ClusterID})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, project.Name)
-		if err != nil {
-			return nil, err
-		}
-
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
-		if err != nil {
-			return nil, fmt.Errorf("error getting dc: %v", err)
-		}
-
-		nd, err := machineresource.Validate(&req.Body, cluster.Spec.Version.Semver())
-		if err != nil {
-			return nil, k8cerrors.NewBadRequest(fmt.Sprintf("node deployment validation failed: %s", err.Error()))
-		}
-
-		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-		if !ok {
-			return nil, k8cerrors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create secret")
-		}
-
-		data := common.CredentialsData{
-			Ctx:               ctx,
-			KubermaticCluster: cluster,
-			Client:            assertedClusterProvider.GetSeedClusterAdminRuntimeClient(),
-		}
-
-		md, err := machineresource.Deployment(cluster, nd, dc, keys, data)
-		if err != nil {
-			return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
-		}
-
-		if err := client.Create(ctx, md); err != nil {
-			return nil, fmt.Errorf("failed to create machine deployment: %v", err)
-		}
-
-		return outputMachineDeployment(md)
+		return handlercommon.CreateMachineDeployment(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, sshKeyProvider, seedsGetter, req.Body, req.ProjectID, req.ClusterID)
 	}
 }
 

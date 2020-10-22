@@ -41,6 +41,8 @@ type ClientService interface {
 
 	CreateExternalCluster(params *CreateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*CreateExternalClusterCreated, error)
 
+	CreateMachineDeployment(params *CreateMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateMachineDeploymentCreated, error)
+
 	CreateNodeDeployment(params *CreateNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateNodeDeploymentCreated, error)
 
 	CreateProject(params *CreateProjectParams, authInfo runtime.ClientAuthInfoWriter) (*CreateProjectCreated, error)
@@ -459,6 +461,40 @@ func (a *Client) CreateExternalCluster(params *CreateExternalClusterParams, auth
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateExternalClusterDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  CreateMachineDeployment Creates a machine deployment that will belong to the given cluster
+*/
+func (a *Client) CreateMachineDeployment(params *CreateMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateMachineDeploymentCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateMachineDeploymentParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "createMachineDeployment",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateMachineDeploymentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateMachineDeploymentCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateMachineDeploymentDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
