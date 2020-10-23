@@ -164,10 +164,16 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 
 	c.logger.Debugf("$ KUBECONFIG=%s %s", c.kubeconfig, strings.Join(cmd.Args, " "))
 
-	stdoutStderr, err := cmd.CombinedOutput()
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+
+	err := cmd.Run()
 	if err != nil {
-		err = errors.New(strings.TrimSpace(string(stdoutStderr)))
+		err = errors.New(strings.TrimSpace(stderr.String()))
 	}
 
-	return stdoutStderr, err
+	return stdout.Bytes(), err
 }
