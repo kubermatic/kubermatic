@@ -214,6 +214,7 @@ func TestEnsureNextBackupIsScheduled(t *testing.T) {
 		name              string
 		currentTime       time.Time
 		schedule          string
+		backupConfigName  string
 		existingBackups   []kubermaticv1.BackupStatus
 		expectedBackups   []kubermaticv1.BackupStatus
 		expectedReconcile *reconcile.Result
@@ -379,6 +380,25 @@ func TestEnsureNextBackupIsScheduled(t *testing.T) {
 				RequeueAfter: 500 * time.Second,
 			},
 		},
+		{
+			name:             "If the backup config name is long, job names are cut short properly",
+			currentTime:      time.Unix(10, 0).UTC(),
+			backupConfigName: "long-backup-config-name-abcdefghijk",
+			schedule:         "",
+			existingBackups:  []kubermaticv1.BackupStatus{},
+			expectedBackups: []kubermaticv1.BackupStatus{
+				{
+					ScheduledTime: &metav1.Time{Time: time.Unix(10, 0).UTC()},
+					BackupName:    "long-backup-config-name-abcdefghijk",
+					JobName:       "testcluster-backup-long-backup-config-name-abcdefghijk-creaxxxx",
+					DeleteJobName: "testcluster-backup-long-backup-config-name-abcdefghijk-delexxxx",
+				},
+			},
+			expectedReconcile: &reconcile.Result{
+				Requeue:      true,
+				RequeueAfter: 0,
+			},
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -391,6 +411,9 @@ func TestEnsureNextBackupIsScheduled(t *testing.T) {
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Spec.Schedule = tc.schedule
 			backupConfig.Status.CurrentBackups = tc.existingBackups
+			if tc.backupConfigName != "" {
+				backupConfig.Name = tc.backupConfigName
+			}
 
 			reconciler := Reconciler{
 				log:                 kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),

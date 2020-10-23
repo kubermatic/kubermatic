@@ -336,8 +336,8 @@ func (r *Reconciler) ensureNextBackupIsScheduled(ctx context.Context, backupConf
 		backupToSchedule.BackupName = fmt.Sprintf("%s-%s", backupConfig.Name, backupToSchedule.ScheduledTime.Format("2006-01-02t15-04-05"))
 	}
 
-	backupToSchedule.JobName = fmt.Sprintf("%s-backup-%s-create-%s", cluster.Name, backupConfig.Name, r.randStringGenerator())
-	backupToSchedule.DeleteJobName = fmt.Sprintf("%s-backup-%s-delete-%s", cluster.Name, backupConfig.Name, r.randStringGenerator())
+	backupToSchedule.JobName = r.limitNameLength(fmt.Sprintf("%s-backup-%s-create-%s", cluster.Name, backupConfig.Name, r.randStringGenerator()))
+	backupToSchedule.DeleteJobName = r.limitNameLength(fmt.Sprintf("%s-backup-%s-delete-%s", cluster.Name, backupConfig.Name, r.randStringGenerator()))
 
 	if err := r.Update(ctx, backupConfig); err != nil {
 		return nil, errors.Wrap(err, "failed to update backup config")
@@ -345,6 +345,14 @@ func (r *Reconciler) ensureNextBackupIsScheduled(ctx context.Context, backupConf
 
 	durationToScheduledTime := backupToSchedule.ScheduledTime.Sub(r.clock.Now())
 	return &reconcile.Result{Requeue: true, RequeueAfter: durationToScheduledTime}, nil
+}
+
+func (r *Reconciler) limitNameLength(name string) string {
+	if len(name) <= 63 {
+		return name
+	}
+	randomness := r.randStringGenerator()
+	return name[0:63-len(randomness)] + randomness
 }
 
 // set a condition on a backupConfig, return true iff the condition's status was changed
