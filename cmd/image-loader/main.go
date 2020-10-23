@@ -21,6 +21,8 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"os"
 
 	"github.com/Masterminds/semver"
 	"go.uber.org/zap"
