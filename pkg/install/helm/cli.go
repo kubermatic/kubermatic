@@ -164,10 +164,12 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 
 	c.logger.Debugf("$ KUBECONFIG=%s %s", c.kubeconfig, strings.Join(cmd.Args, " "))
 
-	stdoutStderr, err := cmd.CombinedOutput()
-	if err != nil {
-		err = errors.New(strings.TrimSpace(string(stdoutStderr)))
+	// when return code is greater than 0 the stderr is captured and included
+	// in the error, otherwise it is just ignored as it probably contains
+	// warnings.
+	out, err := cmd.Output()
+	if ee, ok := err.(*exec.ExitError); ok {
+		return out, fmt.Errorf("error occurred while executing helm command: %s", ee.Stderr)
 	}
-
-	return stdoutStderr, err
+	return out, err
 }
