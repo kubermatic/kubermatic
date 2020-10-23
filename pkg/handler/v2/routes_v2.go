@@ -95,6 +95,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/machinedeployments").
 		Handler(r.createMachineDeployment())
 
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/clusters/{cluster_id}/machines/nodes/{node_id}").
+		Handler(r.deleteMachineNode())
+
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}").
@@ -1068,6 +1072,33 @@ func (r Routing) createMachineDeployment() http.Handler {
 		)(machine.CreateMachineDeployment(r.sshKeyProvider, r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		machine.DecodeCreateMachineDeployment,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/machines/nodes/{node_id} project deleteMachineNode
+//
+//    Deletes the given node that belongs to the machine deployment.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteMachineNode() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(machine.DeleteMachineNode(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		machine.DecodeDeleteMachineNode,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

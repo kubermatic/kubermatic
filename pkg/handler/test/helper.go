@@ -1213,3 +1213,9 @@ func GenDefaultConstraintTemplate(name string) apiv2.ConstraintTemplate {
 		},
 	}
 }
+
+func GenAdminUser(name, email string, isAdmin bool) *kubermaticv1.User {
+	user := GenUser("", name, email)
+	user.Spec.IsAdmin = isAdmin
+	return user
+}
