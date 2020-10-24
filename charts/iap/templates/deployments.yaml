@@ -42,8 +42,8 @@ spec:
         imagePullPolicy: {{ $.Values.iap.image.pullPolicy }}
         args:
         - --provider=oidc
-        {{- if $.Values.iap.custom_provider_ca_secret }}
-        - --provider-ca-file=/etc/ssl/certs/ca.crt
+        {{- if $.Values.iap.customProviderCA }}
+        - --provider-ca-file=/etc/ssl/certs/{{ $.Values.iap.customProviderCA.secretKey }}
         {{- end }}
         - --oidc-issuer-url={{ $.Values.iap.oidc_issuer_url }}
         - --http-address=0.0.0.0:{{ $.Values.iap.port }}
@@ -79,7 +79,7 @@ spec:
         volumeMounts:
         - name: config
           mountPath: /config
-        {{- if $.Values.iap.custom_provider_ca_secret }}
+        {{- if $.Values.iap.customProviderCA }}
         - name: ca
           mountPath: /etc/ssl/certs
         {{- end }}
@@ -90,13 +90,13 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-      {{- if $.Values.iap.custom_provider_ca_secret }}
+      {{- if $.Values.iap.customProviderCA }}
       - name: ca
         secret:
-          secretName: {{ .Values.iap.custom_provider_ca_secret }}
+          secretName: {{ $.Values.iap.customProviderCA.secretName }}
           items:
-          - key: ca.crt
-            path: ca.crt
+          - key: {{ $.Values.iap.customProviderCA.secretKey }}
+            path: {{ $.Values.iap.customProviderCA.secretKey }}
       {{- end }}
       securityContext:
         fsGroup: 65534
