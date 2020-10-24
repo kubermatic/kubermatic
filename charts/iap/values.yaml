@@ -114,6 +114,11 @@ iap:
     name: letsencrypt-prod
     kind: ClusterIssuer
 
+  ## provides secret name at iap namespace for secret for a ca.crt file:
+  #customProviderCA:
+  #    secretName: ca-cert
+  #    secretKey: ca.crt
+
   resources:
     requests:
       cpu: 50m
