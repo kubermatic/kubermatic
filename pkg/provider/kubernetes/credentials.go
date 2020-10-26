@@ -66,6 +66,9 @@ func CreateOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ct
 	if cluster.Spec.Cloud.Alibaba != nil {
 		return createAlibabaSecret(ctx, seedClient, cluster)
 	}
+	if cluster.Spec.Cloud.Anexia != nil {
+		return createOrUpdateAnexiaSecret(ctx, seedClient, cluster)
+	}
 	return nil
 }
 
@@ -412,6 +415,31 @@ func createAlibabaSecret(ctx context.Context, seedClient ctrlruntimeclient.Clien
 	// clean old inline credentials
 	cluster.Spec.Cloud.Alibaba.AccessKeyID = ""
 	cluster.Spec.Cloud.Alibaba.AccessKeySecret = ""
+
+	return nil
+}
+
+func createOrUpdateAnexiaSecret(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
+	spec := cluster.Spec.Cloud.Anexia
+
+	// already migrated
+	if spec.Token == "" {
+		return nil
+	}
+
+	// move credentials into dedicated Secret
+	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
+		resources.AnexiaToken: []byte(spec.Token),
+	})
+	if err != nil {
+		return err
+	}
+
+	// add secret key selectors to cluster object
+	cluster.Spec.Cloud.Anexia.CredentialsReference = credentialRef
+
+	// clean old inline credentials
+	cluster.Spec.Cloud.Anexia.Token = ""
 
 	return nil
 }

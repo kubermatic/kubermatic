@@ -20,6 +20,8 @@ import (
 	"errors"
 	"fmt"
 
+	anexia "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
+
 	"github.com/aws/aws-sdk-go/service/ec2"
 
 	alibaba "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
@@ -404,6 +406,26 @@ func getAlibabaProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 	return ext, nil
 }
 
+func getAnexiaProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter) (*runtime.RawExtension, error) {
+	config := anexia.RawConfig{
+		VlanID:     providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Anexia.VlanID},
+		TemplateID: providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Anexia.TemplateID},
+		CPUs:       nodeSpec.Cloud.Anexia.CPUs,
+		Memory:     int(nodeSpec.Cloud.Anexia.Memory),
+		DiskSize:   int(nodeSpec.Cloud.Anexia.DiskSize),
+		LocationID: providerconfig.ConfigVarString{Value: dc.Spec.Anexia.LocationID},
+	}
+
+	ext := &runtime.RawExtension{}
+	b, err := json.Marshal(config)
+	if err != nil {
+		return nil, err
+	}
+
+	ext.Raw = b
+	return ext, nil
+}
+
 func getCentOSOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
 	config := centos.Config{
 		DistUpgradeOnBoot: nodeSpec.OperatingSystem.CentOS.DistUpgradeOnBoot,
@@ -491,6 +513,12 @@ func getFlatcarOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtensi
 		// We manage Flatcar updates via the CoreOS update operator which requires locksmithd
 		// to be disabled: https://github.com/coreos/container-linux-update-operator#design
 		DisableLocksmithD: true,
+
+		ProvisioningUtility: flatcar.Ignition,
+	}
+	// set cloud init only for anexia provider
+	if nodeSpec.Cloud.Anexia != nil {
+		config.ProvisioningUtility = flatcar.CloudInit
 	}
 
 	ext := &runtime.RawExtension{}

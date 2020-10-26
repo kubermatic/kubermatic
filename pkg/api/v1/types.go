@@ -72,6 +72,7 @@ type DatacenterSpec struct {
 	VSphere      *kubermaticv1.DatacenterSpecVSphere      `json:"vsphere,omitempty"`
 	Kubevirt     *kubermaticv1.DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *kubermaticv1.DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
+	Anexia       *kubermaticv1.DatacenterSpecAnexia       `json:"anexia,omitempty"`
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
@@ -728,6 +729,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 			GCP:            newPublicGCPCloudSpec(cs.Cloud.GCP),
 			Kubevirt:       newPublicKubevirtCloudSpec(cs.Cloud.Kubevirt),
 			Alibaba:        newPublicAlibabaCloudSpec(cs.Cloud.Alibaba),
+			Anexia:         newPublicAnexiaCloudSpec(cs.Cloud.Anexia),
 		},
 		Version:                             cs.Version,
 		MachineNetworks:                     cs.MachineNetworks,
@@ -758,6 +760,7 @@ type PublicCloudSpec struct {
 	GCP            *PublicGCPCloudSpec          `json:"gcp,omitempty"`
 	Kubevirt       *PublicKubevirtCloudSpec     `json:"kubevirt,omitempty"`
 	Alibaba        *PublicAlibabaCloudSpec      `json:"alibaba,omitempty"`
+	Anexia         *PublicAnexiaCloudSpec       `json:"anexia,omitempty"`
 }
 
 // PublicFakeCloudSpec is a public counterpart of apiv1.FakeCloudSpec.
@@ -910,6 +913,17 @@ func newPublicAlibabaCloudSpec(internal *kubermaticv1.AlibabaCloudSpec) (public 
 	return &PublicAlibabaCloudSpec{}
 }
 
+// PublicAnexiaCloudSpec is a public counterpart of apiv1.AnexiaCloudSpec.
+type PublicAnexiaCloudSpec struct{}
+
+func newPublicAnexiaCloudSpec(internal *kubermaticv1.AnexiaCloudSpec) (public *PublicAnexiaCloudSpec) {
+	if internal == nil {
+		return nil
+	}
+
+	return &PublicAnexiaCloudSpec{}
+}
+
 // ClusterStatus defines the cluster status
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
@@ -987,7 +1001,16 @@ type NodeCloudSpec struct {
 	GCP          *GCPNodeSpec          `json:"gcp,omitempty"`
 	Kubevirt     *KubevirtNodeSpec     `json:"kubevirt,omitempty"`
 	Alibaba      *AlibabaNodeSpec      `json:"alibaba,omitempty"`
+	Anexia       *AnexiaNodeSpec       `json:"anexia,omitempty"`
 }
+
+// ProvisioningUtility specifies the type of provisioning utility.
+type ProvisioningUtility string
+
+const (
+	Ignition  ProvisioningUtility = "ignition"
+	CloudInit ProvisioningUtility = "cloud-init"
+)
 
 // UbuntuSpec ubuntu specific settings
 // swagger:model UbuntuSpec
@@ -1014,6 +1037,10 @@ type ContainerLinuxSpec struct {
 type FlatcarSpec struct {
 	// disable flatcar linux auto-update feature
 	DisableAutoUpdate bool `json:"disableAutoUpdate"`
+
+	// ProvisioningUtility specifies the type of provisioning utility, allowed values are cloud-init and ignition.
+	// Defaults to ignition.
+	ProvisioningUtility `json:"provisioningUtility,omitempty"`
 }
 
 // SLESSpec contains SLES specific settings
@@ -1239,6 +1266,26 @@ type AlibabaNodeSpec struct {
 	InternetMaxBandwidthOut string            `json:"internetMaxBandwidthOut"`
 	Labels                  map[string]string `json:"labels"`
 	ZoneID                  string            `json:"zoneID"`
+}
+
+// AnexiaNodeSpec anexia specific node settings
+// swagger:model AnexiaNodeSpec
+type AnexiaNodeSpec struct {
+	// VlanID Instance vlanID
+	// required: true
+	VlanID string `json:"vlanID"`
+	// TemplateID instance template
+	// required: true
+	TemplateID string `json:"templateID"`
+	// CPUs states how many cpus the node will have.
+	// required: true
+	CPUs int `json:"cpus"`
+	// Memory states the memory that node will have.
+	// required: true
+	Memory int64 `json:"memory"`
+	// DiskSize states the disk size that node will have.
+	// required: true
+	DiskSize int64 `json:"diskSize"`
 }
 
 // NodeResources cpu and memory of a node

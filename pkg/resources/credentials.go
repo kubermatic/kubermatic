@@ -37,6 +37,7 @@ type Credentials struct {
 	Kubevirt     KubevirtCredentials
 	VSphere      VSphereCredentials
 	Alibaba      AlibabaCredentials
+	Anexia       AnexiaCredentials
 }
 
 type AWSCredentials struct {
@@ -88,6 +89,10 @@ type VSphereCredentials struct {
 type AlibabaCredentials struct {
 	AccessKeyID     string
 	AccessKeySecret string
+}
+
+type AnexiaCredentials struct {
+	Token string
 }
 
 type CredentialsData interface {
@@ -166,6 +171,11 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 	}
 	if data.Cluster().Spec.Cloud.Alibaba != nil {
 		if credentials.Alibaba, err = GetAlibabaCredentials(data); err != nil {
+			return Credentials{}, err
+		}
+	}
+	if data.Cluster().Spec.Cloud.Anexia != nil {
+		if credentials.Anexia, err = GetAnexiaCredentials(data); err != nil {
 			return Credentials{}, err
 		}
 	}
@@ -408,4 +418,18 @@ func GetAlibabaCredentials(data CredentialsData) (AlibabaCredentials, error) {
 	}
 
 	return alibabaCredentials, nil
+}
+
+func GetAnexiaCredentials(data CredentialsData) (AnexiaCredentials, error) {
+	spec := data.Cluster().Spec.Cloud.Anexia
+	anexiaCredentials := AnexiaCredentials{}
+	var err error
+
+	if spec.Token != "" {
+		anexiaCredentials.Token = spec.Token
+	} else if anexiaCredentials.Token, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, AnexiaToken); err != nil {
+		return AnexiaCredentials{}, err
+	}
+
+	return anexiaCredentials, nil
 }

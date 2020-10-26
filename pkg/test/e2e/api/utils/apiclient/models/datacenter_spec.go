@@ -48,6 +48,9 @@ type DatacenterSpec struct {
 	// alibaba
 	Alibaba *DatacenterSpecAlibaba `json:"alibaba,omitempty"`
 
+	// anexia
+	Anexia *DatacenterSpecAnexia `json:"anexia,omitempty"`
+
 	// aws
 	Aws *DatacenterSpecAWS `json:"aws,omitempty"`
 
@@ -90,6 +93,10 @@ func (m *DatacenterSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateAlibaba(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateAnexia(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -149,6 +156,24 @@ func (m *DatacenterSpec) validateAlibaba(formats strfmt.Registry) error {
 		if err := m.Alibaba.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("alibaba")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *DatacenterSpec) validateAnexia(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Anexia) { // not required
+		return nil
+	}
+
+	if m.Anexia != nil {
+		if err := m.Anexia.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("anexia")
 			}
 			return err
 		}
