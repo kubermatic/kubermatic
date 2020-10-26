@@ -1,5 +1,13 @@
 # Kubermatic 2.15
 
+## [v2.15.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.1)
+
+### Misc
+
+- Ship image-loader as part of GitHub releases ([#6063](https://github.com/kubermatic/kubermatic/issues/6063))
+- Add support for KubermaticConfiguration in image-loader utility ([#6063](https://github.com/kubermatic/kubermatic/issues/6063))
+- Improve Helm error handling in KKP Installer ([#6076](https://github.com/kubermatic/kubermatic/issues/6076))
+
 ## [v2.15.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0)
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.15/upgrading/guidelines/)
@@ -165,6 +173,13 @@ as well as the [2.15 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.15
 
 
 # Kubermatic 2.14
+
+## [v2.14.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.8)
+
+### Misc
+
+- Ship image-loader as part of GitHub releases ([#6096](https://github.com/kubermatic/kubermatic/issues/6096))
+- Add support for KubermaticConfiguration in image-loader utility ([#6071](https://github.com/kubermatic/kubermatic/issues/6071))
 
 ## [v2.14.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.7)
 
@@ -380,6 +395,12 @@ information on how to limit the impact of such changes during KKP upgrades.
 
 
 # Kubermatic 2.13
+
+## [v2.13.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.13.10)
+
+### Misc
+
+- Improve image-loader usability, add support for Helm charts ([#6090](https://github.com/kubermatic/kubermatic/issues/6090))
 
 ## [v2.13.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.13.9)
 
