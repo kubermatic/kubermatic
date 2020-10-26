@@ -139,6 +139,29 @@ function build_installer() {
   fi
 }
 
+function build_tools() {
+  make image-loader
+  if [ "$GOOS" == "windows" ]; then
+    mv _build/image-loader _build/image-loader.exe
+  fi
+}
+
+function upload_archive() {
+  local archive="$1"
+  local buildTarget="$2"
+
+  if [ "$GOOS" == "windows" ]; then
+    echodate "Converting $archive to Zip..."
+    archive="$(tar_to_zip "$archive")"
+  fi
+
+  if ! $DRY_RUN; then
+    echodate "Upload $buildTarget archive..."
+    upload_archive "$archive"
+    rm -- "$archive"
+  fi
+}
+
 # ensure the tag has already been pushed
 if ! $DRY_RUN && ! github_cli "https://api.github.com/repos/$GIT_REPO/git/ref/tags/$RELEASE_NAME" --silent --fail >/dev/null; then
   echodate "Tag $RELEASE_NAME has not been pushed to $GIT_REPO yet."
@@ -234,16 +257,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     LICENSE \
     CHANGELOG.md
 
-  if [ "$GOOS" == "windows" ]; then
-    echodate "Converting $archive to Zip..."
-    archive="$(tar_to_zip "$archive")"
-  fi
-
-  if ! $DRY_RUN; then
-    echodate "Upload CE $buildTarget archive..."
-    upload_archive "$archive"
-    rm -- "$archive"
-  fi
+  upload_archive "$archive" "$buildTarget"
 
   echodate "Compiling EE installer ($buildTarget)..."
   KUBERMATIC_EDITION=ee build_installer
@@ -281,16 +295,23 @@ for buildTarget in $RELEASE_PLATFORMS; do
     pkg/ee/LICENSE \
     CHANGELOG.md
 
-  if [ "$GOOS" == "windows" ]; then
-    echodate "Converting $archive to Zip..."
-    archive="$(tar_to_zip "$archive")"
-  fi
+  upload_archive "$archive" "$buildTarget"
 
-  if ! $DRY_RUN; then
-    echodate "Upload EE $buildTarget archive..."
-    upload_archive "$archive"
-    rm -- "$archive"
-  fi
+  # tools do not have CE/EE dependencies, so it's enough to build
+  # one archive per build target
+  echodate "Compiling Tools ($buildTarget)..."
+  KUBERMATIC_EDITION=ce build_tools
+
+  echodate "Creating Tools archive..."
+
+  archive="_dist/tools-$RELEASE_NAME-$buildTarget.tar.gz"
+  # GNU tar is required
+  tar czf "$archive" \
+    --transform='flags=r;s|_build/||' \
+    _build/image-loader* \
+    LICENSE
+
+  upload_archive "$archive" "$buildTarget"
 done
 
 echodate "Done."
