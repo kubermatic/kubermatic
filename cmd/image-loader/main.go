@@ -193,7 +193,7 @@ func main() {
 
 		images, err := getImagesForHelmCharts(ctx, log, kubermaticConfig, o.chartsPath, o.helmValuesPath, o.helmBinary)
 		if err != nil {
-			log.Fatal("Failed to get images", zap.Error(err))
+			log.Fatalw("Failed to get images", zap.Error(err))
 		}
 		imageSet.Insert(images...)
 	}
@@ -512,7 +512,7 @@ func getVersions(log *zap.SugaredLogger, config *operatorv1alpha1.KubermaticConf
 
 		var err error
 
-		log.Debug("Loading versions", "file", versionsFile)
+		log.Debugw("Loading versions", "file", versionsFile)
 		versions, err = kubermaticversion.LoadVersions(versionsFile)
 		if err != nil {
 			return nil, err
