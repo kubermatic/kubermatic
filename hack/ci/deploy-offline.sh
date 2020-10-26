@@ -78,8 +78,12 @@ export GITTAG="${GIT_HEAD_HASH}"
 
 make image-loader
 
-# push all images from KKP and Helm charts to the local registry
-cat <<EOF >> ${VALUES_FILE}
+# push all images from KKP and Helm charts to the local registry;
+# do not use the VALUES_FILE for the loading process, as it already
+# overrides all the Docker images and for the image-loading we want
+# to get the _original_ image names.
+LOADER_VALUES_FILE=/tmp/loader-values.yaml
+cat <<EOF > ${LOADER_VALUES_FILE}
 kubermaticOperator:
   image:
     tag: ${GIT_HEAD_HASH}
@@ -108,7 +112,7 @@ _build/image-loader \
   -addons-path addons \
   -charts-path charts \
   -helm-binary helm3 \
-  -helm-values-file "${VALUES_FILE}" \
+  -helm-values-file "${LOADER_VALUES_FILE}" \
   -registry "${REGISTRY}" \
   -log-format=JSON
 
