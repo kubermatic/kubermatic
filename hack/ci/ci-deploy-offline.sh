@@ -20,11 +20,11 @@ set -euo pipefail
 # receives a SIGINT
 set -o monitor
 
-cd "$(dirname "$0")/"
-source ../lib.sh
+cd "$(dirname "$0")/../.."
+source hack/lib.sh
 
 # Build and push images
-./ci-push-images.sh
+./push-images.sh
 
 echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
@@ -33,12 +33,13 @@ export VAULT_TOKEN=$(vault write \
   role_id=${VAULT_ROLE_ID} secret_id=${VAULT_SECRET_ID} \
   | jq .auth.client_token -r)
 
-export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
+export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
 rm -f /tmp/id_rsa
 vault kv get -field=key dev/e2e-machine-controller-ssh-key > /tmp/id_rsa
 chmod 400 /tmp/id_rsa
 
+REGISTRY=127.0.0.1:5000
 PROXY_EXTERNAL_ADDR="$(vault kv get -field=proxy-ip dev/gcp-offline-env)"
 PROXY_INTERNAL_ADDR="$(vault kv get -field=proxy-internal-ip dev/gcp-offline-env)"
 KUBERNETES_CONTROLLER_ADDR="$(vault kv get -field=controller-ip dev/gcp-offline-env)"
@@ -51,7 +52,8 @@ vault kv get -field=kubeconfig dev/gcp-offline-env > /tmp/kubeconfig
 export KUBECONFIG="/tmp/kubeconfig"
 kubectl config set clusters.kubernetes.server https://127.0.0.1:6443
 
-ssh ${SSH_OPTS} -M -S /tmp/proxy-socket -fNT -L 5000:127.0.0.1:5000 root@${PROXY_EXTERNAL_ADDR}
+# port-forward the Docker registry and Kubernetes API
+ssh ${SSH_OPTS} -M -S /tmp/proxy-socket -fNT -L 5000:${REGISTRY} root@${PROXY_EXTERNAL_ADDR}
 ssh ${SSH_OPTS} -M -S /tmp/controller-socket -fNT -L 6443:127.0.0.1:6443 ${SSH_OPTS} \
   -o ProxyCommand="ssh ${SSH_OPTS} -W %h:%p root@${PROXY_EXTERNAL_ADDR}" \
   root@${KUBERNETES_CONTROLLER_ADDR}
@@ -63,55 +65,48 @@ function finish {
 }
 trap finish EXIT
 
-# Ensure we have pushed all images from our helm chats in the local registry
-cd ../../charts
-helm template cert-manager | ../hack/retag-images.sh
-helm template nginx-ingress-controller | ../hack/retag-images.sh
-helm template oauth | ../hack/retag-images.sh
-helm template iap | ../hack/retag-images.sh
-helm template minio | ../hack/retag-images.sh
-helm template s3-exporter | ../hack/retag-images.sh
-helm template nodeport-proxy --set=nodePortProxy.image.tag=${GIT_HEAD_HASH} | ../hack/retag-images.sh
-
-helm template monitoring/prometheus | ../hack/retag-images.sh
-helm template monitoring/node-exporter | ../hack/retag-images.sh
-helm template monitoring/kube-state-metrics | ../hack/retag-images.sh
-helm template monitoring/grafana | ../hack/retag-images.sh
-helm template monitoring/helm-exporter | ../hack/retag-images.sh
-helm template monitoring/alertmanager | ../hack/retag-images.sh
-
-helm template logging/promtail | ../hack/retag-images.sh
-helm template logging/loki | ../hack/retag-images.sh
+# build the image loader
 
 # PULL_BASE_REF is the name of the current branch in case of a post-submit
 # or the name of the base branch in case of a PR.
-LATEST_DASHBOARD="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
+export UIDOCKERTAG="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
+export KUBERMATICCOMMIT="${GIT_HEAD_HASH}"
+export GITTAG="${GIT_HEAD_HASH}"
 
-HELM_EXTRA_ARGS="--set kubermatic.controller.image.tag=${GIT_HEAD_HASH},kubermatic.api.image.tag=${GIT_HEAD_HASH},kubermatic.masterController.image.tag=${GIT_HEAD_HASH},kubermatic.controller.addons.kubernetes.image.tag=${GIT_HEAD_HASH},kubermatic.controller.addons.openshift.image.tag=${GIT_HEAD_HASH},kubermatic.ui.image.tag=${LATEST_DASHBOARD}"
-helm template ${HELM_EXTRA_ARGS} kubermatic | ../hack/retag-images.sh
+make image-loader
+
+# push all images from KKP and Helm charts to the local registry
+cat <<EOF >> ${VALUES_FILE}
+kubermaticOperator:
+  image:
+    tag: ${GIT_HEAD_HASH}
+nodePortProxy:
+  image:
+    tag: ${GIT_HEAD_HASH}
+EOF
+
+_build/image-loader \
+  -configuration-file /dev/null \
+  -addons-path addons \
+  -charts-path charts \
+  -helm-binary helm3 \
+  -helm-values-file "${VALUES_FILE}" \
+  -registry "${REGISTRY}" \
+  -log-format=JSON
 
 # Push a tiller image
 docker pull gcr.io/kubernetes-helm/tiller:${HELM_VERSION}
-docker tag gcr.io/kubernetes-helm/tiller:${HELM_VERSION} 127.0.0.1:5000/kubernetes-helm/tiller:${HELM_VERSION}
-docker push 127.0.0.1:5000/kubernetes-helm/tiller:${HELM_VERSION}
+docker tag gcr.io/kubernetes-helm/tiller:${HELM_VERSION} ${REGISTRY}/kubernetes-helm/tiller:${HELM_VERSION}
+docker push ${REGISTRY}/kubernetes-helm/tiller:${HELM_VERSION}
 
-cd ..
-KUBERMATICCOMMIT=${GIT_HEAD_HASH} GITTAG=${GIT_HEAD_HASH} make image-loader
-retry 6 ./_build/image-loader \
-  -configuration-file /dev/null \
-  -addons-path addons \
-  -registry 127.0.0.1:5000 \
-  -log-format=Console
-
-## Deploy
+# Deploy
 HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tiller:${HELM_VERSION}" \
   DEPLOY_STACK=kubermatic \
   DEPLOY_NODEPORT_PROXY=false \
   TILLER_NAMESPACE="kube-system" \
   ./hack/deploy.sh \
   master \
-  ${VALUES_FILE} \
-  ${HELM_EXTRA_ARGS}
+  ${VALUES_FILE}
 
 HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tiller:${HELM_VERSION}" \
   DEPLOY_STACK=monitoring \
@@ -119,8 +114,7 @@ HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tille
   TILLER_NAMESPACE="kube-system" \
   ./hack/deploy.sh \
   master \
-  ${VALUES_FILE} \
-  ${HELM_EXTRA_ARGS}
+  ${VALUES_FILE}
 
 HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tiller:${HELM_VERSION}" \
   DEPLOY_STACK=logging \
@@ -129,5 +123,4 @@ HELM_INIT_ARGS="--tiller-image ${PROXY_INTERNAL_ADDR}:5000/kubernetes-helm/tille
   TILLER_NAMESPACE="kube-system" \
   ./hack/deploy.sh \
   master \
-  ${VALUES_FILE} \
-  ${HELM_EXTRA_ARGS}
+  ${VALUES_FILE}
