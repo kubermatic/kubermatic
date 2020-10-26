@@ -146,7 +146,7 @@ function build_tools() {
   fi
 }
 
-function upload_archive() {
+function ship_archive() {
   local archive="$1"
   local buildTarget="$2"
 
@@ -257,7 +257,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     LICENSE \
     CHANGELOG.md
 
-  upload_archive "$archive" "$buildTarget"
+  ship_archive "$archive" "$buildTarget"
 
   echodate "Compiling EE installer ($buildTarget)..."
   KUBERMATIC_EDITION=ee build_installer
@@ -295,7 +295,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     pkg/ee/LICENSE \
     CHANGELOG.md
 
-  upload_archive "$archive" "$buildTarget"
+  ship_archive "$archive" "$buildTarget"
 
   # tools do not have CE/EE dependencies, so it's enough to build
   # one archive per build target
@@ -311,7 +311,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     _build/image-loader* \
     LICENSE
 
-  upload_archive "$archive" "$buildTarget"
+  ship_archive "$archive" "$buildTarget"
 done
 
 echodate "Done."
