@@ -112,13 +112,13 @@ func main() {
 			log.Warn("No KubermaticConfiguration, -addons-image or -addons-path given, cannot mirror images referenced in addons.")
 		}
 
-			tempDir, err := extractAddonsFromDockerImage(ctx, log, addonsImage)
-			if err != nil {
-				log.Fatalw("Failed to create local addons path", zap.Error(err))
-			}
-			defer os.RemoveAll(tempDir)
+		tempDir, err := extractAddonsFromDockerImage(ctx, log, addonsImage)
+		if err != nil {
+			log.Fatalw("Failed to create local addons path", zap.Error(err))
+		}
+		defer os.RemoveAll(tempDir)
 
-			o.addonsPath = tempDir
+		o.addonsPath = tempDir
 	}
 
 	// Using a set here for deduplication
