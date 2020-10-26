@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/docker/distribution/reference"
@@ -130,6 +131,38 @@ func PushImage(ctx context.Context, log *zap.SugaredLogger, dryRun bool, image s
 	log.Info("Pushing image...")
 	cmd := exec.CommandContext(ctx, "docker", "push", image)
 	if err := execCommand(log, dryRun, cmd); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Copy copies the content from a directory out of the
+// container onto the host system
+func Copy(ctx context.Context, log *zap.SugaredLogger, image string, dst string, src string) error {
+	var err error
+
+	log = log.With("image", image)
+
+	log.Infow("Extracting image...", "src", src, "dst", dst)
+
+	dst, err = filepath.Abs(dst)
+	if err != nil {
+		return fmt.Errorf("failed to determine absolute path: %v", err)
+	}
+
+	mountPoint := "/kubermaticextractor"
+	args := []string{
+		"run",
+		"--rm",
+		"-v", fmt.Sprintf("%s:%s", dst, mountPoint),
+		"-w", src,
+		image,
+		"cp", "-ar", ".", mountPoint,
+	}
+
+	cmd := exec.CommandContext(ctx, "docker", args...)
+	if err := execCommand(log, false, cmd); err != nil {
 		return err
 	}
 

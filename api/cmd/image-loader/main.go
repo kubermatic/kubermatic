@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 
 	"github.com/Masterminds/semver"
@@ -53,6 +54,7 @@ type opts struct {
 	registry      string
 	dryRun        bool
 	addonsPath    string
+	addonsImage   string
 }
 
 func main() {
@@ -65,7 +67,8 @@ func main() {
 	flag.StringVar(&o.versionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
 	flag.StringVar(&o.registry, "registry", "", "Address of the registry to push to, for example localhost:5000")
 	flag.BoolVar(&o.dryRun, "dry-run", false, "Only print the names of found images")
-	flag.StringVar(&o.addonsPath, "addons-path", "", "Path to the folder containing the addons")
+	flag.StringVar(&o.addonsPath, "addons-path", "", "Path to a directory containing the KKP addons, if not given, falls back to -addons-image, then the Docker image configured in the KubermaticConfiguration")
+	flag.StringVar(&o.addonsImage, "addons-image", "", "Docker image containing KKP addons, if not given, falls back to the Docker image configured in the KubermaticConfiguration")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -75,6 +78,14 @@ func main() {
 			fmt.Println(err)
 		}
 	}()
+
+	if o.versionsFile == "" {
+		log.Fatal("-versions-file must be specified.")
+	}
+
+	if o.addonsPath != "" && o.addonsImage != "" {
+		log.Fatal("-addons-path or -addons-image must not be specified at the same time.")
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -91,6 +102,23 @@ func main() {
 	versions, err := getVersions(log, o.versionsFile, o.versionFilter)
 	if err != nil {
 		log.Fatalw("Error loading versions", zap.Error(err))
+	}
+
+	// if no local addons path is given, use the configured addons
+	// Docker image and extract the addons from there
+	if o.addonsPath == "" {
+		addonsImage := o.addonsImage
+		if addonsImage == "" {
+			log.Warn("No KubermaticConfiguration, -addons-image or -addons-path given, cannot mirror images referenced in addons.")
+		}
+
+			tempDir, err := extractAddonsFromDockerImage(ctx, log, addonsImage)
+			if err != nil {
+				log.Fatalw("Failed to create local addons path", zap.Error(err))
+			}
+			defer os.RemoveAll(tempDir)
+
+			o.addonsPath = tempDir
 	}
 
 	// Using a set here for deduplication
@@ -116,6 +144,25 @@ func main() {
 	if err := processImages(ctx, log, o.dryRun, imageSet.List(), o.registry); err != nil {
 		log.Fatalw("Failed to process images", zap.Error(err))
 	}
+}
+
+func extractAddonsFromDockerImage(ctx context.Context, log *zap.SugaredLogger, imageName string) (string, error) {
+	tempDir, err := ioutil.TempDir("", "imageloader*")
+	if err != nil {
+		return "", fmt.Errorf("failed to create temporary directory: %v", err)
+	}
+
+	log.Infow("Extracting addon manifests from Docker image", "image", imageName, "temp-directory", tempDir)
+
+	if err := docker.DownloadImages(ctx, log, false, []string{imageName}); err != nil {
+		return tempDir, fmt.Errorf("failed to download addons image: %v", err)
+	}
+
+	if err := docker.Copy(ctx, log, imageName, tempDir, "/addons"); err != nil {
+		return tempDir, fmt.Errorf("failed to extract addons: %v", err)
+	}
+
+	return tempDir, nil
 }
 
 func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string, registry string) error {
@@ -146,13 +193,11 @@ func getImagesForVersion(log *zap.SugaredLogger, version *kubermaticversion.Vers
 	}
 	images = append(images, creatorImages...)
 
-	if addonsPath != "" {
-		addonImages, err := getImagesFromAddons(log, addonsPath, templateData.Cluster())
-		if err != nil {
-			return nil, fmt.Errorf("failed to get images from addons: %v", err)
-		}
-		images = append(images, addonImages...)
+	addonImages, err := getImagesFromAddons(log, addonsPath, templateData.Cluster())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get images from addons: %v", err)
 	}
+	images = append(images, addonImages...)
 
 	return images, nil
 }
