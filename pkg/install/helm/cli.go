@@ -177,7 +177,7 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 }
 
 func valuesToFlags(values map[string]string) []string {
-	set := make([]string, 0)
+	set := make([]string, 0, len(values))
 
 	for name, value := range values {
 		set = append(set, fmt.Sprintf("%s=%s", name, value))
