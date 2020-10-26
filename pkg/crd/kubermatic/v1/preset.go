@@ -57,6 +57,7 @@ type PresetSpec struct {
 	GCP          *GCP          `json:"gcp,omitempty"`
 	Kubevirt     *Kubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *Alibaba      `json:"alibaba,omitempty"`
+	Anexia       *Anexia       `json:"anexia,omitempty"`
 
 	Fake                *Fake  `json:"fake,omitempty"`
 	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
@@ -163,6 +164,13 @@ type Kubevirt struct {
 type Alibaba struct {
 	AccessKeyID     string `json:"accessKeyId"`
 	AccessKeySecret string `json:"accessKeySecret"`
+
+	Datacenter string `json:"datacenter,omitempty"`
+}
+
+type Anexia struct {
+	// Token is used to authenticate with the Anexia API.
+	Token string `json:"token"`
 
 	Datacenter string `json:"datacenter,omitempty"`
 }
