@@ -83,9 +83,24 @@ cat <<EOF >> ${VALUES_FILE}
 kubermaticOperator:
   image:
     tag: ${GIT_HEAD_HASH}
+  imagePullSecret: '{}'
+
 nodePortProxy:
   image:
     tag: ${GIT_HEAD_HASH}
+
+iap:
+  deployments:
+    dummy:
+      name: dummy
+      client_id: dummy
+      client_secret: xxx
+      encryption_key: xxx
+      upstream_service: example.com.svc.cluster.local
+      upstream_port: 9093
+      ingress:
+        host: "dummy.example.com"
+        annotations: {}
 EOF
 
 _build/image-loader \
