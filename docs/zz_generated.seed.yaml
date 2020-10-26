@@ -46,6 +46,7 @@ spec:
           # Region to use, for a full list of regions see
           # https://www.alibabacloud.com/help/doc-detail/40654.htm
           region: ""
+        anexia: null
         aws:
           # List of AMIs to use for a given operating system.
           # This gets defaulted by querying for the latest AMI for the given distribution

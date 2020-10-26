@@ -146,6 +146,7 @@ type DatacenterSpec struct {
 	GCP          *DatacenterSpecGCP          `json:"gcp,omitempty"`
 	Kubevirt     *DatacenterSpecKubevirt     `json:"kubevirt,omitempty"`
 	Alibaba      *DatacenterSpecAlibaba      `json:"alibaba,omitempty"`
+	Anexia       *DatacenterSpecAnexia       `json:"anexia,omitempty"`
 
 	//nolint:staticcheck
 	//lint:ignore SA5008 omitgenyaml is used by the example-yaml-generator
@@ -313,6 +314,12 @@ type DatacenterSpecAlibaba struct {
 	// Region to use, for a full list of regions see
 	// https://www.alibabacloud.com/help/doc-detail/40654.htm
 	Region string `json:"region"`
+}
+
+// DatacenterSpecAnexia describes a anexia datacenter.
+type DatacenterSpecAnexia struct {
+	// LocationID the location of the region
+	LocationID string `json:"location_id"`
 }
 
 type ProxyValue string
