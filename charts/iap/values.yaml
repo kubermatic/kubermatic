@@ -46,7 +46,7 @@ iap:
     #   upstream_port: 9093
     #   ingress:
     #     host: "alertmanager.kubermatic.tld"
-    #     annotations: {}1
+    #     annotations: {}
     #
     # grafana:
     #   name: grafana

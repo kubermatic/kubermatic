@@ -61,16 +61,7 @@ func (c *cli) InstallChart(namespace string, releaseName string, chartDirectory 
 		"--timeout", c.timeout.String(),
 	}
 
-	set := make([]string, 0)
-
-	for name, value := range values {
-		set = append(set, fmt.Sprintf("%s=%s", name, value))
-	}
-
-	if len(set) > 0 {
-		command = append(command, "--set", strings.Join(set, ","))
-	}
-
+	command = append(command, valuesToFlags(values)...)
 	command = append(command, flags...)
 	command = append(command, releaseName, chartDirectory)
 
@@ -131,6 +122,19 @@ func (c *cli) UninstallRelease(namespace string, name string) error {
 	return err
 }
 
+func (c *cli) RenderChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string) ([]byte, error) {
+	command := []string{"template"}
+
+	if valuesFile != "" {
+		command = append(command, "--values", valuesFile)
+	}
+
+	command = append(command, valuesToFlags(values)...)
+	command = append(command, releaseName, chartDirectory)
+
+	return c.run(namespace, command...)
+}
+
 func (c *cli) Version() (*semver.Version, error) {
 	// add --client to gracefully handle Helm 2 (Helm 3 ignores the flag, thankfully);
 	// Helm 2 will output "<no value>", whereas Helm 3 would outright reject the
@@ -176,4 +180,18 @@ func (c *cli) run(namespace string, args ...string) ([]byte, error) {
 	}
 
 	return stdout.Bytes(), err
+}
+
+func valuesToFlags(values map[string]string) []string {
+	set := make([]string, 0, len(values))
+
+	for name, value := range values {
+		set = append(set, fmt.Sprintf("%s=%s", name, value))
+	}
+
+	if len(set) > 0 {
+		return []string{"--set", strings.Join(set, ",")}
+	}
+
+	return nil
 }
