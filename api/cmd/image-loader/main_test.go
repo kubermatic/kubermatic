@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kubermatic/kubermatic/api/pkg/controller/operator/common"
 	kubermaticlog "github.com/kubermatic/kubermatic/api/pkg/log"
 	"github.com/kubermatic/kubermatic/api/pkg/resources"
 	"github.com/kubermatic/kubermatic/api/pkg/version"
@@ -16,13 +17,15 @@ func TestRetagImageForAllVersions(t *testing.T) {
 	masterResources := "../../../config/kubermatic/static/master/versions.yaml"
 	addonPath := "../../../addons"
 
+	// Cannot be set during go-test
+	resources.KUBERMATICCOMMIT = "latest"
+	common.KUBERMATICDOCKERTAG = resources.KUBERMATICCOMMIT
+	common.UIDOCKERTAG = resources.KUBERMATICCOMMIT
+
 	versions, err := version.LoadVersions(masterResources)
 	if err != nil {
 		t.Errorf("Error loading versions: %v", err)
 	}
-
-	// Cannot be set during go-test
-	resources.KUBERMATICCOMMIT = "latest"
 
 	imageSet := sets.NewString()
 	for _, v := range versions {
