@@ -26,7 +26,6 @@ import (
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -129,7 +128,6 @@ func Add(
 		&corev1.ServiceAccount{},
 		&extensionsv1beta1.Ingress{},
 		&policyv1beta1.PodDisruptionBudget{},
-		&certmanagerv1alpha2.Certificate{},
 	}
 
 	for _, t := range namespacedTypesToWatch {

@@ -17,7 +17,6 @@ limitations under the License.
 package kubermatic
 
 import (
-	"errors"
 	"fmt"
 
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
@@ -38,7 +37,6 @@ const (
 	uiDeploymentName      = "kubermatic-dashboard"
 	apiServiceName        = "kubermatic-api"
 	uiServiceName         = "kubermatic-dashboard"
-	certificateName       = "kubermatic"
 	certificateSecretName = "kubermatic-tls"
 )
 
@@ -100,9 +98,23 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 			}
 			i.Annotations["kubernetes.io/ingress.class"] = cfg.Spec.Ingress.ClassName
 
-			// If a Certificate is being issued, reference it,
-			// otherwise leave any possible customization intact.
-			if cfg.Spec.Ingress.CertificateIssuer.Name != "" {
+			// If a Certificate is being issued, configure cert-manager by
+			// setting up the required annoations.
+			issuer := cfg.Spec.Ingress.CertificateIssuer
+
+			if issuer.Name != "" {
+				delete(i.Annotations, certmanagerv1alpha2.IngressIssuerNameAnnotationKey)
+				delete(i.Annotations, certmanagerv1alpha2.IngressClusterIssuerNameAnnotationKey)
+
+				switch issuer.Kind {
+				case certmanagerv1alpha2.IssuerKind:
+					i.Annotations[certmanagerv1alpha2.IngressIssuerNameAnnotationKey] = issuer.Name
+				case certmanagerv1alpha2.ClusterIssuerKind:
+					i.Annotations[certmanagerv1alpha2.IngressClusterIssuerNameAnnotationKey] = issuer.Name
+				default:
+					return nil, fmt.Errorf("unknown Certificate Issuer Kind %q configured", issuer.Kind)
+				}
+
 				i.Spec.TLS = []extensionsv1beta1.IngressTLS{
 					{
 						Hosts:      []string{cfg.Spec.Ingress.Domain},
@@ -159,29 +171,6 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 			}
 
 			return i, nil
-		}
-	}
-}
-
-func CertificateCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedCertificateCreatorGetter {
-	return func() (string, reconciling.CertificateCreator) {
-		return certificateName, func(c *certmanagerv1alpha2.Certificate) (*certmanagerv1alpha2.Certificate, error) {
-			name := cfg.Spec.Ingress.CertificateIssuer.Name
-			if name == "" {
-				return nil, errors.New("no certificateIssuer configured in KubermaticConfiguration, this creator should not have been called")
-			}
-
-			c.Spec.IssuerRef.Name = name
-			c.Spec.IssuerRef.Kind = cfg.Spec.Ingress.CertificateIssuer.Kind
-
-			if group := cfg.Spec.Ingress.CertificateIssuer.APIGroup; group != nil {
-				c.Spec.IssuerRef.Group = *group
-			}
-
-			c.Spec.SecretName = certificateSecretName
-			c.Spec.DNSNames = []string{cfg.Spec.Ingress.Domain}
-
-			return c, nil
 		}
 	}
 }

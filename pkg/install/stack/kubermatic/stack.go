@@ -174,6 +174,12 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt Options) error {
 	logger.Info("📦 Deploying cert-manager…")
 	sublogger := log.Prefix(logger, "   ")
+
+	if opt.KubermaticConfiguration.Spec.Ingress.CertificateIssuer.Name == "" {
+		sublogger.Info("No CertificateIssuer configured in KubermaticConfiguration, skipping.")
+		return nil
+	}
+
 	chartDir := filepath.Join(opt.ChartsDirectory, "cert-manager")
 
 	chart, err := helm.LoadChart(chartDir)
