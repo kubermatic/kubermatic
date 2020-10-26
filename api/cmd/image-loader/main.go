@@ -5,12 +5,11 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"path"
+	"os"
 
 	"github.com/Masterminds/semver"
 	"go.uber.org/zap"
 
-	addonutil "github.com/kubermatic/kubermatic/api/pkg/addon"
 	apiv1 "github.com/kubermatic/kubermatic/api/pkg/api/v1"
 	kubernetescontroller "github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/kubernetes"
 	"github.com/kubermatic/kubermatic/api/pkg/controller/seed-controller-manager/monitoring"
@@ -36,9 +35,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer/json"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes/scheme"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 const mockNamespaceName = "mock-namespace"
@@ -48,11 +46,15 @@ var (
 )
 
 type opts struct {
-	versionsFile  string
-	versionFilter string
-	registry      string
-	dryRun        bool
-	addonsPath    string
+	versionsFile   string
+	versionFilter  string
+	registry       string
+	dryRun         bool
+	addonsPath     string
+	addonsImage    string
+	chartsPath     string
+	helmValuesPath string
+	helmBinary     string
 }
 
 func main() {
@@ -65,7 +67,11 @@ func main() {
 	flag.StringVar(&o.versionFilter, "version-filter", "", "Version constraint which can be used to filter for specific versions")
 	flag.StringVar(&o.registry, "registry", "", "Address of the registry to push to, for example localhost:5000")
 	flag.BoolVar(&o.dryRun, "dry-run", false, "Only print the names of found images")
-	flag.StringVar(&o.addonsPath, "addons-path", "", "Path to the folder containing the addons")
+	flag.StringVar(&o.addonsPath, "addons-path", "", "Path to a directory containing the KKP addons, if not given, falls back to -addons-image, then the Docker image configured in the KubermaticConfiguration")
+	flag.StringVar(&o.addonsImage, "addons-image", "", "Docker image containing KKP addons, if not given, falls back to the Docker image configured in the KubermaticConfiguration")
+	flag.StringVar(&o.chartsPath, "charts-path", "", "Path to the folder containing all Helm charts")
+	flag.StringVar(&o.helmValuesPath, "helm-values-file", "", "Use this values.yaml file when rendering the Helm charts (-charts-path)")
+	flag.StringVar(&o.helmBinary, "helm-binary", "helm", "Helm 3.x binary to use for rendering the charts")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -75,6 +81,14 @@ func main() {
 			fmt.Println(err)
 		}
 	}()
+
+	if o.versionsFile == "" {
+		log.Fatal("-versions-file must be specified.")
+	}
+
+	if o.addonsPath != "" && o.addonsImage != "" {
+		log.Fatal("-addons-path or -addons-image must not be specified at the same time.")
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -91,6 +105,23 @@ func main() {
 	versions, err := getVersions(log, o.versionsFile, o.versionFilter)
 	if err != nil {
 		log.Fatalw("Error loading versions", zap.Error(err))
+	}
+
+	// if no local addons path is given, use the configured addons
+	// Docker image and extract the addons from there
+	if o.addonsPath == "" {
+		addonsImage := o.addonsImage
+		if addonsImage == "" {
+			log.Warn("No KubermaticConfiguration, -addons-image or -addons-path given, cannot mirror images referenced in addons.")
+		}
+
+		tempDir, err := extractAddonsFromDockerImage(ctx, log, addonsImage)
+		if err != nil {
+			log.Fatalw("Failed to create local addons path", zap.Error(err))
+		}
+		defer os.RemoveAll(tempDir)
+
+		o.addonsPath = tempDir
 	}
 
 	// Using a set here for deduplication
@@ -113,9 +144,38 @@ func main() {
 		imageSet.Insert(images...)
 	}
 
+	if o.chartsPath != "" {
+		log.Infow("Rendering Helm charts", "directory", o.chartsPath)
+
+		images, err := getImagesForHelmCharts(ctx, log, o.chartsPath, o.helmValuesPath, o.helmBinary)
+		if err != nil {
+			log.Fatal("Failed to get images", zap.Error(err))
+		}
+		imageSet.Insert(images...)
+	}
+
 	if err := processImages(ctx, log, o.dryRun, imageSet.List(), o.registry); err != nil {
 		log.Fatalw("Failed to process images", zap.Error(err))
 	}
+}
+
+func extractAddonsFromDockerImage(ctx context.Context, log *zap.SugaredLogger, imageName string) (string, error) {
+	tempDir, err := ioutil.TempDir("", "imageloader*")
+	if err != nil {
+		return "", fmt.Errorf("failed to create temporary directory: %v", err)
+	}
+
+	log.Infow("Extracting addon manifests from Docker image", "image", imageName, "temp-directory", tempDir)
+
+	if err := docker.DownloadImages(ctx, log, false, []string{imageName}); err != nil {
+		return tempDir, fmt.Errorf("failed to download addons image: %v", err)
+	}
+
+	if err := docker.Copy(ctx, log, imageName, tempDir, "/addons"); err != nil {
+		return tempDir, fmt.Errorf("failed to extract addons: %v", err)
+	}
+
+	return tempDir, nil
 }
 
 func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, images []string, registry string) error {
@@ -140,24 +200,22 @@ func getImagesForVersion(log *zap.SugaredLogger, version *kubermaticversion.Vers
 		return nil, err
 	}
 
-	creatorImages, err := getImagesFromCreators(templateData)
+	creatorImages, err := getImagesFromCreators(log, templateData)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get images from internal creator functions: %v", err)
 	}
 	images = append(images, creatorImages...)
 
-	if addonsPath != "" {
-		addonImages, err := getImagesFromAddons(log, addonsPath, templateData.Cluster())
-		if err != nil {
-			return nil, fmt.Errorf("failed to get images from addons: %v", err)
-		}
-		images = append(images, addonImages...)
+	addonImages, err := getImagesFromAddons(log, addonsPath, templateData.Cluster())
+	if err != nil {
+		return nil, fmt.Errorf("failed to get images from addons: %v", err)
 	}
+	images = append(images, addonImages...)
 
 	return images, nil
 }
 
-func getImagesFromCreators(templateData *resources.TemplateData) (images []string, err error) {
+func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData) (images []string, err error) {
 	statefulsetCreators := kubernetescontroller.GetStatefulSetCreators(templateData, false)
 	statefulsetCreators = append(statefulsetCreators, monitoring.GetStatefulSetCreators(templateData)...)
 
@@ -415,55 +473,6 @@ func getVersions(log *zap.SugaredLogger, versionsFile, versionFilter string) ([]
 		}
 	}
 	return filteredVersions, nil
-}
-
-func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
-	addonData := &addonutil.TemplateData{
-		Cluster:           cluster,
-		MajorMinorVersion: cluster.Spec.Version.MajorMinor(),
-		Addon:             &kubermaticv1.Addon{},
-		Variables:         map[string]interface{}{},
-	}
-	infos, err := ioutil.ReadDir(addonsPath)
-	if err != nil {
-		return nil, fmt.Errorf("unable to list addons: %v", err)
-	}
-
-	serializer := json.NewSerializer(&json.SimpleMetaFactory{}, scheme.Scheme, scheme.Scheme, false)
-	var images []string
-	for _, info := range infos {
-		if !info.IsDir() {
-			continue
-		}
-		addonName := info.Name()
-		addonImages, err := getImagesFromAddon(log, path.Join(addonsPath, addonName), serializer, addonData)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get images for addon %s: %v", addonName, err)
-		}
-		images = append(images, addonImages...)
-	}
-
-	return images, nil
-}
-
-func getImagesFromAddon(log *zap.SugaredLogger, addonPath string, decoder runtime.Decoder, data *addonutil.TemplateData) ([]string, error) {
-	log = log.With("addon", path.Base(addonPath))
-	log.Debug("Processing manifests...")
-
-	allManifests, err := addonutil.ParseFromFolder(log, "", addonPath, data)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse addon templates in %s: %v", addonPath, err)
-	}
-
-	var images []string
-	for _, manifest := range allManifests {
-		manifestImages, err := getImagesFromManifest(log, decoder, manifest.Raw)
-		if err != nil {
-			return nil, err
-		}
-		images = append(images, manifestImages...)
-	}
-	return images, nil
 }
 
 func getImagesFromManifest(log *zap.SugaredLogger, decoder runtime.Decoder, b []byte) ([]string, error) {
