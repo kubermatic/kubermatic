@@ -31,6 +31,11 @@ import (
 func TestRetagImageForAllVersions(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
+	// Cannot be set during go-test
+	resources.KUBERMATICCOMMIT = "latest"
+	common.KUBERMATICDOCKERTAG = resources.KUBERMATICCOMMIT
+	common.UIDOCKERTAG = resources.KUBERMATICCOMMIT
+
 	config, err := common.DefaultConfiguration(&operatorv1alpha1.KubermaticConfiguration{}, log)
 	if err != nil {
 		t.Errorf("failed to determine versions: %v", err)
@@ -39,12 +44,9 @@ func TestRetagImageForAllVersions(t *testing.T) {
 	versions := getVersionsFromKubermaticConfiguration(config)
 	addonPath := "../../addons"
 
-	// Cannot be set during go-test
-	resources.KUBERMATICCOMMIT = "latest"
-
 	imageSet := sets.NewString()
 	for _, v := range versions {
-		images, err := getImagesForVersion(log, v, addonPath)
+		images, err := getImagesForVersion(log, v, config, addonPath)
 		if err != nil {
 			t.Errorf("Error calling getImagesForVersion: %v", err)
 		}
