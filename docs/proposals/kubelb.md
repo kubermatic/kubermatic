@@ -12,7 +12,9 @@ KubeLB is a provider for multi cluster load balancing and takes the advantages o
 
 * Implementation of service type LoadBalancer like [MetalLB](https://metallb.universe.tf/)
 
-* ECMP and BGP?
+* ECMP and BGP
+
+* IPv6 support
 
 ## Motivation and Background
 
@@ -33,19 +35,33 @@ Solutions which are available e.g. MetalLB focus on a single cluster. KubeLB aim
  
 * In a multi cluster environment it can be useful to have a single entrypoint inside the network to do some security or monitoring
 
-* ...
+* Make the actual loadbalancer technology pluggable (easy implementation if e.g. someone wants to use nginx over envoy)
+
+* Be able to have the load balancing cluster exist separately from the seed cluster or integrated into it
+
+* Separate load balancing instances in the LB cluster in namespaces, one namespace per user cluster/tenant
+
 
 ## Implementation
 
 The overall implementation contains three different parts: 
 
-**Agent**: Controller which is deployed in every user cluster. It watches for Services and Ingress resources.
+**Agent**: Controller which is deployed in every user cluster. It watches for Services, Ingress resources and node changes. Updates the CRD inside the load balancing Cluster accordingly.
 
-**Manager**: Controller which is responsible for deploying and configuring the resources needed inside the load balancer cluster.
+**Manager**: Controller which is responsible for deploying and configuring the resources needed inside the load balancer cluster. Manages a CRD which describes the load balancing endpoints and settings. 
 
 **Controller**: Deploys the Manager inside the load balancer cluster for each user cluster. The Manager deployment is probably namespaced.
 
-Requires a LoadBalancer implementation for the LB Cluster.
+Requires a type LoadBalancer implementation for the LB Cluster.
+
+#### Envoy & Contour
+
+On the LB cluster Envoy & Contour are installed. When the controller creates a new HTTPProxy resource, Contour will configure Envoy automatically to process the traffic of the domain.
+The LB cluster will have a domain assigned e.g. lb.example.com each cluster will have a dedicated subdomain CLUSTERNAME.lb.example.net. For an Ingress on the User cluster a subdomain will be created based on the pattern INGRESS.CLUSTERNAME.lb.example.net The user can reference this URL in his DNS as a CNAME for a customer URL e.g. example.com -> CNAME INGRESS.CLUSTERNAME.lb.example.net 
+To enable envoy to forward the customer URL, in the Ingress both URLs must set.
+Envoy will forward the traffic based on the HTTPProxy to the service and Kubernetes will forward the traffic from the service on the LB cluster to the Endpoints of the User cluster. 
+
+This is not necessarily needed for L4 implementation but can be used to reduce costs of external LoadBalancer instances, since the L4 services can share one entrypoint with different ports. So it can be of Type ClusterIP with envoy infront or directly of type LoadBalancer.
 
 #### Implementation L4
 
@@ -65,7 +81,7 @@ Example Configuration LB Cluster:
     metadata:
       name: hello-svc
     spec:
-      type: ClusterIP
+      type: LoadBalancer / ClusterIP 
       ports:
       - protocol: TCP
         port: 80
@@ -87,7 +103,7 @@ Example Configuration LB Cluster:
 
 #### Implementation L7
 
-The agent will watch for the Ingress resource and inform the manager.   
+The agent will watch for the Ingress resource and configures the CRD inside the load balancing cluster accordingly.
 The manager will create the Service as described in the L4 Implementation and HTTPProxy resource. This takes the advantage of contour to manage different domains and configure envoy.
 
 On the User cluster:
@@ -150,13 +166,6 @@ For the LB cluster:
       - name: http
         port: 80
         protocol: TCP
-
-#### Envoy & Contour
-
-On the LB cluster Envoy & Contour are installed. When the controller creates a new HTTPProxy resource, Contour will configure Envoy automatically to process the traffic of the domain.
-The LB cluster will have a domain assigned e.g. lb.example.com each cluster will have a dedicated subdomain CLUSTERNAME.lb.example.net. For an Ingress on the User cluster a subdomain will be created based on the pattern INGRESS.CLUSTERNAME.lb.example.net The user can reference this URL in his DNS as a CNAME for a customer URL e.g. example.com -> CNAME INGRESS.CLUSTERNAME.lb.example.net 
-To enable envoy to forward the customer URL, in the Ingress both URLs must set.
-Envoy will forward the traffic based on the HTTPProxy to the service and Kubernetes will forward the traffic from the service on the LB cluster to the Endpoints of the User cluster. 
 
 #### TLS and Certificates
 
