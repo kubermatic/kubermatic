@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"path"
 	"strings"
@@ -33,10 +32,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
-	kyaml "k8s.io/apimachinery/pkg/util/yaml"
 )
 
 const (
@@ -220,31 +219,11 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 			continue
 		}
 
-		reader := kyaml.NewYAMLReader(bufio.NewReader(bufferAll))
-		for {
-			b, err := reader.Read()
-			if err != nil {
-				if err == io.EOF {
-					break
-				}
-				return nil, fmt.Errorf("failed reading from YAML reader for file %s: %v", filename, err)
-			}
-			b = bytes.TrimSpace(b)
-			if len(b) == 0 {
-				continue
-			}
-			decoder := kyaml.NewYAMLToJSONDecoder(bytes.NewBuffer(b))
-			raw := runtime.RawExtension{}
-			if err := decoder.Decode(&raw); err != nil {
-				return nil, fmt.Errorf("decoding failed for file %s: %v", filename, err)
-			}
-			if len(raw.Raw) == 0 {
-				// This can happen if the manifest contains only comments, e.G. because it comes from Helm
-				// something like `# Source: istio/charts/galley/templates/validatingwebhookconfiguration.yaml.tpl`
-				continue
-			}
-			allManifests = append(allManifests, raw)
+		addonManifests, err := yaml.ParseMultipleDocuments(bufio.NewReader(bufferAll))
+		if err != nil {
+			return nil, fmt.Errorf("decoding failed for file %s: %v", filename, err)
 		}
+		allManifests = append(allManifests, addonManifests...)
 	}
 
 	return allManifests, nil
