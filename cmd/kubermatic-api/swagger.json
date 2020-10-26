@@ -10324,6 +10324,20 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "AnexiaCloudSpec": {
+      "type": "object",
+      "title": "AnexiaCloudSpec specifies the access data to Anexia.",
+      "properties": {
+        "credentialsReference": {
+          "$ref": "#/definitions/GlobalSecretKeySelector"
+        },
+        "token": {
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "AuditLoggingSettings": {
       "type": "object",
       "properties": {
@@ -10574,6 +10588,9 @@
       "properties": {
         "alibaba": {
           "$ref": "#/definitions/AlibabaCloudSpec"
+        },
+        "anexia": {
+          "$ref": "#/definitions/AnexiaCloudSpec"
         },
         "aws": {
           "$ref": "#/definitions/AWSCloudSpec"
