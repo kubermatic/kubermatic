@@ -18,6 +18,7 @@ package cloud
 
 import (
 	"errors"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/anexia"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -71,6 +72,9 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 	}
 	if datacenter.Spec.Alibaba != nil {
 		return alibaba.NewCloudProvider(datacenter, secretKeyGetter)
+	}
+	if datacenter.Spec.Anexia != nil {
+		return anexia.NewCloudProvider(datacenter, secretKeyGetter)
 	}
 	return nil, errors.New("no cloudprovider found")
 }
