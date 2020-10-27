@@ -61,6 +61,9 @@ func NewClusterProvider(providerName string, kubeClient kubernetes.Interface, ku
 	_ = cp.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoles().Lister()
 	_ = cp.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().ClusterRoleBindings().Lister()
 
+	_ = cp.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().Roles().Lister()
+	_ = cp.kubeInformerProvider.KubeInformerFactoryFor(metav1.NamespaceAll).Rbac().V1().RoleBindings().Lister()
+
 	return cp
 }
 
