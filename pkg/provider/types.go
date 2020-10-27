@@ -59,6 +59,7 @@ const (
 	GCPCloudProvider          = "gcp"
 	KubevirtCloudProvider     = "kubevirt"
 	AlibabaCloudProvider      = "alibaba"
+	AnexiaCloudProvider       = "anexia"
 
 	DefaultSSHPort     = 22
 	DefaultKubeletPort = 10250
@@ -432,6 +433,9 @@ func ClusterCloudProviderName(spec kubermaticv1.CloudSpec) (string, error) {
 	if spec.Alibaba != nil {
 		clouds = append(clouds, AlibabaCloudProvider)
 	}
+	if spec.Anexia != nil {
+		clouds = append(clouds, AnexiaCloudProvider)
+	}
 	if len(clouds) == 0 {
 		return "", nil
 	}
@@ -501,6 +505,9 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 	}
 	if spec.Alibaba != nil {
 		clouds = append(clouds, AlibabaCloudProvider)
+	}
+	if spec.Anexia != nil {
+		clouds = append(clouds, AnexiaCloudProvider)
 	}
 	if len(clouds) == 0 {
 		return "", nil
