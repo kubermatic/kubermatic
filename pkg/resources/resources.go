@@ -497,6 +497,8 @@ const (
 	AlibabaAccessKeyID     = "accessKeyId"
 	AlibabaAccessKeySecret = "accessKeySecret"
 
+	AnexiaToken = "token"
+
 	UserSSHKeys = "usersshkeys"
 )
 
