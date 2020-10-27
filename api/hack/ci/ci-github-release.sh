@@ -126,9 +126,9 @@ function tar_to_zip() {
 }
 
 function build_tools() {
-  make image-loader
+  make --directory api image-loader
   if [ "$GOOS" == "windows" ]; then
-    mv _build/image-loader _build/image-loader.exe
+    mv api/_build/image-loader api/_build/image-loader.exe
   fi
 }
 
@@ -136,7 +136,7 @@ function ship_archive() {
   local archive="$1"
   local buildTarget="${2:-}"
 
-  if [ "$GOOS" == "windows" ]; then
+  if [ "${GOOS:-}" == "windows" ]; then
     echodate "Converting $archive to Zip..."
     archive="$(tar_to_zip "$archive")"
   fi
@@ -197,8 +197,8 @@ if ! $DRY_RUN; then
 fi
 
 # prepare source for archiving
-sed --in-place "s/__KUBERMATIC_TAG__/$GIT_TAG/g" charts/*/*.yaml
-sed --in-place "s/__DASHBOARD_TAG__/$DASHBOARD_GIT_TAG/g" charts/*/*.yaml
+sed --in-place "s/__KUBERMATIC_TAG__/$GIT_TAG/g" config/*/*.yaml
+sed --in-place "s/__DASHBOARD_TAG__/$DASHBOARD_GIT_TAG/g" config/*/*.yaml
 
 mkdir -p _dist
 
@@ -283,8 +283,8 @@ for buildTarget in $RELEASE_PLATFORMS; do
   archive="_dist/tools-$RELEASE_NAME-$buildTarget.tar.gz"
   # GNU tar is required
   tar czf "$archive" \
-    --transform='flags=r;s|_build/||' \
-    _build/image-loader* \
+    --transform='flags=r;s|api/_build/||' \
+    api/_build/image-loader* \
     LICENSE
 
   ship_archive "$archive" "$buildTarget"
