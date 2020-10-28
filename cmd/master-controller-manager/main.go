@@ -21,6 +21,7 @@ import (
 	"flag"
 	"fmt"
 
+	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
@@ -141,6 +142,10 @@ func main() {
 
 	if err := mgr.Add(pprofOpts); err != nil {
 		log.Fatalw("Failed to add pprof endpoint", zap.Error(err))
+	}
+
+	if err := gatekeeperv1beta1.AddToSchemes.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", gatekeeperv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	// these two getters rely on the ctrlruntime manager being started; they are
