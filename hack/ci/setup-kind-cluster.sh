@@ -16,13 +16,8 @@ source hack/lib.sh
 
 echodate "Setting up kind cluster..."
 
-if [ -z "${JOB_NAME:-}" ]; then
+if [ -z "${JOB_NAME:-}" ] || [ -z "${PROW_JOB_ID:-}" ]; then
   echodate "This script should only be running in a CI environment."
-  exit 1
-fi
-
-if [ -z "${PROW_JOB_ID:-}" ]; then
-  echodate "Build id env variable has to be set."
   exit 1
 fi
 
@@ -59,7 +54,7 @@ cat <<EOF >>~/.bashrc
 unset KUBECONFIG
 
 cn() {
-  kubectl config set-context \$(kubectl config current-context) --namespace=\$1
+  kubectl config set-context --current --namespace=\$1
 }
 
 kubeconfig() {
