@@ -22,11 +22,6 @@ set -euo pipefail
 cd $(dirname $0)/../..
 source hack/lib.sh
 
-export WORKER_NAME="${BUILD_ID}"
-if [ "${KUBERMATIC_NO_WORKER_NAME:-}" = "true" ]; then
-  WORKER_NAME=""
-fi
-
 if [ -z "${E2E_SSH_PUBKEY:-}" ]; then
   echodate "Getting default SSH pubkey for machines from Vault"
   export VAULT_ADDR=https://vault.loodse.com/
@@ -79,7 +74,6 @@ elif [[ $provider == "alibaba" ]]; then
 fi
 
 timeout -s 9 90m ./_build/conformance-tests $EXTRA_ARGS \
-  -worker-name=$WORKER_NAME \
   -name-prefix=prow-e2e \
   -kubeconfig=$KUBECONFIG \
   -kubermatic-seed-cluster="$SEED_NAME" \
