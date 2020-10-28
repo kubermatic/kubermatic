@@ -1,5 +1,14 @@
 # Kubermatic 2.15
 
+## [v2.15.2](https://github.com/kubermatic/dashboard/releases/tag/v2.15.2)
+
+### Misc
+
+- Support User SSH Keys in KubeAdm cloud provider ([#2752](https://github.com/kubermatic/dashboard/issues/2752))
+
+
+
+
 ## [v2.15.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.1)
 
 ### Misc
@@ -7,6 +16,9 @@
 - Ship image-loader as part of GitHub releases ([#6063](https://github.com/kubermatic/kubermatic/issues/6063))
 - Add support for KubermaticConfiguration in image-loader utility ([#6063](https://github.com/kubermatic/kubermatic/issues/6063))
 - Improve Helm error handling in KKP Installer ([#6076](https://github.com/kubermatic/kubermatic/issues/6076))
+
+
+
 
 ## [v2.15.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.0)
 
