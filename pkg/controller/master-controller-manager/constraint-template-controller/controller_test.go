@@ -20,16 +20,18 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
-	"k8s.io/apimachinery/pkg/api/errors"
 
+	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -64,8 +66,8 @@ func TestReconcile(t *testing.T) {
 		{
 			name:         "scenario 1: sync ct to user cluster",
 			requestName:  ctName,
-			expectedCT:   genConstraintTemplate(ctName),
-			masterClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genConstraintTemplate(ctName)),
+			expectedCT:   genConstraintTemplate(ctName, false),
+			masterClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genConstraintTemplate(ctName, false)),
 			seedClient:   fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genCluster("cluster", true)),
 			userClient:   fakectrlruntimeclient.NewFakeClientWithScheme(sch),
 		},
@@ -73,9 +75,17 @@ func TestReconcile(t *testing.T) {
 			name:                 "scenario 2: dont sync ct to user cluster which has opa-integration off",
 			requestName:          ctName,
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			masterClient:         fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genConstraintTemplate(ctName)),
+			masterClient:         fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genConstraintTemplate(ctName, false)),
 			seedClient:           fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genCluster("cluster", false)),
 			userClient:           fakectrlruntimeclient.NewFakeClientWithScheme(sch),
+		},
+		{
+			name:                 "scenario 3: cleanup ct on user cluster when master ct is being terminated",
+			requestName:          ctName,
+			expectedGetErrStatus: metav1.StatusReasonNotFound,
+			masterClient:         fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genConstraintTemplate(ctName, true)),
+			seedClient:           fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genCluster("cluster", true)),
+			userClient:           fakectrlruntimeclient.NewFakeClientWithScheme(sch, genGKConstraintTemplate(ctName)),
 		},
 	}
 
@@ -104,6 +114,10 @@ func TestReconcile(t *testing.T) {
 			ct := &v1beta1.ConstraintTemplate{}
 			err := tc.userClient.Get(context.Background(), request.NamespacedName, ct)
 			if tc.expectedGetErrStatus != "" {
+				if err == nil {
+					t.Fatalf("expected error status %s, instead got ct: %v", tc.expectedGetErrStatus, ct)
+				}
+
 				if tc.expectedGetErrStatus != errors.ReasonForError(err) {
 					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, errors.ReasonForError(err))
 				}
@@ -125,10 +139,30 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-func genConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
+func genConstraintTemplate(name string, delete bool) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name
-	ct.Spec = v1beta1.ConstraintTemplateSpec{
+
+	ct.Spec = genCTSpec()
+	if delete {
+		deleteTime := metav1.NewTime(time.Now())
+		ct.DeletionTimestamp = &deleteTime
+		ct.Finalizers = append(ct.Finalizers, v1.GatekeeperConstraintTemplateCleanupFinalizer)
+	}
+
+	return ct
+}
+
+func genGKConstraintTemplate(name string) *v1beta1.ConstraintTemplate {
+	ct := &v1beta1.ConstraintTemplate{}
+	ct.Name = name
+	ct.Spec = genCTSpec()
+
+	return ct
+}
+
+func genCTSpec() v1beta1.ConstraintTemplateSpec {
+	return v1beta1.ConstraintTemplateSpec{
 		CRD: v1beta1.CRD{
 			Spec: v1beta1.CRDSpec{
 				Names: v1beta1.Names{
@@ -167,8 +201,6 @@ func genConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 			},
 		},
 	}
-
-	return ct
 }
 
 func genCluster(name string, opaEnabled bool) *kubermaticv1.Cluster {
