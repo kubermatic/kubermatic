@@ -216,6 +216,10 @@ type KubermaticAddonConfiguration struct {
 	// DockerRepository is the repository containing the Docker image containing
 	// the possible addon manifests.
 	DockerRepository string `json:"dockerRepository,omitempty"`
+	// DockerTagSuffix is appended to the tag used for referring to the addons image.
+	// If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
+	// suffix it becomes "v2.15.0-SUFFIX".
+	DockerTagSuffix string `json:"dockerTagSuffix,omitempty"`
 }
 
 type KubermaticIngressConfiguration struct {
