@@ -275,8 +275,8 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
-				createKubernetesAddonsInitContainer(cfg, sharedAddonVolume, versions.Kubermatic),
-				createOpenshiftAddonsInitContainer(cfg, sharedAddonVolume, versions.Kubermatic),
+				createKubernetesAddonsInitContainer(cfg.Spec.UserCluster.Addons.Kubernetes, sharedAddonVolume, versions.Kubermatic),
+				createOpenshiftAddonsInitContainer(cfg.Spec.UserCluster.Addons.Openshift, sharedAddonVolume, versions.Kubermatic),
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -302,10 +302,10 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions common.V
 	}
 }
 
-func createKubernetesAddonsInitContainer(cfg *operatorv1alpha1.KubermaticConfiguration, addonVolume string, dockerTag string) corev1.Container {
+func createKubernetesAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration, addonVolume string, version string) corev1.Container {
 	return corev1.Container{
 		Name:    "copy-addons-kubernetes",
-		Image:   cfg.Spec.UserCluster.Addons.Kubernetes.DockerRepository + ":" + dockerTag,
+		Image:   cfg.DockerRepository + ":" + getAddonDockerTag(cfg, version),
 		Command: []string{"/bin/sh"},
 		Args: []string{
 			"-c",
@@ -320,10 +320,10 @@ func createKubernetesAddonsInitContainer(cfg *operatorv1alpha1.KubermaticConfigu
 	}
 }
 
-func createOpenshiftAddonsInitContainer(cfg *operatorv1alpha1.KubermaticConfiguration, addonVolume string, dockerTag string) corev1.Container {
+func createOpenshiftAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration, addonVolume string, version string) corev1.Container {
 	return corev1.Container{
 		Name:    "copy-addons-openshift",
-		Image:   cfg.Spec.UserCluster.Addons.Openshift.DockerRepository + ":" + dockerTag,
+		Image:   cfg.DockerRepository + ":" + getAddonDockerTag(cfg, version),
 		Command: []string{"/bin/sh"},
 		Args: []string{
 			"-c",
@@ -336,6 +336,14 @@ func createOpenshiftAddonsInitContainer(cfg *operatorv1alpha1.KubermaticConfigur
 			},
 		},
 	}
+}
+
+func getAddonDockerTag(cfg operatorv1alpha1.KubermaticAddonConfiguration, version string) string {
+	if cfg.DockerTagSuffix != "" {
+		version = fmt.Sprintf("%s-%s", version, cfg.DockerTagSuffix)
+	}
+
+	return version
 }
 
 func SeedControllerManagerPDBCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedPodDisruptionBudgetCreatorGetter {
