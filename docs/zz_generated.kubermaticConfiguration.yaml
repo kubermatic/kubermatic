@@ -304,6 +304,10 @@ spec:
         # DockerRepository is the repository containing the Docker image containing
         # the possible addon manifests.
         dockerRepository: quay.io/kubermatic/addons
+        # DockerTagSuffix is appended to the tag used for referring to the addons image.
+        # If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
+        # suffix it becomes "v2.15.0-SUFFIX".
+        dockerTagSuffix: ""
       # Openshift controls the addons for Openshift-based clusters.
       openshift:
         # Default is the list of addons to be installed by default into each cluster.
@@ -356,6 +360,10 @@ spec:
         # DockerRepository is the repository containing the Docker image containing
         # the possible addon manifests.
         dockerRepository: quay.io/kubermatic/openshift-addons
+        # DockerTagSuffix is appended to the tag used for referring to the addons image.
+        # If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
+        # suffix it becomes "v2.15.0-SUFFIX".
+        dockerTagSuffix: ""
     # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
     apiserverReplicas: 2
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
