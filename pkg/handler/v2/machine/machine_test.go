@@ -34,6 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 )
 
 func TestCreateMachineDeployment(t *testing.T) {
@@ -295,6 +296,203 @@ func TestDeleteMachineNode(t *testing.T) {
 	}
 }
 
+func TestListMachineDeployments(t *testing.T) {
+	t.Parallel()
+	var replicas int32 = 1
+	var paused = false
+	testcases := []struct {
+		Name                       string
+		ExpectedResponse           []apiv1.NodeDeployment
+		HTTPStatus                 int
+		ProjectIDToSync            string
+		ClusterIDToSync            string
+		ExistingProject            *kubermaticv1.Project
+		ExistingKubermaticUser     *kubermaticv1.User
+		ExistingAPIUser            *apiv1.User
+		ExistingCluster            *kubermaticv1.Cluster
+		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		ExistingKubermaticObjs     []runtime.Object
+	}{
+		// scenario 1
+		{
+			Name:                   "scenario 1: list machine deployments that belong to the given cluster",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
+			},
+			ExpectedResponse: []apiv1.NodeDeployment{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus",
+						Name: "venus",
+					},
+					Spec: apiv1.NodeDeploymentSpec{
+						Template: apiv1.NodeSpec{
+							Cloud: apiv1.NodeCloudSpec{
+								Digitalocean: &apiv1.DigitaloceanNodeSpec{
+									Size: "2GB",
+								},
+							},
+							OperatingSystem: apiv1.OperatingSystemSpec{
+								Ubuntu: &apiv1.UbuntuSpec{
+									DistUpgradeOnBoot: true,
+								},
+							},
+							Versions: apiv1.NodeVersionInfo{
+								Kubelet: "v9.9.9",
+							},
+						},
+						Replicas:      replicas,
+						Paused:        &paused,
+						DynamicConfig: pointer.BoolPtr(false),
+					},
+					Status: clusterv1alpha1.MachineDeploymentStatus{},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "mars",
+						Name: "mars",
+					},
+					Spec: apiv1.NodeDeploymentSpec{
+						Template: apiv1.NodeSpec{
+							Cloud: apiv1.NodeCloudSpec{
+								AWS: &apiv1.AWSNodeSpec{
+									InstanceType:     "t2.micro",
+									VolumeSize:       50,
+									AvailabilityZone: "eu-central-1a",
+									SubnetID:         "subnet-2bff4f43",
+								},
+							},
+							OperatingSystem: apiv1.OperatingSystemSpec{
+								Ubuntu: &apiv1.UbuntuSpec{
+									DistUpgradeOnBoot: false,
+								},
+							},
+							Versions: apiv1.NodeVersionInfo{
+								Kubelet: "v9.9.9",
+							},
+						},
+						Replicas:      replicas,
+						Paused:        &paused,
+						DynamicConfig: pointer.BoolPtr(false),
+					},
+					Status: clusterv1alpha1.MachineDeploymentStatus{},
+				},
+			},
+		},
+		// scenario 2
+		{
+			Name:                   "scenario 2: the admin John can list machine deployments that belong to the given Bob's cluster",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), test.GenAdminUser("John", "john@acme.com", true)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
+			},
+			ExpectedResponse: []apiv1.NodeDeployment{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus",
+						Name: "venus",
+					},
+					Spec: apiv1.NodeDeploymentSpec{
+						Template: apiv1.NodeSpec{
+							Cloud: apiv1.NodeCloudSpec{
+								Digitalocean: &apiv1.DigitaloceanNodeSpec{
+									Size: "2GB",
+								},
+							},
+							OperatingSystem: apiv1.OperatingSystemSpec{
+								Ubuntu: &apiv1.UbuntuSpec{
+									DistUpgradeOnBoot: true,
+								},
+							},
+							Versions: apiv1.NodeVersionInfo{
+								Kubelet: "v9.9.9",
+							},
+						},
+						Replicas:      replicas,
+						Paused:        &paused,
+						DynamicConfig: pointer.BoolPtr(false),
+					},
+					Status: clusterv1alpha1.MachineDeploymentStatus{},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "mars",
+						Name: "mars",
+					},
+					Spec: apiv1.NodeDeploymentSpec{
+						Template: apiv1.NodeSpec{
+							Cloud: apiv1.NodeCloudSpec{
+								AWS: &apiv1.AWSNodeSpec{
+									InstanceType:     "t2.micro",
+									VolumeSize:       50,
+									AvailabilityZone: "eu-central-1a",
+									SubnetID:         "subnet-2bff4f43",
+								},
+							},
+							OperatingSystem: apiv1.OperatingSystemSpec{
+								Ubuntu: &apiv1.UbuntuSpec{
+									DistUpgradeOnBoot: false,
+								},
+							},
+							Versions: apiv1.NodeVersionInfo{
+								Kubelet: "v9.9.9",
+							},
+						},
+						Replicas:      replicas,
+						Paused:        &paused,
+						DynamicConfig: pointer.BoolPtr(false),
+					},
+					Status: clusterv1alpha1.MachineDeploymentStatus{},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments",
+				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineObj := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+				machineObj = append(machineObj, existingMachineDeployment)
+			}
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			actualNodeDeployments := test.NodeDeploymentSliceWrapper{}
+			actualNodeDeployments.DecodeOrDie(res.Body, t).Sort()
+
+			wrappedExpectedNodeDeployments := test.NodeDeploymentSliceWrapper(tc.ExpectedResponse)
+			wrappedExpectedNodeDeployments.Sort()
+
+			actualNodeDeployments.EqualOrDie(wrappedExpectedNodeDeployments, t)
+		})
+	}
+}
+
 func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 	controllerStatus := kubermaticv1.HealthStatusDown
 	if isControllerReady {
@@ -320,4 +518,8 @@ func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 
 func genTestMachine(name, rawProviderSpec string, labels map[string]string, ownerRef []metav1.OwnerReference) *clusterv1alpha1.Machine {
 	return test.GenTestMachine(name, rawProviderSpec, labels, ownerRef)
+}
+
+func genTestMachineDeployment(name, rawProviderSpec string, selector map[string]string, dynamicConfig bool) *clusterv1alpha1.MachineDeployment {
+	return test.GenTestMachineDeployment(name, rawProviderSpec, selector, dynamicConfig)
 }

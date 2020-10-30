@@ -124,3 +124,44 @@ func (req deleteMachineNodeReq) GetSeedCluster() apiv1.SeedCluster {
 		ClusterID: req.ClusterID,
 	}
 }
+
+// listMachineDeploymentsReq defines HTTP request for listMachineDeployments
+// swagger:parameters listMachineDeployments
+type listMachineDeploymentsReq struct {
+	common.ProjectReq
+	// in: path
+	ClusterID string `json:"cluster_id"`
+}
+
+func DecodeListMachineDeployments(c context.Context, r *http.Request) (interface{}, error) {
+	var req listMachineDeploymentsReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+
+	return req, nil
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req listMachineDeploymentsReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+func ListMachineDeployments(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listMachineDeploymentsReq)
+
+		return handlercommon.ListMachineDeployments(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
+	}
+}

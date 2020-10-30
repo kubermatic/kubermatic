@@ -8699,6 +8699,55 @@
       }
     },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments": {
+      "get": {
+        "description": "Lists machine deployments that belong to the given cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "listMachineDeployments",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "NodeDeployment",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/NodeDeployment"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
       "post": {
         "description": "Creates a machine deployment that will belong to the given cluster",
         "consumes": [
