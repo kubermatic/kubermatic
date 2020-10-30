@@ -34,6 +34,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/utils/pointer"
 )
 
 func TestCreateMachineDeployment(t *testing.T) {
@@ -348,7 +349,7 @@ func TestListMachineDeployments(t *testing.T) {
 						},
 						Replicas:      replicas,
 						Paused:        &paused,
-						DynamicConfig: boolPtr(false),
+						DynamicConfig: pointer.BoolPtr(false),
 					},
 					Status: clusterv1alpha1.MachineDeploymentStatus{},
 				},
@@ -378,7 +379,7 @@ func TestListMachineDeployments(t *testing.T) {
 						},
 						Replicas:      replicas,
 						Paused:        &paused,
-						DynamicConfig: boolPtr(false),
+						DynamicConfig: pointer.BoolPtr(false),
 					},
 					Status: clusterv1alpha1.MachineDeploymentStatus{},
 				},
@@ -420,7 +421,7 @@ func TestListMachineDeployments(t *testing.T) {
 						},
 						Replicas:      replicas,
 						Paused:        &paused,
-						DynamicConfig: boolPtr(false),
+						DynamicConfig: pointer.BoolPtr(false),
 					},
 					Status: clusterv1alpha1.MachineDeploymentStatus{},
 				},
@@ -450,7 +451,7 @@ func TestListMachineDeployments(t *testing.T) {
 						},
 						Replicas:      replicas,
 						Paused:        &paused,
-						DynamicConfig: boolPtr(false),
+						DynamicConfig: pointer.BoolPtr(false),
 					},
 					Status: clusterv1alpha1.MachineDeploymentStatus{},
 				},
@@ -521,8 +522,4 @@ func genTestMachine(name, rawProviderSpec string, labels map[string]string, owne
 
 func genTestMachineDeployment(name, rawProviderSpec string, selector map[string]string, dynamicConfig bool) *clusterv1alpha1.MachineDeployment {
 	return test.GenTestMachineDeployment(name, rawProviderSpec, selector, dynamicConfig)
-}
-
-func boolPtr(i bool) *bool {
-	return &i
 }
