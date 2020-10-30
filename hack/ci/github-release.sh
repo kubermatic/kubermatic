@@ -242,7 +242,6 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/iap \
     charts/kubermatic-operator \
     charts/kubermatic/crd \
-    charts/kubernetes-dashboard \
     charts/logging/loki \
     charts/logging/promtail \
     charts/minio \
@@ -280,7 +279,6 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/iap \
     charts/kubermatic-operator \
     charts/kubermatic \
-    charts/kubernetes-dashboard \
     charts/logging \
     charts/minio \
     charts/monitoring \
