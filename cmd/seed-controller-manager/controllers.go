@@ -193,6 +193,9 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 }
 
 func createEtcdBackupController(ctrlCtx *controllerContext) error {
+	if !ctrlCtx.etcdBackupRestoreController {
+		return nil
+	}
 	storeContainer, err := getContainerFromFile(ctrlCtx.runOptions.backupContainerFile)
 	if err != nil {
 		return err
@@ -220,6 +223,7 @@ func createEtcdBackupController(ctrlCtx *controllerContext) error {
 		deleteContainer,
 		cleanupContainer,
 		ctrlCtx.runOptions.backupContainerImage,
+		ctrlCtx.versions,
 	)
 }
 
@@ -250,11 +254,15 @@ func createBackupController(ctrlCtx *controllerContext) error {
 }
 
 func createEtcdRestoreController(ctrlCtx *controllerContext) error {
+	if !ctrlCtx.etcdBackupRestoreController {
+		return nil
+	}
 	return etcdrestorecontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
+		ctrlCtx.versions,
 	)
 }
 
