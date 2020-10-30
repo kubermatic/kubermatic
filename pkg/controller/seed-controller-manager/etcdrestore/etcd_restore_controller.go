@@ -144,6 +144,10 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, restore *kubermaticv1.EtcdRestore, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	log.Infof("performing etcd restore from backup %v", restore.Spec.BackupName)
 
+	if restore.DeletionTimestamp != nil || cluster.DeletionTimestamp != nil {
+		return nil, nil
+	}
+
 	if restore.Status.Phase == kubermaticv1.EtcdRestorePhaseCompleted {
 		return nil, nil
 	}

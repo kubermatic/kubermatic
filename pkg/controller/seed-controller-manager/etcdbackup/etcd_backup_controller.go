@@ -261,7 +261,7 @@ func minReconcile(reconciles ...*reconcile.Result) *reconcile.Result {
 // ensure a backup is scheduled for the next time slot after the current time, according to the backup config's schedule.
 // "schedule a backup" means set the scheduled time, backup name and job names of the corresponding element of backupConfig.Status.CurrentBackups
 func (r *Reconciler) ensureNextBackupIsScheduled(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	if backupConfig.DeletionTimestamp != nil {
+	if backupConfig.DeletionTimestamp != nil || cluster.DeletionTimestamp != nil {
 		// backupConfig is deleting. Don't schedule any new backups.
 		return nil, nil
 	}
