@@ -180,34 +180,7 @@ func DecodeListNodeDeployments(c context.Context, r *http.Request) (interface{},
 func ListNodeDeployments(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listNodeDeploymentsReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
-		if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		nodeDeployments := make([]*apiv1.NodeDeployment, 0, len(machineDeployments.Items))
-		for i := range machineDeployments.Items {
-			nd, err := outputMachineDeployment(&machineDeployments.Items[i])
-			if err != nil {
-				return nil, fmt.Errorf("failed to output machine deployment %s: %v", machineDeployments.Items[i].Name, err)
-			}
-
-			nodeDeployments = append(nodeDeployments, nd)
-		}
-
-		return nodeDeployments, nil
+		return handlercommon.ListMachineDeployments(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
 	}
 }
 
