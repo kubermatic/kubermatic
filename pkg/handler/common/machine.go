@@ -190,6 +190,37 @@ func DeleteMachineNode(ctx context.Context, userInfoGetter provider.UserInfoGett
 
 }
 
+func ListMachineDeployments(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+	if err := client.List(ctx, machineDeployments, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	nodeDeployments := make([]*apiv1.NodeDeployment, 0, len(machineDeployments.Items))
+	for i := range machineDeployments.Items {
+		nd, err := outputMachineDeployment(&machineDeployments.Items[i])
+		if err != nil {
+			return nil, fmt.Errorf("failed to output machine deployment %s: %v", machineDeployments.Items[i].Name, err)
+		}
+
+		nodeDeployments = append(nodeDeployments, nd)
+	}
+
+	return nodeDeployments, nil
+}
+
 func findMachineAndNode(ctx context.Context, name string, client ctrlruntimeclient.Client) (*clusterv1alpha1.Machine, *corev1.Node, error) {
 	machineList := &clusterv1alpha1.MachineList{}
 	if err := client.List(ctx, machineList, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {

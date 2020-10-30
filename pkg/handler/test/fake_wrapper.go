@@ -361,3 +361,33 @@ func (k NewConstraintsSliceWrapper) EqualOrDie(expected NewConstraintsSliceWrapp
 		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
 	}
 }
+
+// NodeDeploymentSliceWrapper wraps []apiv1.NodeDeployment
+// to provide convenient methods for tests
+type NodeDeploymentSliceWrapper []apiv1.NodeDeployment
+
+// Sort sorts the collection by CreationTimestamp
+func (k NodeDeploymentSliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].Name < k[j].Name
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *NodeDeploymentSliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NodeDeploymentSliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k NodeDeploymentSliceWrapper) EqualOrDie(expected NodeDeploymentSliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
