@@ -161,7 +161,63 @@ func (req listMachineDeploymentsReq) GetSeedCluster() apiv1.SeedCluster {
 func ListMachineDeployments(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listMachineDeploymentsReq)
-
 		return handlercommon.ListMachineDeployments(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
 	}
+}
+
+func GetMachineDeployment(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(machineDeploymentReq)
+		return handlercommon.GetMachineDeployment(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.MachineDeploymentID)
+	}
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req machineDeploymentReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+// machineDeploymentReq defines HTTP request for getMachineDeployment
+// swagger:parameters getMachineDeployment
+type machineDeploymentReq struct {
+	common.ProjectReq
+	// in: path
+	ClusterID string `json:"cluster_id"`
+	// in: path
+	MachineDeploymentID string `json:"machinedeployment_id"`
+}
+
+func decodeMachineDeploymentID(c context.Context, r *http.Request) (string, error) {
+	machineDeploymentID := mux.Vars(r)["machinedeployment_id"]
+	if machineDeploymentID == "" {
+		return "", fmt.Errorf("'machinedeployment_id' parameter is required but was not provided")
+	}
+
+	return machineDeploymentID, nil
+}
+
+func DecodeGetMachineDeployment(c context.Context, r *http.Request) (interface{}, error) {
+	var req machineDeploymentReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+
+	machineDeploymentID, err := decodeMachineDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.MachineDeploymentID = machineDeploymentID
+
+	return req, nil
 }

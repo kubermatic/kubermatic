@@ -34,6 +34,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -219,6 +220,26 @@ func ListMachineDeployments(ctx context.Context, userInfoGetter provider.UserInf
 	}
 
 	return nodeDeployments, nil
+}
+
+func GetMachineDeployment(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID, machineDeploymentID string) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	machineDeployment := &clusterv1alpha1.MachineDeployment{}
+	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: machineDeploymentID}, machineDeployment); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return outputMachineDeployment(machineDeployment)
 }
 
 func findMachineAndNode(ctx context.Context, name string, client ctrlruntimeclient.Client) (*clusterv1alpha1.Machine, *corev1.Node, error) {

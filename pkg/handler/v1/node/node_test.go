@@ -36,11 +36,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	"k8s.io/utils/pointer"
 )
-
-func boolPtr(i bool) *bool {
-	return &i
-}
 
 func TestDeleteNodeForCluster(t *testing.T) {
 	t.Parallel()
@@ -354,7 +351,7 @@ func TestListNodeDeployments(t *testing.T) {
 						},
 						Replicas:      replicas,
 						Paused:        &paused,
-						DynamicConfig: boolPtr(false),
+						DynamicConfig: pointer.BoolPtr(false),
 					},
 					Status: clusterv1alpha1.MachineDeploymentStatus{},
 				},
@@ -384,7 +381,7 @@ func TestListNodeDeployments(t *testing.T) {
 						},
 						Replicas:      replicas,
 						Paused:        &paused,
-						DynamicConfig: boolPtr(false),
+						DynamicConfig: pointer.BoolPtr(false),
 					},
 					Status: clusterv1alpha1.MachineDeploymentStatus{},
 				},
@@ -426,7 +423,7 @@ func TestListNodeDeployments(t *testing.T) {
 						},
 						Replicas:      replicas,
 						Paused:        &paused,
-						DynamicConfig: boolPtr(false),
+						DynamicConfig: pointer.BoolPtr(false),
 					},
 					Status: clusterv1alpha1.MachineDeploymentStatus{},
 				},
@@ -456,7 +453,7 @@ func TestListNodeDeployments(t *testing.T) {
 						},
 						Replicas:      replicas,
 						Paused:        &paused,
-						DynamicConfig: boolPtr(false),
+						DynamicConfig: pointer.BoolPtr(false),
 					},
 					Status: clusterv1alpha1.MachineDeploymentStatus{},
 				},
@@ -549,7 +546,7 @@ func TestGetNodeDeployment(t *testing.T) {
 					},
 					Replicas:      replicas,
 					Paused:        &paused,
-					DynamicConfig: boolPtr(false),
+					DynamicConfig: pointer.BoolPtr(false),
 				},
 				Status: clusterv1alpha1.MachineDeploymentStatus{},
 			},
@@ -589,7 +586,7 @@ func TestGetNodeDeployment(t *testing.T) {
 					},
 					Replicas:      replicas,
 					Paused:        &paused,
-					DynamicConfig: boolPtr(true),
+					DynamicConfig: pointer.BoolPtr(true),
 				},
 				Status: clusterv1alpha1.MachineDeploymentStatus{},
 			},
@@ -628,7 +625,7 @@ func TestGetNodeDeployment(t *testing.T) {
 					},
 					Replicas:      replicas,
 					Paused:        &paused,
-					DynamicConfig: boolPtr(false),
+					DynamicConfig: pointer.BoolPtr(false),
 				},
 				Status: clusterv1alpha1.MachineDeploymentStatus{},
 			},
