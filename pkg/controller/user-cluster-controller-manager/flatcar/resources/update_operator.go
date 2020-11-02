@@ -53,7 +53,8 @@ func OperatorDeploymentCreator(getRegistry GetImageRegistry, updateWindow kuberm
 				},
 			}
 
-			labels := map[string]string{"app": OperatorDeploymentName}
+			labels := map[string]string{"app.kubernetes.io/name": OperatorDeploymentName}
+
 			dep.Spec.Selector = &metav1.LabelSelector{MatchLabels: labels}
 			dep.Spec.Template.ObjectMeta.Labels = labels
 			dep.Spec.Template.Spec.ServiceAccountName = OperatorServiceAccountName
