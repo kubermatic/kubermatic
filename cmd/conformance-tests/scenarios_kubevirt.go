@@ -83,9 +83,9 @@ func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) ([]apimodels.Node
 
 	switch {
 	case s.nodeOsSpec.Ubuntu != nil:
-		sourceURL = "http://10.109.79.210/ubuntu.img"
+		sourceURL = "http://10.102.236.197/ubuntu.img"
 	case s.nodeOsSpec.Centos != nil:
-		sourceURL = "http://10.109.79.210/centos.img"
+		sourceURL = "http://10.102.236.197/centos.img"
 	default:
 		s.logger.Error("coreos operating system is not supported")
 	}
