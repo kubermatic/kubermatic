@@ -229,23 +229,7 @@ func DecodeGetNodeDeployment(c context.Context, r *http.Request) (interface{}, e
 func GetNodeDeployment(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machineDeployment := &clusterv1alpha1.MachineDeployment{}
-		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: req.NodeDeploymentID}, machineDeployment); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return outputMachineDeployment(machineDeployment)
+		return handlercommon.GetMachineDeployment(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.NodeDeploymentID)
 	}
 }
 
