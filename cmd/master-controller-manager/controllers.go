@@ -22,7 +22,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	constrainttemplate "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/constraint-template-controller"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
 	projectlabelsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-label-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
@@ -52,7 +51,6 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	)
 	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
 	userSSHKeysSynchronizerFactory := userSSHKeysSynchronizerFactoryCreator(ctrlCtx)
-	constraintTemplateControllerFactory := constraintTemplateControllerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		kubermaticlog.Logger,
@@ -62,8 +60,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.seedKubeconfigGetter,
 		rbacControllerFactory,
 		projectLabelSynchronizerFactory,
-		userSSHKeysSynchronizerFactory,
-		constraintTemplateControllerFactory); err != nil {
+		userSSHKeysSynchronizerFactory); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
 	}
@@ -122,19 +119,6 @@ func projectLabelSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcont
 func userSSHKeysSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
 	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return usersshkeyssynchronizer.ControllerName, usersshkeyssynchronizer.Add(
-			ctx,
-			mgr,
-			seedManagerMap,
-			ctrlCtx.log,
-			ctrlCtx.workerName,
-			ctrlCtx.workerCount,
-		)
-	}
-}
-
-func constraintTemplateControllerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
-	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
-		return constrainttemplate.ControllerName, constrainttemplate.Add(
 			ctx,
 			mgr,
 			seedManagerMap,

@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -59,33 +60,38 @@ func TestReconcile(t *testing.T) {
 		requestName          string
 		expectedCT           *kubermaticv1.ConstraintTemplate
 		expectedGetErrStatus metav1.StatusReason
-		masterClient         ctrlruntimeclient.Client
 		seedClient           ctrlruntimeclient.Client
 		userClient           ctrlruntimeclient.Client
 	}{
 		{
-			name:         "scenario 1: sync ct to user cluster",
-			requestName:  ctName,
-			expectedCT:   genConstraintTemplate(ctName, false),
-			masterClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genConstraintTemplate(ctName, false)),
-			seedClient:   fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genCluster("cluster", true)),
-			userClient:   fakectrlruntimeclient.NewFakeClientWithScheme(sch),
+			name:        "scenario 1: sync ct to user cluster",
+			requestName: ctName,
+			expectedCT:  genConstraintTemplate(ctName, false),
+			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
+				scheme.Scheme,
+				genConstraintTemplate(ctName, false),
+				genCluster("cluster", true)),
+			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(sch),
 		},
 		{
 			name:                 "scenario 2: dont sync ct to user cluster which has opa-integration off",
 			requestName:          ctName,
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			masterClient:         fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genConstraintTemplate(ctName, false)),
-			seedClient:           fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genCluster("cluster", false)),
-			userClient:           fakectrlruntimeclient.NewFakeClientWithScheme(sch),
+			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
+				scheme.Scheme,
+				genConstraintTemplate(ctName, false),
+				genCluster("cluster", false)),
+			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(sch),
 		},
 		{
 			name:                 "scenario 3: cleanup ct on user cluster when master ct is being terminated",
 			requestName:          ctName,
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			masterClient:         fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genConstraintTemplate(ctName, true)),
-			seedClient:           fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genCluster("cluster", true)),
-			userClient:           fakectrlruntimeclient.NewFakeClientWithScheme(sch, genGKConstraintTemplate(ctName)),
+			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
+				scheme.Scheme,
+				genConstraintTemplate(ctName, true),
+				genCluster("cluster", true)),
+			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(sch, genGKConstraintTemplate(ctName)),
 		},
 	}
 
@@ -93,17 +99,13 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 
 			r := &reconciler{
-				ctx:                     context.Background(),
-				log:                     kubermaticlog.Logger,
-				workerNameLabelSelector: workerSelector,
-				masterClient:            tc.masterClient,
-				seedClientProviders: map[string]*SeedClientProvider{
-					"testSeed": {
-						seedClient:                tc.seedClient,
-						userClusterClientProvider: newFakeClientProvider(tc.userClient),
-					},
-				},
-				userClusterClients: map[string]ctrlruntimeclient.Client{},
+				ctx:                       context.Background(),
+				log:                       kubermaticlog.Logger,
+				workerNameLabelSelector:   workerSelector,
+				recorder:                  &record.FakeRecorder{},
+				seedClient:                tc.seedClient,
+				userClusterClientProvider: newFakeClientProvider(tc.userClient),
+				userClusterClients:        map[string]ctrlruntimeclient.Client{},
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}

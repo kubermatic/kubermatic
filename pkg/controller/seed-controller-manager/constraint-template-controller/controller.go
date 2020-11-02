@@ -19,8 +19,6 @@ package constrainttemplatecontroller
 import (
 	"context"
 	"fmt"
-	"net"
-	"os"
 	"time"
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
@@ -34,12 +32,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -60,22 +59,18 @@ type UserClusterClientProvider interface {
 }
 
 type reconciler struct {
-	ctx                     context.Context
-	log                     *zap.SugaredLogger
-	workerNameLabelSelector labels.Selector
-	masterClient            ctrlruntimeclient.Client
-	seedClientProviders     map[string]*SeedClientProvider
-	userClusterClients      map[string]ctrlruntimeclient.Client
-}
-
-type SeedClientProvider struct {
+	ctx                       context.Context
+	log                       *zap.SugaredLogger
+	workerNameLabelSelector   labels.Selector
+	recorder                  record.EventRecorder
 	seedClient                ctrlruntimeclient.Client
 	userClusterClientProvider UserClusterClientProvider
+	userClusterClients        map[string]ctrlruntimeclient.Client
 }
 
 func Add(ctx context.Context,
 	mgr manager.Manager,
-	seedManagers map[string]manager.Manager,
+	clientProvider UserClusterClientProvider,
 	log *zap.SugaredLogger,
 	workerName string,
 	numWorkers int) error {
@@ -86,12 +81,13 @@ func Add(ctx context.Context,
 	}
 
 	reconciler := &reconciler{
-		ctx:                     ctx,
-		log:                     log.Named(ControllerName),
-		workerNameLabelSelector: workerSelector,
-		masterClient:            mgr.GetClient(),
-		seedClientProviders:     map[string]*SeedClientProvider{},
-		userClusterClients:      map[string]ctrlruntimeclient.Client{},
+		ctx:                       ctx,
+		log:                       log.Named(ControllerName),
+		workerNameLabelSelector:   workerSelector,
+		recorder:                  mgr.GetEventRecorderFor(ControllerName),
+		seedClient:                mgr.GetClient(),
+		userClusterClientProvider: clientProvider,
+		userClusterClients:        map[string]ctrlruntimeclient.Client{},
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -99,29 +95,12 @@ func Add(ctx context.Context,
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
 
-	for seedName, seedManager := range seedManagers {
-		seedClient := seedManager.GetClient()
-
-		userClusterClientProvider, err := getUserClusterClientProvider(seedManager)
-		if err != nil {
-			return fmt.Errorf("failed to get cluster client provider for seed %s: %w", seedName, err)
-		}
-		reconciler.seedClientProviders[seedName] = &SeedClientProvider{
-			seedClient:                seedClient,
-			userClusterClientProvider: userClusterClientProvider,
-		}
-
-		clusterSource := &source.Kind{Type: &kubermaticv1.Cluster{}}
-		if err := clusterSource.InjectCache(mgr.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache into clusterSource for seed %s: %v", seedName, err)
-		}
-		if err := c.Watch(
-			clusterSource,
-			enqueueAllConstraintTemplates(reconciler.masterClient, reconciler.log),
-			workerlabel.Predicates(workerName),
-		); err != nil {
-			return fmt.Errorf("failed to establish watch for clusters in seed %s: %v", seedName, err)
-		}
+	if err := c.Watch(
+		&source.Kind{Type: &kubermaticv1.Cluster{}},
+		enqueueAllConstraintTemplates(reconciler.seedClient, reconciler.log),
+		workerlabel.Predicates(workerName),
+	); err != nil {
+		return fmt.Errorf("failed to establish watch for clusters: %w", err)
 	}
 
 	if err := c.Watch(
@@ -134,16 +113,16 @@ func Add(ctx context.Context,
 	return nil
 }
 
-// Reconcile reconciles the kubermatic constraint template on the master cluster to all seed cluster user clusters
+// Reconcile reconciles the kubermatic constraint template on the seed cluster to all user clusters
 // which have opa integration enabled
 func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("ConstraintTemplate", request)
+	log := r.log.With("request", request)
 	log.Debug("Reconciling")
 
 	constraintTemplate := &kubermaticv1.ConstraintTemplate{}
-	if err := r.masterClient.Get(r.ctx, request.NamespacedName, constraintTemplate); err != nil {
+	if err := r.seedClient.Get(r.ctx, request.NamespacedName, constraintTemplate); err != nil {
 		if kerrors.IsNotFound(err) {
-			log.Debugw("constraint template not found, returning", "constraint-name", constraintTemplate.Name)
+			log.Debug("constraint template not found, returning")
 			return reconcile.Result{}, nil
 		}
 		if controllerutil.IsCacheNotStarted(err) {
@@ -153,21 +132,22 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, fmt.Errorf("failed to get constraint template %s: %v", constraintTemplate.Name, err)
 	}
 
-	err := r.reconcile(constraintTemplate)
+	err := r.reconcile(log, constraintTemplate)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
+		r.recorder.Eventf(constraintTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(constraintTemplate *kubermaticv1.ConstraintTemplate) error {
+func (r *reconciler) reconcile(log *zap.SugaredLogger, constraintTemplate *kubermaticv1.ConstraintTemplate) error {
 
 	if constraintTemplate.DeletionTimestamp != nil {
 		if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer) {
 			return nil
 		}
 
-		err := r.syncAllClusters(constraintTemplate, func(userClusterClient client.Client, ct *kubermaticv1.ConstraintTemplate) error {
+		err := r.syncAllClusters(log, constraintTemplate, func(userClusterClient client.Client, ct *kubermaticv1.ConstraintTemplate) error {
 			return userClusterClient.Delete(r.ctx, &v1beta1.ConstraintTemplate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: constraintTemplate.Name,
@@ -180,7 +160,7 @@ func (r *reconciler) reconcile(constraintTemplate *kubermaticv1.ConstraintTempla
 
 		oldConstraintTemplate := constraintTemplate.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer)
-		if err := r.masterClient.Patch(r.ctx, constraintTemplate, client.MergeFrom(oldConstraintTemplate)); err != nil {
+		if err := r.seedClient.Patch(r.ctx, constraintTemplate, client.MergeFrom(oldConstraintTemplate)); err != nil {
 			return fmt.Errorf("failed to remove constraint template finalizer %s: %v", constraintTemplate.Name, err)
 		}
 		return nil
@@ -189,7 +169,7 @@ func (r *reconciler) reconcile(constraintTemplate *kubermaticv1.ConstraintTempla
 	if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer) {
 		oldConstraintTemplate := constraintTemplate.DeepCopy()
 		kuberneteshelper.AddFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperConstraintTemplateCleanupFinalizer)
-		if err := r.masterClient.Patch(r.ctx, constraintTemplate, client.MergeFrom(oldConstraintTemplate)); err != nil {
+		if err := r.seedClient.Patch(r.ctx, constraintTemplate, client.MergeFrom(oldConstraintTemplate)); err != nil {
 			return fmt.Errorf("failed to set constraint template finalizer %s: %v", constraintTemplate.Name, err)
 		}
 	}
@@ -198,52 +178,49 @@ func (r *reconciler) reconcile(constraintTemplate *kubermaticv1.ConstraintTempla
 		constraintTemplateCreatorGetter(constraintTemplate),
 	}
 
-	return r.syncAllClusters(constraintTemplate, func(userClusterClient client.Client, ct *kubermaticv1.ConstraintTemplate) error {
+	return r.syncAllClusters(log, constraintTemplate, func(userClusterClient client.Client, ct *kubermaticv1.ConstraintTemplate) error {
 		return reconciling.ReconcileConstraintTemplates(r.ctx, ctCreatorGetters, "", userClusterClient)
 	})
 }
 
 func (r *reconciler) syncAllClusters(
+	log *zap.SugaredLogger,
 	constraintTemplate *kubermaticv1.ConstraintTemplate,
 	action func(userClusterClient client.Client, ct *kubermaticv1.ConstraintTemplate) error) error {
 
-	for seedName, seedClientProvider := range r.seedClientProviders {
+	clusterList := &kubermaticv1.ClusterList{}
+	if err := r.seedClient.List(r.ctx, clusterList, &ctrlruntimeclient.ListOptions{LabelSelector: r.workerNameLabelSelector}); err != nil {
+		return fmt.Errorf("failed listing clusters: %w", err)
+	}
 
-		clusterList := &kubermaticv1.ClusterList{}
-		if err := seedClientProvider.seedClient.List(r.ctx, clusterList, &ctrlruntimeclient.ListOptions{LabelSelector: r.workerNameLabelSelector}); err != nil {
-			r.log.Errorw("Failed listing clusters", "seed", seedName)
-			return err
+	for _, userCluster := range clusterList.Items {
+		if userCluster.Spec.Pause {
+			log.Debugw("Cluster paused, skipping", "cluster", userCluster.Spec.HumanReadableName)
+			continue
 		}
 
-		for _, userCluster := range clusterList.Items {
-			if userCluster.Spec.Pause {
-				r.log.Debugw("Cluster paused, skipping", "seed", seedName, "cluster", userCluster.Spec.HumanReadableName)
-				continue
-			}
-
-			if userCluster.Spec.OPAIntegration != nil && userCluster.Spec.OPAIntegration.Enabled {
-				// Get user cluster client from map, if it doesnt exist yet, create it
-				var err error
-				userClusterClient, ok := r.userClusterClients[genUserClusterClientKey(seedName, userCluster.Name)]
-				if !ok {
-					userClusterClient, err = seedClientProvider.userClusterClientProvider.GetClient(&userCluster)
-					if err != nil {
-						return fmt.Errorf("error getting client for cluster %s on seed %s: %w", userCluster.Spec.HumanReadableName, seedName, err)
-					}
-					r.userClusterClients[genUserClusterClientKey(seedName, userCluster.Name)] = userClusterClient
-				}
-
-				err = action(userClusterClient, constraintTemplate)
+		if userCluster.Spec.OPAIntegration != nil && userCluster.Spec.OPAIntegration.Enabled {
+			// Get user cluster client from map, if it doesnt exist yet, create it
+			var err error
+			userClusterClient, ok := r.userClusterClients[userCluster.Name]
+			if !ok {
+				userClusterClient, err = r.userClusterClientProvider.GetClient(&userCluster)
 				if err != nil {
-					r.log.Errorw("Failed syncing constraint template", "seed", seedName, "cluster", userCluster.Spec.HumanReadableName)
-					return err
+					return fmt.Errorf("error getting client for cluster %s: %w", userCluster.Spec.HumanReadableName, err)
 				}
-				r.log.Debugw("Reconciled constraint template with cluster", "ct", constraintTemplate.Name, "seed", seedName, "cluster", userCluster.Spec.HumanReadableName)
-			} else {
-				r.log.Debugw("Cluster does not integrate with OPA, skipping", "seed", seedName, "cluster", userCluster.Spec.HumanReadableName)
+				r.userClusterClients[userCluster.Name] = userClusterClient
 			}
+
+			err = action(userClusterClient, constraintTemplate)
+			if err != nil {
+				return fmt.Errorf("Failed syncing constraint template for cluster %s: %w", userCluster.Spec.HumanReadableName, err)
+			}
+			log.Debugw("Reconciled constraint template with cluster", "cluster", userCluster.Spec.HumanReadableName)
+		} else {
+			log.Debugw("Cluster does not integrate with OPA, skipping", "cluster", userCluster.Spec.HumanReadableName)
 		}
 	}
+
 	return nil
 }
 
@@ -285,26 +262,4 @@ func enqueueAllConstraintTemplates(client ctrlruntimeclient.Client, log *zap.Sug
 		}
 		return requests
 	})}
-}
-
-func genUserClusterClientKey(seedName, clusterName string) string {
-	return fmt.Sprintf("%s-%s", seedName, clusterName)
-}
-
-func getUserClusterClientProvider(mgr manager.Manager) (UserClusterClientProvider, error) {
-	var clientProvider *clusterclient.Provider
-	var err error
-	if !isInternalConfig(mgr.GetConfig()) {
-		clientProvider, err = clusterclient.NewExternal(mgr.GetClient())
-	} else {
-		clientProvider, err = clusterclient.NewInternal(mgr.GetClient())
-	}
-	return clientProvider, err
-}
-
-// isInternalConfig returns `true` if the Host contained in the given config
-// matches the one used when the controller runs in cluster, `false` otherwise.
-func isInternalConfig(cfg *rest.Config) bool {
-	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
-	return cfg.Host == "https://"+net.JoinHostPort(host, port)
 }
