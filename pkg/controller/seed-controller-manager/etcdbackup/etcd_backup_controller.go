@@ -19,9 +19,14 @@ package etcdbackup
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/pkg/errors"
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -47,9 +52,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -277,14 +279,14 @@ func (r *Reconciler) ensureNextBackupIsScheduled(ctx context.Context, backupConf
 			backupConfig,
 			kubermaticv1.EtcdBackupConfigConditionSchedulingActive,
 			corev1.ConditionFalse,
-			"TooManyActiveBackups",
-			"too many active backups already; not scheduling new ones") {
+			"TooManyBackups",
+			"tracking too many backups; not scheduling new ones") {
 
 			// condition changed, need to persist and generate an event
 			if err := r.Update(ctx, backupConfig); err != nil {
 				return nil, errors.Wrap(err, "failed to update backup config")
 			}
-			r.recorder.Event(backupConfig, corev1.EventTypeWarning, "TooManyActiveBackups", "too many active backups already; not scheduling new ones")
+			r.recorder.Event(backupConfig, corev1.EventTypeWarning, "TooManyBackups", "tracking too many backups; not scheduling new ones")
 		}
 
 		return nil, nil
@@ -300,7 +302,7 @@ func (r *Reconciler) ensureNextBackupIsScheduled(ctx context.Context, backupConf
 		if err := r.Update(ctx, backupConfig); err != nil {
 			return nil, errors.Wrap(err, "failed to update backup config")
 		}
-		r.recorder.Event(backupConfig, corev1.EventTypeNormal, "NotTooManyActiveBackups", "backup count low enough; scheduling new backups")
+		r.recorder.Event(backupConfig, corev1.EventTypeNormal, "NormalBackupCount", "backup count low enough; scheduling new backups")
 	}
 
 	if backupConfig.Spec.Schedule == "" {
@@ -462,7 +464,7 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 
 	modified := false
 	for _, backup := range backupsToDelete {
-		if err := r.createDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
+		if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
 			return nil, err
 		}
 		modified = true
@@ -478,9 +480,9 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 	return nil, nil
 }
 
-func (r *Reconciler) createDeleteJob(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backup *kubermaticv1.BackupStatus) error {
+func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backup *kubermaticv1.BackupStatus) error {
 	if r.deleteContainer != nil {
-		job := r.deleteJob(backupConfig, cluster, backup)
+		job := r.backupDeleteJob(backupConfig, cluster, backup)
 		if err := r.Create(ctx, job); err != nil && !kerrors.IsAlreadyExists(err) {
 			return errors.Wrapf(err, "error creating delete job for backup %s", backup.BackupName)
 		}
@@ -508,7 +510,7 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 				}
 				// job not found. Apparently deleted externally.
 				// recreate it. We want to see a finished delete job.
-				if err := r.createDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
+				if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
 					return nil, err
 				}
 				backup.DeleteMessage = "job deleted externally, restarted"
@@ -526,7 +528,7 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 					if err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
 						return nil, errors.Wrapf(err, "backup %s: failed to delete failed delete job %s", backup.BackupName, backup.JobName)
 					}
-					if err := r.createDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
+					if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
 						return nil, err
 					}
 					backup.DeleteMessage = fmt.Sprintf("Job failed: %s. Restarted.", cond.Message)
@@ -552,10 +554,13 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 	var returnReconcile *reconcile.Result
 
 	var newBackups []kubermaticv1.BackupStatus
+	modified := false
 	for _, backup := range backupConfig.Status.CurrentBackups {
 		// if the backupConfig is being deleted and this backup hasn't even started yet,
 		// we can just delete the backup from backupConfig.Status.CurrentBackups directly
 		if backupConfig.DeletionTimestamp != nil && backup.BackupPhase == "" {
+			// don't add backup to newBackups, which ends up deleting it from backupConfig.Status.CurrentBackups below
+			modified = true
 			continue
 		}
 
@@ -635,16 +640,20 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 		}
 
 		if backupJobDeleted && deleteJobDeleted {
-			continue // delete backup from backupConfig.Status.CurrentBackups
+			// don't add backup to newBackups, which ends up deleting it from backupConfig.Status.CurrentBackups below
+			modified = true
+			continue
 		}
 
 		newBackups = append(newBackups, backup)
 	}
 
-	backupConfig.Status.CurrentBackups = newBackups
+	if modified {
+		backupConfig.Status.CurrentBackups = newBackups
 
-	if err := r.Update(ctx, backupConfig); err != nil {
-		return nil, errors.Wrap(err, "failed to update backup config")
+		if err := r.Update(ctx, backupConfig); err != nil {
+			return nil, errors.Wrap(err, "failed to update backup config")
+		}
 	}
 
 	return returnReconcile, nil
@@ -811,7 +820,7 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 	return job
 }
 
-func (r *Reconciler) deleteJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backupStatus *kubermaticv1.BackupStatus) *batchv1.Job {
+func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster, backupStatus *kubermaticv1.BackupStatus) *batchv1.Job {
 	deleteContainer := r.deleteContainer.DeepCopy()
 	deleteContainer.Env = append(
 		deleteContainer.Env,

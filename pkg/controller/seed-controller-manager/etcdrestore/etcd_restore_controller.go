@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"github.com/minio/minio-go"
 	"go.uber.org/zap"
+	"reflect"
+	"time"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -33,7 +36,6 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	"reflect"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -42,7 +44,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-	"time"
 )
 
 const (
@@ -209,7 +210,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, rest
 	if err := r.updateRestore(ctx, restore, func(restore *kubermaticv1.EtcdRestore) {
 		restore.Status.Phase = kubermaticv1.EtcdRestorePhaseStarted
 	}); err != nil {
-		return nil, fmt.Errorf("failed to add finalizer: %v", err)
+		return nil, fmt.Errorf("failed to set EtcdRestore started phase: %v", err)
 	}
 
 	// delete etcd sts

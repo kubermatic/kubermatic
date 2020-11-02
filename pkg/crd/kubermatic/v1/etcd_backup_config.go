@@ -29,7 +29,7 @@ const (
 	EtcdBackupConfigKindName = "EtcdBackupConfig"
 
 	DefaultKeptBackupsCount = 20
-	MaxKeptBackupsCount     = 20
+	MaxKeptBackupsCount     = 50
 
 	// BackupStatusPhase value indicating that the corresponding job has started
 	BackupStatusPhaseRunning = "Running"
