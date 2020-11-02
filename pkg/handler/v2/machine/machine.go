@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -220,4 +221,59 @@ func DecodeGetMachineDeployment(c context.Context, r *http.Request) (interface{}
 	req.MachineDeploymentID = machineDeploymentID
 
 	return req, nil
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req machineDeploymentNodesReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+// machineDeploymentNodesReq defines HTTP request for listMachineDeploymentNodes
+// swagger:parameters listMachineDeploymentNodes
+type machineDeploymentNodesReq struct {
+	common.ProjectReq
+	// in: path
+	ClusterID string `json:"cluster_id"`
+	// in: path
+	MachineDeploymentID string `json:"machinedeployment_id"`
+	// in: query
+	HideInitialConditions bool `json:"hideInitialConditions"`
+}
+
+func DecodeListMachineDeploymentNodes(c context.Context, r *http.Request) (interface{}, error) {
+	var req machineDeploymentNodesReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+
+	machineDeploymentID, err := decodeMachineDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.MachineDeploymentID = machineDeploymentID
+
+	hideInitialConditions := r.URL.Query().Get("hideInitialConditions")
+	if strings.EqualFold(hideInitialConditions, "true") {
+		req.HideInitialConditions = true
+	}
+
+	return req, nil
+}
+
+func ListMachineDeploymentNodes(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(machineDeploymentNodesReq)
+		return handlercommon.ListMachineDeploymentNodes(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.MachineDeploymentID, req.HideInitialConditions)
+	}
 }

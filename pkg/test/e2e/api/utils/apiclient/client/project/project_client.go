@@ -143,6 +143,8 @@ type ClientService interface {
 
 	ListExternalClusters(params *ListExternalClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListExternalClustersOK, error)
 
+	ListMachineDeploymentNodes(params *ListMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentNodesOK, error)
+
 	ListMachineDeployments(params *ListMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentsOK, error)
 
 	ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceOK, error)
@@ -2205,6 +2207,40 @@ func (a *Client) ListExternalClusters(params *ListExternalClustersParams, authIn
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListExternalClustersDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListMachineDeploymentNodes lists nodes that belong to the given machine deployment
+*/
+func (a *Client) ListMachineDeploymentNodes(params *ListMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentNodesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListMachineDeploymentNodesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listMachineDeploymentNodes",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListMachineDeploymentNodesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListMachineDeploymentNodesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListMachineDeploymentNodesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
