@@ -84,7 +84,7 @@ func DecodeListConstraintsReq(c context.Context, r *http.Request) (interface{}, 
 func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(getConstraintReq)
+		req := request.(constraintReq)
 
 		clus, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
@@ -93,24 +93,57 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 
 		constraint, err := constraintProvider.Get(clus, req.Name)
 		if err != nil {
-			return nil, err
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		return convertCToAPI(constraint), nil
 	}
 }
 
-// getConstraintReq defines HTTP request for get constraint endpoint
-// swagger:parameters getConstraint
-type getConstraintReq struct {
+func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider,
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(constraintReq)
+
+		clus, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+		err = deleteConstraint(ctx, userInfoGetter, constraintProvider, privilegedConstraintProvider, clus, req.ProjectID, req.Name)
+		return common.KubernetesErrorToHTTPError(err), nil
+	}
+}
+
+func deleteConstraint(ctx context.Context, userInfoGetter provider.UserInfoGetter, constraintProvider provider.ConstraintProvider,
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider, cluster *v1.Cluster, projectID, constraintName string) error {
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedConstraintProvider.DeleteUnsecured(cluster, constraintName)
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return err
+	}
+
+	return constraintProvider.Delete(cluster, userInfo, constraintName)
+}
+
+// constraintReq defines HTTP request for a constraint endpoint
+// swagger:parameters getConstraint deleteConstraint
+type constraintReq struct {
 	cluster.GetClusterReq
 	// in: path
 	// required: true
 	Name string `json:"constraint_name"`
 }
 
-func DecodeGetConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req getConstraintReq
+func DecodeConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req constraintReq
 
 	cr, err := cluster.DecodeGetClusterReq(c, r)
 	if err != nil {

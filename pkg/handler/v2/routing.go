@@ -78,6 +78,7 @@ type Routing struct {
 	privilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
 	constraintTemplateProvider            provider.ConstraintTemplateProvider
 	constraintProvider                    provider.ConstraintProvider
+	privilegedConstraintProvider          provider.PrivilegedConstraintProvider
 }
 
 // NewV2Routing creates a new Routing.
@@ -123,6 +124,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		privilegedExternalClusterProvider:     routingParams.PrivilegedExternalClusterProvider,
 		constraintTemplateProvider:            routingParams.ConstraintTemplateProvider,
 		constraintProvider:                    routingParams.ConstraintProvider,
+		privilegedConstraintProvider:          routingParams.PrivilegedConstraintProvider,
 	}
 }
 

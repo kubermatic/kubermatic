@@ -807,4 +807,16 @@ type ConstraintProvider interface {
 
 	// Get gets the given constraints
 	Get(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error)
+
+	// Delete deletes the given constraint
+	Delete(cluster *kubermaticv1.Cluster, userInfo *UserInfo, name string) error
+}
+
+// PrivilegedConstraintProvider declares a set of methods for interacting with constraints using a privileged client
+type PrivilegedConstraintProvider interface {
+	// DeleteUnsecured deletes a constraint using a privileged client
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to delete the resource
+	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
 }

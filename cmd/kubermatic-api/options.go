@@ -201,4 +201,5 @@ type providers struct {
 	privilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
 	constraintTemplateProvider            provider.ConstraintTemplateProvider
 	constraintProvider                    provider.ConstraintProvider
+	privilegedConstraintProvider          provider.PrivilegedConstraintProvider
 }
