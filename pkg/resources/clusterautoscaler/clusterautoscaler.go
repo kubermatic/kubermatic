@@ -105,7 +105,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 					Args: []string{
 						"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 						"--leader-elect-resource-lock", "configmaps",
-						// PercentageUsed treshold. If the current utilization of a node is above this, the CA will never
+						// PercentageUsed threshold. If the current utilization of a node is above this, the CA will never
 						// scale it down. Default is 0.5. Increased, because otherwise small nodes never get scaled down
 						// because the DS pods on them alone manage to get the utilization above the 0.5 threshold.
 						"--scale-down-utilization-threshold", "0.7",

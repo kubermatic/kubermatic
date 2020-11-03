@@ -212,7 +212,7 @@ func (v *Provider) DefaultCloudSpec(cloud *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
-// ValidateCloudSpec validates whether a vsphere client can be constructued for
+// ValidateCloudSpec validates whether a vsphere client can be constructed for
 // the passed cloudspec and perform some additional checks on datastore config.
 func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	username, password, err := GetCredentialsForCluster(spec, v.secretKeySelector, v.dc)

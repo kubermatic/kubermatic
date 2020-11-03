@@ -180,7 +180,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 				seeds[seed.Name] = seed
 				return seeds, nil
 			},
-			// This controler doesn't necessarily have an explicit kubeconfig, most of the time it
+			// This controller doesn't necessarily have an explicit kubeconfig, most of the time it
 			// runs with in-cluster config. Just return the config from the manager and only allow
 			// our own seed
 			func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {

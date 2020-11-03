@@ -45,7 +45,7 @@ const (
 	// SecurityGroupCleanupFinalizer will instruct the deletion of the security group
 	SecurityGroupCleanupFinalizer = "kubermatic.io/cleanup-openstack-security-group"
 	// OldNetworkCleanupFinalizer will instruct the deletion of all network components. Router, Network, Subnet
-	// Deprecated: Got splitted into dedicated finalizers
+	// Deprecated: Got split into dedicated finalizers
 	OldNetworkCleanupFinalizer = "kubermatic.io/cleanup-openstack-network"
 
 	// NetworkCleanupFinalizer will instruct the deletion of the network
@@ -516,7 +516,7 @@ func getComputeClient(username, password, domain, tenant, tenantID, authURL, reg
 	return serviceClient, err
 }
 
-// GetSubnets list all available subnet ids fot a given CloudSpec
+// GetSubnets list all available subnet ids for a given CloudSpec
 func GetSubnets(username, password, domain, tenant, tenantID, networkID, authURL, region string) ([]ossubnets.Subnet, error) {
 	serviceClient, err := getNetClient(username, password, domain, tenant, tenantID, authURL, region)
 	if err != nil {
@@ -547,7 +547,7 @@ func (os *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
 
-	// We can only get security groups by ID and can't be sure that whats on the cluster
+	// We can only get security groups by ID and can't be sure that what's on the cluster
 	securityGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: sgName})
 	if err != nil {
 		return fmt.Errorf("failed to list security groups: %v", err)

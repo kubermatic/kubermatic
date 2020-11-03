@@ -1598,7 +1598,7 @@ hr {
 }
 /* PatternFly specific */
 /* Bootstrap overrides */
-/* PatternFly-specific variables based on Bootstrap overides */
+/* PatternFly-specific variables based on Bootstrap overrides */
 .alert {
   border-width: 2px;
   padding-left: 34px;
@@ -3824,7 +3824,7 @@ hr {
 }
 /* PatternFly specific */
 /* Bootstrap overrides */
-/* PatternFly-specific variables based on Bootstrap overides */
+/* PatternFly-specific variables based on Bootstrap overrides */
 .alert {
   border-width: 2px;
   padding-left: 34px;
@@ -5634,7 +5634,7 @@ hr {
 }
 /* PatternFly specific */
 /* Bootstrap overrides */
-/* PatternFly-specific variables based on Bootstrap overides */
+/* PatternFly-specific variables based on Bootstrap overrides */
 .alert {
   border-width: 2px;
   padding-left: 34px;

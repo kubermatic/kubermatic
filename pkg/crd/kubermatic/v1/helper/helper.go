@@ -192,7 +192,7 @@ func IsClusterInitialized(cluster *kubermaticv1.Cluster) bool {
 	return success && upToDate && cluster.Status.ExtendedHealth.AllHealthy()
 }
 
-// We assume that te cluster is still provisioning if it was not initialized fully at least once.
+// We assume that the cluster is still provisioning if it was not initialized fully at least once.
 func GetHealthStatus(status kubermaticv1.HealthStatus, cluster *kubermaticv1.Cluster) kubermaticv1.HealthStatus {
 	if status == kubermaticv1.HealthStatusDown && !IsClusterInitialized(cluster) {
 		return kubermaticv1.HealthStatusProvisioning

@@ -282,7 +282,7 @@ func TestDefaultPodSpec(t *testing.T) {
 			},
 		},
 		{
-			name: "Default mode for secret volume doesnt get overwritten",
+			name: "Default mode for secret volume doesn't get overwritten",
 			newObject: corev1.PodSpec{
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
@@ -322,7 +322,7 @@ func TestDefaultPodSpec(t *testing.T) {
 			},
 		},
 		{
-			name: "Default mode for configmap volume doesnt get overwritten",
+			name: "Default mode for configmap volume doesn't get overwritten",
 			newObject: corev1.PodSpec{
 				Volumes: []corev1.Volume{{
 					VolumeSource: corev1.VolumeSource{
@@ -433,7 +433,7 @@ func TestDefaultDeployment(t *testing.T) {
 		t.Fatalf("Failed to get the Deployment from the client: %v", err)
 	}
 
-	// wipe formatting differenes
+	// wipe formatting differences
 	actualDeployment.TypeMeta = metav1.TypeMeta{}
 	actualDeployment.ResourceVersion = ""
 
@@ -504,7 +504,7 @@ func TestDefaultStatefulSet(t *testing.T) {
 		t.Fatalf("Failed to get the StatefulSet from the client: %v", err)
 	}
 
-	// wipe formatting differenes
+	// wipe formatting differences
 	actualStatefulSet.TypeMeta = metav1.TypeMeta{}
 	actualStatefulSet.ResourceVersion = ""
 
@@ -575,7 +575,7 @@ func TestDefaultDaemonSet(t *testing.T) {
 		t.Fatalf("Failed to get the DaemonSet from the client: %v", err)
 	}
 
-	// wipe formatting differenes
+	// wipe formatting differences
 	actualDaemonSet.TypeMeta = metav1.TypeMeta{}
 	actualDaemonSet.ResourceVersion = ""
 
@@ -654,7 +654,7 @@ func TestDefaultCronJob(t *testing.T) {
 		t.Fatalf("Failed to get the CronJob from the client: %v", err)
 	}
 
-	// wipe formatting differenes
+	// wipe formatting differences
 	actualCronJob.TypeMeta = metav1.TypeMeta{}
 	actualCronJob.ResourceVersion = ""
 
@@ -849,7 +849,7 @@ func TestImagePullSecretsWrapper(t *testing.T) {
 
 // identityCreator is an ObjectModifier that returns the input object
 // untouched.
-// TODO(irozzo) May be usefule to move this in a test package?
+// TODO(irozzo) May be useful to move this in a test package?
 func identityCreator(obj runtime.Object) (runtime.Object, error) {
 	return obj, nil
 }

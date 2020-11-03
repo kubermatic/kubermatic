@@ -37,6 +37,8 @@ LDFLAGS_EXTRA=-w
 BUILD_DEST ?= _build
 GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFLAGS_EXTRA)
 GOBUILDIMAGE ?= golang:1.15.1
+CODESPELL_IMAGE ?= quay.io/kubermatic/codespell:1.17.1
+CODESPELL_BIN := $(shell which codespell)
 DOCKER_BIN := $(shell which docker)
 
 default: all
@@ -80,7 +82,7 @@ test-integration: download-gocache
 	@# Run integration tests and only integration tests by:
 	@# * Finding all files that contain the build tag via grep
 	@# * Extracting the dirname as the `go test` command doesn't play well with individual files as args
-	@# * Prefixing them with `./` as thats needed by `go test` as well
+	@# * Prefixing them with `./` as that's needed by `go test` as well
 	@grep --files-with-matches --recursive --extended-regexp '\+build.+integration' cmd/ pkg/ \
 		|xargs dirname \
 		|xargs --max-args=1 -I ^ go test -tags "integration $(KUBERMATIC_EDITION)"  -race ./^
@@ -119,7 +121,21 @@ lint:
 	./hack/ci/run-lint.sh
 
 shellcheck:
+ifndef DOCKER_BIN
 	shellcheck $$(find . -name '*.sh')
+endif
+
+spellcheck:
+ifndef CODESPELL_BIN
+	$(error "codespell not available in your environment, use spellcheck-in-docker if you have Docker installed.")
+endif
+	$(CODESPELL_BIN) -S *.png,*.po,.git,*.jpg,*.mod,*.sum,*.woff,*.woff2,swagger.json,*/_build/*,*/_dist/*,./vendor/* -I .codespell.exclude -f
+
+spellcheck-in-docker:
+ifndef DOCKER_BIN
+	$(error "Docker not available in your environment, please install it and retry.")
+endif
+	$(DOCKER_BIN) run -it -v ${PWD}:/kubermatic -w /kubermatic $(CODESPELL_IMAGE) make spellcheck
 
 cover:
 	./hack/cover.sh --html

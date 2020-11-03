@@ -232,7 +232,7 @@ func getLabelsForCluster(
 ) (changed bool, newClusterLabels map[string]string) {
 	// They shouldn't be nil as we skip projects without labels
 	// and need a label on the cluster to associate it to a project
-	// but better be safe than panicing.
+	// but better be safe than panicking.
 	if clusterLabels == nil {
 		clusterLabels = map[string]string{}
 	}

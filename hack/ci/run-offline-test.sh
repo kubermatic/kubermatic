@@ -136,7 +136,7 @@ sed -i "s/__KUBERMATIC_TAG__/${GIT_HEAD_HASH}/g" charts/*/*.yaml
 sed -i "s/__DASHBOARD_TAG__/latest/g" charts/*/*.yaml
 
 retry 5 ./../release-docker-images.sh ${GIT_HEAD_HASH} $(git tag -l --points-at HEAD)
-echodate "Sucessfully finished building and pushing quay images"
+echodate "Successfully finished building and pushing quay images"
 
 # Ensure we have pushed the kubermatic chart
 cd ../../charts

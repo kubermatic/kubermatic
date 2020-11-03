@@ -60,7 +60,7 @@ func getPossibleVMNetworks(ctx context.Context, session *Session) ([]NetworkInfo
 		}
 
 		// We need to pull the elements info from the API because there's no sane way of retrieving the path for a NetworkReference via the SDK
-		// unless we wan't to maintain a long switch statement with all kind of types
+		// unless we want to maintain a long switch statement with all kind of types
 		element, err := session.Finder.Element(ctx, network.Reference())
 		if err != nil {
 			return nil, fmt.Errorf("failed to get details for %q: %v", network.Reference().String(), err)

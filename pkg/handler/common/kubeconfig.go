@@ -147,7 +147,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 		}
 		oidcTokens, err := oidcIssuer.Exchange(ctx, req.code)
 		if err != nil {
-			return nil, kcerrors.NewBadRequest("error while exchaning oidc code for token = %v", err)
+			return nil, kcerrors.NewBadRequest("error while exchanging oidc code for token = %v", err)
 		}
 		if len(oidcTokens.RefreshToken) == 0 {
 			return nil, kcerrors.NewBadRequest("the refresh token is missing but required, try setting/unsetting \"oidc-offline-access-as-scope\" command line flag")
@@ -177,7 +177,7 @@ func CreateOIDCKubeconfigEndpoint(ctx context.Context, projectProvider provider.
 				}
 			}
 			if clusterFromAdminKubeCfg == nil {
-				return nil, kcerrors.New(http.StatusInternalServerError, fmt.Sprintf("unable to construct kubeconfig because couldn't find %s cluster enty in existing kubecfg", req.ClusterID))
+				return nil, kcerrors.New(http.StatusInternalServerError, fmt.Sprintf("unable to construct kubeconfig because couldn't find %s cluster entry in existing kubecfg", req.ClusterID))
 			}
 
 			// create cluster entry

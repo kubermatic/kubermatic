@@ -82,7 +82,7 @@ for testing purposes.
 
 You can create a cluster via the UI at `https://dev.kubermatic.io`, then use `kubectl` to add a
 `worker-name=<<hostname-of-your-laptop>>` label to the cluster. This will make your locally
-running controlers manage the cluster.
+running controllers manage the cluster.
 
 #### Running locally
 

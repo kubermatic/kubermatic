@@ -58,7 +58,7 @@ func TestDeleteClusterEndpoint(t *testing.T) {
 		ExpectedListClusterKeysStatus int
 	}{
 		{
-			Name:             "scenario 1: tests deletion of a cluster and its dependant resources",
+			Name:             "scenario 1: tests deletion of a cluster and its dependent resources",
 			Body:             ``,
 			ExpectedResponse: `{}`,
 			HTTPStatus:       http.StatusOK,
@@ -1102,7 +1102,7 @@ func TestPatchCluster(t *testing.T) {
 		},
 		// scenario 3
 		{
-			Name:             "scenario 3: tried to update cluser with older but compatible nodes",
+			Name:             "scenario 3: tried to update cluster with older but compatible nodes",
 			Body:             `{"spec":{"version":"9.11.3"}}`, // kubelet is 9.9.9, maximum compatible master is 9.11.x
 			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"9.11.3","oidc":{}},"status":{"version":"9.11.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
 			cluster:          "keen-snyder",
@@ -1123,7 +1123,7 @@ func TestPatchCluster(t *testing.T) {
 		},
 		// scenario 4
 		{
-			Name:             "scenario 4: tried to update cluser with old nodes",
+			Name:             "scenario 4: tried to update cluster with old nodes",
 			Body:             `{"spec":{"version":"9.12.3"}}`, // kubelet is 9.9.9, maximum compatible master is 9.11.x
 			ExpectedResponse: `{"error":{"code":400,"message":"Cluster contains nodes running the following incompatible kubelet versions: [9.9.9]. Upgrade your nodes before you upgrade the cluster."}}`,
 			cluster:          "keen-snyder",
@@ -1144,7 +1144,7 @@ func TestPatchCluster(t *testing.T) {
 		},
 		// scenario 5
 		{
-			Name:             "scenario 5: tried to downgrade cluser to version older than its nodes",
+			Name:             "scenario 5: tried to downgrade cluster to version older than its nodes",
 			Body:             `{"spec":{"version":"9.8.12"}}`, // kubelet is 9.9.9, cluster cannot be older
 			ExpectedResponse: `{"error":{"code":400,"message":"Cluster contains nodes running the following incompatible kubelet versions: [9.9.9]. Upgrade your nodes before you upgrade the cluster."}}`,
 			cluster:          "keen-snyder",

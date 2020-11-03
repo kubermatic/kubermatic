@@ -42,7 +42,7 @@ vim hack/publish-s3-exporter.sh
 vim charts/kubermatic/values.yaml
 ```
 
-Avaiable metrics:
+Available metrics:
 
 ```
 # HELP go_gc_duration_seconds A summary of the GC invocation durations.

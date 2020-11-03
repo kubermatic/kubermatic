@@ -23,7 +23,7 @@ This is a proposal to simplify both the installation and upgrades of a Kubermati
 
 A Go program will be created that assists the user in performing the steps outlined
 above. This `kubermatic-installer` (not to be confused with the *Kubermatic Operator*)
-will work similarily to KubeOne's `apply` command, i.e. it will provide an idempotent
+will work similarly to KubeOne's `apply` command, i.e. it will provide an idempotent
 command that brings the target environment up to the installer's version, installing
 and upgrading components as needed.
 

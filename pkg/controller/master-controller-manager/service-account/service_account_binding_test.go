@@ -86,7 +86,7 @@ func TestReconcileBinding(t *testing.T) {
 			}
 
 			if len(bindings.Items) != 1 {
-				t.Fatalf("wrong number of bindigs, expectd 1 got %d", len(bindings.Items))
+				t.Fatalf("wrong number of bindigs, expected 1 got %d", len(bindings.Items))
 			}
 
 			if !equality.Semantic.DeepEqual(bindings.Items[0].Labels, test.expectedBinding.Labels) {

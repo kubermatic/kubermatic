@@ -192,8 +192,8 @@ func ConsoleProxyEndpoint(
 // consoleLogin loggs an user into the console by doing the oauth login, then returning a redirect.
 // This is not done by the user themselves, because:
 // * The openshift OAuth server is under the same URL as the kubermatic UI but doesn't have a
-//   certificate signed by a CA the browser has. This mean that if HSTS is enabled, the brower
-//   wont allow the user to visit that URL.
+//   certificate signed by a CA the browser has. This mean that if HSTS is enabled, the browser
+//   won't allow the user to visit that URL.
 // * It is poor UX to require the User to login twice.
 func consoleLogin(
 	ctx context.Context,

@@ -116,7 +116,7 @@ created by the cluster admin.
 
 * Running arbitrary combinations of components (master branch of X and fearure-xyz branch
   of Y).
-* Setting up DNS after the LoadBalancers have been created is not soemthing for the operator,
+* Setting up DNS after the LoadBalancers have been created is not something for the operator,
   this remains something for the cluster admin to do.
 * There is no need for a Big Bang release where we replace all charts with the operator
   at one point in time. Instead we will have a migration phase where both the operator and

@@ -9,7 +9,7 @@ example documentation are generated.
 
 ## Adding/Removig Patch Releases
 
-Update the `defaults.go` variable `DefaultKubernetesVersioning` accodingly.
+Update the `defaults.go` variable `DefaultKubernetesVersioning` accordingly.
 
 Next, re-generate the Helm chart and documentation:
 
@@ -48,7 +48,7 @@ Once new Docker images are ready, KKP can be updated as well.
   the most recent version minus 1 (i.e. if 1.19.2 is the most recent version we support,
   set the default to the latest 1.18 version) and make sure to define upgrade paths
   for previous Kubernetes versions as well.
-- Updat `pkg/resources/test/load_files_test.go` `TestLoadFiles()` to make it generate
+- Update `pkg/resources/test/load_files_test.go` `TestLoadFiles()` to make it generate
   manifests for the new minor version.
 
 Lastly, re-generate the Helm chart and documentation:

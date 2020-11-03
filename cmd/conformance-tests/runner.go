@@ -689,7 +689,7 @@ func (r *testRunner) testCluster(
 			},
 		); err != nil {
 			log.Errorf("Ginkgo scenario '%s' failed, giving up retrying: %v", err)
-			// We still wan't to run potential next runs
+			// We still want to run potential next runs
 			continue
 		}
 	}

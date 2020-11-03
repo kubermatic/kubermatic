@@ -46,7 +46,7 @@ Pods can be configured using "spec.dnsConfig" mentioned in https://raw.githubuse
 
 ## Task & effort
 
-*Specify the taks and the effort in days*
+*Specify the tasks and the effort in days*
 
 * Replace service references with cluster-ip master templates - 1d
 * Give all master components access to the user clusters pod & service network - 1d

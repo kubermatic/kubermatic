@@ -46,6 +46,6 @@ A short and concise description of all steps of the intended implementation
 A list of alternative implementations to solve the problem at hand and a short description of why they were discarded
 
 ## Task & effort:
-*Specify the taks and the effort in days (samples unit 0.5days) e.g.*
+*Specify the tasks and the effort in days (samples unit 0.5days) e.g.*
 * Implement NodeClass - 1d
 * Enhance kubermatic controller - 2d

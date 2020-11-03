@@ -12,7 +12,7 @@ The approach the machine-controller takes, differs from the node-controller.
 
 The current way we manage nodes has some downsides:
 
-*   Theres a new "official" api definition for machine-management
+*   There's a new "official" api definition for machine-management
 *   We extended the core node object via annotations
 *   Node.spec.providerID is read-only. Currently we do a buffered deletion when a node comes up
 *   We used docker-machine which is poorly written and was not flexible enough

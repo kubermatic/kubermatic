@@ -185,7 +185,7 @@ type machineTestData struct {
 func buildNet(t *testing.T, cidr string, gw string, dnsServers ...string) Network {
 	ip, ipnet, err := net.ParseCIDR(cidr)
 	if err != nil {
-		t.Fatalf("error in network config of test, couldnt parse %s as cidr", cidr)
+		t.Fatalf("error in network config of test, couldn't parse %s as cidr", cidr)
 	}
 
 	dnsIps := make([]net.IP, len(dnsServers))

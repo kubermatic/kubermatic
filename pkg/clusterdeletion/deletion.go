@@ -143,7 +143,7 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 
 	// If we deleted something it is implied that there was still something left. Just return
 	// here so the finalizers stay, it will make the cluster controller requeue us after a delay
-	// This also means that we may end up issuing multiple DELETE calls against the same ressource
+	// This also means that we may end up issuing multiple DELETE calls against the same resource
 	// if cleaning up takes some time, but that shouldn't cause any harm
 	// We also need to return when something was deleted so the checkIfAllLoadbalancersAreGone
 	// call gets an updated version of the cluster from the lister

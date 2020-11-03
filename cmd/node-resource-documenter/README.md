@@ -16,4 +16,4 @@ is generated.
 
 The generated output file is a markdown file containing the header for the Hugo CMS. Inside
 of it are sections for the addons containing resource configurations. Those are listed per
-containter in form of a YAML snippet describing the configuration.
+container in form of a YAML snippet describing the configuration.

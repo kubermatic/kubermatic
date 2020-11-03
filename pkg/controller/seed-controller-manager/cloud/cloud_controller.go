@@ -56,11 +56,11 @@ const (
 	// hardcoded AZs and Subnets towards multi-AZ support.
 	awsHarcodedAZMigrationRevision = 2
 	// currentMigrationRevision describes the current migration revision. If this is set on the
-	// cluster, certain migrations wont get executed. This must never be decremented.
+	// cluster, certain migrations won't get executed. This must never be decremented.
 	CurrentMigrationRevision = awsHarcodedAZMigrationRevision
 )
 
-// Check if the Reconciler fullfills the interface
+// Check if the Reconciler fulfills the interface
 // at compile time
 var _ reconcile.Reconciler = &Reconciler{}
 

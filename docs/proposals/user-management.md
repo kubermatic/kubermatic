@@ -82,17 +82,17 @@ One thing worth mentioning is that the names of the `Groups`, `Roles` and `RoleB
 
 ## Implementation
 
-Having a proper set of permissions in place that are attached to all `Resources` for each `Group` we have in our system is a foundation we will build our user management functionallity on. In reality it boils down to assigning a `Group` (think unique name) to an authenticated `User`. From that moment we will query our system as Bob that belongs  to `Editors` group and let Kubernetes take care of enforcing authorisation decisions.
+Having a proper set of permissions in place that are attached to all `Resources` for each `Group` we have in our system is a foundation we will build our user management functionality on. In reality it boils down to assigning a `Group` (think unique name) to an authenticated `User`. From that moment we will query our system as Bob that belongs  to `Editors` group and let Kubernetes take care of enforcing authorisation decisions.
 
 One way of doing this we would like to propose is to create a new type namely `Project`. For exact type definitions please refer to `Types` section. An instance of `Project` represents a unique project
-and gives us an identity we will attach to project’s `resources`. At the same time we would like to extend existing `apiv1.User` type in a way that would allow us to store a list of `Projects` along with a `Group` a user belongs to. We will also provide a new implementation of `ClusterProvider` that will be different in two ways. Firstly, it will use a build-in admin account to get the list of `clusters` associated with the given project. Secondly, all the other operations like cluster creation, deletion and retrieval will use `Impersonation` and will accept the name of the group the user belongs to.
+and gives us an identity we will attach to project’s `resources`. At the same time we would like to extend existing `apiv1.User` type in a way that would allow us to store a list of `Projects` along with a `Group` a user belongs to. We will also provide a new implementation of `ClusterProvider` that will be different in two ways. Firstly, it will use a built-in admin account to get the list of `clusters` associated with the given project. Secondly, all the other operations like cluster creation, deletion and retrieval will use `Impersonation` and will accept the name of the group the user belongs to.
 
 To recap when a user logs-in to our system this is what happens:
 - a user is authenticated
 - we retrieve a list of projects the user belongs to along with groups names from `apiv1.User`
 - we map the user to a group.
 - all the future queries will use `Impersonation` to authorise. To make this part more concrete imagine that we want to list clusters a user has access to. Since all `Resources` that belong to the `Project` will have the project's identity attached to them (be it `projectName` or `projectID`).
-To find corresponding clusters we will use a build-in admin account to look up the data from the cache (`Informers`). Once we have the list of interesting resources as a sanity check we impersonate as Bob and try to get each cluster directly from the api-server. This logic will be enclosed in `ProjectProvider`.
+To find corresponding clusters we will use a built-in admin account to look up the data from the cache (`Informers`). Once we have the list of interesting resources as a sanity check we impersonate as Bob and try to get each cluster directly from the api-server. This logic will be enclosed in `ProjectProvider`.
 
 
 To hide complexity from developers and to present a more hierarchical view we will create `ProjectProvider` which will accept a modified version of `ClusterProvider`, the new component will also rely on `RBACGenerator`.  The new component will not only make sure that queries are executed in the context of a user but it will also encapsulate resources and will provide convenient methods to operate on them. In the event of a resource creation or deletion the `ProjectProvider` will rely on `RBACGenerator` to create necessary `RBAC` roles.

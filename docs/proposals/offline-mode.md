@@ -32,7 +32,7 @@ Kubermatic:
     * Deploys Kubermatic master cluster, during this time Internet must not be available
     * Deploys a custmer cluster, during this time Internet must not be available
 
-## Tasks and effords
+## Tasks and efforts
 
 * machine-controller: 0.5d
 * collecting all images and writing a script for downloading, retagging and uploading: 0.5d

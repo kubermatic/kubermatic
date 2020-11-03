@@ -11,7 +11,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// AzureCloudSpec AzureCloudSpec specifies acceess credentials to Azure cloud.
+// AzureCloudSpec AzureCloudSpec specifies access credentials to Azure cloud.
 //
 // swagger:model AzureCloudSpec
 type AzureCloudSpec struct {
