@@ -10,7 +10,7 @@ KubeLB is a provider for multi cluster load balancing and takes the advantages o
 
 ## Non-Goals
 
-* Implementation of service type LoadBalancer like [MetalLB](https://metallb.universe.tf/)
+* Implementation of service type LoadBalancer for single cluster
 
 * ECMP and BGP
 
@@ -25,52 +25,50 @@ Solutions which are available e.g. MetalLB focus on a single cluster. KubeLB aim
 
 * Implementation of service type LoadBalancer where it's not available
 
-* Kind of multi cluster Ingress Controller
+* Multi cluster Ingress Controller
 
 * Possible cost reduction as you can decide between KubeLB and IaaS LoadBalancer instances
 
 * Multi cluster load balancing
 
-* Internal/External load balancing
+* Load balancing for internal networks
  
-* In a multi cluster environment it can be useful to have a single entrypoint inside the network to do some security or monitoring
+* In a multi cluster environment it can be useful to have a limited amount of entrypoints (Load balancer cluster) inside the network to do some security or monitoring. 
 
 * Make the actual loadbalancer technology pluggable (easy implementation if e.g. someone wants to use nginx over envoy)
 
 * Be able to have the load balancing cluster exist separately from the seed cluster or integrated into it
 
-* Separate load balancing instances in the LB cluster in namespaces, one namespace per user cluster/tenant
-
-
 ## Implementation
 
-The overall implementation contains three different parts: 
+The overall implementation contains two different parts: 
 
-**Agent**: Controller which is deployed in every user cluster. It watches for Services, Ingress resources and node changes. Updates the CRD inside the load balancing Cluster accordingly.
+**Agent**: Controller which is deployed in every application cluster. It watches for Services, Ingress resources and node changes. Updates or Creates a CRD inside the load balancing Cluster accordingly.
 
-**Manager**: Controller which is responsible for deploying and configuring the resources needed inside the load balancer cluster. Manages a CRD which describes the load balancing endpoints and settings. 
+**Manager**: Controller which is responsible for deploying and configuring the resources needed inside the load balancer cluster. Watcher for it's CRD which describes the load balancing endpoints and settings. 
 
-**Controller**: Deploys the Manager inside the load balancer cluster for each user cluster. The Manager deployment is probably namespaced.
+**LoadBalancer**
 
-Requires a type LoadBalancer implementation for the LB Cluster.
+It is required to have a service type "LoadBalancer" implementation on the load balancer cluster. This can be a cloud solution or a some single cluster implementations like in [Alternatives considered](#Alternatives considered).
+
 
 #### Envoy & Contour
 
 On the LB cluster Envoy & Contour are installed. When the controller creates a new HTTPProxy resource, Contour will configure Envoy automatically to process the traffic of the domain.
-The LB cluster will have a domain assigned e.g. lb.example.com each cluster will have a dedicated subdomain CLUSTERNAME.lb.example.net. For an Ingress on the User cluster a subdomain will be created based on the pattern INGRESS.CLUSTERNAME.lb.example.net The user can reference this URL in his DNS as a CNAME for a customer URL e.g. example.com -> CNAME INGRESS.CLUSTERNAME.lb.example.net 
+The LB cluster will have a domain assigned e.g. lb.example.com each cluster will have a dedicated subdomain CLUSTERNAME.lb.example.net. For an Ingress on the application cluster a subdomain will be created based on the pattern INGRESS.CLUSTERNAME.lb.example.net The user can reference this URL in his DNS as a CNAME for a customer URL e.g. example.com -> CNAME INGRESS.CLUSTERNAME.lb.example.net 
 To enable envoy to forward the customer URL, in the Ingress both URLs must set.
-Envoy will forward the traffic based on the HTTPProxy to the service and Kubernetes will forward the traffic from the service on the LB cluster to the Endpoints of the User cluster. 
+Envoy will forward the traffic based on the HTTPProxy to the service and Kubernetes will forward the traffic from the service on the LB cluster to the Endpoints of the application cluster. 
 
 This is not necessarily needed for L4 implementation but can be used to reduce costs of external LoadBalancer instances, since the L4 services can share one entrypoint with different ports. So it can be of Type ClusterIP with envoy infront or directly of type LoadBalancer.
 
 #### Implementation L4
 
-The agent watches for Services of type LoadBalancer/NodePort in the user cluster. In the user cluster itself for each service with type LoadBalancer a NodePort is allocated by default. 
-The agent informs the Manager which creates a Service and Endpoint in the LB cluster and adds the node IP addresses of the user cluster to the Endpoint IP addresses there. The agent watches for node changes like "remove", "add" and failures and will update the IP list in the Endpoint accordingly.
+The agent watches for Services of type LoadBalancer/NodePort in the application cluster. In the application cluster itself for each service with type LoadBalancer a NodePort is allocated by default. 
+The agent informs the Manager which creates a Service and Endpoint in the LB cluster and adds the node IP addresses of the application cluster to the Endpoint IP addresses there. The agent watches for node changes like "remove", "add" and failures and will update the IP list in the Endpoint accordingly.
 Evaluation for failing node detection, so it is fast enough and meet our requirements. If not we need to do some active health checks.
  
 For IaaS type load balancers: The controller will use the provisioned load balancers endpoint as its own endpoint.
-For non implemented type load balancers: The controller will update the Status and IP of the Service in the User cluster, when the LB is provisioned or changed.
+For non implemented type load balancers: The controller will update the Status and IP of the Service in the application cluster, when the LB is provisioned or changed.
 
 Kubernetes will forward the traffic from the Service on the LB cluster to one of the endpoint IPs and the port.
 
@@ -106,7 +104,7 @@ Example Configuration LB Cluster:
 The agent will watch for the Ingress resource and configures the CRD inside the load balancing cluster accordingly.
 The manager will create the Service as described in the L4 Implementation and HTTPProxy resource. This takes the advantage of contour to manage different domains and configure envoy.
 
-On the User cluster:
+On the application cluster:
 
     apiVersion: extensions/v1beta1
     kind: Ingress
@@ -169,12 +167,16 @@ For the LB cluster:
 
 #### TLS and Certificates
 
-Limited to envoy/contour and external load balancer implementations 
+Limited to envoy/contour and external load balancer implementations
 
 ## Alternatives considered
 
-Solved by GKE with Anthos - Cloud only Solution 
+Single cluster implementation for service type "LoadBalancer"
 
-## Task & effort:
+* [MetalLB](https://metallb.universe.tf/)
+* [Porter](https://github.com/kubesphere/porter)
+* [KubeViP](https://kube-vip.io/)
 
-Sir do a lot
+
+Multi cluster networking by GKE with [Anthos](https://cloud.google.com/kubernetes-engine/docs/concepts/ingress-for-anthos) - Cloud only Solution 
+
