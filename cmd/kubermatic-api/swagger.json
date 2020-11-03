@@ -8805,8 +8805,8 @@
         }
       }
     },
-    "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}": {
-      "get": {
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}": {
+      "delete": {
         "produces": [
           "application/json"
         ],
@@ -8815,6 +8815,58 @@
         ],
         "summary": "Deletes the given node that belongs to the machine deployment.",
         "operationId": "deleteMachineDeploymentNode",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "NodeID",
+            "name": "node_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets a machine deployment that is assigned to the given cluster.",
+        "operationId": "getMachineDeployment",
         "parameters": [
           {
             "type": "string",
@@ -8860,16 +8912,16 @@
         }
       }
     },
-    "/api/v2/projects/{project_id}/clusters/{cluster_id}/machines/nodes/{node_id}": {
-      "delete": {
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes": {
+      "get": {
         "produces": [
           "application/json"
         ],
         "tags": [
           "project"
         ],
-        "summary": "Deletes the given node that belongs to the machine deployment.",
-        "operationId": "deleteMachineNode",
+        "summary": "Lists nodes that belong to the given machine deployment.",
+        "operationId": "listMachineDeploymentNodes",
         "parameters": [
           {
             "type": "string",
@@ -8887,15 +8939,27 @@
           },
           {
             "type": "string",
-            "x-go-name": "NodeID",
-            "name": "node_id",
+            "x-go-name": "MachineDeploymentID",
+            "name": "machinedeployment_id",
             "in": "path",
             "required": true
+          },
+          {
+            "type": "boolean",
+            "x-go-name": "HideInitialConditions",
+            "name": "hideInitialConditions",
+            "in": "query"
           }
         ],
         "responses": {
           "200": {
-            "$ref": "#/responses/empty"
+            "description": "Node",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Node"
+              }
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
