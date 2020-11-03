@@ -663,6 +663,217 @@ func TestGetMachineDeployment(t *testing.T) {
 	}
 }
 
+func TestListMachineDeploymentNodes(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                       string
+		ExpectedResponse           []apiv1.Node
+		HTTPStatus                 int
+		ProjectIDToSync            string
+		ClusterIDToSync            string
+		ExistingProject            *kubermaticv1.Project
+		ExistingKubermaticUser     *kubermaticv1.User
+		ExistingAPIUser            *apiv1.User
+		ExistingCluster            *kubermaticv1.Cluster
+		ExistingNodes              []*corev1.Node
+		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		ExistingMachines           []*clusterv1alpha1.Machine
+		ExistingKubermaticObjs     []runtime.Object
+		MachineDeploymentID        string
+	}{
+		// scenario 1
+		{
+			Name:                   "scenario 1: list nodes that belong to the given machine deployment",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}, false),
+				genTestMachineDeployment("mars", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+			},
+			MachineDeploymentID: "venus",
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
+				genTestMachine("mars-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "345", "xyz": "abc"}, nil),
+				genTestMachine("mars-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, nil),
+			},
+			ExpectedResponse: []apiv1.Node{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus-1",
+						Name: "",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+						SSHUserName: "root",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "venus-1",
+						Capacity:    apiv1.NodeResources{},
+						Allocatable: apiv1.NodeResources{},
+					},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus-2",
+						Name: "",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+						SSHUserName: "root",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "venus-2",
+						Capacity:    apiv1.NodeResources{},
+						Allocatable: apiv1.NodeResources{},
+					},
+				},
+			},
+		},
+		// scenario 2
+		{
+			Name:                   "scenario 2: the admin John can list any nodes that belong to the given machine deployment",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), test.GenAdminUser("John", "john@acme.com", true)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123"}, false),
+				genTestMachineDeployment("mars", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+			},
+			MachineDeploymentID: "venus",
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("venus-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "xyz": "abc"}, nil),
+				genTestMachine("mars-1", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "345", "xyz": "abc"}, nil),
+				genTestMachine("mars-2", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, nil),
+			},
+			ExpectedResponse: []apiv1.Node{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus-1",
+						Name: "",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+						SSHUserName: "root",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "venus-1",
+						Capacity:    apiv1.NodeResources{},
+						Allocatable: apiv1.NodeResources{},
+					},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus-2",
+						Name: "",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+						SSHUserName: "root",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "venus-2",
+						Capacity:    apiv1.NodeResources{},
+						Allocatable: apiv1.NodeResources{},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineDeploymentID), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineObj := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			for _, existingNode := range tc.ExistingNodes {
+				kubernetesObj = append(kubernetesObj, existingNode)
+			}
+			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+				machineObj = append(machineObj, existingMachineDeployment)
+			}
+			for _, existingMachine := range tc.ExistingMachines {
+				machineObj = append(machineObj, existingMachine)
+			}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			actualNodes := test.NodeV1SliceWrapper{}
+			actualNodes.DecodeOrDie(res.Body, t).Sort()
+
+			wrappedExpectedNodes := test.NodeV1SliceWrapper(tc.ExpectedResponse)
+			wrappedExpectedNodes.Sort()
+
+			actualNodes.EqualOrDie(wrappedExpectedNodes, t)
+		})
+	}
+}
+
 func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 	controllerStatus := kubermaticv1.HealthStatusDown
 	if isControllerReady {

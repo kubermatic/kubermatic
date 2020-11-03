@@ -22,8 +22,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
-	"time"
 
 	"github.com/Masterminds/semver"
 	jsonpatch "github.com/evanphx/json-patch"
@@ -51,12 +49,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	errGlue = " & "
-
-	initialConditionParsingDelay = 5
 )
 
 // createNodeDeploymentReq defines HTTP request for createMachineDeployment
@@ -323,35 +315,7 @@ func getMachineDeploymentForNodeDeployment(ctx context.Context, clusterProvider 
 func ListNodeDeploymentNodes(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentNodesReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfoGetter, cluster, req.ProjectID, req.NodeDeploymentID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		nodeList, err := getNodeList(ctx, cluster, clusterProvider)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		var nodesV1 []*apiv1.Node
-		for i := range machines.Items {
-			node := getNodeForMachine(&machines.Items[i], nodeList.Items)
-			outNode, err := outputMachine(&machines.Items[i], node, req.HideInitialConditions)
-			if err != nil {
-				return nil, fmt.Errorf("failed to output machine %s: %v", machines.Items[i].Name, err)
-			}
-
-			nodesV1 = append(nodesV1, outNode)
-		}
-
-		return nodesV1, nil
+		return handlercommon.ListMachineDeploymentNodes(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.NodeDeploymentID, req.HideInitialConditions)
 	}
 }
 
@@ -762,107 +726,6 @@ func getNodeList(ctx context.Context, cluster *kubermaticv1.Cluster, clusterProv
 		return nil, err
 	}
 	return nodeList, nil
-}
-
-func apiNodeStatus(status apiv1.NodeStatus, inputNode *corev1.Node, hideInitialNodeConditions bool) apiv1.NodeStatus {
-	for _, address := range inputNode.Status.Addresses {
-		status.Addresses = append(status.Addresses, apiv1.NodeAddress{
-			Type:    string(address.Type),
-			Address: address.Address,
-		})
-	}
-
-	if !hideInitialNodeConditions || time.Since(inputNode.CreationTimestamp.Time).Minutes() > initialConditionParsingDelay {
-		reason, message := parseNodeConditions(inputNode)
-		status.ErrorReason += reason
-		status.ErrorMessage += message
-	}
-
-	status.Allocatable.Memory = inputNode.Status.Allocatable.Memory().String()
-	status.Allocatable.CPU = inputNode.Status.Allocatable.Cpu().String()
-
-	status.Capacity.Memory = inputNode.Status.Capacity.Memory().String()
-	status.Capacity.CPU = inputNode.Status.Capacity.Cpu().String()
-
-	status.NodeInfo.OperatingSystem = inputNode.Status.NodeInfo.OperatingSystem
-	status.NodeInfo.KubeletVersion = inputNode.Status.NodeInfo.KubeletVersion
-	status.NodeInfo.Architecture = inputNode.Status.NodeInfo.Architecture
-	status.NodeInfo.ContainerRuntimeVersion = inputNode.Status.NodeInfo.ContainerRuntimeVersion
-	status.NodeInfo.KernelVersion = inputNode.Status.NodeInfo.KernelVersion
-	return status
-}
-
-func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv1.Node, error) {
-	displayName := machine.Spec.Name
-	nodeStatus := apiv1.NodeStatus{}
-	nodeStatus.MachineName = machine.Name
-	var deletionTimestamp *apiv1.Time
-	if machine.DeletionTimestamp != nil {
-		dt := apiv1.NewTime(machine.DeletionTimestamp.Time)
-		deletionTimestamp = &dt
-	}
-
-	if machine.Status.ErrorReason != nil {
-		nodeStatus.ErrorReason += string(*machine.Status.ErrorReason) + errGlue
-		nodeStatus.ErrorMessage += *machine.Status.ErrorMessage + errGlue
-	}
-
-	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(machine.Spec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get operating system spec from machine: %v", err)
-	}
-
-	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(machine.Spec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
-	}
-
-	if node != nil {
-		if node.Name != machine.Spec.Name {
-			displayName = node.Name
-		}
-		nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
-	}
-
-	nodeStatus.ErrorReason = strings.TrimSuffix(nodeStatus.ErrorReason, errGlue)
-	nodeStatus.ErrorMessage = strings.TrimSuffix(nodeStatus.ErrorMessage, errGlue)
-
-	sshUserName, err := machineconversions.GetSSHUserName(operatingSystemSpec, cloudSpec)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ssh login name: %v", err)
-	}
-
-	return &apiv1.Node{
-		ObjectMeta: apiv1.ObjectMeta{
-			ID:                machine.Name,
-			Name:              displayName,
-			DeletionTimestamp: deletionTimestamp,
-			CreationTimestamp: apiv1.NewTime(machine.CreationTimestamp.Time),
-		},
-		Spec: apiv1.NodeSpec{
-			Versions: apiv1.NodeVersionInfo{
-				Kubelet: machine.Spec.Versions.Kubelet,
-			},
-			OperatingSystem: *operatingSystemSpec,
-			Cloud:           *cloudSpec,
-			SSHUserName:     sshUserName,
-		},
-		Status: nodeStatus,
-	}, nil
-}
-
-func parseNodeConditions(node *corev1.Node) (reason string, message string) {
-	for _, condition := range node.Status.Conditions {
-		goodConditionType := condition.Type == corev1.NodeReady
-		if goodConditionType && condition.Status != corev1.ConditionTrue {
-			reason += condition.Reason + errGlue
-			message += condition.Message + errGlue
-		} else if !goodConditionType && condition.Status == corev1.ConditionTrue {
-			reason += condition.Reason + errGlue
-			message += condition.Message + errGlue
-		}
-	}
-	return reason, message
 }
 
 func getNodeForMachine(machine *clusterv1alpha1.Machine, nodes []corev1.Node) *corev1.Node {
