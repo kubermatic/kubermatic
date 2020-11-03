@@ -18,6 +18,9 @@ type AddonFormControl struct {
 	// DisplayName is visible in the UI
 	DisplayName string `json:"displayName,omitempty"`
 
+	// HelpText is visible in the UI next to the control
+	HelpText string `json:"helpText,omitempty"`
+
 	// InternalName is used internally to save in the addon object
 	InternalName string `json:"internalName,omitempty"`
 
