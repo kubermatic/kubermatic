@@ -1077,7 +1077,6 @@ presubmits:
   - name: pre-kubermatic-e2e-aws-openshift-4.1
     decorate: true
     optional: true
-    run_if_changed: "openshift_addons/"
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-aws: "true"
