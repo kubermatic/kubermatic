@@ -60,10 +60,12 @@ func ClusterReconcileWrapper(
 		reconcilingStatus = corev1.ConditionTrue
 	}
 	errs := []error{err}
-	oldCluster := cluster.DeepCopy()
-	SetClusterCondition(cluster, versions, conditionType, reconcilingStatus, "", "")
-	if !reflect.DeepEqual(oldCluster, cluster) {
-		errs = append(errs, ctrlruntimeclient.IgnoreNotFound(client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))))
+	if conditionType != kubermaticv1.ClusterConditionNone {
+		oldCluster := cluster.DeepCopy()
+		SetClusterCondition(cluster, versions, conditionType, reconcilingStatus, "", "")
+		if !reflect.DeepEqual(oldCluster, cluster) {
+			errs = append(errs, ctrlruntimeclient.IgnoreNotFound(client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))))
+		}
 	}
 	return result, utilerrors.NewAggregate(errs)
 }

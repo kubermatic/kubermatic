@@ -206,6 +206,9 @@ const (
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
+	// ClusterConditionNone is a special value indicating that no cluster condition should be set
+	ClusterConditionNone ClusterConditionType = ""
+
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpdateInProgress = "ClusterUpdateInProgress"
 )
@@ -215,8 +218,6 @@ var AllClusterConditionTypes = []ClusterConditionType{
 	ClusterConditionClusterControllerReconcilingSuccess,
 	ClusterConditionAddonControllerReconcilingSuccess,
 	ClusterConditionBackupControllerReconcilingSuccess,
-	ClusterConditionEtcdRestoreControllerReconcilingSuccess,
-	ClusterConditionBackupScheduleControllerReconcilingSuccess,
 	ClusterConditionCloudControllerReconcilingSuccess,
 	ClusterConditionComponentDefaulterReconcilingSuccess,
 	ClusterConditionUpdateControllerReconcilingSuccess,

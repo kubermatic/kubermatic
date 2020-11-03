@@ -188,7 +188,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.workerName,
 		cluster,
 		r.versions,
-		kubermaticv1.ClusterConditionBackupControllerReconcilingSuccess,
+		kubermaticv1.ClusterConditionNone,
 		func() (*reconcile.Result, error) {
 			return r.reconcile(ctx, log, backupConfig, cluster)
 		},
