@@ -20,9 +20,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
+	"time"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
@@ -34,8 +37,15 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	errGlue = " & "
+
+	initialConditionParsingDelay = 5
 )
 
 func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, sshKeyProvider provider.SSHKeyProvider, seedsGetter provider.SeedsGetter, machineDeployment apiv1.NodeDeployment, projectID, clusterID string) (interface{}, error) {
@@ -240,6 +250,171 @@ func GetMachineDeployment(ctx context.Context, userInfoGetter provider.UserInfoG
 	}
 
 	return outputMachineDeployment(machineDeployment)
+}
+
+func ListMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID, machineDeploymentID string, hideInitialConditions bool) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfoGetter, cluster, projectID, machineDeploymentID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	nodeList, err := getNodeList(ctx, cluster, clusterProvider)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	var nodesV1 []*apiv1.Node
+	for i := range machines.Items {
+		node := getNodeForMachine(&machines.Items[i], nodeList.Items)
+		outNode, err := outputMachine(&machines.Items[i], node, hideInitialConditions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to output machine %s: %v", machines.Items[i].Name, err)
+		}
+
+		nodesV1 = append(nodesV1, outNode)
+	}
+
+	return nodesV1, nil
+}
+
+func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv1.Node, error) {
+	displayName := machine.Spec.Name
+	nodeStatus := apiv1.NodeStatus{}
+	nodeStatus.MachineName = machine.Name
+	var deletionTimestamp *apiv1.Time
+	if machine.DeletionTimestamp != nil {
+		dt := apiv1.NewTime(machine.DeletionTimestamp.Time)
+		deletionTimestamp = &dt
+	}
+
+	if machine.Status.ErrorReason != nil {
+		nodeStatus.ErrorReason += string(*machine.Status.ErrorReason) + errGlue
+		nodeStatus.ErrorMessage += *machine.Status.ErrorMessage + errGlue
+	}
+
+	operatingSystemSpec, err := machineconversions.GetAPIV1OperatingSystemSpec(machine.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get operating system spec from machine: %v", err)
+	}
+
+	cloudSpec, err := machineconversions.GetAPIV2NodeCloudSpec(machine.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get node cloud spec from machine: %v", err)
+	}
+
+	if node != nil {
+		if node.Name != machine.Spec.Name {
+			displayName = node.Name
+		}
+		nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
+	}
+
+	nodeStatus.ErrorReason = strings.TrimSuffix(nodeStatus.ErrorReason, errGlue)
+	nodeStatus.ErrorMessage = strings.TrimSuffix(nodeStatus.ErrorMessage, errGlue)
+
+	sshUserName, err := machineconversions.GetSSHUserName(operatingSystemSpec, cloudSpec)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ssh login name: %v", err)
+	}
+
+	return &apiv1.Node{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                machine.Name,
+			Name:              displayName,
+			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: apiv1.NewTime(machine.CreationTimestamp.Time),
+		},
+		Spec: apiv1.NodeSpec{
+			Versions: apiv1.NodeVersionInfo{
+				Kubelet: machine.Spec.Versions.Kubelet,
+			},
+			OperatingSystem: *operatingSystemSpec,
+			Cloud:           *cloudSpec,
+			SSHUserName:     sshUserName,
+		},
+		Status: nodeStatus,
+	}, nil
+}
+
+func parseNodeConditions(node *corev1.Node) (reason string, message string) {
+	for _, condition := range node.Status.Conditions {
+		goodConditionType := condition.Type == corev1.NodeReady
+		if goodConditionType && condition.Status != corev1.ConditionTrue {
+			reason += condition.Reason + errGlue
+			message += condition.Message + errGlue
+		} else if !goodConditionType && condition.Status == corev1.ConditionTrue {
+			reason += condition.Reason + errGlue
+			message += condition.Message + errGlue
+		}
+	}
+	return reason, message
+}
+
+func apiNodeStatus(status apiv1.NodeStatus, inputNode *corev1.Node, hideInitialNodeConditions bool) apiv1.NodeStatus {
+	for _, address := range inputNode.Status.Addresses {
+		status.Addresses = append(status.Addresses, apiv1.NodeAddress{
+			Type:    string(address.Type),
+			Address: address.Address,
+		})
+	}
+
+	if !hideInitialNodeConditions || time.Since(inputNode.CreationTimestamp.Time).Minutes() > initialConditionParsingDelay {
+		reason, message := parseNodeConditions(inputNode)
+		status.ErrorReason += reason
+		status.ErrorMessage += message
+	}
+
+	status.Allocatable.Memory = inputNode.Status.Allocatable.Memory().String()
+	status.Allocatable.CPU = inputNode.Status.Allocatable.Cpu().String()
+
+	status.Capacity.Memory = inputNode.Status.Capacity.Memory().String()
+	status.Capacity.CPU = inputNode.Status.Capacity.Cpu().String()
+
+	status.NodeInfo.OperatingSystem = inputNode.Status.NodeInfo.OperatingSystem
+	status.NodeInfo.KubeletVersion = inputNode.Status.NodeInfo.KubeletVersion
+	status.NodeInfo.Architecture = inputNode.Status.NodeInfo.Architecture
+	status.NodeInfo.ContainerRuntimeVersion = inputNode.Status.NodeInfo.ContainerRuntimeVersion
+	status.NodeInfo.KernelVersion = inputNode.Status.NodeInfo.KernelVersion
+	return status
+}
+
+func getNodeList(ctx context.Context, cluster *kubermaticv1.Cluster, clusterProvider provider.ClusterProvider) (*corev1.NodeList, error) {
+	client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	nodeList := &corev1.NodeList{}
+	if err := client.List(ctx, nodeList); err != nil {
+		return nil, err
+	}
+	return nodeList, nil
+}
+
+func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
+
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	machineDeployment := &clusterv1alpha1.MachineDeployment{}
+	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nodeDeploymentID}, machineDeployment); err != nil {
+		return nil, err
+	}
+
+	machines := &clusterv1alpha1.MachineList{}
+	if err := client.List(ctx, machines, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}); err != nil {
+		return nil, err
+	}
+	return machines, nil
 }
 
 func findMachineAndNode(ctx context.Context, name string, client ctrlruntimeclient.Client) (*clusterv1alpha1.Machine, *corev1.Node, error) {
