@@ -77,16 +77,16 @@ func (req createMachineDeploymentReq) GetSeedCluster() apiv1.SeedCluster {
 	}
 }
 
-func DeleteMachineNode(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func DeleteMachineDeploymentNode(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(deleteMachineNodeReq)
+		req := request.(deleteMachineDeploymentNodeReq)
 		return handlercommon.DeleteMachineNode(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.NodeID)
 	}
 }
 
-// deleteMachineNodeReq defines HTTP request for deleteMachineNode
-// swagger:parameters deleteMachineNode
-type deleteMachineNodeReq struct {
+// deleteMachineDeploymentNodeReq defines HTTP request for deleteMachineDeploymentNode
+// swagger:parameters deleteMachineDeploymentNode
+type deleteMachineDeploymentNodeReq struct {
 	common.ProjectReq
 	// in: path
 	ClusterID string `json:"cluster_id"`
@@ -94,8 +94,8 @@ type deleteMachineNodeReq struct {
 	NodeID string `json:"node_id"`
 }
 
-func DecodeDeleteMachineNode(c context.Context, r *http.Request) (interface{}, error) {
-	var req deleteMachineNodeReq
+func DecodeDeleteMachineDeploymentNode(c context.Context, r *http.Request) (interface{}, error) {
+	var req deleteMachineDeploymentNodeReq
 
 	nodeID := mux.Vars(r)["node_id"]
 	if nodeID == "" {
@@ -119,7 +119,7 @@ func DecodeDeleteMachineNode(c context.Context, r *http.Request) (interface{}, e
 }
 
 // GetSeedCluster returns the SeedCluster object
-func (req deleteMachineNodeReq) GetSeedCluster() apiv1.SeedCluster {
+func (req deleteMachineDeploymentNodeReq) GetSeedCluster() apiv1.SeedCluster {
 	return apiv1.SeedCluster{
 		ClusterID: req.ClusterID,
 	}

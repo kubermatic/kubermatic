@@ -96,8 +96,8 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.createMachineDeployment())
 
 	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/clusters/{cluster_id}/machines/nodes/{node_id}").
-		Handler(r.deleteMachineNode())
+		Path("/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}").
+		Handler(r.deleteMachineDeploymentNode())
 
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/machinedeployments").
@@ -1084,7 +1084,7 @@ func (r Routing) createMachineDeployment() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/machines/nodes/{node_id} project deleteMachineNode
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id} project deleteMachineDeploymentNode
 //
 //    Deletes the given node that belongs to the machine deployment.
 //
@@ -1097,15 +1097,15 @@ func (r Routing) createMachineDeployment() http.Handler {
 //       200: empty
 //       401: empty
 //       403: empty
-func (r Routing) deleteMachineNode() http.Handler {
+func (r Routing) deleteMachineDeploymentNode() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(machine.DeleteMachineNode(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
-		machine.DecodeDeleteMachineNode,
+		)(machine.DeleteMachineDeploymentNode(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		machine.DecodeDeleteMachineDeploymentNode,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
