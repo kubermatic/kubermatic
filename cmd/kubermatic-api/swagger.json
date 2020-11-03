@@ -10212,7 +10212,7 @@
           "x-go-name": "Logo"
         },
         "logoFormat": {
-          "description": "LogoFormat contains logo format of the configured addon, i.e. svg+xml.",
+          "description": "LogoFormat contains logo format of the configured addon, i.e. svg+xml",
           "type": "string",
           "x-go-name": "LogoFormat"
         },
@@ -10232,6 +10232,11 @@
           "description": "DisplayName is visible in the UI",
           "type": "string",
           "x-go-name": "DisplayName"
+        },
+        "helpText": {
+          "description": "HelpText is visible in the UI next to the control",
+          "type": "string",
+          "x-go-name": "HelpText"
         },
         "internalName": {
           "description": "InternalName is used internally to save in the addon object",
