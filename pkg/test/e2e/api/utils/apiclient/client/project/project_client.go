@@ -59,7 +59,7 @@ type ClientService interface {
 
 	DeleteExternalCluster(params *DeleteExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteExternalClusterOK, error)
 
-	DeleteMachineNode(params *DeleteMachineNodeParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMachineNodeOK, error)
+	DeleteMachineDeploymentNode(params *DeleteMachineDeploymentNodeParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMachineDeploymentNodeOK, error)
 
 	DeleteNodeDeployment(params *DeleteNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteNodeDeploymentOK, error)
 
@@ -779,23 +779,23 @@ func (a *Client) DeleteExternalCluster(params *DeleteExternalClusterParams, auth
 }
 
 /*
-  DeleteMachineNode deletes the given node that belongs to the machine deployment
+  DeleteMachineDeploymentNode deletes the given node that belongs to the machine deployment
 */
-func (a *Client) DeleteMachineNode(params *DeleteMachineNodeParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMachineNodeOK, error) {
+func (a *Client) DeleteMachineDeploymentNode(params *DeleteMachineDeploymentNodeParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMachineDeploymentNodeOK, error) {
 	// TODO: Validate the params before sending
 	if params == nil {
-		params = NewDeleteMachineNodeParams()
+		params = NewDeleteMachineDeploymentNodeParams()
 	}
 
 	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "deleteMachineNode",
+		ID:                 "deleteMachineDeploymentNode",
 		Method:             "DELETE",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machines/nodes/{node_id}",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/nodes/{node_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
 		Params:             params,
-		Reader:             &DeleteMachineNodeReader{formats: a.formats},
+		Reader:             &DeleteMachineDeploymentNodeReader{formats: a.formats},
 		AuthInfo:           authInfo,
 		Context:            params.Context,
 		Client:             params.HTTPClient,
@@ -803,12 +803,12 @@ func (a *Client) DeleteMachineNode(params *DeleteMachineNodeParams, authInfo run
 	if err != nil {
 		return nil, err
 	}
-	success, ok := result.(*DeleteMachineNodeOK)
+	success, ok := result.(*DeleteMachineDeploymentNodeOK)
 	if ok {
 		return success, nil
 	}
 	// unexpected success response
-	unexpectedSuccess := result.(*DeleteMachineNodeDefault)
+	unexpectedSuccess := result.(*DeleteMachineDeploymentNodeDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
