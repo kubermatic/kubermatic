@@ -172,7 +172,7 @@ func TestCreateMachineDeployment(t *testing.T) {
 	}
 }
 
-func TestDeleteMachineNode(t *testing.T) {
+func TestDeleteMachineDeploymentNode(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		Name                    string
@@ -261,7 +261,7 @@ func TestDeleteMachineNode(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machines/nodes/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(""))
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/nodes/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			kubermaticObj := []runtime.Object{}
 			machineObj := []runtime.Object{}
