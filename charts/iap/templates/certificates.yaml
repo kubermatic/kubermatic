@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+{{ if .Values.iap.certIssuer.name }}
 {{ range .Values.iap.deployments }}
 ---
 apiVersion: cert-manager.io/v1alpha2
@@ -25,4 +26,5 @@ spec:
     kind: {{ $.Values.iap.certIssuer.kind }}
   dnsNames:
   - {{ .ingress.host | trim }}
+{{ end -}}
 {{ end -}}
