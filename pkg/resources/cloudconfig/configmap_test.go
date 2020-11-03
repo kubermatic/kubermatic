@@ -78,6 +78,33 @@ func TestGetVsphereCloudConfig(t *testing.T) {
 				return nil
 			},
 		},
+		{
+			name: "Datastore overridden at cluster level",
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						VSphere: &kubermaticv1.VSphereCloudSpec{
+							Datastore: "super-cool-datastore",
+						},
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					VSphere: &kubermaticv1.DatacenterSpecVSphere{
+						Endpoint:         "https://vsphere.com:9443",
+						DefaultDatastore: "less-cool-datastore",
+					},
+				},
+			},
+			verify: func(cc *vsphere.CloudConfig) error {
+				if cc.Workspace.DefaultDatastore != "super-cool-datastore" {
+					return fmt.Errorf("Expected default-datastore to be %q, was %q", "super-cool-datastore",
+						cc.Workspace.DefaultDatastore)
+				}
+				return nil
+			},
+		},
 	}
 
 	for idx := range testCases {

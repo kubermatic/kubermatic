@@ -241,6 +241,14 @@ func getVsphereCloudConfig(
 	if urlPort := vspherURL.Port(); urlPort != "" {
 		port = urlPort
 	}
+	datastore := dc.Spec.VSphere.DefaultDatastore
+	// if a datastore is provided at cluster level override the default
+	// datastore provided at datacenter level.
+	// Note that in case a DatastoreCluster is provided at cluster level we
+	// still use DefaultDatastore specified at datacenter level.
+	if cluster.Spec.Cloud.VSphere.Datastore != "" {
+		datastore = cluster.Spec.Cloud.VSphere.Datastore
+	}
 	return &vsphere.CloudConfig{
 		Global: vsphere.GlobalOpts{
 			User:             credentials.VSphere.Username,
@@ -249,7 +257,7 @@ func getVsphereCloudConfig(
 			VCenterPort:      port,
 			InsecureFlag:     dc.Spec.VSphere.AllowInsecure,
 			Datacenter:       dc.Spec.VSphere.Datacenter,
-			DefaultDatastore: dc.Spec.VSphere.DefaultDatastore,
+			DefaultDatastore: datastore,
 			WorkingDir:       cluster.Name,
 		},
 		Workspace: vsphere.WorkspaceOpts{
@@ -262,7 +270,7 @@ func getVsphereCloudConfig(
 			VCenterIP:        vspherURL.Hostname(),
 			Datacenter:       dc.Spec.VSphere.Datacenter,
 			Folder:           cluster.Spec.Cloud.VSphere.Folder,
-			DefaultDatastore: dc.Spec.VSphere.DefaultDatastore,
+			DefaultDatastore: datastore,
 		},
 		Disk: vsphere.DiskOpts{
 			SCSIControllerType: "pvscsi",

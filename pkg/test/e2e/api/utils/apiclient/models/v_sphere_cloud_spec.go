@@ -16,13 +16,14 @@ import (
 // swagger:model VSphereCloudSpec
 type VSphereCloudSpec struct {
 
-	// Datastore to be used for storing virtual machines, it is mutually
-	// exclusive with DatastoreCluster.
+	// Datastore to be used for storing virtual machines and as a default for
+	// dynamic volume provisioning, it is mutually exclusive with
+	// DatastoreCluster.
 	// +optional
 	Datastore string `json:"datastore,omitempty"`
 
-	// DatastoreCluster to be used for determining the Datastore for virtual
-	// machines, it is mutually exclusive with Datastore.
+	// DatastoreCluster to be used for storing virtual machines, it is mutually
+	// exclusive with Datastore.
 	// +optional
 	DatastoreCluster string `json:"datastoreCluster,omitempty"`
 

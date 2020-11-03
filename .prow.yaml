@@ -1033,6 +1033,8 @@ presubmits:
           value: "v1.19.3"
         - name: PROVIDER
           value: "vsphere"
+        - name: EXCLUDE_DISTRIBUTIONS
+          value: "centos,coreos,flatcar,rhel"
         - name: SCENARIO_OPTIONS
           value: "datastore-cluster"
         - name: SERVICE_ACCOUNT_KEY
