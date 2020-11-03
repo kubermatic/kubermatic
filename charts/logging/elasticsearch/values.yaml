@@ -88,7 +88,7 @@ logging:
       storageSize: 50Gi
 
     curator:
-      # Amount of days after which the indicies should be killed
+      # Amount of days after which the indices should be killed
       interval: 5
       image:
         repository: quay.io/kubermatic/elasticsearch-curator

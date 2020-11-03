@@ -145,7 +145,7 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 	seedClient, ok := r.seedClients[request.Namespace]
 	if !ok {
 		log.Errorw("Got request for seed we don't have a client for", "seed", request.Namespace)
-		// The clients are inserted during controller initialzation, so there is no point in retrying
+		// The clients are inserted during controller initialization, so there is no point in retrying
 		return nil
 	}
 

@@ -108,7 +108,7 @@ func digitaloceanSize(ctx context.Context, token string) (apiv1.DigitaloceanSize
 	sizeList := apiv1.DigitaloceanSizeList{}
 	// currently there are 3 types of sizes: 1) starting with s, 2) starting with c and 3) the old ones
 	// type 3 isn't listed in the pricing anymore and only will be available for legacy issues until July 1st, 2018
-	// therefor we might not want to log all cases that aren't starting with s or c
+	// therefore we might not want to log all cases that aren't starting with s or c
 	for k := range sizes {
 		s := apiv1.DigitaloceanSize{
 			Slug:         sizes[k].Slug,

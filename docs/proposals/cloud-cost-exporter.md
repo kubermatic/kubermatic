@@ -25,7 +25,7 @@ This Exporter uses SDKs of various Cloud Providers:
 
 We want the exporter to be configurable via a config file / configmap.
 
-The exporter can then scrape the Cloud Providers for the number of Nodes, Disks and simliar infrastructure under controll by Kubermatic.
+The exporter can then scrape the Cloud Providers for the number of Nodes, Disks and similar infrastructure under control by Kubermatic.
 With this data ingested into Prometheus we can query various different costs with PromQL queries.
 
 ## Task & effort:

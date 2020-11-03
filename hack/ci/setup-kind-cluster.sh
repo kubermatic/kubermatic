@@ -48,7 +48,7 @@ echodate "Setting iptables rule to clamp mss to path mtu"
 iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
 
 # Make debugging a bit better
-echodate "Confuguring bash"
+echodate "Configuring bash"
 cat <<EOF >>~/.bashrc
 # Gets set to the CI clusters kubeconfig from a preset
 unset KUBECONFIG

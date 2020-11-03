@@ -246,7 +246,7 @@ type ClusterStatus struct {
 
 	// ErrorReason contains a error reason in case the controller encountered an error. Will be reset if the error was resolved
 	ErrorReason *ClusterStatusError `json:"errorReason,omitempty"`
-	// ErrorMessage contains a defauled error message in case the controller encountered an error. Will be reset if the error was resolved
+	// ErrorMessage contains a default error message in case the controller encountered an error. Will be reset if the error was resolved
 	ErrorMessage *string `json:"errorMessage,omitempty"`
 
 	// Conditions contains conditions the cluster is in, its primary use case is status signaling between controllers or between
@@ -432,7 +432,7 @@ type HetznerCloudSpec struct {
 	Token string `json:"token,omitempty"` // Token is used to authenticate with the Hetzner cloud API.
 }
 
-// AzureCloudSpec specifies acceess credentials to Azure cloud.
+// AzureCloudSpec specifies access credentials to Azure cloud.
 type AzureCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 

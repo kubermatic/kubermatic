@@ -111,7 +111,7 @@ func TestUnmarshalJSON(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !bytes.Equal(b, tc.inputByte) {
-				t.Errorf("epxected to get %s, but got %s", string(tc.inputByte), string(b))
+				t.Errorf("expected to get %s, but got %s", string(tc.inputByte), string(b))
 			}
 		})
 	}

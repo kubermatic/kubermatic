@@ -38,7 +38,7 @@ import (
 
 const ControllerName = "node_csr_autoapprover"
 
-// Check if the Reconciler fullfills the interface
+// Check if the Reconciler fulfills the interface
 // at compile time
 var _ reconcile.Reconciler = &reconciler{}
 

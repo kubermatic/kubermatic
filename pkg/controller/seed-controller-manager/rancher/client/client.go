@@ -107,7 +107,7 @@ func (c *Client) do(urlStr, data string, into interface{}) error {
 	defer resp.Body.Close()
 	if !isHTTPOK(resp.StatusCode) {
 		body, _ := ioutil.ReadAll(resp.Body)
-		return fmt.Errorf("request faild: [%d %s]: %v", resp.StatusCode, http.StatusText(resp.StatusCode), string(body))
+		return fmt.Errorf("request failed: [%d %s]: %v", resp.StatusCode, http.StatusText(resp.StatusCode), string(body))
 	}
 	if into == nil {
 		return nil

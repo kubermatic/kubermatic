@@ -579,7 +579,7 @@ func listGCPSubnetworks(ctx context.Context, userInfo *provider.UserInfo, datace
 		for _, subnetwork := range page.Items {
 			// subnetworks.Network are a url e.g. https://www.googleapis.com/compute/v1/[...]/networks/default"
 			// we just get the path of the network, instead of the url
-			// therefor we can't use regular Filter function and need to check on our own
+			// therefore we can't use regular Filter function and need to check on our own
 			if strings.Contains(subnetwork.Network, networkName) {
 				subnetworkPath := subnetworkRegex.FindString(subnetwork.SelfLink)
 				net := apiv1.GCPSubnetwork{

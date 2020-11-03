@@ -53,25 +53,25 @@ func (nf *networkFlags) String() string {
 }
 
 func (nf *networkFlags) Set(value string) error {
-	splitted := strings.Split(value, ",")
+	split := strings.Split(value, ",")
 
-	if len(splitted) < 3 {
+	if len(split) < 3 {
 		return fmt.Errorf("expected cidr,gateway,dns1,dns2,... but got: %s", value)
 	}
 
-	cidrStr := splitted[0]
+	cidrStr := split[0]
 	ip, ipnet, err := net.ParseCIDR(cidrStr)
 	if err != nil {
 		return fmt.Errorf("error parsing cidr %s: %v", cidrStr, err)
 	}
 
-	gwStr := splitted[1]
+	gwStr := split[1]
 	gwIP := net.ParseIP(gwStr)
 	if gwIP == nil {
 		return fmt.Errorf("expected valid gateway ip but got %s", gwStr)
 	}
 
-	dnsSplitted := splitted[2:]
+	dnsSplitted := split[2:]
 	dnsServers := make([]net.IP, len(dnsSplitted))
 	for i, d := range dnsSplitted {
 		dnsIP := net.ParseIP(d)

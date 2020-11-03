@@ -364,12 +364,12 @@ func TestValidate(t *testing.T) {
 			errExpected: true,
 		},
 		{
-			name:           "Shuld be able to delete empty seeds",
+			name:           "Should be able to delete empty seeds",
 			seedToValidate: &kubermaticv1.Seed{},
 			isDelete:       true,
 		},
 		{
-			name: "Shuld be able to delete seeds with no used datacenters",
+			name: "Should be able to delete seeds with no used datacenters",
 			existingSeeds: map[string]*kubermaticv1.Seed{
 				"existing-seed": {
 					ObjectMeta: metav1.ObjectMeta{

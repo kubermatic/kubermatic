@@ -6,7 +6,7 @@ Fixes #
 **Special notes for your reviewer**:
 
 **Documentation**:
-<!-- Add links to the related documentation changes related to this pull request. E.g. the link to the kubermatic/docs pullrequest. -->
+<!-- Add links to the related documentation changes related to this pull request. E.g. the link to the kubermatic/docs pull request. -->
 
 **Does this PR introduce a user-facing change?**:
 <!--  Write your release note:

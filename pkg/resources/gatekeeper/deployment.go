@@ -413,7 +413,7 @@ func TLSServingCertSecretCreator(data gatekeeperWebhookCertificateCreatorData) r
 	commonName := fmt.Sprintf("%s.%s.svc.cluster.local", resources.GatekeeperWebhookServiceName, data.Cluster().Status.NamespaceName)
 	return servingcerthelper.ServingCertSecretCreator(data.GetRootCA,
 		resources.GatekeeperWebhookServerCertSecretName,
-		// Must match whats configured in the gatekeeper webhook
+		// Must match what's configured in the gatekeeper webhook
 		commonName,
 		[]string{commonName},
 		nil)

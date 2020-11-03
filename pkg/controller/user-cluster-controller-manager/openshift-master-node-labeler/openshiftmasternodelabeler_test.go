@@ -61,7 +61,7 @@ func TestReconciliation(t *testing.T) {
 				}
 				for _, node := range nodes.Items {
 					if _, exists := node.Labels["node-role.kubernetes.io/master"]; !exists {
-						return fmt.Errorf("node %q didnt have the master label anymore", node.Name)
+						return fmt.Errorf("node %q didn't have the master label anymore", node.Name)
 					}
 				}
 				return nil
@@ -129,7 +129,7 @@ func TestReconciliation(t *testing.T) {
 				}
 				for _, node := range nodes.Items {
 					if _, exists := node.Labels["node-role.kubernetes.io/master"]; !exists {
-						return fmt.Errorf("node %q didnt have the master label", node.Name)
+						return fmt.Errorf("node %q didn't have the master label", node.Name)
 					}
 				}
 				return nil

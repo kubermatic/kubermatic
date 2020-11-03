@@ -51,7 +51,7 @@ get them running by following the following steps:
 * You can put this command into a function to make your life easier:
   `echo 'function cn { kubectl config set-context $(kubectl config current-context) --namespace=$1; }' >> ~/.bashrc`,
   this allows you to run `cn $NAMESPACE_NAME`, e.G. `cn cluster-$YOUR_CLUSTER_ID`
-* Now execute `kubectl get pod`, you should see an output similiar to this:
+* Now execute `kubectl get pod`, you should see an output similar to this:
 
 ```
 $ kubectl get pod

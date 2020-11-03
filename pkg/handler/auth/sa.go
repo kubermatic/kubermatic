@@ -46,7 +46,7 @@ func (s *ServiceAccountAuthClient) Extract(rq *http.Request) (string, error) {
 	return s.headerBearerTokenExtractor.Extract(rq)
 }
 
-// Verify parses a raw ID Token, verifies it's been signed by the provider, preforms
+// Verify parses a raw ID Token, verifies it's been signed by the provider, performs
 // any additional checks depending on the Config, and returns the payload as TokenClaims.
 func (s *ServiceAccountAuthClient) Verify(ctx context.Context, token string) (TokenClaims, error) {
 	_, customClaims, err := s.jwtTokenAuthenticator.Authenticate(token)

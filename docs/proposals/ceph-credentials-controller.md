@@ -12,7 +12,7 @@ those, a `StorageClass` needs to be added to each of those clusters
 and configured with Ceph access credentials.
 
 Because of performance issues caused by too many Ceph pools, all client clusters
-are exptected to use the same pool. However, reusing the same credentials for
+are expected to use the same pool. However, reusing the same credentials for
 all of them would make them difficult to revoke or rotate. For that reason,
 each of the child clusters should be provided with a separate set of credentials
 granting access to the same pool.

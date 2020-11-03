@@ -103,7 +103,7 @@ func DefaultContainer(c *corev1.Container, procMountType *corev1.ProcMountType) 
 		}
 	}
 
-	// This attribut was added in 1.12
+	// This attribute was added in 1.12
 	if c.SecurityContext != nil {
 		c.SecurityContext.ProcMount = procMountType
 	}

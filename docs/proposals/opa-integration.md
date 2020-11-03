@@ -39,14 +39,14 @@ High level overview on how it would work is that a seed(master) cluster has a li
 similarly to how RBACs are done. Admins can add more and these are shared across all user clusters which have gatekeeper enabled,
 but admins have the possibility to mark some CTs for example just for AWS datacenter, so they are shared just to AWS DC clusters. 
 When a user cluster with enabled "OPA Integration" flag is created it's deployed with Gatekeeper. A controller reconciles all the 
-eligable seed ConstraintTemplates to the user cluster. The user can then manage Configs and Constraints for its cluster using 
+eligible seed ConstraintTemplates to the user cluster. The user can then manage Configs and Constraints for its cluster using 
 Kubermatic dashboard or API. 
 
 The admin also will have the possibility to set up default constraints that will be applied to user clusters.
 
 When enabling OPA integration, we need to make sure to let users know what consequences this has. Especially for existing user clusters 
 which could already have gatekeeper installed. Also when disabling the OPA integration, they need to know the effect it will have on their 
-exisiting constraints and configs, which will be deleted along with the gatekeeper installation. 
+existing constraints and configs, which will be deleted along with the gatekeeper installation. 
 
 To integrate OPA with Kubermatic we will need to:
 - deploy Gatekeeper based on flag in cluster
@@ -109,7 +109,7 @@ type ConstraintList struct {
 
 ### Possible extensions or EE features
 
-1. Constraint can be offered to users based on their access to other projects and clusters. We could have a speacial endpoint:
+1. Constraint can be offered to users based on their access to other projects and clusters. We could have a special endpoint:
 `/projects/{project_id}/clusters/{cluster_id}/constraints/suggestions` which could compare what constraints the cluster already has,
 and what are the ones used in other clusters and projects the user has access to and suggest the difference. This could
 help users with saving time on adding the same constraints for multiple clusters. 

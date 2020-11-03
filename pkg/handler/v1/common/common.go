@@ -126,7 +126,7 @@ func GetReadyPod(client corev1interface.PodInterface, labelSelector string) (*co
 }
 
 // While it is tempting to write our own roundTripper to do all the reading/writing
-// in memory intead of opening a TCP port it has some drawbacks:
+// in memory instead of opening a TCP port it has some drawbacks:
 // * net/http.ReadResponse does not work with websockets, because its body is hardcoded to be an
 //   io.ReadCloster and not an io.ReadWriteCloser:
 //   * https://github.com/golang/go/blob/361ab73305788c4bf35359a02d8873c36d654f1b/src/net/http/transfer.go#L550

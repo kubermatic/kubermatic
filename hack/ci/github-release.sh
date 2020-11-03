@@ -34,7 +34,7 @@ DRY_RUN=${DRY_RUN:-false}
 GITHUB_TOKEN="${GITHUB_TOKEN:-$(cat /etc/github/oauth | tr --delete '\n')}"
 export GITHUB_AUTH="Authorization: token $GITHUB_TOKEN"
 
-# this stops execution when GIT_TAG is not overriden and
+# this stops execution when GIT_TAG is not overridden and
 # we are not on a tagged revision
 export GIT_TAG="${GIT_TAG:-$(git describe --tags --exact-match)}"
 export GIT_BRANCH="${GIT_BRANCH:-$(git rev-parse --abbrev-ref HEAD)}"
@@ -101,7 +101,7 @@ function upload_archive {
     if echo "$res" | jq --exit-status '.errors[0]' > /dev/null; then
       for err in $(echo "$res" | jq --raw-output '.errors[0].code'); do
         # if the error code is 'already_exists' do not fail to make this call
-        # idempotent. To make it better we should alse check that the content
+        # idempotent. To make it better we should also check that the content
         # match.
         [[ "$err" == "already_exists" ]] && return 0
       done

@@ -530,7 +530,7 @@ func TestLoadFiles(t *testing.T) {
 
 				tmpFile, err := ioutil.TempFile("", "kubermatic")
 				if err != nil {
-					t.Fatalf("couldnt create temp file, see: %v", err)
+					t.Fatalf("couldn't create temp file, see: %v", err)
 				}
 
 				tmpFilePath := tmpFile.Name()
@@ -542,7 +542,7 @@ func TestLoadFiles(t *testing.T) {
     - 'foo.bar:12345'
 `)
 				if err != nil {
-					t.Fatalf("couldnt write to temp file, see: %v", err)
+					t.Fatalf("couldn't write to temp file, see: %v", err)
 				}
 				defer (func() {
 					err = os.Remove(tmpFilePath)

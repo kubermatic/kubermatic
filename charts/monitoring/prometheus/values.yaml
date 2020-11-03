@@ -76,7 +76,7 @@ prometheus:
 
   # The list of rule files to load; if you use the `volumes`
   # directive below to mount your own ConfigMap or Secret into
-  # Prometheus, you will want to extend this list to laod your
+  # Prometheus, you will want to extend this list to load your
   # own rule files. You can remove the predefined path to
   # effectively disable the stock recordings and alerts.
   ruleFiles:

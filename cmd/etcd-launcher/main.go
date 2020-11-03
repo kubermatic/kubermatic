@@ -99,7 +99,7 @@ func main() {
 	initialMembers := initialMemberList(e.config.clusterSize, e.config.namespace)
 
 	e.config.initialState = initialStateNew
-	// check if the etcd cluster is initialized succcessfully.
+	// check if the etcd cluster is initialized successfully.
 	if k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
 		e.config.initialState = initialStateExisting
 	}
@@ -139,7 +139,7 @@ func main() {
 			// reconcile dead members
 			containsUnwantedMembers, err := e.containsUnwantedMembers()
 			if err != nil {
-				log.Warnw("failed to list memebers ", zap.Error(err))
+				log.Warnw("failed to list members ", zap.Error(err))
 				time.Sleep(10 * time.Second)
 				continue
 			}
@@ -175,7 +175,7 @@ func main() {
 		if _, err := client.MemberAdd(context.Background(), []string{fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace)}); err != nil {
 			log.Fatalf("failed to join cluster: %v", err)
 		}
-		log.Info("joined etcd cluster succcessfully.")
+		log.Info("joined etcd cluster successfully.")
 	}
 
 	if err = cmd.Wait(); err != nil {

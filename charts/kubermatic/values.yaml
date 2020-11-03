@@ -48,7 +48,7 @@ kubermatic:
   # base64 encoded presets.yaml. Predefined presets for all supported providers.
   presets: ""
 
-  # The default number of replicas for controlplane components. Can be overriden on
+  # The default number of replicas for controlplane components. Can be overridden on
   # a per-cluster basis by setting .Spec.ComponentsOverride.$COMPONENT.Replicas
   apiserverDefaultReplicas: "2"
   controllerManagerDefaultReplicas: "1"
@@ -291,7 +291,7 @@ kubermatic:
 #        rules:
 #        - alert: MyCustomAlert
 #          annotations:
-#            message: Something happend in {{ $labels.namespace }}
+#            message: Something happened in {{ $labels.namespace }}
 #          expr: |
 #            sum(rate(machine_controller_errors_total[5m])) by (namespace) > 0.01
 #          for: 10m

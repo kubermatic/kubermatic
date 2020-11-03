@@ -38,7 +38,7 @@ spec:
       name: "letsencrypt-staging"
     className: nginx
 
-  # These secret keys configure the way components commmunicate with Dex.
+  # These secret keys configure the way components communicate with Dex.
   auth:
     clientID: kubermatic
     issuerClientID: kubermaticIssuer

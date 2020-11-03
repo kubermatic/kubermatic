@@ -123,7 +123,7 @@ func (o *IssuerVerifier) Exchange(ctx context.Context, code string) (auth.OIDCTo
 	}, nil
 }
 
-// Verify parses a raw ID Token, verifies it's been signed by the provider, preforms
+// Verify parses a raw ID Token, verifies it's been signed by the provider, performs
 // any additional checks depending on the Config, and returns the payload as TokenClaims.
 func (o *IssuerVerifier) Verify(ctx context.Context, token string) (auth.TokenClaims, error) {
 	if o == nil {

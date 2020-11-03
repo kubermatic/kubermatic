@@ -569,7 +569,7 @@ func DecodeListEventsReq(c context.Context, r *http.Request) (interface{}, error
 		if req.Type == warningType || req.Type == normalType {
 			return req, nil
 		}
-		return nil, fmt.Errorf("wrong query paramater, unsupported type: %s", req.Type)
+		return nil, fmt.Errorf("wrong query parameter, unsupported type: %s", req.Type)
 	}
 
 	return req, nil

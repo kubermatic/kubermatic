@@ -157,7 +157,7 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 				}
 				datacenter, exists := seeds["my-seed"].Spec.Datacenters["my-datacenter"]
 				if !exists {
-					return errors.New(`.Spec.Datacenters["my-datacenter"] doesnt exist`)
+					return errors.New(`.Spec.Datacenters["my-datacenter"] doesn't exist`)
 				}
 				if datacenter.Country != "Germany" {
 					return fmt.Errorf("Expected datacenter.Country to be 'Germany', was %q", datacenter.Country)
@@ -185,10 +185,10 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 					return fmt.Errorf("Expected error to be nil, was %v", err)
 				}
 				if seeds["my-seed"] == nil {
-					return errors.New("Couldnt find seed")
+					return errors.New("Couldn't find seed")
 				}
 				if _, exists := seeds["my-seed"].Spec.Datacenters["my-datacenter"]; !exists {
-					return errors.New("Datacenter 'my-datacenter' doesnt exist")
+					return errors.New("Datacenter 'my-datacenter' doesn't exist")
 				}
 				return nil
 			},
@@ -205,13 +205,13 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 					return fmt.Errorf("Expected error to be nil, was %v", err)
 				}
 				if seeds["my-seed"] == nil {
-					return errors.New("Couldnt find seed")
+					return errors.New("Couldn't find seed")
 				}
 				if _, exists := seeds["my-seed"].Spec.Datacenters["my-datacenter"]; !exists {
-					return errors.New("Datacenter 'my-datacenter' doesnt exist")
+					return errors.New("Datacenter 'my-datacenter' doesn't exist")
 				}
 				if _, exists := seeds["my-seed"].Spec.Datacenters["my-second-datacenter"]; !exists {
-					return errors.New("Datacenter 'my-second-datacenter' doesnt exist")
+					return errors.New("Datacenter 'my-second-datacenter' doesn't exist")
 				}
 				return nil
 			},
@@ -229,16 +229,16 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 					return fmt.Errorf("Expected error to be nil, was %v", err)
 				}
 				if seeds["my-seed"] == nil {
-					return errors.New("Couldnt find seed 'my-seed'")
+					return errors.New("Couldn't find seed 'my-seed'")
 				}
 				if seeds["my-second-seed"] == nil {
-					return errors.New("Couldnt find seed 'my-second-seed'")
+					return errors.New("Couldn't find seed 'my-second-seed'")
 				}
 				if _, exists := seeds["my-seed"].Spec.Datacenters["my-datacenter"]; !exists {
-					return errors.New("Datacenter 'my-datacenter' doesnt exist")
+					return errors.New("Datacenter 'my-datacenter' doesn't exist")
 				}
 				if _, exists := seeds["my-second-seed"].Spec.Datacenters["my-second-datacenter"]; !exists {
-					return errors.New("Datacenter 'my-second-datacenter' doesnt exist")
+					return errors.New("Datacenter 'my-second-datacenter' doesn't exist")
 				}
 				return nil
 			},
@@ -258,22 +258,22 @@ func TestDatacenterMetasToSeedDatacenterSpecs(t *testing.T) {
 					return fmt.Errorf("Expected error to be nil, was %v", err)
 				}
 				if seeds["my-seed"] == nil {
-					return errors.New("Couldnt find seed 'my-seed'")
+					return errors.New("Couldn't find seed 'my-seed'")
 				}
 				if seeds["my-second-seed"] == nil {
-					return errors.New("Couldnt find seed 'my-second-seed'")
+					return errors.New("Couldn't find seed 'my-second-seed'")
 				}
 				if _, exists := seeds["my-seed"].Spec.Datacenters["my-datacenter"]; !exists {
-					return errors.New("Datacenter 'my-datacenter' doesnt exist")
+					return errors.New("Datacenter 'my-datacenter' doesn't exist")
 				}
 				if _, exists := seeds["my-seed"].Spec.Datacenters["my-third-datacenter"]; !exists {
-					return errors.New("Datacenter 'my-third-datacenter' doesnt exist")
+					return errors.New("Datacenter 'my-third-datacenter' doesn't exist")
 				}
 				if _, exists := seeds["my-second-seed"].Spec.Datacenters["my-second-datacenter"]; !exists {
-					return errors.New("Datacenter 'my-second-datacenter' doesnt exist")
+					return errors.New("Datacenter 'my-second-datacenter' doesn't exist")
 				}
 				if _, exists := seeds["my-second-seed"].Spec.Datacenters["my-fourth-datacenter"]; !exists {
-					return errors.New("Datacenter 'my-fourth-datacenter' doesnt exist")
+					return errors.New("Datacenter 'my-fourth-datacenter' doesn't exist")
 				}
 				return nil
 			},

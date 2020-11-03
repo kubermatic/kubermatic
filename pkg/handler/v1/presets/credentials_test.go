@@ -216,7 +216,7 @@ func TestCredentialEndpoint(t *testing.T) {
 					Spec: kubermaticv1.PresetSpec{
 						RequiredEmailDomain: test.RequiredEmailDomain,
 						Digitalocean: &kubermaticv1.Digitalocean{
-							Token: "toke",
+							Token: "took",
 						},
 					},
 				},

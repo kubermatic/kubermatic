@@ -28,7 +28,7 @@ echo "# This file has been generated, DO NOT EDIT." > $targetFile
 for crd in $(kubectl get crd -o name); do
 	echo "Getting crd $crd"
 	echo -e '\n---\n' >> $targetFile
-	# We cant use --export because the status has mandatory fields that are not preserved
+	# We can't use --export because the status has mandatory fields that are not preserved
 	kubectl get $crd -o json|jq '{metadata: {name: .metadata.name}, apiVersion: .apiVersion, kind: .kind, spec: .spec}' >> $targetFile
 done
 

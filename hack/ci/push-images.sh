@@ -48,7 +48,7 @@ export KUBERMATICDOCKERTAG="${GIT_HEAD_TAG:-$GIT_HEAD_HASH}"
 export UIDOCKERTAG="$KUBERMATICDOCKERTAG"
 
 if [ -z "$GIT_HEAD_TAG" ]; then
-  # in presubmits, we check against the PULL_BASE_REF (which is incidently also
+  # in presubmits, we check against the PULL_BASE_REF (which is incidentally also
   # only defined in presubmits); in postsubmits we check against the current branch
   UIBRANCH="${PULL_BASE_REF:-$GIT_BRANCH}"
 
@@ -84,5 +84,5 @@ sed -i "s/__DASHBOARD_TAG__/$UIDOCKERTAG/g" charts/*/*.yaml
 set -f # prevent globbing, do word splitting
 # shellcheck disable=SC2086
 retry 5 ./hack/release-docker-images.sh $TAGS
-echodate "Sucessfully finished building and pushing quay images"
+echodate "Successfully finished building and pushing quay images"
 unset TEST_NAME

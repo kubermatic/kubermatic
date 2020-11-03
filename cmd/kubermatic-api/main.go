@@ -157,7 +157,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	kubermaticMasterInformerFactory := kubermaticinformers.NewSharedInformerFactory(kubermaticMasterClient, 30*time.Minute)
 
 	// We use the manager only to get a lister-backed ctrlruntimeclient.Client. We can not use it for most
-	// other actions, because it doesn't support impersonation (and cant be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
+	// other actions, because it doesn't support impersonation (and can't be changed to do that as that would mean it has to replicate the apiservers RBAC for the lister)
 	mgr, err := manager.New(masterCfg, manager.Options{MetricsBindAddress: "0"})
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to construct manager: %v", err)
@@ -511,7 +511,7 @@ func clusterProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provide
 		}
 		kubeClient, err := kubernetes.NewForConfig(cfg)
 		if err != nil {
-			return nil, fmt.Errorf("faild to create kubeClient: %v", err)
+			return nil, fmt.Errorf("failed to create kubeClient: %v", err)
 		}
 		defaultImpersonationClientForSeed := kubernetesprovider.NewImpersonationClient(cfg, mapper)
 

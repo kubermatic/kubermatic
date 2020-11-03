@@ -32,7 +32,7 @@ func TestBuffer(t *testing.T) {
 			name:     "empty input",
 			expected: "",
 		}, {
-			name: "singe line",
+			name: "single line",
 			inputA: []string{
 				"one single line",
 			},
