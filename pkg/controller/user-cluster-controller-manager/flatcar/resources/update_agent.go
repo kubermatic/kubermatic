@@ -37,6 +37,8 @@ var (
 )
 
 func AgentDaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemonSetCreatorGetter {
+	var userCore int64 = 500 // UID of the flatcar admin user 'core'
+
 	return func() (string, reconciling.DaemonSetCreator) {
 		return AgentDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			ds.Spec.UpdateStrategy = appsv1.DaemonSetUpdateStrategy{
@@ -61,6 +63,9 @@ func AgentDaemonSetCreator(getRegistry GetImageRegistry) reconciling.NamedDaemon
 					Name:    "update-agent",
 					Image:   getRegistry(resources.RegistryQuay) + "/kinvolk/flatcar-linux-update-operator:v0.7.3",
 					Command: []string{"/bin/update-agent"},
+					SecurityContext: &corev1.SecurityContext{
+						RunAsUser: &userCore,
+					},
 					Env: []corev1.EnvVar{
 						{
 							Name: "UPDATE_AGENT_NODE",
