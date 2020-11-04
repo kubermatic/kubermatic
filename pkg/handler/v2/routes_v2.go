@@ -198,6 +198,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}").
 		Handler(r.deleteConstraint())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/constraints").
+		Handler(r.createConstraint())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -1085,6 +1089,33 @@ func (r Routing) deleteConstraint() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(constraint.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintProvider, r.privilegedConstraintProvider)),
 		constraint.DecodeConstraintReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/constraints project createConstraint
+//
+//     Creates a given constraint for the specified cluster.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Constraint
+//       401: empty
+//       403: empty
+func (r Routing) createConstraint() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(constraint.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintProvider, r.privilegedConstraintProvider)),
+		constraint.DecodeCreateConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

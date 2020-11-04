@@ -17,6 +17,8 @@ limitations under the License.
 package constraint_test
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -258,6 +260,98 @@ func TestDeleteConstraints(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints/%s",
 				tc.ProjectID, tc.ClusterID, tc.ConstraintName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
+func TestCreateConstraints(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name             string
+		Constraint       apiv2.Constraint
+		ProjectID        string
+		ClusterID        string
+		ExpectedResponse string
+		HTTPStatus       int
+		ExistingAPIUser  *apiv1.User
+		ExistingObjects  []runtime.Object
+	}{
+		{
+			Name: "scenario 1: user can create constraint",
+			Constraint: apiv2.Constraint{
+				Name: "ct1",
+				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName).Spec,
+			},
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":"namespace"}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			Name: "scenario 2: unauthorized user can not create constraint",
+			Constraint: apiv2.Constraint{
+				Name: "ct1",
+				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName).Spec,
+			},
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			Name: "scenario 3: admin user can create constraint in any project/cluster",
+			Constraint: apiv2.Constraint{
+				Name: "ct1",
+				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName).Spec,
+			},
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":"namespace"}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genKubermaticUser("John", "john@acme.com", true),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+	}
+
+	for _, tc := range testcases {
+		var reqBody struct {
+			Name string                      `json:"name"`
+			Spec kubermaticv1.ConstraintSpec `json:"spec"`
+		}
+		reqBody.Spec = tc.Constraint.Spec
+		reqBody.Name = tc.Constraint.Name
+
+		body, err := json.Marshal(reqBody)
+		if err != nil {
+			t.Fatalf("error marshalling body into json: %v", err)
+		}
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints",
+				tc.ProjectID, tc.ClusterID), bytes.NewBuffer(body))
 			res := httptest.NewRecorder()
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
