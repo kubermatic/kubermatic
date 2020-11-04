@@ -109,12 +109,16 @@ iap:
     #     annotations:
     #       ingress.kubernetes.io/upstream-hash-by: "ip_hash" ## needed for prometheus federations
 
-  # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates
+  # the cert-manager Issuer (or ClusterIssuer) responsible for managing the certificates;
+  # set this to an empty value to disable creating Certificate resources; in this case you need
+  # to manually provide the appropriate certificates
   certIssuer:
     name: letsencrypt-prod
     kind: ClusterIssuer
 
-  ## provides secret name at iap namespace for secret for a ca.crt file:
+  # provides secret name at iap namespace for secret for a ca.crt file; this is required if
+  # the OIDC provider (by default: Dex) uses a custom CA, because the oauth-proxy needs to
+  # validate the user tokens with the OIDC provider.
   #customProviderCA:
   #    secretName: ca-cert
   #    secretKey: ca.crt
