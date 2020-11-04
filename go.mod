@@ -46,7 +46,7 @@ require (
 	github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365
 	github.com/imdario/mergo v0.3.10 // indirect
 	github.com/jetstack/cert-manager v0.11.0
-	github.com/kubermatic/machine-controller v1.13.2
+	github.com/kubermatic/machine-controller v1.20.0
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/nelsam/hel v0.0.0-20200611165952-2d829bae0c66 // indirect
 	github.com/oklog/run v1.1.0
@@ -67,7 +67,7 @@ require (
 	github.com/vmware/govmomi v0.22.2
 	go.etcd.io/etcd/v3 v3.3.0-rc.0.0.20200728214110-6c81b20ec8de
 	go.uber.org/zap v1.15.0
-	golang.org/x/crypto v0.0.0-20200728195943-123391ffb6de
+	golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
 	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
 	golang.org/x/sys v0.0.0-20200819171115-d785dc25833f // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
