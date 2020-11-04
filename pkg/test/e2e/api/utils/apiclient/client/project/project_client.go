@@ -57,6 +57,8 @@ type ClientService interface {
 
 	DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterV2OK, error)
 
+	DeleteConstraint(params *DeleteConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteConstraintOK, error)
+
 	DeleteExternalCluster(params *DeleteExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteExternalClusterOK, error)
 
 	DeleteMachineDeploymentNode(params *DeleteMachineDeploymentNodeParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMachineDeploymentNodeOK, error)
@@ -743,6 +745,40 @@ func (a *Client) DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteClusterV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteConstraint deletes a specified constraint for the given cluster
+*/
+func (a *Client) DeleteConstraint(params *DeleteConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteConstraintOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteConstraintParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteConstraint",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteConstraintReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteConstraintOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteConstraintDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

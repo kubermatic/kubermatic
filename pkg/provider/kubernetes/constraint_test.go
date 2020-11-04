@@ -23,11 +23,14 @@ import (
 	"github.com/go-test/deep"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
+	restclient "k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -61,7 +64,10 @@ func TestListConstraints(t *testing.T) {
 			t.Parallel()
 
 			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
-			constraintProvider, err := kubernetes.NewConstraintProvider(client)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			constraintProvider, err := kubernetes.NewConstraintProvider(fakeImpersonationClient, client)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -115,7 +121,10 @@ func TestGetConstraint(t *testing.T) {
 			t.Parallel()
 
 			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
-			constraintProvider, err := kubernetes.NewConstraintProvider(client)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			constraintProvider, err := kubernetes.NewConstraintProvider(fakeImpersonationClient, client)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -126,6 +135,47 @@ func TestGetConstraint(t *testing.T) {
 			}
 			if !reflect.DeepEqual(constraint, tc.expectedConstraint) {
 				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedConstraint))
+			}
+		})
+	}
+}
+
+func TestDeleteConstraint(t *testing.T) {
+
+	testCases := []struct {
+		name            string
+		existingObjects []runtime.Object
+		userInfo        *provider.UserInfo
+		cluster         *kubermaticv1.Cluster
+		constraintName  string
+	}{
+		{
+			name: "scenario 1: delete constraint",
+			existingObjects: []runtime.Object{
+				genConstraint("ct1", testNamespace),
+			},
+			userInfo:       &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			cluster:        genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
+			constraintName: "ct1",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			constraintProvider, err := kubernetes.NewConstraintProvider(fakeImpersonationClient, client)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = constraintProvider.Delete(tc.cluster, tc.userInfo, tc.constraintName)
+			if err != nil {
+				t.Fatal(err)
 			}
 		})
 	}

@@ -165,4 +165,5 @@ type RoutingParams struct {
 	PrivilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
 	ConstraintTemplateProvider            provider.ConstraintTemplateProvider
 	ConstraintProvider                    provider.ConstraintProvider
+	PrivilegedConstraintProvider          provider.PrivilegedConstraintProvider
 }

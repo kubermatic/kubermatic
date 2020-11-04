@@ -200,6 +200,81 @@ func TestGetConstraints(t *testing.T) {
 	}
 }
 
+func TestDeleteConstraints(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name             string
+		ConstraintName   string
+		ProjectID        string
+		ClusterID        string
+		ExpectedResponse string
+		HTTPStatus       int
+		ExistingAPIUser  *apiv1.User
+		ExistingObjects  []runtime.Object
+	}{
+		{
+			Name:             "scenario 1: user can delete constraint",
+			ConstraintName:   "ct1",
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ExpectedResponse: `{}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			Name:             "scenario 2: unauthorized user can not delete constraint",
+			ConstraintName:   "ct1",
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			Name:             "scenario 3: admin user can delete any constraint",
+			ConstraintName:   "ct1",
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ExpectedResponse: `{}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
+				genKubermaticUser("John", "john@acme.com", true),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints/%s",
+				tc.ProjectID, tc.ClusterID, tc.ConstraintName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
 func genConstraint(name, namespace string) *kubermaticv1.Constraint {
 	ct := &kubermaticv1.Constraint{}
 	ct.Kind = kubermaticv1.ConstraintKind
