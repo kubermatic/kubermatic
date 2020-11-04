@@ -214,7 +214,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, back
 	var err error
 	errorReconcile := &reconcile.Result{RequeueAfter: 1 * time.Minute}
 
-	if nextReconcile, err = r.ensureNextBackupIsScheduled(ctx, backupConfig, cluster); err != nil {
+	if nextReconcile, err = r.ensurePendingBackupIsScheduled(ctx, backupConfig, cluster); err != nil {
 		return errorReconcile, errors.Wrap(err, "failed to ensure next backup is scheduled")
 	}
 
@@ -263,15 +263,13 @@ func minReconcile(reconciles ...*reconcile.Result) *reconcile.Result {
 	return result
 }
 
-// ensure a backup is scheduled for the next time slot after the current time, according to the backup config's schedule.
+// ensure a backup is scheduled for the most recent backup time, according to the backup config's schedule.
 // "schedule a backup" means set the scheduled time, backup name and job names of the corresponding element of backupConfig.Status.CurrentBackups
-func (r *Reconciler) ensureNextBackupIsScheduled(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) ensurePendingBackupIsScheduled(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	if backupConfig.DeletionTimestamp != nil || cluster.DeletionTimestamp != nil {
 		// backupConfig is deleting. Don't schedule any new backups.
 		return nil, nil
 	}
-
-	var backupToSchedule *kubermaticv1.BackupStatus
 
 	if len(backupConfig.Status.CurrentBackups) > 2*backupConfig.GetKeptBackupsCount() {
 		// keeping track of many backups already, don't schedule new ones.
@@ -305,6 +303,9 @@ func (r *Reconciler) ensureNextBackupIsScheduled(ctx context.Context, backupConf
 		r.recorder.Event(backupConfig, corev1.EventTypeNormal, "NormalBackupCount", "backup count low enough; scheduling new backups")
 	}
 
+	var backupToSchedule *kubermaticv1.BackupStatus
+	var requeueAfter time.Duration
+
 	if backupConfig.Spec.Schedule == "" {
 		// no schedule set => we need to schedule exactly one backup (if none was scheduled yet)
 		if len(backupConfig.Status.CurrentBackups) > 0 {
@@ -319,26 +320,41 @@ func (r *Reconciler) ensureNextBackupIsScheduled(ctx context.Context, backupConf
 		backupToSchedule = &backupConfig.Status.CurrentBackups[0]
 		backupToSchedule.ScheduledTime = &metav1.Time{Time: r.clock.Now()}
 		backupToSchedule.BackupName = backupConfig.Name
+		requeueAfter = 0
 
 	} else {
+		// compute the pending (i.e. latest past) and the next (i.e. earliest future) backup time,
+		// based on the most recent scheduled backup or, as a fallback, the backupConfig's creation time
+
+		nextBackupTime := backupConfig.ObjectMeta.CreationTimestamp.Time
+
+		if len(backupConfig.Status.CurrentBackups) > 0 {
+			latestBackup := &backupConfig.Status.CurrentBackups[len(backupConfig.Status.CurrentBackups)-1]
+			nextBackupTime = latestBackup.ScheduledTime.Time
+		}
+
 		schedule, err := parseCronSchedule(backupConfig.Spec.Schedule)
 		if err != nil {
 			return nil, errors.Wrapf(err, "Failed to Parse Schedule %v", backupConfig.Spec.Schedule)
 		}
 
-		nextScheduledTime := schedule.Next(r.clock.Now())
+		now := r.clock.Now()
 
-		for _, backup := range backupConfig.Status.CurrentBackups {
-			if backup.ScheduledTime.Time.Equal(nextScheduledTime) {
-				// found a scheduled backup for the next time slot. Nothing to change, requeue when its time arrives.
-				return &reconcile.Result{Requeue: true, RequeueAfter: nextScheduledTime.Sub(r.clock.Now())}, nil
-			}
+		var pendingBackupTime time.Time
+		for nextBackupTime = schedule.Next(nextBackupTime); now.After(nextBackupTime); nextBackupTime = schedule.Next(nextBackupTime) {
+			pendingBackupTime = nextBackupTime
+		}
+
+		if pendingBackupTime.IsZero() {
+			// no pending backup time found, meaning all past backups have been scheduled already. Just wait for the next backup time
+			return &reconcile.Result{Requeue: true, RequeueAfter: nextBackupTime.Sub(now)}, nil
 		}
 
 		backupConfig.Status.CurrentBackups = append(backupConfig.Status.CurrentBackups, kubermaticv1.BackupStatus{})
 		backupToSchedule = &backupConfig.Status.CurrentBackups[len(backupConfig.Status.CurrentBackups)-1]
-		backupToSchedule.ScheduledTime = &metav1.Time{Time: nextScheduledTime}
+		backupToSchedule.ScheduledTime = &metav1.Time{Time: pendingBackupTime}
 		backupToSchedule.BackupName = fmt.Sprintf("%s-%s", backupConfig.Name, backupToSchedule.ScheduledTime.Format("2006-01-02t15-04-05"))
+		requeueAfter = nextBackupTime.Sub(now)
 	}
 
 	backupToSchedule.JobName = r.limitNameLength(fmt.Sprintf("%s-backup-%s-create-%s", cluster.Name, backupConfig.Name, r.randStringGenerator()))
@@ -348,8 +364,7 @@ func (r *Reconciler) ensureNextBackupIsScheduled(ctx context.Context, backupConf
 		return nil, errors.Wrap(err, "failed to update backup config")
 	}
 
-	durationToScheduledTime := backupToSchedule.ScheduledTime.Sub(r.clock.Now())
-	return &reconcile.Result{Requeue: true, RequeueAfter: durationToScheduledTime}, nil
+	return &reconcile.Result{Requeue: true, RequeueAfter: requeueAfter}, nil
 }
 
 func (r *Reconciler) limitNameLength(name string) string {

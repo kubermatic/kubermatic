@@ -210,9 +210,10 @@ func genClusterRootCaSecret() *corev1.Secret {
 	}
 }
 
-func TestEnsureNextBackupIsScheduled(t *testing.T) {
+func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 	testCases := []struct {
 		name              string
+		creationTime      time.Time
 		currentTime       time.Time
 		schedule          string
 		backupConfigName  string
@@ -264,27 +265,34 @@ func TestEnsureNextBackupIsScheduled(t *testing.T) {
 			},
 		},
 		{
-			name:            "scheduling on a Config with no backups schedules one backup",
-			currentTime:     time.Unix(10, 0).UTC(),
+			name:            "before the next scheduled time slot, no backup is scheduled and we reconcile at that time slot",
+			creationTime:    time.Unix(60, 0).UTC(),
+			currentTime:     time.Unix(120, 0).UTC(),
 			schedule:        "*/10 * * * *",
-			existingBackups: []kubermaticv1.BackupStatus{},
-			expectedBackups: []kubermaticv1.BackupStatus{
-				{
-					ScheduledTime: &metav1.Time{Time: time.Unix(600, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-10-00",
-					JobName:       "testcluster-backup-testbackup-create-xxxx",
-					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
-				},
-			},
+			existingBackups: nil,
+			expectedBackups: nil,
 			expectedReconcile: &reconcile.Result{
 				Requeue:      true,
-				RequeueAfter: 590 * time.Second,
+				RequeueAfter: 480 * time.Second, // diff. between current time and next 10min slot
 			},
 		},
 		{
-			name:        "scheduling on a Config with future backups already scheduled changes nothing",
-			currentTime: time.Unix(10, 0).UTC(), //
-			schedule:    "*/10 * * * *",
+			name:            "with no backups, schedules with @every descriptors reconcile based on on the config creation time",
+			creationTime:    time.Unix(60, 0).UTC(),
+			currentTime:     time.Unix(120, 0).UTC(),
+			schedule:        "@every 10m",
+			existingBackups: nil,
+			expectedBackups: nil,
+			expectedReconcile: &reconcile.Result{
+				Requeue:      true,
+				RequeueAfter: 540 * time.Second, // diff. between current time and backup config creation time + 10m
+			},
+		},
+		{
+			name:         "with most recent backup scheduled, no new backup is scheduled and we reconcile at the next time slot",
+			creationTime: time.Unix(60, 0).UTC(),
+			currentTime:  time.Unix(660, 0).UTC(),
+			schedule:     "*/10 * * * *",
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(600, 0).UTC()},
@@ -303,13 +311,14 @@ func TestEnsureNextBackupIsScheduled(t *testing.T) {
 			},
 			expectedReconcile: &reconcile.Result{
 				Requeue:      true,
-				RequeueAfter: 590 * time.Second,
+				RequeueAfter: 540 * time.Second,
 			},
 		},
 		{
-			name:        "scheduling on a Config with no future backups scheduled schedules the next one",
-			currentTime: time.Unix(700, 0).UTC(),
-			schedule:    "*/10 * * * *",
+			name:         "with most recent backup NOT scheduled, that backup is scheduled and we reconcile at the next time slot",
+			creationTime: time.Unix(60, 0).UTC(),
+			currentTime:  time.Unix(1260, 0).UTC(), //
+			schedule:     "*/10 * * * *",
 			existingBackups: []kubermaticv1.BackupStatus{
 				{
 					ScheduledTime: &metav1.Time{Time: time.Unix(600, 0).UTC()},
@@ -334,51 +343,26 @@ func TestEnsureNextBackupIsScheduled(t *testing.T) {
 			},
 			expectedReconcile: &reconcile.Result{
 				Requeue:      true,
-				RequeueAfter: 500 * time.Second,
+				RequeueAfter: 540 * time.Second,
 			},
 		},
 		{
-			name:        "scheduling on a Config with a future backups scheduled for a time not matching the schedule schedules a new backup",
-			currentTime: time.Unix(700, 0).UTC(),
-			schedule:    "*/10 * * * *",
-			existingBackups: []kubermaticv1.BackupStatus{
-				{
-					ScheduledTime: &metav1.Time{Time: time.Unix(600, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-10-00",
-					JobName:       "testcluster-backup-testbackup-create-xxxx",
-					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
-				},
-				{
-					// this could only happen if you change the .schedule field of a BackupConfig later.
-					ScheduledTime: &metav1.Time{Time: time.Unix(720, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-12-00",
-					JobName:       "testcluster-backup-testbackup-create-xxxx",
-					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
-				},
-			},
+			name:            "with multiple past backups missing, still only the most recent one is scheduled",
+			creationTime:    time.Unix(0, 0).UTC(),
+			currentTime:     time.Unix(3600*24*17, 0).UTC(),
+			schedule:        "@every 120h",
+			existingBackups: nil,
 			expectedBackups: []kubermaticv1.BackupStatus{
 				{
-					ScheduledTime: &metav1.Time{Time: time.Unix(600, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-10-00",
-					JobName:       "testcluster-backup-testbackup-create-xxxx",
-					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
-				},
-				{
-					ScheduledTime: &metav1.Time{Time: time.Unix(720, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-12-00",
-					JobName:       "testcluster-backup-testbackup-create-xxxx",
-					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
-				},
-				{
-					ScheduledTime: &metav1.Time{Time: time.Unix(1200, 0).UTC()},
-					BackupName:    "testbackup-1970-01-01t00-20-00",
+					ScheduledTime: &metav1.Time{Time: time.Unix(3600*24*15, 0).UTC()},
+					BackupName:    "testbackup-1970-01-16t00-00-00",
 					JobName:       "testcluster-backup-testbackup-create-xxxx",
 					DeleteJobName: "testcluster-backup-testbackup-delete-xxxx",
 				},
 			},
 			expectedReconcile: &reconcile.Result{
 				Requeue:      true,
-				RequeueAfter: 500 * time.Second,
+				RequeueAfter: 3600 * 24 * 3 * time.Second,
 			},
 		},
 		{
@@ -411,6 +395,7 @@ func TestEnsureNextBackupIsScheduled(t *testing.T) {
 			clock := clock.NewFakeClock(tc.currentTime.UTC())
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Spec.Schedule = tc.schedule
+			backupConfig.SetCreationTimestamp(metav1.Time{Time: tc.creationTime})
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 			if tc.backupConfigName != "" {
 				backupConfig.Name = tc.backupConfigName
@@ -424,9 +409,9 @@ func TestEnsureNextBackupIsScheduled(t *testing.T) {
 				randStringGenerator: constRandStringGenerator("xxxx"),
 			}
 
-			reconcileAfter, err := reconciler.ensureNextBackupIsScheduled(context.Background(), backupConfig, cluster)
+			reconcileAfter, err := reconciler.ensurePendingBackupIsScheduled(context.Background(), backupConfig, cluster)
 			if err != nil {
-				t.Fatalf("ensureNextBackupIsScheduled returned an error: %v", err)
+				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
@@ -620,7 +605,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 
 			reconcileAfter, err := reconciler.startPendingBackupJobs(context.Background(), backupConfig, cluster)
 			if err != nil {
-				t.Fatalf("ensureNextBackupIsScheduled returned an error: %v", err)
+				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
@@ -893,7 +878,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 
 			reconcileAfter, err := reconciler.startPendingBackupDeleteJobs(context.Background(), backupConfig, cluster)
 			if err != nil {
-				t.Fatalf("ensureNextBackupIsScheduled returned an error: %v", err)
+				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
@@ -1114,7 +1099,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 
 			reconcileAfter, err := reconciler.updateRunningBackupDeleteJobs(context.Background(), backupConfig, cluster)
 			if err != nil {
-				t.Fatalf("ensureNextBackupIsScheduled returned an error: %v", err)
+				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
@@ -1406,7 +1391,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 
 			reconcileAfter, err := reconciler.deleteFinishedBackupJobs(context.Background(), backupConfig, cluster)
 			if err != nil {
-				t.Fatalf("ensureNextBackupIsScheduled returned an error: %v", err)
+				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
@@ -1716,7 +1701,7 @@ func TestFinalization(t *testing.T) {
 
 			reconcileAfter, err := reconciler.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Namespace: backupConfig.Namespace, Name: backupConfig.Name}})
 			if err != nil {
-				t.Fatalf("ensureNextBackupIsScheduled returned an error: %v", err)
+				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}
 
 			readbackBackupConfig := &kubermaticv1.EtcdBackupConfig{}
