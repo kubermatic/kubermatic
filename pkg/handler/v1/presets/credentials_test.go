@@ -360,6 +360,25 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedResponse: `{"names":["first", "second"]}`,
 		},
 		{
+			name:     "test list of credential names for Anexia",
+			provider: "anexia",
+			credentials: []runtime.Object{
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "anexia-first",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: test.RequiredEmailDomain,
+						Anexia: &kubermaticv1.Anexia{
+							Token: "token",
+						},
+					},
+				},
+			},
+			httpStatus:       http.StatusOK,
+			expectedResponse: `{"names":["anexia-first"]}`,
+		},
+		{
 			name:       "test no existing provider",
 			provider:   "test",
 			httpStatus: http.StatusBadRequest,

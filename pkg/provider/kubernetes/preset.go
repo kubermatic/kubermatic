@@ -183,6 +183,9 @@ func (m *PresetsProvider) SetCloudCredentials(userInfo *provider.UserInfo, prese
 	if cloud.Alibaba != nil {
 		return m.setAlibabaCredentials(userInfo, presetName, cloud)
 	}
+	if cloud.Anexia != nil {
+		return m.setAnexiaCredentials(userInfo, presetName, cloud)
+	}
 
 	return nil, fmt.Errorf("can not find provider to set credentials")
 }
@@ -397,4 +400,18 @@ func (m *PresetsProvider) setAlibabaCredentials(userInfo *provider.UserInfo, pre
 	cloud.Alibaba.AccessKeyID = credentials.AccessKeyID
 	cloud.Alibaba.AccessKeySecret = credentials.AccessKeySecret
 	return &cloud, nil
+}
+
+func (m *PresetsProvider) setAnexiaCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {
+	preset, err := m.GetPreset(userInfo, presetName)
+	if err != nil {
+		return nil, err
+	}
+	if preset.Spec.Anexia == nil {
+		return nil, emptyCredentialError(presetName, "Anexia")
+	}
+
+	cloud.Anexia.Token = preset.Spec.Anexia.Token
+	return &cloud, nil
+
 }

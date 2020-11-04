@@ -10561,6 +10561,48 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
+    "AnexiaNodeSpec": {
+      "description": "AnexiaNodeSpec anexia specific node settings",
+      "type": "object",
+      "required": [
+        "vlanID",
+        "templateID",
+        "cpus",
+        "memory",
+        "diskSize"
+      ],
+      "properties": {
+        "cpus": {
+          "description": "CPUs states how many cpus the node will have.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "CPUs"
+        },
+        "diskSize": {
+          "description": "DiskSize states the disk size that node will have.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DiskSize"
+        },
+        "memory": {
+          "description": "Memory states the memory that node will have.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Memory"
+        },
+        "templateID": {
+          "description": "TemplateID instance template",
+          "type": "string",
+          "x-go-name": "TemplateID"
+        },
+        "vlanID": {
+          "description": "VlanID Instance vlanID",
+          "type": "string",
+          "x-go-name": "VlanID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
     "AuditLoggingSettings": {
       "type": "object",
       "properties": {
@@ -11353,6 +11395,9 @@
         "alibaba": {
           "$ref": "#/definitions/DatacenterSpecAlibaba"
         },
+        "anexia": {
+          "$ref": "#/definitions/DatacenterSpecAnexia"
+        },
         "aws": {
           "$ref": "#/definitions/DatacenterSpecAWS"
         },
@@ -11457,6 +11502,18 @@
           "description": "Region to use, for a full list of regions see\nhttps://www.alibabacloud.com/help/doc-detail/40654.htm",
           "type": "string",
           "x-go-name": "Region"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "DatacenterSpecAnexia": {
+      "type": "object",
+      "title": "DatacenterSpecAnexia describes a anexia datacenter.",
+      "properties": {
+        "location_id": {
+          "description": "LocationID the location of the region",
+          "type": "string",
+          "x-go-name": "LocationID"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -12955,6 +13012,9 @@
         "alibaba": {
           "$ref": "#/definitions/AlibabaNodeSpec"
         },
+        "anexia": {
+          "$ref": "#/definitions/AnexiaNodeSpec"
+        },
         "aws": {
           "$ref": "#/definitions/AWSNodeSpec"
         },
@@ -13992,6 +14052,11 @@
       "title": "PublicAlibabaCloudSpec is a public counterpart of apiv1.AlibabaCloudSpec.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "PublicAnexiaCloudSpec": {
+      "type": "object",
+      "title": "PublicAnexiaCloudSpec is a public counterpart of apiv1.AnexiaCloudSpec.",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
     "PublicAzureCloudSpec": {
       "type": "object",
       "title": "PublicAzureCloudSpec is a public counterpart of apiv1.AzureCloudSpec.",
@@ -14008,6 +14073,9 @@
       "properties": {
         "alibaba": {
           "$ref": "#/definitions/PublicAlibabaCloudSpec"
+        },
+        "anexia": {
+          "$ref": "#/definitions/PublicAnexiaCloudSpec"
         },
         "aws": {
           "$ref": "#/definitions/PublicAWSCloudSpec"

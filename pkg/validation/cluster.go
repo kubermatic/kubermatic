@@ -139,6 +139,9 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 	if newSpec.Alibaba == nil && oldSpec.Alibaba != nil {
 		return ErrCloudChangeNotAllowed
 	}
+	if newSpec.Anexia == nil && oldSpec.Anexia != nil {
+		return ErrCloudChangeNotAllowed
+	}
 	if newSpec.DatacenterName != oldSpec.DatacenterName {
 		return errors.New("changing the datacenter is not allowed")
 	}
@@ -283,6 +286,11 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 			return fmt.Errorf("datacenter %q is not a alibaba datacenter", spec.DatacenterName)
 		}
 		return validateAlibabaCloudSpec(spec.Alibaba)
+	case spec.Anexia != nil:
+		if dc.Spec.Anexia == nil {
+			return fmt.Errorf("datacenter %q is not a anexia datacenter", spec.DatacenterName)
+		}
+		return validateAnexiaCloudSpec(spec.Anexia)
 	default:
 		return errors.New("no cloud provider specified")
 	}
@@ -452,6 +460,20 @@ func validateAlibabaCloudSpec(spec *kubermaticv1.AlibabaCloudSpec) error {
 			return err
 		}
 	}
+	return nil
+}
+
+func validateAnexiaCloudSpec(spec *kubermaticv1.AnexiaCloudSpec) error {
+	if spec.Token == "" {
+		if spec.CredentialsReference == nil {
+			return errors.New("no token or credentials reference specified")
+		}
+
+		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AnexiaToken); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

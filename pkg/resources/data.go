@@ -347,6 +347,8 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
 			return "external"
 		}
 		return "openstack"
+	case cluster.Spec.Cloud.Anexia != nil:
+		return "anexia"
 	default:
 		return ""
 	}

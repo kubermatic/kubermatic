@@ -75,6 +75,7 @@ type Credentials struct {
 	Kubevirt     KubevirtCredentials
 	VSphere      VSphereCredentials
 	Alibaba      AlibabaCredentials
+	Anexia       AnexiaCredentials
 }
 
 type AWSCredentials struct {
@@ -126,4 +127,8 @@ type VSphereCredentials struct {
 type AlibabaCredentials struct {
 	AccessKeyID     string
 	AccessKeySecret string
+}
+
+type AnexiaCredentials struct {
+	Token string
 }
