@@ -67,15 +67,12 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse flatcar config: %v", err)
 		}
-		// set ignition by default
-		provisioningUtility := apiv1.Ignition
-		if config.ProvisioningUtility == flatcar.CloudInit {
-			provisioningUtility = apiv1.CloudInit
-		}
 
 		operatingSystemSpec.Flatcar = &apiv1.FlatcarSpec{
-			DisableAutoUpdate:   config.DisableAutoUpdate,
-			ProvisioningUtility: provisioningUtility,
+			DisableAutoUpdate: config.DisableAutoUpdate,
+		}
+		if config.ProvisioningUtility == flatcar.CloudInit {
+			operatingSystemSpec.Flatcar.ProvisioningUtility = flatcar.CloudInit
 		}
 
 	case providerconfig.OperatingSystemUbuntu:

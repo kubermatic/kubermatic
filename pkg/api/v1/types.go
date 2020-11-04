@@ -22,6 +22,7 @@ import (
 	"github.com/Masterminds/semver"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -1004,14 +1005,6 @@ type NodeCloudSpec struct {
 	Anexia       *AnexiaNodeSpec       `json:"anexia,omitempty"`
 }
 
-// ProvisioningUtility specifies the type of provisioning utility.
-type ProvisioningUtility string
-
-const (
-	Ignition  ProvisioningUtility = "ignition"
-	CloudInit ProvisioningUtility = "cloud-init"
-)
-
 // UbuntuSpec ubuntu specific settings
 // swagger:model UbuntuSpec
 type UbuntuSpec struct {
@@ -1040,7 +1033,7 @@ type FlatcarSpec struct {
 
 	// ProvisioningUtility specifies the type of provisioning utility, allowed values are cloud-init and ignition.
 	// Defaults to ignition.
-	ProvisioningUtility `json:"provisioningUtility,omitempty"`
+	flatcar.ProvisioningUtility `json:"provisioningUtility,omitempty"`
 }
 
 // SLESSpec contains SLES specific settings

@@ -20,11 +20,10 @@ import (
 	"errors"
 	"fmt"
 
-	anexia "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
-
 	"github.com/aws/aws-sdk-go/service/ec2"
 
 	alibaba "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/alibaba/types"
+	anexia "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/anexia/types"
 	aws "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/aws/types"
 	azure "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/azure/types"
 	digitalocean "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/digitalocean/types"
