@@ -222,6 +222,12 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		if err != nil {
 			return nil, err
 		}
+	case nd.Spec.Template.Cloud.Anexia != nil:
+		config.CloudProvider = providerconfig.CloudProviderAnexia
+		cloudExt, err = getAnexiaProviderSpec(nd.Spec.Template, dc)
+		if err != nil {
+			return nil, err
+		}
 	default:
 		return nil, errors.New("unknown cloud provider")
 	}
@@ -294,7 +300,8 @@ func Validate(nd *apiv1.NodeDeployment, controlPlaneVersion *semver.Version) (*a
 		nd.Spec.Template.Cloud.Packet == nil &&
 		nd.Spec.Template.Cloud.GCP == nil &&
 		nd.Spec.Template.Cloud.Kubevirt == nil &&
-		nd.Spec.Template.Cloud.Alibaba == nil {
+		nd.Spec.Template.Cloud.Alibaba == nil &&
+		nd.Spec.Template.Cloud.Anexia == nil {
 		return nil, fmt.Errorf("node deployment needs to have cloud provider data")
 	}
 

@@ -22,6 +22,9 @@ type PublicCloudSpec struct {
 	// alibaba
 	Alibaba PublicAlibabaCloudSpec `json:"alibaba,omitempty"`
 
+	// anexia
+	Anexia PublicAnexiaCloudSpec `json:"anexia,omitempty"`
+
 	// aws
 	Aws PublicAWSCloudSpec `json:"aws,omitempty"`
 
