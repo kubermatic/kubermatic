@@ -77,30 +77,32 @@ Kubernetes will forward the traffic from the Service on the LB cluster to one of
 
 Example Configuration LB Cluster:
 
-    kind: Service
-    apiVersion: v1
-    metadata:
-      name: hello-svc
-    spec:
-      type: LoadBalancer / ClusterIP 
-      ports:
-      - protocol: TCP
-        port: 80
-        targetPort: 80
-        name: http
-    ---
-    apiVersion: v1
-    kind: Endpoints
-    metadata:
-      name: hello-svc
-    subsets:
-    - addresses:
-      - ip: 10.0.0.1 #Node-1 address 
-      - ip: 10.0.0.2 #Node-2 address
-      ports:
-      - name: http
-        port: 80
-        protocol: TCP
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: hello-svc
+spec:
+  type: LoadBalancer / ClusterIP 
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+    name: http
+---
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: hello-svc
+subsets:
+- addresses:
+  - ip: 10.0.0.1 #Node-1 address 
+  - ip: 10.0.0.2 #Node-2 address
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+```
 
 #### Implementation L7
 
@@ -108,24 +110,25 @@ The agent will watch for the Ingress resource and configures the CRD inside the 
 The manager will create the Service as described in the L4 Implementation and HTTPProxy resource. This takes the advantage of contour to manage different domains and configure envoy.
 
 On the tenant cluster:
-
-    apiVersion: extensions/v1beta1
-    kind: Ingress
-    metadata:
-      name: hello-svc
-      annotations:
-        kubelb.expose: extern / intern
-    spec:
-      rules:
-      - http:
-          paths:
-          - path: /testpath
-            backend:
-              serviceName: test
-              servicePort: 80
+```yaml
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: hello-svc
+  annotations:
+    kubelb.expose: extern / intern
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /testpath
+        backend:
+          serviceName: test
+          servicePort: 80
+```
 
 For the LB cluster:
-
+```yaml
     apiVersion: projectcontour.io/v1
     kind: HTTPProxy
     metadata:
@@ -141,8 +144,8 @@ For the LB cluster:
             - name: hello-svc
               port: 80
     ---
-    kind: Service
     apiVersion: v1
+    kind: Service
     metadata:
       name: hello-svc
       namespace: clustername
@@ -167,7 +170,7 @@ For the LB cluster:
       - name: http
         port: 80
         protocol: TCP
-
+```
 #### TLS and Certificates
 
 Limited to envoy/contour and external load balancer implementations
