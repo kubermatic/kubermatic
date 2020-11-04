@@ -212,7 +212,7 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		}
 	case nd.Spec.Template.Cloud.Kubevirt != nil:
 		config.CloudProvider = providerconfig.CloudProviderKubeVirt
-		cloudExt, err = getKubevirtProviderSpec(nd.Spec.Template)
+		cloudExt, err = getKubevirtProviderSpec(nd.Spec.Template, dc)
 		if err != nil {
 			return nil, err
 		}

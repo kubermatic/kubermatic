@@ -33,6 +33,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -100,8 +101,8 @@ func main() {
 func createExampleSeed() *kubermaticv1.Seed {
 	imageList := kubermaticv1.ImageList{}
 
-	for _, os := range providerconfig.AllOperatingSystems {
-		imageList[os] = ""
+	for _, operatingSystem := range providerconfig.AllOperatingSystems {
+		imageList[operatingSystem] = ""
 	}
 
 	proxySettings := kubermaticv1.ProxySettings{
@@ -149,8 +150,11 @@ func createExampleSeed() *kubermaticv1.Seed {
 						GCP: &kubermaticv1.DatacenterSpecGCP{
 							ZoneSuffixes: []string{},
 						},
-						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{},
-						Alibaba:  &kubermaticv1.DatacenterSpecAlibaba{},
+						Kubevirt: &kubermaticv1.DatacenterSpecKubevirt{
+							DNSPolicy: "",
+							DNSConfig: &corev1.PodDNSConfig{},
+						},
+						Alibaba: &kubermaticv1.DatacenterSpecAlibaba{},
 					},
 				},
 			},

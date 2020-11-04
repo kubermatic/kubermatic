@@ -97,7 +97,27 @@ spec:
           # Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
           # For informational purposes only.
           location: ""
-        kubevirt: {}
+        kubevirt:
+          # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
+          # configuration based on DNSPolicy.
+          dns_config:
+            # A list of DNS name server IP addresses.
+            # This will be appended to the base nameservers generated from DNSPolicy.
+            # Duplicated nameservers will be removed.
+            nameservers: null
+            # A list of DNS resolver options.
+            # This will be merged with the base options generated from DNSPolicy.
+            # Duplicated entries will be removed. Resolution options given in Options
+            # will override those that appear in the base DNSPolicy.
+            options: null
+            # A list of DNS search domains for host-name lookup.
+            # This will be appended to the base search paths generated from DNSPolicy.
+            # Duplicated search paths will be removed.
+            searches: null
+          # DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
+          # 'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
+          # policy selected with DNSPolicy.
+          dns_policy: ""
         openstack:
           auth_url: ""
           availability_zone: ""

@@ -73,7 +73,7 @@ type DatacenterSpec struct {
 	Hetzner *DatacenterSpecHetzner `json:"hetzner,omitempty"`
 
 	// kubevirt
-	Kubevirt DatacenterSpecKubevirt `json:"kubevirt,omitempty"`
+	Kubevirt *DatacenterSpecKubevirt `json:"kubevirt,omitempty"`
 
 	// node
 	Node *NodeSettings `json:"node,omitempty"`
@@ -121,6 +121,10 @@ func (m *DatacenterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateHetzner(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateKubevirt(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -282,6 +286,24 @@ func (m *DatacenterSpec) validateHetzner(formats strfmt.Registry) error {
 		if err := m.Hetzner.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("hetzner")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *DatacenterSpec) validateKubevirt(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Kubevirt) { // not required
+		return nil
+	}
+
+	if m.Kubevirt != nil {
+		if err := m.Kubevirt.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("kubevirt")
 			}
 			return err
 		}
