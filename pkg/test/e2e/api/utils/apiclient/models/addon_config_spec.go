@@ -27,7 +27,7 @@ type AddonConfigSpec struct {
 	// Logo of the configured addon, encoded in base64
 	Logo string `json:"logo,omitempty"`
 
-	// LogoFormat contains logo format of the configured addon, i.e. svg+xml.
+	// LogoFormat contains logo format of the configured addon, i.e. svg+xml
 	LogoFormat string `json:"logoFormat,omitempty"`
 
 	// ShortDescription of the configured addon that contains more detailed information about the addon,
