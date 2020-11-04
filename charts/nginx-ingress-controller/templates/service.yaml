@@ -37,4 +37,5 @@ spec:
     protocol: TCP
   selector:
     app: ingress-nginx
+  externalTrafficPolicy: '{{ .Values.nginx.service.externalTrafficPolicy }}'
 {{ end }}

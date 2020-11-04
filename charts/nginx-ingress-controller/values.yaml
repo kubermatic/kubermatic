@@ -57,3 +57,8 @@ nginx:
   # By default, while using host network, name resolution uses the host's DNS. If you wish nginx-controller
   # to keep resolving names inside the k8s network, use ClusterFirstWithHostNet.
   dnsPolicy: ClusterFirst
+  service:
+    # externalTrafficPolicy denotes if this Service desires to route external traffic to node-local or
+    # cluster-wide endpoints. Available values: "Local" and "Cluster".
+    # "Local" preserves the client source IP, and "Cluster" doesn't.
+    externalTrafficPolicy: ""
