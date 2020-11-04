@@ -21,20 +21,26 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ConstraintProvider struct that holds required components in order manage constraints
 type ConstraintProvider struct {
-	clientPrivileged ctrlruntimeclient.Client
+	// createSeedImpersonatedClient is used as a ground for impersonation
+	// whenever a connection to Seed API server is required
+	createSeedImpersonatedClient impersonationClient
+	clientPrivileged             ctrlruntimeclient.Client
 }
 
 // NewConstraintProvider returns a constraint provider
-func NewConstraintProvider(client ctrlruntimeclient.Client) (*ConstraintProvider, error) {
+func NewConstraintProvider(createSeedImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) (*ConstraintProvider, error) {
 	return &ConstraintProvider{
-		clientPrivileged: client,
+		clientPrivileged:             client,
+		createSeedImpersonatedClient: createSeedImpersonatedClient,
 	}, nil
 }
 
@@ -57,4 +63,30 @@ func (p *ConstraintProvider) Get(cluster *kubermaticv1.Cluster, name string) (*k
 	}
 
 	return constraint, nil
+}
+
+// Delete deletes a constraint
+func (p *ConstraintProvider) Delete(cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo, name string) error {
+
+	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return err
+	}
+
+	return impersonationClient.Delete(context.Background(), &kubermaticv1.Constraint{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: cluster.Status.NamespaceName,
+		},
+	})
+}
+
+// DeleteUnsecured deletes a constraint using a privileged client
+func (p *ConstraintProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error {
+	return p.clientPrivileged.Delete(context.Background(), &kubermaticv1.Constraint{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: cluster.Status.NamespaceName,
+		},
+	})
 }

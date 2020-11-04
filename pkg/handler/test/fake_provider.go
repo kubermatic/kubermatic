@@ -226,3 +226,7 @@ func (p *FakeConstraintProvider) List(cluster *kubermaticapiv1.Cluster) (*kuberm
 func (p *FakeConstraintProvider) Get(cluster *kubermaticapiv1.Cluster, name string) (*kubermaticapiv1.Constraint, error) {
 	return p.Provider.Get(cluster, name)
 }
+
+func (p *FakeConstraintProvider) Delete(cluster *kubermaticapiv1.Cluster, userInfo *provider.UserInfo, name string) error {
+	return p.Provider.Delete(cluster, userInfo, name)
+}
