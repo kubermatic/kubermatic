@@ -111,7 +111,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, err
 		}
 		err = deleteConstraint(ctx, userInfoGetter, constraintProvider, privilegedConstraintProvider, clus, req.ProjectID, req.Name)
-		return common.KubernetesErrorToHTTPError(err), nil
+		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 }
 
