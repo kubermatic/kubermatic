@@ -159,6 +159,8 @@ type ClientService interface {
 
 	ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentsOK, error)
 
+	ListNodesForCluster(params *ListNodesForClusterParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodesForClusterOK, error)
+
 	ListProjects(params *ListProjectsParams, authInfo runtime.ClientAuthInfoWriter) (*ListProjectsOK, error)
 
 	ListRole(params *ListRoleParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleOK, error)
@@ -2483,6 +2485,40 @@ func (a *Client) ListNodeDeployments(params *ListNodeDeploymentsParams, authInfo
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListNodeDeploymentsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListNodesForCluster this endpoint is used for kubeadm cluster
+*/
+func (a *Client) ListNodesForCluster(params *ListNodesForClusterParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodesForClusterOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListNodesForClusterParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listNodesForCluster",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/nodes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListNodesForClusterReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListNodesForClusterOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListNodesForClusterDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -39,6 +39,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -282,6 +283,87 @@ func ListMachineDeploymentNodes(ctx context.Context, userInfoGetter provider.Use
 	}
 
 	return nodesV1, nil
+}
+
+func ListNodesForCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string, hideInitialConditions bool) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	machineList := &clusterv1alpha1.MachineList{}
+	if err := client.List(ctx, machineList, ctrlruntimeclient.InNamespace(metav1.NamespaceSystem)); err != nil {
+		return nil, fmt.Errorf("failed to load machines from cluster: %v", err)
+	}
+
+	nodeList, err := getNodeList(ctx, cluster, clusterProvider)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	// The following is a bit tricky. We might have a node which is not created by a machine and vice versa...
+	var nodesV1 []*apiv1.Node
+	matchedMachineNodes := sets.NewString()
+
+	// Go over all machines first
+	for i := range machineList.Items {
+		node := getNodeForMachine(&machineList.Items[i], nodeList.Items)
+		if node != nil {
+			matchedMachineNodes.Insert(string(node.UID))
+		}
+
+		// Do not list Machines that are controlled, i.e. by Machine Set.
+		if len(machineList.Items[i].ObjectMeta.OwnerReferences) != 0 {
+			continue
+		}
+
+		outNode, err := outputMachine(&machineList.Items[i], node, hideInitialConditions)
+		if err != nil {
+			return nil, fmt.Errorf("failed to output machine %s: %v", machineList.Items[i].Name, err)
+		}
+
+		nodesV1 = append(nodesV1, outNode)
+	}
+
+	// Now all nodes, which do not belong to a machine - Relevant for BYO
+	for i := range nodeList.Items {
+		if !matchedMachineNodes.Has(string(nodeList.Items[i].UID)) {
+			nodesV1 = append(nodesV1, outputNode(&nodeList.Items[i], hideInitialConditions))
+		}
+	}
+	return nodesV1, nil
+}
+
+func outputNode(node *corev1.Node, hideInitialNodeConditions bool) *apiv1.Node {
+	nodeStatus := apiv1.NodeStatus{}
+	nodeStatus = apiNodeStatus(nodeStatus, node, hideInitialNodeConditions)
+	var deletionTimestamp *apiv1.Time
+	if node.DeletionTimestamp != nil {
+		t := apiv1.NewTime(node.DeletionTimestamp.Time)
+		deletionTimestamp = &t
+	}
+
+	return &apiv1.Node{
+		ObjectMeta: apiv1.ObjectMeta{
+			ID:                node.Name,
+			Name:              node.Name,
+			DeletionTimestamp: deletionTimestamp,
+			CreationTimestamp: apiv1.NewTime(node.CreationTimestamp.Time),
+		},
+		Spec: apiv1.NodeSpec{
+			Versions:        apiv1.NodeVersionInfo{},
+			OperatingSystem: apiv1.OperatingSystemSpec{},
+			Cloud:           apiv1.NodeCloudSpec{},
+		},
+		Status: nodeStatus,
+	}
 }
 
 func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv1.Node, error) {
