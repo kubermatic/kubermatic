@@ -301,6 +301,7 @@ func TestCreateConstraints(t *testing.T) {
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
+				test.GenConstraintTemplate("requiredlabels"),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -316,6 +317,7 @@ func TestCreateConstraints(t *testing.T) {
 			HTTPStatus:       http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
+				test.GenConstraintTemplate("requiredlabels"),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
@@ -331,7 +333,23 @@ func TestCreateConstraints(t *testing.T) {
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
+				test.GenConstraintTemplate("requiredlabels"),
 				genKubermaticUser("John", "john@acme.com", true),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			Name: "scenario 4: cannot create constraint with not existing constraint template",
+			Constraint: apiv2.Constraint{
+				Name: "ct1",
+				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName).Spec,
+			},
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8s.io \"requiredlabels\" not found"}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},

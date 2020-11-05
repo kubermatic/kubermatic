@@ -1221,3 +1221,35 @@ func GenAdminUser(name, email string, isAdmin bool) *kubermaticv1.User {
 	user.Spec.IsAdmin = isAdmin
 	return user
 }
+
+func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
+	ct := &kubermaticv1.ConstraintTemplate{}
+	ct.Name = name
+	ct.Spec = constrainttemplatev1beta1.ConstraintTemplateSpec{
+		CRD: constrainttemplatev1beta1.CRD{
+			Spec: constrainttemplatev1beta1.CRDSpec{
+				Names: constrainttemplatev1beta1.Names{
+					Kind:       "labelconstraint",
+					ShortNames: []string{"lc"},
+				},
+			},
+		},
+		Targets: []constrainttemplatev1beta1.Target{
+			{
+				Target: "admission.k8s.gatekeeper.sh",
+				Rego: `
+		package k8srequiredlabels
+
+        deny[{"msg": msg, "details": {"missing_labels": missing}}] {
+          provided := {label | input.review.object.metadata.labels[label]}
+          required := {label | label := input.parameters.labels[_]}
+          missing := required - provided
+          count(missing) > 0
+          msg := sprintf("you must provide labels: %v", [missing])
+        }`,
+			},
+		},
+	}
+
+	return ct
+}

@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -32,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
@@ -175,9 +177,15 @@ func DecodeConstraintReq(c context.Context, r *http.Request) (interface{}, error
 
 func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider) endpoint.Endpoint {
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider,
+	constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createConstraintReq)
+
+		err := req.ValidateCreateConstraintReq(constraintTemplateProvider)
+		if err != nil {
+			return nil, utilerrors.NewBadRequest(fmt.Sprintf("Validation failed, constraint needs to have an existing constraint template: %v", err))
+		}
 
 		clus, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
@@ -241,4 +249,9 @@ func DecodeCreateConstraintReq(c context.Context, r *http.Request) (interface{},
 		return nil, err
 	}
 	return req, nil
+}
+
+func (req *createConstraintReq) ValidateCreateConstraintReq(constraintTemplateProvider provider.ConstraintTemplateProvider) error {
+	_, err := constraintTemplateProvider.Get(req.Body.Spec.ConstraintType)
+	return err
 }
