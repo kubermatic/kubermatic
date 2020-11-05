@@ -874,6 +874,291 @@ func TestListMachineDeploymentNodes(t *testing.T) {
 	}
 }
 
+func TestListNodesForCluster(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		ExpectedResponse       []apiv1.Node
+		HTTPStatus             int
+		ProjectIDToSync        string
+		ClusterIDToSync        string
+		ExistingProject        *kubermaticv1.Project
+		ExistingKubermaticUser *kubermaticv1.User
+		ExistingAPIUser        *apiv1.User
+		ExistingCluster        *kubermaticv1.Cluster
+		ExistingNodes          []*corev1.Node
+		ExistingMachines       []*clusterv1alpha1.Machine
+		ExistingKubermaticObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			Name:                   "scenario 1: list nodes that belong to the given cluster",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
+			},
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+			},
+			ExpectedResponse: []apiv1.Node{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus",
+						Name: "venus",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+						SSHUserName: "root",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "venus",
+						Capacity: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+						Allocatable: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+					},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "mars",
+						Name: "mars",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							AWS: &apiv1.AWSNodeSpec{
+								InstanceType:     "t2.micro",
+								VolumeSize:       50,
+								AvailabilityZone: "eu-central-1a",
+								SubnetID:         "subnet-2bff4f43",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: false,
+							},
+						},
+						SSHUserName: "ubuntu",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "mars",
+						Capacity: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+						Allocatable: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+					},
+				},
+			},
+		},
+		// scenario 2
+		{
+			Name:                   "scenario 2: list nodes that belong to the given cluster should skip controlled machines",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
+			},
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, []metav1.OwnerReference{{APIVersion: "", Kind: "", Name: "", UID: ""}}),
+				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+			},
+			ExpectedResponse: []apiv1.Node{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "mars",
+						Name: "mars",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							AWS: &apiv1.AWSNodeSpec{
+								InstanceType:     "t2.micro",
+								VolumeSize:       50,
+								AvailabilityZone: "eu-central-1a",
+								SubnetID:         "subnet-2bff4f43",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: false,
+							},
+						},
+						SSHUserName: "ubuntu",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "mars",
+						Capacity: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+						Allocatable: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+					},
+				},
+			},
+		},
+		// scenario 3
+		{
+			Name:                   "scenario 3: the admin John can list nodes that belong to the given Bob's cluster",
+			HTTPStatus:             http.StatusOK,
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), test.GenAdminUser("John", "john@acme.com", true)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
+			},
+			ExistingMachines: []*clusterv1alpha1.Machine{
+				genTestMachine("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"},"operatingSystem":"ubuntu","containerRuntimeInfo":{"name":"docker","version":"1.13"},"operatingSystemSpec":{"distUpgradeOnBoot":true}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+				genTestMachine("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "containerRuntimeInfo":{"name":"docker","version":"1.12"},"operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, map[string]string{"md-id": "123", "some-other": "xyz"}, nil),
+			},
+			ExpectedResponse: []apiv1.Node{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "venus",
+						Name: "venus",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							Digitalocean: &apiv1.DigitaloceanNodeSpec{
+								Size: "2GB",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: true,
+							},
+						},
+						SSHUserName: "root",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "venus",
+						Capacity: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+						Allocatable: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+					},
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "mars",
+						Name: "mars",
+					},
+					Spec: apiv1.NodeSpec{
+						Cloud: apiv1.NodeCloudSpec{
+							AWS: &apiv1.AWSNodeSpec{
+								InstanceType:     "t2.micro",
+								VolumeSize:       50,
+								AvailabilityZone: "eu-central-1a",
+								SubnetID:         "subnet-2bff4f43",
+							},
+						},
+						OperatingSystem: apiv1.OperatingSystemSpec{
+							Ubuntu: &apiv1.UbuntuSpec{
+								DistUpgradeOnBoot: false,
+							},
+						},
+						SSHUserName: "ubuntu",
+						Versions: apiv1.NodeVersionInfo{
+							Kubelet: "v9.9.9",
+						},
+					},
+					Status: apiv1.NodeStatus{
+						MachineName: "mars",
+						Capacity: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+						Allocatable: apiv1.NodeResources{
+							CPU:    "0",
+							Memory: "0",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineObj := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			for _, existingNode := range tc.ExistingNodes {
+				kubernetesObj = append(kubernetesObj, existingNode)
+			}
+			for _, existingMachine := range tc.ExistingMachines {
+				machineObj = append(machineObj, existingMachine)
+			}
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			actualNodes := test.NodeV1SliceWrapper{}
+			actualNodes.DecodeOrDie(res.Body, t).Sort()
+
+			wrappedExpectedNodes := test.NodeV1SliceWrapper(tc.ExpectedResponse)
+			wrappedExpectedNodes.Sort()
+
+			actualNodes.EqualOrDie(wrappedExpectedNodes, t)
+		})
+	}
+}
+
 func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 	controllerStatus := kubermaticv1.HealthStatusDown
 	if isControllerReady {
