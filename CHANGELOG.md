@@ -1,5 +1,16 @@
 # Kubermatic 2.15
 
+## [v2.15.3](https://github.com/kubermatic/dashboard/releases/tag/v2.15.3)
+
+### Misc
+
+- Allow to customize the Docker image tag for Cluster Addons ([#6106](https://github.com/kubermatic/kubermatic/pull/6106))
+- Allow to disable creation of certificates for IAP deployments ([#6126](https://github.com/kubermatic/kubermatic/pull/6126))
+- Restore list of nodes in the cluster view ([#2774](https://github.com/kubermatic/dashboard/issues/2774))
+
+
+
+
 ## [v2.15.2](https://github.com/kubermatic/dashboard/releases/tag/v2.15.2)
 
 ### Misc
