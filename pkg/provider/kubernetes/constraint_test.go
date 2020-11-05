@@ -181,6 +181,52 @@ func TestDeleteConstraint(t *testing.T) {
 	}
 }
 
+func TestCreateConstraint(t *testing.T) {
+
+	testCases := []struct {
+		name       string
+		cluster    *kubermaticv1.Cluster
+		userInfo   *provider.UserInfo
+		constraint *kubermaticv1.Constraint
+	}{
+		{
+			name:       "scenario 1: create constraint",
+			cluster:    genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
+			userInfo:   &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+			constraint: genConstraint("ct1", testNamespace),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			constraintProvider, err := kubernetes.NewConstraintProvider(fakeImpersonationClient, client)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			_, err = constraintProvider.Create(tc.userInfo, tc.constraint)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			constraint, err := constraintProvider.Get(tc.cluster, tc.constraint.Name)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(constraint, tc.constraint) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.constraint))
+			}
+		})
+	}
+}
+
 func genConstraint(name, namespace string) *kubermaticv1.Constraint {
 	ct := &kubermaticv1.Constraint{}
 	ct.Kind = kubermaticv1.ConstraintKind

@@ -39,6 +39,8 @@ type ClientService interface {
 
 	CreateClusterV2(params *CreateClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterV2Created, error)
 
+	CreateConstraint(params *CreateConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*CreateConstraintOK, error)
+
 	CreateExternalCluster(params *CreateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*CreateExternalClusterCreated, error)
 
 	CreateMachineDeployment(params *CreateMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*CreateMachineDeploymentCreated, error)
@@ -439,6 +441,40 @@ func (a *Client) CreateClusterV2(params *CreateClusterV2Params, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateClusterV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  CreateConstraint creates a given constraint for the specified cluster
+*/
+func (a *Client) CreateConstraint(params *CreateConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*CreateConstraintOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateConstraintParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "createConstraint",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/constraints",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateConstraintReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateConstraintOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateConstraintDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

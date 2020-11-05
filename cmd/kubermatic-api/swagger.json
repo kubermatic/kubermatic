@@ -8491,6 +8491,60 @@
             }
           }
         }
+      },
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Creates a given constraint for the specified cluster.",
+        "operationId": "createConstraint",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/constraintBody"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Constraint",
+            "schema": {
+              "$ref": "#/definitions/Constraint"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}": {
@@ -15051,6 +15105,20 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
+    },
+    "constraintBody": {
+      "type": "object",
+      "properties": {
+        "Spec": {
+          "$ref": "#/definitions/ConstraintSpec"
+        },
+        "name": {
+          "description": "Name is the name for the constraint",
+          "type": "string",
+          "x-go-name": "Name"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
     },
     "ctBody": {
       "type": "object",

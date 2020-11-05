@@ -808,12 +808,21 @@ type ConstraintProvider interface {
 	// Get gets the given constraints
 	Get(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.Constraint, error)
 
+	// Create creates the given constraint
+	Create(userInfo *UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+
 	// Delete deletes the given constraint
 	Delete(cluster *kubermaticv1.Cluster, userInfo *UserInfo, name string) error
 }
 
 // PrivilegedConstraintProvider declares a set of methods for interacting with constraints using a privileged client
 type PrivilegedConstraintProvider interface {
+	// CreateUnsecured creates the given constraint using a privileged client
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecured(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+
 	// DeleteUnsecured deletes a constraint using a privileged client
 	//
 	// Note that this function:
