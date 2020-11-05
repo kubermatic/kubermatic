@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/go-kit/kit/endpoint"
@@ -275,5 +276,49 @@ func ListMachineDeploymentNodes(projectProvider provider.ProjectProvider, privil
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(machineDeploymentNodesReq)
 		return handlercommon.ListMachineDeploymentNodes(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.MachineDeploymentID, req.HideInitialConditions)
+	}
+}
+
+// listNodesForClusterReq defines HTTP request for listNodesForCluster
+// swagger:parameters listNodesForCluster
+type listNodesForClusterReq struct {
+	common.ProjectReq
+	// in: path
+	ClusterID string `json:"cluster_id"`
+	// in: query
+	HideInitialConditions bool `json:"hideInitialConditions"`
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req listNodesForClusterReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+func DecodeListNodesForCluster(c context.Context, r *http.Request) (interface{}, error) {
+	var req listNodesForClusterReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+
+	req.HideInitialConditions, _ = strconv.ParseBool(r.URL.Query().Get("hideInitialConditions"))
+
+	return req, nil
+}
+
+func ListNodesForCluster(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listNodesForClusterReq)
+		return handlercommon.ListNodesForCluster(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.HideInitialConditions)
 	}
 }
