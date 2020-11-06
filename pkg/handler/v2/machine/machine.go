@@ -322,3 +322,51 @@ func ListNodesForCluster(projectProvider provider.ProjectProvider, privilegedPro
 		return handlercommon.ListNodesForCluster(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.HideInitialConditions)
 	}
 }
+
+// machineDeploymentMetricsReq defines HTTP request for listMachineDeploymentMetrics
+// swagger:parameters listMachineDeploymentMetrics
+type machineDeploymentMetricsReq struct {
+	common.ProjectReq
+	// in: path
+	ClusterID string `json:"cluster_id"`
+	// in: path
+	MachineDeploymentID string `json:"machinedeployment_id"`
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req machineDeploymentMetricsReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+func DecodeListMachineDeploymentMetrics(c context.Context, r *http.Request) (interface{}, error) {
+	var req machineDeploymentMetricsReq
+
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ClusterID = clusterID
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = projectReq.(common.ProjectReq)
+
+	machineDeploymentID, err := decodeMachineDeploymentID(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.MachineDeploymentID = machineDeploymentID
+
+	return req, nil
+}
+
+func ListMachineDeploymentMetrics(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(machineDeploymentMetricsReq)
+		return handlercommon.ListMachineDeploymentMetrics(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.MachineDeploymentID)
+	}
+}
