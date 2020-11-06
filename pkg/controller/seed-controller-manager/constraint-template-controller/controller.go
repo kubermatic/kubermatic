@@ -200,7 +200,7 @@ func (r *reconciler) syncAllClusters(
 		}
 
 		if userCluster.Spec.OPAIntegration != nil && userCluster.Spec.OPAIntegration.Enabled {
-			// Get user cluster client from map, if it doesnt exist yet, create it
+			// Get user cluster client from map, if it does not exist yet, create it
 			var err error
 			userClusterClient, ok := r.userClusterClients[userCluster.Name]
 			if !ok {
