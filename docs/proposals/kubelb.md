@@ -27,9 +27,9 @@ Solutions which are available e.g. MetalLB focus on a single cluster. KubeLB aim
 
 * Multi cluster Ingress Controller
 
-* Possible cost reduction as you can decide between KubeLB and IaaS LoadBalancer instances
-
 * Multi cluster load balancing
+
+* Possible cost reduction as you can decide between KubeLB and IaaS LoadBalancer instances
 
 * Load balancing for internal networks
  
@@ -52,17 +52,7 @@ The overall implementation contains two different parts:
 </div>
 
 
-It is required to have a service type "LoadBalancer" implementation on the load balancer cluster. This can be a cloud solution, or some single cluster implementations listed below. 
-
-
-#### Envoy & Contour
-
-On the LB cluster Envoy & Contour are installed. When the controller creates a new HTTPProxy resource, Contour will configure Envoy automatically to process the traffic of the domain.
-The LB cluster will have a domain assigned e.g. lb.example.com each cluster will have a dedicated subdomain CLUSTERNAME.lb.example.net. For an Ingress on the tenant cluster a subdomain will be created based on the pattern INGRESS.CLUSTERNAME.lb.example.net The user can reference this URL in his DNS as a CNAME for a customer URL e.g. example.com -> CNAME INGRESS.CLUSTERNAME.lb.example.net 
-To enable envoy to forward the customer URL, in the Ingress both URLs must set.
-Envoy will forward the traffic based on the HTTPProxy to the service and Kubernetes will forward the traffic from the service on the LB cluster to the Endpoints of the tenant cluster. 
-
-This is not necessarily needed for L4 implementation but can be used to reduce costs of external LoadBalancer instances, since the L4 services can share one entrypoint with different ports. So it can be of Type ClusterIP with envoy infront or directly of type LoadBalancer.
+It is required to have a service type "LoadBalancer" implementation on the load balancer cluster. This can be a cloud solution, or some single cluster implementations. 
 
 #### Implementation L4
 
@@ -103,6 +93,14 @@ subsets:
     port: 80
     protocol: TCP
 ```
+
+
+#### kube-proxy
+
+Kube-proxy is responsible for the behaviour of kubernetes services. Since we use these services it might be interesting to take some extra configuration.
+This is possible for kube-proxy which offers for example different proxy-modes (userspace, iptables or ipvs) which implement different load balancing mechanisms.
+IPVS mode offers the most options for balancing traffic to backend pods.
+
 
 #### Implementation L7
 
@@ -171,6 +169,17 @@ For the LB cluster:
         port: 80
         protocol: TCP
 ```
+
+
+#### Envoy & Contour
+
+On the LB cluster Envoy & Contour are installed. When the controller creates a new HTTPProxy resource, Contour will configure Envoy automatically to process the traffic of the domain.
+The LB cluster will have a domain assigned e.g. lb.example.com each cluster will have a dedicated subdomain CLUSTERNAME.lb.example.net. For an Ingress on the tenant cluster a subdomain will be created based on the pattern INGRESS.CLUSTERNAME.lb.example.net The user can reference this URL in his DNS as a CNAME for a customer URL e.g. example.com -> CNAME INGRESS.CLUSTERNAME.lb.example.net 
+To enable envoy to forward the customer URL, in the Ingress both URLs must set.
+Envoy will forward the traffic based on the HTTPProxy to the service and Kubernetes will forward the traffic from the service on the LB cluster to the Endpoints of the tenant cluster. 
+
+This is not necessarily needed for L4 implementation but can be used to reduce costs of external LoadBalancer instances, since the L4 services can share one entrypoint with different ports. So it can be of Type ClusterIP with envoy infront or directly of type LoadBalancer.
+
 #### TLS and Certificates
 
 Limited to envoy/contour and external load balancer implementations
