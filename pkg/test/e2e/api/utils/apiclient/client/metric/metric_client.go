@@ -25,9 +25,45 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ListMachineDeploymentMetrics(params *ListMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentMetricsOK, error)
+
 	ListNodeDeploymentMetrics(params *ListNodeDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListNodeDeploymentMetricsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  ListMachineDeploymentMetrics lists metrics that belong to the given machine deployment
+*/
+func (a *Client) ListMachineDeploymentMetrics(params *ListMachineDeploymentMetricsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentMetricsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListMachineDeploymentMetricsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listMachineDeploymentMetrics",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListMachineDeploymentMetricsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListMachineDeploymentMetricsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListMachineDeploymentMetricsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

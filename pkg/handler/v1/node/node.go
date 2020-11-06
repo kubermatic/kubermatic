@@ -43,11 +43,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -355,54 +353,7 @@ func DecodeListNodeDeploymentMetrics(c context.Context, r *http.Request) (interf
 func ListNodeDeploymentMetrics(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentMetricsReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		// check if logged user has privileges to list node deployments. If yes then we can use privileged client to
-		// get metrics
-		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfoGetter, cluster, req.ProjectID, req.NodeDeploymentID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		nodeList, err := getNodeList(ctx, cluster, clusterProvider)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		availableResources := make(map[string]corev1.ResourceList)
-		for i := range machines.Items {
-			n := getNodeForMachine(&machines.Items[i], nodeList.Items)
-			if n != nil {
-				availableResources[n.Name] = n.Status.Allocatable
-			}
-		}
-
-		dynamicCLient, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		nodeDeploymentNodesMetrics := make([]v1beta1.NodeMetrics, 0)
-		allNodeMetricsList := &v1beta1.NodeMetricsList{}
-		if err := dynamicCLient.List(ctx, allNodeMetricsList); err != nil {
-			// Happens during cluster creation when the CRD is not setup yet
-			if _, ok := err.(*meta.NoKindMatchError); !ok {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-		}
-
-		for _, m := range allNodeMetricsList.Items {
-			if _, ok := availableResources[m.Name]; ok {
-				nodeDeploymentNodesMetrics = append(nodeDeploymentNodesMetrics, m)
-			}
-		}
-
-		return handlercommon.ConvertNodeMetrics(nodeDeploymentNodesMetrics, availableResources)
+		return handlercommon.ListMachineDeploymentMetrics(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.NodeDeploymentID)
 	}
 }
 
@@ -713,26 +664,4 @@ func ListNodeDeploymentNodesEvents(projectProvider provider.ProjectProvider, pri
 
 		return events, nil
 	}
-}
-
-func getNodeList(ctx context.Context, cluster *kubermaticv1.Cluster, clusterProvider provider.ClusterProvider) (*corev1.NodeList, error) {
-	client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
-	if err != nil {
-		return nil, err
-	}
-
-	nodeList := &corev1.NodeList{}
-	if err := client.List(ctx, nodeList); err != nil {
-		return nil, err
-	}
-	return nodeList, nil
-}
-
-func getNodeForMachine(machine *clusterv1alpha1.Machine, nodes []corev1.Node) *corev1.Node {
-	for _, node := range nodes {
-		if (machine.Status.NodeRef != nil && node.UID == machine.Status.NodeRef.UID) || node.Name == machine.Name {
-			return &node
-		}
-	}
-	return nil
 }
