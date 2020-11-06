@@ -115,6 +115,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/nodes").
 		Handler(r.listNodesForCluster())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics").
+		Handler(r.listMachineDeploymentMetrics())
+
 	// Defines set of HTTP endpoints for SSH Keys that belong to a cluster
 	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}").
@@ -1281,6 +1285,32 @@ func (r Routing) listNodesForCluster() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(machine.ListNodesForCluster(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		machine.DecodeListNodesForCluster,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/metrics metric listMachineDeploymentMetrics
+//
+//     Lists metrics that belong to the given machine deployment.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []NodeMetric
+//       401: empty
+//       403: empty
+func (r Routing) listMachineDeploymentMetrics() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(machine.ListMachineDeploymentMetrics(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		machine.DecodeListMachineDeploymentMetrics,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
