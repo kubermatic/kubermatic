@@ -213,7 +213,7 @@ func (r *reconciler) syncAllClusters(
 
 			err = action(userClusterClient, constraintTemplate)
 			if err != nil {
-				return fmt.Errorf("Failed syncing constraint template for cluster %s: %w", userCluster.Spec.HumanReadableName, err)
+				return fmt.Errorf("failed syncing constraint template for cluster %s: %w", userCluster.Spec.HumanReadableName, err)
 			}
 			log.Debugw("Reconciled constraint template with cluster", "cluster", userCluster.Spec.HumanReadableName)
 		} else {
@@ -241,7 +241,7 @@ func enqueueAllConstraintTemplates(client ctrlruntimeclient.Client, log *zap.Sug
 
 		cluster, ok := a.Object.(*kubermaticv1.Cluster)
 		if !ok {
-			err := fmt.Errorf("Object was not a cluster but a %T", a.Object)
+			err := fmt.Errorf("object was not a cluster but a %T", a.Object)
 			log.Error(err)
 			utilruntime.HandleError(err)
 			return nil
