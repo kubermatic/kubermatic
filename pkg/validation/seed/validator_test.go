@@ -67,7 +67,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "No changes, no error",
 			existingSeeds: []*kubermaticv1.Seed{
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -96,7 +96,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "Clusters from other seeds should have no effect on new empty seeds",
 			existingSeeds: []*kubermaticv1.Seed{
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "europe-west3-c",
 					},
@@ -110,7 +110,7 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			existingClusters: []*kubermaticv1.Cluster{
-				&kubermaticv1.Cluster{
+				{
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "do-fra1",
@@ -130,7 +130,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "Clusters from other seeds should have no effect when deleting seeds",
 			existingSeeds: []*kubermaticv1.Seed{
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "europe-west3-c",
 					},
@@ -142,7 +142,7 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				},
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "asia-south1-a",
 					},
@@ -156,7 +156,7 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			existingClusters: []*kubermaticv1.Cluster{
-				&kubermaticv1.Cluster{
+				{
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "do-fra1",
@@ -181,7 +181,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "Adding new datacenter should be possible",
 			existingSeeds: []*kubermaticv1.Seed{
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -213,7 +213,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "Should be able to remove unused datacenters from a seed",
 			existingSeeds: []*kubermaticv1.Seed{
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -271,7 +271,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "It should not be possible to change a datacenter's provider",
 			existingSeeds: []*kubermaticv1.Seed{
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -303,7 +303,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "Datacenter names are unique across all seeds",
 			existingSeeds: []*kubermaticv1.Seed{
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -315,7 +315,7 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				},
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed-two",
 					},
@@ -345,7 +345,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "Cannot remove datacenters that are used by clusters",
 			existingSeeds: []*kubermaticv1.Seed{
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -359,7 +359,7 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			existingClusters: []*kubermaticv1.Cluster{
-				&kubermaticv1.Cluster{
+				{
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "dc1",
@@ -382,7 +382,7 @@ func TestValidate(t *testing.T) {
 		{
 			name: "Should be able to delete seeds with no used datacenters",
 			existingSeeds: []*kubermaticv1.Seed{
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -417,14 +417,14 @@ func TestValidate(t *testing.T) {
 				},
 			},
 			existingSeeds: []*kubermaticv1.Seed{
-				&kubermaticv1.Seed{
+				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "myseed",
 					},
 				},
 			},
 			existingClusters: []*kubermaticv1.Cluster{
-				&kubermaticv1.Cluster{},
+				{},
 			},
 			isDelete:    true,
 			errExpected: true,
