@@ -71,7 +71,7 @@ func (opts *WebhookOpts) Configure(s *webhook.Server) error {
 	// different directories
 	// this is not fully backward compatible
 	if opts.CertFile != "" && opts.KeyFile != "" && filepath.Dir(opts.CertFile) != filepath.Dir(opts.KeyFile) {
-		return fmt.Errorf("certificate file %q and key file %q provided respectively with flags seed-admissionwebhook-cert-file and seed-admissionwebhook-cert-file should be located in the same directory", opts.CertFile, opts.certDir)
+		return fmt.Errorf("certificate file %q and key file %q provided respectively with flags seed-admissionwebhook-cert-file and seed-admissionwebhook-cert-file must be located in the same directory", opts.CertFile, opts.certDir)
 	}
 
 	if opts.CertFile != "" {

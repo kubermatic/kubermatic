@@ -18,6 +18,7 @@ package seed
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -38,9 +39,9 @@ func TestValidate(t *testing.T) {
 
 	testCases := []struct {
 		name             string
-		existingSeeds    map[string]*kubermaticv1.Seed
 		seedToValidate   *kubermaticv1.Seed
-		existingClusters []runtime.Object
+		existingSeeds    []*kubermaticv1.Seed
+		existingClusters []*kubermaticv1.Cluster
 		isDelete         bool
 		errExpected      bool
 	}{
@@ -65,8 +66,8 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "No changes, no error",
-			existingSeeds: map[string]*kubermaticv1.Seed{
-				"existing-seed": {
+			existingSeeds: []*kubermaticv1.Seed{
+				&kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -94,8 +95,8 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "Clusters from other seeds should have no effect on new empty seeds",
-			existingSeeds: map[string]*kubermaticv1.Seed{
-				"europe-west3-c": {
+			existingSeeds: []*kubermaticv1.Seed{
+				&kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "europe-west3-c",
 					},
@@ -108,7 +109,7 @@ func TestValidate(t *testing.T) {
 					},
 				},
 			},
-			existingClusters: []runtime.Object{
+			existingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
@@ -128,8 +129,8 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "Clusters from other seeds should have no effect when deleting seeds",
-			existingSeeds: map[string]*kubermaticv1.Seed{
-				"europe-west3-c": {
+			existingSeeds: []*kubermaticv1.Seed{
+				&kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "europe-west3-c",
 					},
@@ -141,7 +142,7 @@ func TestValidate(t *testing.T) {
 						},
 					},
 				},
-				"asia-south1-a": {
+				&kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "asia-south1-a",
 					},
@@ -154,7 +155,7 @@ func TestValidate(t *testing.T) {
 					},
 				},
 			},
-			existingClusters: []runtime.Object{
+			existingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
@@ -179,8 +180,8 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "Adding new datacenter should be possible",
-			existingSeeds: map[string]*kubermaticv1.Seed{
-				"existing-seed": {
+			existingSeeds: []*kubermaticv1.Seed{
+				&kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -211,8 +212,8 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "Should be able to remove unused datacenters from a seed",
-			existingSeeds: map[string]*kubermaticv1.Seed{
-				"existing-seed": {
+			existingSeeds: []*kubermaticv1.Seed{
+				&kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -269,8 +270,8 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "It should not be possible to change a datacenter's provider",
-			existingSeeds: map[string]*kubermaticv1.Seed{
-				"existing-seed": {
+			existingSeeds: []*kubermaticv1.Seed{
+				&kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -301,14 +302,26 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "Datacenter names are unique across all seeds",
-			existingSeeds: map[string]*kubermaticv1.Seed{
-				"existing-seed": {
+			existingSeeds: []*kubermaticv1.Seed{
+				&kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
 					Spec: kubermaticv1.SeedSpec{
 						Datacenters: map[string]kubermaticv1.Datacenter{
 							"in-use": {
+								Spec: fakeProviderSpec,
+							},
+						},
+					},
+				},
+				&kubermaticv1.Seed{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "existing-seed-two",
+					},
+					Spec: kubermaticv1.SeedSpec{
+						Datacenters: map[string]kubermaticv1.Datacenter{
+							"foo": {
 								Spec: fakeProviderSpec,
 							},
 						},
@@ -331,8 +344,8 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "Cannot remove datacenters that are used by clusters",
-			existingSeeds: map[string]*kubermaticv1.Seed{
-				"existing-seed": {
+			existingSeeds: []*kubermaticv1.Seed{
+				&kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -345,7 +358,7 @@ func TestValidate(t *testing.T) {
 					},
 				},
 			},
-			existingClusters: []runtime.Object{
+			existingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{
 					Spec: kubermaticv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
@@ -368,8 +381,8 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "Should be able to delete seeds with no used datacenters",
-			existingSeeds: map[string]*kubermaticv1.Seed{
-				"existing-seed": {
+			existingSeeds: []*kubermaticv1.Seed{
+				&kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "existing-seed",
 					},
@@ -403,7 +416,14 @@ func TestValidate(t *testing.T) {
 					Name: "myseed",
 				},
 			},
-			existingClusters: []runtime.Object{
+			existingSeeds: []*kubermaticv1.Seed{
+				&kubermaticv1.Seed{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "myseed",
+					},
+				},
+			},
+			existingClusters: []*kubermaticv1.Cluster{
 				&kubermaticv1.Cluster{},
 			},
 			isDelete:    true,
@@ -413,13 +433,28 @@ func TestValidate(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			var obj []runtime.Object
+			for _, c := range tc.existingClusters {
+				obj = append(obj, c)
+			}
+			for _, s := range tc.existingSeeds {
+				obj = append(obj, s)
+			}
+			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, obj...)
 			sv := &validator{
+				lock:     &sync.Mutex{},
 				listOpts: &ctrlruntimeclient.ListOptions{},
+				client:   client,
+				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+					return client, nil
+				},
 			}
 
-			err := sv.validate(context.Background(), tc.seedToValidate,
-				fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingClusters...),
-				tc.existingSeeds, tc.isDelete)
+			op := admissionv1beta1.Create
+			if tc.isDelete {
+				op = admissionv1beta1.Delete
+			}
+			err := sv.Validate(context.Background(), tc.seedToValidate, op)
 
 			if (err != nil) != tc.errExpected {
 				t.Fatalf("Expected err: %t, but got err: %v", tc.errExpected, err)

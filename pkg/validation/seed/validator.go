@@ -78,8 +78,8 @@ func (v *validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op ad
 		return fmt.Errorf("failed to get seeds: %v", err)
 	}
 	seedsMap := map[string]*kubermaticv1.Seed{}
-	for _, s := range seeds.Items {
-		seedsMap[s.Name] = &s
+	for i, s := range seeds.Items {
+		seedsMap[s.Name] = &seeds.Items[i]
 	}
 	if op == admissionv1beta1.Delete {
 		// when a namespace is deleted, a DELETE call for all seeds in the namespace
