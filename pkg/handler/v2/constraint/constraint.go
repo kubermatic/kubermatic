@@ -21,8 +21,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -254,4 +256,97 @@ func DecodeCreateConstraintReq(c context.Context, r *http.Request) (interface{},
 func (req *createConstraintReq) ValidateCreateConstraintReq(constraintTemplateProvider provider.ConstraintTemplateProvider) error {
 	_, err := constraintTemplateProvider.Get(req.Body.Spec.ConstraintType)
 	return err
+}
+
+func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider,
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchConstraintReq)
+
+		clus, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		// get Constraint
+		originalConstraint, err := constraintProvider.Get(clus, req.Name)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		originalAPIConstraint := convertInternalToAPIConstraint(originalConstraint)
+
+		// patch
+		originalJSON, err := json.Marshal(originalAPIConstraint)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current constraint: %v", err))
+		}
+
+		patchedJSON, err := jsonpatch.MergePatch(originalJSON, req.Patch)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch ct: %v", err))
+		}
+
+		var patched *apiv2.Constraint
+		err = json.Unmarshal(patchedJSON, &patched)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshall patch ct: %v", err))
+		}
+
+		patchedConstraint := convertAPIToInternalConstraint(req.Name, clus.Status.NamespaceName, patched.Spec)
+
+		// ConstraintType cannot be changed by patch
+		patchedConstraint.Spec.ConstraintType = originalConstraint.Spec.ConstraintType
+
+		ct, err := updateConstraint(ctx, userInfoGetter, constraintProvider, privilegedConstraintProvider, req.ProjectID, patchedConstraint)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return convertInternalToAPIConstraint(ct), nil
+	}
+}
+
+func updateConstraint(ctx context.Context, userInfoGetter provider.UserInfoGetter, constraintProvider provider.ConstraintProvider,
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider, projectID string, constraint *v1.Constraint) (*v1.Constraint, error) {
+
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedConstraintProvider.UpdateUnsecured(constraint)
+	}
+
+	userInfo, err := userInfoGetter(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return constraintProvider.Update(userInfo, constraint)
+}
+
+// patchConstraintReq defines HTTP request for patching constraints
+// swagger:parameters patchConstraint
+type patchConstraintReq struct {
+	constraintReq
+	// in: body
+	Patch json.RawMessage
+}
+
+// DecodePatchConstraintReq decodes http request into patchConstraintReq
+func DecodePatchConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchConstraintReq
+
+	ctReq, err := DecodeConstraintReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.constraintReq = ctReq.(constraintReq)
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
