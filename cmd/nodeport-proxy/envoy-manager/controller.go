@@ -352,7 +352,6 @@ func (r *reconciler) sync() error {
 	}
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
-	//TODO(youssefazrak) add the needed arguments
 	snapshot := envoycachev3.NewSnapshot(lastUsedVersion.String(), nil, clusters, nil, listeners, nil, nil)
 	if equality.Semantic.DeepEqual(r.lastAppliedSnapshot, snapshot) {
 		return nil
