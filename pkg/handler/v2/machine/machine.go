@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -368,5 +369,39 @@ func ListMachineDeploymentMetrics(projectProvider provider.ProjectProvider, priv
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(machineDeploymentMetricsReq)
 		return handlercommon.ListMachineDeploymentMetrics(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.MachineDeploymentID)
+	}
+}
+
+// patchMachineDeploymentReq defines HTTP request for patchMachineDeployment endpoint
+// swagger:parameters patchMachineDeployment
+type patchMachineDeploymentReq struct {
+	machineDeploymentReq
+
+	// in: body
+	Patch json.RawMessage
+}
+
+func DecodePatchMachineDeployment(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchMachineDeploymentReq
+
+	rawMachineDeployment, err := DecodeGetMachineDeployment(c, r)
+	if err != nil {
+		return nil, err
+	}
+	md := rawMachineDeployment.(machineDeploymentReq)
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+	req.MachineDeploymentID = md.MachineDeploymentID
+	req.ClusterID = md.ClusterID
+	req.ProjectID = md.ProjectID
+
+	return req, nil
+}
+
+func PatchMachineDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchMachineDeploymentReq)
+		return handlercommon.PatchMachineDeployment(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, sshKeyProvider, seedsGetter, req.ProjectID, req.ClusterID, req.MachineDeploymentID, req.Patch)
 	}
 }

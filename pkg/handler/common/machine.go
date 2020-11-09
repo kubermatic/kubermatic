@@ -18,10 +18,14 @@ package common
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/Masterminds/semver"
+	jsonpatch "github.com/evanphx/json-patch"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -34,6 +38,7 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	machineresource "k8c.io/kubermatic/v2/pkg/resources/machine"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+	"k8c.io/kubermatic/v2/pkg/validation/nodeupdate"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -417,6 +422,101 @@ func ListMachineDeploymentMetrics(ctx context.Context, userInfoGetter provider.U
 	}
 
 	return ConvertNodeMetrics(nodeDeploymentNodesMetrics, availableResources)
+}
+
+func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, sshKeyProvider provider.SSHKeyProvider, seedsGetter provider.SeedsGetter, projectID, clusterID, machineDeploymentID string, patch json.RawMessage) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	// We cannot use machineClient.ClusterV1alpha1().MachineDeployments().Patch() method as we are not exposing
+	// MachineDeployment type directly. API uses NodeDeployment type and we cannot ensure compatibility here.
+	machineDeployment := &clusterv1alpha1.MachineDeployment{}
+	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: machineDeploymentID}, machineDeployment); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	nodeDeployment, err := outputMachineDeployment(machineDeployment)
+	if err != nil {
+		return nil, fmt.Errorf("cannot output existing node deployment: %v", err)
+	}
+
+	nodeDeploymentJSON, err := json.Marshal(nodeDeployment)
+	if err != nil {
+		return nil, fmt.Errorf("cannot decode existing node deployment: %v", err)
+	}
+
+	patchedNodeDeploymentJSON, err := jsonpatch.MergePatch(nodeDeploymentJSON, patch)
+	if err != nil {
+		return nil, fmt.Errorf("cannot patch node deployment: %v", err)
+	}
+
+	var patchedNodeDeployment *apiv1.NodeDeployment
+	if err := json.Unmarshal(patchedNodeDeploymentJSON, &patchedNodeDeployment); err != nil {
+		return nil, fmt.Errorf("cannot decode patched cluster: %v", err)
+	}
+
+	//TODO: We need to make the kubelet version configurable but restrict it to versions supported by the control plane
+	kversion, err := semver.NewVersion(patchedNodeDeployment.Spec.Template.Versions.Kubelet)
+	if err != nil {
+		return nil, k8cerrors.NewBadRequest("failed to parse kubelet version: %v", err)
+	}
+	if err = nodeupdate.EnsureVersionCompatible(cluster.Spec.Version.Semver(), kversion); err != nil {
+		return nil, k8cerrors.NewBadRequest(err.Error())
+	}
+
+	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting dc: %v", err)
+	}
+
+	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+	if !ok {
+		return nil, k8cerrors.New(http.StatusInternalServerError, "clusterprovider is not a kubernetesprovider.Clusterprovider, can not create nodeDeployment")
+	}
+	data := common.CredentialsData{
+		Ctx:               ctx,
+		KubermaticCluster: cluster,
+		Client:            assertedClusterProvider.GetSeedClusterAdminRuntimeClient(),
+	}
+	patchedMachineDeployment, err := machineresource.Deployment(cluster, patchedNodeDeployment, dc, keys, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
+	}
+
+	// Only the fields from NodeDeploymentSpec will be updated by a patch.
+	// It ensures that the name and resource version are set and the selector stays the same.
+	machineDeployment.Spec.Template.Spec = patchedMachineDeployment.Spec.Template.Spec
+	machineDeployment.Spec.Replicas = patchedMachineDeployment.Spec.Replicas
+	machineDeployment.Spec.Paused = patchedMachineDeployment.Spec.Paused
+
+	if err := client.Update(ctx, machineDeployment); err != nil {
+		return nil, fmt.Errorf("failed to update machine deployment: %v", err)
+	}
+
+	return outputMachineDeployment(machineDeployment)
 }
 
 func outputMachine(machine *clusterv1alpha1.Machine, node *corev1.Node, hideInitialNodeConditions bool) (*apiv1.Node, error) {
