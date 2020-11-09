@@ -23,6 +23,7 @@ import (
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
+
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -1174,6 +1175,12 @@ type OpenstackNodeSpec struct {
 	// if not set, the default AZ from the Datacenter spec will be used
 	// required: false
 	AvailabilityZone string `json:"availabilityZone"`
+	// Period of time to check for instance ready status
+	// required: false
+	InstanceReadyCheckPeriod  string `json:"instanceReadyCheckPeriod"`
+	// Max time to wait for the instance to be ready
+	// required: false
+	InstanceReadyCheckTimeout string `json:"instanceReadyCheckTimeout"`
 }
 
 // AWSNodeSpec aws specific node settings
@@ -1192,7 +1199,7 @@ type AWSNodeSpec struct {
 	AMI string `json:"ami"`
 	// additional instance tags
 	Tags map[string]string `json:"tags"`
-	// Availiability zone in which to place the node. It is coupled with the subnet to which the node will belong.
+	// Availability zone in which to place the node. It is coupled with the subnet to which the node will belong.
 	AvailabilityZone string `json:"availabilityZone"`
 	// The VPC subnet to which the node shall be connected.
 	SubnetID string `json:"subnetID"`

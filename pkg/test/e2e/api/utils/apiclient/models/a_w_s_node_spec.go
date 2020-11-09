@@ -24,7 +24,7 @@ type AWSNodeSpec struct {
 	// assigned during launch overriding a possible setting in the used AWS subnet.
 	AssignPublicIP bool `json:"assignPublicIP,omitempty"`
 
-	// Availiability zone in which to place the node. It is coupled with the subnet to which the node will belong.
+	// Availability zone in which to place the node. It is coupled with the subnet to which the node will belong.
 	AvailabilityZone string `json:"availabilityZone,omitempty"`
 
 	// instance type
