@@ -37,6 +37,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
 	"github.com/kubermatic/machine-controller/pkg/userdata/sles"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 
 	"k8s.io/apimachinery/pkg/util/json"
