@@ -38,6 +38,7 @@ import (
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
 	"github.com/kubermatic/machine-controller/pkg/userdata/sles"
 	"github.com/kubermatic/machine-controller/pkg/userdata/ubuntu"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 
 	"k8s.io/apimachinery/pkg/util/json"
@@ -177,11 +178,11 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			return nil, fmt.Errorf("failed to parse openstack config: %v", err)
 		}
 		cloudSpec.Openstack = &apiv1.OpenstackNodeSpec{
-			Flavor:           config.Flavor.Value,
-			Image:            config.Image.Value,
-			Tags:             config.Tags,
-			AvailabilityZone: config.AvailabilityZone.Value,
-			InstanceReadyCheckPeriod: config.InstanceReadyCheckPeriod.Value,
+			Flavor:                    config.Flavor.Value,
+			Image:                     config.Image.Value,
+			Tags:                      config.Tags,
+			AvailabilityZone:          config.AvailabilityZone.Value,
+			InstanceReadyCheckPeriod:  config.InstanceReadyCheckPeriod.Value,
 			InstanceReadyCheckTimeout: config.InstanceReadyCheckTimeout.Value,
 		}
 		cloudSpec.Openstack.UseFloatingIP = config.FloatingIPPool.Value != ""

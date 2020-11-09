@@ -1177,7 +1177,7 @@ type OpenstackNodeSpec struct {
 	AvailabilityZone string `json:"availabilityZone"`
 	// Period of time to check for instance ready status
 	// required: false
-	InstanceReadyCheckPeriod  string `json:"instanceReadyCheckPeriod"`
+	InstanceReadyCheckPeriod string `json:"instanceReadyCheckPeriod"`
 	// Max time to wait for the instance to be ready
 	// required: false
 	InstanceReadyCheckTimeout string `json:"instanceReadyCheckTimeout"`
