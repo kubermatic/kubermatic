@@ -19,7 +19,7 @@ require (
 	github.com/digitalocean/godo v1.7.3
 	github.com/docker/distribution v2.7.1+incompatible
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
-	github.com/envoyproxy/go-control-plane v0.9.4
+	github.com/envoyproxy/go-control-plane v0.9.7
 	github.com/evanphx/json-patch v4.9.0+incompatible
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ini/ini v1.55.0 // indirect
@@ -99,7 +99,7 @@ replace (
 	github.com/go-logr/logr => github.com/go-logr/logr v0.2.1-0.20200730175230-ee2de8da5be6
 	github.com/go-logr/zapr => github.com/go-logr/zapr v0.2.0
 	// pin to prevent panics in DeepEqual() when comparing envoy objects
-	github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
+	// github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
 	// prevent 2.0.0 dependency because it's a broken release
 	gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.1.0
 	// pin to prevent panics in DeepEqual() when comparing envoy objects

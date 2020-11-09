@@ -131,7 +131,7 @@ func main() {
 		namespace:           namespace,
 		envoySnapshotCache:  snapshotCache,
 		log:                 log,
-		lastAppliedSnapshot: envoycachev3.NewSnapshot("v0.0.0", nil, nil, nil, nil, nil),
+		lastAppliedSnapshot: envoycachev3.NewSnapshot("v0.0.0", nil, nil, nil, nil, nil, nil),
 	}
 	ctrl, err := controller.New("envoy-manager", mgr,
 		controller.Options{Reconciler: r, MaxConcurrentReconciles: 1})

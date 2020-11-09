@@ -37,10 +37,13 @@ import (
 	envoyhealthv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/health_check/v3"
 	envoyhttpconnectionmanagerv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 
 	//Need to change to cache/v2 for v2 but also no .Resource, nor in v2
 	// nor in v3
-	envoycache "github.com/envoyproxy/go-control-plane/pkg/cache/v2"
+
+	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	corev1 "k8s.io/api/core/v1"
@@ -57,11 +60,11 @@ type reconciler struct {
 	log       *zap.SugaredLogger
 	namespace string
 
-	envoySnapshotCache  envoycache.SnapshotCache
-	lastAppliedSnapshot envoycache.Snapshot
+	envoySnapshotCache  envoycachev3.SnapshotCache
+	lastAppliedSnapshot envoycachev3.Snapshot
 }
 
-func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clusters []envoycache.Resource, err error) {
+func (r *reconciler) getInitialResources() (listeners []envoycachetype.Resource, clusters []envoycachetype.Resource, err error) {
 	adminCluster := &envoyclusterv3.Cluster{
 		Name:           "service_stats",
 		ConnectTimeout: ptypes.DurationProto(50 * time.Millisecond),
@@ -346,20 +349,21 @@ func (r *reconciler) sync() error {
 		}
 	}
 
-	lastUsedVersion, err := semver.NewVersion(r.lastAppliedSnapshot.GetVersion(envoycache.ClusterType))
+	lastUsedVersion, err := semver.NewVersion(r.lastAppliedSnapshot.GetVersion(envoyresourcev3.ClusterType))
 	if err != nil {
 		return errors.Wrap(err, "failed to parse version from last snapshot")
 	}
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
-	snapshot := envoycache.NewSnapshot(lastUsedVersion.String(), nil, clusters, nil, listeners, nil)
+	//TODO(youssefazrak) add the needed arguments
+	snapshot := envoycachev3.NewSnapshot(lastUsedVersion.String(), nil, clusters, nil, listeners, nil, nil)
 	if equality.Semantic.DeepEqual(r.lastAppliedSnapshot, snapshot) {
 		return nil
 	}
 
 	r.log.Info("detected a change. Updating the Envoy config cache...")
 	newVersion := lastUsedVersion.IncMajor()
-	newSnapshot := envoycache.NewSnapshot(newVersion.String(), nil, clusters, nil, listeners, nil)
+	newSnapshot := envoycachev3.NewSnapshot(newVersion.String(), nil, clusters, nil, listeners, nil, nil)
 
 	if err := newSnapshot.Consistent(); err != nil {
 		return errors.Wrap(err, "new Envoy config snapshot is not consistent")

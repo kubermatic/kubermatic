@@ -31,7 +31,8 @@ import (
 	envoyendpointv3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
-	envoycache "github.com/envoyproxy/go-control-plane/pkg/cache/v2"
+	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	corev1 "k8s.io/api/core/v1"
@@ -277,12 +278,12 @@ func TestSync(t *testing.T) {
 							},
 						},
 					},
-					FilterChains: []*envoylistenerv2.FilterChain{
+					FilterChains: []*envoylistenerv3.FilterChain{
 						{
-							Filters: []*envoylistenerv2.Filter{
+							Filters: []*envoylistenerv3.Filter{
 								{
 									Name: envoywellknown.TCPProxy,
-									ConfigType: &envoylistenerv2.Filter_TypedConfig{
+									ConfigType: &envoylistenerv3.Filter_TypedConfig{
 										TypedConfig: marshalMessage(t, &envoytcpfilterv3.TcpProxy{
 											StatPrefix: "ingress_tcp",
 											ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
@@ -308,12 +309,12 @@ func TestSync(t *testing.T) {
 							},
 						},
 					},
-					FilterChains: []*envoylistenerv2.FilterChain{
+					FilterChains: []*envoylistenerv3.FilterChain{
 						{
-							Filters: []*envoylistenerv2.Filter{
+							Filters: []*envoylistenerv3.Filter{
 								{
 									Name: envoywellknown.TCPProxy,
-									ConfigType: &envoylistenerv2.Filter_TypedConfig{
+									ConfigType: &envoylistenerv3.Filter_TypedConfig{
 										TypedConfig: marshalMessage(t, &envoytcpfilterv3.TcpProxy{
 											StatPrefix: "ingress_tcp",
 											ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
@@ -470,12 +471,12 @@ func TestSync(t *testing.T) {
 							},
 						},
 					},
-					FilterChains: []*envoylistenerv2.FilterChain{
+					FilterChains: []*envoylistenerv3.FilterChain{
 						{
-							Filters: []*envoylistenerv2.Filter{
+							Filters: []*envoylistenerv3.Filter{
 								{
 									Name: envoywellknown.TCPProxy,
-									ConfigType: &envoylistenerv2.Filter_TypedConfig{
+									ConfigType: &envoylistenerv3.Filter_TypedConfig{
 										TypedConfig: marshalMessage(t, &envoytcpfilterv3.TcpProxy{
 											StatPrefix: "ingress_tcp",
 											ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
@@ -587,13 +588,13 @@ func TestSync(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			log := zap.NewNop().Sugar()
 			client := fakectrlruntimeclient.NewFakeClient(test.resources...)
-			snapshotCache := envoycache.NewSnapshotCache(true, hasher{}, log)
+			snapshotCache := envoycachev3.NewSnapshotCache(true, hasher{}, log)
 
 			c := reconciler{
 				Client:              client,
 				envoySnapshotCache:  snapshotCache,
 				log:                 log,
-				lastAppliedSnapshot: envoycache.NewSnapshot("v0.0.0", nil, nil, nil, nil, nil),
+				lastAppliedSnapshot: envoycachev3.NewSnapshot("v0.0.0", nil, nil, nil, nil, nil, nil),
 			}
 
 			if err := c.sync(); err != nil {
@@ -601,7 +602,7 @@ func TestSync(t *testing.T) {
 			}
 
 			gotClusters := map[string]*envoyclusterv3.Cluster{}
-			for name, res := range c.lastAppliedSnapshot.Resources[envoycache.Cluster].Items {
+			for name, res := range c.lastAppliedSnapshot.Resources[envoycachetype.Cluster].Items {
 				gotClusters[name] = res.(*envoyclusterv3.Cluster)
 			}
 			// Delete the admin cluster. We're not going to bother comparing it here, as its a static resource.
@@ -613,7 +614,7 @@ func TestSync(t *testing.T) {
 			}
 
 			gotListeners := map[string]*envoylistenerv3.Listener{}
-			for name, res := range c.lastAppliedSnapshot.Resources[envoycache.Listener].Items {
+			for name, res := range c.lastAppliedSnapshot.Resources[envoycachetype.Listener].Items {
 				gotListeners[name] = res.(*envoylistenerv3.Listener)
 			}
 			delete(gotListeners, "service_stats")
