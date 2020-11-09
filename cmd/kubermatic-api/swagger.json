@@ -10116,7 +10116,7 @@
           "x-go-name": "AssignPublicIP"
         },
         "availabilityZone": {
-          "description": "Availiability zone in which to place the node. It is coupled with the subnet to which the node will belong.",
+          "description": "Availability zone in which to place the node. It is coupled with the subnet to which the node will belong.",
           "type": "string",
           "x-go-name": "AvailabilityZone"
         },
@@ -13810,6 +13810,16 @@
           "description": "image to use",
           "type": "string",
           "x-go-name": "Image"
+        },
+        "instanceReadyCheckPeriod": {
+          "description": "Period of time to check for instance ready status",
+          "type": "string",
+          "x-go-name": "InstanceReadyCheckPeriod"
+        },
+        "instanceReadyCheckTimeout": {
+          "description": "Max time to wait for the instance to be ready",
+          "type": "string",
+          "x-go-name": "InstanceReadyCheckTimeout"
         },
         "tags": {
           "description": "Additional metadata to set",

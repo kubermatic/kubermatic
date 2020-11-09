@@ -177,10 +177,12 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			return nil, fmt.Errorf("failed to parse openstack config: %v", err)
 		}
 		cloudSpec.Openstack = &apiv1.OpenstackNodeSpec{
-			Flavor:           config.Flavor.Value,
-			Image:            config.Image.Value,
-			Tags:             config.Tags,
-			AvailabilityZone: config.AvailabilityZone.Value,
+			Flavor:                    config.Flavor.Value,
+			Image:                     config.Image.Value,
+			Tags:                      config.Tags,
+			AvailabilityZone:          config.AvailabilityZone.Value,
+			InstanceReadyCheckPeriod:  config.InstanceReadyCheckPeriod.Value,
+			InstanceReadyCheckTimeout: config.InstanceReadyCheckTimeout.Value,
 		}
 		cloudSpec.Openstack.UseFloatingIP = config.FloatingIPPool.Value != ""
 		if config.RootDiskSizeGB != nil && *config.RootDiskSizeGB > 0 {
