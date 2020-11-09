@@ -139,7 +139,7 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 	}
 
 	clusterType := "kubernetes"
-	if cluster.Spec.Openshift != nil {
+	if cluster.IsOpenshift() {
 		clusterType = "openshift"
 	}
 
