@@ -21,7 +21,6 @@ import (
 	"flag"
 	"fmt"
 	"net"
-	"time"
 
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
@@ -34,6 +33,7 @@ import (
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	xdsv3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 
+	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
@@ -47,31 +47,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-var (
-	namespace           string
-	listenAddress       string
-	envoyNodeName       string
-	exposeAnnotationKey string
-
-	envoyStatsPort int
-	envoyAdminPort int
-)
-
-const (
-	defaultExposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
-	clusterConnectTimeout      = 1 * time.Second
-)
-
 func main() {
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
 
-	flag.StringVar(&listenAddress, "listen-address", ":8001", "Address to serve on")
-	flag.StringVar(&envoyNodeName, "envoy-node-name", "kube", "Name of the envoy nodes to apply the config to via xds")
-	flag.IntVar(&envoyAdminPort, "envoy-admin-port", 9001, "Envoys admin port")
-	flag.IntVar(&envoyStatsPort, "envoy-stats-port", 8002, "Limited port which should be opened on envoy to expose metrics and the health check. Endpoints are: /healthz & /stats")
-	flag.StringVar(&namespace, "namespace", "", "The namespace we should use for pods and services. Leave empty for all namespaces.")
-	flag.StringVar(&exposeAnnotationKey, "expose-annotation-key", defaultExposeAnnotationKey, "The annotation key used to determine if a service should be exposed")
+	ctrlOpts := envoymanager.Options{}
+	flag.StringVar(&ctrlOpts.ListenAddress, "listen-address", ":8001", "Address to serve on")
+	flag.StringVar(&ctrlOpts.EnvoyNodeName, "envoy-node-name", "kube", "Name of the envoy nodes to apply the config to via xds")
+	flag.IntVar(&ctrlOpts.EnvoyAdminPort, "envoy-admin-port", 9001, "Envoys admin port")
+	flag.IntVar(&ctrlOpts.EnvoyStatsPort, "envoy-stats-port", 8002, "Limited port which should be opened on envoy to expose metrics and the health check. Endpoints are: /healthz & /stats")
+	flag.StringVar(&ctrlOpts.Namespace, "namespace", "", "The namespace we should use for pods and services. Leave empty for all namespaces.")
+	flag.StringVar(&ctrlOpts.ExposeAnnotationKey, "expose-annotation-key", envoymanager.DefaultExposeAnnotationKey, "The annotation key used to determine if a service should be exposed")
 	flag.Parse()
 
 	// setup signal handler
@@ -92,13 +78,13 @@ func main() {
 	}()
 
 	cli.Hello(log, "Envoy-Manager", logOpts.Debug)
-	log.Infow("Starting the server...", "address", listenAddress)
+	log.Infow("Starting the server...", "address", ctrlOpts.ListenAddress)
 
-	snapshotCache := envoycachev3.NewSnapshotCache(true, hasher{}, log.With("component", "envoycache"))
+	snapshotCache := envoycachev3.NewSnapshotCache(true, envoycachev3.IDHash{}, log.With("component", "envoycache"))
 	srv := xdsv3.NewServer(ctx, snapshotCache, nil)
 	grpcServer := grpc.NewServer()
 
-	listener, err := net.Listen("tcp", listenAddress)
+	listener, err := net.Listen("tcp", ctrlOpts.ListenAddress)
 	if err != nil {
 		log.Fatalw("failed to listen on address", zap.Error(err))
 	}
@@ -120,17 +106,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	mgr, err := manager.New(config, manager.Options{Namespace: namespace})
+	mgr, err := manager.New(config, manager.Options{Namespace: ctrlOpts.Namespace})
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	r := &reconciler{
-		ctx:                ctx,
+	r := &envoymanager.Reconciler{
+		Ctx:                ctx,
 		Client:             mgr.GetClient(),
-		namespace:          namespace,
-		envoySnapshotCache: snapshotCache,
-		log:                log,
+		Options:            ctrlOpts,
+		Log:                log,
+		EnvoySnapshotCache: snapshotCache,
 	}
 	ctrl, err := controller.New("envoy-manager", mgr,
 		controller.Options{Reconciler: r, MaxConcurrentReconciles: 1})

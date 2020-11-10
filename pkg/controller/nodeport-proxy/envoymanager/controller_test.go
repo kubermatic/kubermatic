@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package envoymanager
 
 import (
 	"testing"
@@ -57,7 +57,7 @@ func TestSync(t *testing.T) {
 						Name:      "my-nodeport",
 						Namespace: "test",
 						Annotations: map[string]string{
-							exposeAnnotationKey: "true",
+							DefaultExposeAnnotationKey: "true",
 						},
 					},
 					Spec: corev1.ServiceSpec{
@@ -337,7 +337,7 @@ func TestSync(t *testing.T) {
 						Name:      "my-nodeport",
 						Namespace: "test",
 						Annotations: map[string]string{
-							exposeAnnotationKey: "true",
+							DefaultExposeAnnotationKey: "true",
 						},
 					},
 					Spec: corev1.ServiceSpec{
@@ -559,7 +559,7 @@ func TestSync(t *testing.T) {
 						Name:      "my-nodeport",
 						Namespace: "test",
 						Annotations: map[string]string{
-							exposeAnnotationKey: "true",
+							DefaultExposeAnnotationKey: "true",
 						},
 					},
 					Spec: corev1.ServiceSpec{
@@ -588,12 +588,16 @@ func TestSync(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			log := zap.NewNop().Sugar()
 			client := fakectrlruntimeclient.NewFakeClient(test.resources...)
-			snapshotCache := envoycachev3.NewSnapshotCache(true, hasher{}, log)
+			snapshotCache := envoycachev3.NewSnapshotCache(true, envoycachev3.IDHash{}, log)
 
-			c := reconciler{
-				Client:             client,
-				envoySnapshotCache: snapshotCache,
-				log:                log,
+			c := Reconciler{
+				Client: client,
+				Options: Options{
+					EnvoyNodeName:       "node-name",
+					ExposeAnnotationKey: DefaultExposeAnnotationKey,
+				},
+				EnvoySnapshotCache: snapshotCache,
+				Log:                log,
 			}
 
 			if err := c.sync(); err != nil {
@@ -601,7 +605,7 @@ func TestSync(t *testing.T) {
 			}
 
 			gotClusters := map[string]*envoyclusterv3.Cluster{}
-			s, _ := c.envoySnapshotCache.GetSnapshot(envoyNodeName)
+			s, _ := c.EnvoySnapshotCache.GetSnapshot(c.EnvoyNodeName)
 			for name, res := range s.Resources[envoycachetype.Cluster].Items {
 				gotClusters[name] = res.(*envoyclusterv3.Cluster)
 			}

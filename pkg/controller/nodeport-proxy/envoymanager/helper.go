@@ -14,24 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package envoymanager
 
 import (
 	"fmt"
 
-	envoycorev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
-
-// hasher returns a static string so changes apply to all nodes
-type hasher struct{}
-
-// ID returns a static string as all envoy nodes should receive the same config
-func (h hasher) ID(node *envoycorev3.Node) string {
-	return envoyNodeName
-}
 
 func ServiceKey(service *corev1.Service) string {
 	return fmt.Sprintf("%s/%s", service.Namespace, service.Name)

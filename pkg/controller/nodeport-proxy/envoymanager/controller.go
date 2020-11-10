@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package envoymanager
 
 import (
 	"context"
@@ -50,17 +50,32 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-type reconciler struct {
-	ctrlruntimeclient.Client
+const (
+	DefaultExposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
+	clusterConnectTimeout      = 1 * time.Second
+)
 
-	ctx       context.Context
-	log       *zap.SugaredLogger
-	namespace string
+type Options struct {
+	Namespace           string
+	ListenAddress       string
+	EnvoyNodeName       string
+	ExposeAnnotationKey string
 
-	envoySnapshotCache envoycachev3.SnapshotCache
+	EnvoyStatsPort int
+	EnvoyAdminPort int
 }
 
-func (r *reconciler) getInitialResources() (listeners []envoycachetype.Resource, clusters []envoycachetype.Resource, err error) {
+type Reconciler struct {
+	ctrlruntimeclient.Client
+	Options
+
+	Ctx context.Context
+	Log *zap.SugaredLogger
+
+	EnvoySnapshotCache envoycachev3.SnapshotCache
+}
+
+func (r *Reconciler) getInitialResources() (listeners []envoycachetype.Resource, clusters []envoycachetype.Resource, err error) {
 	adminCluster := &envoyclusterv3.Cluster{
 		Name:           "service_stats",
 		ConnectTimeout: ptypes.DurationProto(50 * time.Millisecond),
@@ -82,7 +97,7 @@ func (r *reconciler) getInitialResources() (listeners []envoycachetype.Resource,
 												Protocol: envoycorev3.SocketAddress_TCP,
 												Address:  "127.0.0.1",
 												PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-													PortValue: uint32(envoyAdminPort),
+													PortValue: uint32(r.EnvoyAdminPort),
 												},
 											},
 										},
@@ -169,7 +184,7 @@ func (r *reconciler) getInitialResources() (listeners []envoycachetype.Resource,
 					Protocol: envoycorev3.SocketAddress_TCP,
 					Address:  "0.0.0.0",
 					PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-						PortValue: uint32(envoyStatsPort),
+						PortValue: uint32(r.EnvoyStatsPort),
 					},
 				},
 			},
@@ -192,18 +207,18 @@ func (r *reconciler) getInitialResources() (listeners []envoycachetype.Resource,
 	return listeners, clusters, nil
 }
 
-func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
-	r.log.Debug("Got reconcile request")
+func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
+	r.Log.Debug("Got reconcile request")
 	err := r.sync()
 	if err != nil {
-		r.log.Errorf("Failed to reconcile", zap.Error(err))
+		r.Log.Errorf("Failed to reconcile", zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) sync() error {
+func (r *Reconciler) sync() error {
 	services := &corev1.ServiceList{}
-	if err := r.List(r.ctx, services, ctrlruntimeclient.InNamespace(r.namespace)); err != nil {
+	if err := r.List(r.Ctx, services, ctrlruntimeclient.InNamespace(r.Namespace)); err != nil {
 		return errors.Wrap(err, "failed to list service's")
 	}
 
@@ -214,11 +229,11 @@ func (r *reconciler) sync() error {
 
 	for _, service := range services.Items {
 		serviceKey := ServiceKey(&service)
-		serviceLog := r.log.With("service", serviceKey)
+		serviceLog := r.Log.With("service", serviceKey)
 
 		// Only cover services which have the annotation: true
-		if strings.ToLower(service.Annotations[exposeAnnotationKey]) != "true" {
-			serviceLog.Debugf("Skipping service: it does not have the annotation %s=true", exposeAnnotationKey)
+		if strings.ToLower(service.Annotations[r.ExposeAnnotationKey]) != "true" {
+			serviceLog.Debugf("Skipping service: it does not have the annotation %s=true", r.ExposeAnnotationKey)
 			continue
 		}
 
@@ -313,7 +328,7 @@ func (r *reconciler) sync() error {
 				return errors.Wrap(err, "failed to marshal tcpProxyConfig")
 			}
 
-			r.log.Debugf("Using a listener on port %d", servicePort.NodePort)
+			r.Log.Debugf("Using a listener on port %d", servicePort.NodePort)
 
 			listener := &envoylistenerv3.Listener{
 				Name: serviceNodePortName,
@@ -346,11 +361,11 @@ func (r *reconciler) sync() error {
 	}
 
 	// Get current snapshot
-	currSnapshot, err := r.envoySnapshotCache.GetSnapshot(envoyNodeName)
+	currSnapshot, err := r.EnvoySnapshotCache.GetSnapshot(r.EnvoyNodeName)
 	if err != nil {
-		r.log.Debugf("Setting first snapshot: %v", err)
+		r.Log.Debugf("Setting first snapshot: %v", err)
 		newSnapshot := envoycachev3.NewSnapshot("v0.0.0", nil, clusters, nil, listeners, nil, nil)
-		if err := r.envoySnapshotCache.SetSnapshot(envoyNodeName, newSnapshot); err != nil {
+		if err := r.EnvoySnapshotCache.SetSnapshot(r.EnvoyNodeName, newSnapshot); err != nil {
 			return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 		}
 		return nil
@@ -364,11 +379,11 @@ func (r *reconciler) sync() error {
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
 	snapshot := envoycachev3.NewSnapshot(lastUsedVersion.String(), nil, clusters, nil, listeners, nil, nil)
 	if reflect.DeepEqual(currSnapshot, snapshot) {
-		r.log.Debug("No changes detected")
+		r.Log.Debug("No changes detected")
 		return nil
 	}
 
-	r.log.Info("detected a change. Updating the Envoy config cache...")
+	r.Log.Info("detected a change. Updating the Envoy config cache...")
 	newVersion := lastUsedVersion.IncMajor()
 	newSnapshot := envoycachev3.NewSnapshot(newVersion.String(), nil, clusters, nil, listeners, nil, nil)
 
@@ -376,14 +391,14 @@ func (r *reconciler) sync() error {
 		return errors.Wrap(err, "new Envoy config snapshot is not consistent")
 	}
 
-	if err := r.envoySnapshotCache.SetSnapshot(envoyNodeName, newSnapshot); err != nil {
+	if err := r.EnvoySnapshotCache.SetSnapshot(r.EnvoyNodeName, newSnapshot); err != nil {
 		return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 	}
 
 	return nil
 }
 
-func (r *reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod, error) {
+func (r *Reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod, error) {
 	key := ServiceKey(service)
 	var readyPods []*corev1.Pod
 
@@ -407,7 +422,7 @@ func (r *reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod
 			readyPods = append(readyPods, &servicePods.Items[idx])
 		} else {
 			// Only log when we do not add pods as the caller is responsible for logging the final pods
-			r.log.Debugf("Skipping pod %s/%s for service %s/%s. The pod is not ready", pod.Namespace, pod.Name, service.Namespace, service.Name)
+			r.Log.Debugf("Skipping pod %s/%s for service %s/%s. The pod is not ready", pod.Namespace, pod.Name, service.Namespace, service.Name)
 		}
 	}
 
