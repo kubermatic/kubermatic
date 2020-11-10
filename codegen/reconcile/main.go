@@ -151,6 +151,11 @@ func main() {
 				ImportAlias:        "certmanagerv1alpha2",
 				ResourceImportPath: "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2",
 			},
+			{
+				ResourceName:       "ConstraintTemplate",
+				ImportAlias:        "gatekeeperv1beta1",
+				ResourceImportPath: "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1",
+			},
 		},
 	}
 
