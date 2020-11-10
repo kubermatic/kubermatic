@@ -23,7 +23,7 @@ containerize ./hack/update-velero-crds.sh
 
 velero=velero
 if ! [ -x "$(command -v $velero)" ]; then
-  version=v1.4.2
+  version=v1.5.2
   url="https://github.com/vmware-tanzu/velero/releases/download/$version/velero-$version-linux-amd64.tar.gz"
   velero=/tmp/velero
 
@@ -34,6 +34,7 @@ if ! [ -x "$(command -v $velero)" ]; then
 fi
 
 cd charts/backup/velero/
+mkdir -p crd
 
 version=$($velero version --client-only | grep Version | cut -d' ' -f2)
 crds=$($velero install --crds-only --dry-run -o json | jq -c '.items[]')
