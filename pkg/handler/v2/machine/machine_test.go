@@ -1312,6 +1312,146 @@ func TestMachineDeploymentMetrics(t *testing.T) {
 	}
 }
 
+func TestPatchMachineDeployment(t *testing.T) {
+	t.Parallel()
+
+	var replicas int32 = 1
+	var replicasUpdated int32 = 3
+	var kubeletVerUpdated = "v9.8.0"
+
+	testcases := []struct {
+		Name                       string
+		Body                       string
+		ExpectedResponse           string
+		HTTPStatus                 int
+		cluster                    string
+		project                    string
+		ExistingAPIUser            *apiv1.User
+		NodeDeploymentID           string
+		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
+		ExistingKubermaticObjs     []runtime.Object
+	}{
+		// Scenario 1: Update replicas count.
+		{
+			Name:                       "Scenario 1: Update replicas count",
+			Body:                       fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
+			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false},"status":{}}`, replicasUpdated),
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusOK,
+			project:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:            test.GenDefaultAPIUser(),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)},
+			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
+		},
+		// Scenario 2: Update kubelet version.
+		{
+			Name:                       "Scenario 2: Update kubelet version",
+			Body:                       fmt.Sprintf(`{"spec":{"template":{"versions":{"kubelet":"%v"}}}}`, kubeletVerUpdated),
+			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"%v"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false},"status":{}}`, replicas, kubeletVerUpdated),
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusOK,
+			project:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:            test.GenDefaultAPIUser(),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)},
+			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
+		},
+		// Scenario 3: Change to paused.
+		{
+			Name:                       "Scenario 3: Change to paused",
+			Body:                       `{"spec":{"paused":true}}`,
+			ExpectedResponse:           `{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":1,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":true,"dynamicConfig":false},"status":{}}`,
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusOK,
+			project:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:            test.GenDefaultAPIUser(),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)},
+			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
+		},
+		// Scenario 4: Downgrade to too old kubelet version
+		{
+			Name:                       "Scenario 4: Downgrade kubelet to too old",
+			Body:                       `{"spec":{"template":{"versions":{"kubelet":"9.6.0"}}}}`,
+			ExpectedResponse:           `{"error":{"code":400,"message":"kubelet version 9.6.0 is not compatible with control plane version 9.9.9"}}`,
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusBadRequest,
+			project:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:            test.GenDefaultAPIUser(),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)},
+			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
+		},
+		// Scenario 5: Upgrade kubelet to a too new version
+		{
+			Name:                       "Scenario 5: Upgrade kubelet to too new",
+			Body:                       `{"spec":{"template":{"versions":{"kubelet":"9.10.0"}}}}`,
+			ExpectedResponse:           `{"error":{"code":400,"message":"kubelet version 9.10.0 is not compatible with control plane version 9.9.9"}}`,
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusBadRequest,
+			project:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:            test.GenDefaultAPIUser(),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)},
+			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true)),
+		},
+		// Scenario 6: The admin John can update any node deployment.
+		{
+			Name:                       "Scenario 6: The admin John can update any machine deployment",
+			Body:                       fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
+			ExpectedResponse:           fmt.Sprintf(`{"id":"venus","name":"venus","creationTimestamp":"0001-01-01T00:00:00Z","spec":{"replicas":%v,"template":{"cloud":{"digitalocean":{"size":"2GB","backups":false,"ipv6":false,"monitoring":false,"tags":["kubernetes","kubernetes-cluster-defClusterID","system-cluster-defClusterID","system-project-my-first-project-ID"]}},"operatingSystem":{"ubuntu":{"distUpgradeOnBoot":true}},"versions":{"kubelet":"v9.9.9"},"labels":{"system/cluster":"defClusterID","system/project":"my-first-project-ID"}},"paused":false,"dynamicConfig":false},"status":{}}`, replicasUpdated),
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusOK,
+			project:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:            test.GenAPIUser("John", "john@acme.com"),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)},
+			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true), test.GenAdminUser("John", "john@acme.com", true)),
+		},
+		// Scenario 7: The user John can not update Bob's node deployment.
+		{
+			Name:                       "Scenario 7: The user John can not update Bob's machine deployment",
+			Body:                       fmt.Sprintf(`{"spec":{"replicas":%v}}`, replicasUpdated),
+			ExpectedResponse:           `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			cluster:                    "keen-snyder",
+			HTTPStatus:                 http.StatusForbidden,
+			project:                    test.GenDefaultProject().Name,
+			ExistingAPIUser:            test.GenAPIUser("John", "john@acme.com"),
+			NodeDeploymentID:           "venus",
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)},
+			ExistingKubermaticObjs:     test.GenDefaultKubermaticObjects(genTestCluster(true), test.GenAdminUser("John", "john@acme.com", false)),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s",
+				test.GenDefaultProject().Name, test.GenDefaultCluster().Name, tc.NodeDeploymentID), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineDeploymentObjets := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+				machineDeploymentObjets = append(machineDeploymentObjets, existingMachineDeployment)
+			}
+			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineDeploymentObjets, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
 func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 	controllerStatus := kubermaticv1.HealthStatusDown
 	if isControllerReady {
