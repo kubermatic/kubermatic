@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -44,7 +45,6 @@ import (
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/labels"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -353,7 +353,7 @@ func (r *reconciler) sync() error {
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
 	snapshot := envoycachev3.NewSnapshot(lastUsedVersion.String(), nil, clusters, nil, listeners, nil, nil)
-	if equality.Semantic.DeepEqual(r.lastAppliedSnapshot, snapshot) {
+	if reflect.DeepEqual(r.lastAppliedSnapshot, snapshot) {
 		return nil
 	}
 
