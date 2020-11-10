@@ -13,8 +13,6 @@
 # limitations under the License.
 
 certManager:
-  isOpenshift: false
-
   # Optional proxy server configuration
   # http_proxy: ""
   # https_proxy: ""
@@ -24,7 +22,7 @@ certManager:
     replicas: 1
     image:
       repository: quay.io/jetstack/cert-manager-controller
-      tag: v0.16.1
+      tag: v1.0.4
       pullPolicy: IfNotPresent
     pullSecrets: []
 
@@ -55,7 +53,7 @@ certManager:
     replicas: 1
     image:
       repository: quay.io/jetstack/cert-manager-webhook
-      tag: v0.16.1
+      tag: v1.0.4
       pullPolicy: IfNotPresent
 
     resources:
@@ -85,7 +83,7 @@ certManager:
     replicas: 1
     image:
       repository: quay.io/jetstack/cert-manager-cainjector
-      tag: v0.16.1
+      tag: v1.0.4
       pullPolicy: IfNotPresent
 
     resources:
