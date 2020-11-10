@@ -46,7 +46,7 @@ spec:
           description: VolumeSnapshotLocationStatus describes the current status of a Velero VolumeSnapshotLocation.
           properties:
             phase:
-              description: VolumeSnapshotLocationPhase is the lifecyle phase of a Velero VolumeSnapshotLocation.
+              description: VolumeSnapshotLocationPhase is the lifecycle phase of a Velero VolumeSnapshotLocation.
               enum:
                 - Available
                 - Unavailable
