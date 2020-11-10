@@ -107,3 +107,20 @@ func (p *ConstraintProvider) CreateUnsecured(constraint *kubermaticv1.Constraint
 	err := p.clientPrivileged.Create(context.Background(), constraint)
 	return constraint, err
 }
+
+func (p *ConstraintProvider) Update(userInfo *provider.UserInfo, constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+
+	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	err = impersonationClient.Update(context.Background(), constraint)
+	return constraint, err
+}
+
+func (p *ConstraintProvider) UpdateUnsecured(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+
+	err := p.clientPrivileged.Update(context.Background(), constraint)
+	return constraint, err
+}

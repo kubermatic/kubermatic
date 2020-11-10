@@ -227,6 +227,55 @@ func TestCreateConstraint(t *testing.T) {
 	}
 }
 
+func TestUpdateConstraint(t *testing.T) {
+
+	testCases := []struct {
+		name             string
+		updateConstraint *kubermaticv1.Constraint
+		existingObjects  []runtime.Object
+		cluster          *kubermaticv1.Cluster
+		userInfo         *provider.UserInfo
+	}{
+		{
+			name: "scenario 1: update constraint",
+			updateConstraint: func() *kubermaticv1.Constraint {
+				ct := genConstraint("ct1", testNamespace)
+				ct.Spec.Match.Kinds = append(ct.Spec.Match.Kinds, kubermaticv1.Kind{Kinds: "pod", APIGroups: "v1"})
+				ct.Spec.Match.Scope = "*"
+				return ct
+			}(),
+			existingObjects: []runtime.Object{
+				genConstraint("ct1", testNamespace),
+			},
+			cluster:  genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
+			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			constraintProvider, err := kubernetes.NewConstraintProvider(fakeImpersonationClient, client)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			constraint, err := constraintProvider.Update(tc.userInfo, tc.updateConstraint)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !reflect.DeepEqual(constraint, tc.updateConstraint) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.updateConstraint))
+			}
+		})
+	}
+}
+
 func genConstraint(name, namespace string) *kubermaticv1.Constraint {
 	ct := &kubermaticv1.Constraint{}
 	ct.Kind = kubermaticv1.ConstraintKind
