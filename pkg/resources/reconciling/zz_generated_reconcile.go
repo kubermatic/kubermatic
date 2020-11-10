@@ -10,6 +10,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -835,6 +836,43 @@ func ReconcileCertificates(ctx context.Context, namedGetters []NamedCertificateC
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &certmanagerv1alpha2.Certificate{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Certificate %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
+
+// ConstraintTemplateCreator defines an interface to create/update ConstraintTemplates
+type ConstraintTemplateCreator = func(existing *gatekeeperv1beta1.ConstraintTemplate) (*gatekeeperv1beta1.ConstraintTemplate, error)
+
+// NamedConstraintTemplateCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedConstraintTemplateCreatorGetter = func() (name string, create ConstraintTemplateCreator)
+
+// ConstraintTemplateObjectWrapper adds a wrapper so the ConstraintTemplateCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func ConstraintTemplateObjectWrapper(create ConstraintTemplateCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*gatekeeperv1beta1.ConstraintTemplate))
+		}
+		return create(&gatekeeperv1beta1.ConstraintTemplate{})
+	}
+}
+
+// ReconcileConstraintTemplates will create and update the ConstraintTemplates coming from the passed ConstraintTemplateCreator slice
+func ReconcileConstraintTemplates(ctx context.Context, namedGetters []NamedConstraintTemplateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := ConstraintTemplateObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &gatekeeperv1beta1.ConstraintTemplate{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ConstraintTemplate %s/%s: %v", namespace, name, err)
 		}
 	}
 

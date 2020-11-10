@@ -25,6 +25,7 @@ import (
 	"os"
 
 	"github.com/go-logr/zapr"
+	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
@@ -112,6 +113,9 @@ func main() {
 	}
 	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+	if err := gatekeeperv1beta1.AddToSchemes.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", gatekeeperv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
 
 	// Check if the CRD for the VerticalPodAutoscaler is registered by allocating an informer
