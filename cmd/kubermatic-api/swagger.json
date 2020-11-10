@@ -17224,12 +17224,12 @@
           "x-go-name": "Image"
         },
         "instanceReadyCheckPeriod": {
-          "description": "Period of time to check for instance ready status",
+          "description": "Period of time to check for instance ready status, i.e. 10s/1m",
           "type": "string",
           "x-go-name": "InstanceReadyCheckPeriod"
         },
         "instanceReadyCheckTimeout": {
-          "description": "Max time to wait for the instance to be ready",
+          "description": "Max time to wait for the instance to be ready, i.e. 10s/1m",
           "type": "string",
           "x-go-name": "InstanceReadyCheckTimeout"
         },
