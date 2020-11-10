@@ -57,8 +57,7 @@ type reconciler struct {
 	log       *zap.SugaredLogger
 	namespace string
 
-	envoySnapshotCache  envoycachev3.SnapshotCache
-	lastAppliedSnapshot envoycachev3.Snapshot
+	envoySnapshotCache envoycachev3.SnapshotCache
 }
 
 func (r *reconciler) getInitialResources() (listeners []envoycachetype.Resource, clusters []envoycachetype.Resource, err error) {
@@ -346,14 +345,26 @@ func (r *reconciler) sync() error {
 		}
 	}
 
-	lastUsedVersion, err := semver.NewVersion(r.lastAppliedSnapshot.GetVersion(envoyresourcev3.ClusterType))
+	// Get current snapshot
+	currSnapshot, err := r.envoySnapshotCache.GetSnapshot(envoyNodeName)
+	if err != nil {
+		r.log.Debugf("Setting first snapshot: %v", err)
+		newSnapshot := envoycachev3.NewSnapshot("v0.0.0", nil, clusters, nil, listeners, nil, nil)
+		if err := r.envoySnapshotCache.SetSnapshot(envoyNodeName, newSnapshot); err != nil {
+			return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
+		}
+		return nil
+	}
+
+	lastUsedVersion, err := semver.NewVersion(currSnapshot.GetVersion(envoyresourcev3.ClusterType))
 	if err != nil {
 		return errors.Wrap(err, "failed to parse version from last snapshot")
 	}
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
 	snapshot := envoycachev3.NewSnapshot(lastUsedVersion.String(), nil, clusters, nil, listeners, nil, nil)
-	if reflect.DeepEqual(r.lastAppliedSnapshot, snapshot) {
+	if reflect.DeepEqual(currSnapshot, snapshot) {
+		r.log.Debug("No changes detected")
 		return nil
 	}
 
@@ -368,8 +379,6 @@ func (r *reconciler) sync() error {
 	if err := r.envoySnapshotCache.SetSnapshot(envoyNodeName, newSnapshot); err != nil {
 		return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 	}
-
-	r.lastAppliedSnapshot = newSnapshot
 
 	return nil
 }

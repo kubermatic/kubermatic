@@ -591,10 +591,9 @@ func TestSync(t *testing.T) {
 			snapshotCache := envoycachev3.NewSnapshotCache(true, hasher{}, log)
 
 			c := reconciler{
-				Client:              client,
-				envoySnapshotCache:  snapshotCache,
-				log:                 log,
-				lastAppliedSnapshot: envoycachev3.NewSnapshot("v0.0.0", nil, nil, nil, nil, nil, nil),
+				Client:             client,
+				envoySnapshotCache: snapshotCache,
+				log:                log,
 			}
 
 			if err := c.sync(); err != nil {
@@ -602,7 +601,8 @@ func TestSync(t *testing.T) {
 			}
 
 			gotClusters := map[string]*envoyclusterv3.Cluster{}
-			for name, res := range c.lastAppliedSnapshot.Resources[envoycachetype.Cluster].Items {
+			s, _ := c.envoySnapshotCache.GetSnapshot(envoyNodeName)
+			for name, res := range s.Resources[envoycachetype.Cluster].Items {
 				gotClusters[name] = res.(*envoyclusterv3.Cluster)
 			}
 			// Delete the admin cluster. We're not going to bother comparing it here, as its a static resource.
@@ -614,7 +614,7 @@ func TestSync(t *testing.T) {
 			}
 
 			gotListeners := map[string]*envoylistenerv3.Listener{}
-			for name, res := range c.lastAppliedSnapshot.Resources[envoycachetype.Listener].Items {
+			for name, res := range s.Resources[envoycachetype.Listener].Items {
 				gotListeners[name] = res.(*envoylistenerv3.Listener)
 			}
 			delete(gotListeners, "service_stats")

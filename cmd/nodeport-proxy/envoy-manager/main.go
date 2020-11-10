@@ -126,12 +126,11 @@ func main() {
 	}
 
 	r := &reconciler{
-		ctx:                 ctx,
-		Client:              mgr.GetClient(),
-		namespace:           namespace,
-		envoySnapshotCache:  snapshotCache,
-		log:                 log,
-		lastAppliedSnapshot: envoycachev3.NewSnapshot("v0.0.0", nil, nil, nil, nil, nil, nil),
+		ctx:                ctx,
+		Client:             mgr.GetClient(),
+		namespace:          namespace,
+		envoySnapshotCache: snapshotCache,
+		log:                log,
 	}
 	ctrl, err := controller.New("envoy-manager", mgr,
 		controller.Options{Reconciler: r, MaxConcurrentReconciles: 1})
