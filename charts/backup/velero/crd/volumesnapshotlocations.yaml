@@ -1,9 +1,9 @@
-# This file has been generated with Velero v1.4.2. Do not edit.
+# This file has been generated with Velero v1.5.2. Do not edit.
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.2.4
+    controller-gen.kubebuilder.io/version: v0.3.0
   labels:
     component: velero
   name: volumesnapshotlocations.velero.io
@@ -18,24 +18,18 @@ spec:
   scope: Namespaced
   validation:
     openAPIV3Schema:
-      description: VolumeSnapshotLocation is a location where Velero stores volume
-        snapshots.
+      description: VolumeSnapshotLocation is a location where Velero stores volume snapshots.
       properties:
         apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation
-            of an object. Servers should convert recognized schemas to the latest
-            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
           type: string
         kind:
-          description: 'Kind is a string value representing the REST resource this
-            object represents. Servers may infer this from the endpoint the client
-            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
         spec:
-          description: VolumeSnapshotLocationSpec defines the specification for a
-            Velero VolumeSnapshotLocation.
+          description: VolumeSnapshotLocationSpec defines the specification for a Velero VolumeSnapshotLocation.
           properties:
             config:
               additionalProperties:
@@ -46,23 +40,21 @@ spec:
               description: Provider is the provider of the volume storage.
               type: string
           required:
-          - provider
+            - provider
           type: object
         status:
-          description: VolumeSnapshotLocationStatus describes the current status of
-            a Velero VolumeSnapshotLocation.
+          description: VolumeSnapshotLocationStatus describes the current status of a Velero VolumeSnapshotLocation.
           properties:
             phase:
-              description: VolumeSnapshotLocationPhase is the lifecycle phase of a
-                Velero VolumeSnapshotLocation.
+              description: VolumeSnapshotLocationPhase is the lifecyle phase of a Velero VolumeSnapshotLocation.
               enum:
-              - Available
-              - Unavailable
+                - Available
+                - Unavailable
               type: string
           type: object
       type: object
   version: v1
   versions:
-  - name: v1
-    served: true
-    storage: true
+    - name: v1
+      served: true
+      storage: true
