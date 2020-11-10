@@ -183,6 +183,8 @@ type ClientService interface {
 
 	PatchClusterV2(params *PatchClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterV2OK, error)
 
+	PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*PatchConstraintOK, error)
+
 	PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchNodeDeploymentOK, error)
 
 	PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchRoleOK, error)
@@ -2899,6 +2901,40 @@ func (a *Client) PatchClusterV2(params *PatchClusterV2Params, authInfo runtime.C
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PatchClusterV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchConstraint patches a given constraint for the specified cluster
+*/
+func (a *Client) PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*PatchConstraintOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchConstraintParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchConstraint",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchConstraintReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchConstraintOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchConstraintDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
