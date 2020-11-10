@@ -98,7 +98,6 @@ require (
 replace (
 	github.com/go-logr/logr => github.com/go-logr/logr v0.2.1-0.20200730175230-ee2de8da5be6
 	github.com/go-logr/zapr => github.com/go-logr/zapr v0.2.0
-	// pin to prevent panics in DeepEqual() when comparing envoy objects
 	// Line below commented to fix the issue related to Envoy using v3
 	// github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
 	// prevent 2.0.0 dependency because it's a broken release
