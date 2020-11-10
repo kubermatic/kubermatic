@@ -24,7 +24,8 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/go-ini/ini v1.55.0 // indirect
 	github.com/go-kit/kit v0.10.0
-	github.com/go-logr/zapr v0.1.1
+	github.com/go-logr/logr v0.2.1 // indirect
+	github.com/go-logr/zapr v0.2.0
 	github.com/go-openapi/errors v0.19.6
 	github.com/go-openapi/runtime v0.19.20
 	github.com/go-openapi/strfmt v0.19.5
@@ -79,12 +80,12 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
-	k8s.io/api v0.19.0
-	k8s.io/apiextensions-apiserver v0.19.0
-	k8s.io/apimachinery v0.19.0
+	k8s.io/api v0.19.3
+	k8s.io/apiextensions-apiserver v0.19.3
+	k8s.io/apimachinery v0.19.3
 	k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 // git digest for VPA v0.4.0
 	k8s.io/client-go v12.0.0+incompatible
-	k8s.io/code-generator v0.19.0
+	k8s.io/code-generator v0.19.3
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.3.0 // indirect
 	k8s.io/kube-aggregator v0.16.4
@@ -96,20 +97,14 @@ require (
 )
 
 replace (
-	github.com/go-logr/logr => github.com/go-logr/logr v0.2.1-0.20200730175230-ee2de8da5be6
-	github.com/go-logr/zapr => github.com/go-logr/zapr v0.2.0
-	// Line below commented to fix the issue related to Envoy using v3
-	// github.com/golang/protobuf => github.com/golang/protobuf v1.3.2
 	// prevent 2.0.0 dependency because it's a broken release
 	gomodules.xyz/jsonpatch/v2 => gomodules.xyz/jsonpatch/v2 v2.1.0
-	// pin to prevent panics in DeepEqual() when comparing envoy objects
-	google.golang.org/genproto => google.golang.org/genproto v0.0.0-20190219182410-082222b4a5c5
-	k8s.io/api => k8s.io/api v0.19.0
-	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.19.0
-	k8s.io/apimachinery => k8s.io/apimachinery v0.19.0
-	k8s.io/client-go => k8s.io/client-go v0.19.0
-	k8s.io/code-generator => k8s.io/code-generator v0.19.0
-	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.19.0
-	k8s.io/kubelet => k8s.io/kubelet v0.19.0
-	k8s.io/metrics => k8s.io/metrics v0.19.0
+	k8s.io/api => k8s.io/api v0.19.3
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.19.3
+	k8s.io/apimachinery => k8s.io/apimachinery v0.19.3
+	k8s.io/client-go => k8s.io/client-go v0.19.3
+	k8s.io/code-generator => k8s.io/code-generator v0.19.3
+	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.19.3
+	k8s.io/kubelet => k8s.io/kubelet v0.19.3
+	k8s.io/metrics => k8s.io/metrics v0.19.3
 )
