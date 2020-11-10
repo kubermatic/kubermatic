@@ -185,6 +185,8 @@ type ClientService interface {
 
 	PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*PatchConstraintOK, error)
 
+	PatchMachineDeployment(params *PatchMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchMachineDeploymentOK, error)
+
 	PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchNodeDeploymentOK, error)
 
 	PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchRoleOK, error)
@@ -2935,6 +2937,41 @@ func (a *Client) PatchConstraint(params *PatchConstraintParams, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PatchConstraintDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchMachineDeployment Patches a machine deployment that is assigned to the given cluster. Please note that at the moment only
+node deployment's spec can be updated by a patch, no other fields can be changed using this endpoint.
+*/
+func (a *Client) PatchMachineDeployment(params *PatchMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchMachineDeploymentOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchMachineDeploymentParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchMachineDeployment",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchMachineDeploymentReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchMachineDeploymentOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchMachineDeploymentDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
