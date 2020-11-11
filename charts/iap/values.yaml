@@ -72,24 +72,6 @@ iap:
     #     host: "grafana.kubermatic.tld"
     #     annotations: {}
     #
-    # kibana:
-    #   name: kibana
-    #   client_id: kibana
-    #   client_secret: xxx
-    #   encryption_key: xxx
-    #   config: ## see https://github.com/oauth2-proxy/oauth2-proxy/blob/master/docs/configuration/configuration.md
-    #     scope: "groups openid email"
-    #     email_domains:
-    #       - '*'
-    #     ## do not route health endpoint through the proxy
-    #     skip_auth_regex:
-    #       - '/ui/favicons/favicon.ico'
-    #   upstream_service: kibana.logging.svc.cluster.local
-    #   upstream_port: 5601
-    #   ingress:
-    #     host: "kibana.kubermatic.tld"
-    #     annotations: {}
-    #
     # prometheus:
     #   name: prometheus
     #   client_id: prometheus
