@@ -242,8 +242,7 @@ for buildTarget in $RELEASE_PLATFORMS; do
     charts/iap \
     charts/kubermatic-operator \
     charts/kubermatic/crd \
-    charts/logging/loki \
-    charts/logging/promtail \
+    charts/logging \
     charts/minio \
     charts/monitoring \
     charts/nginx-ingress-controller \

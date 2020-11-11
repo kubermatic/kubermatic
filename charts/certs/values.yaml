@@ -18,7 +18,6 @@ certificates:
   - "grafana.kubermatic.example.com"
   - "prometheus.kubermatic.example.com"
   - "alertmanager.kubermatic.example.com"
-  - "kibana.kubermatic.example.com"
   issuer:
     email: dev@kubermatic.com
 

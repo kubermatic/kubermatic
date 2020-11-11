@@ -43,7 +43,6 @@ DEPLOY_NODEPORT_PROXY=${DEPLOY_NODEPORT_PROXY:-true}
 DEPLOY_ALERTMANAGER=${DEPLOY_ALERTMANAGER:-true}
 DEPLOY_MINIO=${DEPLOY_MINIO:-true}
 DEPLOY_LOKI=${DEPLOY_LOKI:-false}
-DEPLOY_ELASTIC=${DEPLOY_ELASTIC:-true}
 USE_KUBERMATIC_OPERATOR=${USE_KUBERMATIC_OPERATOR:-false}
 DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
 TILLER_NAMESPACE=${TILLER_NAMESPACE:-kubermatic}
@@ -137,11 +136,6 @@ case "${DEPLOY_STACK}" in
 
   logging)
     initTiller
-    if [[ "${DEPLOY_ELASTIC}" = true ]]; then
-      deploy "elasticsearch" "logging" charts/logging/elasticsearch/
-      deploy "fluentbit" "logging" charts/logging/fluentbit/
-      deploy "kibana" "logging" charts/logging/kibana/
-    fi
     if [[ "${DEPLOY_LOKI}" = true ]]; then
       deploy "loki" "logging" charts/logging/loki/
       deploy "promtail" "logging" charts/logging/promtail/
