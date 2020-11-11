@@ -15,28 +15,28 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: webhook
+  name: cert-manager-webhook
   labels:
-    app: webhook
-    app.kubernetes.io/name: webhook
+    app: cert-manager-webhook
+    app.kubernetes.io/name: cert-manager-webhook
     app.kubernetes.io/instance: {{ .Release.Name }}
 spec:
   replicas: {{ .Values.certManager.webhook.replicas }}
   selector:
     matchLabels:
-      app: webhook
-      app.kubernetes.io/name: webhook
+      app: cert-manager-webhook
+      app.kubernetes.io/name: cert-manager-webhook
       app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        app: webhook
-        app.kubernetes.io/name: webhook
+        app: cert-manager-webhook
+        app.kubernetes.io/name: cert-manager-webhook
         app.kubernetes.io/instance: {{ .Release.Name }}
       annotations:
         fluentbit.io/parser: glog
     spec:
-      serviceAccountName: webhook
+      serviceAccountName: cert-manager-webhook
       containers:
       - name: webhook
         image: '{{ .Values.certManager.webhook.image.repository }}:{{ .Values.certManager.webhook.image.tag }}'
@@ -44,8 +44,8 @@ spec:
         args:
         - --secure-port={{ .Values.certManager.webhook.securePort }}
         - --dynamic-serving-ca-secret-namespace=$(POD_NAMESPACE)
-        - --dynamic-serving-ca-secret-name=webhook-ca
-        - --dynamic-serving-dns-names=webhook,webhook.{{ .Release.Namespace }},webhook.{{ .Release.Namespace }}.svc
+        - --dynamic-serving-ca-secret-name=cert-manager-webhook-ca
+        - --dynamic-serving-dns-names=cert-manager-webhook,cert-manager-webhook.{{ .Release.Namespace }},cert-manager-webhook.{{ .Release.Namespace }}.svc
         livenessProbe:
           httpGet:
             path: /livez
