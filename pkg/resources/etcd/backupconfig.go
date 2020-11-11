@@ -33,7 +33,7 @@ func BackupConfigCreator(data etcdBackupConfigCreatorData) reconciling.NamedEtcd
 	return func() (string, reconciling.EtcdBackupConfigCreator) {
 		return resources.EtcdDefaultBackupConfigName, func(config *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
 			config.Spec.Name = resources.EtcdDefaultBackupConfigName
-			config.Spec.Schedule = "*/20 * * * *"
+			config.Spec.Schedule = "@every 20m"
 			keep := 20
 			config.Spec.Keep = &keep
 			config.Spec.Cluster = corev1.ObjectReference{

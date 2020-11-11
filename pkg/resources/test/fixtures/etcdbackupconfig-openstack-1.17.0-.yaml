@@ -10,5 +10,5 @@ spec:
     uid: "1234567890"
   keep: 20
   name: default-backups
-  schedule: '*/20 * * * *'
+  schedule: '@every 20m'
 status: {}
