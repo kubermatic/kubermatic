@@ -20,7 +20,7 @@ nodePortProxy:
   envoy:
     image:
       repository: "docker.io/envoyproxy/envoy-alpine"
-      tag: v1.13.0
+      tag: v1.16.0
 
   nodeSelector: {}
   affinity:
