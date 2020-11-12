@@ -17,11 +17,11 @@ kind: ValidatingWebhookConfiguration
 metadata:
   name: cert-manager-webhook
   labels:
-    app: webhook
-    app.kubernetes.io/name: webhook
+    app: cert-manager-webhook
+    app.kubernetes.io/name: cert-manager-webhook
     app.kubernetes.io/instance: {{ .Release.Name }}
   annotations:
-    cert-manager.io/inject-ca-from-secret: "{{ .Release.Namespace }}/webhook-ca"
+    cert-manager.io/inject-ca-from-secret: "{{ .Release.Namespace }}/cert-manager-webhook-ca"
 webhooks:
   - name: webhook.cert-manager.io
     namespaceSelector:
@@ -39,8 +39,7 @@ webhooks:
           - "cert-manager.io"
           - "acme.cert-manager.io"
         apiVersions:
-          - v1alpha2
-          - v1alpha3
+          - "*"
         operations:
           - CREATE
           - UPDATE
@@ -50,6 +49,6 @@ webhooks:
     sideEffects: None
     clientConfig:
       service:
-        name: webhook
+        name: cert-manager-webhook
         namespace: {{ .Release.Namespace | quote }}
         path: /mutate
