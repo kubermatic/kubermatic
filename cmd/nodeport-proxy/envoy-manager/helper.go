@@ -19,7 +19,7 @@ package main
 import (
 	"fmt"
 
-	envoycorev2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
+	envoycorev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -29,7 +29,7 @@ import (
 type hasher struct{}
 
 // ID returns a static string as all envoy nodes should receive the same config
-func (h hasher) ID(node *envoycorev2.Node) string {
+func (h hasher) ID(node *envoycorev3.Node) string {
 	return envoyNodeName
 }
 
