@@ -26,10 +26,13 @@ import (
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 
-	envoyv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoydiscoveryv2 "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v2"
-	envoycache "github.com/envoyproxy/go-control-plane/pkg/cache"
-	xds "github.com/envoyproxy/go-control-plane/pkg/server"
+	clusterservice "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
+	discoverygrpc "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
+	endpointservice "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
+	listenerservice "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
+	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
+	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	xdsv3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -91,8 +94,8 @@ func main() {
 	cli.Hello(log, "Envoy-Manager", logOpts.Debug)
 	log.Infow("Starting the server...", "address", listenAddress)
 
-	snapshotCache := envoycache.NewSnapshotCache(true, hasher{}, log.With("component", "envoycache"))
-	srv := xds.NewServer(ctx, snapshotCache, nil)
+	snapshotCache := envoycachev3.NewSnapshotCache(true, hasher{}, log.With("component", "envoycache"))
+	srv := xdsv3.NewServer(ctx, snapshotCache, nil)
 	grpcServer := grpc.NewServer()
 
 	listener, err := net.Listen("tcp", listenAddress)
@@ -100,11 +103,11 @@ func main() {
 		log.Fatalw("failed to listen on address", zap.Error(err))
 	}
 
-	envoydiscoveryv2.RegisterAggregatedDiscoveryServiceServer(grpcServer, srv)
-	envoyv2.RegisterEndpointDiscoveryServiceServer(grpcServer, srv)
-	envoyv2.RegisterClusterDiscoveryServiceServer(grpcServer, srv)
-	envoyv2.RegisterRouteDiscoveryServiceServer(grpcServer, srv)
-	envoyv2.RegisterListenerDiscoveryServiceServer(grpcServer, srv)
+	discoverygrpc.RegisterAggregatedDiscoveryServiceServer(grpcServer, srv)
+	endpointservice.RegisterEndpointDiscoveryServiceServer(grpcServer, srv)
+	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, srv)
+	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, srv)
+	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, srv)
 
 	go func() {
 		if err := grpcServer.Serve(listener); err != nil {
@@ -128,7 +131,7 @@ func main() {
 		namespace:           namespace,
 		envoySnapshotCache:  snapshotCache,
 		log:                 log,
-		lastAppliedSnapshot: envoycache.NewSnapshot("v0.0.0", nil, nil, nil, nil, nil),
+		lastAppliedSnapshot: envoycachev3.NewSnapshot("v0.0.0", nil, nil, nil, nil, nil, nil),
 	}
 	ctrl, err := controller.New("envoy-manager", mgr,
 		controller.Options{Reconciler: r, MaxConcurrentReconciles: 1})

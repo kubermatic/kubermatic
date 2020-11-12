@@ -19,6 +19,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -29,19 +30,21 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	envoyv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2"
-	envoycorev2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/core"
-	envoyendpointv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/endpoint"
-	envoylistenerv2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/listener"
-	envoyroutev2 "github.com/envoyproxy/go-control-plane/envoy/api/v2/route"
-	envoyhealthv2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/health_check/v2"
-	envoyhttpconnectionmanagerv2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/http_connection_manager/v2"
-	envoytcpfilterv2 "github.com/envoyproxy/go-control-plane/envoy/config/filter/network/tcp_proxy/v2"
-	envoycache "github.com/envoyproxy/go-control-plane/pkg/cache"
+	envoyclusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
+	envoycorev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
+	envoyendpointv3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
+	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoyhealthv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/http/health_check/v3"
+	envoyhttpconnectionmanagerv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
+	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
+	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
+
+	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/labels"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -54,32 +57,32 @@ type reconciler struct {
 	log       *zap.SugaredLogger
 	namespace string
 
-	envoySnapshotCache  envoycache.SnapshotCache
-	lastAppliedSnapshot envoycache.Snapshot
+	envoySnapshotCache  envoycachev3.SnapshotCache
+	lastAppliedSnapshot envoycachev3.Snapshot
 }
 
-func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clusters []envoycache.Resource, err error) {
-	adminCluster := &envoyv2.Cluster{
+func (r *reconciler) getInitialResources() (listeners []envoycachetype.Resource, clusters []envoycachetype.Resource, err error) {
+	adminCluster := &envoyclusterv3.Cluster{
 		Name:           "service_stats",
 		ConnectTimeout: ptypes.DurationProto(50 * time.Millisecond),
-		ClusterDiscoveryType: &envoyv2.Cluster_Type{
-			Type: envoyv2.Cluster_STATIC,
+		ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
+			Type: envoyclusterv3.Cluster_STATIC,
 		},
-		LbPolicy: envoyv2.Cluster_ROUND_ROBIN,
-		LoadAssignment: &envoyv2.ClusterLoadAssignment{
+		LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
+		LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
 			ClusterName: "service_stats",
-			Endpoints: []*envoyendpointv2.LocalityLbEndpoints{
+			Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
 				{
-					LbEndpoints: []*envoyendpointv2.LbEndpoint{
+					LbEndpoints: []*envoyendpointv3.LbEndpoint{
 						{
-							HostIdentifier: &envoyendpointv2.LbEndpoint_Endpoint{
-								Endpoint: &envoyendpointv2.Endpoint{
-									Address: &envoycorev2.Address{
-										Address: &envoycorev2.Address_SocketAddress{
-											SocketAddress: &envoycorev2.SocketAddress{
-												Protocol: envoycorev2.SocketAddress_TCP,
+							HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
+								Endpoint: &envoyendpointv3.Endpoint{
+									Address: &envoycorev3.Address{
+										Address: &envoycorev3.Address_SocketAddress{
+											SocketAddress: &envoycorev3.SocketAddress{
+												Protocol: envoycorev3.SocketAddress_TCP,
 												Address:  "127.0.0.1",
-												PortSpecifier: &envoycorev2.SocketAddress_PortValue{
+												PortSpecifier: &envoycorev3.SocketAddress_PortValue{
 													PortValue: uint32(envoyAdminPort),
 												},
 											},
@@ -95,12 +98,12 @@ func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clu
 	}
 	clusters = append(clusters, adminCluster)
 
-	healthCheck := &envoyhealthv2.HealthCheck{
+	healthCheck := &envoyhealthv3.HealthCheck{
 		PassThroughMode: &wrappers.BoolValue{Value: false},
-		Headers: []*envoyroutev2.HeaderMatcher{
+		Headers: []*envoyroutev3.HeaderMatcher{
 			{
 				Name: ":path",
-				HeaderMatchSpecifier: &envoyroutev2.HeaderMatcher_ExactMatch{
+				HeaderMatchSpecifier: &envoyroutev3.HeaderMatcher_ExactMatch{
 					ExactMatch: "/healthz",
 				},
 			},
@@ -112,25 +115,25 @@ func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clu
 		return nil, nil, errors.Wrap(err, "failed to marshal HealthCheck")
 	}
 
-	httpConnectionManager := &envoyhttpconnectionmanagerv2.HttpConnectionManager{
-		CodecType:  envoyhttpconnectionmanagerv2.HttpConnectionManager_AUTO,
+	httpConnectionManager := &envoyhttpconnectionmanagerv3.HttpConnectionManager{
+		CodecType:  envoyhttpconnectionmanagerv3.HttpConnectionManager_AUTO,
 		StatPrefix: "service_stats",
-		RouteSpecifier: &envoyhttpconnectionmanagerv2.HttpConnectionManager_RouteConfig{
-			RouteConfig: &envoyv2.RouteConfiguration{
-				VirtualHosts: []*envoyroutev2.VirtualHost{
+		RouteSpecifier: &envoyhttpconnectionmanagerv3.HttpConnectionManager_RouteConfig{
+			RouteConfig: &envoyroutev3.RouteConfiguration{
+				VirtualHosts: []*envoyroutev3.VirtualHost{
 					{
 						Name:    "backend",
 						Domains: []string{"*"},
-						Routes: []*envoyroutev2.Route{
+						Routes: []*envoyroutev3.Route{
 							{
-								Match: &envoyroutev2.RouteMatch{
-									PathSpecifier: &envoyroutev2.RouteMatch_Prefix{
+								Match: &envoyroutev3.RouteMatch{
+									PathSpecifier: &envoyroutev3.RouteMatch_Prefix{
 										Prefix: "/stats",
 									},
 								},
-								Action: &envoyroutev2.Route_Route{
-									Route: &envoyroutev2.RouteAction{
-										ClusterSpecifier: &envoyroutev2.RouteAction_Cluster{
+								Action: &envoyroutev3.Route_Route{
+									Route: &envoyroutev3.RouteAction{
+										ClusterSpecifier: &envoyroutev3.RouteAction_Cluster{
 											Cluster: "service_stats",
 										},
 									},
@@ -141,10 +144,10 @@ func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clu
 				},
 			},
 		},
-		HttpFilters: []*envoyhttpconnectionmanagerv2.HttpFilter{
+		HttpFilters: []*envoyhttpconnectionmanagerv3.HttpFilter{
 			{
 				Name: envoywellknown.HealthCheck,
-				ConfigType: &envoyhttpconnectionmanagerv2.HttpFilter_TypedConfig{
+				ConfigType: &envoyhttpconnectionmanagerv3.HttpFilter_TypedConfig{
 					TypedConfig: healthCheckMarshalled,
 				},
 			},
@@ -159,25 +162,25 @@ func (r *reconciler) getInitialResources() (listeners []envoycache.Resource, clu
 		return nil, nil, errors.Wrap(err, "failed to marshal HTTPConnectionManager")
 	}
 
-	listener := &envoyv2.Listener{
+	listener := &envoylistenerv3.Listener{
 		Name: "service_stats",
-		Address: &envoycorev2.Address{
-			Address: &envoycorev2.Address_SocketAddress{
-				SocketAddress: &envoycorev2.SocketAddress{
-					Protocol: envoycorev2.SocketAddress_TCP,
+		Address: &envoycorev3.Address{
+			Address: &envoycorev3.Address_SocketAddress{
+				SocketAddress: &envoycorev3.SocketAddress{
+					Protocol: envoycorev3.SocketAddress_TCP,
 					Address:  "0.0.0.0",
-					PortSpecifier: &envoycorev2.SocketAddress_PortValue{
+					PortSpecifier: &envoycorev3.SocketAddress_PortValue{
 						PortValue: uint32(envoyStatsPort),
 					},
 				},
 			},
 		},
-		FilterChains: []*envoylistenerv2.FilterChain{
+		FilterChains: []*envoylistenerv3.FilterChain{
 			{
-				Filters: []*envoylistenerv2.Filter{
+				Filters: []*envoylistenerv3.Filter{
 					{
 						Name: envoywellknown.HTTPConnectionManager,
-						ConfigType: &envoylistenerv2.Filter_TypedConfig{
+						ConfigType: &envoylistenerv3.Filter_TypedConfig{
 							TypedConfig: httpConnectionManagerMarshalled,
 						},
 					},
@@ -241,7 +244,7 @@ func (r *reconciler) sync() error {
 			serviceNodePortName := fmt.Sprintf("%s-%d", serviceKey, servicePort.NodePort)
 			servicePortLog := serviceLog.With("port", servicePort.NodePort)
 
-			var endpoints []*envoyendpointv2.LbEndpoint
+			var endpoints []*envoyendpointv3.LbEndpoint
 			for _, pod := range pods {
 				podLog := servicePortLog.With("pod", pod.Name, "namespace", pod.Namespace, "service", service.Name)
 
@@ -255,15 +258,15 @@ func (r *reconciler) sync() error {
 				podLog.Debug("Using pod as backend for service")
 
 				// Cluster endpoints
-				endpoints = append(endpoints, &envoyendpointv2.LbEndpoint{
-					HostIdentifier: &envoyendpointv2.LbEndpoint_Endpoint{
-						Endpoint: &envoyendpointv2.Endpoint{
-							Address: &envoycorev2.Address{
-								Address: &envoycorev2.Address_SocketAddress{
-									SocketAddress: &envoycorev2.SocketAddress{
-										Protocol: envoycorev2.SocketAddress_TCP,
+				endpoints = append(endpoints, &envoyendpointv3.LbEndpoint{
+					HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
+						Endpoint: &envoyendpointv3.Endpoint{
+							Address: &envoycorev3.Address{
+								Address: &envoycorev3.Address_SocketAddress{
+									SocketAddress: &envoycorev3.SocketAddress{
+										Protocol: envoycorev3.SocketAddress_TCP,
 										Address:  pod.Status.PodIP,
-										PortSpecifier: &envoycorev2.SocketAddress_PortValue{
+										PortSpecifier: &envoycorev3.SocketAddress_PortValue{
 											PortValue: uint32(podPort),
 										},
 									},
@@ -276,21 +279,21 @@ func (r *reconciler) sync() error {
 
 			// Must be sorted, otherwise we get into trouble when doing the snapshot diff later
 			sort.Slice(endpoints, func(i, j int) bool {
-				addrI := endpoints[i].HostIdentifier.(*envoyendpointv2.LbEndpoint_Endpoint).Endpoint.Address.Address.(*envoycorev2.Address_SocketAddress).SocketAddress.Address
-				addrJ := endpoints[j].HostIdentifier.(*envoyendpointv2.LbEndpoint_Endpoint).Endpoint.Address.Address.(*envoycorev2.Address_SocketAddress).SocketAddress.Address
+				addrI := endpoints[i].HostIdentifier.(*envoyendpointv3.LbEndpoint_Endpoint).Endpoint.Address.Address.(*envoycorev3.Address_SocketAddress).SocketAddress.Address
+				addrJ := endpoints[j].HostIdentifier.(*envoyendpointv3.LbEndpoint_Endpoint).Endpoint.Address.Address.(*envoycorev3.Address_SocketAddress).SocketAddress.Address
 				return addrI < addrJ
 			})
 
-			cluster := &envoyv2.Cluster{
+			cluster := &envoyclusterv3.Cluster{
 				Name:           serviceNodePortName,
 				ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
-				ClusterDiscoveryType: &envoyv2.Cluster_Type{
-					Type: envoyv2.Cluster_STATIC,
+				ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
+					Type: envoyclusterv3.Cluster_STATIC,
 				},
-				LbPolicy: envoyv2.Cluster_ROUND_ROBIN,
-				LoadAssignment: &envoyv2.ClusterLoadAssignment{
+				LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
+				LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
 					ClusterName: serviceNodePortName,
-					Endpoints: []*envoyendpointv2.LocalityLbEndpoints{
+					Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
 						{
 							LbEndpoints: endpoints,
 						},
@@ -299,9 +302,9 @@ func (r *reconciler) sync() error {
 			}
 			clusters = append(clusters, cluster)
 
-			tcpProxyConfig := &envoytcpfilterv2.TcpProxy{
+			tcpProxyConfig := &envoytcpfilterv3.TcpProxy{
 				StatPrefix: "ingress_tcp",
-				ClusterSpecifier: &envoytcpfilterv2.TcpProxy_Cluster{
+				ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
 					Cluster: serviceNodePortName,
 				},
 			}
@@ -313,25 +316,25 @@ func (r *reconciler) sync() error {
 
 			r.log.Debugf("Using a listener on port %d", servicePort.NodePort)
 
-			listener := &envoyv2.Listener{
+			listener := &envoylistenerv3.Listener{
 				Name: serviceNodePortName,
-				Address: &envoycorev2.Address{
-					Address: &envoycorev2.Address_SocketAddress{
-						SocketAddress: &envoycorev2.SocketAddress{
-							Protocol: envoycorev2.SocketAddress_TCP,
+				Address: &envoycorev3.Address{
+					Address: &envoycorev3.Address_SocketAddress{
+						SocketAddress: &envoycorev3.SocketAddress{
+							Protocol: envoycorev3.SocketAddress_TCP,
 							Address:  "0.0.0.0",
-							PortSpecifier: &envoycorev2.SocketAddress_PortValue{
+							PortSpecifier: &envoycorev3.SocketAddress_PortValue{
 								PortValue: uint32(servicePort.NodePort),
 							},
 						},
 					},
 				},
-				FilterChains: []*envoylistenerv2.FilterChain{
+				FilterChains: []*envoylistenerv3.FilterChain{
 					{
-						Filters: []*envoylistenerv2.Filter{
+						Filters: []*envoylistenerv3.Filter{
 							{
 								Name: envoywellknown.TCPProxy,
-								ConfigType: &envoylistenerv2.Filter_TypedConfig{
+								ConfigType: &envoylistenerv3.Filter_TypedConfig{
 									TypedConfig: tcpProxyConfigMarshalled,
 								},
 							},
@@ -343,20 +346,20 @@ func (r *reconciler) sync() error {
 		}
 	}
 
-	lastUsedVersion, err := semver.NewVersion(r.lastAppliedSnapshot.GetVersion(envoycache.ClusterType))
+	lastUsedVersion, err := semver.NewVersion(r.lastAppliedSnapshot.GetVersion(envoyresourcev3.ClusterType))
 	if err != nil {
 		return errors.Wrap(err, "failed to parse version from last snapshot")
 	}
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
-	snapshot := envoycache.NewSnapshot(lastUsedVersion.String(), nil, clusters, nil, listeners, nil)
-	if equality.Semantic.DeepEqual(r.lastAppliedSnapshot, snapshot) {
+	snapshot := envoycachev3.NewSnapshot(lastUsedVersion.String(), nil, clusters, nil, listeners, nil, nil)
+	if reflect.DeepEqual(r.lastAppliedSnapshot, snapshot) {
 		return nil
 	}
 
 	r.log.Info("detected a change. Updating the Envoy config cache...")
 	newVersion := lastUsedVersion.IncMajor()
-	newSnapshot := envoycache.NewSnapshot(newVersion.String(), nil, clusters, nil, listeners, nil)
+	newSnapshot := envoycachev3.NewSnapshot(newVersion.String(), nil, clusters, nil, listeners, nil, nil)
 
 	if err := newSnapshot.Consistent(); err != nil {
 		return errors.Wrap(err, "new Envoy config snapshot is not consistent")
