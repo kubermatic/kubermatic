@@ -34,17 +34,12 @@ import (
 	xdsv3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 
 	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 func main() {
@@ -118,16 +113,8 @@ func main() {
 		Log:                log,
 		EnvoySnapshotCache: snapshotCache,
 	}
-	ctrl, err := controller.New("envoy-manager", mgr,
-		controller.Options{Reconciler: r, MaxConcurrentReconciles: 1})
-	if err != nil {
-		log.Fatalw("failed to construct mgr", zap.Error(err))
-	}
-
-	for _, t := range []runtime.Object{&corev1.Pod{}, &corev1.Service{}} {
-		if err := ctrl.Watch(&source.Kind{Type: t}, controllerutil.EnqueueConst("")); err != nil {
-			log.Fatalw("failed to watch", "kind", t, zap.Error(err))
-		}
+	if err := r.SetupWithManager(mgr); err != nil {
+		log.Fatal(err)
 	}
 
 	if err := mgr.Start(stopCh); err != nil {

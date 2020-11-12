@@ -32,9 +32,15 @@ import (
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/labels"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -62,18 +68,21 @@ type Reconciler struct {
 	EnvoySnapshotCache envoycachev3.SnapshotCache
 }
 
-func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
+func (r *Reconciler) Reconcile(_ ctrl.Request) (ctrl.Result, error) {
 	r.Log.Debug("Got reconcile request")
 	err := r.sync()
 	if err != nil {
 		r.Log.Errorf("Failed to reconcile", zap.Error(err))
 	}
-	return reconcile.Result{}, err
+	return ctrl.Result{}, err
 }
 
 func (r *Reconciler) sync() error {
 	services := &corev1.ServiceList{}
-	if err := r.List(r.Ctx, services, ctrlruntimeclient.InNamespace(r.Namespace)); err != nil {
+	if err := r.List(r.Ctx, services,
+		ctrlruntimeclient.InNamespace(r.Namespace),
+		client.MatchingFields{r.ExposeAnnotationKey: "true"},
+	); err != nil {
 		return errors.Wrap(err, "failed to list service's")
 	}
 
@@ -94,18 +103,22 @@ func (r *Reconciler) sync() error {
 			return nil
 		}
 
-		if pods, err := r.getReadyServicePods(&service); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed to get pod's for service '%s'", serviceKey))
-		} else {
-			// If we have no pods, dont bother creating a cluster.
-			if len(pods) == 0 {
-				serviceLog.Debug("Skipping service: it has no running pods")
+		eps := corev1.Endpoints{}
+		if err := r.Get(context.Background(), types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, &eps); err != nil {
+			if apierrors.IsNotFound(err) {
 				continue
 			}
-			l, c := r.makeListenersAndClustersForService(&service, pods)
-			listeners = append(listeners, l...)
-			clusters = append(clusters, c...)
+			return errors.Wrap(err, fmt.Sprintf("failed to get endpoints for service '%s'", serviceKey))
 		}
+		// If we have no pods, dont bother creating a cluster.
+		if len(eps.Subsets) == 0 {
+			serviceLog.Debug("Skipping service: it has no running pods")
+			continue
+		}
+		l, c := r.makeListenersAndClustersForService(&service, &eps)
+		listeners = append(listeners, l...)
+		clusters = append(clusters, c...)
+
 	}
 
 	// Get current snapshot
@@ -170,33 +183,27 @@ func (r *Reconciler) sync() error {
 	return nil
 }
 
-func (r *Reconciler) getReadyServicePods(service *corev1.Service) ([]*corev1.Pod, error) {
-	key := ServiceKey(service)
-	var readyPods []*corev1.Pod
-
-	// As we take the service selector as input, we can assume that its validated
-	opts := &ctrlruntimeclient.ListOptions{
-		LabelSelector: labels.SelectorFromValidatedSet(service.Spec.Selector),
-		Namespace:     service.Namespace,
-	}
-	servicePods := &corev1.PodList{}
-	if err := r.List(context.Background(), servicePods, opts); err != nil {
-		return readyPods, errors.Wrap(err, fmt.Sprintf("failed to list pod's for service '%s' via selector: '%s'", key, opts.LabelSelector.String()))
-	}
-
-	if len(servicePods.Items) == 0 {
-		return readyPods, nil
-	}
-
-	// Filter for ready pods
-	for idx, pod := range servicePods.Items {
-		if PodIsReady(&pod) {
-			readyPods = append(readyPods, &servicePods.Items[idx])
-		} else {
-			// Only log when we do not add pods as the caller is responsible for logging the final pods
-			r.Log.Debugf("Skipping pod %s/%s for service %s/%s. The pod is not ready", pod.Namespace, pod.Name, service.Namespace, service.Name)
+func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
+		s := raw.(*corev1.Service)
+		if s.ObjectMeta.Annotations == nil {
+			return nil
 		}
+		return []string{strings.ToLower(s.ObjectMeta.Annotations[r.ExposeAnnotationKey])}
+	}); err != nil {
+		return fmt.Errorf("Error occurred while adding service index: %w", err)
 	}
-
-	return readyPods, nil
+	return ctrl.NewControllerManagedBy(mgr).
+		// Ensures that only one new Snapshot is generated at a time
+		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
+		For(&corev1.Service{}).
+		Watches(&source.Kind{Type: &corev1.Endpoints{}},
+			&handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(
+				func(obj handler.MapObject) []ctrl.Request {
+					return []ctrl.Request{{NamespacedName: types.NamespacedName{
+						Name:      obj.Meta.GetName(),
+						Namespace: obj.Meta.GetNamespace(),
+					}}}
+				})}).
+		Complete(r)
 }

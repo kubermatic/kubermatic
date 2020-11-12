@@ -85,76 +85,28 @@ func TestSync(t *testing.T) {
 						},
 					},
 				},
-				&corev1.Pod{
+				&corev1.Endpoints{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "pod1",
+						Name:      "my-nodeport",
 						Namespace: "test",
-						Labels: map[string]string{
-							"foo": "bar",
-						},
 					},
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "webservice",
-								Ports: []corev1.ContainerPort{
-									{
-										Name:          "http",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8080,
-									},
-									{
-										Name:          "https",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8443,
-									},
+					Subsets: []corev1.EndpointSubset{
+						{
+							Addresses: []corev1.EndpointAddress{
+								{IP: "172.16.0.1"},
+								{IP: "172.16.0.2"},
+							},
+							Ports: []corev1.EndpointPort{
+								{
+									Name:     "http",
+									Protocol: corev1.ProtocolTCP,
+									Port:     8080,
 								},
-							},
-						},
-					},
-					Status: corev1.PodStatus{
-						PodIP: "172.16.0.1",
-						Conditions: []corev1.PodCondition{
-							{
-								Type:   corev1.PodReady,
-								Status: corev1.ConditionTrue,
-							},
-						},
-					},
-				},
-				&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "pod2",
-						Namespace: "test",
-						Labels: map[string]string{
-							"foo": "bar",
-						},
-					},
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "webservice",
-								Ports: []corev1.ContainerPort{
-									{
-										Name:          "http",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8080,
-									},
-									{
-										Name:          "https",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8443,
-									},
+								{
+									Name:     "https",
+									Protocol: corev1.ProtocolTCP,
+									Port:     8443,
 								},
-							},
-						},
-					},
-					Status: corev1.PodStatus{
-						PodIP: "172.16.0.2",
-						Conditions: []corev1.PodCondition{
-							{
-								Type:   corev1.PodReady,
-								Status: corev1.ConditionTrue,
 							},
 						},
 					},
@@ -356,66 +308,25 @@ func TestSync(t *testing.T) {
 						},
 					},
 				},
-				&corev1.Pod{
+				&corev1.Endpoints{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "pod1",
+						Name:      "my-nodeport",
 						Namespace: "test",
-						Labels: map[string]string{
-							"foo": "bar",
-						},
 					},
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "webservice",
-								Ports: []corev1.ContainerPort{
-									{
-										Name:          "http",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8080,
-									},
+					Subsets: []corev1.EndpointSubset{
+						{
+							Addresses: []corev1.EndpointAddress{
+								{IP: "172.16.0.1"},
+							},
+							NotReadyAddresses: []corev1.EndpointAddress{
+								{IP: "172.16.0.2"},
+							},
+							Ports: []corev1.EndpointPort{
+								{
+									Name:     "http",
+									Protocol: corev1.ProtocolTCP,
+									Port:     8080,
 								},
-							},
-						},
-					},
-					Status: corev1.PodStatus{
-						PodIP: "172.16.0.1",
-						Conditions: []corev1.PodCondition{
-							{
-								Type:   corev1.PodReady,
-								Status: corev1.ConditionTrue,
-							},
-						},
-					},
-				},
-				&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "pod2",
-						Namespace: "test",
-						Labels: map[string]string{
-							"foo": "bar",
-						},
-					},
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "webservice",
-								Ports: []corev1.ContainerPort{
-									{
-										Name:          "http",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8080,
-									},
-								},
-							},
-						},
-					},
-					Status: corev1.PodStatus{
-						PodIP: "172.16.0.2",
-						Conditions: []corev1.PodCondition{
-							{
-								Type:   corev1.PodReady,
-								Status: corev1.ConditionFalse,
 							},
 						},
 					},

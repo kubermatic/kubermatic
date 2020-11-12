@@ -18,7 +18,10 @@ package envoymanager
 
 import (
 	"fmt"
+	"net"
+	"reflect"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
@@ -38,44 +41,12 @@ import (
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 )
 
-func (r *Reconciler) makeListenersAndClustersForService(service *corev1.Service, pods []*corev1.Pod) (listeners []envoycachetype.Resource, clusters []envoycachetype.Resource) {
+func (r *Reconciler) makeListenersAndClustersForService(service *corev1.Service, endpoints *corev1.Endpoints) (listeners []envoycachetype.Resource, clusters []envoycachetype.Resource) {
 	serviceKey := ServiceKey(service)
 	for _, servicePort := range service.Spec.Ports {
 		serviceNodePortName := fmt.Sprintf("%s-%d", serviceKey, servicePort.NodePort)
-		servicePortLog := r.Log.With("port", servicePort.NodePort)
 
-		var endpoints []*envoyendpointv3.LbEndpoint
-		for _, pod := range pods {
-			podLog := servicePortLog.With("pod", pod.Name, "namespace", pod.Namespace, "service", service.Name)
-
-			// Get the port on the pod, the NodePort Service port is pointing to
-			podPort := getMatchingPodPort(servicePort, pod)
-			if podPort == 0 {
-				podLog.Debug("Skipping pod for service port: the service port does not match to any of the pods containers")
-				continue
-			}
-
-			podLog.Debug("Using pod as backend for service")
-
-			// Cluster endpoints
-			endpoints = append(endpoints, &envoyendpointv3.LbEndpoint{
-				HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
-					Endpoint: &envoyendpointv3.Endpoint{
-						Address: &envoycorev3.Address{
-							Address: &envoycorev3.Address_SocketAddress{
-								SocketAddress: &envoycorev3.SocketAddress{
-									Protocol: envoycorev3.SocketAddress_TCP,
-									Address:  pod.Status.PodIP,
-									PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-										PortValue: uint32(podPort),
-									},
-								},
-							},
-						},
-					},
-				},
-			})
-		}
+		endpoints := r.getEndpoints(service, &servicePort, corev1.ProtocolTCP, endpoints)
 
 		// Must be sorted, otherwise we get into trouble when doing the snapshot diff later
 		sort.Slice(endpoints, func(i, j int) bool {
@@ -278,4 +249,77 @@ func (r *Reconciler) makeInitialResources() (listeners []envoycachetype.Resource
 	listeners = append(listeners, listener)
 
 	return listeners, clusters
+}
+
+// getEndpoints returns a slice of LbEndpoint pointers for a given
+// service/target port combination.
+// Based on:
+// https://github.com/kubernetes/ingress-nginx/blob/decc1346dd956a7f3edfc23c2547abbc75598e36/internal/ingress/controller/endpoints.go#L35
+func (r *Reconciler) getEndpoints(s *corev1.Service, port *corev1.ServicePort, proto corev1.Protocol,
+	eps *corev1.Endpoints) []*envoyendpointv3.LbEndpoint {
+
+	var upsServers []*envoyendpointv3.LbEndpoint
+
+	if s == nil || port == nil {
+		return upsServers
+	}
+
+	// using a map avoids duplicated upstream servers when the service
+	// contains multiple port definitions sharing the same targetport
+	processedUpstreamServers := make(map[string]struct{})
+
+	svcKey := ServiceKey(s)
+
+	r.Log.Infof("Getting Endpoints for Service %q and port %v", svcKey, port.String())
+
+	for _, ss := range eps.Subsets {
+		for _, epPort := range ss.Ports {
+
+			if !reflect.DeepEqual(epPort.Protocol, proto) {
+				continue
+			}
+
+			var targetPort int32
+
+			if port.Name == "" {
+				// port.Name is optional if there is only one port
+				targetPort = epPort.Port
+			} else if port.Name == epPort.Name {
+				targetPort = epPort.Port
+			}
+
+			if targetPort <= 0 {
+				continue
+			}
+
+			for _, epAddress := range ss.Addresses {
+				ep := net.JoinHostPort(epAddress.IP, strconv.Itoa(int(targetPort)))
+				if _, exists := processedUpstreamServers[ep]; exists {
+					continue
+				}
+				ups := &envoyendpointv3.LbEndpoint{
+					HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
+						Endpoint: &envoyendpointv3.Endpoint{
+							Address: &envoycorev3.Address{
+								Address: &envoycorev3.Address_SocketAddress{
+									SocketAddress: &envoycorev3.SocketAddress{
+										Protocol: envoycorev3.SocketAddress_TCP,
+										Address:  epAddress.IP,
+										PortSpecifier: &envoycorev3.SocketAddress_PortValue{
+											PortValue: uint32(targetPort),
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				upsServers = append(upsServers, ups)
+				processedUpstreamServers[ep] = struct{}{}
+			}
+		}
+	}
+
+	r.Log.Infof("Endpoints found for Service %q: %v", svcKey, upsServers)
+	return upsServers
 }
