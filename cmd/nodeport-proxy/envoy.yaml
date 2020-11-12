@@ -13,18 +13,24 @@
 # limitations under the License.
 
 dynamic_resources:
-  lds_config:
-    api_config_source:
-      api_type: GRPC
-      grpc_services:
-      - envoy_grpc:
-          cluster_name: xds_cluster
   cds_config:
+    resource_api_version: V3
     api_config_source:
       api_type: GRPC
+      transport_api_version: V3
       grpc_services:
       - envoy_grpc:
           cluster_name: xds_cluster
+      set_node_on_first_message_only: true
+  lds_config:
+    resource_api_version: V3
+    api_config_source:
+      api_type: GRPC
+      transport_api_version: V3
+      grpc_services:
+      - envoy_grpc:
+          cluster_name: xds_cluster
+      set_node_on_first_message_only: true
 static_resources:
   clusters:
   - name: xds_cluster
