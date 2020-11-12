@@ -18,14 +18,14 @@ metadata:
   name: cert-manager-webhook:dynamic-serving
   namespace: '{{ .Release.Namespace }}'
   labels:
-    app: webhook
-    app.kubernetes.io/name: webhook
+    app: cert-manager-webhook
+    app.kubernetes.io/name: cert-manager-webhook
     app.kubernetes.io/instance: '{{ .Release.Name }}'
 rules:
 - apiGroups: [""]
   resources: ["secrets"]
   resourceNames:
-  - 'webhook-ca'
+  - 'cert-manager-webhook-ca'
   verbs: ["get", "list", "watch", "update"]
 # It's not possible to grant CREATE permission on a single resourceName.
 - apiGroups: [""]
@@ -39,8 +39,8 @@ metadata:
   name: cert-manager-webhook:dynamic-serving
   namespace: '{{ .Release.Namespace }}'
   labels:
-    app: webhook
-    app.kubernetes.io/name: webhook
+    app: cert-manager-webhook
+    app.kubernetes.io/name: cert-manager-webhook
     app.kubernetes.io/instance: '{{ .Release.Name }}'
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -49,5 +49,5 @@ roleRef:
 subjects:
 - apiGroup: ""
   kind: ServiceAccount
-  name: webhook
+  name: cert-manager-webhook
   namespace: '{{ .Release.Namespace }}'
