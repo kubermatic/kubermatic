@@ -18,6 +18,7 @@ package nodelocaldns
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -59,8 +60,9 @@ func ConfigMapCreator(dnsClusterIP string) reconciling.NamedConfigMapCreatorGett
 	}
 }
 
-const (
-	configTemplate = `
+var (
+	configTemplate = fmt.Sprintf(`
+import %s
 cluster.local:53 {
     errors
     cache {
@@ -109,5 +111,5 @@ ip6.arpa:53 {
     }
     prometheus :9253
     }
-  `
+  `, extraConfigImportPath)
 )

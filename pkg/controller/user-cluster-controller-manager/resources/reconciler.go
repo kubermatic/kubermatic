@@ -29,6 +29,7 @@ import (
 	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
 	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
+	dnsautoscaler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dns-autoscaler"
 	kubestatemetrics "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
@@ -208,6 +209,7 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		}
 		creators = []reconciling.NamedServiceAccountCreatorGetter{
 			coredns.ServiceAccountCreator(),
+			dnsautoscaler.ServiceAccountCreator(),
 			nodelocaldns.ServiceAccountCreator(),
 		}
 		if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -368,6 +370,7 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context) error {
 			[]reconciling.NamedClusterRoleCreatorGetter{
 				kubernetesdashboard.ClusterRoleCreator(),
 				coredns.ClusterRoleCreator(),
+				dnsautoscaler.ClusterRolereator(),
 			}...)
 	}
 
@@ -402,6 +405,7 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 			[]reconciling.NamedClusterRoleBindingCreatorGetter{
 				kubernetesdashboard.ClusterRoleBindingCreator(),
 				coredns.ClusterRoleBindingCreator(),
+				dnsautoscaler.ClusterRoleBindingCreator(),
 			}...)
 	}
 
@@ -533,6 +537,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 	} else {
 		creators = append(creators,
 			coredns.ConfigMapCreator(r.clusterDNSDomain),
+			dnsautoscaler.ConfigMapCreator(),
 			nodelocaldns.ConfigMapCreator(r.dnsClusterIP),
 		)
 	}
@@ -705,6 +710,7 @@ func (r *reconciler) reconcileDeployments(ctx context.Context) error {
 
 	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{
 		coredns.DeploymentCreator(r.clusterSemVer),
+		dnsautoscaler.DeploymentCreator(),
 	}
 
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {

@@ -33,6 +33,7 @@ func ConfigMapCreator(clusterDNSDomain string) reconciling.NamedConfigMapCreator
 			}
 			cm.Labels = resources.BaseAppLabels(resources.CoreDNSServiceName, nil)
 			cm.Data["Corefile"] = fmt.Sprintf(`
+      import %s
       .:53 {
           errors
           health
@@ -47,7 +48,7 @@ func ConfigMapCreator(clusterDNSDomain string) reconciling.NamedConfigMapCreator
           reload
           loadbalance
       }
-      `, clusterDNSDomain)
+      `, ExtraConfigImportPath, clusterDNSDomain)
 
 			return cm, nil
 		}

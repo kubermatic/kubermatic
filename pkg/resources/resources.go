@@ -518,6 +518,21 @@ const (
 	CoreDNSConfigMapName           = "coredns"
 	CoreDNSDeploymentName          = "coredns"
 	CoreDNSPodDisruptionBudgetName = "coredns"
+
+	// CoreDNSExtraConfigMapName is a configmap where user can place extra configururation for core dns.
+	CoreDNSExtraConfigMapName = "coredns-extra-configs"
+
+	// NodeLocalDNSExtraConfigMapName is a configmap where user can place extra configururation for node local dns.
+	NodeLocalDNSExtraConfigMapName = "node-local-dns-extra-configs"
+)
+
+// Resource names and constants for dns autoscaler.
+const (
+	DNSAutoscalerServicaAccountName     = "dns-autoscaler"
+	DNSAutoscalerClusterRoleName        = "dns-autoscaler"
+	DNSAutoscalerClusterRoleBindingName = "dns-autoscaler"
+	DNSAutoscalerConfigMapName          = "dns-autoscaler"
+	DNSAutoscalerDeploymentName         = "dns-autoscaler"
 )
 
 const (
