@@ -18,28 +18,19 @@ package envoymanager
 
 import (
 	"fmt"
+	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func ServiceKey(service *corev1.Service) string {
 	return fmt.Sprintf("%s/%s", service.Namespace, service.Name)
 }
 
-func getAnnotation(obj runtime.Object, annotation string) (string, bool) {
-	metaObj, ok := obj.(metav1.Object)
-	if !ok {
-		return "", false
-	}
-	return getAnnotationFromMeta(metaObj, annotation)
-}
-
-func getAnnotationFromMeta(obj metav1.Object, annotation string) (string, bool) {
+func isExposed(obj metav1.Object, annotation string) bool {
 	if obj.GetAnnotations() == nil {
-		return "", false
+		return false
 	}
-	val, ok := obj.GetAnnotations()[annotation]
-	return val, ok
+	return strings.ToLower(obj.GetAnnotations()[annotation]) == "true"
 }

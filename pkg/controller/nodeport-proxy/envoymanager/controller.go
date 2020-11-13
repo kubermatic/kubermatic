@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/Masterminds/semver"
@@ -100,7 +99,7 @@ func (r *Reconciler) sync() error {
 		serviceKey := ServiceKey(&service)
 		serviceLog := r.Log.With("service", serviceKey)
 		// Only cover services which have the annotation: true
-		if strings.ToLower(service.Annotations[r.ExposeAnnotationKey]) != "true" {
+		if !isExposed(&service, r.ExposeAnnotationKey) {
 			serviceLog.Debugf("skipping service: it does not have the annotation %s=true", r.ExposeAnnotationKey)
 			continue
 		}
@@ -168,8 +167,9 @@ func (r *Reconciler) sync() error {
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(r.Ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
 		var values []string
-		if val, ok := getAnnotation(raw, r.ExposeAnnotationKey); ok {
-			values = append(values, strings.ToLower(val))
+		svc := raw.(*corev1.Service)
+		if isExposed(svc, r.ExposeAnnotationKey) {
+			values = append(values, "ok")
 		}
 		return values
 	}); err != nil {
@@ -201,7 +201,7 @@ func (r *Reconciler) endpointsToService(obj handler.MapObject) []ctrl.Request {
 	}
 
 	// Avoid enqueuing services that are not exposed.
-	if val, _ := getAnnotation(&svc, r.ExposeAnnotationKey); val != "true" {
+	if !isExposed(&svc, r.ExposeAnnotationKey) {
 		return nil
 	}
 	return []ctrl.Request{{NamespacedName: svcName}}
@@ -233,7 +233,7 @@ func (m matchingAnnotationPredicate) Generic(e event.GenericEvent) bool {
 }
 
 func (m matchingAnnotationPredicate) match(obj metav1.Object) bool {
-	val, _ := getAnnotationFromMeta(obj, m.annotation)
-	m.log.Debugw("processing event", "object", obj, "annotationValue", val)
-	return val == "true"
+	e := isExposed(obj, m.annotation)
+	m.log.Debugw("processing event", "object", obj, "isExposed", e)
+	return e
 }
