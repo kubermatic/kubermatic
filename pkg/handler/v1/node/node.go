@@ -28,16 +28,11 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // createNodeDeploymentReq defines HTTP request for createMachineDeployment
@@ -193,58 +188,6 @@ func DecodeListNodeDeploymentNodes(c context.Context, r *http.Request) (interfac
 	return req, nil
 }
 
-func getMachinesForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, nodeDeploymentID string) (*clusterv1alpha1.MachineList, error) {
-
-	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	machineDeployment := &clusterv1alpha1.MachineDeployment{}
-	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nodeDeploymentID}, machineDeployment); err != nil {
-		return nil, err
-	}
-
-	machines := &clusterv1alpha1.MachineList{}
-	if err := client.List(ctx, machines, &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}); err != nil {
-		return nil, err
-	}
-	return machines, nil
-}
-
-func getMachineSetsForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, nodeDeploymentID string) (*clusterv1alpha1.MachineSetList, error) {
-	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	machineDeployment := &clusterv1alpha1.MachineDeployment{}
-	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nodeDeploymentID}, machineDeployment); err != nil {
-		return nil, err
-	}
-
-	machineSets := &clusterv1alpha1.MachineSetList{}
-	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem, LabelSelector: labels.SelectorFromSet(machineDeployment.Spec.Selector.MatchLabels)}
-	if err := client.List(ctx, machineSets, listOpts); err != nil {
-		return nil, err
-	}
-	return machineSets, nil
-}
-
-func getMachineDeploymentForNodeDeployment(ctx context.Context, clusterProvider provider.ClusterProvider, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, nodeDeploymentID string) (*clusterv1alpha1.MachineDeployment, error) {
-	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
-	if err != nil {
-		return nil, err
-	}
-
-	machineDeployment := &clusterv1alpha1.MachineDeployment{}
-	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: nodeDeploymentID}, machineDeployment); err != nil {
-		return nil, err
-	}
-
-	return machineDeployment, nil
-}
-
 func ListNodeDeploymentNodes(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentNodesReq)
@@ -388,11 +331,6 @@ func DeleteNodeDeployment(projectProvider provider.ProjectProvider, privilegedPr
 	}
 }
 
-const (
-	warningType = "warning"
-	normalType  = "normal"
-)
-
 // nodeDeploymentNodesEventsReq defines HTTP request for listNodeDeploymentNodesEvents endpoint
 // swagger:parameters listNodeDeploymentNodesEvents
 type nodeDeploymentNodesEventsReq struct {
@@ -428,7 +366,7 @@ func DecodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (in
 
 	req.Type = r.URL.Query().Get("type")
 	if len(req.Type) > 0 {
-		if req.Type == warningType || req.Type == normalType {
+		if req.Type == handlercommon.MachineDeploymentEventWarningType || req.Type == handlercommon.MachineDeploymentEventNormalType {
 			return req, nil
 		}
 		return nil, fmt.Errorf("wrong query parameter, unsupported type: %s", req.Type)
@@ -440,72 +378,6 @@ func DecodeListNodeDeploymentNodesEvents(c context.Context, r *http.Request) (in
 func ListNodeDeploymentNodesEvents(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(nodeDeploymentNodesEventsReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := clusterProvider.GetAdminClientForCustomerCluster(cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machines, err := getMachinesForNodeDeployment(ctx, clusterProvider, userInfoGetter, cluster, req.ProjectID, req.NodeDeploymentID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machineSets, err := getMachineSetsForNodeDeployment(ctx, clusterProvider, userInfoGetter, cluster, req.ProjectID, req.NodeDeploymentID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		machineDeployment, err := getMachineDeploymentForNodeDeployment(ctx, clusterProvider, userInfoGetter, cluster, req.ProjectID, req.NodeDeploymentID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		eventType := ""
-		events := make([]apiv1.Event, 0)
-
-		switch req.Type {
-		case warningType:
-			eventType = corev1.EventTypeWarning
-		case normalType:
-			eventType = corev1.EventTypeNormal
-		}
-
-		for _, machine := range machines.Items {
-			kubermaticEvents, err := common.GetEvents(ctx, client, &machine, metav1.NamespaceSystem)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-
-			events = append(events, kubermaticEvents...)
-		}
-
-		for _, machineSet := range machineSets.Items {
-			kubermaticEvents, err := common.GetEvents(ctx, client, &machineSet, metav1.NamespaceSystem)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-
-			events = append(events, kubermaticEvents...)
-		}
-
-		kubermaticEvents, err := common.GetEvents(ctx, client, machineDeployment, metav1.NamespaceSystem)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		events = append(events, kubermaticEvents...)
-
-		if len(eventType) > 0 {
-			events = common.FilterEventsByType(events, eventType)
-		}
-
-		return events, nil
+		return handlercommon.ListMachineDeploymentNodesEvents(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.NodeDeploymentID, req.Type)
 	}
 }
