@@ -239,8 +239,8 @@ func (e exposeAnnotationPredicate) Generic(event event.GenericEvent) bool {
 	return e.match(event.Meta)
 }
 
-func (m exposeAnnotationPredicate) match(obj metav1.Object) bool {
-	e := isExposed(obj, m.annotation)
-	m.log.Debugw("processing event", "object", obj, "isExposed", e)
-	return e
+func (e exposeAnnotationPredicate) match(obj metav1.Object) bool {
+	ie := isExposed(obj, e.annotation)
+	e.log.Debugw("processing event", "object", obj, "isExposed", ie)
+	return ie
 }
