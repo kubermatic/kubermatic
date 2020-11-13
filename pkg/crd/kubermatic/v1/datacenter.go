@@ -307,6 +307,14 @@ type DatacenterSpecFake struct {
 
 // DatacenterSpecKubevirt describes a kubevirt datacenter.
 type DatacenterSpecKubevirt struct {
+	// DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',
+	//'Default' or 'None'. Defaults to "ClusterFirst". DNS parameters given in DNSConfig will be merged with the
+	// policy selected with DNSPolicy.
+	DNSPolicy string `json:"dns_policy,omitempty"`
+
+	// DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
+	// configuration based on DNSPolicy.
+	DNSConfig *corev1.PodDNSConfig `json:"dns_config,omitempty"`
 }
 
 // DatacenterSpecAlibaba describes a alibaba datacenter.

@@ -8,4 +8,4 @@ the available options for Seed CRDs.
 
 Use the scripts in `hack/` to update the generated YAML files in `docs/`:
 
-    ./hack/update-yaml-examples.sh
+    ./hack/update-docs.sh
