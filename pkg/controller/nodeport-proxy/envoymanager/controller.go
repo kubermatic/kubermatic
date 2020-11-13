@@ -200,7 +200,7 @@ func (r *Reconciler) endpointsToService(obj handler.MapObject) []ctrl.Request {
 		return nil
 	}
 
-	// Avoid enqueing services that are not exposed.
+	// Avoid enqueuing services that are not exposed.
 	if val, _ := getAnnotation(&svc, r.ExposeAnnotationKey); val != "true" {
 		return nil
 	}
