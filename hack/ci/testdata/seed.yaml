@@ -110,7 +110,11 @@ spec:
       location: Frankfurt
       country: DE
       spec:
-        kubevirt: {}
+        kubevirt:
+          dns_policy: "None"
+          dns_config:
+            nameservers:
+            - 8.8.8.8
     syseleven-dbl1:
       country: DE
       location: Syseleven - dbl1

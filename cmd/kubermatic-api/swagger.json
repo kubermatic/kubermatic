@@ -11895,6 +11895,16 @@
     "DatacenterSpecKubevirt": {
       "type": "object",
       "title": "DatacenterSpecKubevirt describes a kubevirt datacenter.",
+      "properties": {
+        "dns_config": {
+          "$ref": "#/definitions/PodDNSConfig"
+        },
+        "dns_policy": {
+          "description": "DNSPolicy represents the dns policy for the pod. Valid values are 'ClusterFirstWithHostNet', 'ClusterFirst',\n'Default' or 'None'. Defaults to \"ClusterFirst\". DNS parameters given in DNSConfig will be merged with the\npolicy selected with DNSPolicy.",
+          "type": "string",
+          "x-go-name": "DNSPolicy"
+        }
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "DatacenterSpecOpenstack": {
@@ -14211,6 +14221,54 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "PodDNSConfig": {
+      "description": "PodDNSConfig defines the DNS parameters of a pod in addition to\nthose generated from DNSPolicy.",
+      "type": "object",
+      "properties": {
+        "nameservers": {
+          "description": "A list of DNS name server IP addresses.\nThis will be appended to the base nameservers generated from DNSPolicy.\nDuplicated nameservers will be removed.\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Nameservers"
+        },
+        "options": {
+          "description": "A list of DNS resolver options.\nThis will be merged with the base options generated from DNSPolicy.\nDuplicated entries will be removed. Resolution options given in Options\nwill override those that appear in the base DNSPolicy.\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/PodDNSConfigOption"
+          },
+          "x-go-name": "Options"
+        },
+        "searches": {
+          "description": "A list of DNS search domains for host-name lookup.\nThis will be appended to the base search paths generated from DNSPolicy.\nDuplicated search paths will be removed.\n+optional",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Searches"
+        }
+      },
+      "x-go-package": "k8s.io/api/core/v1"
+    },
+    "PodDNSConfigOption": {
+      "type": "object",
+      "title": "PodDNSConfigOption defines DNS resolver options of a pod.",
+      "properties": {
+        "name": {
+          "description": "Required.",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "value": {
+          "description": "+optional",
+          "type": "string",
+          "x-go-name": "Value"
+        }
+      },
+      "x-go-package": "k8s.io/api/core/v1"
     },
     "PolicyRule": {
       "description": "PolicyRule holds information that describes a policy rule, but does not contain information\nabout who the rule applies to or which namespace the rule applies to.",
