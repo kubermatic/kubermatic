@@ -149,6 +149,8 @@ type ClientService interface {
 
 	ListMachineDeploymentNodes(params *ListMachineDeploymentNodesParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentNodesOK, error)
 
+	ListMachineDeploymentNodesEvents(params *ListMachineDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentNodesEventsOK, error)
+
 	ListMachineDeployments(params *ListMachineDeploymentsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentsOK, error)
 
 	ListNamespace(params *ListNamespaceParams, authInfo runtime.ClientAuthInfoWriter) (*ListNamespaceOK, error)
@@ -2319,6 +2321,42 @@ func (a *Client) ListMachineDeploymentNodes(params *ListMachineDeploymentNodesPa
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListMachineDeploymentNodesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListMachineDeploymentNodesEvents lists machine deployment events if query parameter type is set to warning then only warning events are retrieved
+
+  If the value is 'normal' then normal events are returned. If the query parameter is missing method returns all events.
+*/
+func (a *Client) ListMachineDeploymentNodesEvents(params *ListMachineDeploymentNodesEventsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMachineDeploymentNodesEventsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListMachineDeploymentNodesEventsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listMachineDeploymentNodesEvents",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/machinedeployments/{machinedeployment_id}/nodes/events",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListMachineDeploymentNodesEventsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListMachineDeploymentNodesEventsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListMachineDeploymentNodesEventsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
