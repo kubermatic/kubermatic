@@ -18,7 +18,6 @@ package envoymanager
 
 import (
 	"fmt"
-	"strings"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,5 +31,5 @@ func isExposed(obj metav1.Object, annotation string) bool {
 	if obj.GetAnnotations() == nil {
 		return false
 	}
-	return strings.ToLower(obj.GetAnnotations()[annotation]) == "true"
+	return obj.GetAnnotations()[annotation] == "true"
 }

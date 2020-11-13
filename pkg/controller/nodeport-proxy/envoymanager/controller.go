@@ -98,7 +98,11 @@ func (r *Reconciler) sync() error {
 	for _, service := range services.Items {
 		serviceKey := ServiceKey(&service)
 		serviceLog := r.Log.With("service", serviceKey)
-		// Only cover services which have the annotation: true
+
+		// This is redundant as we are using the field selector, but as this
+		// check makes the unit tests easier (FakeClient does not play nice
+		// with field selectors) and the performance penalty is negligible in
+		// this context we can keep it at the moment.
 		if !isExposed(&service, r.ExposeAnnotationKey) {
 			serviceLog.Debugf("skipping service: it does not have the annotation %s=true", r.ExposeAnnotationKey)
 			continue
@@ -178,7 +182,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		// Ensures that only one new Snapshot is generated at a time
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
-		For(&corev1.Service{}, builder.WithPredicates(matchingAnnotationPredicate{annotation: r.ExposeAnnotationKey, log: r.Log})).
+		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.ExposeAnnotationKey, log: r.Log})).
 		Watches(&source.Kind{Type: &corev1.Endpoints{}},
 			&handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(r.endpointsToService)}).
 		Complete(r)
@@ -200,39 +204,42 @@ func (r *Reconciler) endpointsToService(obj handler.MapObject) []ctrl.Request {
 		return nil
 	}
 
-	// Avoid enqueuing services that are not exposed.
+	// Avoid enqueuing events for services that are not exposed.
 	if !isExposed(&svc, r.ExposeAnnotationKey) {
 		return nil
 	}
 	return []ctrl.Request{{NamespacedName: svcName}}
 }
 
-type matchingAnnotationPredicate struct {
+// exposeAnnotationPredicate is used to filter out events associated to
+// services that do not have the expose annotation and are thus not interesting
+// for this controller.
+type exposeAnnotationPredicate struct {
 	log        *zap.SugaredLogger
 	annotation string
 }
 
 // Create returns true if the Create event should be processed
-func (m matchingAnnotationPredicate) Create(e event.CreateEvent) bool {
-	return m.match(e.Meta)
+func (e exposeAnnotationPredicate) Create(event event.CreateEvent) bool {
+	return e.match(event.Meta)
 }
 
 // Delete returns true if the Delete event should be processed
-func (m matchingAnnotationPredicate) Delete(e event.DeleteEvent) bool {
-	return m.match(e.Meta)
+func (e exposeAnnotationPredicate) Delete(event event.DeleteEvent) bool {
+	return e.match(event.Meta)
 }
 
 // Update returns true if the Update event should be processed
-func (m matchingAnnotationPredicate) Update(e event.UpdateEvent) bool {
-	return m.match(e.MetaNew)
+func (e exposeAnnotationPredicate) Update(event event.UpdateEvent) bool {
+	return e.match(event.MetaNew)
 }
 
 // Generic returns true if the Generic event should be processed
-func (m matchingAnnotationPredicate) Generic(e event.GenericEvent) bool {
-	return m.match(e.Meta)
+func (e exposeAnnotationPredicate) Generic(event event.GenericEvent) bool {
+	return e.match(event.Meta)
 }
 
-func (m matchingAnnotationPredicate) match(obj metav1.Object) bool {
+func (m exposeAnnotationPredicate) match(obj metav1.Object) bool {
 	e := isExposed(obj, m.annotation)
 	m.log.Debugw("processing event", "object", obj, "isExposed", e)
 	return e
