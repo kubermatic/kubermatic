@@ -20,34 +20,26 @@ import (
 	"fmt"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func ServiceKey(service *corev1.Service) string {
 	return fmt.Sprintf("%s/%s", service.Namespace, service.Name)
 }
 
-func PodIsReady(pod *corev1.Pod) bool {
-	for _, condition := range pod.Status.Conditions {
-		if condition.Type == corev1.PodReady {
-			return condition.Status == corev1.ConditionTrue
-		}
+func getAnnotation(obj runtime.Object, annotation string) (string, bool) {
+	metaObj, ok := obj.(metav1.Object)
+	if !ok {
+		return "", false
 	}
-	return false
+	return getAnnotationFromMeta(metaObj, annotation)
 }
 
-func getMatchingPodPort(servicePort corev1.ServicePort, pod *corev1.Pod) int32 {
-	if servicePort.TargetPort.Type == intstr.Int {
-		return servicePort.TargetPort.IntVal
+func getAnnotationFromMeta(obj metav1.Object, annotation string) (string, bool) {
+	if obj.GetAnnotations() == nil {
+		return "", false
 	}
-
-	for _, container := range pod.Spec.Containers {
-		for _, podPort := range container.Ports {
-			if servicePort.TargetPort.Type == intstr.String && servicePort.TargetPort.StrVal == podPort.Name {
-				return podPort.ContainerPort
-			}
-		}
-	}
-
-	return 0
+	val, ok := obj.GetAnnotations()[annotation]
+	return val, ok
 }

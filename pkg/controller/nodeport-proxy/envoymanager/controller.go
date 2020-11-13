@@ -27,18 +27,20 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
-
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -68,11 +70,11 @@ type Reconciler struct {
 	EnvoySnapshotCache envoycachev3.SnapshotCache
 }
 
-func (r *Reconciler) Reconcile(_ ctrl.Request) (ctrl.Result, error) {
-	r.Log.Debug("Got reconcile request")
+func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+	r.Log.Debugw("got reconcile request", "request", req)
 	err := r.sync()
 	if err != nil {
-		r.Log.Errorf("Failed to reconcile", zap.Error(err))
+		r.Log.Errorf("failed to reconcile", zap.Error(err))
 	}
 	return ctrl.Result{}, err
 }
@@ -93,13 +95,13 @@ func (r *Reconciler) sync() error {
 		serviceLog := r.Log.With("service", serviceKey)
 		// Only cover services which have the annotation: true
 		if strings.ToLower(service.Annotations[r.ExposeAnnotationKey]) != "true" {
-			serviceLog.Debugf("Skipping service: it does not have the annotation %s=true", r.ExposeAnnotationKey)
+			serviceLog.Debugf("skipping service: it does not have the annotation %s=true", r.ExposeAnnotationKey)
 			continue
 		}
 
 		// We only manage NodePort services so Kubernetes takes care of allocating a unique port
 		if service.Spec.Type != corev1.ServiceTypeNodePort {
-			serviceLog.Warn("Skipping service: it is not of type NodePort", "service")
+			serviceLog.Warn("skipping service: it is not of type NodePort", "service")
 			return nil
 		}
 
@@ -112,7 +114,7 @@ func (r *Reconciler) sync() error {
 		}
 		// If we have no pods, dont bother creating a cluster.
 		if len(eps.Subsets) == 0 {
-			serviceLog.Debug("Skipping service: it has no running pods")
+			serviceLog.Debug("skipping service: it has no running pods")
 			continue
 		}
 		l, c := r.makeListenersAndClustersForService(&service, &eps)
@@ -124,7 +126,7 @@ func (r *Reconciler) sync() error {
 	// Get current snapshot
 	currSnapshot, err := r.EnvoySnapshotCache.GetSnapshot(r.EnvoyNodeName)
 	if err != nil {
-		r.Log.Debugf("Setting first snapshot: %v", err)
+		r.Log.Debugf("setting first snapshot: %v", err)
 		newSnapshot := envoycachev3.NewSnapshot(
 			"v0.0.0",
 			nil,       // endpoints
@@ -156,7 +158,7 @@ func (r *Reconciler) sync() error {
 		nil,       // secrets
 	)
 	if reflect.DeepEqual(currSnapshot, snapshot) {
-		r.Log.Debug("No changes detected")
+		r.Log.Debug("no changes detected")
 		return nil
 	}
 
@@ -184,26 +186,74 @@ func (r *Reconciler) sync() error {
 }
 
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
-		s := raw.(*corev1.Service)
-		if s.ObjectMeta.Annotations == nil {
-			return nil
+	if err := mgr.GetFieldIndexer().IndexField(r.Ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
+		var values []string
+		if val, ok := getAnnotation(raw, r.ExposeAnnotationKey); ok {
+			values = append(values, strings.ToLower(val))
 		}
-		return []string{strings.ToLower(s.ObjectMeta.Annotations[r.ExposeAnnotationKey])}
+		return values
 	}); err != nil {
-		return fmt.Errorf("Error occurred while adding service index: %w", err)
+		return fmt.Errorf("error occurred while adding service index: %w", err)
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		// Ensures that only one new Snapshot is generated at a time
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
-		For(&corev1.Service{}).
+		For(&corev1.Service{}, builder.WithPredicates(matchingAnnotationPredicate{annotation: r.ExposeAnnotationKey, log: r.Log})).
 		Watches(&source.Kind{Type: &corev1.Endpoints{}},
-			&handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(
-				func(obj handler.MapObject) []ctrl.Request {
-					return []ctrl.Request{{NamespacedName: types.NamespacedName{
-						Name:      obj.Meta.GetName(),
-						Namespace: obj.Meta.GetNamespace(),
-					}}}
-				})}).
+			&handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(r.endpointsToService)}).
 		Complete(r)
+}
+
+func (r *Reconciler) endpointsToService(obj handler.MapObject) []ctrl.Request {
+	svcName := types.NamespacedName{
+		Name:      obj.Meta.GetName(),
+		Namespace: obj.Meta.GetNamespace(),
+	}
+	// Get the service associated to the Endpoints
+	svc := corev1.Service{}
+	if err := r.Client.Get(r.Ctx, svcName, &svc); err != nil {
+		// Avoid enqueuing events for endpoints that do not have an associated
+		// service (e.g. leader election).
+		if !apierrors.IsNotFound(err) {
+			r.Log.Errorw("error occurred while mapping endpoints to service", "endpoints", obj)
+		}
+		return nil
+	}
+
+	// Avoid enqueing services that are not exposed.
+	if val, _ := getAnnotation(&svc, r.ExposeAnnotationKey); val != "true" {
+		return nil
+	}
+	return []ctrl.Request{{NamespacedName: svcName}}
+}
+
+type matchingAnnotationPredicate struct {
+	log        *zap.SugaredLogger
+	annotation string
+}
+
+// Create returns true if the Create event should be processed
+func (m matchingAnnotationPredicate) Create(e event.CreateEvent) bool {
+	return m.match(e.Meta)
+}
+
+// Delete returns true if the Delete event should be processed
+func (m matchingAnnotationPredicate) Delete(e event.DeleteEvent) bool {
+	return m.match(e.Meta)
+}
+
+// Update returns true if the Update event should be processed
+func (m matchingAnnotationPredicate) Update(e event.UpdateEvent) bool {
+	return m.match(e.MetaNew)
+}
+
+// Generic returns true if the Generic event should be processed
+func (m matchingAnnotationPredicate) Generic(e event.GenericEvent) bool {
+	return m.match(e.Meta)
+}
+
+func (m matchingAnnotationPredicate) match(obj metav1.Object) bool {
+	val, _ := getAnnotationFromMeta(obj, m.annotation)
+	m.log.Debugw("processing event", "object", obj, "annotationValue", val)
+	return val == "true"
 }

@@ -269,8 +269,7 @@ func (r *Reconciler) getEndpoints(s *corev1.Service, port *corev1.ServicePort, p
 	processedUpstreamServers := make(map[string]struct{})
 
 	svcKey := ServiceKey(s)
-
-	r.Log.Infof("Getting Endpoints for Service %q and port %v", svcKey, port.String())
+	serviceLog := r.Log.With("service", svcKey)
 
 	for _, ss := range eps.Subsets {
 		for _, epPort := range ss.Ports {
@@ -320,6 +319,6 @@ func (r *Reconciler) getEndpoints(s *corev1.Service, port *corev1.ServicePort, p
 		}
 	}
 
-	r.Log.Infof("Endpoints found for Service %q: %v", svcKey, upsServers)
+	serviceLog.Debugw("Endpoints found", "lb-endpoints", upsServers)
 	return upsServers
 }
