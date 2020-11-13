@@ -21,5 +21,5 @@ rules:
   - ""
   resources:
   - services
-  - pods
+  - endpoints
   verbs: ["get", "list", "watch", "update"]

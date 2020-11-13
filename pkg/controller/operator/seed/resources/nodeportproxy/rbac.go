@@ -80,7 +80,7 @@ func ClusterRoleCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconcili
 			cr.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{""},
-					Resources: []string{"pods", "services"},
+					Resources: []string{"endpoints", "services"},
 					Verbs:     []string{"get", "list", "watch"},
 				},
 			}
