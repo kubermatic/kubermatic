@@ -38,6 +38,8 @@ import (
 	envoyhttpconnectionmanagerv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3"
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
+	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
+	envoylog "github.com/envoyproxy/go-control-plane/pkg/log"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 )
 
@@ -321,4 +323,21 @@ func (r *Reconciler) getEndpoints(s *corev1.Service, port *corev1.ServicePort, p
 
 	serviceLog.Debugw("Endpoints found", "lb-endpoints", upsServers)
 	return upsServers
+}
+
+func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) envoycachev3.Snapshot {
+	return envoycachev3.NewSnapshot(
+		"v0.0.0",
+		nil,       // endpoints
+		clusters,  // clusters
+		nil,       // routes
+		listeners, // listeners
+		nil,       // runtimes
+		nil,       // secrets
+	)
+}
+
+// NewSnapshotCache returns a new envoy snapshot cache.
+func NewSnapshotCache(log envoylog.Logger) envoycachev3.SnapshotCache {
+	return envoycachev3.NewSnapshotCache(true, envoycachev3.IDHash{}, log)
 }

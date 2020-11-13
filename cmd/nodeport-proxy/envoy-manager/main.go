@@ -30,7 +30,6 @@ import (
 	endpointservice "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
 	listenerservice "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
 	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
-	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	xdsv3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 
 	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
@@ -46,9 +45,10 @@ func main() {
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
 
+	var listenAddress string
 	ctrlOpts := envoymanager.Options{}
-	flag.StringVar(&ctrlOpts.ListenAddress, "listen-address", ":8001", "Address to serve on")
-	flag.StringVar(&ctrlOpts.EnvoyNodeName, "envoy-node-name", "kube", "Name of the envoy nodes to apply the config to via xds")
+	flag.StringVar(&listenAddress, "listen-address", ":8001", "Address to serve on")
+	flag.StringVar(&ctrlOpts.EnvoyNodeName, "envoy-node-name", "kube", "Name of the envoy nodes to apply the config to via xds.")
 	flag.IntVar(&ctrlOpts.EnvoyAdminPort, "envoy-admin-port", 9001, "Envoys admin port")
 	flag.IntVar(&ctrlOpts.EnvoyStatsPort, "envoy-stats-port", 8002, "Limited port which should be opened on envoy to expose metrics and the health check. Endpoints are: /healthz & /stats")
 	flag.StringVar(&ctrlOpts.Namespace, "namespace", "", "The namespace we should use for pods and services. Leave empty for all namespaces.")
@@ -73,13 +73,13 @@ func main() {
 	}()
 
 	cli.Hello(log, "Envoy-Manager", logOpts.Debug)
-	log.Infow("Starting the server...", "address", ctrlOpts.ListenAddress)
+	log.Infow("Starting the server...", "address", listenAddress)
 
-	snapshotCache := envoycachev3.NewSnapshotCache(true, envoycachev3.IDHash{}, log.With("component", "envoycache"))
+	snapshotCache := envoymanager.NewSnapshotCache(log.With("component", "envoycache"))
 	srv := xdsv3.NewServer(ctx, snapshotCache, nil)
 	grpcServer := grpc.NewServer()
 
-	listener, err := net.Listen("tcp", ctrlOpts.ListenAddress)
+	listener, err := net.Listen("tcp", listenAddress)
 	if err != nil {
 		log.Fatalw("failed to listen on address", zap.Error(err))
 	}

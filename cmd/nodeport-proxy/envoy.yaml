@@ -31,6 +31,9 @@ dynamic_resources:
       - envoy_grpc:
           cluster_name: xds_cluster
       set_node_on_first_message_only: true
+node:
+  id: kube
+  cluster: np-cluster
 static_resources:
   clusters:
   - name: xds_cluster

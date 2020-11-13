@@ -32,7 +32,6 @@ import (
 	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
-	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	corev1 "k8s.io/api/core/v1"
@@ -499,7 +498,7 @@ func TestSync(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			log := zap.NewNop().Sugar()
 			client := fakectrlruntimeclient.NewFakeClient(test.resources...)
-			snapshotCache := envoycachev3.NewSnapshotCache(true, envoycachev3.IDHash{}, log)
+			snapshotCache := NewSnapshotCache(log)
 
 			c := Reconciler{
 				Client: client,

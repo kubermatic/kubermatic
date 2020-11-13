@@ -210,17 +210,25 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 				Image: image,
 				Command: []string{"/envoy-manager",
 					"-listen-address=:8001",
-					"-envoy-node-name=kube",
+					"-envoy-node-name=$(PODNAME)",
 					"-envoy-admin-port=9001",
 					"-envoy-stats-port=8002",
 					"-expose-annotation-key=" + NodePortProxyExposeNamespacedAnnotationKey,
-					"-namespace=$(MY_NAMESPACE)"},
-				Env: []corev1.EnvVar{{
-					Name: "MY_NAMESPACE",
-					ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{
-						FieldPath: "metadata.namespace",
-					}},
-				}},
+					"-namespace=$(PODNAMESPACE)"},
+				Env: []corev1.EnvVar{
+					{
+						Name: "PODNAMESPACE",
+						ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.namespace",
+						}},
+					},
+					{
+						Name: "PODNAME",
+						ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						}},
+					},
+				},
 			}, {
 				Name:  "envoy",
 				Image: data.ImageRegistry("docker.io") + "/envoyproxy/envoy-alpine:v1.16.0",
@@ -229,9 +237,17 @@ func deploymentEnvoy(image string, data nodePortProxyData) reconciling.NamedDepl
 					"-c",
 					"/etc/envoy/envoy.yaml",
 					"--service-cluster",
-					"cluster0",
+					"kube-cluster",
 					"--service-node",
-					"kube",
+					"$(PODNAME)",
+				},
+				Env: []corev1.EnvVar{
+					{
+						Name: "PODNAME",
+						ValueFrom: &corev1.EnvVarSource{FieldRef: &corev1.ObjectFieldSelector{
+							FieldPath: "metadata.name",
+						}},
+					},
 				},
 				Lifecycle: &corev1.Lifecycle{
 					PreStop: &corev1.Handler{

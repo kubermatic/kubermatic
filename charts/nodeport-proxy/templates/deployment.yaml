@@ -54,9 +54,14 @@ spec:
         - /envoy-manager
         args:
         - "-listen-address=:8001"
-        - "-envoy-node-name=kube"
+        - "-envoy-node-name=$(PODNAME)"
         - "-envoy-admin-port=9001"
         - "-envoy-stats-port=8002"
+        env:
+        - name: PODNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         ports:
         - containerPort: 8001
           name: grpc
@@ -71,9 +76,14 @@ spec:
         - "-c"
         - "/etc/envoy/envoy.yaml"
         - "--service-cluster"
-        - "cluster0"
+        - "np-cluster"
         - "--service-node"
-        - "kube"
+        - "$(PODNAME)"
+        env:
+        - name: PODNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
         lifecycle:
           preStop:
             exec:

@@ -51,13 +51,19 @@ const (
 )
 
 type Options struct {
-	Namespace           string
-	ListenAddress       string
-	EnvoyNodeName       string
+	// Namespace where Services and Endpoints are watched.
+	Namespace string
+	// NodeName is the name used to retrieve the xds configuration.
+	// It is supposed to match the id (AKA service-node) of the Envoy instance
+	// being controlled.
+	EnvoyNodeName string
+	// ExposeAnnotationKey is the annotation used to expose services.
 	ExposeAnnotationKey string
 
-	EnvoyStatsPort int
+	// EnvoyAdminPort port used to exposed Envoy admin interface.
 	EnvoyAdminPort int
+	// EnvoyStatsPort is the port used to expose Envoy stats.
+	EnvoyStatsPort int
 }
 
 type Reconciler struct {
@@ -127,16 +133,7 @@ func (r *Reconciler) sync() error {
 	currSnapshot, err := r.EnvoySnapshotCache.GetSnapshot(r.EnvoyNodeName)
 	if err != nil {
 		r.Log.Debugf("setting first snapshot: %v", err)
-		newSnapshot := envoycachev3.NewSnapshot(
-			"v0.0.0",
-			nil,       // endpoints
-			clusters,  // clusters
-			nil,       // routes
-			listeners, // listeners
-			nil,       // runtimes
-			nil,       // secrets
-		)
-		if err := r.EnvoySnapshotCache.SetSnapshot(r.EnvoyNodeName, newSnapshot); err != nil {
+		if err := r.EnvoySnapshotCache.SetSnapshot(r.EnvoyNodeName, newSnapshot("v0.0.0", clusters, listeners)); err != nil {
 			return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 		}
 		return nil
@@ -148,31 +145,14 @@ func (r *Reconciler) sync() error {
 	}
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
-	snapshot := envoycachev3.NewSnapshot(
-		lastUsedVersion.String(),
-		nil,       // endpoints
-		clusters,  // clusters
-		nil,       // routes
-		listeners, // listeners
-		nil,       // runtimes
-		nil,       // secrets
-	)
-	if reflect.DeepEqual(currSnapshot, snapshot) {
+	if reflect.DeepEqual(currSnapshot, newSnapshot(lastUsedVersion.String(), clusters, listeners)) {
 		r.Log.Debug("no changes detected")
 		return nil
 	}
 
 	r.Log.Info("detected a change. Updating the Envoy config cache...")
 	newVersion := lastUsedVersion.IncMajor()
-	newSnapshot := envoycachev3.NewSnapshot(
-		newVersion.String(),
-		nil,       // endpoints
-		clusters,  // clusters
-		nil,       // routes
-		listeners, // listeners
-		nil,       // runtimes
-		nil,       // secrets
-	)
+	newSnapshot := newSnapshot(newVersion.String(), clusters, listeners)
 
 	if err := newSnapshot.Consistent(); err != nil {
 		return errors.Wrap(err, "new Envoy config snapshot is not consistent")
