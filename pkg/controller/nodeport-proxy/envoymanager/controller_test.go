@@ -14,9 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package main
+package envoymanager
 
 import (
+	"context"
 	"testing"
 
 	"go.uber.org/zap"
@@ -32,14 +33,17 @@ import (
 	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
-	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	ctrl "sigs.k8s.io/controller-runtime"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 )
 
 func TestSync(t *testing.T) {
@@ -57,7 +61,7 @@ func TestSync(t *testing.T) {
 						Name:      "my-nodeport",
 						Namespace: "test",
 						Annotations: map[string]string{
-							exposeAnnotationKey: "true",
+							DefaultExposeAnnotationKey: "true",
 						},
 					},
 					Spec: corev1.ServiceSpec{
@@ -85,76 +89,28 @@ func TestSync(t *testing.T) {
 						},
 					},
 				},
-				&corev1.Pod{
+				&corev1.Endpoints{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "pod1",
+						Name:      "my-nodeport",
 						Namespace: "test",
-						Labels: map[string]string{
-							"foo": "bar",
-						},
 					},
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "webservice",
-								Ports: []corev1.ContainerPort{
-									{
-										Name:          "http",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8080,
-									},
-									{
-										Name:          "https",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8443,
-									},
+					Subsets: []corev1.EndpointSubset{
+						{
+							Addresses: []corev1.EndpointAddress{
+								{IP: "172.16.0.1"},
+								{IP: "172.16.0.2"},
+							},
+							Ports: []corev1.EndpointPort{
+								{
+									Name:     "http",
+									Protocol: corev1.ProtocolTCP,
+									Port:     8080,
 								},
-							},
-						},
-					},
-					Status: corev1.PodStatus{
-						PodIP: "172.16.0.1",
-						Conditions: []corev1.PodCondition{
-							{
-								Type:   corev1.PodReady,
-								Status: corev1.ConditionTrue,
-							},
-						},
-					},
-				},
-				&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "pod2",
-						Namespace: "test",
-						Labels: map[string]string{
-							"foo": "bar",
-						},
-					},
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "webservice",
-								Ports: []corev1.ContainerPort{
-									{
-										Name:          "http",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8080,
-									},
-									{
-										Name:          "https",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8443,
-									},
+								{
+									Name:     "https",
+									Protocol: corev1.ProtocolTCP,
+									Port:     8443,
 								},
-							},
-						},
-					},
-					Status: corev1.PodStatus{
-						PodIP: "172.16.0.2",
-						Conditions: []corev1.PodCondition{
-							{
-								Type:   corev1.PodReady,
-								Status: corev1.ConditionTrue,
 							},
 						},
 					},
@@ -337,7 +293,7 @@ func TestSync(t *testing.T) {
 						Name:      "my-nodeport",
 						Namespace: "test",
 						Annotations: map[string]string{
-							exposeAnnotationKey: "true",
+							DefaultExposeAnnotationKey: "true",
 						},
 					},
 					Spec: corev1.ServiceSpec{
@@ -356,66 +312,25 @@ func TestSync(t *testing.T) {
 						},
 					},
 				},
-				&corev1.Pod{
+				&corev1.Endpoints{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "pod1",
+						Name:      "my-nodeport",
 						Namespace: "test",
-						Labels: map[string]string{
-							"foo": "bar",
-						},
 					},
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "webservice",
-								Ports: []corev1.ContainerPort{
-									{
-										Name:          "http",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8080,
-									},
+					Subsets: []corev1.EndpointSubset{
+						{
+							Addresses: []corev1.EndpointAddress{
+								{IP: "172.16.0.1"},
+							},
+							NotReadyAddresses: []corev1.EndpointAddress{
+								{IP: "172.16.0.2"},
+							},
+							Ports: []corev1.EndpointPort{
+								{
+									Name:     "http",
+									Protocol: corev1.ProtocolTCP,
+									Port:     8080,
 								},
-							},
-						},
-					},
-					Status: corev1.PodStatus{
-						PodIP: "172.16.0.1",
-						Conditions: []corev1.PodCondition{
-							{
-								Type:   corev1.PodReady,
-								Status: corev1.ConditionTrue,
-							},
-						},
-					},
-				},
-				&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "pod2",
-						Namespace: "test",
-						Labels: map[string]string{
-							"foo": "bar",
-						},
-					},
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "webservice",
-								Ports: []corev1.ContainerPort{
-									{
-										Name:          "http",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8080,
-									},
-								},
-							},
-						},
-					},
-					Status: corev1.PodStatus{
-						PodIP: "172.16.0.2",
-						Conditions: []corev1.PodCondition{
-							{
-								Type:   corev1.PodReady,
-								Status: corev1.ConditionFalse,
 							},
 						},
 					},
@@ -559,7 +474,7 @@ func TestSync(t *testing.T) {
 						Name:      "my-nodeport",
 						Namespace: "test",
 						Annotations: map[string]string{
-							exposeAnnotationKey: "true",
+							DefaultExposeAnnotationKey: "true",
 						},
 					},
 					Spec: corev1.ServiceSpec{
@@ -588,13 +503,16 @@ func TestSync(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			log := zap.NewNop().Sugar()
 			client := fakectrlruntimeclient.NewFakeClient(test.resources...)
-			snapshotCache := envoycachev3.NewSnapshotCache(true, hasher{}, log)
+			snapshotCache := NewSnapshotCache(log)
 
-			c := reconciler{
-				Client:              client,
-				envoySnapshotCache:  snapshotCache,
-				log:                 log,
-				lastAppliedSnapshot: envoycachev3.NewSnapshot("v0.0.0", nil, nil, nil, nil, nil, nil),
+			c := Reconciler{
+				Client: client,
+				Options: Options{
+					EnvoyNodeName:       "node-name",
+					ExposeAnnotationKey: DefaultExposeAnnotationKey,
+				},
+				EnvoySnapshotCache: snapshotCache,
+				Log:                log,
 			}
 
 			if err := c.sync(); err != nil {
@@ -602,7 +520,8 @@ func TestSync(t *testing.T) {
 			}
 
 			gotClusters := map[string]*envoyclusterv3.Cluster{}
-			for name, res := range c.lastAppliedSnapshot.Resources[envoycachetype.Cluster].Items {
+			s, _ := c.EnvoySnapshotCache.GetSnapshot(c.EnvoyNodeName)
+			for name, res := range s.Resources[envoycachetype.Cluster].Items {
 				gotClusters[name] = res.(*envoyclusterv3.Cluster)
 			}
 			// Delete the admin cluster. We're not going to bother comparing it here, as its a static resource.
@@ -614,13 +533,141 @@ func TestSync(t *testing.T) {
 			}
 
 			gotListeners := map[string]*envoylistenerv3.Listener{}
-			for name, res := range c.lastAppliedSnapshot.Resources[envoycachetype.Listener].Items {
+			for name, res := range s.Resources[envoycachetype.Listener].Items {
 				gotListeners[name] = res.(*envoylistenerv3.Listener)
 			}
 			delete(gotListeners, "service_stats")
 
 			if diff := deep.Equal(gotListeners, test.expectedListener); diff != nil {
 				t.Errorf("Got unexpected listeners. Diff to expected: %v", diff)
+			}
+		})
+	}
+}
+
+func TestEndpointToService(t *testing.T) {
+	tests := []struct {
+		name          string
+		eps           *corev1.Endpoints
+		resources     []runtime.Object
+		expectResults []ctrl.Request
+	}{
+		{
+			name:          "No results when matching service is not found",
+			eps:           &corev1.Endpoints{ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "foo"}},
+			expectResults: nil,
+		},
+		{
+			name: "No result when matching service found but not exposed",
+			eps:  &corev1.Endpoints{ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "foo"}},
+			resources: []runtime.Object{
+				&corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "foo"},
+				},
+			},
+			expectResults: nil,
+		},
+		{
+			name: "Result expected when exposed matching service is found",
+			eps:  &corev1.Endpoints{ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "bar"}},
+			resources: []runtime.Object{
+				&corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace:   "foo",
+						Name:        "bar",
+						Annotations: map[string]string{DefaultExposeAnnotationKey: "true"},
+					},
+				},
+			},
+			expectResults: []ctrl.Request{{
+				NamespacedName: types.NamespacedName{Namespace: "foo", Name: "bar"},
+			}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			log := zap.NewNop().Sugar()
+			client := fakectrlruntimeclient.NewFakeClient(tt.resources...)
+			res := (&Reconciler{
+				Options: Options{ExposeAnnotationKey: DefaultExposeAnnotationKey},
+				Client:  client,
+				Ctx:     context.TODO(),
+				Log:     log,
+			}).endpointsToService(handler.MapObject{Meta: tt.eps, Object: tt.eps})
+			if diff := deep.Equal(res, tt.expectResults); diff != nil {
+				t.Errorf("Got unexpected results. Diff to expected: %v", diff)
+			}
+		})
+	}
+}
+
+func TestExposeAnnotationPredicate(t *testing.T) {
+	tests := []struct {
+		name          string
+		obj           *corev1.Service
+		annotationKey string
+		expectAccept  bool
+	}{
+		{
+			name: "Should be accepted when annotation has the good value",
+			obj: &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{DefaultExposeAnnotationKey: "true"},
+				},
+			},
+			expectAccept: true,
+		},
+		{
+			name:         "Should be rejected when annotation is not present",
+			obj:          &corev1.Service{},
+			expectAccept: false,
+		},
+		{
+			name: "Should be rejected when annotation value is wrong",
+			obj: &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{DefaultExposeAnnotationKey: "tru"},
+				},
+			},
+			expectAccept: false,
+		},
+		{
+			name: "Should be rejected when annotation value has wrong case",
+			obj: &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{DefaultExposeAnnotationKey: "True"},
+				},
+			},
+			expectAccept: false,
+		},
+		{
+			name: "Custom annotation key",
+			obj: &corev1.Service{
+				ObjectMeta: metav1.ObjectMeta{
+					Annotations: map[string]string{"custom-annotation": "true"},
+				},
+			},
+			annotationKey: "custom-annotation",
+			expectAccept:  true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.annotationKey == "" {
+				tt.annotationKey = DefaultExposeAnnotationKey
+			}
+			p := exposeAnnotationPredicate{annotation: tt.annotationKey, log: zap.NewNop().Sugar()}
+			if got, exp := p.Create(event.CreateEvent{Meta: tt.obj, Object: tt.obj}), tt.expectAccept; got != exp {
+				t.Errorf("expect create accepted %t, but got %t for object: %+v", exp, got, *tt.obj)
+			}
+			if got, exp := p.Delete(event.DeleteEvent{Meta: tt.obj, Object: tt.obj}), tt.expectAccept; got != exp {
+				t.Errorf("expect delete accepted %t, but got %t for object: %+v", exp, got, *tt.obj)
+			}
+			if got, exp := p.Update(event.UpdateEvent{MetaNew: tt.obj, ObjectNew: tt.obj}), tt.expectAccept; got != exp {
+				t.Errorf("expect update accepted %t, but got %t for object: %+v", exp, got, *tt.obj)
+			}
+			if got, exp := p.Generic(event.GenericEvent{Meta: tt.obj, Object: tt.obj}), tt.expectAccept; got != exp {
+				t.Errorf("expect generic accepted %t, but got %t for object: %+v", exp, got, *tt.obj)
 			}
 		})
 	}
