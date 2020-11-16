@@ -65,28 +65,48 @@ type Options struct {
 	EnvoyStatsPort int
 }
 
+// NewReconciler returns a new Reconciler or an error if something goes wrong
+// during the initial snapshot setup.
+func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, opts Options) (*Reconciler, envoycachev3.SnapshotCache, error) {
+	cache := envoycachev3.NewSnapshotCache(true, envoycachev3.IDHash{}, log.With("component", "envoycache"))
+	r := Reconciler{
+		ctx:     ctx,
+		log:     log,
+		Client:  client,
+		Options: opts,
+		cache:   cache,
+	}
+
+	// Set initial snapshot
+	listeners, clusters := r.makeInitialResources()
+	if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshot("0.0.0", clusters, listeners)); err != nil {
+		return nil, nil, errors.Wrap(err, "failed to set initial Envoy cache snapshot")
+	}
+	return &r, cache, nil
+}
+
 type Reconciler struct {
+	ctx context.Context
+	log *zap.SugaredLogger
+
 	ctrlruntimeclient.Client
 	Options
 
-	Ctx context.Context
-	Log *zap.SugaredLogger
-
-	EnvoySnapshotCache envoycachev3.SnapshotCache
+	cache envoycachev3.SnapshotCache
 }
 
 func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	r.Log.Debugw("got reconcile request", "request", req)
+	r.log.Debugw("got reconcile request", "request", req)
 	err := r.sync()
 	if err != nil {
-		r.Log.Errorf("failed to reconcile", zap.Error(err))
+		r.log.Errorf("failed to reconcile", zap.Error(err))
 	}
 	return ctrl.Result{}, err
 }
 
 func (r *Reconciler) sync() error {
 	services := corev1.ServiceList{}
-	if err := r.List(r.Ctx, &services,
+	if err := r.List(r.ctx, &services,
 		ctrlruntimeclient.InNamespace(r.Namespace),
 		client.MatchingFields{r.ExposeAnnotationKey: "true"},
 	); err != nil {
@@ -97,7 +117,7 @@ func (r *Reconciler) sync() error {
 
 	for _, service := range services.Items {
 		serviceKey := ServiceKey(&service)
-		serviceLog := r.Log.With("service", serviceKey)
+		serviceLog := r.log.With("service", serviceKey)
 
 		serviceLog.Debug("processing service")
 		// This is redundant as we are using the field selector, but as this
@@ -134,10 +154,10 @@ func (r *Reconciler) sync() error {
 	}
 
 	// Get current snapshot
-	currSnapshot, err := r.EnvoySnapshotCache.GetSnapshot(r.EnvoyNodeName)
+	currSnapshot, err := r.cache.GetSnapshot(r.EnvoyNodeName)
 	if err != nil {
-		r.Log.Debugf("setting first snapshot: %v", err)
-		if err := r.EnvoySnapshotCache.SetSnapshot(r.EnvoyNodeName, newSnapshot("0.0.0", clusters, listeners)); err != nil {
+		r.log.Debugf("setting first snapshot: %v", err)
+		if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshot("0.0.0", clusters, listeners)); err != nil {
 			return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 		}
 		return nil
@@ -150,19 +170,19 @@ func (r *Reconciler) sync() error {
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
 	if reflect.DeepEqual(currSnapshot, newSnapshot(lastUsedVersion.String(), clusters, listeners)) {
-		r.Log.Debug("no changes detected")
+		r.log.Debug("no changes detected")
 		return nil
 	}
 
 	newVersion := lastUsedVersion.IncMajor()
-	r.Log.Infow("detected a change. Updating the Envoy config cache...", "version", newVersion)
+	r.log.Infow("detected a change. Updating the Envoy config cache...", "version", newVersion.String())
 	newSnapshot := newSnapshot(newVersion.String(), clusters, listeners)
 
 	if err := newSnapshot.Consistent(); err != nil {
 		return errors.Wrap(err, "new Envoy config snapshot is not consistent")
 	}
 
-	if err := r.EnvoySnapshotCache.SetSnapshot(r.EnvoyNodeName, newSnapshot); err != nil {
+	if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshot); err != nil {
 		return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 	}
 
@@ -170,7 +190,7 @@ func (r *Reconciler) sync() error {
 }
 
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(r.Ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(r.ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
 		var values []string
 		svc := raw.(*corev1.Service)
 		if isExposed(svc, r.ExposeAnnotationKey) {
@@ -183,7 +203,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		// Ensures that only one new Snapshot is generated at a time
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
-		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.ExposeAnnotationKey, log: r.Log})).
+		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.ExposeAnnotationKey, log: r.log})).
 		Watches(&source.Kind{Type: &corev1.Endpoints{}},
 			&handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(r.endpointsToService)}).
 		Complete(r)
@@ -196,11 +216,11 @@ func (r *Reconciler) endpointsToService(obj handler.MapObject) []ctrl.Request {
 	}
 	// Get the service associated to the Endpoints
 	svc := corev1.Service{}
-	if err := r.Client.Get(r.Ctx, svcName, &svc); err != nil {
+	if err := r.Client.Get(r.ctx, svcName, &svc); err != nil {
 		// Avoid enqueuing events for endpoints that do not have an associated
 		// service (e.g. leader election).
 		if !apierrors.IsNotFound(err) {
-			r.Log.Errorw("error occurred while mapping endpoints to service", "endpoints", obj)
+			r.log.Errorw("error occurred while mapping endpoints to service", "endpoints", obj)
 		}
 		return nil
 	}
