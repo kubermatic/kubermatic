@@ -23,9 +23,12 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -48,7 +51,7 @@ func TestKubermaticVersion(t *testing.T) {
 	}
 
 	expectedVersions := apiv1.KubermaticVersions{
-		API: "manual_build",
+		API: kubermatic.NewFakeVersions().Kubermatic,
 	}
 
 	if diff := deep.Equal(gotVersion, expectedVersions); diff != nil {

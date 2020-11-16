@@ -418,6 +418,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ConstraintTemplateProvider:            prov.constraintTemplateProvider,
 		ConstraintProvider:                    prov.constraintProvider,
 		PrivilegedConstraintProvider:          prov.privilegedConstraintProvider,
+		Versions:                              options.versions,
 	}
 
 	r := handler.NewRouting(routingParams)

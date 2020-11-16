@@ -182,6 +182,7 @@ type newRoutingFunc func(
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
 	constraintProvider provider.ConstraintProvider,
 	privilegedConstraintProvider provider.PrivilegedConstraintProvider,
+	kubermaticVersions kubermatic.Versions,
 ) http.Handler
 
 func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
@@ -258,6 +259,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, nil, err
 	}
 
+	kubermaticVersions := kubermatic.NewFakeVersions()
 	fUserClusterConnection := &fakeUserClusterConnection{fakeClient}
 	clusterProvider := kubernetes.NewClusterProvider(
 		&restclient.Config{},
@@ -268,7 +270,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeClient,
 		kubernetesClient,
 		false,
-		kubermatic.NewDefaultVersions(),
+		kubermaticVersions,
 	)
 	clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 	clusterProviderGetter := func(seed *kubermaticv1.Seed) (provider.ClusterProvider, error) {
@@ -382,6 +384,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeConstraintTemplateProvider,
 		fakeConstraintProvider,
 		constraintProvider,
+		kubermaticVersions,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

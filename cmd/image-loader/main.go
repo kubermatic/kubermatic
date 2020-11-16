@@ -140,10 +140,12 @@ func main() {
 		}
 	}
 
-	versions, err := getVersions(log, kubermaticConfig, o.versionsFile, o.versionFilter)
+	clusterVersions, err := getVersions(log, kubermaticConfig, o.versionsFile, o.versionFilter)
 	if err != nil {
 		log.Fatalw("Error loading versions", zap.Error(err))
 	}
+
+	kubermaticVersions := kubermatic.NewDefaultVersions()
 
 	// if no local addons path is given, use the configured addons
 	// Docker image and extract the addons from there
@@ -153,8 +155,7 @@ func main() {
 			if kubermaticConfig == nil {
 				log.Warn("No KubermaticConfiguration, -addons-image or -addons-path given, cannot mirror images referenced in addons.")
 			} else {
-				v := kubermatic.NewDefaultVersions()
-				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.Kubernetes.DockerRepository + ":" + v.Kubermatic
+				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.Kubernetes.DockerRepository + ":" + kubermaticVersions.Kubermatic
 			}
 		}
 
@@ -171,18 +172,18 @@ func main() {
 
 	// Using a set here for deduplication
 	imageSet := sets.NewString(staticImages...)
-	for _, version := range versions {
+	for _, clusterVersion := range clusterVersions {
 		versionLog := log.With(
-			zap.String("version", version.Version.String()),
-			zap.String("cluster-type", version.Type),
+			zap.String("version", clusterVersion.Version.String()),
+			zap.String("cluster-type", clusterVersion.Type),
 		)
-		if version.Type != "" && version.Type != apiv1.KubernetesClusterType {
+		if clusterVersion.Type != "" && clusterVersion.Type != apiv1.KubernetesClusterType {
 			// TODO: Implement. https://github.com/kubermatic/kubermatic/issues/3623
 			versionLog.Warn("Skipping version because its not for Kubernetes. We only support Kubernetes at the moment")
 			continue
 		}
 		versionLog.Info("Collecting images...")
-		images, err := getImagesForVersion(log, version, kubermaticConfig, o.addonsPath)
+		images, err := getImagesForVersion(log, clusterVersion, kubermaticConfig, o.addonsPath, kubermaticVersions)
 		if err != nil {
 			versionLog.Fatalw("failed to get images", zap.Error(err))
 		}
@@ -239,13 +240,13 @@ func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, ima
 	return nil
 }
 
-func getImagesForVersion(log *zap.SugaredLogger, version *kubermaticversion.Version, config *operatorv1alpha1.KubermaticConfiguration, addonsPath string) (images []string, err error) {
-	templateData, err := getTemplateData(version, kubermatic.NewDefaultVersions())
+func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, config *operatorv1alpha1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions) (images []string, err error) {
+	templateData, err := getTemplateData(clusterVersion, kubermaticVersions)
 	if err != nil {
 		return nil, err
 	}
 
-	creatorImages, err := getImagesFromCreators(log, templateData, config)
+	creatorImages, err := getImagesFromCreators(log, templateData, config, kubermaticVersions)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get images from internal creator functions: %v", err)
 	}
@@ -260,9 +261,7 @@ func getImagesForVersion(log *zap.SugaredLogger, version *kubermaticversion.Vers
 	return images, nil
 }
 
-func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *operatorv1alpha1.KubermaticConfiguration) (images []string, err error) {
-	v := kubermatic.NewDefaultVersions()
-
+func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *operatorv1alpha1.KubermaticConfiguration, kubermaticVersions kubermatic.Versions) (images []string, err error) {
 	seed, err := common.DefaultSeed(&kubermaticv1.Seed{}, log)
 	if err != nil {
 		return nil, fmt.Errorf("failed to default Seed: %v", err)
@@ -274,15 +273,15 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 	deploymentCreators := kubernetescontroller.GetDeploymentCreators(templateData, false)
 	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(templateData)...)
 	deploymentCreators = append(deploymentCreators, containerlinux.GetDeploymentCreators("", kubermaticv1.UpdateWindow{})...)
-	deploymentCreators = append(deploymentCreators, masteroperator.APIDeploymentCreator(config, "", v))
-	deploymentCreators = append(deploymentCreators, masteroperator.MasterControllerManagerDeploymentCreator(config, "", v))
-	deploymentCreators = append(deploymentCreators, masteroperator.UIDeploymentCreator(config, v))
-	deploymentCreators = append(deploymentCreators, seedoperatorkubermatic.SeedControllerManagerDeploymentCreator("", v, config, seed))
-	deploymentCreators = append(deploymentCreators, seedoperatornodeportproxy.EnvoyDeploymentCreator(seed, v))
-	deploymentCreators = append(deploymentCreators, seedoperatornodeportproxy.UpdaterDeploymentCreator(seed, v))
-	deploymentCreators = append(deploymentCreators, vpa.AdmissionControllerDeploymentCreator(config, v))
-	deploymentCreators = append(deploymentCreators, vpa.RecommenderDeploymentCreator(config, v))
-	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, v))
+	deploymentCreators = append(deploymentCreators, masteroperator.APIDeploymentCreator(config, "", kubermaticVersions))
+	deploymentCreators = append(deploymentCreators, masteroperator.MasterControllerManagerDeploymentCreator(config, "", kubermaticVersions))
+	deploymentCreators = append(deploymentCreators, masteroperator.UIDeploymentCreator(config, kubermaticVersions))
+	deploymentCreators = append(deploymentCreators, seedoperatorkubermatic.SeedControllerManagerDeploymentCreator("", kubermaticVersions, config, seed))
+	deploymentCreators = append(deploymentCreators, seedoperatornodeportproxy.EnvoyDeploymentCreator(seed, kubermaticVersions))
+	deploymentCreators = append(deploymentCreators, seedoperatornodeportproxy.UpdaterDeploymentCreator(seed, kubermaticVersions))
+	deploymentCreators = append(deploymentCreators, vpa.AdmissionControllerDeploymentCreator(config, kubermaticVersions))
+	deploymentCreators = append(deploymentCreators, vpa.RecommenderDeploymentCreator(config, kubermaticVersions))
+	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, kubermaticVersions))
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
 

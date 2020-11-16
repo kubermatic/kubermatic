@@ -54,3 +54,14 @@ func NewDefaultVersions() Versions {
 		KubermaticEdition: edition.KubermaticEdition,
 	}
 }
+
+func NewFakeVersions() Versions {
+	return Versions{
+		KubermaticCommit:  "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+		Kubermatic:        "v0.0.0-test",
+		UI:                "v1.1.1-test",
+		VPA:               "0.5.0",
+		Envoy:             "v1.16.0",
+		KubermaticEdition: edition.KubermaticEdition,
+	}
+}

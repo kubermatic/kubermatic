@@ -96,7 +96,7 @@ func TestSetClusterCondition_sorts(t *testing.T) {
 
 func TestSetClusterCondition(t *testing.T) {
 	conditionType := kubermaticv1.ClusterConditionSeedResourcesUpToDate
-	versions := kubermatic.NewDefaultVersions()
+	versions := kubermatic.NewFakeVersions()
 
 	testCases := []struct {
 		name                    string
@@ -186,8 +186,6 @@ func TestSetClusterCondition(t *testing.T) {
 		},
 	}
 
-	versions := kubermatic.NewDefaultVersions()
-
 	for idx := range testCases {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
@@ -211,7 +209,7 @@ func getCluster(condition *kubermaticv1.ClusterCondition) *kubermaticv1.Cluster 
 }
 
 func TestClusterReconciliatonSuccessful(t *testing.T) {
-	versions := kubermatic.NewDefaultVersions()
+	versions := kubermatic.NewFakeVersions()
 	testCases := []struct {
 		name          string
 		openshift     bool
@@ -293,17 +291,16 @@ func TestClusterReconciliatonSuccessful(t *testing.T) {
 		testCase := testCases[idx]
 		t.Run(testCase.name, func(t *testing.T) {
 			t.Parallel()
-			cluster := clusterWithAllSuccessfulConditions(testCase.openshift)
+			cluster := clusterWithAllSuccessfulConditions(versions, testCase.openshift)
 			testCase.modify(cluster)
-			if _, result := ClusterReconciliationSuccessful(cluster, false); result != testCase.expectSuccess {
+			if _, result := ClusterReconciliationSuccessful(cluster, versions, false); result != testCase.expectSuccess {
 				t.Errorf("Expected success: %t, got success: %t", testCase.expectSuccess, result)
 			}
 		})
 	}
 }
 
-func clusterWithAllSuccessfulConditions(openshift bool) *kubermaticv1.Cluster {
-	versions := kubermatic.NewDefaultVersions()
+func clusterWithAllSuccessfulConditions(versions kubermatic.Versions, openshift bool) *kubermaticv1.Cluster {
 	c := &kubermaticv1.Cluster{}
 	if openshift {
 		c.Annotations = map[string]string{"kubermatic.io/openshift": "true"}

@@ -81,6 +81,7 @@ type Routing struct {
 func NewRouting(routingParams RoutingParams) Routing {
 	return Routing{
 		log:                                   routingParams.Log,
+		logger:                                log.NewLogfmtLogger(os.Stderr),
 		presetsProvider:                       routingParams.PresetsProvider,
 		seedsGetter:                           routingParams.SeedsGetter,
 		seedsClientGetter:                     routingParams.SeedsClientGetter,
@@ -96,7 +97,6 @@ func NewRouting(routingParams RoutingParams) Routing {
 		privilegedServiceAccountTokenProvider: routingParams.PrivilegedServiceAccountTokenProvider,
 		projectProvider:                       routingParams.ProjectProvider,
 		privilegedProjectProvider:             routingParams.PrivilegedProjectProvider,
-		logger:                                log.NewLogfmtLogger(os.Stderr),
 		oidcIssuerVerifier:                    routingParams.OIDCIssuerVerifier,
 		tokenVerifiers:                        routingParams.TokenVerifiers,
 		tokenExtractors:                       routingParams.TokenExtractors,
@@ -116,6 +116,7 @@ func NewRouting(routingParams RoutingParams) Routing {
 		admissionPluginProvider:               routingParams.AdmissionPluginProvider,
 		settingsWatcher:                       routingParams.SettingsWatcher,
 		userWatcher:                           routingParams.UserWatcher,
+		versions:                              routingParams.Versions,
 	}
 }
 
@@ -168,4 +169,5 @@ type RoutingParams struct {
 	ConstraintTemplateProvider            provider.ConstraintTemplateProvider
 	ConstraintProvider                    provider.ConstraintProvider
 	PrivilegedConstraintProvider          provider.PrivilegedConstraintProvider
+	Versions                              kubermatic.Versions
 }
