@@ -20,15 +20,20 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 )
 
-// UIDOCKERTAG is a magic variable containing the tag / git commit hash
-// of the dashboard Docker image to deploy. It gets fed by the
-// Makefile as an ldflag.
-var UIDOCKERTAG string
+// These variables get fed by ldflags during compilation.
+var (
+	// gitHash is a magic variable containing the git commit hash
+	// of the current (as in currently executing) kubermatic api.
+	gitHash string
 
-// KUBERMATICDOCKERTAG is a magic variable containing the tag / git commit hash
-// of the kubermatic Docker image to deploy. It gets fed by the
-// Makefile as an ldflag.
-var KUBERMATICDOCKERTAG string
+	// kubermaticDockerTag is a magic variable containing the tag / git commit hash
+	// of the kubermatic Docker image to deploy.
+	kubermaticDockerTag string
+
+	// uiDockerTag is a magic variable containing the tag / git commit hash
+	// of the dashboard Docker image to deploy.
+	uiDockerTag string
+)
 
 type Versions struct {
 	KubermaticCommit  string
@@ -41,9 +46,9 @@ type Versions struct {
 
 func NewDefaultVersions() Versions {
 	return Versions{
-		KubermaticCommit:  "tbd",
-		Kubermatic:        KUBERMATICDOCKERTAG,
-		UI:                UIDOCKERTAG,
+		KubermaticCommit:  gitHash,
+		Kubermatic:        kubermaticDockerTag,
+		UI:                uiDockerTag,
 		VPA:               "0.5.0",
 		Envoy:             "v1.16.0",
 		KubermaticEdition: edition.KubermaticEdition,
