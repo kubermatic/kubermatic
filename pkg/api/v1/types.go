@@ -2113,6 +2113,8 @@ const (
 	UserClusterRoleCleanupFinalizer = "kubermatic.io/user-cluster-role"
 	// ExternalClusterKubeconfigCleanupFinalizer indicates that secrets for kubeconfig still need cleanup
 	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.io/cleanup-kubeconfig-secret"
+	// EtcdBackConfigCleanupFinalizer indicates that EtcdBackupConfigs for the cluster still need cleanup
+	EtcdBackupConfigCleanupFinalizer = "kubermatic.io/cleanup-etcdbackupconfigs"
 	// GatekeeperConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on user cluster need cleanup
 	GatekeeperConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-constraint-templates"
 	// GatekeeperSeedConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on seed clusters need cleanup
