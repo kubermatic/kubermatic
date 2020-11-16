@@ -85,8 +85,8 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (r *Reconciler) sync() error {
-	services := &corev1.ServiceList{}
-	if err := r.List(r.Ctx, services,
+	services := corev1.ServiceList{}
+	if err := r.List(r.Ctx, &services,
 		ctrlruntimeclient.InNamespace(r.Namespace),
 		client.MatchingFields{r.ExposeAnnotationKey: "true"},
 	); err != nil {
@@ -99,6 +99,7 @@ func (r *Reconciler) sync() error {
 		serviceKey := ServiceKey(&service)
 		serviceLog := r.Log.With("service", serviceKey)
 
+		serviceLog.Debug("processing service")
 		// This is redundant as we are using the field selector, but as this
 		// check makes the unit tests easier (FakeClient does not play nice
 		// with field selectors) and the performance penalty is negligible in
@@ -136,7 +137,7 @@ func (r *Reconciler) sync() error {
 	currSnapshot, err := r.EnvoySnapshotCache.GetSnapshot(r.EnvoyNodeName)
 	if err != nil {
 		r.Log.Debugf("setting first snapshot: %v", err)
-		if err := r.EnvoySnapshotCache.SetSnapshot(r.EnvoyNodeName, newSnapshot("v0.0.0", clusters, listeners)); err != nil {
+		if err := r.EnvoySnapshotCache.SetSnapshot(r.EnvoyNodeName, newSnapshot("0.0.0", clusters, listeners)); err != nil {
 			return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 		}
 		return nil
@@ -153,8 +154,8 @@ func (r *Reconciler) sync() error {
 		return nil
 	}
 
-	r.Log.Info("detected a change. Updating the Envoy config cache...")
 	newVersion := lastUsedVersion.IncMajor()
+	r.Log.Infow("detected a change. Updating the Envoy config cache...", "version", newVersion)
 	newSnapshot := newSnapshot(newVersion.String(), clusters, listeners)
 
 	if err := newSnapshot.Consistent(); err != nil {
@@ -173,7 +174,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		var values []string
 		svc := raw.(*corev1.Service)
 		if isExposed(svc, r.ExposeAnnotationKey) {
-			values = append(values, "ok")
+			values = append(values, "true")
 		}
 		return values
 	}); err != nil {

@@ -327,7 +327,7 @@ func (r *Reconciler) getEndpoints(s *corev1.Service, port *corev1.ServicePort, p
 
 func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) envoycachev3.Snapshot {
 	return envoycachev3.NewSnapshot(
-		"v0.0.0",
+		version,
 		nil,       // endpoints
 		clusters,  // clusters
 		nil,       // routes
