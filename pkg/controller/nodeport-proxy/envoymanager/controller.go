@@ -68,7 +68,7 @@ type Options struct {
 // NewReconciler returns a new Reconciler or an error if something goes wrong
 // during the initial snapshot setup.
 func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, opts Options) (*Reconciler, envoycachev3.SnapshotCache, error) {
-	cache := envoycachev3.NewSnapshotCache(true, envoycachev3.IDHash{}, log.With("component", "envoycache"))
+	cache := envoycachev3.NewSnapshotCache(true, envoycachev3.IDHash{}, log)
 	r := Reconciler{
 		ctx:     ctx,
 		log:     log,
