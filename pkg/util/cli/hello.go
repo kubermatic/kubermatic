@@ -19,15 +19,19 @@ package cli
 import (
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/edition"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
-func Hello(log *zap.SugaredLogger, app string, verbose bool) {
-	log = log.With("version", resources.KUBERMATICGITTAG)
-	if verbose {
-		log = log.With("commit", resources.KUBERMATICCOMMIT)
+func Hello(log *zap.SugaredLogger, app string, verbose bool, versions *kubermatic.Versions) {
+	if versions == nil {
+		v := kubermatic.NewDefaultVersions()
+		versions = &v
 	}
 
-	log.Infof("Starting Kubermatic %s (%s)...", app, edition.KubermaticEdition)
+	log = log.With("version", versions.Kubermatic)
+	if verbose {
+		log = log.With("commit", versions.KubermaticCommit)
+	}
+
+	log.Infof("Starting Kubermatic %s (%s)...", app, versions.KubermaticEdition)
 }

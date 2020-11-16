@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package common
+package kubermatic
 
 import (
 	"k8c.io/kubermatic/v2/pkg/util/edition"
@@ -31,6 +31,7 @@ var UIDOCKERTAG string
 var KUBERMATICDOCKERTAG string
 
 type Versions struct {
+	KubermaticCommit  string
 	Kubermatic        string
 	UI                string
 	VPA               string
@@ -40,6 +41,7 @@ type Versions struct {
 
 func NewDefaultVersions() Versions {
 	return Versions{
+		KubermaticCommit:  "tbd",
 		Kubermatic:        KUBERMATICDOCKERTAG,
 		UI:                UIDOCKERTAG,
 		VPA:               "0.5.0",

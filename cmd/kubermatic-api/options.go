@@ -27,6 +27,7 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
 	corev1 "k8s.io/api/core/v1"
@@ -66,6 +67,7 @@ type serverRunOptions struct {
 	serviceAccountSigningKey string
 
 	featureGates features.FeatureGate
+	versions     kubermatic.Versions
 }
 
 func newServerRunOptions() (serverRunOptions, error) {
@@ -140,6 +142,8 @@ func newServerRunOptions() (serverRunOptions, error) {
 
 		s.oidcCABundle = pool
 	}
+
+	s.versions = kubermatic.NewDefaultVersions()
 
 	return s, nil
 }

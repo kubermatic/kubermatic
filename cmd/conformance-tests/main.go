@@ -265,7 +265,7 @@ func main() {
 		}
 	}()
 
-	cli.Hello(log, "Conformance Tests", true)
+	cli.Hello(log, "Conformance Tests", true, nil)
 	log.Infow("Kubermatic API Endpoint", "endpoint", opts.kubermaticEndpoint)
 
 	if opts.existingClusterLabel != "" && opts.clusterParallelCount != 1 {

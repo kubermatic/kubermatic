@@ -44,6 +44,7 @@ import (
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	appsv1beta1 "k8s.io/api/apps/v1beta1"
@@ -152,7 +153,7 @@ func main() {
 			if kubermaticConfig == nil {
 				log.Warn("No KubermaticConfiguration, -addons-image or -addons-path given, cannot mirror images referenced in addons.")
 			} else {
-				v := common.NewDefaultVersions()
+				v := kubermatic.NewDefaultVersions()
 				addonsImage = kubermaticConfig.Spec.UserCluster.Addons.Kubernetes.DockerRepository + ":" + v.Kubermatic
 			}
 		}
@@ -239,7 +240,7 @@ func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, ima
 }
 
 func getImagesForVersion(log *zap.SugaredLogger, version *kubermaticversion.Version, config *operatorv1alpha1.KubermaticConfiguration, addonsPath string) (images []string, err error) {
-	templateData, err := getTemplateData(version)
+	templateData, err := getTemplateData(version, kubermatic.NewDefaultVersions())
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +261,7 @@ func getImagesForVersion(log *zap.SugaredLogger, version *kubermaticversion.Vers
 }
 
 func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.TemplateData, config *operatorv1alpha1.KubermaticConfiguration) (images []string, err error) {
-	v := common.NewDefaultVersions()
+	v := kubermatic.NewDefaultVersions()
 
 	seed, err := common.DefaultSeed(&kubermaticv1.Seed{}, log)
 	if err != nil {
@@ -338,7 +339,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateData, error) {
+func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersions kubermatic.Versions) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
@@ -442,13 +443,13 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 	})
 	objects := []runtime.Object{configMapList, secretList, serviceList}
 
-	clusterVersion, err := ksemver.NewSemver(version.Version.String())
+	clusterSemver, err := ksemver.NewSemver(clusterVersion.Version.String())
 	if err != nil {
 		return nil, err
 	}
 	fakeCluster := &kubermaticv1.Cluster{}
 	fakeCluster.Spec.Cloud = kubermaticv1.CloudSpec{}
-	fakeCluster.Spec.Version = *clusterVersion
+	fakeCluster.Spec.Version = *clusterSemver
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
@@ -480,6 +481,7 @@ func getTemplateData(version *kubermaticversion.Version) (*resources.TemplateDat
 		resources.DefaultEtcdLauncherImage,
 		resources.DefaultDNATControllerImage,
 		false,
+		kubermaticVersions,
 	), nil
 }
 

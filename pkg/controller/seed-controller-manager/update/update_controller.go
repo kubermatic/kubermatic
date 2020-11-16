@@ -30,6 +30,7 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -47,24 +48,28 @@ const (
 )
 
 type Reconciler struct {
-	workerName    string
-	updateManager *version.Manager
 	ctrlruntimeclient.Client
+
+	workerName                    string
+	updateManager                 *version.Manager
 	recorder                      record.EventRecorder
 	userClusterConnectionProvider *client.Provider
 	log                           *zap.SugaredLogger
+	versions                      kubermatic.Versions
 }
 
 // Add creates a new update controller
 func Add(mgr manager.Manager, numWorkers int, workerName string, updateManager *version.Manager,
-	userClusterConnectionProvider *client.Provider, log *zap.SugaredLogger) error {
+	userClusterConnectionProvider *client.Provider, log *zap.SugaredLogger, versions kubermatic.Versions) error {
 	reconciler := &Reconciler{
+		Client: mgr.GetClient(),
+
 		workerName:                    workerName,
 		updateManager:                 updateManager,
-		Client:                        mgr.GetClient(),
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		userClusterConnectionProvider: userClusterConnectionProvider,
 		log:                           log,
+		versions:                      versions,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -100,6 +105,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.Client,
 		r.workerName,
 		cluster,
+		r.versions,
 		kubermaticv1.ClusterConditionUpdateControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			return r.reconcile(ctx, cluster)

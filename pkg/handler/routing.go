@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
 	corev1 "k8s.io/api/core/v1"
@@ -38,6 +39,8 @@ import (
 // Routing represents an object which binds endpoints to http handlers.
 type Routing struct {
 	log                                   *zap.SugaredLogger
+	logger                                log.Logger
+	versions                              kubermatic.Versions
 	presetsProvider                       provider.PresetProvider
 	seedsGetter                           provider.SeedsGetter
 	seedsClientGetter                     provider.SeedClientGetter
@@ -50,7 +53,6 @@ type Routing struct {
 	privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider
 	projectProvider                       provider.ProjectProvider
 	privilegedProjectProvider             provider.PrivilegedProjectProvider
-	logger                                log.Logger
 	oidcIssuerVerifier                    auth.OIDCIssuerVerifier
 	tokenVerifiers                        auth.TokenVerifier
 	tokenExtractors                       auth.TokenExtractor

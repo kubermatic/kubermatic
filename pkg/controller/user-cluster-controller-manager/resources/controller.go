@@ -29,6 +29,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -72,6 +73,7 @@ func Add(
 	openshiftConsoleCallbackURI string,
 	dnsClusterIP string,
 	opaIntegration bool,
+	versions kubermatic.Versions,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		openshift:                     openshift,
@@ -86,6 +88,7 @@ func Add(
 		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
 		dnsClusterIP:                  dnsClusterIP,
 		opaIntegration:                opaIntegration,
+		versions:                      versions,
 	}
 
 	if r.openshift {
@@ -227,6 +230,7 @@ type reconciler struct {
 	openshiftConsoleCallbackURI   string
 	dnsClusterIP                  string
 	opaIntegration                bool
+	versions                      kubermatic.Versions
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

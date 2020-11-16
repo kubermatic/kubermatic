@@ -22,7 +22,7 @@ import (
 	"sort"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -42,6 +42,7 @@ func ClusterReconcileWrapper(
 	client ctrlruntimeclient.Client,
 	workerName string,
 	cluster *kubermaticv1.Cluster,
+	versions kubermatic.Versions,
 	conditionType kubermaticv1.ClusterConditionType,
 	reconcile func() (*reconcile.Result, error)) (*reconcile.Result, error) {
 
@@ -60,7 +61,7 @@ func ClusterReconcileWrapper(
 	}
 	errs := []error{err}
 	oldCluster := cluster.DeepCopy()
-	SetClusterCondition(cluster, conditionType, reconcilingStatus, "", "")
+	SetClusterCondition(cluster, versions, conditionType, reconcilingStatus, "", "")
 	if !reflect.DeepEqual(oldCluster, cluster) {
 		errs = append(errs, ctrlruntimeclient.IgnoreNotFound(client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))))
 	}
@@ -82,6 +83,7 @@ func GetClusterCondition(c *kubermaticv1.Cluster, conditionType kubermaticv1.Clu
 // reason and message. It also adds the Kubermatic version and tiemstamps.
 func SetClusterCondition(
 	c *kubermaticv1.Cluster,
+	v kubermatic.Versions,
 	conditionType kubermaticv1.ClusterConditionType,
 	status corev1.ConditionStatus,
 	reason string,
@@ -90,7 +92,7 @@ func SetClusterCondition(
 	newCondition := kubermaticv1.ClusterCondition{
 		Type:              conditionType,
 		Status:            status,
-		KubermaticVersion: resources.KUBERMATICGITTAG + "-" + resources.KUBERMATICCOMMIT,
+		KubermaticVersion: uniqueVersion(v),
 		Reason:            reason,
 		Message:           message,
 	}
@@ -122,7 +124,7 @@ func SetClusterCondition(
 
 // ClusterReconciliationSuccessful checks if cluster has all conditions that are
 // required for it to be healthy. ignoreKubermaticVersion should only be set in tests.
-func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster, ignoreKubermaticVersion bool) (missingConditions []kubermaticv1.ClusterConditionType, success bool) {
+func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster, versions kubermatic.Versions, ignoreKubermaticVersion bool) (missingConditions []kubermaticv1.ClusterConditionType, success bool) {
 	conditionsToExclude := []kubermaticv1.ClusterConditionType{kubermaticv1.ClusterConditionSeedResourcesUpToDate}
 	if cluster.IsOpenshift() {
 		conditionsToExclude = append(conditionsToExclude, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess)
@@ -136,7 +138,7 @@ func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster, ignoreKuberm
 			continue
 		}
 
-		if !clusterHasCurrentSuccessfullConditionType(cluster, conditionType, ignoreKubermaticVersion) {
+		if !clusterHasCurrentSuccessfullConditionType(cluster, versions, conditionType, ignoreKubermaticVersion) {
 			missingConditions = append(missingConditions, conditionType)
 		}
 	}
@@ -158,6 +160,7 @@ func conditionTypeListHasConditionType(
 
 func clusterHasCurrentSuccessfullConditionType(
 	cluster *kubermaticv1.Cluster,
+	versions kubermatic.Versions,
 	conditionType kubermaticv1.ClusterConditionType,
 	ignoreKubermaticVersion bool,
 ) bool {
@@ -170,7 +173,7 @@ func clusterHasCurrentSuccessfullConditionType(
 			return false
 		}
 
-		if !ignoreKubermaticVersion && (condition.KubermaticVersion != resources.KUBERMATICGITTAG+"-"+resources.KUBERMATICCOMMIT) {
+		if !ignoreKubermaticVersion && (condition.KubermaticVersion != uniqueVersion(versions)) {
 			return false
 		}
 
@@ -180,23 +183,27 @@ func clusterHasCurrentSuccessfullConditionType(
 	return false
 }
 
-func IsClusterInitialized(cluster *kubermaticv1.Cluster) bool {
+func IsClusterInitialized(cluster *kubermaticv1.Cluster, versions kubermatic.Versions) bool {
 	isInitialized := cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue)
 	// If was set to true at least once just return true
 	if isInitialized {
 		return true
 	}
 
-	_, success := ClusterReconciliationSuccessful(cluster, false)
+	_, success := ClusterReconciliationSuccessful(cluster, versions, false)
 	upToDate := cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionSeedResourcesUpToDate, corev1.ConditionTrue)
 	return success && upToDate && cluster.Status.ExtendedHealth.AllHealthy()
 }
 
 // We assume that the cluster is still provisioning if it was not initialized fully at least once.
-func GetHealthStatus(status kubermaticv1.HealthStatus, cluster *kubermaticv1.Cluster) kubermaticv1.HealthStatus {
-	if status == kubermaticv1.HealthStatusDown && !IsClusterInitialized(cluster) {
+func GetHealthStatus(status kubermaticv1.HealthStatus, cluster *kubermaticv1.Cluster, versions kubermatic.Versions) kubermaticv1.HealthStatus {
+	if status == kubermaticv1.HealthStatusDown && !IsClusterInitialized(cluster, versions) {
 		return kubermaticv1.HealthStatusProvisioning
 	}
 
 	return status
+}
+
+func uniqueVersion(v kubermatic.Versions) string {
+	return v.KubermaticCommit
 }

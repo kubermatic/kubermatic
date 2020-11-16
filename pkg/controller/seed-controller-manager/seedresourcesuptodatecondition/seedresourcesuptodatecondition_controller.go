@@ -26,6 +26,7 @@ import (
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -42,12 +43,22 @@ import (
 
 const ControllerName = "seed_resources_up_to_date_condition_controller"
 
+type reconciler struct {
+	ctx        context.Context
+	log        *zap.SugaredLogger
+	client     ctrlruntimeclient.Client
+	recorder   record.EventRecorder
+	workerName string
+	versions   kubermatic.Versions
+}
+
 func Add(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	mgr manager.Manager,
 	numWorkers int,
 	workerName string,
+	versions kubermatic.Versions,
 ) error {
 	r := &reconciler{
 		ctx:        ctx,
@@ -55,6 +66,7 @@ func Add(
 		client:     mgr.GetClient(),
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		workerName: workerName,
+		versions:   versions,
 	}
 
 	ctrlOptions := controller.Options{
@@ -77,14 +89,6 @@ func Add(
 	}
 
 	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
-}
-
-type reconciler struct {
-	ctx        context.Context
-	log        *zap.SugaredLogger
-	client     ctrlruntimeclient.Client
-	recorder   record.EventRecorder
-	workerName string
 }
 
 func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
@@ -123,6 +127,7 @@ func (r *reconciler) reconcile(cluster *kubermaticv1.Cluster) error {
 	if !upToDate {
 		kubermaticv1helper.SetClusterCondition(
 			cluster,
+			r.versions,
 			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
 			corev1.ConditionFalse,
 			kubermaticv1.ReasonClusterUpdateSuccessful,
@@ -131,6 +136,7 @@ func (r *reconciler) reconcile(cluster *kubermaticv1.Cluster) error {
 	} else {
 		kubermaticv1helper.SetClusterCondition(
 			cluster,
+			r.versions,
 			kubermaticv1.ClusterConditionSeedResourcesUpToDate,
 			corev1.ConditionTrue,
 			kubermaticv1.ReasonClusterUpdateSuccessful,

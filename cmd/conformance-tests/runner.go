@@ -49,6 +49,7 @@ import (
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
 	projectclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -338,8 +339,9 @@ func (r *testRunner) executeScenario(log *zap.SugaredLogger, scenario testScenar
 						return false, nil
 					}
 
+					versions := kubermatic.NewDefaultVersions()
 					// ignore Kubermatic version in this check, to allow running against a 3rd party setup
-					missingConditions, success := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, true)
+					missingConditions, success := kubermaticv1helper.ClusterReconciliationSuccessful(cluster, versions, true)
 					if len(missingConditions) > 0 {
 						log.Infof("Waiting for the following conditions: %v", missingConditions)
 					}

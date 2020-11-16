@@ -23,18 +23,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestRetagImageForAllVersions(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
-
-	// Cannot be set during go-test
-	resources.KUBERMATICCOMMIT = "latest"
-	common.KUBERMATICDOCKERTAG = resources.KUBERMATICCOMMIT
-	common.UIDOCKERTAG = resources.KUBERMATICCOMMIT
 
 	config, err := common.DefaultConfiguration(&operatorv1alpha1.KubermaticConfiguration{}, log)
 	if err != nil {

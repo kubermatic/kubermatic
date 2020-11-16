@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -83,6 +83,7 @@ func TestSetClusterCondition_sorts(t *testing.T) {
 	}
 	SetClusterCondition(
 		cluster,
+		kubermatic.NewDefaultVersions(),
 		kubermaticv1.ClusterConditionUpdateControllerReconcilingSuccess,
 		corev1.ConditionTrue,
 		"",
@@ -95,6 +96,8 @@ func TestSetClusterCondition_sorts(t *testing.T) {
 
 func TestSetClusterCondition(t *testing.T) {
 	conditionType := kubermaticv1.ClusterConditionSeedResourcesUpToDate
+	versions := kubermatic.NewDefaultVersions()
+
 	testCases := []struct {
 		name                    string
 		cluster                 *kubermaticv1.Cluster
@@ -108,7 +111,7 @@ func TestSetClusterCondition(t *testing.T) {
 			cluster: getCluster(&kubermaticv1.ClusterCondition{
 				Type:              conditionType,
 				Status:            corev1.ConditionTrue,
-				KubermaticVersion: resources.KUBERMATICGITTAG + "-" + resources.KUBERMATICCOMMIT,
+				KubermaticVersion: uniqueVersion(versions),
 				Reason:            "my-reason",
 				Message:           "my-message",
 			}),
@@ -144,7 +147,7 @@ func TestSetClusterCondition(t *testing.T) {
 			cluster: getCluster(&kubermaticv1.ClusterCondition{
 				Type:              conditionType,
 				Status:            corev1.ConditionFalse,
-				KubermaticVersion: resources.KUBERMATICGITTAG + "-" + resources.KUBERMATICCOMMIT,
+				KubermaticVersion: uniqueVersion(versions),
 				Reason:            "my-reason",
 				Message:           "my-message",
 			}),
@@ -158,7 +161,7 @@ func TestSetClusterCondition(t *testing.T) {
 			cluster: getCluster(&kubermaticv1.ClusterCondition{
 				Type:              conditionType,
 				Status:            corev1.ConditionTrue,
-				KubermaticVersion: resources.KUBERMATICGITTAG + "-" + resources.KUBERMATICCOMMIT,
+				KubermaticVersion: uniqueVersion(versions),
 				Reason:            "outdated-reason",
 				Message:           "my-message",
 			}),
@@ -172,7 +175,7 @@ func TestSetClusterCondition(t *testing.T) {
 			cluster: getCluster(&kubermaticv1.ClusterCondition{
 				Type:              conditionType,
 				Status:            corev1.ConditionTrue,
-				KubermaticVersion: resources.KUBERMATICGITTAG + "-" + resources.KUBERMATICCOMMIT,
+				KubermaticVersion: uniqueVersion(versions),
 				Reason:            "my-reason",
 				Message:           "outdated-message",
 			}),
@@ -183,12 +186,14 @@ func TestSetClusterCondition(t *testing.T) {
 		},
 	}
 
+	versions := kubermatic.NewDefaultVersions()
+
 	for idx := range testCases {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			initialCluster := tc.cluster.DeepCopy()
-			SetClusterCondition(tc.cluster, conditionType, tc.conditionStatus, tc.conditionReason, tc.conditionMessage)
+			SetClusterCondition(tc.cluster, versions, conditionType, tc.conditionStatus, tc.conditionReason, tc.conditionMessage)
 			hasChanged := !apiequality.Semantic.DeepEqual(initialCluster, tc.cluster)
 			if hasChanged != tc.conditionChangeExpected {
 				t.Errorf("Change doesn't match expectation: hasChanged: %t: changeExpected: %t", hasChanged, tc.conditionChangeExpected)
@@ -206,6 +211,7 @@ func getCluster(condition *kubermaticv1.ClusterCondition) *kubermaticv1.Cluster 
 }
 
 func TestClusterReconciliatonSuccessful(t *testing.T) {
+	versions := kubermatic.NewDefaultVersions()
 	testCases := []struct {
 		name          string
 		openshift     bool
@@ -223,6 +229,7 @@ func TestClusterReconciliatonSuccessful(t *testing.T) {
 			modify: func(c *kubermaticv1.Cluster) {
 				SetClusterCondition(
 					c,
+					versions,
 					kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess,
 					corev1.ConditionFalse,
 					"",
@@ -236,6 +243,7 @@ func TestClusterReconciliatonSuccessful(t *testing.T) {
 			modify: func(c *kubermaticv1.Cluster) {
 				SetClusterCondition(
 					c,
+					versions,
 					kubermaticv1.ClusterConditionOpenshiftControllerReconcilingSuccess,
 					corev1.ConditionFalse,
 					"",
@@ -249,6 +257,7 @@ func TestClusterReconciliatonSuccessful(t *testing.T) {
 			modify: func(c *kubermaticv1.Cluster) {
 				SetClusterCondition(
 					c,
+					versions,
 					kubermaticv1.ClusterConditionSeedResourcesUpToDate,
 					corev1.ConditionFalse,
 					"",
@@ -270,6 +279,7 @@ func TestClusterReconciliatonSuccessful(t *testing.T) {
 			modify: func(c *kubermaticv1.Cluster) {
 				SetClusterCondition(
 					c,
+					versions,
 					kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess,
 					corev1.ConditionFalse,
 					"",
@@ -293,12 +303,13 @@ func TestClusterReconciliatonSuccessful(t *testing.T) {
 }
 
 func clusterWithAllSuccessfulConditions(openshift bool) *kubermaticv1.Cluster {
+	versions := kubermatic.NewDefaultVersions()
 	c := &kubermaticv1.Cluster{}
 	if openshift {
 		c.Annotations = map[string]string{"kubermatic.io/openshift": "true"}
 	}
 	for _, t := range kubermaticv1.AllClusterConditionTypes {
-		SetClusterCondition(c, t, corev1.ConditionTrue, "", "")
+		SetClusterCondition(c, versions, t, corev1.ConditionTrue, "", "")
 	}
 	return c
 }

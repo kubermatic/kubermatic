@@ -64,6 +64,7 @@ type metricsServerData interface {
 	GetRootCA() (*triple.KeyPair, error)
 	ImageRegistry(string) string
 	DNATControllerImage() string
+	DNATControllerTag() string
 	NodeAccessNetwork() string
 }
 

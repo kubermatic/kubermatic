@@ -30,6 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -99,6 +100,7 @@ type Reconciler struct {
 	oidcIssuerClientID string
 
 	features Features
+	versions kubermatic.Versions
 }
 
 // NewController creates a cluster controller.
@@ -129,7 +131,8 @@ func Add(
 	kubermaticImage string,
 	etcdLauncherImage string,
 	dnatControllerImage string,
-	features Features) error {
+	features Features,
+	versions kubermatic.Versions) error {
 
 	reconciler := &Reconciler{
 		log:                     log.Named(ControllerName),
@@ -163,6 +166,7 @@ func Add(
 		oidcIssuerClientID: oidcIssuerClientID,
 
 		features: features,
+		versions: versions,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -221,6 +225,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.Client,
 		r.workerName,
 		cluster,
+		r.versions,
 		kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			// only reconcile this cluster if there are not yet too many updates running

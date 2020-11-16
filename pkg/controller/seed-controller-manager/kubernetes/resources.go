@@ -176,6 +176,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		r.etcdLauncherImage,
 		r.dnatControllerImage,
 		supportsFailureDomainZoneAntiAffinity,
+		r.versions,
 	), nil
 }
 

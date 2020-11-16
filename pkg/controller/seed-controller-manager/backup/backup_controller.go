@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -76,6 +77,8 @@ const (
 )
 
 type Reconciler struct {
+	ctrlruntimeclient.Client
+
 	log              *zap.SugaredLogger
 	workerName       string
 	storeContainer   corev1.Container
@@ -87,8 +90,8 @@ type Reconciler struct {
 	// It must be configurable to cover offline use cases
 	backupContainerImage string
 
-	ctrlruntimeclient.Client
 	recorder record.EventRecorder
+	versions kubermatic.Versions
 }
 
 // Add creates a new Backup controller that is responsible for creating backupjobs
@@ -102,6 +105,7 @@ func Add(
 	cleanupContainer corev1.Container,
 	backupSchedule time.Duration,
 	backupContainerImage string,
+	versions kubermatic.Versions,
 ) error {
 	log = log.Named(ControllerName)
 	if err := validateStoreContainer(storeContainer); err != nil {
@@ -116,14 +120,15 @@ func Add(
 	}
 
 	reconciler := &Reconciler{
+		Client:               mgr.GetClient(),
 		log:                  log,
 		workerName:           workerName,
 		storeContainer:       storeContainer,
 		cleanupContainer:     cleanupContainer,
 		backupScheduleString: backupScheduleString,
 		backupContainerImage: backupContainerImage,
-		Client:               mgr.GetClient(),
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
+		versions:             versions,
 	}
 	c, err := controller.New(ControllerName, mgr, controller.Options{
 		Reconciler:              reconciler,
@@ -233,6 +238,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.Client,
 		r.workerName,
 		cluster,
+		r.versions,
 		kubermaticv1.ClusterConditionBackupControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			return nil, r.reconcile(ctx, log, cluster)

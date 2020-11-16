@@ -27,13 +27,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
 	"k8c.io/kubermatic/v2/pkg/install/stack/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
+	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -86,11 +85,11 @@ var (
 	}
 )
 
-func DeployCommand(logger *logrus.Logger) cli.Command {
+func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
 	return cli.Command{
 		Name:   "deploy",
 		Usage:  "Installs or upgrades the current installation to the installer's built-in version",
-		Action: DeployAction(logger),
+		Action: DeployAction(logger, versions),
 		Flags: []cli.Flag{
 			deployForceFlag,
 			deployConfigFlag,
@@ -104,16 +103,14 @@ func DeployCommand(logger *logrus.Logger) cli.Command {
 	}
 }
 
-func DeployAction(logger *logrus.Logger) cli.ActionFunc {
+func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cli.ActionFunc {
 	return handleErrors(logger, setupLogger(logger, func(ctx *cli.Context) error {
-		v := common.NewDefaultVersions()
-
 		fields := logrus.Fields{
-			"version": v.Kubermatic,
+			"version": versions.Kubermatic,
 			"edition": edition.KubermaticEdition,
 		}
 		if ctx.GlobalBool("verbose") {
-			fields["git"] = resources.KUBERMATICCOMMIT
+			fields["git"] = versions.KubermaticCommit
 		}
 
 		// error out early if there is no useful Helm binary

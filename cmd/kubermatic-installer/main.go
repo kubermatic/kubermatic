@@ -23,8 +23,8 @@ import (
 
 	"github.com/urfave/cli"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/log"
+	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
 var (
@@ -45,7 +45,7 @@ func main() {
 	rand.Seed(time.Now().UnixNano())
 
 	logger := log.NewLogrus()
-	versions := common.NewDefaultVersions()
+	versions := kubermaticversion.NewDefaultVersions()
 
 	app := cli.NewApp()
 	app.Name = "kubermatic-installer"
@@ -53,7 +53,7 @@ func main() {
 	app.Version = versions.Kubermatic
 	app.HideVersion = true
 	app.Flags = flags()
-	app.Commands = commands(logger)
+	app.Commands = commands(logger, versions)
 
 	_ = app.Run(os.Args)
 }

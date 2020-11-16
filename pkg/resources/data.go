@@ -27,6 +27,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -38,28 +39,31 @@ import (
 
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
-	ctx                                              context.Context
-	client                                           ctrlruntimeclient.Client
-	cluster                                          *kubermaticv1.Cluster
-	dc                                               *kubermaticv1.Datacenter
-	seed                                             *kubermaticv1.Seed
-	OverwriteRegistry                                string
-	nodePortRange                                    string
-	nodeAccessNetwork                                string
-	etcdDiskSize                                     resource.Quantity
+	ctx                      context.Context
+	client                   ctrlruntimeclient.Client
+	cluster                  *kubermaticv1.Cluster
+	dc                       *kubermaticv1.Datacenter
+	seed                     *kubermaticv1.Seed
+	OverwriteRegistry        string
+	nodePortRange            string
+	nodeAccessNetwork        string
+	etcdDiskSize             resource.Quantity
+	oidcCAFile               string
+	oidcIssuerURL            string
+	oidcIssuerClientID       string
+	nodeLocalDNSCacheEnabled bool
+	kubermaticImage          string
+	etcdLauncherImage        string
+	dnatControllerImage      string
+	versions                 kubermatic.Versions
+
+	supportsFailureDomainZoneAntiAffinity bool
+
 	monitoringScrapeAnnotationPrefix                 string
 	inClusterPrometheusRulesFile                     string
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
 	inClusterPrometheusScrapingConfigsFile           string
-	oidcCAFile                                       string
-	oidcIssuerURL                                    string
-	oidcIssuerClientID                               string
-	nodeLocalDNSCacheEnabled                         bool
-	kubermaticImage                                  string
-	etcdLauncherImage                                string
-	dnatControllerImage                              string
-	supportsFailureDomainZoneAntiAffinity            bool
 }
 
 // NewTemplateData returns an instance of TemplateData
@@ -85,30 +89,34 @@ func NewTemplateData(
 	kubermaticImage string,
 	etcdLauncherImage string,
 	dnatControllerImage string,
-	supportsFailureDomainZoneAntiAffinity bool) *TemplateData {
+	supportsFailureDomainZoneAntiAffinity bool,
+	versions kubermatic.Versions) *TemplateData {
 	return &TemplateData{
-		ctx:                                    ctx,
-		client:                                 client,
-		cluster:                                cluster,
-		dc:                                     dc,
-		seed:                                   seed,
-		OverwriteRegistry:                      overwriteRegistry,
-		nodePortRange:                          nodePortRange,
-		nodeAccessNetwork:                      nodeAccessNetwork,
-		etcdDiskSize:                           etcdDiskSize,
-		monitoringScrapeAnnotationPrefix:       monitoringScrapeAnnotationPrefix,
-		inClusterPrometheusRulesFile:           inClusterPrometheusRulesFile,
-		inClusterPrometheusDisableDefaultRules: inClusterPrometheusDisableDefaultRules,
+		ctx:                      ctx,
+		client:                   client,
+		cluster:                  cluster,
+		dc:                       dc,
+		seed:                     seed,
+		OverwriteRegistry:        overwriteRegistry,
+		nodePortRange:            nodePortRange,
+		nodeAccessNetwork:        nodeAccessNetwork,
+		etcdDiskSize:             etcdDiskSize,
+		oidcCAFile:               oidcCAFile,
+		oidcIssuerURL:            oidcURL,
+		oidcIssuerClientID:       oidcIssuerClientID,
+		nodeLocalDNSCacheEnabled: nodeLocalDNSCacheEnabled,
+		kubermaticImage:          kubermaticImage,
+		etcdLauncherImage:        etcdLauncherImage,
+		dnatControllerImage:      dnatControllerImage,
+		versions:                 versions,
+
+		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
+
+		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
+		inClusterPrometheusRulesFile:                     inClusterPrometheusRulesFile,
+		inClusterPrometheusDisableDefaultRules:           inClusterPrometheusDisableDefaultRules,
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
-		oidcCAFile:                                       oidcCAFile,
-		oidcIssuerURL:                                    oidcURL,
-		oidcIssuerClientID:                               oidcIssuerClientID,
-		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
-		kubermaticImage:                                  kubermaticImage,
-		etcdLauncherImage:                                etcdLauncherImage,
-		dnatControllerImage:                              dnatControllerImage,
-		supportsFailureDomainZoneAntiAffinity:            supportsFailureDomainZoneAntiAffinity,
 	}
 }
 
@@ -172,6 +180,14 @@ func (d *TemplateData) EtcdLauncherImage() string {
 		imageWithoutRegistry = strings.Join(imageSplit[1:], "/")
 	}
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
+}
+
+func (d *TemplateData) EtcdLauncherTag() string {
+	return d.versions.Kubermatic
+}
+
+func (d *TemplateData) NodePortProxyTag() string {
+	return d.versions.Kubermatic
 }
 
 // MonitoringScrapeAnnotationPrefix returns the scrape annotation prefix
@@ -302,6 +318,10 @@ func (d *TemplateData) KubermaticAPIImage() string {
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
 
+func (d *TemplateData) KubermaticDockerTag() string {
+	return d.versions.Kubermatic
+}
+
 func (d *TemplateData) DNATControllerImage() string {
 	dnatControllerImageSplit := strings.Split(d.dnatControllerImage, "/")
 	var registry, imageWithoutRegistry string
@@ -313,6 +333,10 @@ func (d *TemplateData) DNATControllerImage() string {
 		imageWithoutRegistry = strings.Join(dnatControllerImageSplit[1:], "/")
 	}
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
+}
+
+func (d *TemplateData) DNATControllerTag() string {
+	return d.versions.Kubermatic
 }
 
 func (d *TemplateData) SupportsFailureDomainZoneAntiAffinity() bool {

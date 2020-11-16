@@ -21,12 +21,14 @@ package main
 import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
+	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
-func commands(logger *logrus.Logger) []cli.Command {
+func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.Command {
 	return []cli.Command{
-		VersionCommand(logger),
-		DeployCommand(logger),
+		VersionCommand(logger, versions),
+		DeployCommand(logger, versions),
 		ConvertKubeconfigCommand(logger),
 	}
 }

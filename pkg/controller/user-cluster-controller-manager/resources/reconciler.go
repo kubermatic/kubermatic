@@ -536,7 +536,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 
 func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
 	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
-		usersshkeys.DaemonSetCreator(),
+		usersshkeys.DaemonSetCreator(r.versions),
 	}
 	if !r.openshift {
 		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator())
