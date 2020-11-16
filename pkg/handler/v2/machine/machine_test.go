@@ -1618,6 +1618,127 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 	}
 }
 
+func TestDeleteMachineDeployment(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                        string
+		HTTPStatus                  int
+		MachineIDToDelete           string
+		ClusterIDToSync             string
+		ProjectIDToSync             string
+		ExistingAPIUser             *apiv1.User
+		ExistingNodes               []*corev1.Node
+		ExistingMachineDeployments  []*clusterv1alpha1.MachineDeployment
+		ExistingKubermaticObjs      []runtime.Object
+		ExpectedHTTPStatusOnGet     int
+		EpxectedNodeDeploymentCount int
+	}{
+		// scenario 1
+		{
+			Name:                   "scenario 1: delete the machine deployments that belong to the given cluster",
+			HTTPStatus:             http.StatusOK,
+			MachineIDToDelete:      "venus",
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
+			},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
+			},
+			// Even though the machine deployment object was deleted the associated node object was not.
+			// When the client GETs the previously deleted "node" it will get a valid response.
+			// That is only true for testing, but in a real cluster, the node object will get deleted by the garbage-collector as it has a ownerRef set.
+			ExpectedHTTPStatusOnGet:     http.StatusOK,
+			EpxectedNodeDeploymentCount: 1,
+		},
+		// scenario 2
+		{
+			Name:                   "scenario 2: the admin John can delete any cluster machine deployment",
+			HTTPStatus:             http.StatusOK,
+			MachineIDToDelete:      "venus",
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), test.GenAdminUser("John", "john@acme.com", true)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
+			},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
+			},
+			// Even though the machine deployment object was deleted the associated node object was not.
+			// When the client GETs the previously deleted "node" it will get a valid response.
+			// That is only true for testing, but in a real cluster, the node object will get deleted by the garbage-collector as it has a ownerRef set.
+			ExpectedHTTPStatusOnGet:     http.StatusOK,
+			EpxectedNodeDeploymentCount: 1,
+		},
+		// scenario 3
+		{
+			Name:                   "scenario 3: the user John can delete Bob's cluster machine deployment",
+			HTTPStatus:             http.StatusForbidden,
+			MachineIDToDelete:      "venus",
+			ClusterIDToSync:        test.GenDefaultCluster().Name,
+			ProjectIDToSync:        test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), test.GenAdminUser("John", "john@acme.com", false)),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExistingNodes: []*corev1.Node{
+				{ObjectMeta: metav1.ObjectMeta{Name: "venus"}},
+				{ObjectMeta: metav1.ObjectMeta{Name: "mars"}},
+			},
+			ExistingMachineDeployments: []*clusterv1alpha1.MachineDeployment{
+				genTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
+				genTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
+			},
+			ExpectedHTTPStatusOnGet:     http.StatusForbidden,
+			EpxectedNodeDeploymentCount: 2,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s",
+				tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineIDToDelete), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			kubermaticObj := []runtime.Object{}
+			machineDeploymentObjets := []runtime.Object{}
+			kubernetesObj := []runtime.Object{}
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			for _, existingNode := range tc.ExistingNodes {
+				kubernetesObj = append(kubernetesObj, existingNode)
+			}
+			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
+				machineDeploymentObjets = append(machineDeploymentObjets, existingMachineDeployment)
+			}
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineDeploymentObjets, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			machineDeployments := &clusterv1alpha1.MachineDeploymentList{}
+			if err := clientsSets.FakeClient.List(context.TODO(), machineDeployments); err != nil {
+				t.Fatalf("failed to list MachineDeployments: %v", err)
+			}
+
+			if machineDeploymentCount := len(machineDeployments.Items); machineDeploymentCount != tc.EpxectedNodeDeploymentCount {
+				t.Errorf("Expected to find %d  machineDeployments but got %d", tc.EpxectedNodeDeploymentCount, machineDeploymentCount)
+			}
+		})
+	}
+}
+
 func genTestCluster(isControllerReady bool) *kubermaticv1.Cluster {
 	controllerStatus := kubermaticv1.HealthStatusDown
 	if isControllerReady {

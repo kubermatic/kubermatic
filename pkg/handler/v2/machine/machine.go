@@ -444,3 +444,38 @@ func ListMachineDeploymentNodesEvents(projectProvider provider.ProjectProvider, 
 		return handlercommon.ListMachineDeploymentNodesEvents(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.MachineDeploymentID, req.Type)
 	}
 }
+
+// deleteMachineDeploymentReq defines HTTP request for deleteMachineDeployment
+// swagger:parameters deleteMachineDeployment
+type deleteMachineDeploymentReq struct {
+	machineDeploymentReq
+}
+
+func DecodeDeleteMachineDeployment(c context.Context, r *http.Request) (interface{}, error) {
+	var req deleteMachineDeploymentReq
+	rawMachineDeployment, err := DecodeGetMachineDeployment(c, r)
+	if err != nil {
+		return nil, err
+	}
+	md := rawMachineDeployment.(machineDeploymentReq)
+
+	req.MachineDeploymentID = md.MachineDeploymentID
+	req.ClusterID = md.ClusterID
+	req.ProjectID = md.ProjectID
+
+	return req, nil
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req deleteMachineDeploymentReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+func DeleteMachineDeployment(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(deleteMachineDeploymentReq)
+		return handlercommon.DeleteMachineDeployment(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.MachineDeploymentID)
+	}
+}
