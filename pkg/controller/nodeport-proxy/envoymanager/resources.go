@@ -39,7 +39,6 @@ import (
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
-	envoylog "github.com/envoyproxy/go-control-plane/pkg/log"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 )
 
@@ -87,7 +86,7 @@ func (r *Reconciler) makeListenersAndClustersForService(service *corev1.Service,
 			panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
 		}
 
-		r.Log.Debugf("Using a listener on port %d", servicePort.NodePort)
+		r.log.Debugf("Using a listener on port %d", servicePort.NodePort)
 
 		listener := &envoylistenerv3.Listener{
 			Name: serviceNodePortName,
@@ -271,7 +270,7 @@ func (r *Reconciler) getEndpoints(s *corev1.Service, port *corev1.ServicePort, p
 	processedUpstreamServers := make(map[string]struct{})
 
 	svcKey := ServiceKey(s)
-	serviceLog := r.Log.With("service", svcKey)
+	serviceLog := r.log.With("service", svcKey)
 
 	for _, ss := range eps.Subsets {
 		for _, epPort := range ss.Ports {
@@ -327,7 +326,7 @@ func (r *Reconciler) getEndpoints(s *corev1.Service, port *corev1.ServicePort, p
 
 func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) envoycachev3.Snapshot {
 	return envoycachev3.NewSnapshot(
-		"v0.0.0",
+		version,
 		nil,       // endpoints
 		clusters,  // clusters
 		nil,       // routes
@@ -335,9 +334,4 @@ func newSnapshot(version string, clusters, listeners []envoycachetype.Resource) 
 		nil,       // runtimes
 		nil,       // secrets
 	)
-}
-
-// NewSnapshotCache returns a new envoy snapshot cache.
-func NewSnapshotCache(log envoylog.Logger) envoycachev3.SnapshotCache {
-	return envoycachev3.NewSnapshotCache(true, envoycachev3.IDHash{}, log)
 }
