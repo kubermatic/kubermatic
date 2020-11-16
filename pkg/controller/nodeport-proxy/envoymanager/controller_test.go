@@ -503,24 +503,22 @@ func TestSync(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			log := zap.NewNop().Sugar()
 			client := fakectrlruntimeclient.NewFakeClient(test.resources...)
-			snapshotCache := NewSnapshotCache(log)
-
-			c := Reconciler{
-				Client: client,
-				Options: Options{
+			c, _, _ := NewReconciler(
+				context.TODO(),
+				log,
+				client,
+				Options{
 					EnvoyNodeName:       "node-name",
 					ExposeAnnotationKey: DefaultExposeAnnotationKey,
 				},
-				EnvoySnapshotCache: snapshotCache,
-				Log:                log,
-			}
+			)
 
 			if err := c.sync(); err != nil {
 				t.Fatalf("failed to execute controller sync func: %v", err)
 			}
 
 			gotClusters := map[string]*envoyclusterv3.Cluster{}
-			s, _ := c.EnvoySnapshotCache.GetSnapshot(c.EnvoyNodeName)
+			s, _ := c.cache.GetSnapshot(c.EnvoyNodeName)
 			for name, res := range s.Resources[envoycachetype.Cluster].Items {
 				gotClusters[name] = res.(*envoyclusterv3.Cluster)
 			}
@@ -591,8 +589,8 @@ func TestEndpointToService(t *testing.T) {
 			res := (&Reconciler{
 				Options: Options{ExposeAnnotationKey: DefaultExposeAnnotationKey},
 				Client:  client,
-				Ctx:     context.TODO(),
-				Log:     log,
+				ctx:     context.TODO(),
+				log:     log,
 			}).endpointsToService(handler.MapObject{Meta: tt.eps, Object: tt.eps})
 			if diff := deep.Equal(res, tt.expectResults); diff != nil {
 				t.Errorf("Got unexpected results. Diff to expected: %v", diff)

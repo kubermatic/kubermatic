@@ -73,9 +73,26 @@ func main() {
 	}()
 
 	cli.Hello(log, "Envoy-Manager", logOpts.Debug)
-	log.Infow("Starting the server...", "address", listenAddress)
+	log.Infow("starting the server...", "address", listenAddress)
 
-	snapshotCache := envoymanager.NewSnapshotCache(log.With("component", "envoycache"))
+	config, err := ctrlruntimeconfig.GetConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	mgr, err := manager.New(config, manager.Options{Namespace: ctrlOpts.Namespace})
+	if err != nil {
+		log.Fatalw("failed to build controller-runtime manager", zap.Error(err))
+	}
+
+	r, snapshotCache, err := envoymanager.NewReconciler(ctx, log, mgr.GetClient(), ctrlOpts)
+	if err != nil {
+		log.Fatalw("failed to build reconciler", zap.Error(err))
+	}
+	if err := r.SetupWithManager(mgr); err != nil {
+		log.Fatalw("failed to register reconciler with controller-runtime manager", zap.Error(err))
+	}
+
 	srv := xdsv3.NewServer(ctx, snapshotCache, nil)
 	grpcServer := grpc.NewServer()
 
@@ -96,28 +113,7 @@ func main() {
 		}
 	}()
 
-	config, err := ctrlruntimeconfig.GetConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	mgr, err := manager.New(config, manager.Options{Namespace: ctrlOpts.Namespace})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	r := &envoymanager.Reconciler{
-		Ctx:                ctx,
-		Client:             mgr.GetClient(),
-		Options:            ctrlOpts,
-		Log:                log,
-		EnvoySnapshotCache: snapshotCache,
-	}
-	if err := r.SetupWithManager(mgr); err != nil {
-		log.Fatal(err)
-	}
-
 	if err := mgr.Start(stopCh); err != nil {
-		log.Errorw("Manager ended with err", zap.Error(err))
+		log.Errorw("manager ended with error", zap.Error(err))
 	}
 }
