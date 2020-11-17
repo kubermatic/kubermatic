@@ -59,7 +59,7 @@ data:
     cgroupsPerQOS: true
     clusterDNS:
     - {{ .Cluster.Network.DNSResolverIP }}
-    clusterDomain: cluster.local
+    clusterDomain: {{ .Cluster.Network.DNSDomain }}
     configMapAndSecretChangeDetectionStrategy: Watch
     containerLogMaxFiles: 5
     containerLogMaxSize: 10Mi
@@ -140,7 +140,7 @@ data:
     cgroupsPerQOS: true
     clusterDNS:
     - {{ .Cluster.Network.DNSResolverIP }}
-    clusterDomain: cluster.local
+    clusterDomain: {{ .Cluster.Network.DNSDomain }}
     configMapAndSecretChangeDetectionStrategy: Watch
     containerLogMaxFiles: 5
     containerLogMaxSize: 10Mi
@@ -221,7 +221,7 @@ data:
     cgroupsPerQOS: true
     clusterDNS:
     - {{ .Cluster.Network.DNSResolverIP }}
-    clusterDomain: cluster.local
+    clusterDomain: {{ .Cluster.Network.DNSDomain }}
     configMapAndSecretChangeDetectionStrategy: Watch
     containerLogMaxFiles: 5
     containerLogMaxSize: 10Mi
@@ -302,7 +302,7 @@ data:
     cgroupsPerQOS: true
     clusterDNS:
     - {{ .Cluster.Network.DNSResolverIP }}
-    clusterDomain: cluster.local
+    clusterDomain: {{ .Cluster.Network.DNSDomain }}
     configMapAndSecretChangeDetectionStrategy: Watch
     containerLogMaxFiles: 5
     containerLogMaxSize: 10Mi
