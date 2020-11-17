@@ -95,6 +95,7 @@ func (s *azureScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDep
 					Cloud: &apimodels.NodeCloudSpec{
 						Azure: &apimodels.AzureNodeSpec{
 							Size: &size,
+							AssignPublicIP: true,
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{

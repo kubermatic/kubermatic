@@ -263,8 +263,8 @@ iptables -A INPUT -i tun0 -j DROP
 						"-c",
 						// Always set IP forwarding as a CNI plugin might reset this to 0 (Like Calico 3).
 						`while true; do sysctl -w net.ipv4.ip_forward=1;
-  if ! iptables -t mangle -C INPUT -p tcp --tcp-flags SYN,RST SYN --dport 1194 -j TCPMSS --set-mss 1300 &>/dev/null; then
-   iptables -t mangle -A INPUT -p tcp --tcp-flags SYN,RST SYN --dport 1194 -j TCPMSS --set-mss 1300
+  if ! iptables -t mangle -C INPUT -p tcp --tcp-flags SYN,RST SYN --dport 1194 -j TCPMSS --set-mss 1200 &>/dev/null; then
+   iptables -t mangle -A INPUT -p tcp --tcp-flags SYN,RST SYN --dport 1194 -j TCPMSS --set-mss 1200
   fi
   sleep 30;
 done`,
