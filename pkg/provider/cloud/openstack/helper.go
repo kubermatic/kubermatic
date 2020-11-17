@@ -154,7 +154,7 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, cluster
 	secGroupName := resourceNamePrefix + clusterName
 	secGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: secGroupName})
 	if err != nil {
-		return "", fmt.Errorf("failed to get securiy groups: %v", err)
+		return "", fmt.Errorf("failed to get security groups: %v", err)
 	}
 
 	var securityGroupID string
