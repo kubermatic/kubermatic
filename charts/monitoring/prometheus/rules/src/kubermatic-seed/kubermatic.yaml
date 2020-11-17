@@ -53,7 +53,7 @@ groups:
       severity: warning
     runbook:
       steps:
-        - Check the kubermatic controller-manager's logs via `kubectl -n kubermatic logs -l 'role=controller-manager'` for errors related to deletion of the addon.
+        - Check the kubermatic controller-manager's logs via `kubectl -n kubermatic logs -l 'app.kubernetes.io/name=kubermatic-seed-controller-manager'` for errors related to deletion of the addon.
           Manually deleted resources inside of the user cluster is a common reason for failing deletions.
         - If all resources of the addon inside the user cluster have been cleaned up, remove the blocking finalizer (e.g. `cleanup-manifests`) from the addon resource.
 
@@ -70,20 +70,20 @@ groups:
       severity: warning
     runbook:
       steps:
-        - Check the kubermatic controller-manager's logs via `kubectl -n kubermatic logs -l 'role=controller-manager'` for errors related to reconciliation of the addon.
+        - Check the kubermatic seed controller-manager's logs via `kubectl -n kubermatic logs -l 'app.kubernetes.io/name=kubermatic-seed-controller-manager'` for errors related to reconciliation of the addon.
 
-  - alert: KubermaticControllerManagerDown
+  - alert: KubermaticSeedControllerManagerDown
     annotations:
-      message: KubermaticControllerManager has disappeared from Prometheus target discovery.
-      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubermaticcontrollermanagerdown
-    expr: absent(up{job="pods",namespace="kubermatic",role="controller-manager"} == 1)
+      message: Kubermatic Seed Controller Manager has disappeared from Prometheus target discovery.
+      runbook_url: https://docs.kubermatic.com/kubermatic/master/monitoring/runbook/#alert-kubermaticseedcontrollermanagerdown
+    expr: absent(up{job="pods",namespace="kubermatic",app_kubernetes_io_name="kubermatic-seed-controller-manager"} == 1)
     for: 15m
     labels:
       severity: critical
     runbook:
       steps:
       - Check the Prometheus Service Discovery page to find out why the target is unreachable.
-      - Ensure that the controller-manager pod's logs and that it is not crashlooping.
+      - Ensure that the seed-controller-manager pod's logs and that it is not crashlooping.
 
   - alert: OpenVPNServerDown
     annotations:
