@@ -138,10 +138,6 @@ func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration,
 		return err
 	}
 
-	if err := r.reconcileCertificates(config, logger); err != nil {
-		return err
-	}
-
 	if err := r.reconcileAdmissionWebhooks(config, logger); err != nil {
 		return err
 	}
@@ -326,30 +322,6 @@ func (r *Reconciler) reconcileIngresses(config *operatorv1alpha1.KubermaticConfi
 
 	if err := reconciling.ReconcileIngresses(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Ingresses: %v", err)
-	}
-
-	return nil
-}
-
-func (r *Reconciler) reconcileCertificates(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
-	if config.Spec.Ingress.Disable {
-		logger.Debug("Skipping Certificate creation because Ingress creation is disabled")
-		return nil
-	}
-
-	if config.Spec.Ingress.CertificateIssuer.Name == "" {
-		logger.Debug("Skipping Certificate creation because no certificateIssuer has been configured")
-		return nil
-	}
-
-	logger.Debug("Reconciling Certificates")
-
-	creators := []reconciling.NamedCertificateCreatorGetter{
-		kubermatic.CertificateCreator(config),
-	}
-
-	if err := reconciling.ReconcileCertificates(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile Certificates: %v", err)
 	}
 
 	return nil

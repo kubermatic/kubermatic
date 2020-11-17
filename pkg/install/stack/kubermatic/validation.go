@@ -58,10 +58,6 @@ func validateKubermaticConfiguration(config *operatorv1alpha1.KubermaticConfigur
 		if config.Spec.Ingress.Domain == "" {
 			failures = append(failures, errors.New("spec.ingress.domain cannot be left empty"))
 		}
-
-		if config.Spec.Ingress.CertificateIssuer.Name == "" {
-			failures = append(failures, errors.New("spec.ingress.certificateIssuer.name cannot be left empty"))
-		}
 	}
 
 	failures = validateRandomSecret(config, config.Spec.Auth.ServiceAccountKey, "spec.auth.serviceAccountKey", failures)
