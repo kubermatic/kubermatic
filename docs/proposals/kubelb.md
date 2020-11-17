@@ -6,7 +6,7 @@
 
 ## Goals
 
-KubeLB is a provider for multi cluster load balancing and takes the advantages of Kubernetes to do the load balancing. 
+KubeLB is a provider for multi cluster load balancing and service propagation. 
 
 ## Non-Goals
 
@@ -35,7 +35,7 @@ Solutions which are available e.g. MetalLB focus on a single cluster. KubeLB aim
  
 * In a multi cluster environment it can be useful to have a limited amount of entrypoints (Load balancer cluster) inside the network to do some security or monitoring. 
 
-* Make the actual loadbalancer technology pluggable (easy implementation if e.g. someone wants to use nginx over envoy)
+* Make the actual Ingress Controller  pluggable (easy implementation if e.g. someone wants to use nginx over envoy)
 
 * Be able to have the load balancing cluster exist separately from the seed cluster or integrated into it
 
@@ -47,142 +47,89 @@ The overall implementation contains two different parts:
 
 **Manager**: Controller which is responsible for deploying and configuring the resources needed inside the load balancer cluster. Watcher for it's CRD which describes the load balancing endpoints and settings. 
 
-<div style="text-align:center">
-  <img src="images/kubelb-architecture.png" width="100%" />
-</div>
+**Load balancer cluster requirements:**
 
-
-It is required to have a service type "LoadBalancer" implementation on the load balancer cluster. This can be a cloud solution, or some single cluster implementations. 
+* Service type "LoadBalancer" implementation (This can be a cloud solution, or some single cluster implementations)
+ 
+* Ingress controller installation
 
 #### Implementation L4
 
+**Agent**
+
 The agent watches for Services of type LoadBalancer/NodePort in the tenant cluster. In the tenant cluster itself for each service with type LoadBalancer a NodePort is allocated by default. 
-The agent informs the Manager which creates a Service and Endpoint in the LB cluster and adds the node IP addresses of the tenant cluster to the Endpoint IP addresses there. The agent watches for node changes like "remove", "add" and failures and will update the IP list in the Endpoint accordingly.
-Evaluation for failing node detection, so it is fast enough and meet our requirements. If not we need to do some active health checks.
+The agent creates a TCPLoadBalancer CRD inside the LB cluster. 
  
-For IaaS type load balancers: The controller will use the provisioned load balancers endpoint as its own endpoint.
-For non implemented type load balancers: The controller will update the Status and IP of the Service in the tenant cluster, when the LB is provisioned or changed.
-
-Kubernetes will forward the traffic from the Service on the LB cluster to one of the endpoint IPs and the port.
-
-Example Configuration LB Cluster:
-
-```yaml
-apiVersion: v1
-kind: Service
-metadata:
-  name: hello-svc
-spec:
-  type: LoadBalancer / ClusterIP 
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 80
-    name: http
----
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: hello-svc
-subsets:
-- addresses:
-  - ip: 10.0.0.1 #Node-1 address 
-  - ip: 10.0.0.2 #Node-2 address
-  ports:
-  - name: http
-    port: 80
-    protocol: TCP
-```
+The agent watches for node changes like "remove", "add" and failures and will update all TCPLoadBalancer CRD accordingly. 
 
 
-#### kube-proxy
+There are different scenarios where the agent takes action, dependent on the service type and LoadBalancer implementation:
 
-Kube-proxy is responsible for the behaviour of kubernetes services. Since we use these services it might be interesting to take some extra configuration.
+1. Type NodePort services: 
+
+    Use this annotation to let the agent take action and create a LoadBalancer for this service.
+
+    `kubernetes.io/service.class: kubelb`
+ 
+2. For IaaS type load balancers:
+
+    The controller will use the provisioned load balancers endpoint as its own endpoint.
+    This also needs the Annotation described above to enable it.
+    
+3. For non implemented type load balancers
+    
+    The controller will update the Status and IP of the Service in the tenant cluster, when the LB is provisioned or changed.
+    The agent takes action by default and replaces the needs of a LoadBalancer implementation for each tenant cluster.
+
+**Manager** 
+
+The Manager watches for the TCPLoadBalancer CRD and creates an Envoy deployment and Service of type LoadBalancer in the LB cluster. Envoy gets configured with the node endpoints of the tenant cluster.
+
+Envoy will serve as a LoadBalancer instance due to its Control Plane mechanism and Cluster focus. For instance if a cluster changes its node size it is required to update all endpoints which are referred to this cluster.
+This can be done in a preformat manner with envoy.
+
+**Notes**
+
+* It is possible to set `externalTrafficPolicy: Local` and reduce the amount of hops for the tenant cluster. However, it's not clear if its possible to preserve the client ip yet and its probably bound to Load Balancer used for the LB Cluster. 
+
+* Kube-proxy is responsible for the behaviour of kubernetes services. Since we rely on these services inside the tenant cluster, it might be interesting to take some extra configuration.
 This is possible for kube-proxy which offers for example different proxy-modes (userspace, iptables or ipvs) which implement different load balancing mechanisms.
 IPVS mode offers the most options for balancing traffic to backend pods.
+
+<div style="text-align:center">
+  <img src="images/kubelb-l4.png" width="100%" />
+</div>
 
 
 #### Implementation L7
 
-The agent will watch for the Ingress resource and configures the CRD inside the load balancing cluster accordingly.
-The manager will create the Service as described in the L4 Implementation and HTTPProxy resource. This takes the advantage of contour to manage different domains and configure envoy.
+**Agent**
 
-On the tenant cluster:
-```yaml
-apiVersion: extensions/v1beta1
-kind: Ingress
-metadata:
-  name: hello-svc
-  annotations:
-    kubelb.expose: extern / intern
-spec:
-  rules:
-  - http:
-      paths:
-      - path: /testpath
-        backend:
-          serviceName: test
-          servicePort: 80
-```
+The agent will watch for the Ingress resources and will ensure that the backend service, used by the ingress resource, is exposed to the LB Cluster. This is done by creating a copy of the service if it's of type ClusterIP.
+Then the agent creates a TCPLoadBalancer CRD for the Service exposed by the tenant cluster, and a HTTPLoadBalancer CRD for the Ingress resources inside the LB cluster.
 
-For the LB cluster:
-```yaml
-    apiVersion: projectcontour.io/v1
-    kind: HTTPProxy
-    metadata:
-      name: hello-svc
-      namespace: clustername
-    spec:
-      virtualhost:
-        fqdn: INGRESS.CLUSTERNAME.lb.example.net
-      routes:
-        - conditions:
-          - prefix: /
-          services:
-            - name: hello-svc
-              port: 80
-    ---
-    apiVersion: v1
-    kind: Service
-    metadata:
-      name: hello-svc
-      namespace: clustername
-    spec:
-      type: ClusterIP
-      ports:
-      - protocol: TCP
-        port: 80
-        targetPort: 80
-        name: http
-    ---
-    apiVersion: v1
-    kind: Endpoints
-    metadata:
-      name: hello-svc
-      namespace: clustername
-    subsets:
-    - addresses:
-      - ip: 10.0.0.1 #Node-1 address 
-      - ip: 10.0.0.2 #Node-2 address
-      ports:
-      - name: http
-        port: 80
-        protocol: TCP
-```
+**Manager**
 
+The manager watches both CRD's and creates an TCP LoadBalancer like it's describe in the Implementation L4 section, with the difference that the load balancer service is of type ClusterIp and not exposed by default.
+Out of the HTTPLoadBalancer CRD the manager creates an Ingress resource itself inside the LB Cluster and use the previously created TCP load balancer service as backend. This requires and ingress controller to be installed inside the LB Cluster.
 
-#### Envoy & Contour
+**DNS and Domain**
 
-On the LB cluster Envoy & Contour are installed. When the controller creates a new HTTPProxy resource, Contour will configure Envoy automatically to process the traffic of the domain.
 The LB cluster will have a domain assigned e.g. lb.example.com each cluster will have a dedicated subdomain CLUSTERNAME.lb.example.net. For an Ingress on the tenant cluster a subdomain will be created based on the pattern INGRESS.CLUSTERNAME.lb.example.net The user can reference this URL in his DNS as a CNAME for a customer URL e.g. example.com -> CNAME INGRESS.CLUSTERNAME.lb.example.net 
-To enable envoy to forward the customer URL, in the Ingress both URLs must set.
-Envoy will forward the traffic based on the HTTPProxy to the service and Kubernetes will forward the traffic from the service on the LB cluster to the Endpoints of the tenant cluster. 
 
-This is not necessarily needed for L4 implementation but can be used to reduce costs of external LoadBalancer instances, since the L4 services can share one entrypoint with different ports. So it can be of Type ClusterIP with envoy infront or directly of type LoadBalancer.
+**Notes**
 
-#### TLS and Certificates
+* It could make sense to use [Contour](https://projectcontour.io/) as an ingress controller since it aims for multi-team ingress delegation, which can be used for multiple clusters instead of teams.
+However, this requires some extra implementation steps because it makes use of its own CRD called HTTPProxy to provide the extra configuration possibilities. 
 
-Limited to envoy/contour and external load balancer implementations
+<div style="text-align:center">
+  <img src="images/kubelb-l7.png" width="100%" />
+</div>
+
+
+**TLS and Certificates**
+
+Limited to envoy, Ingres Controller and external load balancer implementations
 
 ## Alternatives considered
 
@@ -192,6 +139,6 @@ Single cluster implementation for service type "LoadBalancer"
 * [Porter](https://github.com/kubesphere/porter)
 * [KubeViP](https://kube-vip.io/)
 
+Cilium's [Maglev](https://cilium.io/blog/2020/11/10/cilium-19#maglev) implementation.
 
 Multi cluster networking by GKE with [Anthos](https://cloud.google.com/kubernetes-engine/docs/concepts/ingress-for-anthos) - Cloud only Solution 
-
