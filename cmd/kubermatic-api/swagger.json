@@ -13075,13 +13075,19 @@
       "type": "object",
       "properties": {
         "apiGroups": {
-          "description": "APIGroups specifies the APIGroup of the resource",
-          "type": "string",
+          "description": "APIGroups specifies the APIGroups of the resources",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "x-go-name": "APIGroups"
         },
         "kinds": {
-          "description": "Kinds specifies the kind of the resource",
-          "type": "string",
+          "description": "Kinds specifies the kinds of the resources",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "x-go-name": "Kinds"
         }
       },
