@@ -17,11 +17,13 @@ limitations under the License.
 package reconciling
 
 import (
+	"context"
 	"fmt"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
+	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -235,5 +237,38 @@ func DefaultCronJob(creator CronJobCreator) CronJobCreator {
 		}
 
 		return cj, nil
+	}
+}
+
+// SetRunningReplicasNumberIfExistsWrapper creates object modifier that sets replicas
+// number to match what is configured in a deployment if it exists.
+func SetRunningReplicasNumberIfExistsWrapper(ctx context.Context, client ctrlruntimeclient.Client) ObjectModifier {
+	return func(create ObjectCreator) ObjectCreator {
+		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+			obj, err := create(existing)
+			if err != nil {
+				return obj, err
+			}
+			switch o := obj.(type) {
+			case *appsv1.Deployment:
+				deployed := &appsv1.Deployment{}
+				key := ctrlruntimeclient.ObjectKey{
+					Namespace: o.Namespace,
+					Name:      o.Name,
+				}
+				if err := client.Get(ctx, key, deployed); err != nil {
+					if kubeerrors.IsNotFound(err) {
+						return obj, nil
+					}
+					return nil, fmt.Errorf("failed to get Deployment %+v: %v", key, err)
+				}
+				if v := deployed.Spec.Replicas; v != nil {
+					o.Spec.Replicas = v
+				}
+				return o, nil
+			default:
+				return o, fmt.Errorf(`type %q is not supported by SetRunningReplicasNumberIfExistsModifier`, o.GetObjectKind().GroupVersionKind())
+			}
+		}
 	}
 }
