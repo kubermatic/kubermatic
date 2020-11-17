@@ -28,6 +28,7 @@ spec:
       labels:
         role: kubermatic-api
         version: v1
+        app.kubernetes.io/name: kubermatic-api
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '8085'

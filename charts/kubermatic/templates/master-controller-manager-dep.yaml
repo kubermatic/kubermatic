@@ -28,6 +28,7 @@ spec:
     metadata:
       labels:
         app: master-controller
+        app.kubernetes.io/name: kubermatic-master-controller-manager
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '8085'
