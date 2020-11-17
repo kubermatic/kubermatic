@@ -24,7 +24,7 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
@@ -206,7 +206,7 @@ func (r *reconciler) reconcileRoles(log *zap.SugaredLogger, oldRole *rbacv1.Role
 func enqueueTemplateRoles(client ctrlruntimeclient.Client) *handler.EnqueueRequestsFromMapFunc {
 	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		roleList := &rbacv1.RoleList{}
-		if err := client.List(context.Background(), roleList, ctrlruntimeclient.MatchingLabels{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(v1.NamespaceSystem)); err != nil {
+		if err := client.List(context.Background(), roleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(v1.NamespaceSystem)); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Roles: %v", err))
 			return []reconcile.Request{}
 		}

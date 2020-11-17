@@ -90,6 +90,22 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/nodes/upgrades").
 		Handler(r.upgradeClusterNodeDeployments())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/clusterroles").
+		Handler(r.listClusterRole())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/clusterrolenames").
+		Handler(r.listClusterRoleNames())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/roles").
+		Handler(r.listRole())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/rolenames").
+		Handler(r.listRoleNames())
+
 	// Defines a set of HTTP endpoint for machine deployments that belong to a cluster
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clusters/{cluster_id}/machinedeployments").
@@ -1437,6 +1453,106 @@ func (r Routing) deleteMachineDeployment() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(machine.DeleteMachineDeployment(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		machine.DecodeDeleteMachineDeployment,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles project listClusterRoleV2
+//
+//     Lists all ClusterRoles
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ClusterRole
+//       401: empty
+//       403: empty
+func (r Routing) listClusterRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListClusterRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeListClusterRoleReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterrolenames project listClusterRoleNamesV2
+//
+//     Lists all ClusterRoles
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ClusterRoleName
+//       401: empty
+//       403: empty
+func (r Routing) listClusterRoleNames() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListClusterRoleNamesEndpoint(r.userInfoGetter)),
+		cluster.DecodeListClusterRoleReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/roles project listRoleV2
+//
+//     Lists all Roles
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Role
+//       401: empty
+//       403: empty
+func (r Routing) listRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListRoleEndpoint(r.userInfoGetter)),
+		cluster.DecodeListClusterRoleReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rolenames project listRoleNamesV2
+//
+//     Lists all Role names with namespaces
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []RoleName
+//       401: empty
+//       403: empty
+func (r Routing) listRoleNames() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.ListRoleNamesEndpoint(r.userInfoGetter)),
+		cluster.DecodeListClusterRoleReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

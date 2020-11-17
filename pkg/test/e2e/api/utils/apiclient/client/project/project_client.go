@@ -133,6 +133,10 @@ type ClientService interface {
 
 	ListClusterRoleNames(params *ListClusterRoleNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleNamesOK, error)
 
+	ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleNamesV2OK, error)
+
+	ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleV2OK, error)
+
 	ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersOK, error)
 
 	ListClustersForProject(params *ListClustersForProjectParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersForProjectOK, error)
@@ -174,6 +178,10 @@ type ClientService interface {
 	ListRoleBinding(params *ListRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleBindingOK, error)
 
 	ListRoleNames(params *ListRoleNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListRoleNamesOK, error)
+
+	ListRoleNamesV2(params *ListRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListRoleNamesV2OK, error)
+
+	ListRoleV2(params *ListRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListRoleV2OK, error)
 
 	ListSSHKeys(params *ListSSHKeysParams, authInfo runtime.ClientAuthInfoWriter) (*ListSSHKeysOK, error)
 
@@ -2055,6 +2063,74 @@ func (a *Client) ListClusterRoleNames(params *ListClusterRoleNamesParams, authIn
 }
 
 /*
+  ListClusterRoleNamesV2 Lists all ClusterRoles
+*/
+func (a *Client) ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleNamesV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListClusterRoleNamesV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listClusterRoleNamesV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterrolenames",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListClusterRoleNamesV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListClusterRoleNamesV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClusterRoleNamesV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListClusterRoleV2 Lists all ClusterRoles
+*/
+func (a *Client) ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListClusterRoleV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listClusterRoleV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListClusterRoleV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListClusterRoleV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClusterRoleV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListClusters lists clusters for the specified project and data center
 */
 func (a *Client) ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersOK, error) {
@@ -2769,6 +2845,74 @@ func (a *Client) ListRoleNames(params *ListRoleNamesParams, authInfo runtime.Cli
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListRoleNamesDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListRoleNamesV2 Lists all Role names with namespaces
+*/
+func (a *Client) ListRoleNamesV2(params *ListRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListRoleNamesV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListRoleNamesV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listRoleNamesV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rolenames",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListRoleNamesV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListRoleNamesV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListRoleNamesV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListRoleV2 Lists all Roles
+*/
+func (a *Client) ListRoleV2(params *ListRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListRoleV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListRoleV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listRoleV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/roles",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListRoleV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListRoleV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListRoleV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

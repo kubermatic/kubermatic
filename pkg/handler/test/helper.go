@@ -30,6 +30,9 @@ import (
 	"testing"
 	"time"
 
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	rbacv1 "k8s.io/api/rbac/v1"
+
 	ver "github.com/Masterminds/semver"
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -1252,4 +1255,37 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 	}
 
 	return ct
+}
+
+func GenDefaultRole(name, namespace string) *rbacv1.Role {
+	return &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+			Namespace: namespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs:     []string{"get"},
+				APIGroups: []string{""},
+				Resources: []string{"pod"},
+			},
+		},
+	}
+}
+
+func GenDefaultClusterRole(name string) *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs:     []string{"get", "list"},
+				APIGroups: []string{""},
+				Resources: []string{"pod"},
+			},
+		},
+	}
 }
