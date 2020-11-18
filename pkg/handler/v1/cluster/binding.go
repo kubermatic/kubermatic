@@ -66,7 +66,7 @@ func BindUserToRoleEndpoint(projectProvider provider.ProjectProvider, privileged
 		}
 
 		roleBindingList := &rbacv1.RoleBindingList{}
-		if err := client.List(ctx, roleBindingList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterBindingComponentValue}, ctrlruntimeclient.InNamespace(req.Namespace)); err != nil {
+		if err := client.List(ctx, roleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: UserClusterBindingComponentValue}, ctrlruntimeclient.InNamespace(req.Namespace)); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -145,7 +145,7 @@ func UnbindUserFromRoleBindingEndpoint(projectProvider provider.ProjectProvider,
 		}
 
 		roleBindingList := &rbacv1.RoleBindingList{}
-		if err := client.List(ctx, roleBindingList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterBindingComponentValue}, ctrlruntimeclient.InNamespace(req.Namespace)); err != nil {
+		if err := client.List(ctx, roleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: UserClusterBindingComponentValue}, ctrlruntimeclient.InNamespace(req.Namespace)); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -259,7 +259,7 @@ func ListRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilege
 		if err := client.List(
 			ctx,
 			roleBindingList,
-			ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterBindingComponentValue},
+			ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: UserClusterBindingComponentValue},
 		); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -291,7 +291,7 @@ func BindUserToClusterRoleEndpoint(projectProvider provider.ProjectProvider, pri
 		}
 
 		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-		if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterBindingComponentValue}); err != nil {
+		if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: UserClusterBindingComponentValue}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -367,7 +367,7 @@ func UnbindUserFromClusterRoleBindingEndpoint(projectProvider provider.ProjectPr
 		}
 
 		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-		if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterBindingComponentValue}); err != nil {
+		if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: UserClusterBindingComponentValue}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -471,7 +471,7 @@ func ListClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, pr
 		}
 
 		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-		if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterBindingComponentValue}); err != nil {
+		if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: UserClusterBindingComponentValue}); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
@@ -508,7 +508,7 @@ func generateRBACRoleBinding(ctx context.Context, client ctrlruntimeclient.Clien
 	roleBinding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("%s:%s", rand.String(10), roleName),
-			Labels:    map[string]string{UserClusterComponentKey: UserClusterBindingComponentValue},
+			Labels:    map[string]string{handlercommon.UserClusterComponentKey: UserClusterBindingComponentValue},
 			Namespace: namespace,
 		},
 		RoleRef: rbacv1.RoleRef{

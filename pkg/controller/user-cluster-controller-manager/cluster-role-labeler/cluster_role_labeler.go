@@ -23,7 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -100,14 +100,14 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRole *rbacv1.Clust
 		clusterRole.Labels = map[string]string{}
 	}
 
-	if value, ok := clusterRole.Labels[cluster.UserClusterComponentKey]; ok {
-		if value == cluster.UserClusterRoleComponentValue {
-			log.Debug("label ", cluster.UserClusterRoleLabelSelector, " exists, not updating cluster role: ", clusterRole.Name)
+	if value, ok := clusterRole.Labels[handlercommon.UserClusterComponentKey]; ok {
+		if value == handlercommon.UserClusterRoleComponentValue {
+			log.Debug("label ", handlercommon.UserClusterRoleLabelSelector, " exists, not updating cluster role: ", clusterRole.Name)
 			return nil
 		}
 	}
 
-	clusterRole.Labels[cluster.UserClusterComponentKey] = cluster.UserClusterRoleComponentValue
+	clusterRole.Labels[handlercommon.UserClusterComponentKey] = handlercommon.UserClusterRoleComponentValue
 
 	if err := r.client.Patch(r.ctx, clusterRole, ctrlruntimeclient.MergeFrom(oldClusterRole)); err != nil {
 		return fmt.Errorf("failed to update cluster role: %v", err)

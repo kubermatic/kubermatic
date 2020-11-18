@@ -22,7 +22,7 @@ import (
 
 	"github.com/go-test/deep"
 
-	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -51,7 +51,7 @@ func TestReconcile(t *testing.T) {
 				Name: "view",
 			}},
 			requestName:    "view",
-			expectedLabels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+			expectedLabels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 		},
 		{
 			name: "label added to edit cluster role",
@@ -59,7 +59,7 @@ func TestReconcile(t *testing.T) {
 				Name: "edit",
 			}},
 			requestName:    "edit",
-			expectedLabels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+			expectedLabels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 		},
 		{
 			name: "label added to admin cluster role",
@@ -67,7 +67,7 @@ func TestReconcile(t *testing.T) {
 				Name: "admin",
 			}},
 			requestName:    "admin",
-			expectedLabels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+			expectedLabels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 		},
 	}
 

@@ -22,7 +22,7 @@ import (
 	"testing"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
@@ -60,7 +60,7 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "kube-system",
-						Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 				},
 			},
@@ -70,7 +70,7 @@ func TestReconcile(t *testing.T) {
 						Name:              "view",
 						Namespace:         "kube-system",
 						Finalizers:        []string{kubermaticapiv1.UserClusterRoleCleanupFinalizer},
-						Labels:            map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:            map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 						DeletionTimestamp: &nowTime,
 					},
 				},
@@ -78,14 +78,14 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "default",
-						Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 				},
 				&rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "test",
-						Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 				},
 				&corev1.Namespace{
@@ -109,21 +109,21 @@ func TestReconcile(t *testing.T) {
 						Name:       "view",
 						Namespace:  "kube-system",
 						Finalizers: []string{kubermaticapiv1.UserClusterRoleCleanupFinalizer},
-						Labels:     map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:     map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "default",
-						Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "test",
-						Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 				},
 			},
@@ -131,7 +131,7 @@ func TestReconcile(t *testing.T) {
 				&rbacv1.Role{ObjectMeta: metav1.ObjectMeta{
 					Name:      "view",
 					Namespace: "kube-system",
-					Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+					Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 				}},
 				&corev1.Namespace{
 					ObjectMeta: metav1.ObjectMeta{Name: "default"},
@@ -154,7 +154,7 @@ func TestReconcile(t *testing.T) {
 						Name:       "view",
 						Namespace:  "kube-system",
 						Finalizers: []string{kubermaticapiv1.UserClusterRoleCleanupFinalizer},
-						Labels:     map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:     map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -168,7 +168,7 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "default",
-						Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -182,7 +182,7 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "test",
-						Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -199,7 +199,7 @@ func TestReconcile(t *testing.T) {
 						Name:       "view",
 						Namespace:  "kube-system",
 						Finalizers: []string{kubermaticapiv1.UserClusterRoleCleanupFinalizer},
-						Labels:     map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:     map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -213,14 +213,14 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "default",
-						Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 				},
 				&rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "test",
-						Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 				},
 				&corev1.Namespace{
@@ -244,7 +244,7 @@ func TestReconcile(t *testing.T) {
 						Name:       "view",
 						Namespace:  "kube-system",
 						Finalizers: []string{kubermaticapiv1.UserClusterRoleCleanupFinalizer},
-						Labels:     map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:     map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -258,7 +258,7 @@ func TestReconcile(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "view",
 						Namespace: "default",
-						Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -275,7 +275,7 @@ func TestReconcile(t *testing.T) {
 						Name:       "view",
 						Namespace:  "kube-system",
 						Finalizers: []string{kubermaticapiv1.UserClusterRoleCleanupFinalizer},
-						Labels:     map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue},
+						Labels:     map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 					},
 					Rules: []rbacv1.PolicyRule{
 						{
@@ -326,7 +326,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			existingRoleList := &rbacv1.RoleList{}
-			if err := r.client.List(r.ctx, existingRoleList, ctrlruntimeclient.MatchingLabels{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue}); err != nil {
+			if err := r.client.List(r.ctx, existingRoleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}); err != nil {
 				t.Fatalf("failed to get role: %v", err)
 			}
 

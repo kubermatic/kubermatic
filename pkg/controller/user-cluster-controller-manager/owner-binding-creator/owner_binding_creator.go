@@ -23,6 +23,7 @@ import (
 	"go.uber.org/zap"
 
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
 
 	corev1 "k8s.io/api/core/v1"
@@ -71,11 +72,11 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, owner
 	}
 
 	// Watch for changes to ClusterRoles
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByLabel(cluster.UserClusterComponentKey, cluster.UserClusterRoleComponentValue)); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestForObject{}, predicateutil.ByLabel(handlercommon.UserClusterComponentKey, handlercommon.UserClusterRoleComponentValue)); err != nil {
 		return fmt.Errorf("failed to establish watch for the ClusterRoles %v", err)
 	}
 	// Watch for changes to ClusterRoleBindings
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, enqueueAPIBindings(mgr.GetClient()), predicateutil.ByLabel(cluster.UserClusterComponentKey, cluster.UserClusterBindingComponentValue)); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, enqueueAPIBindings(mgr.GetClient()), predicateutil.ByLabel(handlercommon.UserClusterComponentKey, cluster.UserClusterBindingComponentValue)); err != nil {
 		return fmt.Errorf("failed to establish watch for the ClusterRoles %v", err)
 	}
 
@@ -97,7 +98,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRoleName string) error {
 
 	clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-	if err := r.client.List(r.ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue}); err != nil {
+	if err := r.client.List(r.ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: cluster.UserClusterBindingComponentValue}); err != nil {
 		return fmt.Errorf("failed get cluster role binding list %v", err)
 	}
 
@@ -115,7 +116,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRoleName string) e
 		crb := &rbacv1.ClusterRoleBinding{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:   fmt.Sprintf("%s:%s", rand.String(10), clusterRoleName),
-				Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+				Labels: map[string]string{handlercommon.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
 			},
 			RoleRef: rbacv1.RoleRef{
 				APIGroup: rbacv1.GroupName,
@@ -146,7 +147,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, clusterRoleName string) e
 func enqueueAPIBindings(client ctrlruntimeclient.Client) *handler.EnqueueRequestsFromMapFunc {
 	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		clusterRoleList := &rbacv1.ClusterRoleList{}
-		if err := client.List(context.Background(), clusterRoleList, ctrlruntimeclient.MatchingLabels{cluster.UserClusterComponentKey: cluster.UserClusterRoleComponentValue}); err != nil {
+		if err := client.List(context.Background(), clusterRoleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Cluster Roles: %v", err))
 			return []reconcile.Request{}
 		}

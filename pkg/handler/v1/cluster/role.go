@@ -28,6 +28,7 @@ import (
 	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -36,12 +37,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const (
-	UserClusterComponentKey       = "component"
-	UserClusterRoleComponentValue = "userClusterRole"
-	UserClusterRoleLabelSelector  = "component=userClusterRole"
 )
 
 func CreateClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -207,118 +202,28 @@ func DecodeCreateRoleReq(c context.Context, r *http.Request) (interface{}, error
 func ListClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		clusterRoleList := &rbacv1.ClusterRoleList{}
-		if err := client.List(ctx, clusterRoleList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterRoleComponentValue}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return convertInternalClusterRolesToExternal(clusterRoleList), nil
+		return handlercommon.ListClusterRoleEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 	}
 }
 
 func ListClusterRoleNamesEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		clusterRoleList := &rbacv1.ClusterRoleList{}
-		if err := client.List(ctx, clusterRoleList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterRoleComponentValue}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		var clusterRoleNames []apiv1.ClusterRoleName
-		for _, clusterRole := range clusterRoleList.Items {
-			clusterRoleNames = append(clusterRoleNames, apiv1.ClusterRoleName{
-				Name: clusterRole.Name,
-			})
-		}
-		return clusterRoleNames, nil
+		return handlercommon.ListClusterRoleNamesEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 	}
 }
 
 func ListRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		roleList := &rbacv1.RoleList{}
-		if err := client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterRoleComponentValue}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return convertInternalRolesToExternal(roleList), nil
+		return handlercommon.ListRoleEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 	}
 }
 
 func ListRoleNamesEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		cluster, err := clusterProvider.Get(userInfo, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		roleList := &rbacv1.RoleList{}
-		if err := client.List(ctx, roleList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterRoleComponentValue}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return convertRoleNames(roleList), nil
+		return handlercommon.ListRoleNamesEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID)
 	}
 }
 
@@ -730,26 +635,6 @@ func DecodePatchClusterRoleReq(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func convertInternalClusterRolesToExternal(internalClusterRoles *rbacv1.ClusterRoleList) []*apiv1.ClusterRole {
-	var apiClusterRole []*apiv1.ClusterRole
-	if internalClusterRoles != nil {
-		for _, clusterRole := range internalClusterRoles.Items {
-			apiClusterRole = append(apiClusterRole, convertInternalClusterRoleToExternal(clusterRole.DeepCopy()))
-		}
-	}
-	return apiClusterRole
-}
-
-func convertInternalRolesToExternal(internalRoles *rbacv1.RoleList) []*apiv1.Role {
-	var apiClusterRole []*apiv1.Role
-	if internalRoles != nil {
-		for _, clusterRole := range internalRoles.Items {
-			apiClusterRole = append(apiClusterRole, convertInternalRoleToExternal(clusterRole.DeepCopy()))
-		}
-	}
-	return apiClusterRole
-}
-
 // generateRBACClusterRole creates cluster role
 func generateRBACClusterRole(name string, rules []rbacv1.PolicyRule) (*rbacv1.ClusterRole, error) {
 	if rules == nil {
@@ -758,7 +643,7 @@ func generateRBACClusterRole(name string, rules []rbacv1.PolicyRule) (*rbacv1.Cl
 	clusterRole := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
-			Labels: map[string]string{UserClusterComponentKey: UserClusterRoleComponentValue},
+			Labels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 		},
 		Rules: rules,
 	}
@@ -773,7 +658,7 @@ func generateRBACRole(name, namespace string, rules []rbacv1.PolicyRule) (*rbacv
 	clusterRole := &rbacv1.Role{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Labels:    map[string]string{UserClusterComponentKey: UserClusterRoleComponentValue},
+			Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
 			Namespace: namespace,
 		},
 		Rules: rules,
@@ -804,24 +689,4 @@ func convertInternalRoleToExternal(clusterRole *rbacv1.Role) *apiv1.Role {
 		Namespace: clusterRole.Namespace,
 		Rules:     clusterRole.Rules,
 	}
-}
-
-func convertRoleNames(internalRoles *rbacv1.RoleList) []*apiv1.RoleName {
-	var apiRoleName []*apiv1.RoleName
-	roleMap := map[string][]string{}
-	if internalRoles != nil {
-		for _, role := range internalRoles.Items {
-			if roleMap[role.Name] == nil {
-				roleMap[role.Name] = []string{}
-			}
-			roleMap[role.Name] = append(roleMap[role.Name], role.Namespace)
-		}
-	}
-	for name, namespaces := range roleMap {
-		apiRoleName = append(apiRoleName, &apiv1.RoleName{
-			Name:      name,
-			Namespace: namespaces,
-		})
-	}
-	return apiRoleName
 }

@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
@@ -488,7 +489,7 @@ func genDefaultRoleBinding(name, namespace, roleID, userEmail string) *rbacv1.Ro
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+			Labels:    map[string]string{handlercommon.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
 			Namespace: namespace,
 		},
 		Subjects: []rbacv1.Subject{
@@ -507,7 +508,7 @@ func genDefaultGroupRoleBinding(name, namespace, roleID, group string) *rbacv1.R
 	return &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
-			Labels:    map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+			Labels:    map[string]string{handlercommon.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
 			Namespace: namespace,
 		},
 		Subjects: []rbacv1.Subject{
@@ -526,7 +527,7 @@ func genDefaultClusterRoleBinding(name, roleID, userEmail string) *rbacv1.Cluste
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
-			Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+			Labels: map[string]string{handlercommon.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
 		},
 		Subjects: []rbacv1.Subject{
 			{
@@ -544,7 +545,7 @@ func genDefaultGroupClusterRoleBinding(name, roleID, group string) *rbacv1.Clust
 	return &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
-			Labels: map[string]string{cluster.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+			Labels: map[string]string{handlercommon.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
 		},
 		Subjects: []rbacv1.Subject{
 			{

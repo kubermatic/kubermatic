@@ -35,7 +35,6 @@ import (
 	prometheusapi "github.com/prometheus/client_golang/api"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -43,6 +42,7 @@ import (
 	kubermaticfakeclentset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -54,6 +54,7 @@ import (
 	kuberneteswatcher "k8c.io/kubermatic/v2/pkg/watcher/kubernetes"
 
 	corev1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -1252,4 +1253,37 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 	}
 
 	return ct
+}
+
+func GenDefaultRole(name, namespace string) *rbacv1.Role {
+	return &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+			Namespace: namespace,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs:     []string{"get"},
+				APIGroups: []string{""},
+				Resources: []string{"pod"},
+			},
+		},
+	}
+}
+
+func GenDefaultClusterRole(name string) *rbacv1.ClusterRole {
+	return &rbacv1.ClusterRole{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue},
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				Verbs:     []string{"get", "list"},
+				APIGroups: []string{""},
+				Resources: []string{"pod"},
+			},
+		},
+	}
 }
