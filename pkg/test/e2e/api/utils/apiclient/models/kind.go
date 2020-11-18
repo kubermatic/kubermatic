@@ -15,11 +15,11 @@ import (
 // swagger:model Kind
 type Kind struct {
 
-	// APIGroups specifies the APIGroup of the resource
-	APIGroups string `json:"apiGroups,omitempty"`
+	// APIGroups specifies the APIGroups of the resources
+	APIGroups []string `json:"apiGroups"`
 
-	// Kinds specifies the kind of the resource
-	Kinds string `json:"kinds,omitempty"`
+	// Kinds specifies the kinds of the resources
+	Kinds []string `json:"kinds"`
 }
 
 // Validate validates this kind

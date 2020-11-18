@@ -240,7 +240,7 @@ func TestUpdateConstraint(t *testing.T) {
 			name: "scenario 1: update constraint",
 			updateConstraint: func() *kubermaticv1.Constraint {
 				ct := genConstraint("ct1", testNamespace)
-				ct.Spec.Match.Kinds = append(ct.Spec.Match.Kinds, kubermaticv1.Kind{Kinds: "pod", APIGroups: "v1"})
+				ct.Spec.Match.Kinds = append(ct.Spec.Match.Kinds, kubermaticv1.Kind{Kinds: []string{"pod"}, APIGroups: []string{"v1"}})
 				ct.Spec.Match.Scope = "*"
 				return ct
 			}(),
@@ -286,7 +286,7 @@ func genConstraint(name, namespace string) *kubermaticv1.Constraint {
 		ConstraintType: "requiredlabels",
 		Match: kubermaticv1.Match{
 			Kinds: []kubermaticv1.Kind{
-				{Kinds: "namespace", APIGroups: ""},
+				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 			},
 		},
 		Parameters: kubermaticv1.Parameters{

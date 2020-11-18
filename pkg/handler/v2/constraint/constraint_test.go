@@ -141,7 +141,7 @@ func TestGetConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":"namespace"}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
@@ -169,7 +169,7 @@ func TestGetConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":"namespace"}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
@@ -297,7 +297,7 @@ func TestCreateConstraints(t *testing.T) {
 			},
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":"namespace"}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
@@ -329,7 +329,7 @@ func TestCreateConstraints(t *testing.T) {
 			},
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":"namespace"}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
@@ -405,8 +405,8 @@ func TestPatchConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			Patch:            `{"spec":{"constraintType":"somethingdifferentthatshouldnotbeapplied","match":{"kinds":[{"kinds":"pods", "apiGroups":"v1"}, {"kinds":"namespaces"}]}}}`,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":"pods","apiGroups":"v1"},{"kinds":"namespaces"}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			Patch:            `{"spec":{"constraintType":"somethingdifferentthatshouldnotbeapplied","match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":["namespaces"]}]}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["pods"],"apiGroups":["v1"]},{"kinds":["namespaces"]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
@@ -419,7 +419,7 @@ func TestPatchConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			Patch:            `{"spec":{"constraintType":"somethingdifferentthatshouldnotbeapplied","match":{"kinds":[{"kinds":"pods", "apiGroups":"v1"}, {"kinds":"namespaces"}]}}}`,
+			Patch:            `{"spec":{"constraintType":"somethingdifferentthatshouldnotbeapplied","match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":"namespaces"}]}}}`,
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
@@ -433,8 +433,8 @@ func TestPatchConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			Patch:            `{"spec":{"constraintType":"somethingdifferentthatshouldnotbeapplied","match":{"kinds":[{"kinds":"pods", "apiGroups":"v1"}, {"kinds":"namespaces"}]}}}`,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":"pods","apiGroups":"v1"},{"kinds":"namespaces"}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			Patch:            `{"spec":{"constraintType":"somethingdifferentthatshouldnotbeapplied","match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":["namespaces"]}]}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["pods"],"apiGroups":["v1"]},{"kinds":["namespaces"]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
@@ -476,7 +476,7 @@ func genConstraint(name, namespace string) *kubermaticv1.Constraint {
 		ConstraintType: "requiredlabels",
 		Match: kubermaticv1.Match{
 			Kinds: []kubermaticv1.Kind{
-				{Kinds: "namespace", APIGroups: ""},
+				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 			},
 		},
 		Parameters: kubermaticv1.Parameters{
@@ -500,7 +500,7 @@ func genDefaultConstraint(name string) apiv2.Constraint {
 			ConstraintType: "requiredlabels",
 			Match: kubermaticv1.Match{
 				Kinds: []kubermaticv1.Kind{
-					{Kinds: "namespace", APIGroups: ""},
+					{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 				},
 			},
 			Parameters: kubermaticv1.Parameters{

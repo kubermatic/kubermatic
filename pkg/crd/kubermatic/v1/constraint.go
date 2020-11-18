@@ -68,10 +68,10 @@ type Match struct {
 
 // Kind specifies the resource Kind and APIGroup
 type Kind struct {
-	// Kinds specifies the kind of the resource
-	Kinds string `json:"kinds,omitempty"`
-	// APIGroups specifies the APIGroup of the resource
-	APIGroups string `json:"apiGroups,omitempty"`
+	// Kinds specifies the kinds of the resources
+	Kinds []string `json:"kinds,omitempty"`
+	// APIGroups specifies the APIGroups of the resources
+	APIGroups []string `json:"apiGroups,omitempty"`
 }
 
 // Parameters specifies the parameters used by the constraint template REGO
