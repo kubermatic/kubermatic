@@ -175,7 +175,6 @@ func convertInternalClusterRoleToExternal(clusterRole *rbacv1.ClusterRole) *apiv
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                clusterRole.Name,
 			Name:              clusterRole.Name,
-			DeletionTimestamp: nil,
 			CreationTimestamp: apiv1.NewTime(clusterRole.CreationTimestamp.Time),
 		},
 		Rules: clusterRole.Rules,
