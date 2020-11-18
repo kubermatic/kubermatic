@@ -18,15 +18,16 @@ package cluster_test
 
 import (
 	"fmt"
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
