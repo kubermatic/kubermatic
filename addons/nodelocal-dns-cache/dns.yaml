@@ -30,7 +30,7 @@ metadata:
     addonmanager.kubernetes.io/mode: EnsureExists
 data:
   Corefile: |
-    cluster.local:53 {
+    {{ .Cluster.Network.DNSDomain }}:53 {
         errors
         cache {
                 success 9984 30
