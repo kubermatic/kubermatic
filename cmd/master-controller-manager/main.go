@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
-	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
+	"k8c.io/kubermatic/v2/pkg/validation"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -49,11 +49,12 @@ const (
 
 type controllerRunOptions struct {
 	internalAddr            string
-	seedvalidationHook      seedvalidation.WebhookOpts
+	seedvalidationHook      validation.WebhookOpts
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 
 	workerName string
+	namespace  string
 }
 
 type controllerContext struct {
@@ -78,11 +79,11 @@ func main() {
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
-	runOpts.seedvalidationHook.AddFlags(flag.CommandLine)
+	runOpts.seedvalidationHook.AddFlags(flag.CommandLine, true)
 	flag.StringVar(&runOpts.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served.")
-	flag.StringVar(&ctrlCtx.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources.")
+	flag.StringVar(&runOpts.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources.")
 	flag.BoolVar(&runOpts.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. "+
 		"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&runOpts.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
@@ -100,6 +101,7 @@ func main() {
 	kubermaticlog.Logger = log
 	ctrlCtx.log = log
 	ctrlCtx.workerName = runOpts.workerName
+	ctrlCtx.namespace = runOpts.namespace
 
 	cli.Hello(log, "Master Controller-Manager", logOpts.Debug)
 
@@ -140,11 +142,11 @@ func main() {
 	ctrlCtx.mgr = mgr
 
 	if err := mgr.Add(pprofOpts); err != nil {
-		log.Fatalw("Failed to add pprof endpoint", zap.Error(err))
+		log.Fatalw("failed to add pprof endpoint", zap.Error(err))
 	}
 
-	// these two getters rely on the ctrlruntime manager being started; they are
-	// only used inside controllers
+	// these two getters rely on the ctrlruntime manager being started; they
+	// are only used inside controllers
 	ctrlCtx.seedsGetter, err = seedsGetterFactory(ctx, mgr.GetClient(), ctrlCtx.namespace)
 	if err != nil {
 		log.Fatalw("failed to construct seedsGetter", zap.Error(err))
@@ -155,9 +157,17 @@ func main() {
 	}
 
 	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
-		if err := setupSeedValidationWebhook(ctx, mgr, log, runOpts, ctrlCtx); err != nil {
-			log.Fatalw("failed to start seed validation webhook", zap.Error(err))
+		if err := runOpts.seedvalidationHook.Configure(mgr.GetWebhookServer()); err != nil {
+			log.Fatalw("failed to configure admission webhook server", zap.Error(err))
 		}
+
+		// Register Seed validation handler
+		h, err := seedValidationHandler(ctx, mgr.GetClient(), runOpts)
+		if err != nil {
+			log.Fatalw("failed to build Seed validation handler", zap.Error(err))
+		}
+		h.SetupWebhookWithManager(mgr)
+
 	} else {
 		log.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
 	}

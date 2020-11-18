@@ -29,6 +29,7 @@ webhooks:
     service:
       name: seed-webhook
       namespace: {{ .Release.Namespace }}
+      path: /validate-kubermatic-k8s-io-seed
   failurePolicy: Fail
   name: seeds.kubermatic.io
   objectSelector:

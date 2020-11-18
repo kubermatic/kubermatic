@@ -32,22 +32,17 @@ import (
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/collectors"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
-	"k8c.io/kubermatic/v2/pkg/util/restmapper"
-	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -127,7 +122,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		}
 	}
 
-	//Register the global error metric. Ensures that runtime.HandleError() increases the error metric
+	// Register the global error metric. Ensures that runtime.HandleError() increases the error metric
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_controller_manager", prometheus.DefaultRegisterer)
 
 	// Default to empty JSON object
@@ -160,55 +155,16 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Failed to get clientProvider", zap.Error(err))
 	}
 
-	if options.seedValidationHook.CertFile != "" && options.seedValidationHook.KeyFile != "" {
-		restMapperCache := restmapper.New()
-		// Creates a new default validator
-		validator, err := seedvalidation.NewDefaultSeedValidator(
-			options.workerName,
-			// We only have a SeedGetter and not a SeedsGetter, so construct a little
-			// wrapper
-			func() (map[string]*kubermaticv1.Seed, error) {
-				seeds := make(map[string]*kubermaticv1.Seed)
-
-				seed, err := seedGetter()
-				if err != nil {
-					// ignore 404 errors so that on new seed clusters the initial
-					// seed CR creation/validation can succeed
-					if kerrors.IsNotFound(err) {
-						return seeds, nil
-					}
-
-					return nil, err
-				}
-
-				seeds[seed.Name] = seed
-				return seeds, nil
-			},
-			// This controller doesn't necessarily have an explicit kubeconfig, most of the time it
-			// runs with in-cluster config. Just return the config from the manager and only allow
-			// our own seed
-			func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
-				if seed.Name != options.dc {
-					return nil, fmt.Errorf("can only return kubeconfig for our own seed (%q), got request for %q", options.dc, seed.Name)
-				}
-				return restMapperCache.Client(mgr.GetConfig())
-			},
-		)
+	if options.validationWebhook.CertFile != "" && options.validationWebhook.KeyFile != "" {
+		if err := options.validationWebhook.Configure(mgr.GetWebhookServer()); err != nil {
+			log.Fatalw("Failed to configure admission webhook server", zap.Error(err))
+		}
+		// Register Seed validation admission webhook
+		h, err := seedValidationHandler(rootCtx, mgr.GetClient(), options)
 		if err != nil {
-			log.Fatalw("failed to create seed validator webhook server: %v", zap.Error(err))
+			log.Fatalw("Failed to build Seed validation handler", zap.Error(err))
 		}
-		seedValidationWebhookServer, err := options.seedValidationHook.Server(
-			rootCtx,
-			log,
-			options.namespace,
-			validator.Validate,
-		)
-		if err != nil {
-			log.Fatalw("Failed to get seedValidationWebhookServer", zap.Error(err))
-		}
-		if err := mgr.Add(seedValidationWebhookServer); err != nil {
-			log.Fatalw("Failed to add seedValidationWebhookServer to mgr", zap.Error(err))
-		}
+		h.SetupWebhookWithManager(mgr)
 	}
 
 	ctrlCtx := &controllerContext{
