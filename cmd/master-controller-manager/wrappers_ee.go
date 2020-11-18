@@ -22,13 +22,11 @@ import (
 	"context"
 	"flag"
 
-	"go.uber.org/zap"
-
 	eemasterctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/master-controller-manager"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 func addFlags(fs *flag.FlagSet) {
@@ -43,6 +41,9 @@ func seedKubeconfigGetterFactory(ctx context.Context, client ctrlruntimeclient.C
 	return eemasterctrlmgr.SeedKubeconfigGetterFactory(ctx, client)
 }
 
-func setupSeedValidationWebhook(ctx context.Context, mgr manager.Manager, log *zap.SugaredLogger, opt controllerRunOptions, ctrlCtx *controllerContext) error {
-	return eemasterctrlmgr.SetupSeedValidationWebhook(ctx, mgr, log, opt.seedvalidationHook, ctrlCtx.namespace, ctrlCtx.seedsGetter, ctrlCtx.seedKubeconfigGetter, opt.workerName)
+func seedValidationHandler(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (seedvalidation.AdmissionHandler, error) {
+	return (&seedvalidation.ValidationHandlerBuilder{}).
+		Client(client).
+		WorkerName(options.workerName).
+		Build(ctx)
 }

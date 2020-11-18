@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
+	"k8c.io/kubermatic/v2/pkg/validation"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -82,7 +82,7 @@ type controllerRunOptions struct {
 	apiServerEndpointReconcilingDisabled             bool
 	controllerManagerDefaultReplicas                 int
 	schedulerDefaultReplicas                         int
-	seedValidationHook                               seedvalidation.WebhookOpts
+	validationWebhook                                validation.WebhookOpts
 	concurrentClusterUpdate                          int
 	addonEnforceInterval                             int
 
@@ -149,7 +149,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
-	c.seedValidationHook.AddFlags(flag.CommandLine)
+	c.validationWebhook.AddFlags(flag.CommandLine, true)
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
