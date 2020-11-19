@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package nodeport_proxy
+package nodeportproxy
 
 import (
 	"bytes"
@@ -90,7 +90,7 @@ func (n *NetworkingTestConfig) newAgnhostPod(ns string) *corev1.Pod {
 		},
 		Spec: corev1.PodSpec{
 			Containers: []corev1.Container{
-				corev1.Container{
+				{
 					Name:            hostTestContainerName,
 					Image:           AgnosImage,
 					Args:            []string{"pause"},

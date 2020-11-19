@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package nodeport_proxy
+package nodeportproxy
 
 // TODO(irozzo) make registries configurable
 const (

@@ -14,13 +14,13 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package nodeport_proxy
+package nodeportproxy
 
 import (
 	"context"
 	"fmt"
 
-	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
@@ -66,10 +66,10 @@ func (n *ServiceJig) CreateNodePortService(name string, nodePort int32, numPods 
 	svc.Spec.Ports[0].NodePort = nodePort
 	n.Log.Debugw("Creating nodeport service", "service", svc)
 	if err := n.Client.Create(context.TODO(), svc); err != nil {
-		errors.Wrap(err, "failed to create service of type nodeport")
+		return nil, errors.Wrap(err, "failed to create service of type nodeport")
 	}
-	Expect(svc).NotTo(BeNil())
-	Expect(ExtractNodePorts(svc)).To(HaveLen(1))
+	gomega.Expect(svc).NotTo(gomega.BeNil())
+	gomega.Expect(ExtractNodePorts(svc)).To(gomega.HaveLen(1))
 
 	// Create service pods
 	rc := n.newRCTemplate(name, n.Namespace, numPods, labels)

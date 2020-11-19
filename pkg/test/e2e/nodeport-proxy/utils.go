@@ -14,14 +14,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package nodeport_proxy
+package nodeportproxy
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	. "github.com/onsi/ginkgo"
+	"github.com/onsi/ginkgo"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -52,7 +52,7 @@ var (
 
 // CreateLogger creates a new Logger.
 func CreateLogger(debug bool) *zap.SugaredLogger {
-	return ctrlzap.NewRaw(ctrlzap.UseDevMode(debug), ctrlzap.WriteTo(GinkgoWriter)).Sugar()
+	return ctrlzap.NewRaw(ctrlzap.UseDevMode(debug), ctrlzap.WriteTo(ginkgo.GinkgoWriter)).Sugar()
 }
 
 // GetClientsOrDie returns the clients used for testing.

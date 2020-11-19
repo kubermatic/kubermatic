@@ -1173,7 +1173,6 @@ presubmits:
     labels:
       preset-docker-pull: "true"
       preset-docker-push: "true"
-      preset-gce: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
     spec:
@@ -1183,7 +1182,7 @@ presubmits:
         command:
         - "./hack/run-nodeport-proxy-e2e-test.sh"
         env:
-        - name: VERSION_TO_TEST
+        - name: KIND_NODE_VERSION
           value: v1.18.10
         securityContext:
           privileged: true

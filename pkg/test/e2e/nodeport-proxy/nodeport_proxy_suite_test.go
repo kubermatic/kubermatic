@@ -16,7 +16,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package nodeport_proxy
+package nodeportproxy
 
 import (
 	"flag"
@@ -66,7 +66,7 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	if !skipCleanup {
-		networkingTest.CleanUp()
-		deployer.CleanUp()
+		Expect(networkingTest.CleanUp()).NotTo(HaveOccurred(), "failed to clean-up networkingTest")
+		Expect(deployer.CleanUp()).NotTo(HaveOccurred(), "failed to clean-up deployer")
 	}
 })
