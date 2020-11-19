@@ -68,17 +68,12 @@ time retry 5 kind create cluster --name "${KIND_CLUSTER_NAME}" --image=kindest/n
 # load nodeport-proxy image
 time retry 5 kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "$KIND_CLUSTER_NAME"
 
-# Get ginkgo
-go get -v github.com/onsi/ginkgo/ginkgo
 # run tests
-ginkgo -v pkg/test/e2e/nodeport-proxy/ \
-    -r randomizeAllSpecs \
-    --randomizeSuites \
-    --failOnPending \
-    --cover \
-    --trace \
-    --race \
-    --progress \
+go test --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
+    --ginkgo.randomizeAllSpecs \
+    --ginkgo.failOnPending \
+    --ginkgo.trace \
+    --ginkgo.progress \
     -- --kubeconfig "${HOME}/.kube/config" \
     --kubermatic-tag "${TAG}" \
-    --skip-cleanup \
+    --debug-log

@@ -77,7 +77,7 @@ func GetClientsOrDie() (ctrlclient.Client, rest.Interface, *rest.Config) {
 		Scheme: scheme,
 	})
 	if err != nil {
-		panic(err)
+		panic(errors.Wrap(err, "failed to create client"))
 	}
 	return c, podRestClient, config
 }
