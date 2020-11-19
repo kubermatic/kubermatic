@@ -51,7 +51,8 @@ require (
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/nelsam/hel v0.0.0-20200611165952-2d829bae0c66 // indirect
 	github.com/oklog/run v1.1.0
-	github.com/onsi/ginkgo v1.14.0
+	github.com/onsi/ginkgo v1.14.2
+	github.com/onsi/gomega v1.10.1
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20200803193800-bcb6432d79b7
 	github.com/packethost/packngo v0.1.1-0.20190410075950-a02c426e4888
 	github.com/pkg/errors v0.9.1
@@ -80,16 +81,17 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.3.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
-	k8s.io/api v0.19.3
+	k8s.io/api v0.19.4
 	k8s.io/apiextensions-apiserver v0.19.3
-	k8s.io/apimachinery v0.19.3
+	k8s.io/apimachinery v0.19.4
 	k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 // git digest for VPA v0.4.0
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.19.3
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.3.0 // indirect
 	k8s.io/kube-aggregator v0.16.4
-	k8s.io/metrics v0.16.4
+	k8s.io/kubectl v0.19.4
+	k8s.io/metrics v0.19.4
 	k8s.io/test-infra v0.0.0-20200220102703-18fae0a00a2c
 	k8s.io/utils v0.0.0-20200731180307-f00132d28269
 	sigs.k8s.io/controller-runtime v0.6.2
