@@ -30,7 +30,6 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -193,10 +192,6 @@ func (n *NetworkingTestConfig) exec(command ...string) (string, string, error) {
 	err := execute("POST", req.URL(), n.Config, nil, &stdout, &stderr, tty)
 
 	return stdout.String(), stderr.String(), err
-}
-
-func (n *NetworkingTestConfig) waitForPodsCreated(d *appsv1.Deployment) ([]string, error) {
-	return WaitForPodsCreated(n.Client, int(*d.Spec.Replicas), d.Namespace, d.Spec.Selector.MatchLabels)
 }
 
 func (n *NetworkingTestConfig) waitForPodsReady(pods ...string) error {
