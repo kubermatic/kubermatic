@@ -27,6 +27,7 @@ spec:
       labels:
         role: controller-manager
         version: v1
+        app.kubernetes.io/name: kubermatic-seed-controller-manager
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '8085'
