@@ -93,6 +93,8 @@ type Reconciler struct {
 	etcdLauncherImage                                string
 	dnatControllerImage                              string
 	concurrentClusterUpdates                         int
+	etcdBackupRestoreController                      bool
+	backupSchedule                                   time.Duration
 
 	oidcCAFile         string
 	oidcIssuerURL      string
@@ -125,6 +127,8 @@ func Add(
 	dockerPullConfigJSON []byte,
 	nodeLocalDNSCacheEnabled bool,
 	concurrentClusterUpdates int,
+	etcdBackupRestoreController bool,
+	backupSchedule time.Duration,
 
 	oidcCAFile string,
 	oidcIssuerURL string,
@@ -161,6 +165,8 @@ func Add(
 		etcdLauncherImage:                                etcdLauncherImage,
 		dnatControllerImage:                              dnatControllerImage,
 		concurrentClusterUpdates:                         concurrentClusterUpdates,
+		etcdBackupRestoreController:                      etcdBackupRestoreController,
+		backupSchedule:                                   backupSchedule,
 
 		externalURL: externalURL,
 		seedGetter:  seedGetter,
@@ -272,7 +278,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 			return client, nil
 		}
 		// Always requeue a cluster after we executed the cleanup.
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClientGetter).CleanupCluster(ctx, log, cluster)
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClientGetter, r.etcdBackupRestoreController).CleanupCluster(ctx, log, cluster)
 	}
 
 	res, err := r.reconcileCluster(ctx, cluster)

@@ -183,7 +183,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		dockerPullConfigJSON:        dockerPullConfigJSON,
 		etcdBackupRestoreController: options.etcdBackupRestoreController,
 		log:                         log,
-		versions:             versions,
+		versions:                    versions,
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

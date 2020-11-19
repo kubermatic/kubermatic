@@ -54,6 +54,7 @@ func (r *Reconciler) getOSData(ctx context.Context, cluster *kubermaticv1.Cluste
 		etcdLauncherImage:   r.etcdLauncherImage,
 		dnatControllerImage: r.dnatControllerImage,
 		externalURL:         r.externalURL,
+		backupSchedule:      r.backupSchedule,
 		seed:                seed.DeepCopy(),
 		versions:            versions,
 

@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -55,6 +56,7 @@ type TemplateData struct {
 	kubermaticImage          string
 	etcdLauncherImage        string
 	dnatControllerImage      string
+	backupSchedule           time.Duration
 	versions                 kubermatic.Versions
 
 	supportsFailureDomainZoneAntiAffinity bool
@@ -89,6 +91,7 @@ func NewTemplateData(
 	kubermaticImage string,
 	etcdLauncherImage string,
 	dnatControllerImage string,
+	backupSchedule time.Duration,
 	supportsFailureDomainZoneAntiAffinity bool,
 	versions kubermatic.Versions) *TemplateData {
 	return &TemplateData{
@@ -108,6 +111,7 @@ func NewTemplateData(
 		kubermaticImage:          kubermaticImage,
 		etcdLauncherImage:        etcdLauncherImage,
 		dnatControllerImage:      dnatControllerImage,
+		backupSchedule:           backupSchedule,
 		versions:                 versions,
 
 		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
@@ -337,6 +341,10 @@ func (d *TemplateData) DNATControllerImage() string {
 		imageWithoutRegistry = strings.Join(dnatControllerImageSplit[1:], "/")
 	}
 	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
+}
+
+func (d *TemplateData) BackupSchedule() time.Duration {
+	return d.backupSchedule
 }
 
 func (d *TemplateData) DNATControllerTag() string {

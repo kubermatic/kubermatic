@@ -26,6 +26,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/ghodss/yaml"
@@ -600,6 +601,7 @@ func TestLoadFiles(t *testing.T) {
 					"quay.io/kubermatic/kubermatic",
 					"quay.io/kubermatic/etcd-launcher",
 					"quay.io/kubermatic/kubeletdnat-controller",
+					20*time.Minute,
 					false,
 					kubermaticVersions,
 				)

@@ -19,6 +19,7 @@ package backup
 import (
 	"context"
 	"fmt"
+	"github.com/pkg/errors"
 	"strings"
 	"time"
 
@@ -89,6 +90,10 @@ type Reconciler struct {
 	// backupContainerImage holds the image used for creating the etcd backup
 	// It must be configurable to cover offline use cases
 	backupContainerImage string
+	// disabled means delete any existing back cronjob, rather than
+	// ensuring they're installed. This is used to permanently delete the backup cronjobs
+	// and disable the controller, usually in favor of the new one (../etcdbackup)
+	disabled bool
 
 	recorder record.EventRecorder
 	versions kubermatic.Versions
@@ -106,6 +111,7 @@ func Add(
 	backupSchedule time.Duration,
 	backupContainerImage string,
 	versions kubermatic.Versions,
+	disabled bool,
 ) error {
 	log = log.Named(ControllerName)
 	if err := validateStoreContainer(storeContainer); err != nil {
@@ -127,6 +133,7 @@ func Add(
 		cleanupContainer:     cleanupContainer,
 		backupScheduleString: backupScheduleString,
 		backupContainerImage: backupContainerImage,
+		disabled:             disabled,
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		versions:             versions,
 	}
@@ -252,11 +259,13 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if cluster.DeletionTimestamp != nil {
 		// Need to cleanup
 		if sets.NewString(cluster.Finalizers...).Has(cleanupFinalizer) {
-			if err := r.Create(ctx, r.cleanupJob(cluster)); err != nil {
-				// Otherwise we end up in a loop when we are able to create the job but not
-				// remove the finalizer.
-				if !kerrors.IsAlreadyExists(err) {
-					return err
+			if !r.disabled {
+				if err := r.Create(ctx, r.cleanupJob(cluster)); err != nil {
+					// Otherwise we end up in a loop when we are able to create the job but not
+					// remove the finalizer.
+					if !kerrors.IsAlreadyExists(err) {
+						return err
+					}
 				}
 			}
 
@@ -275,7 +284,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	// Always add the finalizer first
-	if !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) && !r.disabled {
 		oldCluster := cluster.DeepCopy()
 		kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
 		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
@@ -287,6 +296,9 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return fmt.Errorf("failed to create backup secret: %v", err)
 	}
 
+	if r.disabled {
+		return r.deleteCronJob(ctx, cluster)
+	}
 	return reconciling.ReconcileCronJobs(ctx, []reconciling.NamedCronJobCreatorGetter{r.cronjob(cluster)}, metav1.NamespaceSystem, r.Client)
 }
 
@@ -452,6 +464,22 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) reconciling.NamedCro
 		}
 	}
 
+}
+
+func (r *Reconciler) deleteCronJob(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	name := fmt.Sprintf("%s-%s", cronJobPrefix, cluster.Name)
+	cj := &batchv1beta1.CronJob{}
+	err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: name}, cj)
+	if err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+	if err := r.Delete(ctx, cj, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
+		return errors.Wrapf(err, "failed to delete cronjob %s", name)
+	}
+	return nil
 }
 
 func parseDuration(interval time.Duration) (string, error) {
