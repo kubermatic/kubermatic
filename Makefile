@@ -37,8 +37,6 @@ LDFLAGS_EXTRA=-w
 BUILD_DEST ?= _build
 GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFLAGS_EXTRA)
 GOBUILDIMAGE ?= golang:1.15.1
-CODESPELL_IMAGE ?= quay.io/kubermatic/codespell:1.17.1
-CODESPELL_BIN := $(shell which codespell)
 DOCKER_BIN := $(shell which docker)
 
 default: all
@@ -126,16 +124,7 @@ ifndef DOCKER_BIN
 endif
 
 spellcheck:
-ifndef CODESPELL_BIN
-	$(error "codespell not available in your environment, use spellcheck-in-docker if you have Docker installed.")
-endif
-	$(CODESPELL_BIN) -S *.png,*.po,.git,*.jpg,*.mod,*.sum,*.woff,*.woff2,swagger.json,*/_build/*,*/_dist/*,./vendor/* -I .codespell.exclude -f
-
-spellcheck-in-docker:
-ifndef DOCKER_BIN
-	$(error "Docker not available in your environment, please install it and retry.")
-endif
-	$(DOCKER_BIN) run -it -v ${PWD}:/kubermatic -w /kubermatic $(CODESPELL_IMAGE) make spellcheck
+	./hack/verify-spelling.sh
 
 cover:
 	./hack/cover.sh --html

@@ -14,22 +14,6 @@
 
 presubmits:
 
-  - name: pre-kubermatic-spellcheck
-    always_run: true
-    decorate: true
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    spec:
-      containers:
-      - image: quay.io/kubermatic/codespell:1.17.1
-        command:
-        - make
-        args:
-        - spellcheck
-        resources:
-          requests:
-            memory: 512Mi
-            cpu: 0.5
-
   #########################################################
   # unit tests
   #########################################################
@@ -185,6 +169,22 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+
+  - name: pre-kubermatic-spellcheck
+    always_run: true
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    spec:
+      containers:
+      - image: quay.io/kubermatic/codespell:1.17.1
+        command:
+        - make
+        args:
+        - spellcheck
+        resources:
+          requests:
+            memory: 512Mi
+            cpu: 0.5
 
   - name: pre-kubermatic-dependencies
     run_if_changed: "^(cmd|codegen|hack|pkg|go.mod|go.sum)/"
