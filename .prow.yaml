@@ -1183,7 +1183,7 @@ presubmits:
         - "./hack/run-nodeport-proxy-e2e-test.sh"
         env:
         - name: KIND_NODE_VERSION
-          value: v1.18.10
+          value: v1.18.2
         securityContext:
           privileged: true
         resources:
