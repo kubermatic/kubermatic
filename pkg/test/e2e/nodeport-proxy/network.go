@@ -1,3 +1,19 @@
+/*
+Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package nodeport_proxy
 
 import (
@@ -95,6 +111,8 @@ func (n *NetworkingTestConfig) CleanUp() error {
 	return n.Client.Delete(context.TODO(), n.HostTestContainerPod)
 }
 
+// Based on:
+// https://github.com/mgdevstack/kubernetes/blob/9eced040142454a20255ae323279a38dc6b2bc1a/test/e2e/framework/network/utils.go#L347
 // DialFromNode executes a tcp request based on protocol via kubectl exec
 // in a test container running with host networking.
 // - minTries is the minimum number of curl attempts required before declaring
@@ -151,9 +169,7 @@ func (n *NetworkingTestConfig) DialFromNode(targetIP string, targetPort, maxTrie
 	return diff
 }
 
-// ExecWithOptions executes a command in the specified container,
-// returning stdout, stderr and error. `options` allowed for
-// additional parameters to be passed.
+// exec executes the command in the host network container.
 func (n *NetworkingTestConfig) exec(command ...string) (string, string, error) {
 
 	const tty = false
