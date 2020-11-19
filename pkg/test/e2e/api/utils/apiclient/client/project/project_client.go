@@ -31,7 +31,11 @@ type ClientService interface {
 
 	BindUserToClusterRole(params *BindUserToClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleOK, error)
 
+	BindUserToClusterRoleV2(params *BindUserToClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleV2OK, error)
+
 	BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleOK, error)
+
+	BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleV2OK, error)
 
 	CreateCluster(params *CreateClusterParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterCreated, error)
 
@@ -325,6 +329,40 @@ func (a *Client) BindUserToClusterRole(params *BindUserToClusterRoleParams, auth
 }
 
 /*
+  BindUserToClusterRoleV2 Binds user to cluster role
+*/
+func (a *Client) BindUserToClusterRoleV2(params *BindUserToClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*BindUserToClusterRoleV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewBindUserToClusterRoleV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "bindUserToClusterRoleV2",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &BindUserToClusterRoleV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*BindUserToClusterRoleV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*BindUserToClusterRoleV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   BindUserToRole Binds user to the role
 */
 func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleOK, error) {
@@ -355,6 +393,40 @@ func (a *Client) BindUserToRole(params *BindUserToRoleParams, authInfo runtime.C
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*BindUserToRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  BindUserToRoleV2 Binds user to the role
+*/
+func (a *Client) BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewBindUserToRoleV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "bindUserToRoleV2",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &BindUserToRoleV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*BindUserToRoleV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*BindUserToRoleV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -23,7 +23,6 @@ import (
 	"github.com/go-test/deep"
 
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -57,7 +56,7 @@ func TestReconcile(t *testing.T) {
 			ownerEmail:  "test@test.com",
 			expectedBinding: rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:          map[string]string{handlercommon.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+					Labels:          map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
 					ResourceVersion: "1",
 				},
 				RoleRef: rbacv1.RoleRef{
@@ -84,7 +83,7 @@ func TestReconcile(t *testing.T) {
 			ownerEmail:  "test@test.com",
 			expectedBinding: rbacv1.ClusterRoleBinding{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels:          map[string]string{handlercommon.UserClusterComponentKey: cluster.UserClusterBindingComponentValue},
+					Labels:          map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
 					ResourceVersion: "1",
 				},
 				RoleRef: rbacv1.RoleRef{
@@ -123,7 +122,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-			if err := client.List(context.Background(), clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: cluster.UserClusterBindingComponentValue}); err != nil {
+			if err := client.List(context.Background(), clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue}); err != nil {
 				t.Fatalf("failed to list cluster role bindigs: %v", err)
 			}
 
