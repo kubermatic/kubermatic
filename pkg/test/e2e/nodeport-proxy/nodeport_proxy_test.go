@@ -52,7 +52,7 @@ var _ = Describe("NodeportProxy", func() {
 				By("load-balancing on available endpoints")
 				for _, svc := range svcJig.Services {
 					lbSvc := deployer.GetLbService()
-					Expect(networkingTest.DialFromNode("127.0.0.1", int(FindExposingNodePort(lbSvc, svc.Spec.Ports[0].NodePort)), 5, 1, sets.NewString(svcJig.ServicePods[svc.Name]...))).Should(HaveLen(0), "All exposed endpoints shoud be hit")
+					Expect(networkingTest.DialFromNode("127.0.0.1", int(FindExposingNodePort(lbSvc, svc.Spec.Ports[0].NodePort)), 5, 1, sets.NewString(svcJig.ServicePods[svc.Name]...))).Should(HaveLen(0), "All exposed endpoints should be hit")
 				}
 			})
 		})
@@ -62,8 +62,6 @@ var _ = Describe("NodeportProxy", func() {
 				// nodePort set to 0 so that it gets allocated dynamically.
 				Expect(svcJig.CreateNodePortService("service-a", 0, 1, map[string]string{})).
 					NotTo(BeNil(), "NodePort service creation failed")
-                    :qa
-
 				Expect(svcJig.CreateNodePortService("service-b", 0, 1, map[string]string{envoymanager.DefaultExposeAnnotationKey: "false"})).
 					NotTo(BeNil(), "NodePort service creation failed")
 			})
