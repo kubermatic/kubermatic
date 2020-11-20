@@ -83,7 +83,7 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 
 		// List all diffrerent constraints and convert
 		var apiConstraintList []*apiv2.Constraint
-		for kind, _ := range cKinds {
+		for kind := range cKinds {
 			list := &unstructured.UnstructuredList{}
 			list.SetGroupVersionKind(schema.GroupVersionKind{
 				Group:   ConstraintsGroup,
