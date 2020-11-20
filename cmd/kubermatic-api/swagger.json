@@ -11924,6 +11924,9 @@
         },
         "spec": {
           "$ref": "#/definitions/ConstraintSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/ConstraintStatus"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -11945,6 +11948,28 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "ConstraintStatus": {
+      "description": "ConstraintStatus represents a constraint status which holds audit info",
+      "type": "object",
+      "properties": {
+        "auditTimestamp": {
+          "type": "string",
+          "x-go-name": "AuditTimestamp"
+        },
+        "enforcement": {
+          "type": "string",
+          "x-go-name": "Enforcement"
+        },
+        "violations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Violation"
+          },
+          "x-go-name": "Violations"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ConstraintTemplate": {
       "description": "ConstraintTemplate represents a gatekeeper ConstraintTemplate",
@@ -15800,6 +15825,33 @@
       "type": "object",
       "title": "Version represents a single semantic version.",
       "x-go-package": "github.com/Masterminds/semver"
+    },
+    "Violation": {
+      "description": "Violation represents a gatekeeper constraint violation",
+      "type": "object",
+      "properties": {
+        "enforcementAction": {
+          "type": "string",
+          "x-go-name": "EnforcementAction"
+        },
+        "kind": {
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "message": {
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "type": "string",
+          "x-go-name": "Namespace"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "body": {
       "type": "object",

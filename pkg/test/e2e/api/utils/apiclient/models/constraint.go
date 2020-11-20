@@ -21,6 +21,9 @@ type Constraint struct {
 
 	// spec
 	Spec *ConstraintSpec `json:"spec,omitempty"`
+
+	// status
+	Status *ConstraintStatus `json:"status,omitempty"`
 }
 
 // Validate validates this constraint
@@ -28,6 +31,10 @@ func (m *Constraint) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateSpec(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateStatus(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -47,6 +54,24 @@ func (m *Constraint) validateSpec(formats strfmt.Registry) error {
 		if err := m.Spec.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("spec")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Constraint) validateStatus(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Status) { // not required
+		return nil
+	}
+
+	if m.Status != nil {
+		if err := m.Status.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("status")
 			}
 			return err
 		}
