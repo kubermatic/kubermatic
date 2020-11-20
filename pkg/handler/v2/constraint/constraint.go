@@ -137,7 +137,7 @@ func getConstraintParameters(uc *unstructured.Unstructured) (*v1.Parameters, err
 	parameters := &v1.Parameters{}
 	params, found, err := unstructured.NestedFieldNoCopy(uc.Object, constraintSpecField, constraintParametersField)
 	if err != nil {
-		return parameters, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("errror getting status: %v", err))
+		return parameters, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error getting parameters: %v", err))
 	}
 	if !found {
 		return parameters, nil
@@ -145,7 +145,7 @@ func getConstraintParameters(uc *unstructured.Unstructured) (*v1.Parameters, err
 
 	paramsRaw, err := json.Marshal(params)
 	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("errror marshalling constraint params: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error marshalling constraint params: %v", err))
 	}
 	parameters.RawJSON = string(paramsRaw)
 
@@ -155,19 +155,19 @@ func getConstraintParameters(uc *unstructured.Unstructured) (*v1.Parameters, err
 func getConstraintMatch(uc *unstructured.Unstructured) (*v1.Match, error) {
 	matchUn, _, err := unstructured.NestedFieldNoCopy(uc.Object, constraintSpecField, "match")
 	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("errror getting match: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error getting match: %v", err))
 	}
 
 	match := &v1.Match{}
 
 	matchRaw, err := json.Marshal(matchUn)
 	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("errror marshalling constraint match: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error marshalling constraint match: %v", err))
 	}
 
 	err = json.Unmarshal(matchRaw, match)
 	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("errror unmarshalling constraint match: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error unmarshalling constraint match: %v", err))
 	}
 
 	return match, nil
@@ -176,19 +176,19 @@ func getConstraintMatch(uc *unstructured.Unstructured) (*v1.Match, error) {
 func getConstraintStatus(uc *unstructured.Unstructured) (*apiv2.ConstraintStatus, error) {
 	status, _, err := unstructured.NestedFieldNoCopy(uc.Object, constraintStatusField)
 	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("errror getting status: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error getting status: %v", err))
 	}
 
 	constraintStatus := &apiv2.ConstraintStatus{}
 
 	statusRaw, err := json.Marshal(status)
 	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("errror marshalling constraint status: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error marshalling constraint status: %v", err))
 	}
 
 	err = json.Unmarshal(statusRaw, constraintStatus)
 	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("errror unmarshalling constraint status: %v", err))
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error unmarshalling constraint status: %v", err))
 	}
 
 	return constraintStatus, nil
