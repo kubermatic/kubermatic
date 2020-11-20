@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/apimachinery/pkg/util/wait"
 )
 
 func TestListCredentials(t *testing.T) {
@@ -139,17 +140,41 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 				req.Header.Set("Location", tc.location)
 			}
 
-			client := &http.Client{Timeout: time.Second * 10}
-
-			resp, err := client.Do(req)
-			if err != nil {
-				t.Fatalf("error reading response: %v", err)
+			client := &http.Client{Timeout: time.Second * 5}
+			backoff := wait.Backoff{
+				// With those settings the cumulative sleep duration is ~ 8s
+				// when all attempts are made.
+				Duration: time.Second,
+				Factor:   1.5,
+				Steps:    4,
 			}
-			defer resp.Body.Close()
+			if err := wait.ExponentialBackoff(backoff, func() (bool, error) {
+				resp, err := client.Do(req)
+				if err != nil {
+					if uerr, ok := err.(*url.Error); ok && (uerr.Temporary() || uerr.Timeout()) {
+						return false, nil
+					}
+					t.Logf("unrecoverable error reading response: %v", err)
+					return false, err
+				}
+				defer resp.Body.Close()
 
-			if resp.StatusCode != tc.expectedCode {
-				t.Fatalf("expected code %d, but got %d", tc.expectedCode, resp.StatusCode)
+				if resp.StatusCode == tc.expectedCode {
+					t.Logf("expected code %d, but got %d", tc.expectedCode, resp.StatusCode)
+					return true, nil
+				}
+				// 5xx return codes may be associated to recoverable
+				// conditions, with the exception of 501 (Not implemented)
+				if resp.StatusCode == 0 || (resp.StatusCode >= 500 && resp.StatusCode != 501) {
+					fmt.Errorf("unexpected HTTP status %s", resp.Status)
+					return false, nil
+				}
+				return false, fmt.Errorf("got response with an unexpected status code: %d", resp.StatusCode)
+
+			}); err != nil {
+				t.Errorf("failed to get expected response [%d] from %q endpoint: %v", tc.expectedCode, tc.location, err)
 			}
+
 		})
 	}
 }
