@@ -34,6 +34,7 @@ import (
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/preset"
 )
 
 // RegisterV2 declares all router paths for v2
@@ -434,6 +435,22 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/azure/vnets").
 		Handler(r.listAzureVnets())
+
+	// Define a set of endpoints for preset management
+	mux.Methods(http.MethodGet).
+		Path("/providers/{provider_name}/presets").
+		Handler(r.listPresets())
+
+	mux.Methods(http.MethodPost).
+		Path("/providers/{provider_name}/presets").
+		Handler(r.createPreset())
+
+	mux.Methods(http.MethodPut).
+		Path("/providers/{provider_name}/presets").
+		Handler(r.updatePreset())
+
+	mux.Methods(http.MethodPut).
+		Path("/providers/{provider_name}/presets/{preset_name}")
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -2916,6 +2933,42 @@ func (r Routing) listAzureSubnets() http.Handler {
 		)(provider.AzureSubnetsEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAzureSubnetsReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+func (r Routing) listPresets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.ListPresets(r.presetsProvider, r.userInfoGetter)),
+		preset.DecodeListPresets,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+func (r Routing) createPreset() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.CreatePreset(r.presetsProvider, r.userInfoGetter)),
+		preset.DecodeCreatePreset,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+func (r Routing) updatePreset() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.UpdatePreset(r.presetsProvider, r.userInfoGetter)),
+		preset.DecodeUpdatePreset,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

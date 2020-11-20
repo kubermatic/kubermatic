@@ -710,6 +710,8 @@ type AdminProvider interface {
 
 // PresetProvider declares the set of methods for interacting with presets
 type PresetProvider interface {
+	CreatePreset(userInfo *UserInfo, preset *kubermaticv1.Preset) (string, error)
+	UpdatePreset(userInfo *UserInfo, preset *kubermaticv1.Preset) (string, error)
 	GetPresets(userInfo *UserInfo) ([]kubermaticv1.Preset, error)
 	GetPreset(userInfo *UserInfo, name string) (*kubermaticv1.Preset, error)
 	SetCloudCredentials(userInfo *UserInfo, presetName string, cloud kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter) (*kubermaticv1.CloudSpec, error)
