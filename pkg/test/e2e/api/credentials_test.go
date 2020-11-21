@@ -152,6 +152,7 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 				resp, err := client.Do(req)
 				if err != nil {
 					if uerr, ok := err.(*url.Error); ok && (uerr.Temporary() || uerr.Timeout()) {
+						t.Logf("temporary error reading response: %v", err)
 						return false, nil
 					}
 					t.Logf("unrecoverable error reading response: %v", err)
@@ -172,7 +173,7 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 				return false, fmt.Errorf("got response with an unexpected status code: %d", resp.StatusCode)
 
 			}); err != nil {
-				t.Errorf("failed to get expected response [%d] from %q endpoint: %v", tc.expectedCode, tc.location, err)
+				t.Errorf("failed to get expected response [%d] from %q endpoint: %v", tc.expectedCode, tc.path, err)
 			}
 
 		})
