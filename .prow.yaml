@@ -30,7 +30,7 @@ presubmits:
         command:
         - make
         args:
-        - run-nodeport-proxy-e2e-test-in-kind
+        - test
         resources:
           requests:
             memory: 7Gi
@@ -1182,7 +1182,7 @@ presubmits:
         command:
         - make
         args:
-        - make
+        - run-nodeport-proxy-e2e-test-in-kind
         env:
         - name: KIND_NODE_VERSION
           value: v1.18.2
