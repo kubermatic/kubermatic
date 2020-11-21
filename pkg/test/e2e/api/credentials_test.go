@@ -161,7 +161,6 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 				defer resp.Body.Close()
 
 				if resp.StatusCode == tc.expectedCode {
-					t.Logf("expected code %d, but got %d", tc.expectedCode, resp.StatusCode)
 					return true, nil
 				}
 				// 5xx return codes may be associated to recoverable
