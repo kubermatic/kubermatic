@@ -145,15 +145,15 @@ func (n *ServiceJig) newRCTemplate(name, namespace string, replicas int32, label
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
-							Name:  "netexec",
-							Image: NetexecImage,
-							Args:  []string{"--http-port=8080", "--udp-port=8080"},
+							Name:  "agnhost",
+							Image: AgnhostImage,
+							Args:  []string{"serve-hostname", "--port=8080"},
 							ReadinessProbe: &corev1.Probe{
 								PeriodSeconds: 3,
 								Handler: corev1.Handler{
 									HTTPGet: &corev1.HTTPGetAction{
 										Port: intstr.FromInt(8080),
-										Path: "/hostName",
+										Path: "/",
 									},
 								},
 							},

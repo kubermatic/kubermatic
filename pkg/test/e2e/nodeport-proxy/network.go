@@ -91,7 +91,7 @@ func (n *NetworkingTestConfig) newAgnhostPod(ns string) *corev1.Pod {
 			Containers: []corev1.Container{
 				{
 					Name:            hostTestContainerName,
-					Image:           AgnosImage,
+					Image:           AgnhostImage,
 					Args:            []string{"pause"},
 					SecurityContext: &corev1.SecurityContext{},
 					ImagePullPolicy: corev1.PullIfNotPresent,
