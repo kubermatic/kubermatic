@@ -166,7 +166,7 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 				// 5xx return codes may be associated to recoverable
 				// conditions, with the exception of 501 (Not implemented)
 				if resp.StatusCode == 0 || (resp.StatusCode >= 500 && resp.StatusCode != 501) {
-					fmt.Errorf("unexpected HTTP status %s", resp.Status)
+					t.Logf("unexpected HTTP status %s", resp.Status)
 					return false, nil
 				}
 				return false, fmt.Errorf("got response with an unexpected status code: %d", resp.StatusCode)
