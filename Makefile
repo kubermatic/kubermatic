@@ -85,7 +85,7 @@ build-tests:
 	go test -tags "integration,$(KUBERMATIC_EDITION)" -run nope ./pkg/... ./cmd/... ./codegen/...
 
 .PHONY: test-integration
-test-integration : CGO_ENABLED = 1
+test-integration: CGO_ENABLED=1
 test-integration: download-gocache
 	@# Run integration tests and only integration tests by:
 	@# * Finding all files that contain the build tag via grep
@@ -165,6 +165,7 @@ run-master-controller-manager:
 	./hack/run-master-controller-manager.sh
 
 .PHONY: run-nodeport-proxy-e2e-test-in-kind
+run-nodeport-proxy-e2e-test-in-kind: CGO_ENABLED=1
 run-nodeport-proxy-e2e-test-in-kind:
 	./hack/run-nodeport-proxy-e2e-test-in-kind.sh
 

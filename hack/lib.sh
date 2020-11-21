@@ -64,7 +64,7 @@ echodate() {
 }
 
 log_fatal() {
-  echodate
+  echodate "$@"
   exit 1
 }
 
