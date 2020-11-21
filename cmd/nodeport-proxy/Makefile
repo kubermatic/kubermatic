@@ -15,23 +15,24 @@
 DOCKER_REPO ?= "quay.io/kubermatic"
 GOOS ?= $(shell go env GOOS)
 
-default: test build
-
+.PHONY: lb-updater
 lb-updater:
 	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/lb-updater k8c.io/kubermatic/v2/cmd/nodeport-proxy/lb-updater
 
+.PHONY: envoy-manager
 envoy-manager:
 	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/envoy-manager k8c.io/kubermatic/v2/cmd/nodeport-proxy/envoy-manager
 
+.PHONY: build
 build: envoy-manager lb-updater
 
+.PHONY: clean
 clean:
 	rm -f envoy-manager lb-updater
 
+.PHONY: docker
 docker: build
 	docker build -t $(DOCKER_REPO)/nodeport-proxy:$(TAG) .
 
 test:
 	go test ./...
-
-.PHONY: test envoy-manager lb-updater

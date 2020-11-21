@@ -30,7 +30,7 @@ presubmits:
         command:
         - make
         args:
-        - test
+        - run-nodeport-proxy-e2e-test-in-kind
         resources:
           requests:
             memory: 7Gi
@@ -1180,7 +1180,9 @@ presubmits:
       - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.21
         imagePullPolicy: Always
         command:
-        - "./hack/run-nodeport-proxy-e2e-test.sh"
+        - make
+        args:
+        - make
         env:
         - name: KIND_NODE_VERSION
           value: v1.18.2

@@ -39,32 +39,40 @@ GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFL
 GOBUILDIMAGE ?= golang:1.15.1
 DOCKER_BIN := $(shell which docker)
 
-default: all
-
+.PHONY: all
 all: build test
 
-.PHONY: $(CMD)
+.PHONY: build
 build: $(CMD)
 
-$(CMD): download-gocache
-	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $(BUILD_DEST)/$@ ./cmd/$@
+.PHONY: $(CMD)
+$(CMD): %: $(BUILD_DEST)/%
 
+$(BUILD_DEST)/%: cmd/% download-gocache
+	GOOS=$(GOOS) go build -tags "$(KUBERMATIC_EDITION)" $(GOTOOLFLAGS) -o $@ ./cmd/$*
+
+.PHONY: install
 install:
 	go install $(GOTOOLFLAGS) ./cmd/...
 
+.PHONY: showenv
 showenv:
 	@go env
 
+.PHONY: download-cache
 download-gocache:
 	@./hack/ci/download-gocache.sh
 	@# Prevent this from getting executed multiple times
 	@touch download-gocache
 
+.PHONY: test
 test: download-gocache run-tests build-tests
 
+.PHONY:  run-tests
 run-tests:
 	CGO_ENABLED=1 go test -tags "unit,$(KUBERMATIC_EDITION)" -race ./pkg/... ./cmd/... ./codegen/...
 
+.PHONY: build-tests
 build-tests:
 	@# Make sure all e2e tests compile with their individual build tag
 	@# without actually running them by using `-run` with a non-existing test.
@@ -73,8 +81,10 @@ build-tests:
 	go test -tags "cloud,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
 	go test -tags "create,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
 	go test -tags "e2e,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/api/...
+	go test -tags "e2e,$(KUBERMATIC_EDITION)" -run nope ./pkg/test/e2e/nodeport-proxy/...
 	go test -tags "integration,$(KUBERMATIC_EDITION)" -run nope ./pkg/... ./cmd/... ./codegen/...
 
+.PHONY: test-integration
 test-integration : CGO_ENABLED = 1
 test-integration: download-gocache
 	@# Run integration tests and only integration tests by:
@@ -85,6 +95,7 @@ test-integration: download-gocache
 		|xargs dirname \
 		|xargs --max-args=1 -I ^ go test -tags "integration $(KUBERMATIC_EDITION)"  -race ./^
 
+.PHONY: test-update
 test-update:
 	-go test ./pkg/userdata/openshift -update
 	-go test ./pkg/resources/test -update
@@ -93,16 +104,19 @@ test-update:
 	-go test ./pkg/controller/seed-controller-manager/openshift/resources -update
 	-go test ./codegen/openshift_versions -update
 
+.PHONY: clean
 clean:
-	rm -f $(TARGET)
+	rm -rf $(BUILD_DEST)
 	@echo "Cleaned $(BUILD_DEST)"
 
+.PHONY: docker-build
 docker-build: build
 ifndef DOCKER_BIN
 	$(error "Docker not available in your environment, please install it and retry.")
 endif
 	$(DOCKER_BIN) build $(DOCKER_BUILD_FLAG) .
 
+.PHONY: docker-push
 docker-push:
 ifndef DOCKER_BIN
 	$(error "Docker not available in your environment, please install it and retry.")
@@ -112,46 +126,60 @@ endif
 		$(DOCKER_BIN) push $(REPO):$$tag; \
 	done
 
+.PHONY: gittag
 gittag:
 	@echo $(GITTAG)
 
+.PHONY: lint
 lint:
 	./hack/ci/run-lint.sh
 
+.PHONY: shellcheck
 shellcheck:
 ifndef DOCKER_BIN
 	shellcheck $$(find . -name '*.sh')
 endif
 
+.PHONY: spellcheck
 spellcheck:
 	./hack/verify-spelling.sh
 
+.PHONY: cover
 cover:
 	./hack/cover.sh --html
 
+.PHONY: run-controller-manager
 run-controller-manager:
 	./hack/run-controller.sh
 
+.PHONY: run-api-server
 run-api-server:
 	./hack/run-api.sh
 
+.PHONY: run-operator
 run-operator:
 	./hack/run-operator.sh
 
+.PHONY: run-master-controller-manager
 run-master-controller-manager:
 	./hack/run-master-controller-manager.sh
 
+.PHONY: run-nodeport-proxy-e2e-test-in-kind
+run-nodeport-proxy-e2e-test-in-kind:
+	./hack/run-nodeport-proxy-e2e-test-in-kind.sh
+
+.PHONY: verify
 verify:
 	./hack/verify-codegen.sh
 	./hack/verify-swagger.sh
 	./hack/verify-api-client.sh
 
+.PHONY: check-dependencies
 check-dependencies:
 	go mod tidy
 	go mod verify
 	git diff --exit-code
 
+.PHONY: gen-api-client
 gen-api-client:
 	./hack/gen-api-client.sh
-
-.PHONY: build install test cover docker-build docker-push run-controller-manager run-api-server run-rbac-generator test-update-fixture run-tests build-tests $(TARGET)
