@@ -140,7 +140,7 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 				req.Header.Set("Location", tc.location)
 			}
 
-			client := &http.Client{Timeout: time.Second * 5}
+			client := &http.Client{Timeout: time.Second * 10}
 			backoff := wait.Backoff{
 				// With those settings the cumulative sleep duration is ~ 8s
 				// when all attempts are made.
