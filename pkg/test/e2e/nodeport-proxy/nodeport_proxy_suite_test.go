@@ -22,8 +22,8 @@ import (
 	"flag"
 	"testing"
 
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
+	"github.com/onsi/ginkgo"
+	"github.com/onsi/gomega"
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 )
@@ -41,11 +41,11 @@ func init() {
 }
 
 func TestNodeportProxy(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "NodeportProxy Suite")
+	gomega.RegisterFailHandler(ginkgo.Fail)
+	ginkgo.RunSpecs(t, "NodeportProxy Suite")
 }
 
-var _ = BeforeSuite(func() {
+var _ = ginkgo.BeforeSuite(func() {
 	logger = CreateLogger(debugLog)
 	k8scli, podRestCli, config := GetClientsOrDie()
 	deployer = &Deployer{
@@ -53,7 +53,7 @@ var _ = BeforeSuite(func() {
 		Client:   k8scli,
 		Versions: versions,
 	}
-	Expect(deployer.SetUp()).NotTo(HaveOccurred(), "nodeport-proxy should deploy successfully")
+	gomega.Expect(deployer.SetUp()).NotTo(gomega.HaveOccurred(), "nodeport-proxy should deploy successfully")
 	networkingTest = &NetworkingTestConfig{
 		Log:           logger,
 		Namespace:     deployer.Namespace,
@@ -61,12 +61,12 @@ var _ = BeforeSuite(func() {
 		Config:        config,
 		PodRestClient: podRestCli,
 	}
-	Expect(networkingTest.DeployTestPod()).NotTo(HaveOccurred(), "test pod should deploy successfully")
+	gomega.Expect(networkingTest.DeployTestPod()).NotTo(gomega.HaveOccurred(), "test pod should deploy successfully")
 })
 
-var _ = AfterSuite(func() {
+var _ = ginkgo.AfterSuite(func() {
 	if !skipCleanup {
-		Expect(networkingTest.CleanUp()).NotTo(HaveOccurred(), "failed to clean-up networkingTest")
-		Expect(deployer.CleanUp()).NotTo(HaveOccurred(), "failed to clean-up deployer")
+		gomega.Expect(networkingTest.CleanUp()).NotTo(gomega.HaveOccurred(), "failed to clean-up networkingTest")
+		gomega.Expect(deployer.CleanUp()).NotTo(gomega.HaveOccurred(), "failed to clean-up deployer")
 	}
 })
