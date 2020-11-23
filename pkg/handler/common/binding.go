@@ -29,7 +29,6 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
-
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -145,10 +144,10 @@ func BindUserToClusterRoleEndpoint(ctx context.Context, userInfoGetter provider.
 	oldBinding := existingClusterRoleBinding.DeepCopy()
 	for _, subject := range existingClusterRoleBinding.Subjects {
 		if clusterRoleUser.UserEmail != "" && subject.Name == clusterRoleUser.UserEmail {
-			return nil, errors.NewBadRequest("user %s already connected to role %s", clusterRoleUser.UserEmail, roleID)
+			return nil, errors.NewBadRequest("user %s already connected to the cluster role %s", clusterRoleUser.UserEmail, roleID)
 		}
 		if clusterRoleUser.Group != "" && subject.Name == clusterRoleUser.Group {
-			return nil, errors.NewBadRequest("group %s already connected to role %s", clusterRoleUser.Group, roleID)
+			return nil, errors.NewBadRequest("group %s already connected to the cluster role %s", clusterRoleUser.Group, roleID)
 		}
 	}
 

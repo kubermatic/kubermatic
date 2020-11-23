@@ -334,7 +334,7 @@ func TestBindUserToClusterRole(t *testing.T) {
 			name:             "scenario 4: bind existing user",
 			roleName:         "role-1",
 			body:             `{"userEmail":"test@example.com"}`,
-			expectedResponse: `{"error":{"code":400,"message":"user test@example.com already connected to role role-1"}}`,
+			expectedResponse: `{"error":{"code":400,"message":"user test@example.com already connected to the cluster role role-1"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusBadRequest,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
@@ -418,7 +418,7 @@ func TestBindUserToClusterRole(t *testing.T) {
 			name:             "scenario 9: bind existing group",
 			roleName:         "role-1",
 			body:             `{"group":"test"}`,
-			expectedResponse: `{"error":{"code":400,"message":"group test already connected to role role-1"}}`,
+			expectedResponse: `{"error":{"code":400,"message":"group test already connected to the cluster role role-1"}}`,
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusBadRequest,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
