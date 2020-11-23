@@ -101,8 +101,8 @@ func (s *openStackScenario) NodeDeployments(num int, _ secrets) ([]apimodels.Nod
 						Openstack: &apimodels.OpenstackNodeSpec{
 							Flavor:                    &flavor,
 							Image:                     &image,
-							InstanceReadyCheckPeriod:  "5",
-							InstanceReadyCheckTimeout: "10",
+							InstanceReadyCheckPeriod:  "5s",
+							InstanceReadyCheckTimeout: "2m",
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
