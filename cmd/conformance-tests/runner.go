@@ -73,11 +73,6 @@ func podIsReady(p *corev1.Pod) bool {
 	return false
 }
 
-// This is a workaround for: https://github.com/kubermatic/kubermatic6185
-func podFailedKubeletAdmissionDueToNodeAffinityPredicate(p *corev1.Pod) bool {
-	return p.Status.Phase == "Failed" && p.Status.Reason == "NodeAffinity"
-}
-
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *apimodels.CreateClusterSpec
@@ -1086,6 +1081,15 @@ func (r *testRunner) waitForControlPlane(log *zap.SugaredLogger, clusterName str
 	return cluster, nil
 }
 
+// This is a workaround for: https://github.com/kubermatic/kubermatic/issues/6185
+func (r *testRunner) podFailedKubeletAdmissionDueToNodeAffinityPredicate(p *corev1.Pod) bool {
+	r.log.Debugw(
+		"found pod that was scheduled successfully, but failed kubelet admission due to NodeAffinity predicate",
+		"pod", *p,
+	)
+	return p.Status.Phase == "Failed" && p.Status.Reason == "NodeAffinity"
+}
+
 func (r *testRunner) waitUntilAllPodsAreReady(log *zap.SugaredLogger, userClusterClient ctrlruntimeclient.Client, timeout time.Duration) error {
 	log.Debug("Waiting for all pods to be ready...")
 	started := time.Now()
@@ -1098,7 +1102,7 @@ func (r *testRunner) waitUntilAllPodsAreReady(log *zap.SugaredLogger, userCluste
 		}
 
 		for _, pod := range podList.Items {
-			if !podIsReady(&pod) && !podFailedKubeletAdmissionDueToNodeAffinityPredicate(&pod) {
+			if !podIsReady(&pod) && !r.podFailedKubeletAdmissionDueToNodeAffinityPredicate(&pod) {
 				return false, nil
 			}
 		}
