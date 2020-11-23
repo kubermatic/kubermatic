@@ -51,61 +51,12 @@ func BindUserToRoleEndpoint(projectProvider provider.ProjectProvider, privileged
 func UnbindUserFromRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(roleUserReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest("invalid request: %v", err)
 		}
 
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID, Namespace: req.Namespace}, &rbacv1.Role{}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		roleBindingList := &rbacv1.RoleBindingList{}
-		if err := client.List(ctx, roleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue}, ctrlruntimeclient.InNamespace(req.Namespace)); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		var existingRoleBinding *rbacv1.RoleBinding
-		for _, roleBinding := range roleBindingList.Items {
-			if roleBinding.RoleRef.Name == req.RoleID {
-				existingRoleBinding = roleBinding.DeepCopy()
-				break
-			}
-		}
-
-		if existingRoleBinding == nil {
-			return nil, errors.NewBadRequest("the role binding not found in namespace %s", req.Namespace)
-		}
-
-		roleUser := req.Body
-		binding := existingRoleBinding.DeepCopy()
-		var newSubjects []rbacv1.Subject
-		for _, subject := range binding.Subjects {
-			if roleUser.UserEmail != "" && subject.Name == roleUser.UserEmail {
-				continue
-			}
-			if roleUser.Group != "" && subject.Name == roleUser.Group {
-				continue
-			}
-			newSubjects = append(newSubjects, subject)
-		}
-		binding.Subjects = newSubjects
-
-		if err := client.Update(ctx, binding); err != nil {
-			return nil, fmt.Errorf("failed to update role binding: %v", err)
-		}
-
-		return convertInternalRoleBindingToExternal(binding), nil
+		return handlercommon.UnbindUserFromRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID, req.Namespace)
 	}
 }
 
@@ -209,61 +160,12 @@ func BindUserToClusterRoleEndpoint(projectProvider provider.ProjectProvider, pri
 func UnbindUserFromClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(clusterRoleUserReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest("invalid request: %v", err)
 		}
 
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		if err := client.Get(ctx, ctrlruntimeclient.ObjectKey{Name: req.RoleID}, &rbacv1.ClusterRole{}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-		if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		var existingClusterRoleBinding *rbacv1.ClusterRoleBinding
-		for _, clusterRoleBinding := range clusterRoleBindingList.Items {
-			if clusterRoleBinding.RoleRef.Name == req.RoleID {
-				existingClusterRoleBinding = clusterRoleBinding.DeepCopy()
-				break
-			}
-		}
-
-		if existingClusterRoleBinding == nil {
-			return nil, errors.NewBadRequest("the cluster role binding not found")
-		}
-
-		clusterRoleUser := req.Body
-		binding := existingClusterRoleBinding.DeepCopy()
-		var newSubjects []rbacv1.Subject
-		for _, subject := range binding.Subjects {
-			if clusterRoleUser.UserEmail != "" && subject.Name == clusterRoleUser.UserEmail {
-				continue
-			}
-			if clusterRoleUser.Group != "" && subject.Name == clusterRoleUser.Group {
-				continue
-			}
-			newSubjects = append(newSubjects, subject)
-		}
-		binding.Subjects = newSubjects
-
-		if err := client.Update(ctx, binding); err != nil {
-			return nil, fmt.Errorf("failed to update cluster role binding: %v", err)
-		}
-
-		return convertInternalClusterRoleBindingToExternal(binding), nil
+		return handlercommon.UnbindUserFromClusterRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID)
 	}
 }
 
