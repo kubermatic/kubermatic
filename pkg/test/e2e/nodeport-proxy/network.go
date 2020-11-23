@@ -107,7 +107,10 @@ func (n *NetworkingTestConfig) newAgnhostPod(ns string) *corev1.Pod {
 
 // CleanUp deletes the resources.
 func (n *NetworkingTestConfig) CleanUp() error {
-	return n.Client.Delete(context.TODO(), n.HostTestContainerPod)
+	if n.HostTestContainerPod != nil {
+		return n.Client.Delete(context.TODO(), n.HostTestContainerPod)
+	}
+	return nil
 }
 
 // Based on:

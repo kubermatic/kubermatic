@@ -53,14 +53,15 @@ var _ = ginkgo.BeforeSuite(func() {
 		Client:   k8scli,
 		Versions: versions,
 	}
-	gomega.Expect(deployer.SetUp()).NotTo(gomega.HaveOccurred(), "nodeport-proxy should deploy successfully")
 	networkingTest = &NetworkingTestConfig{
 		Log:           logger,
-		Namespace:     deployer.Namespace,
 		Client:        k8scli,
 		Config:        config,
 		PodRestClient: podRestCli,
 	}
+	gomega.Expect(deployer.SetUp()).NotTo(gomega.HaveOccurred(), "nodeport-proxy should deploy successfully")
+	// We put the test pod in same namespace as the nodeport proxy
+	networkingTest.Namespace = deployer.Namespace
 	gomega.Expect(networkingTest.DeployTestPod()).NotTo(gomega.HaveOccurred(), "test pod should deploy successfully")
 })
 
