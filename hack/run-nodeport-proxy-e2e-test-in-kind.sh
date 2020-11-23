@@ -29,7 +29,7 @@ TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.18.2}"
 
-type kind > /dev/null || log_fatal \
+type kind > /dev/null || fatal \
     "Kind is required to run this script, please refer to: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
 
 function clean_up {
@@ -40,24 +40,7 @@ appendTrap clean_up EXIT
 
 # Only start docker daemon in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
-  # Start Docker daemon
-  echodate "Starting Docker"
-  dockerd > /tmp/docker.log 2>&1 &
-  echodate "Started Docker successfully"
-
-  function docker_logs {
-    if [[ $? -ne 0 ]]; then
-      echodate "Printing Docker logs"
-      cat /tmp/docker.log
-      echodate "Done printing Docker logs"
-    fi
-  }
-  appendTrap docker_logs EXIT
-
-  # Wait for Docker to start
-  echodate "Waiting for Docker"
-  retry 5 docker stats --no-stream
-  echodate "Docker became ready"
+    start_docker_daemon
 fi
 
 # build Docker images
