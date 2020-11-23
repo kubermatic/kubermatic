@@ -1064,7 +1064,7 @@ func (r *testRunner) waitForControlPlane(log *zap.SugaredLogger, clusterName str
 			return false, fmt.Errorf("failed to list controlplane pods: %v", err)
 		}
 		for _, pod := range controlPlanePods.Items {
-			if !podIsReady(&pod) && !podFailedKubeletAdmissionDueToNodeAffinityPredicate(&pod) {
+			if !podIsReady(&pod) {
 				return false, nil
 			}
 		}
@@ -1098,7 +1098,7 @@ func (r *testRunner) waitUntilAllPodsAreReady(log *zap.SugaredLogger, userCluste
 		}
 
 		for _, pod := range podList.Items {
-			if !podIsReady(&pod) {
+			if !podIsReady(&pod) && !podFailedKubeletAdmissionDueToNodeAffinityPredicate(&pod) {
 				return false, nil
 			}
 		}
