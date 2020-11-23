@@ -55,6 +55,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -79,6 +80,10 @@ func init() {
 	}
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme v1beta1", "error", err)
+	}
+
+	if err := apiextensionv1beta1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		kubermaticlog.Logger.Fatalw("failed to register scheme apiextension", "error", err)
 	}
 }
 
@@ -1360,4 +1365,8 @@ func GenDefaultGroupClusterRoleBinding(name, roleID, group string) *rbacv1.Clust
 			Name: roleID,
 		},
 	}
+}
+
+func RegisterScheme(builder runtime.SchemeBuilder) error {
+	return builder.AddToScheme(scheme.Scheme)
 }

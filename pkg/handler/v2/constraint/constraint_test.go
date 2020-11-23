@@ -18,6 +18,7 @@ package constraint_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -30,35 +31,50 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 func TestListConstraints(t *testing.T) {
+	if err := test.RegisterScheme(SchemeBuilder); err != nil {
+		t.Fatal(err)
+	}
+
 	t.Parallel()
 	testcases := []struct {
-		Name                string
-		ProjectID           string
-		ClusterID           string
-		HTTPStatus          int
-		ExistingAPIUser     *apiv1.User
-		ExistingObjects     []runtime.Object
-		ExpectedConstraints []apiv2.Constraint
+		Name                      string
+		ProjectID                 string
+		ClusterID                 string
+		HTTPStatus                int
+		ExistingAPIUser           *apiv1.User
+		ExistingObjects           []runtime.Object
+		ExistingGatekeeperObjects []runtime.Object
+		ExpectedConstraints       []apiv2.Constraint
 	}{
 		{
 			Name:      "scenario 1: user can list accessible constraint",
 			ProjectID: test.GenDefaultProject().Name,
 			ClusterID: test.GenDefaultCluster().Name,
 			ExpectedConstraints: []apiv2.Constraint{
-				genDefaultConstraint("ct1"),
-				genDefaultConstraint("ct2"),
+				genDefaultConstraint("ct1", "RequiredLabel"),
+				genDefaultConstraint("ct2", "RequiredLabel"),
+				genDefaultConstraint("ct3", "UniqueLabel"),
 			},
 			HTTPStatus: http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
-				genConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
+				genConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
+				genConstraint("ct3", test.GenDefaultCluster().Status.NamespaceName, "UniqueLabel"),
 			),
+			ExistingGatekeeperObjects: []runtime.Object{
+				genGatekeeperConstraint("ct1", "RequiredLabel", t),
+				genGatekeeperConstraint("ct2", "RequiredLabel", t),
+				genGatekeeperConstraint("ct3", "UniqueLabel", t),
+			},
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
 		{
@@ -69,9 +85,13 @@ func TestListConstraints(t *testing.T) {
 			HTTPStatus:          http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
-				genConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
+				genConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
+			ExistingGatekeeperObjects: []runtime.Object{
+				genGatekeeperConstraint("ct1", "RequiredLabel", t),
+				genGatekeeperConstraint("ct2", "RequiredLabel", t),
+			},
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
 		{
@@ -79,16 +99,23 @@ func TestListConstraints(t *testing.T) {
 			ProjectID: test.GenDefaultProject().Name,
 			ClusterID: test.GenDefaultCluster().Name,
 			ExpectedConstraints: []apiv2.Constraint{
-				genDefaultConstraint("ct1"),
-				genDefaultConstraint("ct2"),
+				genDefaultConstraint("ct1", "RequiredLabel"),
+				genDefaultConstraint("ct2", "RequiredLabel"),
+				genDefaultConstraint("ct3", "UniqueLabel"),
 			},
 			HTTPStatus: http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
-				genConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
+				genConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
+				genConstraint("ct3", test.GenDefaultCluster().Status.NamespaceName, "UniqueLabel"),
 				genKubermaticUser("John", "john@acme.com", true),
 			),
+			ExistingGatekeeperObjects: []runtime.Object{
+				genGatekeeperConstraint("ct1", "RequiredLabel", t),
+				genGatekeeperConstraint("ct2", "RequiredLabel", t),
+				genGatekeeperConstraint("ct3", "UniqueLabel", t),
+			},
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
 	}
@@ -98,9 +125,17 @@ func TestListConstraints(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints",
 				tc.ProjectID, tc.ClusterID), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			for _, gkObject := range tc.ExistingGatekeeperObjects {
+				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
+				if err != nil {
+					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
+				}
 			}
 
 			ep.ServeHTTP(res, req)
@@ -125,29 +160,36 @@ func TestListConstraints(t *testing.T) {
 }
 
 func TestGetConstraints(t *testing.T) {
+	if err := test.RegisterScheme(SchemeBuilder); err != nil {
+		t.Fatal(err)
+	}
+
 	t.Parallel()
 	testcases := []struct {
-		Name             string
-		ConstraintName   string
-		ProjectID        string
-		ClusterID        string
-		ExpectedResponse string
-		HTTPStatus       int
-		ExistingAPIUser  *apiv1.User
-		ExistingObjects  []runtime.Object
+		Name                      string
+		ConstraintName            string
+		ProjectID                 string
+		ClusterID                 string
+		ExpectedResponse          string
+		HTTPStatus                int
+		ExistingAPIUser           *apiv1.User
+		ExistingObjects           []runtime.Object
+		ExistingGatekeeperObjects []runtime.Object
 	}{
 		{
 			Name:             "scenario 1: user can get accessible constraint",
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}},"status":{"enforcement":"true","auditTimestamp":"2019-05-11T01:46:13Z","violations":[{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"default"},{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"gatekeeper"}]}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
-				genConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
+			ExistingGatekeeperObjects: []runtime.Object{
+				genGatekeeperConstraint("ct1", "RequiredLabel", t),
+			},
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
 		{
@@ -159,9 +201,11 @@ func TestGetConstraints(t *testing.T) {
 			HTTPStatus:       http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
-				genConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
+			ExistingGatekeeperObjects: []runtime.Object{
+				genGatekeeperConstraint("ct1", "RequiredLabel", t),
+			},
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
 		{
@@ -169,14 +213,16 @@ func TestGetConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}},"status":{"enforcement":"true","auditTimestamp":"2019-05-11T01:46:13Z","violations":[{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"default"},{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"gatekeeper"}]}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
-				genConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 				genKubermaticUser("John", "john@acme.com", true),
 			),
+			ExistingGatekeeperObjects: []runtime.Object{
+				genGatekeeperConstraint("ct1", "RequiredLabel", t),
+			},
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
 	}
@@ -186,9 +232,17 @@ func TestGetConstraints(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints/%s",
 				tc.ProjectID, tc.ClusterID, tc.ConstraintName), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			for _, gkObject := range tc.ExistingGatekeeperObjects {
+				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
+				if err != nil {
+					t.Fatalf("failed to create gk object due to %v", err)
+				}
 			}
 
 			ep.ServeHTTP(res, req)
@@ -200,6 +254,90 @@ func TestGetConstraints(t *testing.T) {
 			test.CompareWithResult(t, res, tc.ExpectedResponse)
 		})
 	}
+}
+
+func genGatekeeperConstraint(name, kind string, t *testing.T) *unstructured.Unstructured {
+	ct := &unstructured.Unstructured{}
+	ct.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   constraint.ConstraintsGroup,
+		Version: constraint.ConstraintsVersion,
+		Kind:    kind,
+	})
+	ct.SetName(name)
+	ct.SetNamespace(constraint.ConstraintNamespace)
+
+	// set spec
+	spec := &kubermaticv1.ConstraintSpec{
+		Match: kubermaticv1.Match{
+			Kinds: []kubermaticv1.Kind{
+				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
+			},
+		},
+	}
+
+	specMap, err := unmarshallToJSONMap(spec)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = unstructured.SetNestedField(ct.Object, specMap, "spec")
+	if err != nil {
+		t.Fatalf("error setting constraint spec field: %v", err)
+	}
+
+	// Set parameters
+	parameters := map[string]interface{}{
+		"labels": []interface{}{"gatekeeper", "opa"},
+	}
+
+	err = unstructured.SetNestedField(ct.Object, parameters, "spec", "parameters")
+	if err != nil {
+		t.Fatalf("error setting constraint parameters field: %v", err)
+	}
+
+	// set status
+	apiStatus := apiv2.ConstraintStatus{
+		Enforcement:    "true",
+		AuditTimestamp: "2019-05-11T01:46:13Z",
+		Violations: []apiv2.Violation{
+			{
+				EnforcementAction: "deny",
+				Kind:              "Namespace",
+				Message:           "'you must provide labels: {\"gatekeeper\"}'",
+				Name:              "default",
+			},
+			{
+				EnforcementAction: "deny",
+				Kind:              "Namespace",
+				Message:           "'you must provide labels: {\"gatekeeper\"}'",
+				Name:              "gatekeeper",
+			},
+		},
+	}
+	statusMap, err := unmarshallToJSONMap(apiStatus)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = unstructured.SetNestedField(ct.Object, statusMap, "status")
+	if err != nil {
+		t.Fatalf("error setting constraint status field: %v", err)
+	}
+
+	return ct
+}
+
+func unmarshallToJSONMap(object interface{}) (map[string]interface{}, error) {
+
+	raw, err := json.Marshal(object)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling: %v", err)
+	}
+	result := make(map[string]interface{})
+	err = json.Unmarshal(raw, &result)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling: %v", err)
+	}
+
+	return result, nil
 }
 
 func TestDeleteConstraints(t *testing.T) {
@@ -223,7 +361,7 @@ func TestDeleteConstraints(t *testing.T) {
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -236,7 +374,7 @@ func TestDeleteConstraints(t *testing.T) {
 			HTTPStatus:       http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
@@ -249,7 +387,7 @@ func TestDeleteConstraints(t *testing.T) {
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 				genKubermaticUser("John", "john@acme.com", true),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -293,15 +431,15 @@ func TestCreateConstraints(t *testing.T) {
 			Name: "scenario 1: user can create constraint",
 			Constraint: apiv2.Constraint{
 				Name: "ct1",
-				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName).Spec,
+				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel").Spec,
 			},
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				test.GenConstraintTemplate("requiredlabels"),
+				test.GenConstraintTemplate("requiredlabel"),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -309,7 +447,7 @@ func TestCreateConstraints(t *testing.T) {
 			Name: "scenario 2: unauthorized user can not create constraint",
 			Constraint: apiv2.Constraint{
 				Name: "ct1",
-				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName).Spec,
+				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel").Spec,
 			},
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
@@ -317,7 +455,7 @@ func TestCreateConstraints(t *testing.T) {
 			HTTPStatus:       http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				test.GenConstraintTemplate("requiredlabels"),
+				test.GenConstraintTemplate("requiredlabel"),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
@@ -325,15 +463,15 @@ func TestCreateConstraints(t *testing.T) {
 			Name: "scenario 3: admin user can create constraint in any project/cluster",
 			Constraint: apiv2.Constraint{
 				Name: "ct1",
-				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName).Spec,
+				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel").Spec,
 			},
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				test.GenConstraintTemplate("requiredlabels"),
+				test.GenConstraintTemplate("requiredlabel"),
 				genKubermaticUser("John", "john@acme.com", true),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -342,11 +480,11 @@ func TestCreateConstraints(t *testing.T) {
 			Name: "scenario 4: cannot create constraint with not existing constraint template",
 			Constraint: apiv2.Constraint{
 				Name: "ct1",
-				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName).Spec,
+				Spec: genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel").Spec,
 			},
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8s.io \"requiredlabels\" not found"}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8s.io \"requiredlabel\" not found"}}`,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
@@ -406,11 +544,11 @@ func TestPatchConstraints(t *testing.T) {
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
 			Patch:            `{"spec":{"constraintType":"somethingdifferentthatshouldnotbeapplied","match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":["namespaces"]}]}}}`,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["pods"],"apiGroups":["v1"]},{"kinds":["namespaces"]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["pods"],"apiGroups":["v1"]},{"kinds":["namespaces"]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
@@ -424,7 +562,7 @@ func TestPatchConstraints(t *testing.T) {
 			HTTPStatus:       http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 		},
@@ -434,11 +572,11 @@ func TestPatchConstraints(t *testing.T) {
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
 			Patch:            `{"spec":{"constraintType":"somethingdifferentthatshouldnotbeapplied","match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":["namespaces"]}]}}}`,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"requiredlabels","match":{"kinds":[{"kinds":["pods"],"apiGroups":["v1"]},{"kinds":["namespaces"]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[ \"gatekeeper\", \"opa\"]}"}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["pods"],"apiGroups":["v1"]},{"kinds":["namespaces"]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenDefaultCluster(),
-				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName),
+				genConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 				genKubermaticUser("John", "john@acme.com", true),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -466,21 +604,21 @@ func TestPatchConstraints(t *testing.T) {
 	}
 }
 
-func genConstraint(name, namespace string) *kubermaticv1.Constraint {
+func genConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 	ct := &kubermaticv1.Constraint{}
 	ct.Kind = kubermaticv1.ConstraintKind
 	ct.APIVersion = kubermaticv1.SchemeGroupVersion.String()
 	ct.Name = name
 	ct.Namespace = namespace
 	ct.Spec = kubermaticv1.ConstraintSpec{
-		ConstraintType: "requiredlabels",
+		ConstraintType: kind,
 		Match: kubermaticv1.Match{
 			Kinds: []kubermaticv1.Kind{
 				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 			},
 		},
 		Parameters: kubermaticv1.Parameters{
-			RawJSON: `{"labels":[ "gatekeeper", "opa"]}`,
+			RawJSON: `{"labels":["gatekeeper","opa"]}`,
 		},
 	}
 
@@ -493,18 +631,36 @@ func genKubermaticUser(name, email string, isAdmin bool) *kubermaticv1.User {
 	return user
 }
 
-func genDefaultConstraint(name string) apiv2.Constraint {
+func genDefaultConstraint(name, kind string) apiv2.Constraint {
 	return apiv2.Constraint{
 		Name: name,
 		Spec: kubermaticv1.ConstraintSpec{
-			ConstraintType: "requiredlabels",
+			ConstraintType: kind,
 			Match: kubermaticv1.Match{
 				Kinds: []kubermaticv1.Kind{
 					{Kinds: []string{"namespace"}, APIGroups: []string{""}},
 				},
 			},
 			Parameters: kubermaticv1.Parameters{
-				RawJSON: `{"labels":[ "gatekeeper", "opa"]}`,
+				RawJSON: `{"labels":["gatekeeper","opa"]}`,
+			},
+		},
+		Status: &apiv2.ConstraintStatus{
+			Enforcement:    "true",
+			AuditTimestamp: "2019-05-11T01:46:13Z",
+			Violations: []apiv2.Violation{
+				{
+					EnforcementAction: "deny",
+					Kind:              "Namespace",
+					Message:           "'you must provide labels: {\"gatekeeper\"}'",
+					Name:              "default",
+				},
+				{
+					EnforcementAction: "deny",
+					Kind:              "Namespace",
+					Message:           "'you must provide labels: {\"gatekeeper\"}'",
+					Name:              "gatekeeper",
+				},
 			},
 		},
 	}
