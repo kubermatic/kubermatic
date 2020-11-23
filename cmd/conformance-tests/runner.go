@@ -73,6 +73,11 @@ func podIsReady(p *corev1.Pod) bool {
 	return false
 }
 
+// This is a workaround for: https://github.com/kubermatic/kubermatic6185
+func podFailedKubeletAdmissionDueToNodeAffinityPredicate(p *corev1.Pod) bool {
+	return p.Status.Phase == "Failed" && p.Status.Reason == "NodeAffinity"
+}
+
 type testScenario interface {
 	Name() string
 	Cluster(secrets secrets) *apimodels.CreateClusterSpec
@@ -1059,7 +1064,7 @@ func (r *testRunner) waitForControlPlane(log *zap.SugaredLogger, clusterName str
 			return false, fmt.Errorf("failed to list controlplane pods: %v", err)
 		}
 		for _, pod := range controlPlanePods.Items {
-			if !podIsReady(&pod) {
+			if !podIsReady(&pod) && !podFailedKubeletAdmissionDueToNodeAffinityPredicate(&pod) {
 				return false, nil
 			}
 		}
