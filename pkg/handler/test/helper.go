@@ -1287,3 +1287,77 @@ func GenDefaultClusterRole(name string) *rbacv1.ClusterRole {
 		},
 	}
 }
+
+func GenDefaultRoleBinding(name, namespace, roleID, userEmail string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
+			Namespace: namespace,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "User",
+				Name: userEmail,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Name: roleID,
+		},
+	}
+}
+
+func GenDefaultGroupRoleBinding(name, namespace, roleID, group string) *rbacv1.RoleBinding {
+	return &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Labels:    map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
+			Namespace: namespace,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "Group",
+				Name: group,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Name: roleID,
+		},
+	}
+}
+
+func GenDefaultClusterRoleBinding(name, roleID, userEmail string) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "User",
+				Name: userEmail,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Name: roleID,
+		},
+	}
+}
+
+func GenDefaultGroupClusterRoleBinding(name, roleID, group string) *rbacv1.ClusterRoleBinding {
+	return &rbacv1.ClusterRoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "Group",
+				Name: group,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			Name: roleID,
+		},
+	}
+}

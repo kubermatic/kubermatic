@@ -106,6 +106,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/rolenames").
 		Handler(r.listRoleNames())
 
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings").
+		Handler(r.bindUserToRole())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings").
+		Handler(r.bindUserToClusterRole())
+
 	// Defines a set of HTTP endpoint for machine deployments that belong to a cluster
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clusters/{cluster_id}/machinedeployments").
@@ -1553,6 +1561,64 @@ func (r Routing) listRoleNames() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.ListRoleNamesEndpoint(r.userInfoGetter)),
 		cluster.DecodeListClusterRoleReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings project bindUserToRoleV2
+//
+//    Binds user to the role
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: RoleBinding
+//       401: empty
+//       403: empty
+func (r Routing) bindUserToRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.BindUserToRoleEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		cluster.DecodeRoleUserReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings project bindUserToClusterRoleV2
+//
+//    Binds user to cluster role
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterRoleBinding
+//       401: empty
+//       403: empty
+func (r Routing) bindUserToClusterRole() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.BindUserToClusterRoleEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		cluster.DecodeClusterRoleUserReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
