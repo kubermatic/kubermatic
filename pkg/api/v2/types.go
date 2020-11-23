@@ -36,5 +36,22 @@ type ConstraintTemplate struct {
 type Constraint struct {
 	Name string `json:"name"`
 
-	Spec v1.ConstraintSpec `json:"spec"`
+	Spec   v1.ConstraintSpec `json:"spec"`
+	Status *ConstraintStatus `json:"status,omitempty"`
+}
+
+// ConstraintStatus represents a constraint status which holds audit info
+type ConstraintStatus struct {
+	Enforcement    string      `json:"enforcement,omitempty"`
+	AuditTimestamp string      `json:"auditTimestamp,omitempty"`
+	Violations     []Violation `json:"violations,omitempty"`
+}
+
+// Violation represents a gatekeeper constraint violation
+type Violation struct {
+	EnforcementAction string `json:"enforcementAction,omitempty"`
+	Kind              string `json:"kind,omitempty"`
+	Message           string `json:"message,omitempty"`
+	Name              string `json:"name,omitempty"`
+	Namespace         string `json:"namespace,omitempty"`
 }

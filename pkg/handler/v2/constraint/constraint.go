@@ -23,42 +23,175 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
+)
+
+const (
+	ConstraintsGroup          = "constraints.gatekeeper.sh"
+	ConstraintsVersion        = "v1beta1"
+	ConstraintNamespace       = "kubermatic"
+	constraintStatusField     = "status"
+	constraintParametersField = "parameters"
+	constraintSpecField       = "spec"
 )
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listConstraintsReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 		clus, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
+
+		clusterCli, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, clus, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
 		constraintList, err := constraintProvider.List(clus)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		apiC := make([]*apiv2.Constraint, len(constraintList.Items))
-		for i, ct := range constraintList.Items {
-			apiC[i] = convertInternalToAPIConstraint(&ct)
+		// collect constraint types
+		cKinds := sets.String{}
+		for _, ct := range constraintList.Items {
+			cKinds.Insert(ct.Spec.ConstraintType)
 		}
 
-		return apiC, nil
+		// List all diffrerent constraints and convert
+		var apiConstraintList []*apiv2.Constraint
+		for kind := range cKinds {
+			list := &unstructured.UnstructuredList{}
+			list.SetGroupVersionKind(schema.GroupVersionKind{
+				Group:   ConstraintsGroup,
+				Version: ConstraintsVersion,
+				Kind:    kind + "List",
+			})
+			if err := clusterCli.List(ctx, list); err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			for _, uc := range list.Items {
+				apiC, err := convertUnstructuredToAPIConstraint(&uc, kind)
+				if err != nil {
+					return nil, err
+				}
+				apiConstraintList = append(apiConstraintList, apiC)
+			}
+		}
+
+		return apiConstraintList, nil
 	}
+}
+
+func convertUnstructuredToAPIConstraint(uc *unstructured.Unstructured, constraintType string) (*apiv2.Constraint, error) {
+	constraint := &apiv2.Constraint{}
+
+	constraint.Name = uc.GetName()
+	status, err := getConstraintStatus(uc)
+	if err != nil {
+		return nil, err
+	}
+	constraint.Status = status
+
+	match, err := getConstraintMatch(uc)
+	if err != nil {
+		return nil, err
+	}
+	constraint.Spec.Match = *match
+
+	params, err := getConstraintParameters(uc)
+	if err != nil {
+		return nil, err
+	}
+	constraint.Spec.Parameters = *params
+	constraint.Spec.ConstraintType = constraintType
+
+	return constraint, nil
+}
+
+func getConstraintParameters(uc *unstructured.Unstructured) (*v1.Parameters, error) {
+	parameters := &v1.Parameters{}
+	params, found, err := unstructured.NestedFieldNoCopy(uc.Object, constraintSpecField, constraintParametersField)
+	if err != nil {
+		return parameters, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error getting parameters: %v", err))
+	}
+	if !found {
+		return parameters, nil
+	}
+
+	paramsRaw, err := json.Marshal(params)
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error marshalling constraint params: %v", err))
+	}
+	parameters.RawJSON = string(paramsRaw)
+
+	return parameters, nil
+}
+
+func getConstraintMatch(uc *unstructured.Unstructured) (*v1.Match, error) {
+	matchUn, _, err := unstructured.NestedFieldNoCopy(uc.Object, constraintSpecField, "match")
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error getting match: %v", err))
+	}
+
+	match := &v1.Match{}
+
+	matchRaw, err := json.Marshal(matchUn)
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error marshalling constraint match: %v", err))
+	}
+
+	err = json.Unmarshal(matchRaw, match)
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error unmarshalling constraint match: %v", err))
+	}
+
+	return match, nil
+}
+
+func getConstraintStatus(uc *unstructured.Unstructured) (*apiv2.ConstraintStatus, error) {
+	status, _, err := unstructured.NestedFieldNoCopy(uc.Object, constraintStatusField)
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error getting status: %v", err))
+	}
+
+	constraintStatus := &apiv2.ConstraintStatus{}
+
+	statusRaw, err := json.Marshal(status)
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error marshalling constraint status: %v", err))
+	}
+
+	err = json.Unmarshal(statusRaw, constraintStatus)
+	if err != nil {
+		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error unmarshalling constraint status: %v", err))
+	}
+
+	return constraintStatus, nil
 }
 
 func convertInternalToAPIConstraint(c *v1.Constraint) *apiv2.Constraint {
@@ -101,10 +234,16 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(constraintReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 		clus, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
+		}
+
+		clusterCli, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, clus, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		constraint, err := constraintProvider.Get(clus, req.Name)
@@ -112,7 +251,26 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalToAPIConstraint(constraint), nil
+		instance := &unstructured.Unstructured{}
+		instance.SetGroupVersionKind(schema.GroupVersionKind{
+			Group:   ConstraintsGroup,
+			Version: ConstraintsVersion,
+			Kind:    constraint.Spec.ConstraintType,
+		})
+
+		if err := clusterCli.Get(ctx, types.NamespacedName{Namespace: ConstraintNamespace, Name: constraint.Name}, instance); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		// convert to API constraint
+		apiConstraint := convertInternalToAPIConstraint(constraint)
+		cStatus, err := getConstraintStatus(instance)
+		if err != nil {
+			return nil, err
+		}
+		apiConstraint.Status = cStatus
+
+		return apiConstraint, nil
 	}
 }
 
@@ -254,7 +412,7 @@ func DecodeCreateConstraintReq(c context.Context, r *http.Request) (interface{},
 }
 
 func (req *createConstraintReq) ValidateCreateConstraintReq(constraintTemplateProvider provider.ConstraintTemplateProvider) error {
-	_, err := constraintTemplateProvider.Get(req.Body.Spec.ConstraintType)
+	_, err := constraintTemplateProvider.Get(strings.ToLower(req.Body.Spec.ConstraintType))
 	return err
 }
 
