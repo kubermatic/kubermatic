@@ -44,6 +44,18 @@ func BindUserToRoleEndpoint(projectProvider provider.ProjectProvider, privileged
 	}
 }
 
+func UnbindUserFromRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(roleUserReq)
+
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest("invalid request: %v", err)
+		}
+
+		return handlercommon.UnbindUserFromRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID, req.Namespace)
+	}
+}
+
 // Validate validates roleUserReq request
 func (req roleUserReq) Validate() error {
 	if len(req.ProjectID) == 0 {
@@ -56,7 +68,7 @@ func (req roleUserReq) Validate() error {
 }
 
 // roleUserReq defines HTTP request for bindUserToRole endpoint
-// swagger:parameters bindUserToRoleV2
+// swagger:parameters bindUserToRoleV2 unbindUserFromRoleBindingV2
 type roleUserReq struct {
 	common.ProjectReq
 	// in: path
@@ -124,6 +136,18 @@ func BindUserToClusterRoleEndpoint(projectProvider provider.ProjectProvider, pri
 	}
 }
 
+func UnbindUserFromClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(clusterRoleUserReq)
+
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest("invalid request: %v", err)
+		}
+
+		return handlercommon.UnbindUserFromClusterRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID)
+	}
+}
+
 // Validate validates clusterRoleUserReq request
 func (req clusterRoleUserReq) Validate() error {
 	if len(req.ProjectID) == 0 {
@@ -137,7 +161,7 @@ func (req clusterRoleUserReq) Validate() error {
 }
 
 // clusterRoleUserReq defines HTTP request for bindUserToClusterRoleV2 endpoint
-// swagger:parameters bindUserToClusterRoleV2
+// swagger:parameters bindUserToClusterRoleV2 unbindUserFromClusterRoleBindingV2
 type clusterRoleUserReq struct {
 	common.ProjectReq
 	// in: path
