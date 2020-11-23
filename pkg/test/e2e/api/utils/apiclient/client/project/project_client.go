@@ -213,7 +213,11 @@ type ClientService interface {
 
 	UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingOK, error)
 
+	UnbindUserFromClusterRoleBindingV2(params *UnbindUserFromClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingV2OK, error)
+
 	UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingOK, error)
+
+	UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingV2OK, error)
 
 	UpdateExternalCluster(params *UpdateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateExternalClusterOK, error)
 
@@ -3437,6 +3441,40 @@ func (a *Client) UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterR
 }
 
 /*
+  UnbindUserFromClusterRoleBindingV2 Unbinds user from cluster role binding
+*/
+func (a *Client) UnbindUserFromClusterRoleBindingV2(params *UnbindUserFromClusterRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUnbindUserFromClusterRoleBindingV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "unbindUserFromClusterRoleBindingV2",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/clusterroles/{role_id}/clusterbindings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UnbindUserFromClusterRoleBindingV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*UnbindUserFromClusterRoleBindingV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UnbindUserFromClusterRoleBindingV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   UnbindUserFromRoleBinding Unbinds user from the role binding
 */
 func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingOK, error) {
@@ -3467,6 +3505,40 @@ func (a *Client) UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingPara
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*UnbindUserFromRoleBindingDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  UnbindUserFromRoleBindingV2 Unbinds user from the role binding
+*/
+func (a *Client) UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUnbindUserFromRoleBindingV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "unbindUserFromRoleBindingV2",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/roles/{namespace}/{role_id}/bindings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UnbindUserFromRoleBindingV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*UnbindUserFromRoleBindingV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UnbindUserFromRoleBindingV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
