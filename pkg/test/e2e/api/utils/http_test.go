@@ -134,7 +134,7 @@ func TestHttpClientWithRetries(t *testing.T) {
 			expStatus:      200,
 		},
 		{
-			name: "Faile due to request timeout",
+			name: "Failed due to request timeout",
 			handlerFuncs: []http.HandlerFunc{
 				func(w http.ResponseWriter, r *http.Request) {
 					time.AfterFunc(20*time.Millisecond, func() {
