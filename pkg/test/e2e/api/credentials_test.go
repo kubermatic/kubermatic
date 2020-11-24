@@ -27,6 +27,8 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/equality"
+
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
 )
 
 func TestListCredentials(t *testing.T) {
@@ -139,7 +141,9 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 				req.Header.Set("Location", tc.location)
 			}
 
-			client := &http.Client{Timeout: time.Second * 10}
+			// should be able to perform at least 4 calls in case request
+			// timeout is hit all the times
+			client := utils.NewHTTPClientWithRetries(t, 10*time.Second, 1*time.Second, 50*time.Second)
 
 			resp, err := client.Do(req)
 			if err != nil {
@@ -148,8 +152,9 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 			defer resp.Body.Close()
 
 			if resp.StatusCode != tc.expectedCode {
-				t.Fatalf("expected code %d, but got %d", tc.expectedCode, resp.StatusCode)
+				t.Errorf("failed to get expected response [%d] from %q endpoint: %v", tc.expectedCode, tc.path, err)
 			}
+
 		})
 	}
 }
