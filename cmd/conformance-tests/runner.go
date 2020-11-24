@@ -1081,13 +1081,19 @@ func (r *testRunner) waitForControlPlane(log *zap.SugaredLogger, clusterName str
 	return cluster, nil
 }
 
-// This is a workaround for: https://github.com/kubermatic/kubermatic/issues/6185
+// podFailedKubeletAdmissionDueToNodeAffinityPredicate detects a condition in
+// which a pod is scheduled but fails kubelet admission due to a race condition
+// between scheduler and kubelet.
+// see: https://github.com/kubernetes/kubernetes/issues/93338
 func (r *testRunner) podFailedKubeletAdmissionDueToNodeAffinityPredicate(p *corev1.Pod) bool {
-	r.log.Debugw(
-		"found pod that was scheduled successfully, but failed kubelet admission due to NodeAffinity predicate",
-		"pod", *p,
-	)
-	return p.Status.Phase == "Failed" && p.Status.Reason == "NodeAffinity"
+	failedAdmission := p.Status.Phase == "Failed" && p.Status.Reason == "NodeAffinity"
+	if failedAdmission {
+		r.log.Debugw(
+			"pod but failed kubelet admission due to NodeAffinity predicate",
+			"pod", *p,
+		)
+	}
+	return failedAdmission
 }
 
 func (r *testRunner) waitUntilAllPodsAreReady(log *zap.SugaredLogger, userClusterClient ctrlruntimeclient.Client, timeout time.Duration) error {
@@ -1102,6 +1108,7 @@ func (r *testRunner) waitUntilAllPodsAreReady(log *zap.SugaredLogger, userCluste
 		}
 
 		for _, pod := range podList.Items {
+			// Ignore pods failing kubelet admission #6185
 			if !podIsReady(&pod) && !r.podFailedKubeletAdmissionDueToNodeAffinityPredicate(&pod) {
 				return false, nil
 			}
