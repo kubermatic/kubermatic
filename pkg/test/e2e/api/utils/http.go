@@ -113,7 +113,7 @@ func (r *relaxedRoundtripper) RoundTrip(request *http.Request) (*http.Response, 
 		//nolint:bodyclose
 		response, reqErr = http.DefaultTransport.RoundTrip(requestClone)
 		if reqErr != nil {
-			multiErr = multierror.Append(multiErr, errors.Wrap(reqErr, "error ocurred during http call"))
+			multiErr = multierror.Append(multiErr, errors.Wrap(reqErr, "error occurred while executing http call"))
 			return false, nil
 		}
 
