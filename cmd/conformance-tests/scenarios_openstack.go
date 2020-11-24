@@ -99,8 +99,10 @@ func (s *openStackScenario) NodeDeployments(num int, _ secrets) ([]apimodels.Nod
 				Template: &apimodels.NodeSpec{
 					Cloud: &apimodels.NodeCloudSpec{
 						Openstack: &apimodels.OpenstackNodeSpec{
-							Flavor: &flavor,
-							Image:  &image,
+							Flavor:                    &flavor,
+							Image:                     &image,
+							InstanceReadyCheckPeriod:  "5s",
+							InstanceReadyCheckTimeout: "2m",
 						},
 					},
 					Versions: &apimodels.NodeVersionInfo{
