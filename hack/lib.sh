@@ -320,3 +320,24 @@ cleanup_kubermatic_clusters_in_kind() {
   pkill -P $$
   set -e
 }
+
+start_docker_daemon() {
+  # Start Docker daemon
+  echodate "Starting Docker"
+  dockerd > /tmp/docker.log 2>&1 &
+  echodate "Started Docker successfully"
+
+  function docker_logs {
+    if [[ $? -ne 0 ]]; then
+      echodate "Printing Docker logs"
+      cat /tmp/docker.log
+      echodate "Done printing Docker logs"
+    fi
+  }
+  appendTrap docker_logs EXIT
+
+  # Wait for Docker to start
+  echodate "Waiting for Docker"
+  retry 5 docker stats --no-stream
+  echodate "Docker became ready"
+}

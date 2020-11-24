@@ -20,17 +20,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"net"
 
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
-
-	clusterservice "github.com/envoyproxy/go-control-plane/envoy/service/cluster/v3"
-	discoverygrpc "github.com/envoyproxy/go-control-plane/envoy/service/discovery/v3"
-	endpointservice "github.com/envoyproxy/go-control-plane/envoy/service/endpoint/v3"
-	listenerservice "github.com/envoyproxy/go-control-plane/envoy/service/listener/v3"
-	routeservice "github.com/envoyproxy/go-control-plane/envoy/service/route/v3"
-	xdsv3 "github.com/envoyproxy/go-control-plane/pkg/server/v3"
 
 	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -45,9 +36,9 @@ func main() {
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
 
-	var listenAddress string
+	srv := Server{}
 	ctrlOpts := envoymanager.Options{}
-	flag.StringVar(&listenAddress, "listen-address", ":8001", "Address to serve on")
+	flag.StringVar(&srv.ListenAddress, "listen-address", ":8001", "Address to serve on")
 	flag.StringVar(&ctrlOpts.EnvoyNodeName, "envoy-node-name", "kube", "Name of the envoy nodes to apply the config to via xds.")
 	flag.IntVar(&ctrlOpts.EnvoyAdminPort, "envoy-admin-port", 9001, "Envoys admin port")
 	flag.IntVar(&ctrlOpts.EnvoyStatsPort, "envoy-stats-port", 8002, "Limited port which should be opened on envoy to expose metrics and the health check. Endpoints are: /healthz & /stats")
@@ -73,7 +64,6 @@ func main() {
 	}()
 
 	cli.Hello(log, "Envoy-Manager", logOpts.Debug)
-	log.Infow("starting the server...", "address", listenAddress)
 
 	config, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {
@@ -85,7 +75,7 @@ func main() {
 		log.Fatalw("failed to build controller-runtime manager", zap.Error(err))
 	}
 
-	r, snapshotCache, err := envoymanager.NewReconciler(ctx, log, mgr.GetClient(), ctrlOpts)
+	r, snapshotCache, err := envoymanager.NewReconciler(ctx, log.With("component", "envoycache"), mgr.GetClient(), ctrlOpts)
 	if err != nil {
 		log.Fatalw("failed to build reconciler", zap.Error(err))
 	}
@@ -93,25 +83,11 @@ func main() {
 		log.Fatalw("failed to register reconciler with controller-runtime manager", zap.Error(err))
 	}
 
-	srv := xdsv3.NewServer(ctx, snapshotCache, nil)
-	grpcServer := grpc.NewServer()
-
-	listener, err := net.Listen("tcp", listenAddress)
-	if err != nil {
-		log.Fatalw("failed to listen on address", zap.Error(err))
+	srv.Cache = snapshotCache
+	srv.Log = log.With("component", "envoyconfigserver")
+	if err := mgr.Add(&srv); err != nil {
+		log.Fatalw("failed to register envoy config server with controller-runtime manager", zap.Error(err))
 	}
-
-	discoverygrpc.RegisterAggregatedDiscoveryServiceServer(grpcServer, srv)
-	endpointservice.RegisterEndpointDiscoveryServiceServer(grpcServer, srv)
-	clusterservice.RegisterClusterDiscoveryServiceServer(grpcServer, srv)
-	routeservice.RegisterRouteDiscoveryServiceServer(grpcServer, srv)
-	listenerservice.RegisterListenerDiscoveryServiceServer(grpcServer, srv)
-
-	go func() {
-		if err := grpcServer.Serve(listener); err != nil {
-			log.Fatal(err)
-		}
-	}()
 
 	if err := mgr.Start(stopCh); err != nil {
 		log.Errorw("manager ended with error", zap.Error(err))
