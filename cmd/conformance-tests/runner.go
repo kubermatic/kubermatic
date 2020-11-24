@@ -1086,9 +1086,9 @@ func (r *testRunner) waitForControlPlane(log *zap.SugaredLogger, clusterName str
 // between scheduler and kubelet.
 // see: https://github.com/kubernetes/kubernetes/issues/93338
 func (r *testRunner) podFailedKubeletAdmissionDueToNodeAffinityPredicate(p *corev1.Pod) bool {
-	failedAdmission := p.Status.Phase == "Failed" && p.Status.Reason == "NodeAffinity" && p.Spec.NodeName != ""
+	failedAdmission := p.Status.Phase == "Failed" && p.Status.Reason == "NodeAffinity"
 	if failedAdmission {
-		r.log.Debugw(
+		r.log.Infow(
 			"pod failed kubelet admission due to NodeAffinity predicate",
 			"pod", *p,
 		)
