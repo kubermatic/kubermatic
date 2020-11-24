@@ -25,6 +25,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hashicorp/go-multierror"
+	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
@@ -37,32 +40,34 @@ type requestParameterHolder interface {
 }
 
 func SetupParams(t *testing.T, p requestParameterHolder, interval time.Duration, timeout time.Duration, ignoredStatusCodes ...int) {
-	p.SetHTTPClient(newHTTPClient(t, interval, timeout, ignoredStatusCodes...))
+	p.SetHTTPClient(NewHTTPClientWithRetries(t, apiRequestTimeout, interval, timeout, ignoredStatusCodes...))
 }
 
-func newHTTPClient(t *testing.T, interval time.Duration, timeout time.Duration, ignoredStatusCodes ...int) *http.Client {
+func NewHTTPClientWithRetries(t *testing.T, requestTimeout time.Duration, retryInterval, retryTimeout time.Duration, ignoredStatusCodes ...int) *http.Client {
 	return &http.Client{
 		Transport: &relaxedRoundtripper{
 			test:               t,
-			ignoredStatusCodes: ignoredStatusCodes,
-			interval:           interval,
-			timeout:            timeout,
+			ignoredStatusCodes: sets.NewInt(ignoredStatusCodes...),
+			retryInterval:      retryInterval,
+			retryTimeout:       retryTimeout,
+			requestTimeout:     requestTimeout,
 		},
 	}
 }
 
 type relaxedRoundtripper struct {
 	test               *testing.T
-	ignoredStatusCodes []int
-	interval           time.Duration
-	timeout            time.Duration
+	ignoredStatusCodes sets.Int
+	retryInterval      time.Duration
+	retryTimeout       time.Duration
+	requestTimeout     time.Duration
 }
 
 func (r *relaxedRoundtripper) RoundTrip(request *http.Request) (*http.Response, error) {
 	var (
 		bodyBytes []byte
 		response  *http.Response
-		lastErr   error
+		multiErr  error
 	)
 
 	// clone request body
@@ -80,7 +85,10 @@ func (r *relaxedRoundtripper) RoundTrip(request *http.Request) (*http.Response, 
 	}
 
 	attempts := 0
-	err := wait.PollImmediate(r.interval, r.timeout, func() (bool, error) {
+
+	// TODO(irozzo): Probably using an exponential backoff instead is more
+	// appropriate and avoids too many calls.
+	err := wait.PollImmediate(r.retryInterval, r.retryTimeout, func() (bool, error) {
 		var reqErr error
 
 		attempts++
@@ -92,10 +100,10 @@ func (r *relaxedRoundtripper) RoundTrip(request *http.Request) (*http.Response, 
 		// As this context times out anyway, and timing out means it closes
 		// itself, it's okay to not call cancel() here.
 		//nolint:lostcancel
-		ctx, _ := context.WithTimeout(context.Background(), apiRequestTimeout)
+		ctx, _ := context.WithTimeout(context.Background(), r.requestTimeout)
 
 		// replace any preexisting context with our new one
-		requestClone := request.Clone(ctx)
+		requestClone := request.WithContext(ctx)
 
 		if bodyBytes != nil {
 			requestClone.Body = ioutil.NopCloser(bytes.NewReader(bodyBytes))
@@ -104,15 +112,8 @@ func (r *relaxedRoundtripper) RoundTrip(request *http.Request) (*http.Response, 
 		// perform request
 		//nolint:bodyclose
 		response, reqErr = http.DefaultTransport.RoundTrip(requestClone)
-
-		// swallow network errors like timeouts
 		if reqErr != nil {
-			// only record the request error if it was not the ctx being cancelled or
-			// expiring, as the lastErr is meant to give the cause for the timeout
-			if reqErr != context.DeadlineExceeded && reqErr != context.Canceled {
-				lastErr = reqErr
-			}
-
+			multiErr = multierror.Append(multiErr, errors.Wrap(reqErr, "error ocurred during http call"))
 			return false, nil
 		}
 
@@ -120,9 +121,9 @@ func (r *relaxedRoundtripper) RoundTrip(request *http.Request) (*http.Response, 
 		if r.isTransientError(response) {
 			body, err := ioutil.ReadAll(response.Body)
 			if err != nil {
-				lastErr = fmt.Errorf("HTTP %s: (failed to read body: %v)", response.Status, err)
+				multiErr = multierror.Append(multiErr, errors.Wrapf(err, "HTTP %s", response.Status))
 			} else {
-				lastErr = fmt.Errorf("HTTP %s: %s", response.Status, string(body))
+				multiErr = multierror.Append(multiErr, fmt.Errorf("HTTP %s: %s", response.Status, string(body)))
 			}
 
 			response.Body.Close()
@@ -136,22 +137,14 @@ func (r *relaxedRoundtripper) RoundTrip(request *http.Request) (*http.Response, 
 	if err != nil {
 		// because our Poll function never returns an error, err must be ErrWaitTimeout;
 		// RoundTrippers must never return a response and an error at the same time.
-		return nil, fmt.Errorf("request did not succeed after %v (%d attempts, ignoring HTTP codes %v), last error was: %v", r.timeout, attempts, r.ignoredStatusCodes, lastErr)
+		return nil, errors.Wrapf(multiErr, "request did not succeed after %v (%d attempts, ignoring HTTP codes %v)", r.retryTimeout, attempts, r.ignoredStatusCodes.List())
 	}
 
 	return response, nil
 }
 
-func (r *relaxedRoundtripper) isTransientError(response *http.Response) bool {
-	if response.StatusCode >= http.StatusInternalServerError {
-		return true
-	}
-
-	for _, code := range r.ignoredStatusCodes {
-		if code == response.StatusCode {
-			return true
-		}
-	}
-
-	return false
+func (r *relaxedRoundtripper) isTransientError(resp *http.Response) bool {
+	// 5xx return codes may be associated to recoverable
+	// conditions, with the exception of 501 (Not implemented)
+	return resp.StatusCode == 0 || (resp.StatusCode >= 500 && resp.StatusCode != http.StatusNotImplemented) || r.ignoredStatusCodes.Has(resp.StatusCode)
 }

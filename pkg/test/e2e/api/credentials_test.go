@@ -28,6 +28,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/wait"
+
+	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
 )
 
 func TestListCredentials(t *testing.T) {
@@ -140,39 +142,19 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 				req.Header.Set("Location", tc.location)
 			}
 
-			client := &http.Client{Timeout: time.Second * 10}
-			backoff := wait.Backoff{
-				// With those settings the cumulative sleep duration is ~ 8s
-				// when all attempts are made.
-				Duration: time.Second,
-				Factor:   1.5,
-				Steps:    4,
+			// should be able to perform at least 4 calls in case request
+			// timeout is hit all the times
+			client := utils.NewHTTPClientWithRetries(t, 10*time.Second, 1*time.Second, 50*time.Second)
+
+			resp, err := client.Do(req)
+			if err != nil {
+				t.Fatalf("error reading response: %v", err)
 			}
-			if err := wait.ExponentialBackoff(backoff, func() (bool, error) {
-				resp, err := client.Do(req)
-				if err != nil {
-					if uerr, ok := err.(*url.Error); ok && (uerr.Temporary() || uerr.Timeout()) {
-						t.Logf("temporary error reading response: %v", err)
-						return false, nil
-					}
-					t.Logf("unrecoverable error reading response: %v", err)
-					return false, err
-				}
-				defer resp.Body.Close()
+			defer resp.Body.Close()
 
-				if resp.StatusCode == tc.expectedCode {
-					return true, nil
-				}
-				// 5xx return codes may be associated to recoverable
-				// conditions, with the exception of 501 (Not implemented)
-				if resp.StatusCode == 0 || (resp.StatusCode >= 500 && resp.StatusCode != 501) {
-					t.Logf("unexpected HTTP status %s", resp.Status)
-					return false, nil
-				}
-				return false, fmt.Errorf("got response with an unexpected status code: %d", resp.StatusCode)
+			if resp.StatusCode != tc.expectedCode {
+				return t.Errorf("failed to get expected response [%d] from %q endpoint: %v", tc.expectedCode, tc.path, err)
 
-			}); err != nil {
-				t.Errorf("failed to get expected response [%d] from %q endpoint: %v", tc.expectedCode, tc.path, err)
 			}
 
 		})
