@@ -82,10 +82,11 @@ func makeAccessLog() []*envoyaccesslogv3.AccessLog {
 	return accessLog
 }
 
-//TODO(youssefazrak) How to specify the DomainName?
 func makeSNIFilterChainMatch(service *corev1.Service) *envoylistenerv3.FilterChainMatch {
 	filterChainMatch := &envoylistenerv3.FilterChainMatch{
-		ServerNames:       []string{"annotations"},
+		// New annotation used for the new expose strategy. The "expose" one will stay
+		// for the default expose.
+		ServerNames:       []string{service.ObjectMeta.Annotations["nodeport-proxy.k8s.io/domainname"]},
 		TransportProtocol: "tls",
 	}
 	return filterChainMatch
@@ -96,16 +97,15 @@ func (r *Reconciler) makeSNIListener(service *corev1.Service) *envoylistenerv3.L
 	//	for _, servicePort := range service.Spec.Ports {
 	//		serviceNodePortName := fmt.Sprintf("%s-%d", serviceKey, servicePort.NodePort)
 
-	// ServiceKey returns a string: "Service.Namespace/Service.Name"
+	// ServiceKey returns a string: "Service.Namespace/Service.Name" so the whole string is:
+	// "namespace/name-nodeport"
+	// serviceNESName := fmt.Sprintf("%s-%d", serviceKey, service.Spec.Ports[0].Port)
 	serviceKey := ServiceKey(service)
-	//TODO(youssefazrak) check the good port
-	serviceNESName := fmt.Sprintf("%s-%d", serviceKey, service.Spec.Ports)
 
 	tcpProxyConfig := &envoytcpfilterv3.TcpProxy{
 		StatPrefix: "ingress_tcp",
 		ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
-			//TODO(youssefazrak) check what "name" convention to apply
-			Cluster: serviceNESName,
+			Cluster: serviceKey,
 		},
 		AccessLog: makeAccessLog(),
 	}
@@ -115,11 +115,10 @@ func (r *Reconciler) makeSNIListener(service *corev1.Service) *envoylistenerv3.L
 		panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
 	}
 
-	//TODO(youssefazrak) check the good port
 	r.log.Debugf("Using a listener on port %d", HTTPSAltPort)
 
 	sniListener := &envoylistenerv3.Listener{
-		Name: serviceNESName,
+		Name: serviceKey,
 		Address: &envoycorev3.Address{
 			Address: &envoycorev3.Address_SocketAddress{
 				SocketAddress: &envoycorev3.SocketAddress{
@@ -149,13 +148,12 @@ func (r *Reconciler) makeSNIListener(service *corev1.Service) *envoylistenerv3.L
 }
 
 func makeTunnelingVirtualHosts(service *corev1.Service) []*envoyroutev3.VirtualHost {
+	serviceKey := ServiceKey(service)
 	virtualhosts := []*envoyroutev3.VirtualHost{
 		{
-			Name: fmt.Sprintf("%s_%s", service.Namespace, service.Name),
+			Name: serviceKey,
 			Domains: []string{
-				//TODO(youssefazrak) check cluster domain
-				//fmt.Sprintf("%s.%s.svc.%s", service.Name, service.Namespace, &kubermaticv1.Cluster.Spec.ClusterNetwork.DNSDomain),
-				fmt.Sprintf("%s.%s.svc.%s", service.Name, service.Namespace, "cluster.local"),
+				fmt.Sprintf("%s.%s.svc.cluster.local", service.Name, service.Namespace),
 			},
 			Routes: []*envoyroutev3.Route{
 				{
@@ -167,8 +165,7 @@ func makeTunnelingVirtualHosts(service *corev1.Service) []*envoyroutev3.VirtualH
 					Action: &envoyroutev3.Route_Route{
 						Route: &envoyroutev3.RouteAction{
 							ClusterSpecifier: &envoyroutev3.RouteAction_Cluster{
-								//TODO(youssefazrak) cluster name
-								Cluster: fmt.Sprintf("%s_%s", service.Namespace, service.Name),
+								Cluster: serviceKey,
 							},
 							UpgradeConfigs: []*envoyroutev3.RouteAction_UpgradeConfig{
 								{
@@ -185,13 +182,17 @@ func makeTunnelingVirtualHosts(service *corev1.Service) []*envoyroutev3.VirtualH
 	return virtualhosts
 }
 
+//TODO(youssefazrak) Currently we have a 1:1 bind between the listener itself
+// and the virtual_hosts. Each "tunnel" listener of the new expose strategy
+// should have two virtual_hosts, one for OpenVPN and one for the KAS.
 func (r *Reconciler) makeTunnelingListener(service *corev1.Service) *envoylistenerv3.Listener {
+	serviceKey := ServiceKey(service)
 	httpmanager := &envoyhttpconnectionmanagerv3.HttpConnectionManager{
 		CodecType:  envoyhttpconnectionmanagerv3.HttpConnectionManager_HTTP2,
 		StatPrefix: "ingress_http",
 		RouteSpecifier: &envoyhttpconnectionmanagerv3.HttpConnectionManager_RouteConfig{
 			RouteConfig: &envoyroutev3.RouteConfiguration{
-				Name:         "TunnelRoute",
+				Name:         serviceKey,
 				VirtualHosts: makeTunnelingVirtualHosts(service),
 			},
 		},
@@ -217,12 +218,10 @@ func (r *Reconciler) makeTunnelingListener(service *corev1.Service) *envoylisten
 		panic(err)
 	}
 
-	//TODO(youssefazrak) check the good port
 	r.log.Debugf("Using a listener on port %d", HTTPProxyPort)
 
 	tunnelingListener := &envoylistenerv3.Listener{
-		//TODO(youssefazrak) check the good name
-		Name: fmt.Sprintf("listenerTunnel_%s_%s", service.Namespace, service.Name),
+		Name: serviceKey,
 		Address: &envoycorev3.Address{
 			Address: &envoycorev3.Address_SocketAddress{
 				SocketAddress: &envoycorev3.SocketAddress{
@@ -250,12 +249,9 @@ func (r *Reconciler) makeTunnelingListener(service *corev1.Service) *envoylisten
 	return tunnelingListener
 }
 
-//TODO(youssefazrak) Fix below
 func (r *Reconciler) makeNESCluster(service *corev1.Service, endpoints *corev1.Endpoints) (clusters []envoycachetype.Resource) {
 	serviceKey := ServiceKey(service)
 	for _, servicePort := range service.Spec.Ports {
-		serviceNodePortName := fmt.Sprintf("%s-%d", serviceKey, servicePort.NodePort)
-
 		endpoints := r.getEndpoints(service, &servicePort, corev1.ProtocolTCP, endpoints)
 
 		// Must be sorted, otherwise we get into trouble when doing the snapshot diff later
@@ -266,14 +262,14 @@ func (r *Reconciler) makeNESCluster(service *corev1.Service, endpoints *corev1.E
 		})
 
 		cluster := &envoyclusterv3.Cluster{
-			Name:           serviceNodePortName,
+			Name:           serviceKey,
 			ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
 			ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
 				Type: envoyclusterv3.Cluster_STATIC,
 			},
 			LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
 			LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
-				ClusterName: serviceNodePortName,
+				ClusterName: serviceKey,
 				Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
 					{
 						LbEndpoints: endpoints,
