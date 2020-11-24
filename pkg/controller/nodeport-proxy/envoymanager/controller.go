@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
@@ -42,11 +41,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-)
-
-const (
-	DefaultExposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
-	clusterConnectTimeout      = 1 * time.Second
 )
 
 type Options struct {
@@ -105,17 +99,17 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (r *Reconciler) sync() error {
-	services := corev1.ServiceList{}
-	if err := r.List(r.ctx, &services,
+	listeners, clusters := r.makeInitialResources()
+
+	nodePortServices := corev1.ServiceList{}
+	if err := r.List(r.ctx, &nodePortServices,
 		ctrlruntimeclient.InNamespace(r.Namespace),
-		client.MatchingFields{r.ExposeAnnotationKey: "true"},
+		client.MatchingFields{r.ExposeAnnotationKey: NodePortType.String()},
 	); err != nil {
 		return errors.Wrap(err, "failed to list service's")
 	}
 
-	listeners, clusters := r.makeInitialResources()
-
-	for _, service := range services.Items {
+	for _, service := range nodePortServices.Items {
 		serviceKey := ServiceKey(&service)
 		serviceLog := r.log.With("service", serviceKey)
 
@@ -193,8 +187,8 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(r.ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
 		var values []string
 		svc := raw.(*corev1.Service)
-		if isExposed(svc, r.ExposeAnnotationKey) {
-			values = append(values, "true")
+		for _, t := range extractExposeTypes(svc, r.ExposeAnnotationKey) {
+			values = append(values, t.String())
 		}
 		return values
 	}); err != nil {
