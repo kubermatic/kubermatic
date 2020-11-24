@@ -153,7 +153,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", resources.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
 	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", resources.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
-	flag.BoolVar(&c.etcdBackupRestoreController, "etcd-backups-restores", false, "Whether to enable the new etcd backup and restore controllers")
+	flag.BoolVar(&c.etcdBackupRestoreController, "enable-etcd-backups-restores", false, "Whether to enable the new etcd backup and restore controllers")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", resources.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")
