@@ -27,7 +27,6 @@ import (
 	"time"
 
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/util/wait"
 
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
 )
@@ -153,8 +152,7 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 			defer resp.Body.Close()
 
 			if resp.StatusCode != tc.expectedCode {
-				return t.Errorf("failed to get expected response [%d] from %q endpoint: %v", tc.expectedCode, tc.path, err)
-
+				t.Errorf("failed to get expected response [%d] from %q endpoint: %v", tc.expectedCode, tc.path, err)
 			}
 
 		})
