@@ -1163,6 +1163,39 @@ presubmits:
               key: serviceAccountSigningKey
 
   #########################################################
+  # NodePort Proxy e2e tests
+  #########################################################
+
+  - name: pre-kubermatic-nodeport-proxy-e2e
+    run_if_changed: "(cmd/nodeport-proxy/|pkg/controller/operator/seed/nodeportproxy/|pkg/controller/nodeport-proxy|.prow.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.21
+        imagePullPolicy: Always
+        command:
+        - make
+        args:
+        - run-nodeport-proxy-e2e-test-in-kind
+        env:
+        - name: KIND_NODE_VERSION
+          value: v1.18.2
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 2
+          limits:
+            memory: 6Gi
+
+  #########################################################
   # misc
   #########################################################
 

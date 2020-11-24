@@ -15,10 +15,10 @@
 DOCKER_REPO ?= "quay.io/kubermatic"
 GOOS ?= $(shell go env GOOS)
 
+.PHONY: build
 build:
 	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/kubeletdnat-controller .
 
+.PHONY: docker
 docker: build
 	docker build -t $(DOCKER_REPO)/kubeletdnat-controller:$(TAG) .
-
-.PHONY: build docker
