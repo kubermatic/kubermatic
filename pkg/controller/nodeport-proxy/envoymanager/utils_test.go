@@ -92,8 +92,8 @@ func TestExtractPortHostMappingFromService(t *testing.T) {
 		},
 		{
 			name:        "Multiple port mappings",
-			service:     makeService(`{"port-a": "host.com", "port-b": "another-host.com"}`, ""),
-			wantMapping: portHostMapping{"port-a": "host.com", "port-b": "another-host.com"},
+			service:     makeService(`{"port-a": "admin.host.com", "port-b": "host.com"}`, ""),
+			wantMapping: portHostMapping{"port-a": "admin.host.com", "port-b": "host.com"},
 		},
 		{
 			name:        "Missing annotations",
@@ -149,7 +149,7 @@ func TestPortHostMappingValidate(t *testing.T) {
 				corev1.ServicePort{Name: "port-a", Protocol: corev1.ProtocolTCP},
 				corev1.ServicePort{Name: "port-b", Protocol: corev1.ProtocolTCP},
 				corev1.ServicePort{Name: "port-c", Protocol: corev1.ProtocolTCP}),
-			mapping: portHostMapping{"port-a": "host-a.com", "port-b": "host-b.com"},
+			mapping: portHostMapping{"port-a": "admin.host.com", "port-b": "host.com"},
 		},
 		{
 			name: "Duplicated ports",
@@ -157,7 +157,14 @@ func TestPortHostMappingValidate(t *testing.T) {
 				corev1.ServicePort{Name: "port-a", Protocol: corev1.ProtocolTCP},
 				corev1.ServicePort{Name: "port-b", Protocol: corev1.ProtocolTCP},
 				corev1.ServicePort{Name: "port-c", Protocol: corev1.ProtocolTCP}),
-			mapping: portHostMapping{"port-a": "host-a.com", "port-b": "host-b.com", "port-c": "host-b.com"},
+			mapping: portHostMapping{"port-a": "admin.host.com", "port-b": "host.com", "port-c": "host.com"},
+			wantErr: true,
+		},
+		{
+			name: "Mapping reference missing ports",
+			svc: makeService("", "",
+				corev1.ServicePort{Name: "port-a", Protocol: corev1.ProtocolTCP}),
+			mapping: portHostMapping{"port-a": "admin.host.com", "port-b": "host.com"},
 			wantErr: true,
 		},
 	}

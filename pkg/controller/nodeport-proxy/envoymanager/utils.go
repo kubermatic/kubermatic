@@ -28,22 +28,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-// ExposeType defines the strategy used to expose the service.
-type ExposeType string
-
-func ExposeTypeFromString(s string) (ExposeType, bool) {
-	switch s {
-	case NodePortType.String():
-		return NodePortType, true
-	case SNIType.String():
-		return SNIType, true
-	case HTTP2ConnectType.String():
-		return HTTP2ConnectType, true
-	default:
-		return NodePortType, false
-	}
-}
-
 const (
 	// NodePortType is the default ExposeType which creates a listener for each
 	// NodePort.
@@ -63,16 +47,37 @@ const (
 	PortHostMappingAnnotationKey = "nodeport-proxy.k8s.io/port-mapping"
 )
 
+// ExposeType defines the strategy used to expose the service.
+type ExposeType string
+
+// ExposeTypeFromString returns the ExposeType which string representation
+// corresponds to the input string, and a boolean indicating whether the
+// corresponding ExposeType was found or not.
+func ExposeTypeFromString(s string) (ExposeType, bool) {
+	switch ExposeType(s) {
+	case NodePortType:
+		return NodePortType, true
+	case SNIType:
+		return SNIType, true
+	case HTTP2ConnectType:
+		return HTTP2ConnectType, true
+	default:
+		return NodePortType, false
+	}
+}
+
+// String returns the string representation of the ExposeType.
+func (e ExposeType) String() string {
+	return string(e)
+}
+
+// ServiceKey returns a string used to identify the given Service.
 func ServiceKey(service *corev1.Service) string {
 	return fmt.Sprintf("%s/%s", service.Namespace, service.Name)
 }
 
 func isExposed(obj metav1.Object, exposeAnnotationKey string) bool {
 	return len(extractExposeTypes(obj, exposeAnnotationKey)) > 0
-}
-
-func (e ExposeType) String() string {
-	return string(e)
 }
 
 func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) []ExposeType {
@@ -112,6 +117,8 @@ func portNamesSet(svc *corev1.Service) sets.String {
 	return portNames
 }
 
+// portHostMapping contains the mapping between port name and hostname, used
+// for SNI ExposeType.
 type portHostMapping map[string]string
 
 func portHostMappingFromService(svc *corev1.Service) (portHostMapping, error) {
