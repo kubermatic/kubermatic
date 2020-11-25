@@ -77,7 +77,7 @@ func makeAccessLog() []*envoyaccesslogv3.AccessLog {
 }
 
 // This will be used when the new expose strategy will be fully implemented
-//nolint:unused
+//nolint:unused,deadcode
 func makeSNIFilterChain(service *corev1.Service, p portHostMapping) []*envoylistenerv3.FilterChain {
 	var sniFilterChains []*envoylistenerv3.FilterChain
 
@@ -139,7 +139,7 @@ func (r *Reconciler) makeSNIListener() *envoylistenerv3.Listener {
 }
 
 // This will be used when the new expose strategy will be fully implemented
-//nolint:unused
+//nolint:unused,deadcode
 func makeTunnelingVirtualHosts(service *corev1.Service) []*envoyroutev3.VirtualHost {
 	var virtualhosts []*envoyroutev3.VirtualHost
 	serviceKey := ServiceKey(service)
@@ -208,8 +208,7 @@ func (r *Reconciler) makeTunnelingListener() *envoylistenerv3.Listener {
 
 	HTTPManagerConfigMarshalled, err := ptypes.MarshalAny(httpmanager)
 	if err != nil {
-		errors.Wrap(err, "failed to marshal HTTP Connection Manager")
-		panic(err)
+		panic(errors.Wrap(err, "failed to marshal HTTP Connection Manager"))
 	}
 
 	r.log.Debugf("Using a listener on port %d", r.EnvoyHTTP2ConnectListenerPort)
