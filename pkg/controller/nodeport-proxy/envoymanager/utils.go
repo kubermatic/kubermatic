@@ -32,12 +32,12 @@ import (
 type ExposeType string
 
 func ExposeTypeFromString(s string) (ExposeType, bool) {
-	switch ExposeType(s) {
-	case NodePortType:
+	switch s {
+	case NodePortType.String():
 		return NodePortType, true
-	case SNIType:
+	case SNIType.String():
 		return SNIType, true
-	case HTTP2ConnectType:
+	case HTTP2ConnectType.String():
 		return HTTP2ConnectType, true
 	default:
 		return NodePortType, false
@@ -50,9 +50,9 @@ const (
 	NodePortType ExposeType = "NodePort"
 	// SNIType configures Envoy to route TLS streams based on SNI
 	// without terminating them.
-	SNIType = "SNI"
+	SNIType ExposeType = "SNI"
 	// HTTP2ConnectType configures Envoy to terminate HTTP/2 Connect requests.
-	HTTP2ConnectType = "HTTP2Connect"
+	HTTP2ConnectType ExposeType = "HTTP2Connect"
 )
 
 const (
@@ -118,10 +118,13 @@ func portHostMappingFromService(svc *corev1.Service) (portHostMapping, error) {
 	m := portHostMapping{}
 	a := svc.GetAnnotations()
 	if a == nil {
-		return m, fmt.Errorf("service %s/%s does not contain port mapping annotation", svc.Namespace, svc.Name)
+		return m, nil
 	}
-	val := a[PortHostMappingAnnotationKey]
-	err := json.Unmarshal([]byte(val), m)
+	val, ok := a[PortHostMappingAnnotationKey]
+	if !ok {
+		return m, nil
+	}
+	err := json.Unmarshal([]byte(val), &m)
 	if err != nil {
 		return m, errors.Wrap(err, "failed to unmarshal port host mapping for service")
 	}
@@ -131,7 +134,7 @@ func portHostMappingFromService(svc *corev1.Service) (portHostMapping, error) {
 func (p portHostMapping) validate(svc *corev1.Service) error {
 	portNames, hosts := p.portHostSets()
 	if len(p) > hosts.Len() {
-		return fmt.Errorf("duplicated hostname in port host mapping of service: %v", hosts.List())
+		return fmt.Errorf("duplicated hostname in port host mapping of service: %v", p)
 	}
 	actualPortNames := portNamesSet(svc)
 	if diff := portNames.Difference(actualPortNames); len(diff) > 0 {
