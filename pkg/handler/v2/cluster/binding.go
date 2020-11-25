@@ -56,6 +56,44 @@ func UnbindUserFromRoleBindingEndpoint(projectProvider provider.ProjectProvider,
 	}
 }
 
+func ListRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listBindingReq)
+		return handlercommon.ListRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
+	}
+}
+
+func BindUserToClusterRoleEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(clusterRoleUserReq)
+
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest("invalid request: %v", err)
+		}
+
+		return handlercommon.BindUserToClusterRoleEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID)
+	}
+}
+
+func UnbindUserFromClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(clusterRoleUserReq)
+
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest("invalid request: %v", err)
+		}
+
+		return handlercommon.UnbindUserFromClusterRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID)
+	}
+}
+
+func ListClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listBindingReq)
+		return handlercommon.ListClusterRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
+	}
+}
+
 // Validate validates roleUserReq request
 func (req roleUserReq) Validate() error {
 	if len(req.ProjectID) == 0 {
@@ -124,28 +162,37 @@ func DecodeRoleUserReq(c context.Context, r *http.Request) (interface{}, error) 
 	return req, nil
 }
 
-func BindUserToClusterRoleEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(clusterRoleUserReq)
+// listBindingReq defines HTTP request for listClusterRoleBinding endpoint
+// swagger:parameters listClusterRoleBindingV2 listRoleBindingV2
+type listBindingReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
+}
 
-		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest("invalid request: %v", err)
-		}
-
-		return handlercommon.BindUserToClusterRoleEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID)
+// GetSeedCluster returns the SeedCluster object
+func (req listBindingReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
 	}
 }
 
-func UnbindUserFromClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(clusterRoleUserReq)
-
-		if err := req.Validate(); err != nil {
-			return nil, errors.NewBadRequest("invalid request: %v", err)
-		}
-
-		return handlercommon.UnbindUserFromClusterRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID)
+func DecodeListBindingReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req listBindingReq
+	clusterID, err := common.DecodeClusterID(c, r)
+	if err != nil {
+		return nil, err
 	}
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ProjectReq = projectReq.(common.ProjectReq)
+	req.ClusterID = clusterID
+
+	return req, nil
 }
 
 // Validate validates clusterRoleUserReq request
