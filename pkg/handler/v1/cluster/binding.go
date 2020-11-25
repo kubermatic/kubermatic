@@ -27,13 +27,9 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
-
-	rbacv1 "k8s.io/api/rbac/v1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func BindUserToRoleEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -58,31 +54,6 @@ func UnbindUserFromRoleBindingEndpoint(projectProvider provider.ProjectProvider,
 
 		return handlercommon.UnbindUserFromRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID, req.Namespace)
 	}
-}
-
-// Validate validates roleUserReq request
-func (r roleUserReq) Validate() error {
-	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
-		return fmt.Errorf("the project ID and datacenter cannot be empty")
-	}
-	if r.Body.UserEmail == "" && r.Body.Group == "" {
-		return fmt.Errorf("either user email or group must be set")
-	}
-	return nil
-}
-
-// roleUserReq defines HTTP request for bindUserToRole endpoint
-// swagger:parameters bindUserToRole unbindUserFromRoleBinding
-type roleUserReq struct {
-	common.GetClusterReq
-	// in: path
-	// required: true
-	RoleID string `json:"role_id"`
-	// in: path
-	// required: true
-	Namespace string `json:"namespace"`
-	// in: body
-	Body apiv1.RoleUser
 }
 
 func DecodeRoleUserReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -120,28 +91,7 @@ func DecodeRoleUserReq(c context.Context, r *http.Request) (interface{}, error) 
 func ListRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listBindingReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		roleBindingList := &rbacv1.RoleBindingList{}
-		if err := client.List(
-			ctx,
-			roleBindingList,
-			ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue},
-		); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return convertInternalRoleBindingsToExternal(roleBindingList.Items), nil
+		return handlercommon.ListRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
 	}
 }
 
@@ -167,6 +117,38 @@ func UnbindUserFromClusterRoleBindingEndpoint(projectProvider provider.ProjectPr
 
 		return handlercommon.UnbindUserFromClusterRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.Body, req.ProjectID, req.ClusterID, req.RoleID)
 	}
+}
+
+func ListClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listBindingReq)
+		return handlercommon.ListClusterRoleBindingEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
+	}
+}
+
+// Validate validates roleUserReq request
+func (r roleUserReq) Validate() error {
+	if len(r.ProjectID) == 0 || len(r.DC) == 0 {
+		return fmt.Errorf("the project ID and datacenter cannot be empty")
+	}
+	if r.Body.UserEmail == "" && r.Body.Group == "" {
+		return fmt.Errorf("either user email or group must be set")
+	}
+	return nil
+}
+
+// roleUserReq defines HTTP request for bindUserToRole endpoint
+// swagger:parameters bindUserToRole unbindUserFromRoleBinding
+type roleUserReq struct {
+	common.GetClusterReq
+	// in: path
+	// required: true
+	RoleID string `json:"role_id"`
+	// in: path
+	// required: true
+	Namespace string `json:"namespace"`
+	// in: body
+	Body apiv1.RoleUser
 }
 
 // Validate validates clusterRoleUserReq request
@@ -219,30 +201,6 @@ func DecodeClusterRoleUserReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-func ListClusterRoleBindingEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(listBindingReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
-		if err != nil {
-			return nil, err
-		}
-
-		client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, req.ProjectID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-		if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue}); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		return convertInternalClusterRoleBindingsToExternal(clusterRoleBindingList.Items), nil
-	}
-}
-
 // listBindingReq defines HTTP request for listClusterRoleBinding endpoint
 // swagger:parameters listClusterRoleBinding listRoleBinding
 type listBindingReq struct {
@@ -264,41 +222,4 @@ func DecodeListBindingReq(c context.Context, r *http.Request) (interface{}, erro
 	req.ClusterID = clusterID
 
 	return req, nil
-}
-
-func convertInternalRoleBindingToExternal(clusterRole *rbacv1.RoleBinding) *apiv1.RoleBinding {
-	roleBinding := &apiv1.RoleBinding{
-		Namespace:   clusterRole.Namespace,
-		RoleRefName: clusterRole.RoleRef.Name,
-		Subjects:    clusterRole.Subjects,
-	}
-
-	return roleBinding
-}
-
-func convertInternalRoleBindingsToExternal(roleBindings []rbacv1.RoleBinding) []*apiv1.RoleBinding {
-	var apiRoleBinding []*apiv1.RoleBinding
-	for _, binding := range roleBindings {
-		apiRoleBinding = append(apiRoleBinding, convertInternalRoleBindingToExternal(binding.DeepCopy()))
-	}
-
-	return apiRoleBinding
-}
-
-func convertInternalClusterRoleBindingToExternal(clusterRoleBinding *rbacv1.ClusterRoleBinding) *apiv1.ClusterRoleBinding {
-	binding := &apiv1.ClusterRoleBinding{
-		RoleRefName: clusterRoleBinding.RoleRef.Name,
-		Subjects:    clusterRoleBinding.Subjects,
-	}
-
-	return binding
-}
-
-func convertInternalClusterRoleBindingsToExternal(clusterRoleBindings []rbacv1.ClusterRoleBinding) []*apiv1.ClusterRoleBinding {
-	var apiClusterRoleBinding []*apiv1.ClusterRoleBinding
-	for _, binding := range clusterRoleBindings {
-		apiClusterRoleBinding = append(apiClusterRoleBinding, convertInternalClusterRoleBindingToExternal(binding.DeepCopy()))
-	}
-
-	return apiClusterRoleBinding
 }

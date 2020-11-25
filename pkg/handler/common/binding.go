@@ -284,6 +284,70 @@ func UnbindUserFromClusterRoleBindingEndpoint(ctx context.Context, userInfoGette
 	return convertInternalClusterRoleBindingToExternal(binding), nil
 }
 
+func ListRoleBindingEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	roleBindingList := &rbacv1.RoleBindingList{}
+	if err := client.List(
+		ctx,
+		roleBindingList,
+		ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterBindingComponentValue},
+	); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return convertInternalRoleBindingsToExternal(roleBindingList.Items), nil
+}
+
+func ListClusterRoleBindingEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
+	if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{UserClusterComponentKey: UserClusterBindingComponentValue}); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return convertInternalClusterRoleBindingsToExternal(clusterRoleBindingList.Items), nil
+}
+
+func convertInternalClusterRoleBindingsToExternal(clusterRoleBindings []rbacv1.ClusterRoleBinding) []*apiv1.ClusterRoleBinding {
+	var apiClusterRoleBinding []*apiv1.ClusterRoleBinding
+	for _, binding := range clusterRoleBindings {
+		apiClusterRoleBinding = append(apiClusterRoleBinding, convertInternalClusterRoleBindingToExternal(binding.DeepCopy()))
+	}
+
+	return apiClusterRoleBinding
+}
+
+func convertInternalRoleBindingsToExternal(roleBindings []rbacv1.RoleBinding) []*apiv1.RoleBinding {
+	var apiRoleBinding []*apiv1.RoleBinding
+	for _, binding := range roleBindings {
+		apiRoleBinding = append(apiRoleBinding, convertInternalRoleBindingToExternal(binding.DeepCopy()))
+	}
+
+	return apiRoleBinding
+}
+
 func convertInternalRoleBindingToExternal(clusterRole *rbacv1.RoleBinding) *apiv1.RoleBinding {
 	roleBinding := &apiv1.RoleBinding{
 		Namespace:   clusterRole.Namespace,
