@@ -117,15 +117,15 @@ func TestSync(t *testing.T) {
 				},
 			},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
-				"test/my-nodeport-32000": {
-					Name:           "test/my-nodeport-32000",
+				"test/my-nodeport-https": {
+					Name:           "test/my-nodeport-https",
 					ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
 					ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
 						Type: envoyclusterv3.Cluster_STATIC,
 					},
 					LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
 					LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
-						ClusterName: "test/my-nodeport-32000",
+						ClusterName: "test/my-nodeport-https",
 						Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
 							{
 								LbEndpoints: []*envoyendpointv3.LbEndpoint{
@@ -168,15 +168,15 @@ func TestSync(t *testing.T) {
 						},
 					},
 				},
-				"test/my-nodeport-32001": {
-					Name:           "test/my-nodeport-32001",
+				"test/my-nodeport-http": {
+					Name:           "test/my-nodeport-http",
 					ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
 					ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
 						Type: envoyclusterv3.Cluster_STATIC,
 					},
 					LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
 					LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
-						ClusterName: "test/my-nodeport-32001",
+						ClusterName: "test/my-nodeport-http",
 						Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
 							{
 								LbEndpoints: []*envoyendpointv3.LbEndpoint{
@@ -221,8 +221,8 @@ func TestSync(t *testing.T) {
 				},
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{
-				"test/my-nodeport-32000": {
-					Name: "test/my-nodeport-32000",
+				"test/my-nodeport-https": {
+					Name: "test/my-nodeport-https",
 					Address: &envoycorev3.Address{
 						Address: &envoycorev3.Address_SocketAddress{
 							SocketAddress: &envoycorev3.SocketAddress{
@@ -243,7 +243,7 @@ func TestSync(t *testing.T) {
 										TypedConfig: marshalMessage(t, &envoytcpfilterv3.TcpProxy{
 											StatPrefix: "ingress_tcp",
 											ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
-												Cluster: "test/my-nodeport-32000",
+												Cluster: "test/my-nodeport-https",
 											},
 										}),
 									},
@@ -252,8 +252,8 @@ func TestSync(t *testing.T) {
 						},
 					},
 				},
-				"test/my-nodeport-32001": {
-					Name: "test/my-nodeport-32001",
+				"test/my-nodeport-http": {
+					Name: "test/my-nodeport-http",
 					Address: &envoycorev3.Address{
 						Address: &envoycorev3.Address_SocketAddress{
 							SocketAddress: &envoycorev3.SocketAddress{
@@ -274,7 +274,7 @@ func TestSync(t *testing.T) {
 										TypedConfig: marshalMessage(t, &envoytcpfilterv3.TcpProxy{
 											StatPrefix: "ingress_tcp",
 											ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
-												Cluster: "test/my-nodeport-32001",
+												Cluster: "test/my-nodeport-http",
 											},
 										}),
 									},
@@ -337,15 +337,15 @@ func TestSync(t *testing.T) {
 				},
 			},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
-				"test/my-nodeport-32001": {
-					Name:           "test/my-nodeport-32001",
+				"test/my-nodeport-http": {
+					Name:           "test/my-nodeport-http",
 					ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
 					ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
 						Type: envoyclusterv3.Cluster_STATIC,
 					},
 					LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
 					LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
-						ClusterName: "test/my-nodeport-32001",
+						ClusterName: "test/my-nodeport-http",
 						Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
 							{
 								LbEndpoints: []*envoyendpointv3.LbEndpoint{
@@ -373,8 +373,8 @@ func TestSync(t *testing.T) {
 				},
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{
-				"test/my-nodeport-32001": {
-					Name: "test/my-nodeport-32001",
+				"test/my-nodeport-http": {
+					Name: "test/my-nodeport-http",
 					Address: &envoycorev3.Address{
 						Address: &envoycorev3.Address_SocketAddress{
 							SocketAddress: &envoycorev3.SocketAddress{
@@ -395,7 +395,7 @@ func TestSync(t *testing.T) {
 										TypedConfig: marshalMessage(t, &envoytcpfilterv3.TcpProxy{
 											StatPrefix: "ingress_tcp",
 											ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
-												Cluster: "test/my-nodeport-32001",
+												Cluster: "test/my-nodeport-http",
 											},
 										}),
 									},

@@ -27,7 +27,6 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/wrappers"
 	"github.com/pkg/errors"
-	"google.golang.org/protobuf/types/known/anypb"
 	corev1 "k8s.io/api/core/v1"
 
 	//	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -51,26 +50,21 @@ import (
 const clusterConnectTimeout = 1 * time.Second
 
 const (
-	HTTPSAltPort  = 8443
-	HTTPProxyPort = 8080
-	UpgradeType   = "CONNECT"
+	UpgradeType = "CONNECT"
 )
 
-var stdoutAccessLog *anypb.Any
-
-func init() {
-	var err error
+// This will be used when the new expose strategy will be fully implemented
+//nolint:unused
+func makeAccessLog() []*envoyaccesslogv3.AccessLog {
 	f := &envoylistenerlogv3.FileAccessLog{
 		Path: "/dev/stdout",
 	}
 
-	stdoutAccessLog, err = ptypes.MarshalAny(f)
+	stdoutAccessLog, err := ptypes.MarshalAny(f)
 	if err != nil {
 		panic(err)
 	}
-}
 
-func makeAccessLog() []*envoyaccesslogv3.AccessLog {
 	accessLog := []*envoyaccesslogv3.AccessLog{
 		{
 			Name: wellknown.FileAccessLog,
@@ -82,78 +76,81 @@ func makeAccessLog() []*envoyaccesslogv3.AccessLog {
 	return accessLog
 }
 
-func makeSNIFilterChainMatch(service *corev1.Service) *envoylistenerv3.FilterChainMatch {
-	filterChainMatch := &envoylistenerv3.FilterChainMatch{
-		// New annotation used for the new expose strategy. The "expose" one will stay
-		// for the default expose.
-		ServerNames:       []string{service.ObjectMeta.Annotations["nodeport-proxy.k8s.io/domainname"]},
-		TransportProtocol: "tls",
+// This will be used when the new expose strategy will be fully implemented
+//nolint:unused
+func makeSNIFilterChain(service *corev1.Service, p portHostMapping) []*envoylistenerv3.FilterChain {
+	var sniFilterChains []*envoylistenerv3.FilterChain
+
+	serviceKey := ServiceKey(service)
+	for _, servicePort := range service.Spec.Ports {
+		servicePortKey := ServicePortKey(serviceKey, &servicePort)
+
+		tcpProxyConfig := &envoytcpfilterv3.TcpProxy{
+			StatPrefix: "ingress_tcp",
+			ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
+				Cluster: servicePortKey,
+			},
+			AccessLog: makeAccessLog(),
+		}
+
+		tcpProxyConfigMarshalled, err := ptypes.MarshalAny(tcpProxyConfig)
+		if err != nil {
+			panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
+		}
+
+		sniFilterChains = append(sniFilterChains, &envoylistenerv3.FilterChain{
+			Filters: []*envoylistenerv3.Filter{
+				{
+					Name: envoywellknown.TCPProxy,
+					ConfigType: &envoylistenerv3.Filter_TypedConfig{
+						TypedConfig: tcpProxyConfigMarshalled,
+					},
+				},
+			},
+			FilterChainMatch: &envoylistenerv3.FilterChainMatch{
+				ServerNames:       []string{p[servicePort.Name]},
+				TransportProtocol: "tls",
+			},
+		})
 	}
-	return filterChainMatch
+	return sniFilterChains
 }
 
-func (r *Reconciler) makeSNIListener(service *corev1.Service) *envoylistenerv3.Listener {
-	//	serviceKey := ServiceKey(service)
-	//	for _, servicePort := range service.Spec.Ports {
-	//		serviceNodePortName := fmt.Sprintf("%s-%d", serviceKey, servicePort.NodePort)
-
-	// ServiceKey returns a string: "Service.Namespace/Service.Name" so the whole string is:
-	// "namespace/name-nodeport"
-	// serviceNESName := fmt.Sprintf("%s-%d", serviceKey, service.Spec.Ports[0].Port)
-	serviceKey := ServiceKey(service)
-
-	tcpProxyConfig := &envoytcpfilterv3.TcpProxy{
-		StatPrefix: "ingress_tcp",
-		ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
-			Cluster: serviceKey,
-		},
-		AccessLog: makeAccessLog(),
-	}
-
-	tcpProxyConfigMarshalled, err := ptypes.MarshalAny(tcpProxyConfig)
-	if err != nil {
-		panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
-	}
-
-	r.log.Debugf("Using a listener on port %d", HTTPSAltPort)
+// This will be used when the new expose strategy will be fully implemented
+//nolint:unused
+func (r *Reconciler) makeSNIListener() *envoylistenerv3.Listener {
+	r.log.Debugf("Using a listener on port %d", r.EnvoySNIListenerPort)
 
 	sniListener := &envoylistenerv3.Listener{
-		Name: serviceKey,
+		Name: "sni_listener",
 		Address: &envoycorev3.Address{
 			Address: &envoycorev3.Address_SocketAddress{
 				SocketAddress: &envoycorev3.SocketAddress{
 					Protocol: envoycorev3.SocketAddress_TCP,
 					Address:  "0.0.0.0",
 					PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-						PortValue: HTTPSAltPort,
+						PortValue: uint32(r.EnvoySNIListenerPort),
 					},
 				},
-			},
-		},
-		FilterChains: []*envoylistenerv3.FilterChain{
-			{
-				Filters: []*envoylistenerv3.Filter{
-					{
-						Name: envoywellknown.TCPProxy,
-						ConfigType: &envoylistenerv3.Filter_TypedConfig{
-							TypedConfig: tcpProxyConfigMarshalled,
-						},
-					},
-				},
-				FilterChainMatch: makeSNIFilterChainMatch(service),
 			},
 		},
 	}
 	return sniListener
 }
 
+// This will be used when the new expose strategy will be fully implemented
+//nolint:unused
 func makeTunnelingVirtualHosts(service *corev1.Service) []*envoyroutev3.VirtualHost {
+	var virtualhosts []*envoyroutev3.VirtualHost
 	serviceKey := ServiceKey(service)
-	virtualhosts := []*envoyroutev3.VirtualHost{
-		{
-			Name: serviceKey,
+
+	for _, servicePort := range service.Spec.Ports {
+		servicePortKey := ServicePortKey(serviceKey, &servicePort)
+
+		virtualhosts = append(virtualhosts, &envoyroutev3.VirtualHost{
+			Name: servicePortKey,
 			Domains: []string{
-				fmt.Sprintf("%s.%s.svc.cluster.local", service.Name, service.Namespace),
+				fmt.Sprintf("%s.%s.svc.cluster.local:%d", service.Name, service.Namespace, servicePort.Port),
 			},
 			Routes: []*envoyroutev3.Route{
 				{
@@ -165,7 +162,7 @@ func makeTunnelingVirtualHosts(service *corev1.Service) []*envoyroutev3.VirtualH
 					Action: &envoyroutev3.Route_Route{
 						Route: &envoyroutev3.RouteAction{
 							ClusterSpecifier: &envoyroutev3.RouteAction_Cluster{
-								Cluster: serviceKey,
+								Cluster: servicePortKey,
 							},
 							UpgradeConfigs: []*envoyroutev3.RouteAction_UpgradeConfig{
 								{
@@ -177,23 +174,20 @@ func makeTunnelingVirtualHosts(service *corev1.Service) []*envoyroutev3.VirtualH
 					},
 				},
 			},
-		},
+		})
 	}
 	return virtualhosts
 }
 
-//TODO(youssefazrak) Currently we have a 1:1 bind between the listener itself
-// and the virtual_hosts. Each "tunnel" listener of the new expose strategy
-// should have two virtual_hosts, one for OpenVPN and one for the KAS.
-func (r *Reconciler) makeTunnelingListener(service *corev1.Service) *envoylistenerv3.Listener {
-	serviceKey := ServiceKey(service)
+// This will be used when the new expose strategy will be fully implemented
+//nolint:unused
+func (r *Reconciler) makeTunnelingListener() *envoylistenerv3.Listener {
 	httpmanager := &envoyhttpconnectionmanagerv3.HttpConnectionManager{
 		CodecType:  envoyhttpconnectionmanagerv3.HttpConnectionManager_HTTP2,
 		StatPrefix: "ingress_http",
 		RouteSpecifier: &envoyhttpconnectionmanagerv3.HttpConnectionManager_RouteConfig{
 			RouteConfig: &envoyroutev3.RouteConfiguration{
-				Name:         serviceKey,
-				VirtualHosts: makeTunnelingVirtualHosts(service),
+				Name: "http2_connect",
 			},
 		},
 		AccessLog: makeAccessLog(),
@@ -218,17 +212,17 @@ func (r *Reconciler) makeTunnelingListener(service *corev1.Service) *envoylisten
 		panic(err)
 	}
 
-	r.log.Debugf("Using a listener on port %d", HTTPProxyPort)
+	r.log.Debugf("Using a listener on port %d", r.EnvoyHTTP2ConnectListenerPort)
 
 	tunnelingListener := &envoylistenerv3.Listener{
-		Name: serviceKey,
+		Name: "http2connect_listener",
 		Address: &envoycorev3.Address{
 			Address: &envoycorev3.Address_SocketAddress{
 				SocketAddress: &envoycorev3.SocketAddress{
 					Protocol: envoycorev3.SocketAddress_TCP,
 					Address:  "0.0.0.0",
 					PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-						PortValue: HTTPProxyPort,
+						PortValue: uint32(r.EnvoyHTTP2ConnectListenerPort),
 					},
 				},
 			},
@@ -249,9 +243,10 @@ func (r *Reconciler) makeTunnelingListener(service *corev1.Service) *envoylisten
 	return tunnelingListener
 }
 
-func (r *Reconciler) makeNESCluster(service *corev1.Service, endpoints *corev1.Endpoints) (clusters []envoycachetype.Resource) {
+func (r *Reconciler) makeClusters(service *corev1.Service, endpoints *corev1.Endpoints) (clusters []envoycachetype.Resource) {
 	serviceKey := ServiceKey(service)
 	for _, servicePort := range service.Spec.Ports {
+		servicePortKey := ServicePortKey(serviceKey, &servicePort)
 		endpoints := r.getEndpoints(service, &servicePort, corev1.ProtocolTCP, endpoints)
 
 		// Must be sorted, otherwise we get into trouble when doing the snapshot diff later
@@ -262,14 +257,14 @@ func (r *Reconciler) makeNESCluster(service *corev1.Service, endpoints *corev1.E
 		})
 
 		cluster := &envoyclusterv3.Cluster{
-			Name:           serviceKey,
+			Name:           servicePortKey,
 			ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
 			ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
 				Type: envoyclusterv3.Cluster_STATIC,
 			},
 			LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
 			LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
-				ClusterName: serviceKey,
+				ClusterName: servicePortKey,
 				Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
 					{
 						LbEndpoints: endpoints,
@@ -282,42 +277,15 @@ func (r *Reconciler) makeNESCluster(service *corev1.Service, endpoints *corev1.E
 	return
 }
 
-func (r *Reconciler) makeListenersAndClustersForService(service *corev1.Service, endpoints *corev1.Endpoints) (listeners []envoycachetype.Resource, clusters []envoycachetype.Resource) {
+func (r *Reconciler) makeListenersForNodePortService(service *corev1.Service) (listeners []envoycachetype.Resource) {
 	serviceKey := ServiceKey(service)
 	for _, servicePort := range service.Spec.Ports {
-		serviceNodePortName := fmt.Sprintf("%s-%d", serviceKey, servicePort.NodePort)
-
-		endpoints := r.getEndpoints(service, &servicePort, corev1.ProtocolTCP, endpoints)
-
-		// Must be sorted, otherwise we get into trouble when doing the snapshot diff later
-		sort.Slice(endpoints, func(i, j int) bool {
-			addrI := endpoints[i].HostIdentifier.(*envoyendpointv3.LbEndpoint_Endpoint).Endpoint.Address.Address.(*envoycorev3.Address_SocketAddress).SocketAddress.Address
-			addrJ := endpoints[j].HostIdentifier.(*envoyendpointv3.LbEndpoint_Endpoint).Endpoint.Address.Address.(*envoycorev3.Address_SocketAddress).SocketAddress.Address
-			return addrI < addrJ
-		})
-
-		cluster := &envoyclusterv3.Cluster{
-			Name:           serviceNodePortName,
-			ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
-			ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
-				Type: envoyclusterv3.Cluster_STATIC,
-			},
-			LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
-			LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
-				ClusterName: serviceNodePortName,
-				Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
-					{
-						LbEndpoints: endpoints,
-					},
-				},
-			},
-		}
-		clusters = append(clusters, cluster)
+		servicePortKey := ServicePortKey(serviceKey, &servicePort)
 
 		tcpProxyConfig := &envoytcpfilterv3.TcpProxy{
 			StatPrefix: "ingress_tcp",
 			ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
-				Cluster: serviceNodePortName,
+				Cluster: servicePortKey,
 			},
 		}
 
@@ -329,7 +297,7 @@ func (r *Reconciler) makeListenersAndClustersForService(service *corev1.Service,
 		r.log.Debugf("Using a listener on port %d", servicePort.NodePort)
 
 		listener := &envoylistenerv3.Listener{
-			Name: serviceNodePortName,
+			Name: servicePortKey,
 			Address: &envoycorev3.Address{
 				Address: &envoycorev3.Address_SocketAddress{
 					SocketAddress: &envoycorev3.SocketAddress{

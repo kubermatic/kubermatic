@@ -151,7 +151,8 @@ func (r *Reconciler) sync() error {
 			serviceLog.Debug("skipping service: it has no running pods")
 			continue
 		}
-		l, c := r.makeListenersAndClustersForService(&service, &eps)
+		l := r.makeListenersForNodePortService(&service)
+		c := r.makeClusters(&service, &eps)
 		listeners = append(listeners, l...)
 		clusters = append(clusters, c...)
 
