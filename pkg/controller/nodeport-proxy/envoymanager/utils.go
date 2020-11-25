@@ -29,17 +29,6 @@ import (
 )
 
 const (
-	// NodePortType is the default ExposeType which creates a listener for each
-	// NodePort.
-	NodePortType ExposeType = "NodePort"
-	// SNIType configures Envoy to route TLS streams based on SNI
-	// without terminating them.
-	SNIType ExposeType = "SNI"
-	// HTTP2ConnectType configures Envoy to terminate HTTP/2 Connect requests.
-	HTTP2ConnectType ExposeType = "HTTP2Connect"
-)
-
-const (
 	DefaultExposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
 	// PortHostMappingAnnotationKey contains the mapping between the port to be
 	// exposed and the hostname, this is only used when the ExposeType is
@@ -49,6 +38,17 @@ const (
 
 // ExposeType defines the strategy used to expose the service.
 type ExposeType string
+
+const (
+	// NodePortType is the default ExposeType which creates a listener for each
+	// NodePort.
+	NodePortType ExposeType = "NodePort"
+	// SNIType configures Envoy to route TLS streams based on SNI
+	// without terminating them.
+	SNIType ExposeType = "SNI"
+	// HTTP2ConnectType configures Envoy to terminate HTTP/2 Connect requests.
+	HTTP2ConnectType ExposeType = "HTTP2Connect"
+)
 
 // ExposeTypeFromString returns the ExposeType which string representation
 // corresponds to the input string, and a boolean indicating whether the
@@ -117,6 +117,18 @@ func portNamesSet(svc *corev1.Service) sets.String {
 	return portNames
 }
 
+// portHostSets returns respectively the set of port names and hosts from the
+// portHostMapping.
+func (p portHostMapping) portHostSets() (sets.String, sets.String) {
+	hosts := sets.NewString()
+	portNames := sets.NewString()
+	for portName, host := range p {
+		hosts.Insert(host)
+		portNames.Insert(portName)
+	}
+	return portNames, hosts
+}
+
 // portHostMapping contains the mapping between port name and hostname, used
 // for SNI ExposeType.
 type portHostMapping map[string]string
@@ -148,14 +160,4 @@ func (p portHostMapping) validate(svc *corev1.Service) error {
 		return fmt.Errorf("ports declared in port host mapping not found in service: %v", diff.List())
 	}
 	return nil
-}
-
-func (p portHostMapping) portHostSets() (sets.String, sets.String) {
-	hosts := sets.NewString()
-	portNames := sets.NewString()
-	for portName, host := range p {
-		hosts.Insert(host)
-		portNames.Insert(portName)
-	}
-	return portNames, hosts
 }

@@ -57,6 +57,16 @@ type Options struct {
 	EnvoyAdminPort int
 	// EnvoyStatsPort is the port used to expose Envoy stats.
 	EnvoyStatsPort int
+
+	// EnvoySNIListenerPort is the port used by the SNI Listener.
+	// When the value is less or equal than 0 the SNI Listener is disabled and
+	// won't be configured in Envoy.
+	EnvoySNIListenerPort int
+	// EnvoyHTTP2ConnectListenerPort is the port used to listen for HTTP/2
+	// CONNECT requests.
+	// When the value is less or equal than 0 the HTTP/2 CONNECT Listener is
+	// disabled and won't be configured in Envoy.
+	EnvoyHTTP2ConnectListenerPort int
 }
 
 // NewReconciler returns a new Reconciler or an error if something goes wrong
