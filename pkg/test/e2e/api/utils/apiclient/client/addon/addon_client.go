@@ -27,13 +27,29 @@ type Client struct {
 type ClientService interface {
 	CreateAddon(params *CreateAddonParams, authInfo runtime.ClientAuthInfoWriter) (*CreateAddonCreated, error)
 
+	CreateAddonV2(params *CreateAddonV2Params, authInfo runtime.ClientAuthInfoWriter) (*CreateAddonV2Created, error)
+
 	DeleteAddon(params *DeleteAddonParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAddonOK, error)
+
+	DeleteAddonV2(params *DeleteAddonV2Params, authInfo runtime.ClientAuthInfoWriter) (*DeleteAddonV2OK, error)
 
 	GetAddon(params *GetAddonParams, authInfo runtime.ClientAuthInfoWriter) (*GetAddonOK, error)
 
+	GetAddonV2(params *GetAddonV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetAddonV2OK, error)
+
+	ListAccessibleAddons(params *ListAccessibleAddonsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAccessibleAddonsOK, error)
+
 	ListAddons(params *ListAddonsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAddonsOK, error)
 
+	ListAddonsV2(params *ListAddonsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAddonsV2OK, error)
+
+	ListInstallableAddons(params *ListInstallableAddonsParams, authInfo runtime.ClientAuthInfoWriter) (*ListInstallableAddonsOK, error)
+
+	ListInstallableAddonsV2(params *ListInstallableAddonsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListInstallableAddonsV2OK, error)
+
 	PatchAddon(params *PatchAddonParams, authInfo runtime.ClientAuthInfoWriter) (*PatchAddonOK, error)
+
+	PatchAddonV2(params *PatchAddonV2Params, authInfo runtime.ClientAuthInfoWriter) (*PatchAddonV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -73,6 +89,40 @@ func (a *Client) CreateAddon(params *CreateAddonParams, authInfo runtime.ClientA
 }
 
 /*
+  CreateAddonV2 Creates an addon that will belong to the given cluster
+*/
+func (a *Client) CreateAddonV2(params *CreateAddonV2Params, authInfo runtime.ClientAuthInfoWriter) (*CreateAddonV2Created, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateAddonV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "createAddonV2",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/addons",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAddonV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateAddonV2Created)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateAddonV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   DeleteAddon deletes the given addon that belongs to the cluster
 */
 func (a *Client) DeleteAddon(params *DeleteAddonParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAddonOK, error) {
@@ -103,6 +153,40 @@ func (a *Client) DeleteAddon(params *DeleteAddonParams, authInfo runtime.ClientA
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteAddonDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteAddonV2 deletes the given addon that belongs to the cluster
+*/
+func (a *Client) DeleteAddonV2(params *DeleteAddonV2Params, authInfo runtime.ClientAuthInfoWriter) (*DeleteAddonV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteAddonV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteAddonV2",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteAddonV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteAddonV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteAddonV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -141,6 +225,74 @@ func (a *Client) GetAddon(params *GetAddonParams, authInfo runtime.ClientAuthInf
 }
 
 /*
+  GetAddonV2 gets an addon that is assigned to the given cluster
+*/
+func (a *Client) GetAddonV2(params *GetAddonV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetAddonV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetAddonV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getAddonV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAddonV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetAddonV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetAddonV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListAccessibleAddons Lists names of addons that can be configured inside the user clusters
+*/
+func (a *Client) ListAccessibleAddons(params *ListAccessibleAddonsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAccessibleAddonsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAccessibleAddonsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAccessibleAddons",
+		Method:             "POST",
+		PathPattern:        "/api/v1/addons",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAccessibleAddonsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAccessibleAddonsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAccessibleAddonsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListAddons Lists addons that belong to the given cluster
 */
 func (a *Client) ListAddons(params *ListAddonsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAddonsOK, error) {
@@ -175,6 +327,108 @@ func (a *Client) ListAddons(params *ListAddonsParams, authInfo runtime.ClientAut
 }
 
 /*
+  ListAddonsV2 Lists addons that belong to the given cluster
+*/
+func (a *Client) ListAddonsV2(params *ListAddonsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAddonsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAddonsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAddonsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/addons",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAddonsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAddonsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAddonsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListInstallableAddons Lists names of addons that can be installed inside the user cluster
+*/
+func (a *Client) ListInstallableAddons(params *ListInstallableAddonsParams, authInfo runtime.ClientAuthInfoWriter) (*ListInstallableAddonsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListInstallableAddonsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listInstallableAddons",
+		Method:             "GET",
+		PathPattern:        "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListInstallableAddonsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListInstallableAddonsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListInstallableAddonsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListInstallableAddonsV2 Lists names of addons that can be installed inside the user cluster
+*/
+func (a *Client) ListInstallableAddonsV2(params *ListInstallableAddonsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListInstallableAddonsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListInstallableAddonsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listInstallableAddonsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/installableaddons",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListInstallableAddonsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListInstallableAddonsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListInstallableAddonsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   PatchAddon patches an addon that is assigned to the given cluster
 */
 func (a *Client) PatchAddon(params *PatchAddonParams, authInfo runtime.ClientAuthInfoWriter) (*PatchAddonOK, error) {
@@ -205,6 +459,40 @@ func (a *Client) PatchAddon(params *PatchAddonParams, authInfo runtime.ClientAut
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PatchAddonDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchAddonV2 patches an addon that is assigned to the given cluster
+*/
+func (a *Client) PatchAddonV2(params *PatchAddonV2Params, authInfo runtime.ClientAuthInfoWriter) (*PatchAddonV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchAddonV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchAddonV2",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchAddonV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchAddonV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchAddonV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

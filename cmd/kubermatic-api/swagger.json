@@ -141,7 +141,10 @@
         "produces": [
           "application/json"
         ],
-        "operationId": "addon",
+        "tags": [
+          "addon"
+        ],
+        "operationId": "listAccessibleAddons",
         "responses": {
           "200": {
             "description": "AccessibleAddons",
@@ -2485,6 +2488,61 @@
             "description": "ClusterHealth",
             "schema": {
               "$ref": "#/definitions/ClusterHealth"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons": {
+      "get": {
+        "description": "Lists names of addons that can be installed inside the user cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "addon"
+        ],
+        "operationId": "listInstallableAddons",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AccessibleAddons",
+            "schema": {
+              "$ref": "#/definitions/AccessibleAddons"
             }
           },
           "401": {
@@ -8442,6 +8500,281 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/addons": {
+      "get": {
+        "description": "Lists addons that belong to the given cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "addon"
+        ],
+        "operationId": "listAddonsV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Addon",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Addon"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates an addon that will belong to the given cluster",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "addon"
+        ],
+        "operationId": "createAddonV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Addon"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Addon",
+            "schema": {
+              "$ref": "#/definitions/Addon"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "addon"
+        ],
+        "summary": "Gets an addon that is assigned to the given cluster.",
+        "operationId": "getAddonV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "AddonID",
+            "name": "addon_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Addon",
+            "schema": {
+              "$ref": "#/definitions/Addon"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "addon"
+        ],
+        "summary": "Deletes the given addon that belongs to the cluster.",
+        "operationId": "deleteAddonV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "AddonID",
+            "name": "addon_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "addon"
+        ],
+        "summary": "Patches an addon that is assigned to the given cluster.",
+        "operationId": "patchAddonV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "AddonID",
+            "name": "addon_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/Addon"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Addon",
+            "schema": {
+              "$ref": "#/definitions/Addon"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/bindings": {
       "get": {
         "description": "List role binding",
@@ -9132,6 +9465,54 @@
             "description": "ClusterHealth",
             "schema": {
               "$ref": "#/definitions/ClusterHealth"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/installableaddons": {
+      "get": {
+        "description": "Lists names of addons that can be installed inside the user cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "addon"
+        ],
+        "operationId": "listInstallableAddonsV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AccessibleAddons",
+            "schema": {
+              "$ref": "#/definitions/AccessibleAddons"
             }
           },
           "401": {

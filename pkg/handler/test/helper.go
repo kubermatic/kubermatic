@@ -30,6 +30,8 @@ import (
 	"testing"
 	"time"
 
+	k8sjson "k8s.io/apimachinery/pkg/util/json"
+
 	ver "github.com/Masterminds/semver"
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -1374,4 +1376,14 @@ func GenDefaultGroupClusterRoleBinding(name, roleID, group string) *rbacv1.Clust
 
 func RegisterScheme(builder runtime.SchemeBuilder) error {
 	return builder.AddToScheme(scheme.Scheme)
+}
+
+func CreateRawVariables(t *testing.T, in map[string]interface{}) *runtime.RawExtension {
+	result := &runtime.RawExtension{}
+	raw, err := k8sjson.Marshal(in)
+	if err != nil {
+		t.Fatalf("failed to marshal external Variables: %v", err)
+	}
+	result.Raw = raw
+	return result
 }

@@ -231,12 +231,12 @@ func TokenVerifier(tokenVerifier auth.TokenVerifier, userProvider provider.UserP
 }
 
 // Addons is a middleware that injects the current AddonProvider into the ctx
-func Addons(addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+func Addons(clusterProviderGetter provider.ClusterProviderGetter, addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			addonProvider, err := getAddonProvider(addonProviderGetter, seedsGetter, seedCluster.SeedName)
+			addonProvider, err := getAddonProvider(clusterProviderGetter, addonProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -247,11 +247,11 @@ func Addons(addonProviderGetter provider.AddonProviderGetter, seedsGetter provid
 }
 
 // PrivilegedAddons is a middleware that injects the current PrivilegedAddonProvider into the ctx
-func PrivilegedAddons(addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+func PrivilegedAddons(clusterProviderGetter provider.ClusterProviderGetter, addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
-			addonProvider, err := getAddonProvider(addonProviderGetter, seedsGetter, seedCluster.SeedName)
+			addonProvider, err := getAddonProvider(clusterProviderGetter, addonProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
@@ -262,10 +262,23 @@ func PrivilegedAddons(addonProviderGetter provider.AddonProviderGetter, seedsGet
 	}
 }
 
-func getAddonProvider(addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter, seedName string) (provider.AddonProvider, error) {
+func getAddonProvider(clusterProviderGetter provider.ClusterProviderGetter, addonProviderGetter provider.AddonProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AddonProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
 		return nil, err
+	}
+
+	if clusterID != "" {
+		for _, seed := range seeds {
+			clusterProvider, err := clusterProviderGetter(seed)
+			if err != nil {
+				return nil, k8cerrors.NewNotFound("cluster-provider", clusterID)
+			}
+			if clusterProvider.IsCluster(clusterID) {
+				seedName = seed.Name
+				break
+			}
+		}
 	}
 
 	seed, found := seeds[seedName]

@@ -33,57 +33,93 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
-// addonReq defines HTTP request for getAddon and deleteAddon
-// swagger:parameters getAddon deleteAddon
+// addonReq defines HTTP request for getAddonV2 and deleteAddonV2
+// swagger:parameters getAddonV2 deleteAddonV2
 type addonReq struct {
-	common.GetClusterReq
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
 	// in: path
 	AddonID string `json:"addon_id"`
 }
 
-// listReq defines HTTP request for listAddons and listInstallableAddons endpoints
-// swagger:parameters listAddons listInstallableAddons
+// listReq defines HTTP request for listAddonsV2 and listInstallableAddonsV2 endpoints
+// swagger:parameters listAddonsV2 listInstallableAddonsV2
 type listReq struct {
-	common.GetClusterReq
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
 }
 
 // createReq defines HTTP request for createAddon endpoint
-// swagger:parameters createAddon
+// swagger:parameters createAddonV2
 type createReq struct {
-	common.GetClusterReq
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterID string `json:"cluster_id"`
 	// in: body
 	Body apiv1.Addon
 }
 
-// patchReq defines HTTP request for patchAddon endpoint
-// swagger:parameters patchAddon
+// patchReq defines HTTP request for patchAddonV2 endpoint
+// swagger:parameters patchAddonV2
 type patchReq struct {
 	addonReq
 	// in: body
 	Body apiv1.Addon
 }
 
-// patchReq defines HTTP request for getAddonConfig endpoint
-// swagger:parameters getAddonConfig
-type getConfigReq struct {
-	// in: path
-	AddonID string `json:"addon_id"`
+// GetSeedCluster returns the SeedCluster object
+func (req patchReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req createReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req listReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req addonReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		ClusterID: req.ClusterID,
+	}
 }
 
 func DecodeGetAddon(c context.Context, r *http.Request) (interface{}, error) {
 	var req addonReq
 
-	cr, err := common.DecodeGetClusterReq(c, r)
+	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
+
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ProjectReq = projectReq.(common.ProjectReq)
+	req.ClusterID = clusterID
 
 	addonID, err := decodeAddonID(c, r)
 	if err != nil {
 		return nil, err
 	}
-
-	req.GetClusterReq = cr.(common.GetClusterReq)
 	req.AddonID = addonID
 
 	return req, nil
@@ -92,12 +128,18 @@ func DecodeGetAddon(c context.Context, r *http.Request) (interface{}, error) {
 func DecodeListAddons(c context.Context, r *http.Request) (interface{}, error) {
 	var req listReq
 
-	cr, err := common.DecodeGetClusterReq(c, r)
+	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
 
-	req.GetClusterReq = cr.(common.GetClusterReq)
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ProjectReq = projectReq.(common.ProjectReq)
+	req.ClusterID = clusterID
 
 	return req, nil
 }
@@ -105,12 +147,18 @@ func DecodeListAddons(c context.Context, r *http.Request) (interface{}, error) {
 func DecodeCreateAddon(c context.Context, r *http.Request) (interface{}, error) {
 	var req createReq
 
-	cr, err := common.DecodeGetClusterReq(c, r)
+	clusterID, err := common.DecodeClusterID(c, r)
 	if err != nil {
 		return nil, err
 	}
 
-	req.GetClusterReq = cr.(common.GetClusterReq)
+	projectReq, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.ProjectReq = projectReq.(common.ProjectReq)
+	req.ClusterID = clusterID
 
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -135,19 +183,6 @@ func DecodePatchAddon(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func DecodeGetConfig(c context.Context, r *http.Request) (interface{}, error) {
-	var req getConfigReq
-
-	addonID, err := decodeAddonID(c, r)
-	if err != nil {
-		return nil, err
-	}
-
-	req.AddonID = addonID
-
-	return req, nil
-}
-
 func decodeAddonID(c context.Context, r *http.Request) (string, error) {
 	addonID := mux.Vars(r)["addon_id"]
 	if addonID == "" {
@@ -155,12 +190,6 @@ func decodeAddonID(c context.Context, r *http.Request) (string, error) {
 	}
 
 	return addonID, nil
-}
-
-func ListAccessibleAddons(accessibleAddons sets.String) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return accessibleAddons.UnsortedList(), nil
-	}
 }
 
 func ListInstallableAddonEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, accessibleAddons sets.String) endpoint.Endpoint {
@@ -202,19 +231,5 @@ func DeleteAddonEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(addonReq)
 		return handlercommon.DeleteAddonEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.AddonID)
-	}
-}
-
-func ListAddonConfigsEndpoint(addonConfigProvider provider.AddonConfigProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		return handlercommon.ListAddonConfigsEndpoint(addonConfigProvider)
-	}
-}
-
-func GetAddonConfigEndpoint(addonConfigProvider provider.AddonConfigProvider) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(getConfigReq)
-
-		return handlercommon.GetAddonConfigEndpoint(addonConfigProvider, req.AddonID)
 	}
 }
