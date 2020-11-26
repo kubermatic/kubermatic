@@ -76,6 +76,14 @@ func ServiceKey(service *corev1.Service) string {
 	return fmt.Sprintf("%s/%s", service.Namespace, service.Name)
 }
 
+// ServicePortKey returns a string used to identify the given ServicePort.
+func ServicePortKey(serviceKey string, servicePort *corev1.ServicePort) string {
+	if servicePort.Name == "" {
+		return serviceKey
+	}
+	return fmt.Sprintf("%s-%s", serviceKey, servicePort.Name)
+}
+
 func isExposed(obj metav1.Object, exposeAnnotationKey string) bool {
 	return len(extractExposeTypes(obj, exposeAnnotationKey)) > 0
 }
