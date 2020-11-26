@@ -32,6 +32,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -66,7 +67,8 @@ func NewClusterProvider(
 	extractGroupPrefix extractGroupPrefixFunc,
 	client ctrlruntimeclient.Client,
 	k8sClient kubernetes.Interface,
-	oidcKubeConfEndpoint bool) *ClusterProvider {
+	oidcKubeConfEndpoint bool,
+	versions kubermatic.Versions) *ClusterProvider {
 	return &ClusterProvider{
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 		userClusterConnProvider:      userClusterConnProvider,
@@ -76,6 +78,7 @@ func NewClusterProvider(
 		k8sClient:                    k8sClient,
 		oidcKubeConfEndpoint:         oidcKubeConfEndpoint,
 		seedKubeconfig:               cfg,
+		versions:                     versions,
 	}
 }
 
@@ -95,6 +98,7 @@ type ClusterProvider struct {
 	client               ctrlruntimeclient.Client
 	k8sClient            kubernetes.Interface
 	seedKubeconfig       *restclient.Config
+	versions             kubermatic.Versions
 }
 
 // New creates a brand new cluster that is bound to the given project
@@ -107,7 +111,7 @@ func (p *ClusterProvider) New(project *kubermaticv1.Project, userInfo *provider.
 		return nil, errors.New("can not set OIDC for the cluster when share config feature is enabled")
 	}
 
-	newCluster := genAPICluster(project, cluster, userInfo.Email, p.workerName)
+	newCluster := genAPICluster(project, cluster, userInfo.Email, p.workerName, p.versions)
 
 	seedImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
@@ -131,7 +135,7 @@ func (p *ClusterProvider) NewUnsecured(project *kubermaticv1.Project, cluster *k
 		return nil, errors.New("can not set OIDC for the cluster when share config feature is enabled")
 	}
 
-	newCluster := genAPICluster(project, cluster, userEmail, p.workerName)
+	newCluster := genAPICluster(project, cluster, userEmail, p.workerName, p.versions)
 
 	err := p.client.Create(context.Background(), newCluster)
 	if err != nil {
@@ -141,7 +145,7 @@ func (p *ClusterProvider) NewUnsecured(project *kubermaticv1.Project, cluster *k
 	return newCluster, nil
 }
 
-func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, email, workerName string) *kubermaticv1.Cluster {
+func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster, email, workerName string, versions kubermatic.Versions) *kubermaticv1.Cluster {
 	cluster.Spec.HumanReadableName = strings.TrimSpace(cluster.Spec.HumanReadableName)
 
 	var name string
@@ -163,7 +167,7 @@ func genAPICluster(project *kubermaticv1.Project, cluster *kubermaticv1.Cluster,
 			UserEmail:              email,
 			NamespaceName:          NamespaceName(name),
 			CloudMigrationRevision: cloud.CurrentMigrationRevision,
-			KubermaticVersion:      resources.KUBERMATICCOMMIT,
+			KubermaticVersion:      versions.Kubermatic,
 			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
 				Apiserver:                    kubermaticv1.HealthStatusProvisioning,
 				Scheduler:                    kubermaticv1.HealthStatusProvisioning,
@@ -281,7 +285,7 @@ func (p *ClusterProvider) Update(project *kubermaticv1.Project, userInfo *provid
 		return nil, err
 	}
 
-	newCluster.Status.KubermaticVersion = resources.KUBERMATICCOMMIT
+	newCluster.Status.KubermaticVersion = p.versions.Kubermatic
 	newCluster.Labels = getClusterLabels(newCluster.Labels, project.Name, "") // Do not update worker name.
 	if err := seedImpersonatedClient.Update(context.Background(), newCluster); err != nil {
 		return nil, err
@@ -462,7 +466,7 @@ func (p *ClusterProvider) UpdateUnsecured(project *kubermaticv1.Project, cluster
 	if project == nil {
 		return nil, errors.New("project is missing but required")
 	}
-	cluster.Status.KubermaticVersion = resources.KUBERMATICCOMMIT
+	cluster.Status.KubermaticVersion = p.versions.Kubermatic
 	cluster.Labels = getClusterLabels(cluster.Labels, project.Name, "") // Do not update worker name.
 	err := p.client.Update(context.Background(), cluster)
 	if err != nil {

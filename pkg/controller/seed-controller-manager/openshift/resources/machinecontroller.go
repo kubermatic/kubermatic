@@ -19,7 +19,6 @@ package resources
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -49,7 +48,7 @@ func MachineController(osData openshiftData) reconciling.NamedDeploymentCreatorG
 				VolumeSource: corev1.VolumeSource{EmptyDir: &corev1.EmptyDirVolumeSource{}}})
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{{
 				Name:  "copy-userdata-plugin",
-				Image: osData.KubermaticAPIImage() + ":" + resources.KUBERMATICCOMMIT,
+				Image: osData.KubermaticAPIImage() + ":" + osData.KubermaticDockerTag(),
 				Command: []string{
 					"cp",
 					"/usr/local/bin/userdata-openshift",

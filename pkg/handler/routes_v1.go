@@ -1610,7 +1610,7 @@ func (r Routing) getKubermaticVersion() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(v1.GetKubermaticVersion()),
+		)(v1.GetKubermaticVersion(r.versions)),
 		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,

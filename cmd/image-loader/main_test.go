@@ -23,7 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -31,22 +31,18 @@ import (
 func TestRetagImageForAllVersions(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 
-	// Cannot be set during go-test
-	resources.KUBERMATICCOMMIT = "latest"
-	common.KUBERMATICDOCKERTAG = resources.KUBERMATICCOMMIT
-	common.UIDOCKERTAG = resources.KUBERMATICCOMMIT
-
 	config, err := common.DefaultConfiguration(&operatorv1alpha1.KubermaticConfiguration{}, log)
 	if err != nil {
 		t.Errorf("failed to determine versions: %v", err)
 	}
 
-	versions := getVersionsFromKubermaticConfiguration(config)
+	kubermaticVersions := kubermatic.NewFakeVersions()
+	clusterVersions := getVersionsFromKubermaticConfiguration(config)
 	addonPath := "../../addons"
 
 	imageSet := sets.NewString()
-	for _, v := range versions {
-		images, err := getImagesForVersion(log, v, config, addonPath)
+	for _, clusterVersion := range clusterVersions {
+		images, err := getImagesForVersion(log, clusterVersion, config, addonPath, kubermaticVersions)
 		if err != nil {
 			t.Errorf("Error calling getImagesForVersion: %v", err)
 		}

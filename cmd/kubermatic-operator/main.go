@@ -24,7 +24,6 @@ import (
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	masterctrl "k8c.io/kubermatic/v2/pkg/controller/operator/master"
 	seedctrl "k8c.io/kubermatic/v2/pkg/controller/operator/seed"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
@@ -33,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/signals"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/klog"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -86,7 +86,7 @@ func main() {
 		log.Fatal("-namespace is a mandatory flag")
 	}
 
-	v := common.NewDefaultVersions()
+	v := kubermatic.NewDefaultVersions()
 	log.With("kubermatic", v.Kubermatic, "ui", v.UI).Infof("Moin, moin, I'm the Kubermatic %s Operator and these are the versions I work with.", v.KubermaticEdition)
 
 	mgr, err := manager.New(ctrl.GetConfigOrDie(), manager.Options{

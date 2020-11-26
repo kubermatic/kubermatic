@@ -28,6 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -76,7 +77,7 @@ func Add(
 		seedRecorders:  map[string]record.EventRecorder{},
 		seedsGetter:    seedsGetter,
 		workerName:     workerName,
-		versions:       common.NewDefaultVersions(),
+		versions:       kubermatic.NewDefaultVersions(),
 	}
 
 	ctrlOpts := controller.Options{

@@ -21,18 +21,16 @@ REPO = $(DOCKER_REPO)/kubermatic$(shell [ "$(KUBERMATIC_EDITION)" != "ce" ] && e
 CMD = $(filter-out OWNERS nodeport-proxy kubeletdnat-controller, $(notdir $(wildcard ./cmd/*)))
 GOBUILDFLAGS ?= -v
 GOOS ?= $(shell go env GOOS)
-GITTAG = $(shell git describe --tags --always)
-TAGS ?= $(GITTAG)
+TAGS ?= $(shell git describe --tags --always)
 DOCKERTAGS = $(TAGS) latestbuild
 DOCKER_BUILD_FLAG += $(foreach tag, $(DOCKERTAGS), -t $(REPO):$(tag))
 KUBERMATICCOMMIT ?= $(shell git log -1 --format=%H)
 KUBERMATICDOCKERTAG ?= $(KUBERMATICCOMMIT)
 UIDOCKERTAG ?= NA
 LDFLAGS += -extldflags '-static' \
-  -X k8c.io/kubermatic/v2/pkg/resources.KUBERMATICCOMMIT=$(KUBERMATICCOMMIT) \
-  -X k8c.io/kubermatic/v2/pkg/resources.KUBERMATICGITTAG=$(GITTAG) \
-  -X k8c.io/kubermatic/v2/pkg/controller/operator/common.KUBERMATICDOCKERTAG=$(KUBERMATICDOCKERTAG) \
-  -X k8c.io/kubermatic/v2/pkg/controller/operator/common.UIDOCKERTAG=$(UIDOCKERTAG)
+  -X k8c.io/kubermatic/v2/pkg/version/kubermatic.gitHash=$(KUBERMATICCOMMIT) \
+  -X k8c.io/kubermatic/v2/pkg/version/kubermatic.kubermaticDockerTag=$(KUBERMATICDOCKERTAG) \
+  -X k8c.io/kubermatic/v2/pkg/version/kubermatic.uiDockerTag=$(UIDOCKERTAG)
 LDFLAGS_EXTRA=-w
 BUILD_DEST ?= _build
 GOTOOLFLAGS ?= $(GOBUILDFLAGS) -ldflags '$(LDFLAGS_EXTRA) $(LDFLAGS)' $(GOTOOLFLAGS_EXTRA)
@@ -125,10 +123,6 @@ endif
 		echo "docker push $(REPO):$$tag"; \
 		$(DOCKER_BIN) push $(REPO):$$tag; \
 	done
-
-.PHONY: gittag
-gittag:
-	@echo $(GITTAG)
 
 .PHONY: lint
 lint:

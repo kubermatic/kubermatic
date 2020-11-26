@@ -54,7 +54,7 @@ func main() {
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 
-	cli.Hello(log, "Kubelet DNAT-Controller", logOpts.Debug)
+	cli.Hello(log, "Kubelet DNAT-Controller", logOpts.Debug, nil)
 
 	_, network, err := net.ParseCIDR(*networkFlag)
 	if err != nil {

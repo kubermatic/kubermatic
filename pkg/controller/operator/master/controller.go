@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
@@ -63,7 +64,7 @@ func Add(
 		log:        log.Named(ControllerName),
 		workerName: workerName,
 		ctx:        ctx,
-		versions:   common.NewDefaultVersions(),
+		versions:   kubermatic.NewDefaultVersions(),
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}

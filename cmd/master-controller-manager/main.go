@@ -103,7 +103,7 @@ func main() {
 	ctrlCtx.workerName = runOpts.workerName
 	ctrlCtx.namespace = runOpts.namespace
 
-	cli.Hello(log, "Master Controller-Manager", logOpts.Debug)
+	cli.Hello(log, "Master Controller-Manager", logOpts.Debug, nil)
 
 	// TODO remove label selector when everything is migrated to controller-runtime
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)

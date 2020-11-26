@@ -37,6 +37,7 @@ import (
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -77,7 +78,8 @@ func main() {
 		}
 	}()
 
-	cli.Hello(log, "Seed Controller-Manager", logOpts.Debug)
+	versions := kubermatic.NewDefaultVersions()
+	cli.Hello(log, "Seed Controller-Manager", logOpts.Debug, &versions)
 
 	// Set the logger used by sigs.k8s.io/controller-runtime
 	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
@@ -175,6 +177,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		seedGetter:           seedGetter,
 		dockerPullConfigJSON: dockerPullConfigJSON,
 		log:                  log,
+		versions:             versions,
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

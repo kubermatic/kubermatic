@@ -46,12 +46,6 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// KUBERMATICCOMMIT is a magic variable containing the git commit hash of the current (as in currently executing) kubermatic api. It gets fed by Makefile as an ldflag.
-var KUBERMATICCOMMIT string
-
-// KUBERMATICGITTAG is a magic variable containing the output of `git describe` for the current (as in currently executing) kubermatic api. It gets fed by Makefile as an ldflag.
-var KUBERMATICGITTAG = "manual_build"
-
 const (
 	RancherStatefulSetName              = "rancher-server"
 	RancherServerServiceAccountName     = "rancher-server-sa"

@@ -103,7 +103,7 @@ func main() {
 	}()
 	kubermaticlog.Logger = log
 
-	cli.Hello(log, "API", options.log.Debug)
+	cli.Hello(log, "API", options.log.Debug, &options.versions)
 
 	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
@@ -194,7 +194,7 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	}
 
 	seedClientGetter := provider.SeedClientGetterFactory(seedKubeconfigGetter)
-	clusterProviderGetter := clusterProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, seedClientGetter, options.workerName, options.featureGates.Enabled(features.OIDCKubeCfgEndpoint))
+	clusterProviderGetter := clusterProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, seedClientGetter, options)
 
 	presetsProvider, err := kubernetesprovider.NewPresetsProvider(ctx, client, options.presetsFile, options.dynamicPresets)
 	if err != nil {
@@ -418,6 +418,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ConstraintTemplateProvider:            prov.constraintTemplateProvider,
 		ConstraintProvider:                    prov.constraintProvider,
 		PrivilegedConstraintProvider:          prov.privilegedConstraintProvider,
+		Versions:                              options.versions,
 	}
 
 	r := handler.NewRouting(routingParams)
@@ -505,7 +506,7 @@ func setSecureHeaders(next http.Handler) http.Handler {
 	})
 }
 
-func clusterProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter, seedClientGetter provider.SeedClientGetter, workerName string, oidcKubeCfgEndpointEnabled bool) provider.ClusterProviderGetter {
+func clusterProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter, seedClientGetter provider.SeedClientGetter, options serverRunOptions) provider.ClusterProviderGetter {
 	return func(seed *kubermaticv1.Seed) (provider.ClusterProvider, error) {
 		cfg, err := seedKubeconfigGetter(seed)
 		if err != nil {
@@ -531,11 +532,12 @@ func clusterProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provide
 			cfg,
 			defaultImpersonationClientForSeed.CreateImpersonatedClient,
 			userClusterConnectionProvider,
-			workerName,
+			options.workerName,
 			rbac.ExtractGroupPrefix,
 			seedCtrlruntimeClient,
 			kubeClient,
-			oidcKubeCfgEndpointEnabled,
+			options.featureGates.Enabled(features.OIDCKubeCfgEndpoint),
+			options.versions,
 		), nil
 	}
 }

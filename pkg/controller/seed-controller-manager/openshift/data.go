@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubernetesresources "k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
 	corev1 "k8s.io/api/core/v1"
@@ -57,6 +58,7 @@ type openshiftData struct {
 	supportsFailureDomainZoneAntiAffinity bool
 	externalURL                           string
 	seed                                  *kubermaticv1.Seed
+	versions                              kubermatic.Versions
 }
 
 func (od *openshiftData) DC() *kubermaticv1.Datacenter {
@@ -251,6 +253,14 @@ func (od *openshiftData) EtcdLauncherImage() string {
 	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
 
+func (od *openshiftData) EtcdLauncherTag() string {
+	return od.versions.Kubermatic
+}
+
+func (od *openshiftData) NodePortProxyTag() string {
+	return od.versions.Kubermatic
+}
+
 // Openshift has its own DNS cache, so this is always false
 func (od *openshiftData) NodeLocalDNSCacheEnabled() bool {
 	return false
@@ -269,6 +279,10 @@ func (od *openshiftData) KubermaticAPIImage() string {
 	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
 }
 
+func (od *openshiftData) KubermaticDockerTag() string {
+	return od.versions.Kubermatic
+}
+
 func (od *openshiftData) GetGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
 	return provider.SecretKeySelectorValueFuncFactory(context.Background(), od.client)(configVar, key)
 }
@@ -284,6 +298,10 @@ func (od *openshiftData) DNATControllerImage() string {
 		imageWithoutRegistry = strings.Join(dnatControllerImageSplit[1:], "/")
 	}
 	return od.ImageRegistry(registry) + "/" + imageWithoutRegistry
+}
+
+func (od *openshiftData) DNATControllerTag() string {
+	return od.versions.Kubermatic
 }
 
 func (od *openshiftData) SupportsFailureDomainZoneAntiAffinity() bool {

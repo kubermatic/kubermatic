@@ -22,9 +22,9 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 var _ = ginkgo.Describe("NodeportProxy", func() {

@@ -53,7 +53,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		if err != nil {
 			return nil, fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
-		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster)
+		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
 	}
 
 	var err error
@@ -63,7 +63,7 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 	if err != nil {
 		return nil, fmt.Errorf("failed to get etcd health: %v", err)
 	}
-	extendedHealth.Etcd = kubermaticv1helper.GetHealthStatus(etcdHealthStatus, cluster)
+	extendedHealth.Etcd = kubermaticv1helper.GetHealthStatus(etcdHealthStatus, cluster, r.versions)
 
 	return extendedHealth, nil
 }
@@ -88,6 +88,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 		if err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			kubermaticv1helper.SetClusterCondition(
 				c,
+				r.versions,
 				kubermaticv1.ClusterConditionEtcdClusterInitialized,
 				corev1.ConditionTrue,
 				"",
@@ -98,10 +99,11 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 		}
 	}
 
-	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && kubermaticv1helper.IsClusterInitialized(cluster) {
+	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && kubermaticv1helper.IsClusterInitialized(cluster, r.versions) {
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			kubermaticv1helper.SetClusterCondition(
 				c,
+				r.versions,
 				kubermaticv1.ClusterConditionClusterInitialized,
 				corev1.ConditionTrue,
 				"",

@@ -50,6 +50,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -118,7 +119,8 @@ func main() {
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 
-	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug)
+	versions := kubermatic.NewDefaultVersions()
+	cli.Hello(log, "User-Cluster Controller-Manager", logOpts.Debug, &versions)
 
 	if runOp.ownerEmail == "" {
 		log.Fatal("-owner-email must be set")
@@ -230,6 +232,7 @@ func main() {
 		runOp.openshiftConsoleCallbackURI,
 		runOp.dnsClusterIP,
 		runOp.opaIntegration,
+		versions,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))

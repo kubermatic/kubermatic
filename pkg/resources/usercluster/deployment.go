@@ -61,6 +61,7 @@ type userclusterControllerData interface {
 	Cluster() *kubermaticv1.Cluster
 	GetOpenVPNServerPort() (int32, error)
 	KubermaticAPIImage() string
+	KubermaticDockerTag() string
 	GetKubernetesCloudProviderName() string
 	CloudCredentialSecretTemplate() ([]byte, error)
 }
@@ -160,7 +161,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
-					Image:   data.KubermaticAPIImage() + ":" + resources.KUBERMATICCOMMIT,
+					Image:   data.KubermaticAPIImage() + ":" + data.KubermaticDockerTag(),
 					Command: []string{"/usr/local/bin/user-cluster-controller-manager"},
 					Args:    args,
 					Env: []corev1.EnvVar{

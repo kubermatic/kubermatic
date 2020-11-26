@@ -115,7 +115,7 @@ spec:
         - https://127.0.0.1:30000
         command:
         - /usr/local/bin/kubeletdnat-controller
-        image: 'quay.io/kubermatic/kubeletdnat-controller:'
+        image: quay.io/kubermatic/kubeletdnat-controller:v0.0.0-test
         name: dnat-controller
         resources:
           limits:

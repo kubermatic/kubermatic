@@ -45,7 +45,7 @@ func main() {
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 
-	cli.Hello(log, "User SSH-Key Agent", logOpts.Debug)
+	cli.Hello(log, "User SSH-Key Agent", logOpts.Debug, nil)
 
 	cfg, err := config.GetConfig()
 	if err != nil {
