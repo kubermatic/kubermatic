@@ -40,6 +40,7 @@ type dnatControllerData interface {
 	ImageRegistry(string) string
 	NodeAccessNetwork() string
 	DNATControllerImage() string
+	DNATControllerTag() string
 }
 
 // DnatControllerContainer returns a sidecar container for running the dnat controller.
@@ -55,7 +56,7 @@ func DnatControllerContainer(data dnatControllerData, name, apiserverAddress str
 
 	return &corev1.Container{
 		Name:    name,
-		Image:   data.DNATControllerImage() + ":" + resources.KUBERMATICCOMMIT,
+		Image:   data.DNATControllerImage() + ":" + data.DNATControllerTag(),
 		Command: []string{"/usr/local/bin/kubeletdnat-controller"},
 		Args:    args,
 		SecurityContext: &corev1.SecurityContext{

@@ -23,6 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
@@ -104,6 +105,9 @@ func TestCreateCluster(t *testing.T) {
 			expectedError: "can not set OIDC for the cluster when share config feature is enabled",
 		},
 	}
+
+	versions := kubermatic.NewDefaultVersions()
+
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
@@ -112,7 +116,7 @@ func TestCreateCluster(t *testing.T) {
 			}
 
 			// act
-			target := kubernetes.NewClusterProvider(&restclient.Config{}, fakeImpersonationClient, nil, tc.workerName, nil, nil, nil, tc.shareKubeconfig)
+			target := kubernetes.NewClusterProvider(&restclient.Config{}, fakeImpersonationClient, nil, tc.workerName, nil, nil, nil, tc.shareKubeconfig, versions)
 			partialCluster := &kubermaticv1.Cluster{}
 			partialCluster.Spec = *tc.spec
 			if tc.clusterType == "openshift" {

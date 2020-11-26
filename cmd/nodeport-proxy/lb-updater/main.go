@@ -83,7 +83,7 @@ func main() {
 		}
 	}()
 
-	cli.Hello(log, "LoadBalancer Updater", logOpts.Debug)
+	cli.Hello(log, "LoadBalancer Updater", logOpts.Debug, nil)
 
 	config, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {

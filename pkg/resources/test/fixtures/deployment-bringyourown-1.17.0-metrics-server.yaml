@@ -132,7 +132,7 @@ spec:
         - 192.0.2.0/24
         command:
         - /usr/local/bin/kubeletdnat-controller
-        image: 'quay.io/kubermatic/kubeletdnat-controller:'
+        image: quay.io/kubermatic/kubeletdnat-controller:v0.0.0-test
         name: dnat-controller
         resources:
           limits:

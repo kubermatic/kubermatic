@@ -26,10 +26,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
+	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
 var (
@@ -39,24 +38,23 @@ var (
 	}
 )
 
-func VersionCommand(logger *logrus.Logger) cli.Command {
+func VersionCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
 	return cli.Command{
 		Name:   "version",
 		Usage:  "Prints the installer's version",
-		Action: VersionAction(logger),
+		Action: VersionAction(logger, versions),
 		Flags: []cli.Flag{
 			versionShortFlag,
 		},
 	}
 }
 
-func VersionAction(logger *logrus.Logger) cli.ActionFunc {
+func VersionAction(logger *logrus.Logger, versions kubermaticversion.Versions) cli.ActionFunc {
 	return handleErrors(logger, setupLogger(logger, func(ctx *cli.Context) error {
 		name := fmt.Sprintf("Kubermatic %s Installer", edition.KubermaticEdition)
-		v := common.NewDefaultVersions()
 
 		if ctx.Bool(versionShortFlag.Name) {
-			fmt.Printf("%s %s\n", name, v.Kubermatic)
+			fmt.Printf("%s %s\n", name, versions.Kubermatic)
 			return nil
 		}
 
@@ -69,11 +67,11 @@ func VersionAction(logger *logrus.Logger) cli.ActionFunc {
 		versionWidth := len("Version")
 		appVersionWidth := len("App Version")
 
-		if l := len(resources.KUBERMATICCOMMIT); l > versionWidth {
+		if l := len(versions.KubermaticCommit); l > versionWidth {
 			versionWidth = l
 		}
 
-		if l := len(v.Kubermatic); l > appVersionWidth {
+		if l := len(versions.Kubermatic); l > appVersionWidth {
 			appVersionWidth = l
 		}
 
@@ -95,7 +93,7 @@ func VersionAction(logger *logrus.Logger) cli.ActionFunc {
 
 		fmt.Printf(format, "Component", "Version", "App Version")
 		fmt.Printf("%s-+-%s-+-%s-\n", strings.Repeat("-", nameWidth), strings.Repeat("-", versionWidth), strings.Repeat("-", appVersionWidth))
-		fmt.Printf(format, name, resources.KUBERMATICCOMMIT, v.Kubermatic)
+		fmt.Printf(format, name, versions.KubermaticCommit, versions.Kubermatic)
 
 		for _, chart := range charts {
 			fmt.Printf(format, chart.Name, chart.Version, chart.AppVersion)

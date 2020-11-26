@@ -81,8 +81,14 @@ var (
 	}
 )
 
+type nodePortProxyData interface {
+	ImageRegistry(string) string
+	NodePortProxyTag() string
+	Cluster() *kubermaticv1.Cluster
+}
+
 func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, data nodePortProxyData) error {
-	image := data.ImageRegistry("quay.io") + "/" + imageName + ":" + resources.KUBERMATICCOMMIT
+	image := data.ImageRegistry("quay.io") + "/" + imageName + ":" + data.NodePortProxyTag()
 	namespace := data.Cluster().Status.NamespaceName
 	if namespace == "" {
 		return fmt.Errorf(".Status.NamespaceName is empty for cluster %q", data.Cluster().Name)
@@ -119,11 +125,6 @@ func EnsureResources(ctx context.Context, client ctrlruntimeclient.Client, data 
 		return fmt.Errorf("failed to reconcile PodDisruptionBudget: %v", err)
 	}
 	return nil
-}
-
-type nodePortProxyData interface {
-	ImageRegistry(string) string
-	Cluster() *kubermaticv1.Cluster
 }
 
 func serviceAccount() reconciling.NamedServiceAccountCreatorGetter {

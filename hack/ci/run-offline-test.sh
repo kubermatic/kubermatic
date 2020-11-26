@@ -163,7 +163,7 @@ done
 
 # Push all kubermatic images
 cd ..
-KUBERMATICCOMMIT=${GIT_HEAD_HASH} GITTAG=${GIT_HEAD_HASH} make image-loader
+make image-loader
 ./_build/image-loader \
   -configuration-file /dev/null \
   -addons-path addons \

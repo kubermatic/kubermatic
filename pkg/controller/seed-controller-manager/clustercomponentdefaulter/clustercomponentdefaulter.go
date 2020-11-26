@@ -24,6 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
@@ -46,6 +47,7 @@ type Reconciler struct {
 	recorder   record.EventRecorder
 	defaults   kubermaticv1.ComponentSettings
 	workerName string
+	versions   kubermatic.Versions
 }
 
 func Add(
@@ -54,7 +56,8 @@ func Add(
 	mgr manager.Manager,
 	numWorkers int,
 	defaults kubermaticv1.ComponentSettings,
-	workerName string) error {
+	workerName string,
+	versions kubermatic.Versions) error {
 
 	reconciler := &Reconciler{
 		ctx:        ctx,
@@ -63,6 +66,7 @@ func Add(
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		defaults:   defaults,
 		workerName: workerName,
+		versions:   versions,
 	}
 
 	c, err := controller.New(ControllerName, mgr,
@@ -92,6 +96,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.client,
 		r.workerName,
 		cluster,
+		r.versions,
 		kubermaticv1.ClusterConditionComponentDefaulterReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			return nil, r.reconcile(log, cluster)

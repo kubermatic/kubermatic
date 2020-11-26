@@ -24,7 +24,6 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -35,10 +34,10 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubectl/pkg/util/podutils"
-
 	ctrl "sigs.k8s.io/controller-runtime"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
+	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const (

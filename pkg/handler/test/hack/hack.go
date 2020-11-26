@@ -20,6 +20,7 @@ import (
 	"net/http"
 
 	v2 "k8c.io/kubermatic/v2/pkg/handler/v2"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"github.com/gorilla/mux"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -79,7 +80,8 @@ func NewTestRouting(
 	privilegedExternalClusterProvider provider.PrivilegedExternalClusterProvider,
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
 	constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider) http.Handler {
+	privilegedConstraintProvider provider.PrivilegedConstraintProvider,
+	kubermaticVersions kubermatic.Versions) http.Handler {
 
 	updateManager := version.New(versions, updates)
 
@@ -124,6 +126,7 @@ func NewTestRouting(
 		ConstraintTemplateProvider:            constraintTemplateProvider,
 		ConstraintProvider:                    constraintProvider,
 		PrivilegedConstraintProvider:          privilegedConstraintProvider,
+		Versions:                              kubermaticVersions,
 	}
 
 	r := handler.NewRouting(routingParams)

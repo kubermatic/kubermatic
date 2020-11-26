@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -464,6 +465,8 @@ func TestListProjectMethod(t *testing.T) {
 		},
 	}
 
+	versions := kubermatic.NewDefaultVersions()
+
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			kubermaticClient := kubermaticfakeclentset.NewSimpleClientset()
@@ -490,6 +493,7 @@ func TestListProjectMethod(t *testing.T) {
 				fakeClient,
 				kubernetesClient,
 				false,
+				versions,
 			)
 			clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
 			clusterProviderGetter := func(seed *kubermaticapiv1.Seed) (provider.ClusterProvider, error) {

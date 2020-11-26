@@ -63,7 +63,7 @@ func main() {
 		}
 	}()
 
-	cli.Hello(log, "Envoy-Manager", logOpts.Debug)
+	cli.Hello(log, "Envoy-Manager", logOpts.Debug, nil)
 
 	config, err := ctrlruntimeconfig.GetConfig()
 	if err != nil {

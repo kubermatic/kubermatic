@@ -74,7 +74,6 @@ trap finish EXIT
 # or the name of the base branch in case of a PR.
 export UIDOCKERTAG="$(get_latest_dashboard_hash "${PULL_BASE_REF}")"
 export KUBERMATICCOMMIT="${GIT_HEAD_HASH}"
-export GITTAG="${GIT_HEAD_HASH}"
 
 make image-loader
 

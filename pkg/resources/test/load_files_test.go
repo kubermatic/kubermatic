@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -204,6 +205,8 @@ func TestLoadFiles(t *testing.T) {
 			},
 		},
 	}
+
+	kubermaticVersions := kubermatic.NewFakeVersions()
 
 	for _, ver := range versions {
 		for prov, cloudspec := range clouds {
@@ -581,7 +584,9 @@ func TestLoadFiles(t *testing.T) {
 					"quay.io/kubermatic/kubermatic",
 					"quay.io/kubermatic/etcd-launcher",
 					"quay.io/kubermatic/kubeletdnat-controller",
-					false)
+					false,
+					kubermaticVersions,
+				)
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
 				deploymentCreators = append(deploymentCreators, kubernetescontroller.GetDeploymentCreators(data, true)...)

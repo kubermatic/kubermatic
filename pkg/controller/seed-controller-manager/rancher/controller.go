@@ -37,6 +37,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -67,9 +68,11 @@ type KubeconfigProvider interface {
 type fileHandlingDone func()
 
 type Reconciler struct {
-	log *zap.SugaredLogger
 	ctrlruntimeclient.Client
-	KubeconfigProvider KubeconfigProvider
+
+	log                *zap.SugaredLogger
+	kubeconfigProvider KubeconfigProvider
+	versions           kubermatic.Versions
 }
 
 var (
@@ -80,13 +83,16 @@ func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	kubeconfigProvider KubeconfigProvider,
+	versions kubermatic.Versions,
 ) error {
 
 	log = log.Named(ControllerName)
 	reconciler := &Reconciler{
+		Client: mgr.GetClient(),
+
 		log:                log,
-		Client:             mgr.GetClient(),
-		KubeconfigProvider: kubeconfigProvider,
+		kubeconfigProvider: kubeconfigProvider,
+		versions:           versions,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{
@@ -163,7 +169,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, stat
 			log.Errorw("failed to initialize Rancher Server", zap.Error(err))
 			return &reconcile.Result{}, err
 		}
-		kubermaticv1helper.SetClusterCondition(cluster, kubermaticv1.ClusterConditionRancherInitialized, corev1.ConditionTrue, "", "Rancher server initialized successfully")
+		kubermaticv1helper.SetClusterCondition(cluster, r.versions, kubermaticv1.ClusterConditionRancherInitialized, corev1.ConditionTrue, "", "Rancher server initialized successfully")
 		if err := r.Update(ctx, cluster); err != nil {
 			return &reconcile.Result{}, err
 		}
@@ -181,7 +187,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, stat
 			log.Errorw("failed to apply rancher regstration command", zap.Error(err))
 			return nil, err
 		}
-		kubermaticv1helper.SetClusterCondition(cluster, kubermaticv1.ClusterConditionRancherClusterImported, corev1.ConditionTrue, "", "Rancher cluster imported successfully")
+		kubermaticv1helper.SetClusterCondition(cluster, r.versions, kubermaticv1.ClusterConditionRancherClusterImported, corev1.ConditionTrue, "", "Rancher cluster imported successfully")
 		if err := r.Update(ctx, cluster); err != nil {
 			return nil, err
 		}
@@ -349,7 +355,7 @@ func (r *Reconciler) applyRancherRegstrationCommand(ctx context.Context, log *za
 
 func (r *Reconciler) writeAdminKubeconfig(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
 	// Write kubeconfig to disk
-	kubeconfig, err := r.KubeconfigProvider.GetAdminKubeconfig(cluster)
+	kubeconfig, err := r.kubeconfigProvider.GetAdminKubeconfig(cluster)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get admin kubeconfig for cluster %s: %v", cluster.Name, err)
 	}

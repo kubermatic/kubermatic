@@ -47,6 +47,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/openvpn"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/usercluster"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -88,6 +89,7 @@ type Features struct {
 
 type Reconciler struct {
 	client.Client
+
 	log                      *zap.SugaredLogger
 	scheme                   *runtime.Scheme
 	recorder                 record.EventRecorder
@@ -105,6 +107,7 @@ type Reconciler struct {
 	dnatControllerImage      string
 	features                 Features
 	concurrentClusterUpdates int
+	versions                 kubermatic.Versions
 }
 
 func Add(
@@ -124,9 +127,11 @@ func Add(
 	dnatControllerImage string,
 	features Features,
 	concurrentClusterUpdates int,
+	versions kubermatic.Versions,
 ) error {
 	reconciler := &Reconciler{
-		Client:                   mgr.GetClient(),
+		Client: mgr.GetClient(),
+
 		log:                      log.Named(ControllerName),
 		scheme:                   mgr.GetScheme(),
 		recorder:                 mgr.GetEventRecorderFor(ControllerName),
@@ -143,6 +148,7 @@ func Add(
 		dnatControllerImage:      dnatControllerImage,
 		features:                 features,
 		concurrentClusterUpdates: concurrentClusterUpdates,
+		versions:                 versions,
 	}
 
 	c, err := controller.New(ControllerName, mgr,
@@ -201,6 +207,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.Client,
 		r.workerName,
 		cluster,
+		r.versions,
 		kubermaticv1.ClusterConditionOpenshiftControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			// only reconcile this cluster if there are not yet too many updates running
@@ -331,14 +338,14 @@ func (r *Reconciler) syncHeath(ctx context.Context, cluster *kubermaticv1.Cluste
 		if err != nil {
 			return fmt.Errorf("failed to get dep health %q: %v", name, err)
 		}
-		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster)
+		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
 	}
 
 	status, err := resources.HealthyStatefulSet(ctx, r.Client, nn(cluster.Status.NamespaceName, resources.EtcdStatefulSetName), 2)
 	if err != nil {
 		return fmt.Errorf("failed to get etcd health: %v", err)
 	}
-	currentHealth.Etcd = kubermaticv1helper.GetHealthStatus(status, cluster)
+	currentHealth.Etcd = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
 
 	//TODO: Revisit this. This is a tiny bit ugly, but Openshift doesn't have a distinct scheduler
 	// and introducing a distinct health struct for Openshift means we have to change the API as well
@@ -350,10 +357,11 @@ func (r *Reconciler) syncHeath(ctx context.Context, cluster *kubermaticv1.Cluste
 		})
 	}
 
-	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && kubermaticv1helper.IsClusterInitialized(cluster) {
+	if !cluster.Status.HasConditionValue(kubermaticv1.ClusterConditionClusterInitialized, corev1.ConditionTrue) && kubermaticv1helper.IsClusterInitialized(cluster, r.versions) {
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			kubermaticv1helper.SetClusterCondition(
 				c,
+				r.versions,
 				kubermaticv1.ClusterConditionClusterInitialized,
 				corev1.ConditionTrue,
 				"",

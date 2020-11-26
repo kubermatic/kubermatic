@@ -23,12 +23,13 @@ import (
 	"github.com/urfave/cli"
 
 	eeinstaller "k8c.io/kubermatic/v2/pkg/ee/cmd/kubermatic-installer"
+	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
-func commands(logger *logrus.Logger) []cli.Command {
+func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.Command {
 	return []cli.Command{
-		VersionCommand(logger),
-		DeployCommand(logger),
+		VersionCommand(logger, versions),
+		DeployCommand(logger, versions),
 		ConvertKubeconfigCommand(logger),
 		eeinstaller.ConvertDatacentersCommand(logger),
 		eeinstaller.ConvertHelmValuesCommand(logger),

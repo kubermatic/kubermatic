@@ -34,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -62,7 +63,7 @@ type Reconciler struct {
 	seedRecorders  map[string]record.EventRecorder
 	seedsGetter    provider.SeedsGetter
 	workerName     string
-	versions       common.Versions
+	versions       kubermaticversion.Versions
 }
 
 // Reconcile acts upon requests and will restore the state of resources

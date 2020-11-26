@@ -36,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/validation"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -285,6 +286,7 @@ type controllerContext struct {
 	seedGetter           provider.SeedGetter
 	dockerPullConfigJSON []byte
 	log                  *zap.SugaredLogger
+	versions             kubermatic.Versions
 }
 
 func loadAddons(listOpt, fileOpt string) (kubermaticv1.AddonList, error) {

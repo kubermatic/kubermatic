@@ -67,6 +67,7 @@ type etcdStatefulSetCreatorData interface {
 	ImageRegistry(string) string
 	EtcdDiskSize() resource.Quantity
 	EtcdLauncherImage() string
+	EtcdLauncherTag() string
 	GetClusterRef() metav1.OwnerReference
 	SupportsFailureDomainZoneAntiAffinity() bool
 }
@@ -106,7 +107,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 				set.Spec.Template.Spec.InitContainers = []corev1.Container{
 					{
 						Name:            "etcd-launcher-init",
-						Image:           data.EtcdLauncherImage() + ":" + resources.KUBERMATICCOMMIT,
+						Image:           data.EtcdLauncherImage() + ":" + data.EtcdLauncherTag(),
 						ImagePullPolicy: corev1.PullIfNotPresent,
 						Command:         []string{"/bin/cp", "/etcd-launcher", "/opt/bin/"},
 						VolumeMounts: []corev1.VolumeMount{

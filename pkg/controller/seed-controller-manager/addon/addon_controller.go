@@ -39,6 +39,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -76,17 +77,19 @@ type KubeconfigProvider interface {
 
 // Reconciler stores necessary components that are required to manage in-cluster Add-On's
 type Reconciler struct {
-	log                  *zap.SugaredLogger
-	workerName           string
-	addonEnforceInterval int
-	addonVariables       map[string]interface{}
-	kubernetesAddonDir   string
-	openshiftAddonDir    string
-	overwriteRegistry    string
 	ctrlruntimeclient.Client
+
+	log                      *zap.SugaredLogger
+	workerName               string
+	addonEnforceInterval     int
+	addonVariables           map[string]interface{}
+	kubernetesAddonDir       string
+	openshiftAddonDir        string
+	overwriteRegistry        string
 	recorder                 record.EventRecorder
 	KubeconfigProvider       KubeconfigProvider
 	nodeLocalDNSCacheEnabled bool
+	versions                 kubermatic.Versions
 }
 
 // Add creates a new Addon controller that is responsible for
@@ -103,22 +106,25 @@ func Add(
 	overwriteRegistey string,
 	nodeLocalDNSCacheEnabled bool,
 	kubeconfigProvider KubeconfigProvider,
+	versions kubermatic.Versions,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
 	reconciler := &Reconciler{
+		Client: client,
+
 		log:                      log,
 		addonVariables:           addonCtxVariables,
 		addonEnforceInterval:     addonEnforceInterval,
 		kubernetesAddonDir:       kubernetesAddonDir,
 		openshiftAddonDir:        openshiftAddonDir,
 		KubeconfigProvider:       kubeconfigProvider,
-		Client:                   client,
 		workerName:               workerName,
 		recorder:                 mgr.GetEventRecorderFor(ControllerName),
 		overwriteRegistry:        overwriteRegistey,
 		nodeLocalDNSCacheEnabled: nodeLocalDNSCacheEnabled,
+		versions:                 versions,
 	}
 
 	ctrlOptions := controller.Options{
@@ -205,6 +211,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.Client,
 		r.workerName,
 		cluster,
+		r.versions,
 		kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
 			return r.reconcile(ctx, log, addon, cluster)
