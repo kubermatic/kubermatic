@@ -20,14 +20,12 @@ import (
 	"context"
 	"fmt"
 	"reflect"
+	"sort"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
-	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
-	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 
@@ -92,9 +90,7 @@ func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlrunti
 		cache:   cache,
 	}
 
-	// Set initial snapshot
-	listeners, clusters := r.makeInitialResources()
-	if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshot("0.0.0", clusters, listeners)); err != nil {
+	if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshotBuilder(log, portHostMappingFromAnnotation, opts).build("0.0.0")); err != nil {
 		return nil, nil, errors.Wrap(err, "failed to set initial Envoy cache snapshot")
 	}
 	return &r, cache, nil
@@ -120,10 +116,6 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (r *Reconciler) sync() error {
-	var fcs []*envoylistenerv3.FilterChain
-	var vhs []*envoyroutev3.VirtualHost
-	listeners, clusters := r.makeInitialResources()
-
 	services := corev1.ServiceList{}
 	if err := r.List(r.ctx, &services,
 		ctrlruntimeclient.InNamespace(r.Namespace),
@@ -132,86 +124,43 @@ func (r *Reconciler) sync() error {
 		return errors.Wrap(err, "failed to list service's")
 	}
 
+	// Sort services by creation timestamp in order to skip more recent
+	// services in case of "hostname" conflict with SNI ExposeType. Note that
+	// this is not fair, as the annotations may be changed during the service
+	// lifetime. But this is a cheap solution and it is good enough for the
+	// current needs. A better option would be to use a CRD based approach and
+	// keeping sort based on "expose" timestamp.
+	sort.Slice(services.Items, func(i, j int) bool {
+		if it, jt := services.Items[i].CreationTimestamp, services.Items[j].CreationTimestamp; it != jt {
+			return it.After(jt.Time)
+		}
+		// Break ties with service name
+		return services.Items[i].Name > services.Items[j].Name
+	})
+
+	sb := newSnapshotBuilder(r.log, portHostMappingFromAnnotation, r.Options)
 	for _, service := range services.Items {
-		// Variables used to temporarily keep the resources, they will be
-		// aggregated definitively after checking that the service has some
-		// endpoints.
-		var tmpListeners []envoycachetype.Resource
-		var tmpFcs []*envoylistenerv3.FilterChain
-		var tmpVhs []*envoyroutev3.VirtualHost
+		svcKey := ServiceKey(&service)
 
-		serviceKey := ServiceKey(&service)
-		serviceLog := r.log.With("service", serviceKey)
-
-		serviceLog.Debug("processing service")
 		ets := extractExposeTypes(&service, r.ExposeAnnotationKey)
-		// This is redundant as we are using the field selector, but as this
-		// check makes the unit tests easier (FakeClient does not play nice
-		// with field selectors) and the performance penalty is negligible in
-		// this context we can keep it at the moment.
-		if ets.Len() == 0 {
-			serviceLog.Debugf("skipping service: it does not have a valid expose annotation %q", r.ExposeAnnotationKey)
-			continue
-		}
 
-		// Create listeners for NodePortType
-		if ets.Has(NodePortType.String()) {
-			// We only manage NodePort services so Kubernetes takes care of allocating a unique port
-			if service.Spec.Type != corev1.ServiceTypeNodePort {
-				serviceLog.Warn("skipping service: it is not of type NodePort", "service")
-				return nil
-			}
-			// Add listeners for nodeport services
-			tmpListeners = append(tmpListeners, r.makeListenersForNodePortService(&service)...)
-		}
-		// Create filterChains for SNIType
-		if ets.Has(SNIType.String()) && r.isSNIEnabled() {
-			m, err := portHostMappingFromService(&service)
-			if err != nil {
-				serviceLog.Warn("port host mapping is required with SNI expose type", zap.Error(err))
-				continue
-			}
-			if err := m.validate(); err != nil {
-				serviceLog.Warn("port host mapping validation failed", zap.Error(err))
-				continue
-			}
-			tmpFcs = makeSNIFilterChain(&service, m)
-		}
-		// Create virtual hostst for HTTP2ConnectType
-		if ets.Has(HTTP2ConnectType.String()) && r.isHTTP2ConnectEnabled() {
-			tmpVhs = makeTunnelingVirtualHosts(&service)
-		}
-
+		// Get associated endpoints
 		eps := corev1.Endpoints{}
 		if err := r.Get(context.Background(), types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, &eps); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
-			return errors.Wrap(err, fmt.Sprintf("failed to get endpoints for service '%s'", serviceKey))
+			return errors.Wrap(err, fmt.Sprintf("failed to get endpoints for service '%s'", svcKey))
 		}
-		// If we have no pods, dont bother creating a cluster.
-		if len(eps.Subsets) == 0 {
-			serviceLog.Debug("skipping service: it has no running pods")
-			continue
-		}
-		// Now that we know that there are endpoints commit temporary resources.
-		listeners = append(listeners, tmpListeners...)
-		clusters = append(clusters, r.makeClusters(&service, &eps)...)
-		vhs = append(vhs, tmpVhs...)
-		fcs = append(fcs, tmpFcs...)
-	}
-	if len(vhs) > 0 {
-		listeners = append(listeners, r.makeTunnelingListener(vhs...))
-	}
-	if len(fcs) > 0 {
-		listeners = append(listeners, r.makeSNIListener(fcs...))
+		// Add service to the service builder
+		sb.addService(&service, &eps, ets)
 	}
 
 	// Get current snapshot
 	currSnapshot, err := r.cache.GetSnapshot(r.EnvoyNodeName)
 	if err != nil {
 		r.log.Debugf("setting first snapshot: %v", err)
-		if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshot("0.0.0", clusters, listeners)); err != nil {
+		if err := r.cache.SetSnapshot(r.EnvoyNodeName, sb.build("0.0.0")); err != nil {
 			return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 		}
 		return nil
@@ -223,14 +172,14 @@ func (r *Reconciler) sync() error {
 	}
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
-	if reflect.DeepEqual(currSnapshot, newSnapshot(lastUsedVersion.String(), clusters, listeners)) {
+	if reflect.DeepEqual(currSnapshot, sb.build(lastUsedVersion.String())) {
 		r.log.Debug("no changes detected")
 		return nil
 	}
 
 	newVersion := lastUsedVersion.IncMajor()
 	r.log.Infow("detected a change. Updating the Envoy config cache...", "version", newVersion.String())
-	newSnapshot := newSnapshot(newVersion.String(), clusters, listeners)
+	newSnapshot := sb.build(newVersion.String())
 
 	if err := newSnapshot.Consistent(); err != nil {
 		return errors.Wrap(err, "new Envoy config snapshot is not consistent")

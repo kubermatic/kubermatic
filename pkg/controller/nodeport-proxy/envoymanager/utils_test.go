@@ -23,49 +23,48 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestExtractExposeType(t *testing.T) {
 	var testcases = []struct {
 		name            string
 		svc             *corev1.Service
-		wantExposeTypes sets.String
+		wantExposeTypes ExposeTypes
 	}{
 		{
 			name:            "Legacy value",
 			svc:             makeService("", "true"),
-			wantExposeTypes: sets.NewString(NodePortType.String()),
+			wantExposeTypes: NewExposeTypes(NodePortType),
 		},
 		{
 			name:            "New value",
 			svc:             makeService("", "NodePort"),
-			wantExposeTypes: sets.NewString(NodePortType.String()),
+			wantExposeTypes: NewExposeTypes(NodePortType),
 		},
 		{
 			name:            "No value",
 			svc:             makeService("", ""),
-			wantExposeTypes: sets.NewString(),
+			wantExposeTypes: NewExposeTypes(),
 		},
 		{
 			name:            "Both HTTP2 Connet and SNI",
 			svc:             makeService("", "HTTP2Connect, SNI"),
-			wantExposeTypes: sets.NewString(HTTP2ConnectType.String(), SNIType.String()),
+			wantExposeTypes: NewExposeTypes(HTTP2ConnectType, SNIType),
 		},
 		{
 			name:            "Both HTTP2 Connet and SNI #2",
 			svc:             makeService("", "HTTP2Connect,SNI"),
-			wantExposeTypes: sets.NewString(HTTP2ConnectType.String(), SNIType.String()),
+			wantExposeTypes: NewExposeTypes(HTTP2ConnectType, SNIType),
 		},
 		{
 			name:            "Malformed value",
 			svc:             makeService("", "HTTP2Connect SNI"),
-			wantExposeTypes: sets.NewString(),
+			wantExposeTypes: NewExposeTypes(),
 		},
 		{
 			name:            "Malformed value #2",
 			svc:             makeService("", "True"),
-			wantExposeTypes: sets.NewString(),
+			wantExposeTypes: NewExposeTypes(),
 		},
 	}
 	for _, tt := range testcases {
@@ -119,7 +118,7 @@ func TestExtractPortHostMappingFromService(t *testing.T) {
 	}
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
-			p, err := portHostMappingFromService(tt.service)
+			p, err := portHostMappingFromAnnotation(tt.service)
 			if (err != nil) != tt.wantErr {
 				t.Fatalf("wantErr: %t, got %v", tt.wantErr, err)
 			}

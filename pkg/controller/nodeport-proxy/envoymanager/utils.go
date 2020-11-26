@@ -37,29 +37,32 @@ const (
 )
 
 // ExposeType defines the strategy used to expose the service.
-type ExposeType string
+type ExposeType int
 
 const (
 	// NodePortType is the default ExposeType which creates a listener for each
 	// NodePort.
-	NodePortType ExposeType = "NodePort"
+	NodePortType ExposeType = iota
 	// SNIType configures Envoy to route TLS streams based on SNI
 	// without terminating them.
-	SNIType ExposeType = "SNI"
+	SNIType
 	// HTTP2ConnectType configures Envoy to terminate HTTP/2 Connect requests.
-	HTTP2ConnectType ExposeType = "HTTP2Connect"
+	HTTP2ConnectType
 )
+
+// exposeTypeStrings contains the string representation of the ExposeTypes.
+var exposeTypeStrings = [...]string{"NodePort", "SNI", "HTTP2Connect"}
 
 // ExposeTypeFromString returns the ExposeType which string representation
 // corresponds to the input string, and a boolean indicating whether the
 // corresponding ExposeType was found or not.
 func ExposeTypeFromString(s string) (ExposeType, bool) {
-	switch ExposeType(s) {
-	case NodePortType:
+	switch s {
+	case exposeTypeStrings[NodePortType]:
 		return NodePortType, true
-	case SNIType:
+	case exposeTypeStrings[SNIType]:
 		return SNIType, true
-	case HTTP2ConnectType:
+	case exposeTypeStrings[HTTP2ConnectType]:
 		return HTTP2ConnectType, true
 	default:
 		return NodePortType, false
@@ -68,7 +71,26 @@ func ExposeTypeFromString(s string) (ExposeType, bool) {
 
 // String returns the string representation of the ExposeType.
 func (e ExposeType) String() string {
-	return string(e)
+	return exposeTypeStrings[e]
+}
+
+type ExposeTypes map[ExposeType]sets.Empty
+
+func NewExposeTypes(exposeTypes ...ExposeType) ExposeTypes {
+	ets := ExposeTypes{}
+	for _, et := range exposeTypes {
+		ets[et] = sets.Empty{}
+	}
+	return ets
+}
+
+func (e ExposeTypes) Has(item ExposeType) bool {
+	_, contained := e[item]
+	return contained
+}
+
+func (e ExposeTypes) Insert(item ExposeType) {
+	e[item] = sets.Empty{}
 }
 
 // ServiceKey returns a string used to identify the given Service.
@@ -88,8 +110,8 @@ func isExposed(obj metav1.Object, exposeAnnotationKey string) bool {
 	return len(extractExposeTypes(obj, exposeAnnotationKey)) > 0
 }
 
-func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) sets.String {
-	res := sets.NewString()
+func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) ExposeTypes {
+	res := NewExposeTypes()
 	if obj.GetAnnotations() == nil {
 		return res
 	}
@@ -97,7 +119,8 @@ func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) sets.Stri
 	// backward compatibility.
 	val := obj.GetAnnotations()[exposeAnnotationKey]
 	if val == "true" {
-		return sets.NewString(NodePortType.String())
+		res.Insert(NodePortType)
+		return res
 	}
 	// Parse the comma separated list and return the list of ExposeType
 	ts := strings.Split(val, ",")
@@ -106,9 +129,9 @@ func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) sets.Stri
 		if !ok {
 			// If we met a not valid token we consider the value invalid and
 			// return an empty set.
-			return sets.NewString()
+			return NewExposeTypes()
 		}
-		res.Insert(t.String())
+		res.Insert(t)
 	}
 	return res
 }
@@ -140,7 +163,7 @@ func (p portHostMapping) portHostSets() (sets.String, sets.String) {
 // for SNI ExposeType.
 type portHostMapping map[string]string
 
-func portHostMappingFromService(svc *corev1.Service) (portHostMapping, error) {
+func portHostMappingFromAnnotation(svc *corev1.Service) (portHostMapping, error) {
 	m := portHostMapping{}
 	a := svc.GetAnnotations()
 	if a == nil {
