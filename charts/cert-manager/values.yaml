@@ -31,10 +31,9 @@ certManager:
     resources:
       requests:
         cpu: 100m
-        memory: 30Mi
+        memory: 64Mi
       limits:
-        cpu: 300m
-        memory: 50Mi
+        memory: 128Mi
 
     affinity: {}
     nodeSelector: {}
@@ -63,8 +62,7 @@ certManager:
         cpu: 100m
         memory: 30Mi
       limits:
-        cpu: 250m
-        memory: 30Mi
+        memory: 128Mi
 
     affinity: {}
     nodeSelector: {}
