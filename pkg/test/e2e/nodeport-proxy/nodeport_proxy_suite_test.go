@@ -25,14 +25,14 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
 var deployer *Deployer
 var networkingTest *NetworkingTestConfig
 var skipCleanup bool
 var debugLog bool
-var versions common.Versions = common.NewDefaultVersions()
+var versions = kubermatic.NewDefaultVersions()
 
 func init() {
 	flag.StringVar(&versions.Kubermatic, "kubermatic-tag", "latest", "Kubermatic image tag to be used for the tests.")
