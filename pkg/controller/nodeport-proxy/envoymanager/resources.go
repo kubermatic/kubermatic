@@ -118,7 +118,7 @@ func makeSNIFilterChain(service *corev1.Service, p portHostMapping) []*envoylist
 
 // This will be used when the new expose strategy will be fully implemented
 //nolint:unused
-func (r *Reconciler) makeSNIListener() *envoylistenerv3.Listener {
+func (r *Reconciler) makeSNIListener(fcs ...*envoylistenerv3.FilterChain) *envoylistenerv3.Listener {
 	r.log.Debugf("Using a listener on port %d", r.EnvoySNIListenerPort)
 
 	sniListener := &envoylistenerv3.Listener{
@@ -134,6 +134,7 @@ func (r *Reconciler) makeSNIListener() *envoylistenerv3.Listener {
 				},
 			},
 		},
+		FilterChains: fcs,
 	}
 	return sniListener
 }
@@ -179,15 +180,22 @@ func makeTunnelingVirtualHosts(service *corev1.Service) []*envoyroutev3.VirtualH
 	return virtualhosts
 }
 
+func makeRouteConfiguration() *envoyroutev3.RouteConfiguration {
+	return &envoyroutev3.RouteConfiguration{
+		Name: "http2_connect",
+	}
+}
+
 // This will be used when the new expose strategy will be fully implemented
 //nolint:unused
-func (r *Reconciler) makeTunnelingListener() *envoylistenerv3.Listener {
-	httpmanager := &envoyhttpconnectionmanagerv3.HttpConnectionManager{
+func (r *Reconciler) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHost) *envoylistenerv3.Listener {
+	hcm := &envoyhttpconnectionmanagerv3.HttpConnectionManager{
 		CodecType:  envoyhttpconnectionmanagerv3.HttpConnectionManager_HTTP2,
 		StatPrefix: "ingress_http",
 		RouteSpecifier: &envoyhttpconnectionmanagerv3.HttpConnectionManager_RouteConfig{
 			RouteConfig: &envoyroutev3.RouteConfiguration{
-				Name: "http2_connect",
+				Name:         "http2_connect",
+				VirtualHosts: vhs,
 			},
 		},
 		AccessLog: makeAccessLog(),
@@ -205,8 +213,7 @@ func (r *Reconciler) makeTunnelingListener() *envoylistenerv3.Listener {
 			},
 		},
 	}
-
-	HTTPManagerConfigMarshalled, err := ptypes.MarshalAny(httpmanager)
+	httpManagerConfigMarshalled, err := ptypes.MarshalAny(hcm)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to marshal HTTP Connection Manager"))
 	}
@@ -232,7 +239,7 @@ func (r *Reconciler) makeTunnelingListener() *envoylistenerv3.Listener {
 					{
 						Name: envoywellknown.HTTPConnectionManager,
 						ConfigType: &envoylistenerv3.Filter_TypedConfig{
-							TypedConfig: HTTPManagerConfigMarshalled,
+							TypedConfig: httpManagerConfigMarshalled,
 						},
 					},
 				},

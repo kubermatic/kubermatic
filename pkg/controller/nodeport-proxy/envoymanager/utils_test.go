@@ -23,48 +23,49 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestExtractExposeType(t *testing.T) {
 	var testcases = []struct {
 		name            string
 		svc             *corev1.Service
-		wantExposeTypes []ExposeType
+		wantExposeTypes sets.String
 	}{
 		{
 			name:            "Legacy value",
 			svc:             makeService("", "true"),
-			wantExposeTypes: []ExposeType{NodePortType},
+			wantExposeTypes: sets.NewString(NodePortType.String()),
 		},
 		{
 			name:            "New value",
 			svc:             makeService("", "NodePort"),
-			wantExposeTypes: []ExposeType{NodePortType},
+			wantExposeTypes: sets.NewString(NodePortType.String()),
 		},
 		{
 			name:            "No value",
 			svc:             makeService("", ""),
-			wantExposeTypes: nil,
+			wantExposeTypes: sets.NewString(),
 		},
 		{
 			name:            "Both HTTP2 Connet and SNI",
 			svc:             makeService("", "HTTP2Connect, SNI"),
-			wantExposeTypes: []ExposeType{HTTP2ConnectType, SNIType},
+			wantExposeTypes: sets.NewString(HTTP2ConnectType.String(), SNIType.String()),
 		},
 		{
 			name:            "Both HTTP2 Connet and SNI #2",
 			svc:             makeService("", "HTTP2Connect,SNI"),
-			wantExposeTypes: []ExposeType{HTTP2ConnectType, SNIType},
+			wantExposeTypes: sets.NewString(HTTP2ConnectType.String(), SNIType.String()),
 		},
 		{
 			name:            "Malformed value",
 			svc:             makeService("", "HTTP2Connect SNI"),
-			wantExposeTypes: nil,
+			wantExposeTypes: sets.NewString(),
 		},
 		{
 			name:            "Malformed value #2",
 			svc:             makeService("", "True"),
-			wantExposeTypes: nil,
+			wantExposeTypes: sets.NewString(),
 		},
 	}
 	for _, tt := range testcases {

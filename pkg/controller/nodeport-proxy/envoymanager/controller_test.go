@@ -20,7 +20,7 @@ import (
 	"context"
 	"testing"
 
-	"go.uber.org/zap"
+	"go.uber.org/zap/zaptest"
 
 	"github.com/go-test/deep"
 	"github.com/gogo/protobuf/proto"
@@ -501,7 +501,7 @@ func TestSync(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			log := zap.NewNop().Sugar()
+			log := zaptest.NewLogger(t).Sugar()
 			client := fakectrlruntimeclient.NewFakeClient(test.resources...)
 			c, _, _ := NewReconciler(
 				context.TODO(),
@@ -584,7 +584,7 @@ func TestEndpointToService(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			log := zap.NewNop().Sugar()
+			log := zaptest.NewLogger(t).Sugar()
 			client := fakectrlruntimeclient.NewFakeClient(tt.resources...)
 			res := (&Reconciler{
 				Options: Options{ExposeAnnotationKey: DefaultExposeAnnotationKey},
@@ -654,7 +654,7 @@ func TestExposeAnnotationPredicate(t *testing.T) {
 			if tt.annotationKey == "" {
 				tt.annotationKey = DefaultExposeAnnotationKey
 			}
-			p := exposeAnnotationPredicate{annotation: tt.annotationKey, log: zap.NewNop().Sugar()}
+			p := exposeAnnotationPredicate{annotation: tt.annotationKey, log: zaptest.NewLogger(t).Sugar()}
 			if got, exp := p.Create(event.CreateEvent{Meta: tt.obj, Object: tt.obj}), tt.expectAccept; got != exp {
 				t.Errorf("expect create accepted %t, but got %t for object: %+v", exp, got, *tt.obj)
 			}

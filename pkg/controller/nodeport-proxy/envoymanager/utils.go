@@ -88,30 +88,29 @@ func isExposed(obj metav1.Object, exposeAnnotationKey string) bool {
 	return len(extractExposeTypes(obj, exposeAnnotationKey)) > 0
 }
 
-func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) []ExposeType {
-	var types []ExposeType
+func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) sets.String {
+	res := sets.NewString()
 	if obj.GetAnnotations() == nil {
-		return types
+		return res
 	}
 	// When legacy value 'true' is encountered NodePortType is returned for
 	// backward compatibility.
 	val := obj.GetAnnotations()[exposeAnnotationKey]
 	if val == "true" {
-		return append(types, NodePortType)
+		return sets.NewString(NodePortType.String())
 	}
 	// Parse the comma separated list and return the list of ExposeType
 	ts := strings.Split(val, ",")
 	for i := range ts {
-		ts[i] = strings.TrimSpace(ts[i])
-	}
-	for _, t := range sets.NewString(ts...).List() {
-		e, ok := ExposeTypeFromString(t)
+		t, ok := ExposeTypeFromString(strings.TrimSpace(ts[i]))
 		if !ok {
-			return nil
+			// If we met a not valid token we consider the value invalid and
+			// return an empty set.
+			return sets.NewString()
 		}
-		types = append(types, e)
+		res.Insert(t.String())
 	}
-	return types
+	return res
 }
 
 // portNamesSet returns the set of port names extracted from the given Service.
@@ -153,12 +152,13 @@ func portHostMappingFromService(svc *corev1.Service) (portHostMapping, error) {
 	}
 	err := json.Unmarshal([]byte(val), &m)
 	if err != nil {
-		return m, errors.Wrap(err, "failed to unmarshal port host mapping for service")
+		return m, errors.Wrap(err, "failed to unmarshal port host mapping")
 	}
 	return m, nil
 }
 
 func (p portHostMapping) validate(svc *corev1.Service) error {
+	// TODO(irozzo): validate that hosts are well formed FQDN
 	portNames, hosts := p.portHostSets()
 	if len(p) > hosts.Len() {
 		return fmt.Errorf("duplicated hostname in port host mapping of service: %v", p)

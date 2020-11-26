@@ -25,6 +25,9 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
+	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	envoyresourcev3 "github.com/envoyproxy/go-control-plane/pkg/resource/v3"
 
@@ -69,6 +72,14 @@ type Options struct {
 	EnvoyHTTP2ConnectListenerPort int
 }
 
+func (o Options) isSNIEnabled() bool {
+	return o.EnvoySNIListenerPort > 0
+}
+
+func (o Options) isHTTP2ConnectEnabled() bool {
+	return o.EnvoyHTTP2ConnectListenerPort > 0
+}
+
 // NewReconciler returns a new Reconciler or an error if something goes wrong
 // during the initial snapshot setup.
 func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, opts Options) (*Reconciler, envoycachev3.SnapshotCache, error) {
@@ -109,34 +120,66 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (r *Reconciler) sync() error {
+	var fcs []*envoylistenerv3.FilterChain
+	var vhs []*envoyroutev3.VirtualHost
 	listeners, clusters := r.makeInitialResources()
 
-	nodePortServices := corev1.ServiceList{}
-	if err := r.List(r.ctx, &nodePortServices,
+	services := corev1.ServiceList{}
+	if err := r.List(r.ctx, &services,
 		ctrlruntimeclient.InNamespace(r.Namespace),
-		client.MatchingFields{r.ExposeAnnotationKey: NodePortType.String()},
+		client.MatchingFields{r.ExposeAnnotationKey: "true"},
 	); err != nil {
 		return errors.Wrap(err, "failed to list service's")
 	}
 
-	for _, service := range nodePortServices.Items {
+	for _, service := range services.Items {
+		// Variables used to temporarily keep the resources, they will be
+		// aggregated definitively after checking that the service has some
+		// endpoints.
+		var tmpListeners []envoycachetype.Resource
+		var tmpFcs []*envoylistenerv3.FilterChain
+		var tmpVhs []*envoyroutev3.VirtualHost
+
 		serviceKey := ServiceKey(&service)
 		serviceLog := r.log.With("service", serviceKey)
 
 		serviceLog.Debug("processing service")
+		ets := extractExposeTypes(&service, r.ExposeAnnotationKey)
 		// This is redundant as we are using the field selector, but as this
 		// check makes the unit tests easier (FakeClient does not play nice
 		// with field selectors) and the performance penalty is negligible in
 		// this context we can keep it at the moment.
-		if !isExposed(&service, r.ExposeAnnotationKey) {
-			serviceLog.Debugf("skipping service: it does not have the annotation %s=true", r.ExposeAnnotationKey)
+		if ets.Len() == 0 {
+			serviceLog.Debugf("skipping service: it does not have a valid expose annotation %q", r.ExposeAnnotationKey)
 			continue
 		}
 
-		// We only manage NodePort services so Kubernetes takes care of allocating a unique port
-		if service.Spec.Type != corev1.ServiceTypeNodePort {
-			serviceLog.Warn("skipping service: it is not of type NodePort", "service")
-			return nil
+		// Create listeners for NodePortType
+		if ets.Has(NodePortType.String()) {
+			// We only manage NodePort services so Kubernetes takes care of allocating a unique port
+			if service.Spec.Type != corev1.ServiceTypeNodePort {
+				serviceLog.Warn("skipping service: it is not of type NodePort", "service")
+				return nil
+			}
+			// Add listeners for nodeport services
+			tmpListeners = append(tmpListeners, r.makeListenersForNodePortService(&service)...)
+		}
+		// Create filterChains for SNIType
+		if ets.Has(SNIType.String()) && r.isSNIEnabled() {
+			m, err := portHostMappingFromService(&service)
+			if err != nil {
+				serviceLog.Warn("port host mapping is required with SNI expose type", zap.Error(err))
+				continue
+			}
+			if err := m.validate(); err != nil {
+				serviceLog.Warn("port host mapping validation failed", zap.Error(err))
+				continue
+			}
+			tmpFcs = makeSNIFilterChain(&service, m)
+		}
+		// Create virtual hostst for HTTP2ConnectType
+		if ets.Has(HTTP2ConnectType.String()) && r.isHTTP2ConnectEnabled() {
+			tmpVhs = makeTunnelingVirtualHosts(&service)
 		}
 
 		eps := corev1.Endpoints{}
@@ -151,11 +194,17 @@ func (r *Reconciler) sync() error {
 			serviceLog.Debug("skipping service: it has no running pods")
 			continue
 		}
-		l := r.makeListenersForNodePortService(&service)
-		c := r.makeClusters(&service, &eps)
-		listeners = append(listeners, l...)
-		clusters = append(clusters, c...)
-
+		// Now that we know that there are endpoints commit temporary resources.
+		listeners = append(listeners, tmpListeners...)
+		clusters = append(clusters, r.makeClusters(&service, &eps)...)
+		vhs = append(vhs, tmpVhs...)
+		fcs = append(fcs, tmpFcs...)
+	}
+	if len(vhs) > 0 {
+		listeners = append(listeners, r.makeTunnelingListener(vhs...))
+	}
+	if len(fcs) > 0 {
+		listeners = append(listeners, r.makeSNIListener(fcs...))
 	}
 
 	// Get current snapshot
@@ -196,12 +245,11 @@ func (r *Reconciler) sync() error {
 
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(r.ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
-		var values []string
 		svc := raw.(*corev1.Service)
-		for _, t := range extractExposeTypes(svc, r.ExposeAnnotationKey) {
-			values = append(values, t.String())
+		if isExposed(svc, r.EnvoyNodeName) {
+			return []string{"true"}
 		}
-		return values
+		return nil
 	}); err != nil {
 		return fmt.Errorf("error occurred while adding service index: %w", err)
 	}
