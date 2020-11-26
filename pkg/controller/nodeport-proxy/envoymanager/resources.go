@@ -98,6 +98,8 @@ func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints
 		svcLog.Debug("skipping service: no expose types provided")
 	}
 
+	// Exclude all ports by default, to avoid creating unused clusters.
+	excludePorts := portNamesSet(svc)
 	// Create listeners for NodePortType
 	if expTypes.Has(NodePortType) {
 		// We only manage NodePort services so Kubernetes takes care of allocating a unique port
@@ -107,14 +109,20 @@ func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints
 			// Add listeners for nodeport services
 			sb.listeners = append(sb.listeners, sb.makeListenersForNodePortService(svc)...)
 		}
+		// NodePortType exposes all ports.
+		excludePorts = sets.NewString()
 	}
 	// Create filter chains for SNIType
 	if expTypes.Has(SNIType) && sb.isSNIEnabled() {
-		sb.fcs = append(sb.fcs, sb.makeSNIFilterChains(svcLog, svc)...)
+		fcs, includedPorts := sb.makeSNIFilterChains(svcLog, svc)
+		excludePorts = excludePorts.Difference(includedPorts)
+		sb.fcs = append(sb.fcs, fcs...)
 	}
 	// Create virtual hosts for HTTP2ConnectType
 	if expTypes.Has(HTTP2ConnectType) && sb.isHTTP2ConnectEnabled() {
 		sb.vhs = append(sb.vhs, makeTunnelingVirtualHosts(svc)...)
+		// Http2ConnectType exposes all ports.
+		excludePorts = sets.NewString()
 	}
 
 	// Create SNI listener
@@ -126,27 +134,33 @@ func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints
 		sb.listeners = append(sb.listeners, sb.makeTunnelingListener(sb.vhs...))
 	}
 	// Create clusters
-	sb.clusters = append(sb.clusters, sb.makeClusters(svc, eps)...)
+	sb.log.Debugw("creating clusters", "excludedPorts", excludePorts)
+	sb.clusters = append(sb.clusters, sb.makeClusters(svc, eps, excludePorts)...)
 }
 
-func (sb *snapshotBuilder) makeSNIFilterChains(svcLog *zap.SugaredLogger, svc *corev1.Service) []*envoylistenerv3.FilterChain {
+// makeSNIFilterChains returns the FilterChains for the given service and the
+// set of ports that are exposed.
+func (sb *snapshotBuilder) makeSNIFilterChains(svcLog *zap.SugaredLogger, svc *corev1.Service) ([]*envoylistenerv3.FilterChain, sets.String) {
 	m, err := sb.portHostMappingGetter(svc)
 	if err != nil {
 		svcLog.Warn("port host mapping is required with SNI expose type", zap.Error(err))
-		return nil
+		return nil, nil
 	}
 	if err := m.validate(svc); err != nil {
 		svcLog.Warn("port host mapping validation failed", zap.Error(err))
-		return nil
+		return nil, nil
 	}
-	_, hostnames := m.portHostSets()
+	ports, hostnames := m.portHostSets()
 	if conflicts := hostnames.Intersection(sets.StringKeySet(sb.hostnameToService)); len(conflicts) > 0 {
 		for _, c := range conflicts.List() {
 			svcLog.Warnf("skipping, hostname %q already in use by service %s", c, ServiceKey(sb.hostnameToService[c]))
-			return nil
+			return nil, nil
 		}
 	}
-	return makeSNIFilterChain(svc, m)
+
+	svcLog.Debugw("creating sni filter chains", "portHostMapping", m)
+	// Besides the filter chains returns the ports that are exposed.
+	return makeSNIFilterChains(svc, m), ports
 }
 
 // build returns a new Snapshot from the resources derived by the Services
@@ -179,46 +193,48 @@ func makeAccessLog() []*envoyaccesslogv3.AccessLog {
 	return accessLog
 }
 
-func makeSNIFilterChain(service *corev1.Service, p portHostMapping) []*envoylistenerv3.FilterChain {
+func makeSNIFilterChains(service *corev1.Service, p portHostMapping) []*envoylistenerv3.FilterChain {
 	var sniFilterChains []*envoylistenerv3.FilterChain
 
 	serviceKey := ServiceKey(service)
 	for _, servicePort := range service.Spec.Ports {
-		servicePortKey := ServicePortKey(serviceKey, &servicePort)
+		if name, ok := p[servicePort.Name]; ok {
+			servicePortKey := ServicePortKey(serviceKey, &servicePort)
 
-		tcpProxyConfig := &envoytcpfilterv3.TcpProxy{
-			StatPrefix: "ingress_tcp",
-			ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
-				Cluster: servicePortKey,
-			},
-			AccessLog: makeAccessLog(),
-		}
+			tcpProxyConfig := &envoytcpfilterv3.TcpProxy{
+				StatPrefix: "ingress_tcp",
+				ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
+					Cluster: servicePortKey,
+				},
+				AccessLog: makeAccessLog(),
+			}
 
-		tcpProxyConfigMarshalled, err := ptypes.MarshalAny(tcpProxyConfig)
-		if err != nil {
-			panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
-		}
+			tcpProxyConfigMarshalled, err := ptypes.MarshalAny(tcpProxyConfig)
+			if err != nil {
+				panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
+			}
 
-		sniFilterChains = append(sniFilterChains, &envoylistenerv3.FilterChain{
-			Filters: []*envoylistenerv3.Filter{
-				{
-					Name: envoywellknown.TCPProxy,
-					ConfigType: &envoylistenerv3.Filter_TypedConfig{
-						TypedConfig: tcpProxyConfigMarshalled,
+			sniFilterChains = append(sniFilterChains, &envoylistenerv3.FilterChain{
+				Filters: []*envoylistenerv3.Filter{
+					{
+						Name: envoywellknown.TCPProxy,
+						ConfigType: &envoylistenerv3.Filter_TypedConfig{
+							TypedConfig: tcpProxyConfigMarshalled,
+						},
 					},
 				},
-			},
-			FilterChainMatch: &envoylistenerv3.FilterChainMatch{
-				ServerNames:       []string{p[servicePort.Name]},
-				TransportProtocol: "tls",
-			},
-		})
+				FilterChainMatch: &envoylistenerv3.FilterChainMatch{
+					ServerNames:       []string{name},
+					TransportProtocol: "tls",
+				},
+			})
+		}
 	}
 	return sniFilterChains
 }
 
 func (sb *snapshotBuilder) makeSNIListener(fcs ...*envoylistenerv3.FilterChain) *envoylistenerv3.Listener {
-	sb.log.Debugf("Using a listener on port %d", sb.EnvoySNIListenerPort)
+	sb.log.Debugf("using a listener on port %d", sb.EnvoySNIListenerPort)
 
 	sniListener := &envoylistenerv3.Listener{
 		Name: "sni_listener",
@@ -307,7 +323,7 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 		panic(errors.Wrap(err, "failed to marshal HTTP Connection Manager"))
 	}
 
-	sb.log.Debugf("Using a listener on port %d", sb.EnvoyHTTP2ConnectListenerPort)
+	sb.log.Debugf("using a listener on port %d", sb.EnvoyHTTP2ConnectListenerPort)
 
 	tunnelingListener := &envoylistenerv3.Listener{
 		Name: "http2connect_listener",
@@ -338,11 +354,15 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 	return tunnelingListener
 }
 
-func (s *snapshotBuilder) makeClusters(service *corev1.Service, endpoints *corev1.Endpoints) (clusters []envoycachetype.Resource) {
+func (sb *snapshotBuilder) makeClusters(service *corev1.Service, endpoints *corev1.Endpoints, excludePorts sets.String) (clusters []envoycachetype.Resource) {
 	serviceKey := ServiceKey(service)
 	for _, servicePort := range service.Spec.Ports {
+		if excludePorts.Has(servicePort.Name) {
+			sb.log.Debugw("excluding service port", "servicePort", servicePort.Name)
+			continue
+		}
 		servicePortKey := ServicePortKey(serviceKey, &servicePort)
-		endpoints := s.getEndpoints(service, &servicePort, corev1.ProtocolTCP, endpoints)
+		endpoints := sb.getEndpoints(service, &servicePort, corev1.ProtocolTCP, endpoints)
 
 		// Must be sorted, otherwise we get into trouble when doing the snapshot diff later
 		sort.Slice(endpoints, func(i, j int) bool {
@@ -372,7 +392,7 @@ func (s *snapshotBuilder) makeClusters(service *corev1.Service, endpoints *corev
 	return
 }
 
-func (s *snapshotBuilder) makeListenersForNodePortService(service *corev1.Service) (listeners []envoycachetype.Resource) {
+func (sb *snapshotBuilder) makeListenersForNodePortService(service *corev1.Service) (listeners []envoycachetype.Resource) {
 	serviceKey := ServiceKey(service)
 	for _, servicePort := range service.Spec.Ports {
 		servicePortKey := ServicePortKey(serviceKey, &servicePort)
@@ -389,7 +409,7 @@ func (s *snapshotBuilder) makeListenersForNodePortService(service *corev1.Servic
 			panic(errors.Wrap(err, "failed to marshal tcpProxyConfig"))
 		}
 
-		s.log.Debugw("Creating NodePort listener", "service", serviceKey, "nodePort", servicePort.NodePort)
+		sb.log.Debugw("creating NodePort listener", "service", serviceKey, "nodePort", servicePort.NodePort)
 
 		listener := &envoylistenerv3.Listener{
 			Name: servicePortKey,
@@ -422,7 +442,7 @@ func (s *snapshotBuilder) makeListenersForNodePortService(service *corev1.Servic
 	return
 }
 
-func (s *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Resource, clusters []envoycachetype.Resource) {
+func (sb *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Resource, clusters []envoycachetype.Resource) {
 	adminCluster := &envoyclusterv3.Cluster{
 		Name:           "service_stats",
 		ConnectTimeout: ptypes.DurationProto(50 * time.Millisecond),
@@ -444,7 +464,7 @@ func (s *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Res
 												Protocol: envoycorev3.SocketAddress_TCP,
 												Address:  "127.0.0.1",
 												PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-													PortValue: uint32(s.EnvoyAdminPort),
+													PortValue: uint32(sb.EnvoyAdminPort),
 												},
 											},
 										},
@@ -532,7 +552,7 @@ func (s *snapshotBuilder) makeInitialResources() (listeners []envoycachetype.Res
 					Protocol: envoycorev3.SocketAddress_TCP,
 					Address:  "0.0.0.0",
 					PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-						PortValue: uint32(s.EnvoyStatsPort),
+						PortValue: uint32(sb.EnvoyStatsPort),
 					},
 				},
 			},
@@ -623,7 +643,7 @@ func (sb *snapshotBuilder) getEndpoints(s *corev1.Service, port *corev1.ServiceP
 		}
 	}
 
-	serviceLog.Debugw("Endpoints found", "lb-endpoints", upsServers)
+	serviceLog.Debugw("endpoints found", "lb-endpoints", upsServers)
 	return upsServers
 }
 

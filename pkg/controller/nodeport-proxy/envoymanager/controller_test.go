@@ -48,10 +48,12 @@ import (
 
 func TestSync(t *testing.T) {
 	tests := []struct {
-		name             string
-		resources        []runtime.Object
-		expectedClusters map[string]*envoyclusterv3.Cluster
-		expectedListener map[string]*envoylistenerv3.Listener
+		name                     string
+		resources                []runtime.Object
+		sniListenerPort          int
+		http2ConnectListenerPort int
+		expectedClusters         map[string]*envoyclusterv3.Cluster
+		expectedListener         map[string]*envoylistenerv3.Listener
 	}{
 		{
 			name: "2-ports-2-pods-named-and-non-named-ports",
@@ -117,172 +119,12 @@ func TestSync(t *testing.T) {
 				},
 			},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
-				"test/my-nodeport-https": {
-					Name:           "test/my-nodeport-https",
-					ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
-					ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
-						Type: envoyclusterv3.Cluster_STATIC,
-					},
-					LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
-					LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
-						ClusterName: "test/my-nodeport-https",
-						Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
-							{
-								LbEndpoints: []*envoyendpointv3.LbEndpoint{
-									{
-										HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
-											Endpoint: &envoyendpointv3.Endpoint{
-												Address: &envoycorev3.Address{
-													Address: &envoycorev3.Address_SocketAddress{
-														SocketAddress: &envoycorev3.SocketAddress{
-															Protocol: envoycorev3.SocketAddress_TCP,
-															Address:  "172.16.0.1",
-															PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-																PortValue: 8443,
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-									{
-										HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
-											Endpoint: &envoyendpointv3.Endpoint{
-												Address: &envoycorev3.Address{
-													Address: &envoycorev3.Address_SocketAddress{
-														SocketAddress: &envoycorev3.SocketAddress{
-															Protocol: envoycorev3.SocketAddress_TCP,
-															Address:  "172.16.0.2",
-															PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-																PortValue: 8443,
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-				"test/my-nodeport-http": {
-					Name:           "test/my-nodeport-http",
-					ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
-					ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
-						Type: envoyclusterv3.Cluster_STATIC,
-					},
-					LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
-					LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
-						ClusterName: "test/my-nodeport-http",
-						Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
-							{
-								LbEndpoints: []*envoyendpointv3.LbEndpoint{
-									{
-										HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
-											Endpoint: &envoyendpointv3.Endpoint{
-												Address: &envoycorev3.Address{
-													Address: &envoycorev3.Address_SocketAddress{
-														SocketAddress: &envoycorev3.SocketAddress{
-															Protocol: envoycorev3.SocketAddress_TCP,
-															Address:  "172.16.0.1",
-															PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-																PortValue: 8080,
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-									{
-										HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
-											Endpoint: &envoyendpointv3.Endpoint{
-												Address: &envoycorev3.Address{
-													Address: &envoycorev3.Address_SocketAddress{
-														SocketAddress: &envoycorev3.SocketAddress{
-															Protocol: envoycorev3.SocketAddress_TCP,
-															Address:  "172.16.0.2",
-															PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-																PortValue: 8080,
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
+				"test/my-nodeport-https": makeCluster(t, "test/my-nodeport-https", 8443, "172.16.0.1", "172.16.0.2"),
+				"test/my-nodeport-http":  makeCluster(t, "test/my-nodeport-http", 8080, "172.16.0.1", "172.16.0.2"),
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{
-				"test/my-nodeport-https": {
-					Name: "test/my-nodeport-https",
-					Address: &envoycorev3.Address{
-						Address: &envoycorev3.Address_SocketAddress{
-							SocketAddress: &envoycorev3.SocketAddress{
-								Protocol: envoycorev3.SocketAddress_TCP,
-								Address:  "0.0.0.0",
-								PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-									PortValue: 32000,
-								},
-							},
-						},
-					},
-					FilterChains: []*envoylistenerv3.FilterChain{
-						{
-							Filters: []*envoylistenerv3.Filter{
-								{
-									Name: envoywellknown.TCPProxy,
-									ConfigType: &envoylistenerv3.Filter_TypedConfig{
-										TypedConfig: marshalMessage(t, &envoytcpfilterv3.TcpProxy{
-											StatPrefix: "ingress_tcp",
-											ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
-												Cluster: "test/my-nodeport-https",
-											},
-										}),
-									},
-								},
-							},
-						},
-					},
-				},
-				"test/my-nodeport-http": {
-					Name: "test/my-nodeport-http",
-					Address: &envoycorev3.Address{
-						Address: &envoycorev3.Address_SocketAddress{
-							SocketAddress: &envoycorev3.SocketAddress{
-								Protocol: envoycorev3.SocketAddress_TCP,
-								Address:  "0.0.0.0",
-								PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-									PortValue: 32001,
-								},
-							},
-						},
-					},
-					FilterChains: []*envoylistenerv3.FilterChain{
-						{
-							Filters: []*envoylistenerv3.Filter{
-								{
-									Name: envoywellknown.TCPProxy,
-									ConfigType: &envoylistenerv3.Filter_TypedConfig{
-										TypedConfig: marshalMessage(t, &envoytcpfilterv3.TcpProxy{
-											StatPrefix: "ingress_tcp",
-											ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
-												Cluster: "test/my-nodeport-http",
-											},
-										}),
-									},
-								},
-							},
-						},
-					},
-				},
+				"test/my-nodeport-https": makeNodePortListener(t, "test/my-nodeport-https", 32000),
+				"test/my-nodeport-http":  makeNodePortListener(t, "test/my-nodeport-http", 32001),
 			},
 		},
 		{
@@ -293,7 +135,7 @@ func TestSync(t *testing.T) {
 						Name:      "my-nodeport",
 						Namespace: "test",
 						Annotations: map[string]string{
-							DefaultExposeAnnotationKey: "true",
+							DefaultExposeAnnotationKey: "NodePort",
 						},
 					},
 					Spec: corev1.ServiceSpec{
@@ -337,73 +179,10 @@ func TestSync(t *testing.T) {
 				},
 			},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
-				"test/my-nodeport-http": {
-					Name:           "test/my-nodeport-http",
-					ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
-					ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
-						Type: envoyclusterv3.Cluster_STATIC,
-					},
-					LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
-					LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
-						ClusterName: "test/my-nodeport-http",
-						Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
-							{
-								LbEndpoints: []*envoyendpointv3.LbEndpoint{
-									{
-										HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
-											Endpoint: &envoyendpointv3.Endpoint{
-												Address: &envoycorev3.Address{
-													Address: &envoycorev3.Address_SocketAddress{
-														SocketAddress: &envoycorev3.SocketAddress{
-															Protocol: envoycorev3.SocketAddress_TCP,
-															Address:  "172.16.0.1",
-															PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-																PortValue: 8080,
-															},
-														},
-													},
-												},
-											},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
+				"test/my-nodeport-http": makeCluster(t, "test/my-nodeport-http", 8080, "172.16.0.1"),
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{
-				"test/my-nodeport-http": {
-					Name: "test/my-nodeport-http",
-					Address: &envoycorev3.Address{
-						Address: &envoycorev3.Address_SocketAddress{
-							SocketAddress: &envoycorev3.SocketAddress{
-								Protocol: envoycorev3.SocketAddress_TCP,
-								Address:  "0.0.0.0",
-								PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-									PortValue: 32001,
-								},
-							},
-						},
-					},
-					FilterChains: []*envoylistenerv3.FilterChain{
-						{
-							Filters: []*envoylistenerv3.Filter{
-								{
-									Name: envoywellknown.TCPProxy,
-									ConfigType: &envoylistenerv3.Filter_TypedConfig{
-										TypedConfig: marshalMessage(t, &envoytcpfilterv3.TcpProxy{
-											StatPrefix: "ingress_tcp",
-											ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
-												Cluster: "test/my-nodeport-http",
-											},
-										}),
-									},
-								},
-							},
-						},
-					},
-				},
+				"test/my-nodeport-http": makeNodePortListener(t, "test/my-nodeport-http", 32001),
 			},
 		},
 		{
@@ -497,6 +276,209 @@ func TestSync(t *testing.T) {
 			expectedListener: map[string]*envoylistenerv3.Listener{},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{},
 		},
+		{
+			name: "1-sni-service-with-1-exposed-port",
+			resources: []runtime.Object{
+				&corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-cluster-ip",
+						Namespace: "test",
+						Annotations: map[string]string{
+							DefaultExposeAnnotationKey:   "SNI",
+							PortHostMappingAnnotationKey: `{"https": "host.com"}`,
+						},
+					},
+					Spec: corev1.ServiceSpec{
+						Type: corev1.ServiceTypeClusterIP,
+						Ports: []corev1.ServicePort{
+							{
+								Name:       "http",
+								TargetPort: intstr.FromString("http"),
+								Protocol:   corev1.ProtocolTCP,
+								Port:       80,
+							},
+							{
+								Name:       "https",
+								TargetPort: intstr.FromString("https"),
+								Protocol:   corev1.ProtocolTCP,
+								Port:       80,
+							},
+						},
+						Selector: map[string]string{
+							"foo": "bar",
+						},
+					},
+				},
+				&corev1.Endpoints{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-cluster-ip",
+						Namespace: "test",
+					},
+					Subsets: []corev1.EndpointSubset{
+						{
+							Addresses: []corev1.EndpointAddress{
+								{IP: "172.16.0.1"},
+								{IP: "172.16.0.2"},
+							},
+							Ports: []corev1.EndpointPort{
+								{
+									Name:     "http",
+									Protocol: corev1.ProtocolTCP,
+									Port:     8080,
+								},
+								{
+									Name:     "https",
+									Protocol: corev1.ProtocolTCP,
+									Port:     8443,
+								},
+							},
+						},
+					},
+				},
+			},
+			sniListenerPort: 443,
+			expectedClusters: map[string]*envoyclusterv3.Cluster{
+				"test/my-cluster-ip-https": makeCluster(t, "test/my-cluster-ip-https", 8443, "172.16.0.1", "172.16.0.2"),
+			},
+			expectedListener: map[string]*envoylistenerv3.Listener{
+				"sni_listener": makeSNIListener(t, 443, hostClusterName{Cluster: "test/my-cluster-ip-https", Hostname: "host.com"}),
+			},
+		},
+		{
+			name: "1-sni-service-with-2-exposed-ports",
+			resources: []runtime.Object{
+				&corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-cluster-ip",
+						Namespace: "test",
+						Annotations: map[string]string{
+							DefaultExposeAnnotationKey:   "SNI",
+							PortHostMappingAnnotationKey: `{"https": "host.com", "admin": "admin.host.com"}`,
+						},
+					},
+					Spec: corev1.ServiceSpec{
+						Type: corev1.ServiceTypeClusterIP,
+						Ports: []corev1.ServicePort{
+							{
+								Name:       "http",
+								TargetPort: intstr.FromString("http"),
+								Protocol:   corev1.ProtocolTCP,
+								Port:       80,
+							},
+							{
+								Name:       "https",
+								TargetPort: intstr.FromString("https"),
+								Protocol:   corev1.ProtocolTCP,
+								Port:       8443,
+							},
+							{
+								Name:       "admin",
+								TargetPort: intstr.FromString("admin"),
+								Protocol:   corev1.ProtocolTCP,
+								Port:       6443,
+							},
+						},
+						Selector: map[string]string{
+							"foo": "bar",
+						},
+					},
+				},
+				&corev1.Endpoints{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-cluster-ip",
+						Namespace: "test",
+					},
+					Subsets: []corev1.EndpointSubset{
+						{
+							Addresses: []corev1.EndpointAddress{
+								{IP: "172.16.0.1"},
+								{IP: "172.16.0.2"},
+							},
+							Ports: []corev1.EndpointPort{
+								{
+									Name:     "http",
+									Protocol: corev1.ProtocolTCP,
+									Port:     8080,
+								},
+								{
+									Name:     "https",
+									Protocol: corev1.ProtocolTCP,
+									Port:     8443,
+								},
+								{
+									Name:     "admin",
+									Protocol: corev1.ProtocolTCP,
+									Port:     6443,
+								},
+							},
+						},
+					},
+				},
+			},
+			sniListenerPort: 443,
+			expectedClusters: map[string]*envoyclusterv3.Cluster{
+				"test/my-cluster-ip-https": makeCluster(t, "test/my-cluster-ip-https", 8443, "172.16.0.1", "172.16.0.2"),
+				"test/my-cluster-ip-admin": makeCluster(t, "test/my-cluster-ip-admin", 6443, "172.16.0.1", "172.16.0.2"),
+			},
+			expectedListener: map[string]*envoylistenerv3.Listener{
+				"sni_listener": makeSNIListener(t, 443,
+					hostClusterName{Cluster: "test/my-cluster-ip-https", Hostname: "host.com"},
+					hostClusterName{Cluster: "test/my-cluster-ip-admin", Hostname: "admin.host.com"}),
+			},
+		},
+		{
+			name: "sni-listener-not-enabled",
+			resources: []runtime.Object{
+				&corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-cluster-ip",
+						Namespace: "test",
+						Annotations: map[string]string{
+							DefaultExposeAnnotationKey:   "SNI",
+							PortHostMappingAnnotationKey: `{"https": "host.com"}`,
+						},
+					},
+					Spec: corev1.ServiceSpec{
+						Type: corev1.ServiceTypeClusterIP,
+						Ports: []corev1.ServicePort{
+							{
+								Name:       "http",
+								TargetPort: intstr.FromString("http"),
+								Protocol:   corev1.ProtocolTCP,
+								Port:       80,
+							},
+						},
+						Selector: map[string]string{
+							"foo": "bar",
+						},
+					},
+				},
+				&corev1.Endpoints{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "my-cluster-ip",
+						Namespace: "test",
+					},
+					Subsets: []corev1.EndpointSubset{
+						{
+							Addresses: []corev1.EndpointAddress{
+								{IP: "172.16.0.1"},
+							},
+							Ports: []corev1.EndpointPort{
+								{
+									Name:     "http",
+									Protocol: corev1.ProtocolTCP,
+									Port:     8080,
+								},
+							},
+						},
+					},
+				},
+			},
+			// 0 deactivates the SNI listener
+			sniListenerPort:  0,
+			expectedClusters: map[string]*envoyclusterv3.Cluster{},
+			expectedListener: map[string]*envoylistenerv3.Listener{},
+		},
 	}
 
 	for _, test := range tests {
@@ -508,8 +490,10 @@ func TestSync(t *testing.T) {
 				log,
 				client,
 				Options{
-					EnvoyNodeName:       "node-name",
-					ExposeAnnotationKey: DefaultExposeAnnotationKey,
+					EnvoyNodeName:                 "node-name",
+					ExposeAnnotationKey:           DefaultExposeAnnotationKey,
+					EnvoySNIListenerPort:          test.sniListenerPort,
+					EnvoyHTTP2ConnectListenerPort: test.http2ConnectListenerPort,
 				},
 			)
 
@@ -540,6 +524,133 @@ func TestSync(t *testing.T) {
 				t.Errorf("Got unexpected listeners. Diff to expected: %v", diff)
 			}
 		})
+	}
+}
+
+func makeNodePortListener(t *testing.T, name string, portValue uint32) *envoylistenerv3.Listener {
+	return &envoylistenerv3.Listener{
+		Name: name,
+		Address: &envoycorev3.Address{
+			Address: &envoycorev3.Address_SocketAddress{
+				SocketAddress: &envoycorev3.SocketAddress{
+					Protocol: envoycorev3.SocketAddress_TCP,
+					Address:  "0.0.0.0",
+					PortSpecifier: &envoycorev3.SocketAddress_PortValue{
+						PortValue: portValue,
+					},
+				},
+			},
+		},
+		FilterChains: []*envoylistenerv3.FilterChain{
+			{
+				Filters: []*envoylistenerv3.Filter{
+					{
+						Name: envoywellknown.TCPProxy,
+						ConfigType: &envoylistenerv3.Filter_TypedConfig{
+							TypedConfig: marshalMessage(t, &envoytcpfilterv3.TcpProxy{
+								StatPrefix: "ingress_tcp",
+								ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
+									Cluster: name,
+								},
+							}),
+						},
+					},
+				},
+			},
+		},
+	}
+}
+
+type hostClusterName struct {
+	Hostname string
+	Cluster  string
+}
+
+func makeSNIListener(t *testing.T, portValue uint32, hostClusterNames ...hostClusterName) *envoylistenerv3.Listener {
+	fcs := []*envoylistenerv3.FilterChain{}
+	for _, hc := range hostClusterNames {
+
+		tcpProxyConfig := &envoytcpfilterv3.TcpProxy{
+			StatPrefix: "ingress_tcp",
+			ClusterSpecifier: &envoytcpfilterv3.TcpProxy_Cluster{
+				Cluster: hc.Cluster,
+			},
+			AccessLog: makeAccessLog(),
+		}
+
+		tcpProxyConfigMarshalled, err := ptypes.MarshalAny(tcpProxyConfig)
+		if err != nil {
+			t.Fatalf("failed to marshal tcpProxyConfig: %v", err)
+		}
+
+		fcs = append(fcs, &envoylistenerv3.FilterChain{
+			Filters: []*envoylistenerv3.Filter{
+				{
+					Name: envoywellknown.TCPProxy,
+					ConfigType: &envoylistenerv3.Filter_TypedConfig{
+						TypedConfig: tcpProxyConfigMarshalled,
+					},
+				},
+			},
+			FilterChainMatch: &envoylistenerv3.FilterChainMatch{
+				ServerNames:       []string{hc.Hostname},
+				TransportProtocol: "tls",
+			},
+		})
+	}
+	return &envoylistenerv3.Listener{
+		Name: "sni_listener",
+		Address: &envoycorev3.Address{
+			Address: &envoycorev3.Address_SocketAddress{
+				SocketAddress: &envoycorev3.SocketAddress{
+					Protocol: envoycorev3.SocketAddress_TCP,
+					Address:  "0.0.0.0",
+					PortSpecifier: &envoycorev3.SocketAddress_PortValue{
+						PortValue: portValue,
+					},
+				},
+			},
+		},
+		FilterChains: fcs,
+	}
+}
+
+func makeCluster(t *testing.T, name string, portValue uint32, addresses ...string) *envoyclusterv3.Cluster {
+	lbs := []*envoyendpointv3.LbEndpoint{}
+	for _, address := range addresses {
+		lbs = append(lbs, &envoyendpointv3.LbEndpoint{
+			HostIdentifier: &envoyendpointv3.LbEndpoint_Endpoint{
+				Endpoint: &envoyendpointv3.Endpoint{
+					Address: &envoycorev3.Address{
+						Address: &envoycorev3.Address_SocketAddress{
+							SocketAddress: &envoycorev3.SocketAddress{
+								Protocol: envoycorev3.SocketAddress_TCP,
+								Address:  address,
+								PortSpecifier: &envoycorev3.SocketAddress_PortValue{
+									PortValue: portValue,
+								},
+							},
+						},
+					},
+				},
+			},
+		})
+	}
+	return &envoyclusterv3.Cluster{
+		Name:           name,
+		ConnectTimeout: ptypes.DurationProto(clusterConnectTimeout),
+		ClusterDiscoveryType: &envoyclusterv3.Cluster_Type{
+			Type: envoyclusterv3.Cluster_STATIC,
+		},
+		LbPolicy: envoyclusterv3.Cluster_ROUND_ROBIN,
+		LoadAssignment: &envoyendpointv3.ClusterLoadAssignment{
+			ClusterName: name,
+			Endpoints: []*envoyendpointv3.LocalityLbEndpoints{
+				{
+					LbEndpoints: lbs,
+				},
+			},
+		},
 	}
 }
 
