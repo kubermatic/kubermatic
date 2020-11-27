@@ -30,8 +30,6 @@ import (
 	"testing"
 	"time"
 
-	k8sjson "k8s.io/apimachinery/pkg/util/json"
-
 	ver "github.com/Masterminds/semver"
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	prometheusapi "github.com/prometheus/client_golang/api"
@@ -63,6 +61,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	k8sjson "k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	kubernetesclientset "k8s.io/client-go/kubernetes"
 	fakerestclient "k8s.io/client-go/kubernetes/fake"
