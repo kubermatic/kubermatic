@@ -41,7 +41,7 @@ const (
 	UpdaterDeploymentName = "nodeport-proxy-updater"
 	EnvoyPort             = 8002
 	EnvoySNIPort          = 6443
-	EnvoyTunnelingPort    = 8080
+	EnvoyTunnelingPort    = 8088
 )
 
 func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
