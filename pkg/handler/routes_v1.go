@@ -3381,7 +3381,7 @@ func (r Routing) deleteNodeDeployment() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v1/addons addon
+// swagger:route POST /api/v1/addons addon listAccessibleAddons
 //
 //     Lists names of addons that can be configured inside the user clusters
 //
@@ -3408,7 +3408,7 @@ func (r Routing) listAccessibleAddons() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/addons addon listInstallableAddons
+// swagger:route GET /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/installableaddons addon listInstallableAddons
 //
 //     Lists names of addons that can be installed inside the user cluster
 //
@@ -3427,8 +3427,8 @@ func (r Routing) listInstallableAddons() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
+			middleware.Addons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
+			middleware.PrivilegedAddons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
 		)(addon.ListInstallableAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.accessibleAddons)),
 		addon.DecodeListAddons,
 		EncodeJSON,
@@ -3458,8 +3458,8 @@ func (r Routing) createAddon() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
+			middleware.Addons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
+			middleware.PrivilegedAddons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
 		)(addon.CreateAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		addon.DecodeCreateAddon,
 		SetStatusCreatedHeader(EncodeJSON),
@@ -3486,8 +3486,8 @@ func (r Routing) listAddons() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
+			middleware.Addons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
+			middleware.PrivilegedAddons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
 		)(addon.ListAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		addon.DecodeListAddons,
 		EncodeJSON,
@@ -3514,8 +3514,8 @@ func (r Routing) getAddon() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
+			middleware.Addons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
+			middleware.PrivilegedAddons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
 		)(addon.GetAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		addon.DecodeGetAddon,
 		EncodeJSON,
@@ -3545,8 +3545,8 @@ func (r Routing) patchAddon() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
+			middleware.Addons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
+			middleware.PrivilegedAddons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
 		)(addon.PatchAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		addon.DecodePatchAddon,
 		EncodeJSON,
@@ -3573,8 +3573,8 @@ func (r Routing) deleteAddon() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.Addons(r.addonProviderGetter, r.seedsGetter),
-			middleware.PrivilegedAddons(r.addonProviderGetter, r.seedsGetter),
+			middleware.Addons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
+			middleware.PrivilegedAddons(r.clusterProviderGetter, r.addonProviderGetter, r.seedsGetter),
 		)(addon.DeleteAddonEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		addon.DecodeGetAddon,
 		EncodeJSON,

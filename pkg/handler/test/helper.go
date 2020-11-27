@@ -61,6 +61,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	k8sjson "k8s.io/apimachinery/pkg/util/json"
 	"k8s.io/apimachinery/pkg/util/sets"
 	kubernetesclientset "k8s.io/client-go/kubernetes"
 	fakerestclient "k8s.io/client-go/kubernetes/fake"
@@ -1374,4 +1375,14 @@ func GenDefaultGroupClusterRoleBinding(name, roleID, group string) *rbacv1.Clust
 
 func RegisterScheme(builder runtime.SchemeBuilder) error {
 	return builder.AddToScheme(scheme.Scheme)
+}
+
+func CreateRawVariables(t *testing.T, in map[string]interface{}) *runtime.RawExtension {
+	result := &runtime.RawExtension{}
+	raw, err := k8sjson.Marshal(in)
+	if err != nil {
+		t.Fatalf("failed to marshal external Variables: %v", err)
+	}
+	result.Raw = raw
+	return result
 }

@@ -25,8 +25,6 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
-	Addon(params *AddonParams, authInfo runtime.ClientAuthInfoWriter) (*AddonOK, error)
-
 	CreateOIDCKubeconfig(params *CreateOIDCKubeconfigParams, authInfo runtime.ClientAuthInfoWriter) (*CreateOIDCKubeconfigOK, error)
 
 	GetAddonConfig(params *GetAddonConfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetAddonConfigOK, error)
@@ -38,40 +36,6 @@ type ClientService interface {
 	ListSystemLabels(params *ListSystemLabelsParams, authInfo runtime.ClientAuthInfoWriter) (*ListSystemLabelsOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
-}
-
-/*
-  Addon Lists names of addons that can be configured inside the user clusters
-*/
-func (a *Client) Addon(params *AddonParams, authInfo runtime.ClientAuthInfoWriter) (*AddonOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewAddonParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "addon",
-		Method:             "POST",
-		PathPattern:        "/api/v1/addons",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &AddonReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*AddonOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddonDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

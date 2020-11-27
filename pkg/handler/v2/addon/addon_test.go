@@ -137,16 +137,14 @@ func TestGetAddon(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/addons/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.AddonToGet), strings.NewReader(""))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/addons/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.AddonToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []runtime.Object
-			var machineObj []runtime.Object
-			var kubernetesObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			for _, existingAddon := range tc.ExistingAddons {
 				kubermaticObj = append(kubermaticObj, existingAddon)
 			}
-			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -299,7 +297,7 @@ func TestListAddons(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/addons", "my-first-project-ID", cluster.Name), strings.NewReader(""))
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/addons", "my-first-project-ID", cluster.Name), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -452,7 +450,7 @@ func TestCreateAddon(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/addons", "my-first-project-ID", cluster.Name), strings.NewReader(tc.Body))
+			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/addons", "my-first-project-ID", cluster.Name), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
@@ -627,7 +625,7 @@ func TestCreatePatchGetAddon(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/addons", "my-first-project-ID", cluster.Name), strings.NewReader(tc.CreateBody))
+			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/addons", "my-first-project-ID", cluster.Name), strings.NewReader(tc.CreateBody))
 			res := httptest.NewRecorder()
 			var kubermaticObj []runtime.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
