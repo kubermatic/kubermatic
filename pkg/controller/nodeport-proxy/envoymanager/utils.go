@@ -206,7 +206,7 @@ func (p portHostMapping) validate(svc *corev1.Service) error {
 	}
 	tcpPortNames := portNamesSet(svc, func(p corev1.ServicePort) bool { return p.Protocol == corev1.ProtocolTCP })
 	if diff := portNames.Difference(tcpPortNames); len(diff) > 0 {
-		return fmt.Errorf("port name(s) not found in TCP servie ports: %v", diff.List())
+		return fmt.Errorf("port name(s) not found in TCP service ports: %v", diff.List())
 	}
 	return nil
 }
