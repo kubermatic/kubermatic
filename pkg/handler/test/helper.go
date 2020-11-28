@@ -1386,3 +1386,59 @@ func CreateRawVariables(t *testing.T, in map[string]interface{}) *runtime.RawExt
 	result.Raw = raw
 	return result
 }
+
+func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
+	ct := &kubermaticv1.Constraint{}
+	ct.Kind = kubermaticv1.ConstraintKind
+	ct.APIVersion = kubermaticv1.SchemeGroupVersion.String()
+	ct.Name = name
+	ct.Namespace = namespace
+	ct.Spec = kubermaticv1.ConstraintSpec{
+		ConstraintType: kind,
+		Match: kubermaticv1.Match{
+			Kinds: []kubermaticv1.Kind{
+				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
+			},
+		},
+		Parameters: kubermaticv1.Parameters{
+			RawJSON: `{"labels":["gatekeeper","opa"]}`,
+		},
+	}
+
+	return ct
+}
+
+func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
+	return apiv2.Constraint{
+		Name: name,
+		Spec: kubermaticv1.ConstraintSpec{
+			ConstraintType: kind,
+			Match: kubermaticv1.Match{
+				Kinds: []kubermaticv1.Kind{
+					{Kinds: []string{"namespace"}, APIGroups: []string{""}},
+				},
+			},
+			Parameters: kubermaticv1.Parameters{
+				RawJSON: `{"labels":["gatekeeper","opa"]}`,
+			},
+		},
+		Status: &apiv2.ConstraintStatus{
+			Enforcement:    "true",
+			AuditTimestamp: "2019-05-11T01:46:13Z",
+			Violations: []apiv2.Violation{
+				{
+					EnforcementAction: "deny",
+					Kind:              "Namespace",
+					Message:           "'you must provide labels: {\"gatekeeper\"}'",
+					Name:              "default",
+				},
+				{
+					EnforcementAction: "deny",
+					Kind:              "Namespace",
+					Message:           "'you must provide labels: {\"gatekeeper\"}'",
+					Name:              "gatekeeper",
+				},
+			},
+		},
+	}
+}
