@@ -50,7 +50,7 @@ func (b *ObjectBuilder) WithCreationTimestamp(time time.Time) *ObjectBuilder {
 	return b
 }
 
-// ServiceBuilder is a builder for v1.Service.
+// ServiceBuilder is a builder providing a fluent API for v1.Service creation.
 type ServiceBuilder struct {
 	ObjectBuilder
 
@@ -115,7 +115,8 @@ func (b ServiceBuilder) Build() *corev1.Service {
 	}
 }
 
-// EndpointsBuilder is a builder for v1.Endpoints.
+// EndpointsBuilder is a builder providing a fluent API for v1.Endpoints
+// creation.
 type EndpointsBuilder struct {
 	ObjectBuilder
 
@@ -133,6 +134,10 @@ func NewEndpointsBuilder(nn NamespacedName) *EndpointsBuilder {
 	}
 }
 
+// WithEndpointsSubset starts the creation of an Endpoints Subset, the creation
+// must me terminated with a call to DoneWithEndpointSubset, after ports and
+// addresses are added.
+// nolint:golint
 func (b *EndpointsBuilder) WithEndpointsSubset() *epsSubsetBuilder {
 	return &epsSubsetBuilder{eb: b}
 }
@@ -187,6 +192,9 @@ func (b *epsSubsetBuilder) WithEndpointPort(
 	})
 }
 
+// DoneWithEndpointSubset concludes the creation of the Subset and returns the
+// EndpointsBuilder to start the creation of a new Subset or create the
+// Endpoints with Build method.
 func (b *epsSubsetBuilder) DoneWithEndpointSubset(eps ...corev1.EndpointPort) *EndpointsBuilder {
 	b.epsPorts = append(b.epsPorts, eps...)
 	b.eb.epsSubsets = append(b.eb.epsSubsets, corev1.EndpointSubset{

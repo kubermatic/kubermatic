@@ -264,7 +264,7 @@ func TestSync(t *testing.T) {
 				"test/my-service-https": makeCluster(t, "test/my-service-https", 8443, "172.16.0.1"),
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{
-				"http2connect_listener": makeHttp2ConnectListener(t, 443, hostClusterName{Cluster: "test/my-service-https", Hostname: "my-service.test.svc.cluster.local:443"}),
+				"http2connect_listener": makeHTTP2ConnectListener(t, 443, hostClusterName{Cluster: "test/my-service-https", Hostname: "my-service.test.svc.cluster.local:443"}),
 			},
 		},
 		{
@@ -411,7 +411,7 @@ func makeSNIListener(t *testing.T, portValue uint32, hostClusterNames ...hostClu
 	return sb.makeSNIListener(fcs...)
 }
 
-func makeHttp2ConnectListener(t *testing.T, portValue int, hostClusterNames ...hostClusterName) *envoylistenerv3.Listener {
+func makeHTTP2ConnectListener(t *testing.T, portValue int, hostClusterNames ...hostClusterName) *envoylistenerv3.Listener {
 	var vhs []*envoyroutev3.VirtualHost
 	for _, hostClusterName := range hostClusterNames {
 		vhs = append(vhs, &envoyroutev3.VirtualHost{
