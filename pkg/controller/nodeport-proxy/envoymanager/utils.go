@@ -19,6 +19,7 @@ package envoymanager
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -93,12 +94,25 @@ func (e ExposeTypes) Insert(item ExposeType) {
 	e[item] = sets.Empty{}
 }
 
-// ServiceKey returns a string used to identify the given Service.
-func ServiceKey(service *corev1.Service) string {
-	return fmt.Sprintf("%s/%s", service.Namespace, service.Name)
+// SortServicesByCreationTimestamp sorts the Service slice in descending order
+// by creation timestamp (i.e. from oldest to newest).
+// UID alphanumeric ordering is used to break ties.
+func SortServicesByCreationTimestamp(items []corev1.Service) {
+	sort.Slice(items, func(i, j int) bool {
+		if it, jt := items[i].CreationTimestamp, items[j].CreationTimestamp; it != jt {
+			return jt.After(it.Time)
+		}
+		// Break ties with UIDs
+		return items[i].UID < items[j].UID
+	})
 }
 
-// ServicePortKey returns a string used to identify the given ServicePort.
+// ServiceKey returns a string used to identify the given v1.Service.
+func ServiceKey(svc *corev1.Service) string {
+	return fmt.Sprintf("%s/%s", svc.Namespace, svc.Name)
+}
+
+// ServicePortKey returns a string used to identify the given v1.ServicePort.
 func ServicePortKey(serviceKey string, servicePort *corev1.ServicePort) string {
 	if servicePort.Name == "" {
 		return serviceKey
@@ -137,12 +151,16 @@ func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) ExposeTyp
 }
 
 // portNamesSet returns the set of port names extracted from the given Service.
-func portNamesSet(svc *corev1.Service) sets.String {
+func portNamesSet(svc *corev1.Service, filterFuncs ...func(corev1.ServicePort) bool) sets.String {
 	portNames := sets.NewString()
+OUTER:
 	for _, p := range svc.Spec.Ports {
-		if p.Protocol == corev1.ProtocolTCP {
-			portNames.Insert(p.Name)
+		for _, filter := range filterFuncs {
+			if ok := filter(p); !ok {
+				continue OUTER
+			}
 		}
+		portNames.Insert(p.Name)
 	}
 	return portNames
 }
@@ -186,9 +204,9 @@ func (p portHostMapping) validate(svc *corev1.Service) error {
 	if len(p) > hosts.Len() {
 		return fmt.Errorf("duplicated hostname in port host mapping of service: %v", p)
 	}
-	actualPortNames := portNamesSet(svc)
-	if diff := portNames.Difference(actualPortNames); len(diff) > 0 {
-		return fmt.Errorf("ports declared in port host mapping not found in service: %v", diff.List())
+	tcpPortNames := portNamesSet(svc, func(p corev1.ServicePort) bool { return p.Protocol == corev1.ProtocolTCP })
+	if diff := portNames.Difference(tcpPortNames); len(diff) > 0 {
+		return fmt.Errorf("port name(s) not found in TCP servie ports: %v", diff.List())
 	}
 	return nil
 }

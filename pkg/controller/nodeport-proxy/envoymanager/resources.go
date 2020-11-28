@@ -29,6 +29,7 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	envoyaccesslogv3 "github.com/envoyproxy/go-control-plane/envoy/config/accesslog/v3"
@@ -69,8 +70,8 @@ type snapshotBuilder struct {
 	vhs       []*envoyroutev3.VirtualHost
 	listeners []envoycachetype.Resource
 	clusters  []envoycachetype.Resource
-	// keeps a mapping between hostnames and services to detect conflicts
-	hostnameToService map[string]*corev1.Service
+	// keeps a mapping between hostnames and service keys
+	hostnameToService map[string]types.NamespacedName
 }
 
 func newSnapshotBuilder(log *zap.SugaredLogger, portHostMappingGetter portHostMappingGetter, opts Options) *snapshotBuilder {
@@ -78,7 +79,7 @@ func newSnapshotBuilder(log *zap.SugaredLogger, portHostMappingGetter portHostMa
 		log:                   log.With("component", "snapshotBuilder"),
 		Options:               opts,
 		portHostMappingGetter: portHostMappingGetter,
-		hostnameToService:     map[string]*corev1.Service{},
+		hostnameToService:     map[string]types.NamespacedName{},
 	}
 	return &sb
 }
@@ -99,7 +100,7 @@ func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints
 	}
 
 	// Exclude all ports by default, to avoid creating unused clusters.
-	excludePorts := portNamesSet(svc)
+	var includePorts sets.String
 	// Create listeners for NodePortType
 	if expTypes.Has(NodePortType) {
 		// We only manage NodePort services so Kubernetes takes care of allocating a unique port
@@ -107,55 +108,53 @@ func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints
 			svcLog.Warn("skipping service: it is not of type NodePort", "service")
 		} else {
 			// Add listeners for nodeport services
-			sb.listeners = append(sb.listeners, sb.makeListenersForNodePortService(svc)...)
+			ls, ports := sb.makeListenersForNodePortService(svc)
+			includePorts = ports.Union(includePorts)
+			sb.listeners = append(sb.listeners, ls...)
 		}
-		// NodePortType exposes all ports.
-		excludePorts = sets.NewString()
 	}
 	// Create filter chains for SNIType
 	if expTypes.Has(SNIType) && sb.isSNIEnabled() {
-		fcs, includedPorts := sb.makeSNIFilterChains(svcLog, svc)
-		excludePorts = excludePorts.Difference(includedPorts)
+		fcs, ports := sb.makeSNIFilterChains(svcLog, svc)
+		includePorts = ports.Union(includePorts)
 		sb.fcs = append(sb.fcs, fcs...)
 	}
 	// Create virtual hosts for HTTP2ConnectType
 	if expTypes.Has(HTTP2ConnectType) && sb.isHTTP2ConnectEnabled() {
-		sb.vhs = append(sb.vhs, makeTunnelingVirtualHosts(svc)...)
-		// Http2ConnectType exposes all ports.
-		excludePorts = sets.NewString()
+		vhs, ports := sb.makeTunnelingVirtualHosts(svc)
+		includePorts = ports.Union(includePorts)
+		sb.vhs = append(sb.vhs, vhs...)
 	}
 
-	// Create SNI listener
-	if len(sb.fcs) > 0 {
-		sb.listeners = append(sb.listeners, sb.makeSNIListener(sb.fcs...))
-	}
-	// Create Tunneling listener
-	if len(sb.vhs) > 0 {
-		sb.listeners = append(sb.listeners, sb.makeTunnelingListener(sb.vhs...))
-	}
 	// Create clusters
-	sb.log.Debugw("creating clusters", "excludedPorts", excludePorts)
-	sb.clusters = append(sb.clusters, sb.makeClusters(svc, eps, excludePorts)...)
+	sb.log.Debugw("creating clusters", "includePorts", includePorts)
+	sb.clusters = append(sb.clusters, sb.makeClusters(svc, eps, includePorts)...)
 }
 
 // makeSNIFilterChains returns the FilterChains for the given service and the
-// set of ports that are exposed.
+// set of ports that are exposed. Note that the set can be nil, don't try to
+// write to it before doing a nil check.
 func (sb *snapshotBuilder) makeSNIFilterChains(svcLog *zap.SugaredLogger, svc *corev1.Service) ([]*envoylistenerv3.FilterChain, sets.String) {
 	m, err := sb.portHostMappingGetter(svc)
 	if err != nil {
-		svcLog.Warn("port host mapping is required with SNI expose type", zap.Error(err))
+		svcLog.Warnw("port host mapping is required with SNI expose type", "error", err)
 		return nil, nil
 	}
 	if err := m.validate(svc); err != nil {
-		svcLog.Warn("port host mapping validation failed", zap.Error(err))
+		svcLog.Warnw("port host mapping validation failed", "error", err)
 		return nil, nil
 	}
 	ports, hostnames := m.portHostSets()
 	if conflicts := hostnames.Intersection(sets.StringKeySet(sb.hostnameToService)); len(conflicts) > 0 {
 		for _, c := range conflicts.List() {
-			svcLog.Warnf("skipping, hostname %q already in use by service %s", c, ServiceKey(sb.hostnameToService[c]))
+			svcLog.Warnf("skipping, hostname %q already in use by service %q", c, sb.hostnameToService[c])
 			return nil, nil
 		}
+	}
+	// No conflict was detected add the hostname to the map.
+	sn := types.NamespacedName{Name: svc.Name, Namespace: svc.Namespace}
+	for _, h := range hostnames.List() {
+		sb.hostnameToService[h] = sn
 	}
 
 	svcLog.Debugw("creating sni filter chains", "portHostMapping", m)
@@ -167,7 +166,16 @@ func (sb *snapshotBuilder) makeSNIFilterChains(svcLog *zap.SugaredLogger, svc *c
 // provided so far.
 func (sb *snapshotBuilder) build(version string) envoycachev3.Snapshot {
 	l, c := sb.makeInitialResources()
+
 	l = append(l, sb.listeners...)
+	// Create SNI listener
+	if len(sb.fcs) > 0 {
+		l = append(l, sb.makeSNIListener(sb.fcs...))
+	}
+	// Create Tunneling listener
+	if len(sb.vhs) > 0 {
+		l = append(l, sb.makeTunnelingListener(sb.vhs...))
+	}
 	c = append(c, sb.clusters...)
 	return newSnapshot(version, c, l)
 }
@@ -254,14 +262,20 @@ func (sb *snapshotBuilder) makeSNIListener(fcs ...*envoylistenerv3.FilterChain) 
 	return sniListener
 }
 
-func makeTunnelingVirtualHosts(service *corev1.Service) []*envoyroutev3.VirtualHost {
-	var virtualhosts []*envoyroutev3.VirtualHost
+func (sb *snapshotBuilder) makeTunnelingVirtualHosts(service *corev1.Service) (vhs []*envoyroutev3.VirtualHost, ports sets.String) {
+
 	serviceKey := ServiceKey(service)
+	ports = sets.NewString()
 
 	for _, servicePort := range service.Spec.Ports {
 		servicePortKey := ServicePortKey(serviceKey, &servicePort)
+		if servicePort.Protocol != corev1.ProtocolTCP {
+			sb.log.Debugw("skipping servicePort: unsupported protocol", "servicePort", serviceKey, "protocol", corev1.ProtocolTCP)
+			continue
+		}
+		ports.Insert(servicePort.Name)
 
-		virtualhosts = append(virtualhosts, &envoyroutev3.VirtualHost{
+		vhs = append(vhs, &envoyroutev3.VirtualHost{
 			Name: servicePortKey,
 			Domains: []string{
 				fmt.Sprintf("%s.%s.svc.cluster.local:%d", service.Name, service.Namespace, servicePort.Port),
@@ -290,7 +304,7 @@ func makeTunnelingVirtualHosts(service *corev1.Service) []*envoyroutev3.VirtualH
 			},
 		})
 	}
-	return virtualhosts
+	return
 }
 
 func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHost) *envoylistenerv3.Listener {
@@ -354,10 +368,10 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 	return tunnelingListener
 }
 
-func (sb *snapshotBuilder) makeClusters(service *corev1.Service, endpoints *corev1.Endpoints, excludePorts sets.String) (clusters []envoycachetype.Resource) {
+func (sb *snapshotBuilder) makeClusters(service *corev1.Service, endpoints *corev1.Endpoints, includePorts sets.String) (clusters []envoycachetype.Resource) {
 	serviceKey := ServiceKey(service)
 	for _, servicePort := range service.Spec.Ports {
-		if excludePorts.Has(servicePort.Name) {
+		if !includePorts.Has(servicePort.Name) {
 			sb.log.Debugw("excluding service port", "servicePort", servicePort.Name)
 			continue
 		}
@@ -392,9 +406,15 @@ func (sb *snapshotBuilder) makeClusters(service *corev1.Service, endpoints *core
 	return
 }
 
-func (sb *snapshotBuilder) makeListenersForNodePortService(service *corev1.Service) (listeners []envoycachetype.Resource) {
+func (sb *snapshotBuilder) makeListenersForNodePortService(service *corev1.Service) (listeners []envoycachetype.Resource, exposedPorts sets.String) {
 	serviceKey := ServiceKey(service)
+	exposedPorts = sets.NewString()
 	for _, servicePort := range service.Spec.Ports {
+		if servicePort.Protocol != corev1.ProtocolTCP {
+			sb.log.Debugw("skipping servicePort: unsupported protocol", "servicePort", serviceKey, "protocol", corev1.ProtocolTCP)
+			continue
+		}
+		exposedPorts.Insert(servicePort.Name)
 		servicePortKey := ServicePortKey(serviceKey, &servicePort)
 
 		tcpProxyConfig := &envoytcpfilterv3.TcpProxy{

@@ -19,6 +19,7 @@ package envoymanager
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.uber.org/zap/zaptest"
 
@@ -31,6 +32,7 @@ import (
 	envoycorev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	envoyendpointv3 "github.com/envoyproxy/go-control-plane/envoy/config/endpoint/v3"
 	envoylistenerv3 "github.com/envoyproxy/go-control-plane/envoy/config/listener/v3"
+	envoyroutev3 "github.com/envoyproxy/go-control-plane/envoy/config/route/v3"
 	envoytcpfilterv3 "github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/tcp_proxy/v3"
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
@@ -44,9 +46,13 @@ import (
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+
+	"k8c.io/kubermatic/v2/pkg/test"
 )
 
 func TestSync(t *testing.T) {
+	// Used for SNI conflict test
+	timeRef := time.Date(2020, time.December, 0, 0, 0, 0, 0, time.UTC)
 	tests := []struct {
 		name                     string
 		resources                []runtime.Object
@@ -58,65 +64,19 @@ func TestSync(t *testing.T) {
 		{
 			name: "2-ports-2-pods-named-and-non-named-ports",
 			resources: []runtime.Object{
-				&corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-nodeport",
-						Namespace: "test",
-						Annotations: map[string]string{
-							DefaultExposeAnnotationKey: "true",
-						},
-					},
-					Spec: corev1.ServiceSpec{
-						Type: corev1.ServiceTypeNodePort,
-						Ports: []corev1.ServicePort{
-							// Test if we can proxy to named ports
-							{
-								Name:       "http",
-								TargetPort: intstr.FromString("http"),
-								NodePort:   32001,
-								Protocol:   corev1.ProtocolTCP,
-								Port:       80,
-							},
-							// Test if we can proxy to int ports
-							{
-								Name:       "https",
-								TargetPort: intstr.FromInt(8443),
-								NodePort:   32000,
-								Protocol:   corev1.ProtocolTCP,
-								Port:       443,
-							},
-						},
-						Selector: map[string]string{
-							"foo": "bar",
-						},
-					},
-				},
-				&corev1.Endpoints{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-nodeport",
-						Namespace: "test",
-					},
-					Subsets: []corev1.EndpointSubset{
-						{
-							Addresses: []corev1.EndpointAddress{
-								{IP: "172.16.0.1"},
-								{IP: "172.16.0.2"},
-							},
-							Ports: []corev1.EndpointPort{
-								{
-									Name:     "http",
-									Protocol: corev1.ProtocolTCP,
-									Port:     8080,
-								},
-								{
-									Name:     "https",
-									Protocol: corev1.ProtocolTCP,
-									Port:     8443,
-								},
-							},
-						},
-					},
-				},
+				test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+					WithServiceType(corev1.ServiceTypeNodePort).
+					WithAnnotation(DefaultExposeAnnotationKey, "true").
+					WithServicePort("https", 443, 32000, intstr.FromString("https"), corev1.ProtocolTCP).
+					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+					WithEndpointsSubset().
+					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
+					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
+					WithReadyAddressIP("172.16.0.1").
+					WithReadyAddressIP("172.16.0.2").
+					DoneWithEndpointSubset().Build(),
 			},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
 				"test/my-nodeport-https": makeCluster(t, "test/my-nodeport-https", 8443, "172.16.0.1", "172.16.0.2"),
@@ -130,53 +90,17 @@ func TestSync(t *testing.T) {
 		{
 			name: "1-port-2-pods-one-unhealthy",
 			resources: []runtime.Object{
-				&corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-nodeport",
-						Namespace: "test",
-						Annotations: map[string]string{
-							DefaultExposeAnnotationKey: "NodePort",
-						},
-					},
-					Spec: corev1.ServiceSpec{
-						Type: corev1.ServiceTypeNodePort,
-						Ports: []corev1.ServicePort{
-							{
-								Name:       "http",
-								TargetPort: intstr.FromString("http"),
-								NodePort:   32001,
-								Protocol:   corev1.ProtocolTCP,
-								Port:       80,
-							},
-						},
-						Selector: map[string]string{
-							"foo": "bar",
-						},
-					},
-				},
-				&corev1.Endpoints{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-nodeport",
-						Namespace: "test",
-					},
-					Subsets: []corev1.EndpointSubset{
-						{
-							Addresses: []corev1.EndpointAddress{
-								{IP: "172.16.0.1"},
-							},
-							NotReadyAddresses: []corev1.EndpointAddress{
-								{IP: "172.16.0.2"},
-							},
-							Ports: []corev1.EndpointPort{
-								{
-									Name:     "http",
-									Protocol: corev1.ProtocolTCP,
-									Port:     8080,
-								},
-							},
-						},
-					},
-				},
+				test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+					WithAnnotation(DefaultExposeAnnotationKey, "NodePort").
+					WithServiceType(corev1.ServiceTypeNodePort).
+					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+					WithEndpointsSubset().
+					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
+					WithReadyAddressIP("172.16.0.1").
+					WithNotReadyAddressIP("172.16.0.2").
+					DoneWithEndpointSubset().Build(),
 			},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
 				"test/my-nodeport-http": makeCluster(t, "test/my-nodeport-http", 8080, "172.16.0.1"),
@@ -188,59 +112,12 @@ func TestSync(t *testing.T) {
 		{
 			name: "1-port-service-without-annotation",
 			resources: []runtime.Object{
-				&corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-nodeport",
-						Namespace: "test",
-					},
-					Spec: corev1.ServiceSpec{
-						Type: corev1.ServiceTypeNodePort,
-						Ports: []corev1.ServicePort{
-							{
-								Name:       "http",
-								TargetPort: intstr.FromString("http"),
-								NodePort:   32001,
-								Protocol:   corev1.ProtocolTCP,
-								Port:       80,
-							},
-						},
-						Selector: map[string]string{
-							"foo": "bar",
-						},
-					},
-				},
-				&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "pod1",
-						Namespace: "test",
-						Labels: map[string]string{
-							"foo": "bar",
-						},
-					},
-					Spec: corev1.PodSpec{
-						Containers: []corev1.Container{
-							{
-								Name: "webservice",
-								Ports: []corev1.ContainerPort{
-									{
-										Name:          "http",
-										Protocol:      corev1.ProtocolTCP,
-										ContainerPort: 8080,
-									},
-								},
-							},
-						},
-					},
-					Status: corev1.PodStatus{
-						PodIP: "172.16.0.1",
-						Conditions: []corev1.PodCondition{
-							{
-								Type:   corev1.PodReady,
-								Status: corev1.ConditionTrue,
-							},
-						},
-					},
-				},
+				test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+					WithServiceType(corev1.ServiceTypeNodePort).
+					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+					Build(),
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{},
@@ -248,30 +125,13 @@ func TestSync(t *testing.T) {
 		{
 			name: "1-port-service-without-pods",
 			resources: []runtime.Object{
-				&corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-nodeport",
-						Namespace: "test",
-						Annotations: map[string]string{
-							DefaultExposeAnnotationKey: "true",
-						},
-					},
-					Spec: corev1.ServiceSpec{
-						Type: corev1.ServiceTypeNodePort,
-						Ports: []corev1.ServicePort{
-							{
-								Name:       "http",
-								TargetPort: intstr.FromString("http"),
-								NodePort:   32001,
-								Protocol:   corev1.ProtocolTCP,
-								Port:       80,
-							},
-						},
-						Selector: map[string]string{
-							"foo": "bar",
-						},
-					},
-				},
+				test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+					WithAnnotation(DefaultExposeAnnotationKey, "NodePort").
+					WithServiceType(corev1.ServiceTypeNodePort).
+					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
+					Build(),
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{},
@@ -279,62 +139,19 @@ func TestSync(t *testing.T) {
 		{
 			name: "1-sni-service-with-1-exposed-port",
 			resources: []runtime.Object{
-				&corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-cluster-ip",
-						Namespace: "test",
-						Annotations: map[string]string{
-							DefaultExposeAnnotationKey:   "SNI",
-							PortHostMappingAnnotationKey: `{"https": "host.com"}`,
-						},
-					},
-					Spec: corev1.ServiceSpec{
-						Type: corev1.ServiceTypeClusterIP,
-						Ports: []corev1.ServicePort{
-							{
-								Name:       "http",
-								TargetPort: intstr.FromString("http"),
-								Protocol:   corev1.ProtocolTCP,
-								Port:       80,
-							},
-							{
-								Name:       "https",
-								TargetPort: intstr.FromString("https"),
-								Protocol:   corev1.ProtocolTCP,
-								Port:       80,
-							},
-						},
-						Selector: map[string]string{
-							"foo": "bar",
-						},
-					},
-				},
-				&corev1.Endpoints{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-cluster-ip",
-						Namespace: "test",
-					},
-					Subsets: []corev1.EndpointSubset{
-						{
-							Addresses: []corev1.EndpointAddress{
-								{IP: "172.16.0.1"},
-								{IP: "172.16.0.2"},
-							},
-							Ports: []corev1.EndpointPort{
-								{
-									Name:     "http",
-									Protocol: corev1.ProtocolTCP,
-									Port:     8080,
-								},
-								{
-									Name:     "https",
-									Protocol: corev1.ProtocolTCP,
-									Port:     8443,
-								},
-							},
-						},
-					},
-				},
+				test.NewServiceBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
+					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com"}`).
+					WithServicePort("http", 80, 0, intstr.FromString("http"), corev1.ProtocolTCP).
+					WithServicePort("https", 8080, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
+					WithEndpointsSubset().
+					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
+					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
+					WithReadyAddressIP("172.16.0.1").
+					WithReadyAddressIP("172.16.0.2").
+					DoneWithEndpointSubset().Build(),
 			},
 			sniListenerPort: 443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
@@ -347,73 +164,21 @@ func TestSync(t *testing.T) {
 		{
 			name: "1-sni-service-with-2-exposed-ports",
 			resources: []runtime.Object{
-				&corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-cluster-ip",
-						Namespace: "test",
-						Annotations: map[string]string{
-							DefaultExposeAnnotationKey:   "SNI",
-							PortHostMappingAnnotationKey: `{"https": "host.com", "admin": "admin.host.com"}`,
-						},
-					},
-					Spec: corev1.ServiceSpec{
-						Type: corev1.ServiceTypeClusterIP,
-						Ports: []corev1.ServicePort{
-							{
-								Name:       "http",
-								TargetPort: intstr.FromString("http"),
-								Protocol:   corev1.ProtocolTCP,
-								Port:       80,
-							},
-							{
-								Name:       "https",
-								TargetPort: intstr.FromString("https"),
-								Protocol:   corev1.ProtocolTCP,
-								Port:       8443,
-							},
-							{
-								Name:       "admin",
-								TargetPort: intstr.FromString("admin"),
-								Protocol:   corev1.ProtocolTCP,
-								Port:       6443,
-							},
-						},
-						Selector: map[string]string{
-							"foo": "bar",
-						},
-					},
-				},
-				&corev1.Endpoints{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-cluster-ip",
-						Namespace: "test",
-					},
-					Subsets: []corev1.EndpointSubset{
-						{
-							Addresses: []corev1.EndpointAddress{
-								{IP: "172.16.0.1"},
-								{IP: "172.16.0.2"},
-							},
-							Ports: []corev1.EndpointPort{
-								{
-									Name:     "http",
-									Protocol: corev1.ProtocolTCP,
-									Port:     8080,
-								},
-								{
-									Name:     "https",
-									Protocol: corev1.ProtocolTCP,
-									Port:     8443,
-								},
-								{
-									Name:     "admin",
-									Protocol: corev1.ProtocolTCP,
-									Port:     6443,
-								},
-							},
-						},
-					},
-				},
+				test.NewServiceBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
+					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com", "admin": "admin.host.com"}`).
+					WithServicePort("http", 80, 0, intstr.FromString("http"), corev1.ProtocolTCP).
+					WithServicePort("https", 8080, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+					WithServicePort("admin", 6443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
+					WithEndpointsSubset().
+					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
+					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
+					WithEndpointPort("admin", 6443, corev1.ProtocolTCP).
+					WithReadyAddressIP("172.16.0.1").
+					WithReadyAddressIP("172.16.0.2").
+					DoneWithEndpointSubset().Build(),
 			},
 			sniListenerPort: 443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
@@ -429,53 +194,95 @@ func TestSync(t *testing.T) {
 		{
 			name: "sni-listener-not-enabled",
 			resources: []runtime.Object{
-				&corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-cluster-ip",
-						Namespace: "test",
-						Annotations: map[string]string{
-							DefaultExposeAnnotationKey:   "SNI",
-							PortHostMappingAnnotationKey: `{"https": "host.com"}`,
-						},
-					},
-					Spec: corev1.ServiceSpec{
-						Type: corev1.ServiceTypeClusterIP,
-						Ports: []corev1.ServicePort{
-							{
-								Name:       "http",
-								TargetPort: intstr.FromString("http"),
-								Protocol:   corev1.ProtocolTCP,
-								Port:       80,
-							},
-						},
-						Selector: map[string]string{
-							"foo": "bar",
-						},
-					},
-				},
-				&corev1.Endpoints{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "my-cluster-ip",
-						Namespace: "test",
-					},
-					Subsets: []corev1.EndpointSubset{
-						{
-							Addresses: []corev1.EndpointAddress{
-								{IP: "172.16.0.1"},
-							},
-							Ports: []corev1.EndpointPort{
-								{
-									Name:     "http",
-									Protocol: corev1.ProtocolTCP,
-									Port:     8080,
-								},
-							},
-						},
-					},
-				},
+				test.NewServiceBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
+					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com"}`).
+					WithServicePort("https", 8080, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
+					WithEndpointsSubset().
+					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
+					WithReadyAddressIP("172.16.0.1").
+					DoneWithEndpointSubset().Build(),
 			},
 			// 0 deactivates the SNI listener
 			sniListenerPort:  0,
+			expectedClusters: map[string]*envoyclusterv3.Cluster{},
+			expectedListener: map[string]*envoylistenerv3.Listener{},
+		},
+		{
+			name: "sni-hostname-conflict",
+			resources: []runtime.Object{
+				test.NewServiceBuilder(test.NamespacedName{Name: "newer-service", Namespace: "test"}).
+					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
+					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com"}`).
+					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "newer-service", Namespace: "test"}).
+					WithEndpointsSubset().
+					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
+					WithReadyAddressIP("172.16.0.1").
+					DoneWithEndpointSubset().Build(),
+				test.NewServiceBuilder(test.NamespacedName{Name: "older-service", Namespace: "test"}).
+					WithCreationTimestamp(timeRef).
+					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com"}`).
+					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "older-service", Namespace: "test"}).
+					WithEndpointsSubset().
+					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
+					WithReadyAddressIP("172.16.0.2").
+					DoneWithEndpointSubset().Build(),
+			},
+			sniListenerPort: 443,
+			expectedClusters: map[string]*envoyclusterv3.Cluster{
+				"test/older-service-https": makeCluster(t, "test/older-service-https", 8443, "172.16.0.2"),
+			},
+			expectedListener: map[string]*envoylistenerv3.Listener{
+				"sni_listener": makeSNIListener(t, 443,
+					hostClusterName{Cluster: "test/older-service-https", Hostname: "host.com"}),
+			},
+		},
+		{
+			name: "http2-connect",
+			resources: []runtime.Object{
+				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
+					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
+					WithAnnotation(DefaultExposeAnnotationKey, "HTTP2Connect").
+					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
+					WithEndpointsSubset().
+					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
+					WithReadyAddressIP("172.16.0.1").
+					DoneWithEndpointSubset().Build(),
+			},
+			http2ConnectListenerPort: 443,
+			expectedClusters: map[string]*envoyclusterv3.Cluster{
+				"test/my-service-https": makeCluster(t, "test/my-service-https", 8443, "172.16.0.1"),
+			},
+			expectedListener: map[string]*envoylistenerv3.Listener{
+				"http2connect_listener": makeHttp2ConnectListener(t, 443, hostClusterName{Cluster: "test/my-service-https", Hostname: "my-service.test.svc.cluster.local:443"}),
+			},
+		},
+		{
+			name: "sni-udp-port",
+			resources: []runtime.Object{
+				test.NewServiceBuilder(test.NamespacedName{Name: "udp-service", Namespace: "test"}).
+					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
+					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(PortHostMappingAnnotationKey, `{"": "host.com"}`).
+					WithServicePort("", 1025, 0, intstr.FromString(""), corev1.ProtocolUDP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "udp-service", Namespace: "test"}).
+					WithEndpointsSubset().
+					WithEndpointPort("https", 1025, corev1.ProtocolUDP).
+					WithReadyAddressIP("172.16.0.1").
+					DoneWithEndpointSubset().Build(),
+			},
+			sniListenerPort:  443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{},
 			expectedListener: map[string]*envoylistenerv3.Listener{},
 		},
@@ -598,21 +405,46 @@ func makeSNIListener(t *testing.T, portValue uint32, hostClusterNames ...hostClu
 			},
 		})
 	}
-	return &envoylistenerv3.Listener{
-		Name: "sni_listener",
-		Address: &envoycorev3.Address{
-			Address: &envoycorev3.Address_SocketAddress{
-				SocketAddress: &envoycorev3.SocketAddress{
-					Protocol: envoycorev3.SocketAddress_TCP,
-					Address:  "0.0.0.0",
-					PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-						PortValue: portValue,
+	sb := &snapshotBuilder{}
+	sb.EnvoySNIListenerPort = int(portValue)
+	sb.log = zaptest.NewLogger(t).Sugar()
+	return sb.makeSNIListener(fcs...)
+}
+
+func makeHttp2ConnectListener(t *testing.T, portValue int, hostClusterNames ...hostClusterName) *envoylistenerv3.Listener {
+	var vhs []*envoyroutev3.VirtualHost
+	for _, hostClusterName := range hostClusterNames {
+		vhs = append(vhs, &envoyroutev3.VirtualHost{
+			Name:    hostClusterName.Cluster,
+			Domains: []string{hostClusterName.Hostname},
+			Routes: []*envoyroutev3.Route{
+				{
+					Match: &envoyroutev3.RouteMatch{
+						PathSpecifier: &envoyroutev3.RouteMatch_ConnectMatcher_{
+							ConnectMatcher: &envoyroutev3.RouteMatch_ConnectMatcher{},
+						},
+					},
+					Action: &envoyroutev3.Route_Route{
+						Route: &envoyroutev3.RouteAction{
+							ClusterSpecifier: &envoyroutev3.RouteAction_Cluster{
+								Cluster: hostClusterName.Cluster,
+							},
+							UpgradeConfigs: []*envoyroutev3.RouteAction_UpgradeConfig{
+								{
+									UpgradeType:   UpgradeType,
+									ConnectConfig: &envoyroutev3.RouteAction_UpgradeConfig_ConnectConfig{},
+								},
+							},
+						},
 					},
 				},
 			},
-		},
-		FilterChains: fcs,
+		})
 	}
+	sb := &snapshotBuilder{}
+	sb.EnvoyHTTP2ConnectListenerPort = portValue
+	sb.log = zaptest.NewLogger(t).Sugar()
+	return sb.makeTunnelingListener(vhs...)
 }
 
 func makeCluster(t *testing.T, name string, portValue uint32, addresses ...string) *envoyclusterv3.Cluster {

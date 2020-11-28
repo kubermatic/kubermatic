@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"sort"
 
 	"github.com/Masterminds/semver"
 	"github.com/pkg/errors"
@@ -124,19 +123,14 @@ func (r *Reconciler) sync() error {
 		return errors.Wrap(err, "failed to list service's")
 	}
 
-	// Sort services by creation timestamp in order to skip more recent
-	// services in case of "hostname" conflict with SNI ExposeType. Note that
-	// this is not fair, as the annotations may be changed during the service
-	// lifetime. But this is a cheap solution and it is good enough for the
-	// current needs. A better option would be to use a CRD based approach and
-	// keeping sort based on "expose" timestamp.
-	sort.Slice(services.Items, func(i, j int) bool {
-		if it, jt := services.Items[i].CreationTimestamp, services.Items[j].CreationTimestamp; it != jt {
-			return it.After(jt.Time)
-		}
-		// Break ties with service name
-		return services.Items[i].Name > services.Items[j].Name
-	})
+	// Sort services in descending order by creation timestamp, in order to
+	// skip newer services in case of 'hostname' conflict with SNI ExposeType.
+	// Note that this is not fair, as the annotations may be changed during the
+	// service lifetime. But this is a cheap solution and it is good enough for
+	// the current needs.
+	// A better option would be to use a CRD based approach and keeping sort
+	// based on "expose" timestamp.
+	SortServicesByCreationTimestamp(services.Items)
 
 	sb := newSnapshotBuilder(r.log, portHostMappingFromAnnotation, r.Options)
 	for _, service := range services.Items {

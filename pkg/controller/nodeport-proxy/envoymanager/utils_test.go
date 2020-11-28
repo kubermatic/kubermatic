@@ -18,11 +18,13 @@ package envoymanager
 
 import (
 	"testing"
+	"time"
 
 	"github.com/go-test/deep"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 func TestExtractExposeType(t *testing.T) {
@@ -172,6 +174,52 @@ func TestPortHostMappingValidate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.mapping.validate(tt.svc); (err != nil) != tt.wantErr {
 				t.Fatalf("wantErr: %t, got: %v", tt.wantErr, err)
+			}
+		})
+	}
+}
+
+func TestSortServicesByCreationTimestamp(t *testing.T) {
+	mkSvc := func(uid string, creationTimestamp time.Time) corev1.Service {
+		return corev1.Service{ObjectMeta: metav1.ObjectMeta{
+			Name:              "foo",
+			Namespace:         "test",
+			UID:               types.UID(uid),
+			CreationTimestamp: metav1.NewTime(creationTimestamp),
+		}}
+	}
+	timeRef := time.Date(2020, time.December, 0, 0, 0, 0, 0, time.UTC)
+	var testcases = []struct {
+		name             string
+		items            []corev1.Service
+		wantOrderedItems []corev1.Service
+	}{
+		{
+			name:             "UID used to break ties",
+			items:            []corev1.Service{mkSvc("b", timeRef), mkSvc("a", timeRef)},
+			wantOrderedItems: []corev1.Service{mkSvc("a", timeRef), mkSvc("b", timeRef)},
+		},
+		{
+			name: "Creation timestamp used as primary order criteria",
+			items: []corev1.Service{
+				mkSvc("a", timeRef.Add(2*time.Second)),
+				mkSvc("b", timeRef),
+				mkSvc("c", timeRef.Add(1*time.Second)),
+				mkSvc("d", timeRef),
+			},
+			wantOrderedItems: []corev1.Service{
+				mkSvc("b", timeRef),
+				mkSvc("d", timeRef),
+				mkSvc("c", timeRef.Add(1*time.Second)),
+				mkSvc("a", timeRef.Add(2*time.Second)),
+			},
+		},
+	}
+	for _, tt := range testcases {
+		t.Run(tt.name, func(t *testing.T) {
+			SortServicesByCreationTimestamp(tt.items)
+			if diff := deep.Equal(tt.wantOrderedItems, tt.items); diff != nil {
+				t.Errorf("Unexpected order of items. Diff to expected: %v", diff)
 			}
 		})
 	}
