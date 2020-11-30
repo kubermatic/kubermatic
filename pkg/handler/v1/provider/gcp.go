@@ -20,21 +20,13 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"regexp"
-	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	compute "google.golang.org/api/compute/v1"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/dc"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
@@ -200,62 +192,15 @@ func GCPDiskTypesEndpoint(presetsProvider provider.PresetProvider, userInfoGette
 				sa = credentials.ServiceAccount
 			}
 		}
-		return listGCPDiskTypes(ctx, sa, zone)
+		return providercommon.ListGCPDiskTypes(ctx, sa, zone)
 	}
 }
 
 func GCPDiskTypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesNoCredentialReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-		if cluster.Spec.Cloud.GCP == nil {
-			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
-		}
-
-		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-		}
-
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-		if err != nil {
-			return nil, err
-		}
-
-		return listGCPDiskTypes(ctx, sa, req.Zone)
+		return providercommon.GCPDiskTypesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.Zone)
 	}
-}
-
-func listGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDiskTypeList, error) {
-	diskTypes := apiv1.GCPDiskTypeList{}
-
-	computeService, project, err := gcp.ConnectToComputeService(sa)
-	if err != nil {
-		return diskTypes, err
-	}
-
-	req := computeService.DiskTypes.List(project, zone)
-	err = req.Pages(ctx, func(page *compute.DiskTypeList) error {
-		for _, diskType := range page.Items {
-			if diskType.Name != "local-ssd" {
-				// TODO: There are some issues at the moment with local-ssd, that's why it is disabled at the moment.
-				dt := apiv1.GCPDiskType{
-					Name:        diskType.Name,
-					Description: diskType.Description,
-				}
-				diskTypes = append(diskTypes, dt)
-			}
-		}
-		return nil
-	})
-
-	return diskTypes, err
 }
 
 func GCPSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -279,64 +224,15 @@ func GCPSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter pro
 			}
 		}
 
-		return listGCPSizes(ctx, sa, zone)
+		return providercommon.ListGCPSizes(ctx, sa, zone)
 	}
 }
 
 func GCPSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPTypesNoCredentialReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-		if cluster.Spec.Cloud.GCP == nil {
-			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
-		}
-
-		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-		}
-
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-		if err != nil {
-			return nil, err
-		}
-		return listGCPSizes(ctx, sa, req.Zone)
+		return providercommon.GCPSizeWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.Zone)
 	}
-}
-
-func listGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachineSizeList, error) {
-	sizes := apiv1.GCPMachineSizeList{}
-
-	computeService, project, err := gcp.ConnectToComputeService(sa)
-	if err != nil {
-		return sizes, err
-	}
-
-	req := computeService.MachineTypes.List(project, zone)
-	err = req.Pages(ctx, func(page *compute.MachineTypeList) error {
-		for _, machineType := range page.Items {
-			// TODO: Make the check below more generic, working for all the providers. It is needed as the pods
-			//  with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
-			if machineType.MemoryMb >= 2048 {
-				mt := apiv1.GCPMachineSize{
-					Name:        machineType.Name,
-					Description: machineType.Description,
-					Memory:      machineType.MemoryMb,
-					VCPUs:       machineType.GuestCpus,
-				}
-
-				sizes = append(sizes, mt)
-			}
-		}
-		return nil
-	})
-
-	return sizes, err
 }
 
 func GCPZoneEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -358,69 +254,15 @@ func GCPZoneEndpoint(presetsProvider provider.PresetProvider, seedsGetter provid
 			}
 		}
 
-		return listGCPZones(ctx, userInfo, sa, req.DC, seedsGetter)
+		return providercommon.ListGCPZones(ctx, userInfo, sa, req.DC, seedsGetter)
 	}
 }
 
 func GCPZoneWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-		if cluster.Spec.Cloud.GCP == nil {
-			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
-		}
-
-		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-		}
-
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-		if err != nil {
-			return nil, err
-		}
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		return listGCPZones(ctx, userInfo, sa, cluster.Spec.Cloud.DatacenterName, seedsGetter)
+		return providercommon.GCPZoneWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
 	}
-}
-
-func listGCPZones(ctx context.Context, userInfo *provider.UserInfo, sa, datacenterName string, seedsGetter provider.SeedsGetter) (apiv1.GCPZoneList, error) {
-	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, datacenterName)
-	if err != nil {
-		return nil, errors.NewBadRequest("%v", err)
-	}
-
-	if datacenter.Spec.GCP == nil {
-		return nil, errors.NewBadRequest("the %s is not GCP datacenter", datacenterName)
-	}
-
-	computeService, project, err := gcp.ConnectToComputeService(sa)
-	if err != nil {
-		return nil, err
-	}
-
-	zones := apiv1.GCPZoneList{}
-	req := computeService.Zones.List(project)
-	err = req.Pages(ctx, func(page *compute.ZoneList) error {
-		for _, zone := range page.Items {
-
-			if strings.HasPrefix(zone.Name, datacenter.Spec.GCP.Region) {
-				apiZone := apiv1.GCPZone{Name: zone.Name}
-				zones = append(zones, apiZone)
-			}
-		}
-		return nil
-	})
-
-	return zones, err
 }
 
 func GCPNetworkEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -442,65 +284,15 @@ func GCPNetworkEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 			}
 		}
 
-		return listGCPNetworks(ctx, sa)
+		return providercommon.ListGCPNetworks(ctx, sa)
 	}
 }
 
 func GCPNetworkWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-		if cluster.Spec.Cloud.GCP == nil {
-			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
-		}
-
-		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-		}
-
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-		if err != nil {
-			return nil, err
-		}
-		return listGCPNetworks(ctx, sa)
+		return providercommon.GCPNetworkWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
 	}
-}
-
-func listGCPNetworks(ctx context.Context, sa string) (apiv1.GCPNetworkList, error) {
-	networks := apiv1.GCPNetworkList{}
-
-	computeService, project, err := gcp.ConnectToComputeService(sa)
-	if err != nil {
-		return networks, err
-	}
-
-	req := computeService.Networks.List(project)
-	err = req.Pages(ctx, func(page *compute.NetworkList) error {
-		networkRegex := regexp.MustCompile(`(global\/.+)$`)
-		for _, network := range page.Items {
-			networkPath := networkRegex.FindString(network.SelfLink)
-
-			net := apiv1.GCPNetwork{
-				ID:                    network.Id,
-				Name:                  network.Name,
-				AutoCreateSubnetworks: network.AutoCreateSubnetworks,
-				Subnetworks:           network.Subnetworks,
-				Kind:                  network.Kind,
-				Path:                  networkPath,
-			}
-
-			networks = append(networks, net)
-		}
-		return nil
-	})
-
-	return networks, err
 }
 
 func GCPSubnetworkEndpoint(presetsProvider provider.PresetProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -522,85 +314,13 @@ func GCPSubnetworkEndpoint(presetsProvider provider.PresetProvider, seedsGetter 
 			}
 		}
 
-		return listGCPSubnetworks(ctx, userInfo, req.DC, sa, req.Network, seedsGetter)
+		return providercommon.ListGCPSubnetworks(ctx, userInfo, req.DC, sa, req.Network, seedsGetter)
 	}
 }
 
 func GCPSubnetworkWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GCPSubnetworksNoCredentialReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-		if cluster.Spec.Cloud.GCP == nil {
-			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
-		}
-
-		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-		}
-
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		sa, err := gcp.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-		if err != nil {
-			return nil, err
-		}
-		userInfo, err := userInfoGetter(ctx, "")
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		return listGCPSubnetworks(ctx, userInfo, req.DC, sa, req.Network, seedsGetter)
+		return providercommon.GCPSubnetworkWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID, req.Network)
 	}
-}
-
-func listGCPSubnetworks(ctx context.Context, userInfo *provider.UserInfo, datacenterName string, sa string, networkName string, seedsGetter provider.SeedsGetter) (apiv1.GCPSubnetworkList, error) {
-	datacenter, err := dc.GetDatacenter(userInfo, seedsGetter, datacenterName)
-	if err != nil {
-		return nil, errors.NewBadRequest("%v", err)
-	}
-
-	if datacenter.Spec.GCP == nil {
-		return nil, errors.NewBadRequest("%s is not a GCP datacenter", datacenterName)
-	}
-
-	subnetworks := apiv1.GCPSubnetworkList{}
-
-	computeService, project, err := gcp.ConnectToComputeService(sa)
-	if err != nil {
-		return subnetworks, err
-	}
-
-	req := computeService.Subnetworks.List(project, datacenter.Spec.GCP.Region)
-	err = req.Pages(ctx, func(page *compute.SubnetworkList) error {
-		subnetworkRegex := regexp.MustCompile(`(projects\/.+)$`)
-		for _, subnetwork := range page.Items {
-			// subnetworks.Network are a url e.g. https://www.googleapis.com/compute/v1/[...]/networks/default"
-			// we just get the path of the network, instead of the url
-			// therefore we can't use regular Filter function and need to check on our own
-			if strings.Contains(subnetwork.Network, networkName) {
-				subnetworkPath := subnetworkRegex.FindString(subnetwork.SelfLink)
-				net := apiv1.GCPSubnetwork{
-					ID:                    subnetwork.Id,
-					Name:                  subnetwork.Name,
-					Network:               subnetwork.Network,
-					IPCidrRange:           subnetwork.IpCidrRange,
-					GatewayAddress:        subnetwork.GatewayAddress,
-					Region:                subnetwork.Region,
-					SelfLink:              subnetwork.SelfLink,
-					PrivateIPGoogleAccess: subnetwork.PrivateIpGoogleAccess,
-					Kind:                  subnetwork.Kind,
-					Path:                  subnetworkPath,
-				}
-
-				subnetworks = append(subnetworks, net)
-			}
-
-		}
-		return nil
-	})
-
-	return subnetworks, err
 }
