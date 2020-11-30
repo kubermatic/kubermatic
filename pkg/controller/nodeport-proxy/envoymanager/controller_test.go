@@ -246,6 +246,25 @@ func TestSync(t *testing.T) {
 			},
 		},
 		{
+			name: "sni-udp-port",
+			resources: []runtime.Object{
+				test.NewServiceBuilder(test.NamespacedName{Name: "udp-service", Namespace: "test"}).
+					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
+					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(PortHostMappingAnnotationKey, `{"": "host.com"}`).
+					WithServicePort("", 1025, 0, intstr.FromString(""), corev1.ProtocolUDP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "udp-service", Namespace: "test"}).
+					WithEndpointsSubset().
+					WithEndpointPort("https", 1025, corev1.ProtocolUDP).
+					WithReadyAddressIP("172.16.0.1").
+					DoneWithEndpointSubset().Build(),
+			},
+			sniListenerPort:  443,
+			expectedClusters: map[string]*envoyclusterv3.Cluster{},
+			expectedListener: map[string]*envoylistenerv3.Listener{},
+		},
+		{
 			name: "http2-connect",
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
@@ -268,23 +287,53 @@ func TestSync(t *testing.T) {
 			},
 		},
 		{
-			name: "sni-udp-port",
+			name: "both-sni-and-http2-connect",
 			resources: []runtime.Object{
-				test.NewServiceBuilder(test.NamespacedName{Name: "udp-service", Namespace: "test"}).
+				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
-					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
-					WithAnnotation(PortHostMappingAnnotationKey, `{"": "host.com"}`).
-					WithServicePort("", 1025, 0, intstr.FromString(""), corev1.ProtocolUDP).
+					WithAnnotation(DefaultExposeAnnotationKey, "SNI,HTTP2Connect").
+					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com"}`).
+					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
-				test.NewEndpointsBuilder(test.NamespacedName{Name: "udp-service", Namespace: "test"}).
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
 					WithEndpointsSubset().
-					WithEndpointPort("https", 1025, corev1.ProtocolUDP).
+					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
 					WithReadyAddressIP("172.16.0.1").
 					DoneWithEndpointSubset().Build(),
 			},
-			sniListenerPort:  443,
-			expectedClusters: map[string]*envoyclusterv3.Cluster{},
-			expectedListener: map[string]*envoylistenerv3.Listener{},
+			http2ConnectListenerPort: 8080,
+			sniListenerPort:          8443,
+			expectedClusters: map[string]*envoyclusterv3.Cluster{
+				"test/my-service-https": makeCluster(t, "test/my-service-https", 8443, "172.16.0.1"),
+			},
+			expectedListener: map[string]*envoylistenerv3.Listener{
+				"http2connect_listener": makeHTTP2ConnectListener(t, 8080, hostClusterName{Cluster: "test/my-service-https", Hostname: "my-service.test.svc.cluster.local:443"}),
+				"sni_listener":          makeSNIListener(t, 8443, hostClusterName{Cluster: "test/my-service-https", Hostname: "host.com"}),
+			},
+		},
+		{
+			name: "both-sni-and-http2-connect-invalid-sni-mapping",
+			resources: []runtime.Object{
+				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
+					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
+					WithAnnotation(DefaultExposeAnnotationKey, "SNI,HTTP2Connect").
+					WithAnnotation(PortHostMappingAnnotationKey, `{"http": "host.com"}`). // port http does not exist
+					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
+					Build(),
+				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
+					WithEndpointsSubset().
+					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
+					WithReadyAddressIP("172.16.0.1").
+					DoneWithEndpointSubset().Build(),
+			},
+			http2ConnectListenerPort: 8080,
+			sniListenerPort:          8443,
+			expectedClusters: map[string]*envoyclusterv3.Cluster{
+				"test/my-service-https": makeCluster(t, "test/my-service-https", 8443, "172.16.0.1"),
+			},
+			expectedListener: map[string]*envoylistenerv3.Listener{
+				"http2connect_listener": makeHTTP2ConnectListener(t, 8080, hostClusterName{Cluster: "test/my-service-https", Hostname: "my-service.test.svc.cluster.local:443"}),
+			},
 		},
 	}
 
