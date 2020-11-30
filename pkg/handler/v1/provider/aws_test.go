@@ -21,10 +21,9 @@ import (
 	"testing"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/v1/provider"
+	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 )
 
 func TestSetDefaultSubnet(t *testing.T) {
@@ -223,7 +222,7 @@ func TestSetDefaultSubnet(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			result, err := provider.SetDefaultSubnet(tc.machineDeployments, tc.subnets)
+			result, err := providercommon.SetDefaultSubnet(tc.machineDeployments, tc.subnets)
 			if tc.expectedError != "" {
 				if err == nil {
 					t.Fatal("expected error")
