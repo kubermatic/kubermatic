@@ -29,9 +29,13 @@ type ClientService interface {
 
 	ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesNoCredentialsOK, error)
 
+	ListAWSSizesNoCredentialsV2(params *ListAWSSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesNoCredentialsV2OK, error)
+
 	ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsOK, error)
 
 	ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsNoCredentialsOK, error)
+
+	ListAWSSubnetsNoCredentialsV2(params *ListAWSSubnetsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsNoCredentialsV2OK, error)
 
 	ListAWSVPCS(params *ListAWSVPCSParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSVPCSOK, error)
 
@@ -107,6 +111,40 @@ func (a *Client) ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsPara
 }
 
 /*
+  ListAWSSizesNoCredentialsV2 Lists available AWS sizes
+*/
+func (a *Client) ListAWSSizesNoCredentialsV2(params *ListAWSSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAWSSizesNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAWSSizesNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAWSSizesNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAWSSizesNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAWSSizesNoCredentialsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListAWSSubnets Lists available AWS subnets
 */
 func (a *Client) ListAWSSubnets(params *ListAWSSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsOK, error) {
@@ -171,6 +209,40 @@ func (a *Client) ListAWSSubnetsNoCredentials(params *ListAWSSubnetsNoCredentials
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListAWSSubnetsNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListAWSSubnetsNoCredentialsV2 Lists available AWS subnets
+*/
+func (a *Client) ListAWSSubnetsNoCredentialsV2(params *ListAWSSubnetsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSubnetsNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAWSSubnetsNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAWSSubnetsNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/subnets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAWSSubnetsNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAWSSubnetsNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAWSSubnetsNoCredentialsV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

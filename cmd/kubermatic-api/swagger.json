@@ -10342,6 +10342,90 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/sizes": {
+      "get": {
+        "description": "Lists available AWS sizes",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aws"
+        ],
+        "operationId": "listAWSSizesNoCredentialsV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AWSSizeList",
+            "schema": {
+              "$ref": "#/definitions/AWSSizeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/subnets": {
+      "get": {
+        "description": "Lists available AWS subnets",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aws"
+        ],
+        "operationId": "listAWSSubnetsNoCredentialsV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AWSSubnetList",
+            "schema": {
+              "$ref": "#/definitions/AWSSubnetList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/rolenames": {
       "get": {
         "description": "Lists all Role names with namespaces",
