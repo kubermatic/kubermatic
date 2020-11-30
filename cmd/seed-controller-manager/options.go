@@ -79,10 +79,6 @@ type controllerRunOptions struct {
 	etcdLauncherImage                                string
 	dnatControllerImage                              string
 	namespace                                        string
-	apiServerDefaultReplicas                         int
-	apiServerEndpointReconcilingDisabled             bool
-	controllerManagerDefaultReplicas                 int
-	schedulerDefaultReplicas                         int
 	validationWebhook                                validation.WebhookOpts
 	concurrentClusterUpdate                          int
 	addonEnforceInterval                             int
@@ -144,10 +140,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", resources.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", resources.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
-	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")
-	flag.BoolVar(&c.apiServerEndpointReconcilingDisabled, "apiserver-reconciling-disabled-by-default", false, "Whether to disable reconciling for the apiserver endpoints by default")
-	flag.IntVar(&c.controllerManagerDefaultReplicas, "controller-manager-default-replicas", 1, "The default number of replicas for usercluster controller managers")
-	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
 	c.validationWebhook.AddFlags(flag.CommandLine, true)
@@ -219,15 +211,6 @@ func (o controllerRunOptions) validate() error {
 		return fmt.Errorf("monitoring-scrape-annotation-prefix is undefined")
 	}
 
-	if o.apiServerDefaultReplicas < 1 {
-		return fmt.Errorf("--apiserver-default-replicas must be > 0 (was %d)", o.apiServerDefaultReplicas)
-	}
-	if o.controllerManagerDefaultReplicas < 1 {
-		return fmt.Errorf("--controller-manager-default-replicas must be > 0 (was %d)", o.controllerManagerDefaultReplicas)
-	}
-	if o.schedulerDefaultReplicas < 1 {
-		return fmt.Errorf("--scheduler-default-replicas must be > 0 (was %d)", o.schedulerDefaultReplicas)
-	}
 	if o.concurrentClusterUpdate < 1 {
 		return fmt.Errorf("--max-parallel-reconcile must be > 0 (was %d)", o.concurrentClusterUpdate)
 	}

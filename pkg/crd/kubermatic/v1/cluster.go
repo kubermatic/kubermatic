@@ -304,6 +304,9 @@ type OPAIntegrationSettings struct {
 	Enabled bool `json:"enabled,omitempty"`
 }
 
+// ComponentSettings used to configure cluster components.
+// If you change any field do not forget to update defaulting mutation admission
+// webhook at pkg/mutation/handler
 type ComponentSettings struct {
 	Apiserver         APIServerSettings       `json:"apiserver"`
 	ControllerManager DeploymentSettings      `json:"controllerManager"`
@@ -328,8 +331,7 @@ type StatefulSetSettings struct {
 }
 
 type EtcdStatefulSetSettings struct {
-	ClusterSize int                          `json:"clusterSize,omitempty"`
-	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
+	DeploymentSettings `json:",inline"`
 }
 
 // ClusterNetworkingConfig specifies the different networking

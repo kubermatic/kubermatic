@@ -7,7 +7,7 @@
 ## Goals
 
 *short description of the topic e.g.*
-Add mutating admission webhook that reads configured configmap with default components settings and sets `.spec.componentsOverride` for new clusters.
+Add mutating admission webhook that reads configured configmap with default [components settings](https://github.com/kubermatic/kubermatic/blob/2a489f4e4de8fb38a5ef2248a5873af9da8843d8/pkg/crd/kubermatic/v1/cluster.go#L307) and set `.spec.componentsOverride` for new clusters.
 
 ## Motivation and Background
 
@@ -24,7 +24,7 @@ I propose to
 - Add mutating admission webhook that will intercept creation of clusters
 - Use seed controller manager server to host the endpoint
 - Read the ConfigMap and set new clusters `.spec.componentsOverride`
-- Delete existing clustercomponentdefaulter controller.
+- Delete existing clustercomponentdefaulter controller https://github.com/kubermatic/kubermatic/blob/master/pkg/controller/seed-controller-manager/clustercomponentdefaulter/clustercomponentdefaulter.go#L110-L141.
 
 ## Alternatives considered
 

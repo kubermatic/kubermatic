@@ -75,7 +75,7 @@ require (
 	golang.org/x/sys v0.0.0-20200819171115-d785dc25833f // indirect
 	golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e // indirect
 	golang.org/x/tools v0.0.0-20200717024301-6ddee64345a6
-	gomodules.xyz/jsonpatch/v2 v2.1.0 // indirect
+	gomodules.xyz/jsonpatch/v2 v2.1.0
 	google.golang.org/api v0.15.0
 	google.golang.org/grpc v1.27.1
 	gopkg.in/fsnotify.v1 v1.4.7
