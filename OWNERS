@@ -1,9 +1,17 @@
 # See the OWNERS docs: https://git.k8s.io/community/contributors/guide/owners.md
 
 approvers:
-  - team-lifecycle
-  - team-ui
+  - sig-api
+  - sig-app-management
+  - sig-cluster-management
+  - sig-networking
+  - sig-security
+  - sig-ui
 
 reviewers:
-  - team-lifecycle
-  - team-ui
+  - sig-api
+  - sig-app-management
+  - sig-cluster-management
+  - sig-networking
+  - sig-security
+  - sig-ui

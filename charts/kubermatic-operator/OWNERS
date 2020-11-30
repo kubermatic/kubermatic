@@ -1,0 +1,10 @@
+approvers:
+  - sig-app-management
+  - sig-cluster-management
+
+reviewers:
+  - sig-app-management
+  - sig-cluster-management
+
+options:
+  no_parent_owners: true
