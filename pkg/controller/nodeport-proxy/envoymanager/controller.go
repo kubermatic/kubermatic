@@ -69,11 +69,11 @@ type Options struct {
 	EnvoyHTTP2ConnectListenerPort int
 }
 
-func (o Options) isSNIEnabled() bool {
+func (o Options) IsSNIEnabled() bool {
 	return o.EnvoySNIListenerPort > 0
 }
 
-func (o Options) isHTTP2ConnectEnabled() bool {
+func (o Options) IsHTTP2ConnectEnabled() bool {
 	return o.EnvoyHTTP2ConnectListenerPort > 0
 }
 

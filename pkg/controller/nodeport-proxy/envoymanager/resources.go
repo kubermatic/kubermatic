@@ -114,13 +114,13 @@ func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints
 		}
 	}
 	// Create filter chains for SNIType
-	if expTypes.Has(SNIType) && sb.isSNIEnabled() {
+	if expTypes.Has(SNIType) && sb.IsSNIEnabled() {
 		fcs, ports := sb.makeSNIFilterChains(svcLog, svc)
 		includePorts = ports.Union(includePorts)
 		sb.fcs = append(sb.fcs, fcs...)
 	}
 	// Create virtual hosts for HTTP2ConnectType
-	if expTypes.Has(HTTP2ConnectType) && sb.isHTTP2ConnectEnabled() {
+	if expTypes.Has(HTTP2ConnectType) && sb.IsHTTP2ConnectEnabled() {
 		vhs, ports := sb.makeTunnelingVirtualHosts(svc)
 		includePorts = ports.Union(includePorts)
 		sb.vhs = append(sb.vhs, vhs...)
