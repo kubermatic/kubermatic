@@ -438,8 +438,16 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 
 	// Define a set of endpoints for preset management
 	mux.Methods(http.MethodGet).
-		Path("/providers/{provider_name}/presets").
+		Path("/presets").
 		Handler(r.listPresets())
+
+	mux.Methods(http.MethodPut).
+		Path("/presets/{preset_name}/status").
+		Handler(r.updatePresetStatus())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/{provider_name}/presets").
+		Handler(r.listProviderPresets())
 
 	mux.Methods(http.MethodPost).
 		Path("/providers/{provider_name}/presets").
@@ -448,9 +456,6 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPut).
 		Path("/providers/{provider_name}/presets").
 		Handler(r.updatePreset())
-
-	mux.Methods(http.MethodPut).
-		Path("/providers/{provider_name}/presets/{preset_name}")
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -2937,6 +2942,19 @@ func (r Routing) listAzureSubnets() http.Handler {
 	)
 }
 
+// swagger:route GET /api/v2/presets preset listPresetsV2
+//
+//    List presets
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Preset
+//       401: empty
+//       403: empty
 func (r Routing) listPresets() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2949,6 +2967,74 @@ func (r Routing) listPresets() http.Handler {
 	)
 }
 
+// swagger:route PUT /api/v2/presets/{preset_name}/status preset updatePresetStatusV2
+//
+//    Updates the status of a preset. It can enable or disable it, so that it won't be listed by the list endpoints.
+//
+//
+//     Consumes:
+//	   - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) updatePresetStatus() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.UpdatePresetStatus(r.presetsProvider, r.userInfoGetter)),
+		preset.DecodeUpdatePresetStatus,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/{provider_name}/presets preset listProviderPresetsV2
+//
+//    List presets for the provider
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Preset
+//       401: empty
+//       403: empty
+func (r Routing) listProviderPresets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(preset.ListProviderPresets(r.presetsProvider, r.userInfoGetter)),
+		preset.DecodeListProviderPresets,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/providers/{provider_name}/presets preset createPresetV2
+//
+//    Create the preset
+//
+//     Consumes:
+//	   - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: string
+//       401: empty
+//       403: empty
 func (r Routing) createPreset() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2961,6 +3047,21 @@ func (r Routing) createPreset() http.Handler {
 	)
 }
 
+// swagger:route PUT /api/v2/providers/{provider_name}/presets preset updatePresetV2
+//
+//    Updates the given preset using JSON Merge Patch method (https://tools.ietf.org/html/rfc7396).
+//
+//     Consumes:
+//	   - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: string
+//       401: empty
+//       403: empty
 func (r Routing) updatePreset() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
@@ -2968,7 +3069,7 @@ func (r Routing) updatePreset() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(preset.UpdatePreset(r.presetsProvider, r.userInfoGetter)),
 		preset.DecodeUpdatePreset,
-		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

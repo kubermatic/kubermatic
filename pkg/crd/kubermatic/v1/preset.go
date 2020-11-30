@@ -34,11 +34,11 @@ const (
 	ProviderAzure                     = "azure"
 	ProviderVSphere                   = "vsphere"
 	ProviderAWS                       = "aws"
-	ProviderOpenstack                 = "aws"
-	ProviderPacket                    = "aws"
-	ProviderGCP                       = "aws"
-	ProviderKubevirt                  = "aws"
-	ProviderAlibaba                   = "aws"
+	ProviderOpenstack                 = "openstack"
+	ProviderPacket                    = "packet"
+	ProviderGCP                       = "gcp"
+	ProviderKubevirt                  = "kubevirt"
+	ProviderAlibaba                   = "alibaba"
 	ProviderAnexia                    = "anexia"
 	ProviderFake                      = "fake"
 )
@@ -109,20 +109,40 @@ type PresetSpec struct {
 
 	Fake                *Fake  `json:"fake,omitempty"`
 	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
-	Enabled             *bool   `json:"enabled,omitempty"`
+	Enabled             *bool  `json:"enabled,omitempty"`
 }
 
-func (s PresetSpec) HasProvider(providerType ProviderType) (bool, reflect.Value) {
-	providersRaw := reflect.ValueOf(s)
-	if providersRaw.Kind() != reflect.Struct {
-		return false, reflect.Value{}
+func (s *PresetSpec) getProviderValue(providerType ProviderType) reflect.Value {
+	spec := reflect.ValueOf(s).Elem()
+	if spec.Kind() != reflect.Struct {
+		return reflect.Value{}
 	}
 
 	ignoreCaseCompare := func(name string) bool {
 		return strings.EqualFold(name, string(providerType))
 	}
 
-	provider := reflect.Indirect(providersRaw).FieldByNameFunc(ignoreCaseCompare)
+	provider := reflect.Indirect(spec).FieldByNameFunc(ignoreCaseCompare)
+	return provider
+}
+
+func (s *PresetSpec) SetPresetStatus(enabled bool) {
+	s.Enabled = &enabled
+}
+
+func (s *PresetSpec) SetPresetProviderStatus(providerType ProviderType, enabled bool) {
+	provider := s.getProviderValue(providerType)
+
+	ignoreCaseCompare := func(name string) bool {
+		return strings.EqualFold(name, "Enabled")
+	}
+
+	enabledField := reflect.Indirect(provider).FieldByNameFunc(ignoreCaseCompare)
+	enabledField.Set(reflect.ValueOf(&enabled))
+}
+
+func (s PresetSpec) HasProvider(providerType ProviderType) (bool, reflect.Value) {
+	provider := s.getProviderValue(providerType)
 	return !provider.IsZero(), provider
 }
 
@@ -165,12 +185,18 @@ func (s PresetSpec) IsEnabled() bool {
 	return *s.Enabled
 }
 
+func (s *PresetSpec) OverrideProvider(providerType ProviderType, spec *PresetSpec) {
+	dest := s.getProviderValue(providerType)
+	src := spec.getProviderValue(providerType)
+	dest.Set(src)
+}
+
 type Validateable interface {
 	IsValid() bool
 }
 
 type PresetProvider struct {
-	Enabled    *bool   `json:"enabled,omitempty"`
+	Enabled    *bool  `json:"enabled,omitempty"`
 	Datacenter string `json:"datacenter,omitempty"`
 }
 

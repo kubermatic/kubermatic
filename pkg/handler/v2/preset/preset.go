@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
@@ -20,6 +21,127 @@ import (
 // listPresetsReq represents a request for a list of presets
 // swagger:parameters listPresets
 type listPresetsReq struct {
+	// in: query
+	Disabled bool `json:"disabled,omitempty"`
+}
+
+func DecodeListPresets(_ context.Context, r *http.Request) (interface{}, error) {
+	return listPresetsReq{
+		Disabled: r.URL.Query().Get("disabled") == "true",
+	}, nil
+}
+
+// ListProviderPresets returns a list of preset names for the provider
+func ListPresets(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(listPresetsReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		credentialList := apiv1.CredentialList{Names: make([]string, 0)}
+		presets, err := presetsProvider.GetPresets(userInfo)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		for _, preset := range presets {
+			if !preset.Spec.IsEnabled() && !req.Disabled {
+				continue
+			}
+
+			credentialList.Names = append(credentialList.Names, preset.Name)
+		}
+
+		return credentialList, nil
+	}
+}
+
+// updatePresetStatusReq represents a request to update preset status
+// swagger:parameters updatePresetStatus
+type updatePresetStatusReq struct {
+	// in: path
+	// required: true
+	PresetName string `json:"preset_name"`
+	// in: query
+	Provider string `json:"provider,omitempty"`
+	// in: body
+	// required: true
+	Body struct {Enabled bool}
+}
+
+func DecodeUpdatePresetStatus(_ context.Context, r *http.Request) (interface{}, error) {
+	var req updatePresetStatusReq
+
+	req.PresetName = mux.Vars(r)["preset_name"]
+	req.Provider = r.URL.Query().Get("provider")
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// Validate validates updatePresetStatusReq request
+func (r updatePresetStatusReq) Validate() error {
+	if len(r.PresetName) == 0 {
+		return fmt.Errorf("the preset name cannot be empty")
+	}
+
+	if len(r.Provider) > 0 && !crdapiv1.IsProviderSupported(r.Provider) {
+		return fmt.Errorf("invalid provider name %s", r.Provider)
+	}
+
+	return nil
+}
+
+// UpdatePresetStatus updates the status of a preset. It can enable or disable it, so that it won't be listed by the list endpoints.
+func UpdatePresetStatus(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(updatePresetStatusReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		preset, err := presetsProvider.GetPreset(userInfo, req.PresetName)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		if len(req.Provider) == 0 {
+			preset.Spec.SetPresetStatus(req.Body.Enabled)
+			_, err := presetsProvider.UpdatePreset(userInfo, preset)
+			return nil, err
+		}
+
+		if hasProvider, _ := preset.Spec.HasProvider(crdapiv1.ProviderType(req.Provider)); !hasProvider {
+			return nil, fmt.Errorf("missing provider configuration for: %s", req.Provider)
+		}
+
+		preset.Spec.SetPresetProviderStatus(crdapiv1.ProviderType(req.Provider), req.Body.Enabled)
+		_, err = presetsProvider.UpdatePreset(userInfo, preset)
+		return nil, err
+	}
+}
+
+// listProviderPresetsReq represents a request for a list of presets
+// swagger:parameters listPresets
+type listProviderPresetsReq struct {
 	// in: path
 	// required: true
 	ProviderName string `json:"provider_name"`
@@ -27,8 +149,12 @@ type listPresetsReq struct {
 	Datacenter string `json:"datacenter,omitempty"`
 }
 
-// Validate validates listPresetsReq request
-func (r listPresetsReq) Validate() error {
+func (l listProviderPresetsReq) matchesDatacenter(datacenter string) bool {
+	return len(l.Datacenter) == 0 || strings.EqualFold(l.Datacenter, datacenter)
+}
+
+// Validate validates listProviderPresetsReq request
+func (r listProviderPresetsReq) Validate() error {
 	if len(r.ProviderName) == 0 {
 		return fmt.Errorf("the provider name cannot be empty")
 	}
@@ -40,17 +166,17 @@ func (r listPresetsReq) Validate() error {
 	return nil
 }
 
-func DecodeListPresets(_ context.Context, r *http.Request) (interface{}, error) {
-	return listPresetsReq{
+func DecodeListProviderPresets(_ context.Context, r *http.Request) (interface{}, error) {
+	return listProviderPresetsReq{
 		ProviderName: mux.Vars(r)["provider_name"],
 		Datacenter:   r.URL.Query().Get("datacenter"),
 	}, nil
 }
 
-// ListPresets returns custom credential list name for the provider
-func ListPresets(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+// ListProviderPresets returns a list of preset names for the provider
+func ListProviderPresets(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(listPresetsReq)
+		req, ok := request.(listProviderPresetsReq)
 		if !ok {
 			return nil, errors.NewBadRequest("invalid request")
 		}
@@ -64,8 +190,7 @@ func ListPresets(presetsProvider provider.PresetProvider, userInfoGetter provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		credentials := apiv1.CredentialList{}
-		names := make([]string, 0)
+		credentialList := apiv1.CredentialList{Names: make([]string, 0)}
 		presets, err := presetsProvider.GetPresets(userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
@@ -74,17 +199,18 @@ func ListPresets(presetsProvider provider.PresetProvider, userInfoGetter provide
 		for _, preset := range presets {
 			providerType := crdapiv1.ProviderType(req.ProviderName)
 			presetProvider := preset.Spec.GetPresetProvider(providerType)
-			if presetProvider == nil || !preset.Spec.IsEnabled() || !presetProvider.IsEnabled() {
+
+			if !preset.Spec.IsEnabled() ||
+				presetProvider == nil ||
+				!presetProvider.IsEnabled() ||
+				!req.matchesDatacenter(presetProvider.Datacenter) {
 				continue
 			}
 
-			if presetProvider.Datacenter == req.Datacenter || presetProvider.Datacenter == "" {
-				names = append(names, preset.Name)
-			}
+			credentialList.Names = append(credentialList.Names, preset.Name)
 		}
 
-		credentials.Names = names
-		return credentials, nil
+		return credentialList, nil
 	}
 }
 
@@ -132,7 +258,6 @@ func (r createPresetReq) Validate() error {
 		}
 	}
 
-
 	return nil
 }
 
@@ -178,7 +303,8 @@ func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 			return nil, fmt.Errorf("preset with name %s already exists for the provider %s", preset.Name, req.ProviderName)
 		}
 
-		return presetsProvider.UpdatePreset(userInfo, &req.Body)
+		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
+		return presetsProvider.UpdatePreset(userInfo, preset)
 	}
 }
 
@@ -186,6 +312,11 @@ func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 // swagger:parameters updatePreset
 type updatePresetReq struct {
 	createPresetReq
+}
+
+// Validate validates updatePresetReq request
+func (r updatePresetReq) Validate() error {
+	return r.createPresetReq.Validate()
 }
 
 func DecodeUpdatePreset(_ context.Context, r *http.Request) (interface{}, error) {
@@ -217,15 +348,21 @@ func UpdatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		_, err = presetsProvider.GetPreset(userInfo, req.Body.Name)
+		preset, err := presetsProvider.GetPreset(userInfo, req.Body.Name)
 		if err != nil && !k8serrors.IsNotFound(err) {
 			return nil, err
 		}
 
 		if k8serrors.IsNotFound(err) {
-			return nil, fmt.Errorf("cannot update preset: preset %s does not exist", req.Body.Name)
+			return nil, fmt.Errorf("preset %s does not exist", req.Body.Name)
 		}
 
-		return presetsProvider.UpdatePreset(userInfo, &req.Body)
+		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
+		return presetsProvider.UpdatePreset(userInfo, preset)
 	}
+}
+
+func mergePresets(oldPreset *crdapiv1.Preset, newPreset *crdapiv1.Preset, providerType crdapiv1.ProviderType) *crdapiv1.Preset {
+	oldPreset.Spec.OverrideProvider(providerType, &newPreset.Spec)
+	return oldPreset
 }
