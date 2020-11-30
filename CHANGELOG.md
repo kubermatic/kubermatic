@@ -1,5 +1,18 @@
 # Kubermatic 2.15
 
+## [v2.15.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.4)
+
+### Misc
+
+- Operator does not require cert-manager to be installed; certificates are configured via Ingress annotations instead ([#6069](https://github.com/kubermatic/kubermatic/issues/6069))
+- Fix Prometheus cluster_info metric having the wrong `type` label ([#6138](https://github.com/kubermatic/kubermatic/issues/6138))
+- Fix cert-manager webhook Service naming ([#6150](https://github.com/kubermatic/kubermatic/issues/6150))
+- Fix Prometheus alerts misfiring about absent KKP components ([#6167](https://github.com/kubermatic/kubermatic/issues/6167))
+- Raise cert-manager resource limits to prevent OOMKills ([#6216](https://github.com/kubermatic/kubermatic/issues/6216))
+
+
+
+
 ## [v2.15.3](https://github.com/kubermatic/dashboard/releases/tag/v2.15.3)
 
 ### Misc
