@@ -6,7 +6,6 @@ approvers:
   - sig-cluster-management
   - sig-networking
   - sig-security
-  - sig-ui
 
 reviewers:
   - sig-api
@@ -14,4 +13,3 @@ reviewers:
   - sig-cluster-management
   - sig-networking
   - sig-security
-  - sig-ui
