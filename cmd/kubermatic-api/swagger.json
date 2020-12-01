@@ -16524,7 +16524,7 @@
     "Version": {
       "type": "object",
       "title": "Version represents a single semantic version.",
-      "x-go-package": "github.com/Masterminds/semver"
+      "x-go-package": "github.com/Masterminds/semver/v3"
     },
     "Violation": {
       "description": "Violation represents a gatekeeper constraint violation",
