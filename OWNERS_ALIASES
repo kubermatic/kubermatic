@@ -1,16 +1,41 @@
 aliases:
-  team-lifecycle:
+  sig-api:
+    - floreks
+    - kgroschoff
+    - lsviben
+    - maciaszczykm
+    - zreigz
+
+  sig-app-management:
+    - aborilov
+    - jiachengxu
+    - rastislavs
+    - thetechnick
+    - xrstf
+    - zyanichaimaa
+
+  sig-cluster-management:
     - kron4eg
     - moadqassem
     - moelsayed
     - xmudrii
     - xrstf
-    - youssefazrak
-    - irozzo-1A
 
-  team-ui:
+  sig-networking:
+    - irozzo-1A
+    - moadqassem
+    - moelsayed
+    - rastislavs
+    - youssefazrak
+
+  sig-security:
+    - aborilov
+    - irozzo-1A
+    - jiachengxu
+    - lsviben
+    - moadqassem
+
+  sig-ui:
+    - floreks
     - kgroschoff
     - maciaszczykm
-    - zreigz
-    - floreks
-    - lsviben

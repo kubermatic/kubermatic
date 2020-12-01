@@ -1,13 +1,13 @@
 # See the OWNERS docs: https://git.k8s.io/community/contributors/guide/owners.md
 
 approvers:
-  - team-ui
+  - sig-security
 
 reviewers:
-  - team-ui
+  - sig-security
 
 labels:
-  - team/ui
+  - sig/security
 
 options:
   no_parent_owners: true
