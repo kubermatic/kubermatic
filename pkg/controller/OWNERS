@@ -1,13 +1,13 @@
 # See the OWNERS docs: https://git.k8s.io/community/contributors/guide/owners.md
 
 approvers:
-  - team-lifecycle
+  - sig-cluster-management
 
 reviewers:
-  - team-lifecycle
+  - sig-cluster-management
 
 labels:
-  - team/lifecycle
+  - sig/cluster-management
 
 options:
   no_parent_owners: true
