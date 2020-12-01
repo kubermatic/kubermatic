@@ -89,7 +89,7 @@ func (d *Deletion) cleanupLB(ctx context.Context, log *zap.SugaredLogger, userCl
 
 	set := parseStringSet(cluster.Annotations[deletedLBAnnotationName])
 	set.Insert(string(service.UID))
-	cluster.Annotations[deletedLBAnnotationName] += encodeStringSet(set)
+	cluster.Annotations[deletedLBAnnotationName] = encodeStringSet(set)
 
 	if err := d.seedClient.Patch(ctx, cluster, controllerruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return fmt.Errorf("failed to update cluster when trying to add UID of deleted LoadBalancer: %v", err)
