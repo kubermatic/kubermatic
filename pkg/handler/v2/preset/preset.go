@@ -291,12 +291,12 @@ func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 		}
 
 		preset, err := presetsProvider.GetPreset(userInfo, req.Body.Name)
-		if err != nil && !k8serrors.IsNotFound(err) {
-			return nil, err
-		}
-
 		if k8serrors.IsNotFound(err) {
 			return presetsProvider.CreatePreset(userInfo, &req.Body)
+		}
+
+		if err != nil && !k8serrors.IsNotFound(err) {
+			return nil, err
 		}
 
 		if hasProvider, _ := preset.Spec.HasProvider(crdapiv1.ProviderType(req.ProviderName)); hasProvider {
@@ -349,12 +349,8 @@ func UpdatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 		}
 
 		preset, err := presetsProvider.GetPreset(userInfo, req.Body.Name)
-		if err != nil && !k8serrors.IsNotFound(err) {
+		if err != nil {
 			return nil, err
-		}
-
-		if k8serrors.IsNotFound(err) {
-			return nil, fmt.Errorf("preset %s does not exist", req.Body.Name)
 		}
 
 		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
