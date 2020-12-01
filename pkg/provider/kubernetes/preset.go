@@ -109,6 +109,10 @@ func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 	}
 
 	return func(userInfo *provider.UserInfo, preset *kubermaticv1.Preset) (string, error) {
+		if !userInfo.IsAdmin {
+			return "", fmt.Errorf("only admins can update presets")
+		}
+
 		if err := client.Create(ctx, preset); err != nil {
 			return "", err
 		}
@@ -126,6 +130,10 @@ func presetUpdaterFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 	}
 
 	return func(userInfo *provider.UserInfo, preset *kubermaticv1.Preset) (string, error) {
+		if !userInfo.IsAdmin {
+			return "", fmt.Errorf("only admins can update presets")
+		}
+
 		if err := client.Update(ctx, preset); err != nil {
 			return "", err
 		}
