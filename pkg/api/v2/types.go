@@ -113,3 +113,12 @@ type GVK struct {
 	Version string `json:"version,omitempty"`
 	Kind    string `json:"kind,omitempty"`
 }
+
+type PresetList struct {
+	Items []Preset `json:"items"`
+}
+
+type Preset struct {
+	Name    string `json:"name"`
+	Enabled bool   `json:"enabled"`
+}

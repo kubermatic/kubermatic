@@ -11,7 +11,7 @@ import (
 	"github.com/gorilla/mux"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -44,21 +44,23 @@ func ListPresets(presetsProvider provider.PresetProvider, userInfoGetter provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		credentialList := apiv1.CredentialList{Names: make([]string, 0)}
+		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
 		presets, err := presetsProvider.GetPresets(userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
 		}
 
 		for _, preset := range presets {
+			enabled := preset.Spec.IsEnabled()
+
 			if !preset.Spec.IsEnabled() && !req.Disabled {
 				continue
 			}
 
-			credentialList.Names = append(credentialList.Names, preset.Name)
+			presetList.Items = append(presetList.Items, newPreset(preset.Name, enabled))
 		}
 
-		return credentialList, nil
+		return presetList, nil
 	}
 }
 
@@ -142,6 +144,8 @@ func UpdatePresetStatus(presetsProvider provider.PresetProvider, userInfoGetter 
 // listProviderPresetsReq represents a request for a list of presets
 // swagger:parameters listPresets
 type listProviderPresetsReq struct {
+	listPresetsReq `json:",inline"`
+
 	// in: path
 	// required: true
 	ProviderName string `json:"provider_name"`
@@ -166,10 +170,16 @@ func (r listProviderPresetsReq) Validate() error {
 	return nil
 }
 
-func DecodeListProviderPresets(_ context.Context, r *http.Request) (interface{}, error) {
+func DecodeListProviderPresets(ctx context.Context, r *http.Request) (interface{}, error) {
+	listReq, err := DecodeListPresets(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+
 	return listProviderPresetsReq{
-		ProviderName: mux.Vars(r)["provider_name"],
-		Datacenter:   r.URL.Query().Get("datacenter"),
+		listPresetsReq: listReq.(listPresetsReq),
+		ProviderName:   mux.Vars(r)["provider_name"],
+		Datacenter:     r.URL.Query().Get("datacenter"),
 	}, nil
 }
 
@@ -190,7 +200,7 @@ func ListProviderPresets(presetsProvider provider.PresetProvider, userInfoGetter
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		credentialList := apiv1.CredentialList{Names: make([]string, 0)}
+		presetList := &v2.PresetList{Items: make([]v2.Preset, 0)}
 		presets, err := presetsProvider.GetPresets(userInfo)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
@@ -199,18 +209,27 @@ func ListProviderPresets(presetsProvider provider.PresetProvider, userInfoGetter
 		for _, preset := range presets {
 			providerType := crdapiv1.ProviderType(req.ProviderName)
 			presetProvider := preset.Spec.GetPresetProvider(providerType)
+			enabled := preset.Spec.IsEnabled() && presetProvider != nil && presetProvider.IsEnabled()
 
-			if !preset.Spec.IsEnabled() ||
-				presetProvider == nil ||
-				!presetProvider.IsEnabled() ||
-				!req.matchesDatacenter(presetProvider.Datacenter) {
+			// Preset does not contain requested provider configuration
+			if presetProvider == nil {
 				continue
 			}
 
-			credentialList.Names = append(credentialList.Names, preset.Name)
+			// Preset does not contain requested datacenter
+			if !req.matchesDatacenter(presetProvider.Datacenter) {
+				continue
+			}
+
+			// Only enabled presets are request and preset is disabled
+			if !req.Disabled && (!preset.Spec.IsEnabled() || !presetProvider.IsEnabled()) {
+				continue
+			}
+
+			presetList.Items = append(presetList.Items, newPreset(preset.Name, enabled))
 		}
 
-		return credentialList, nil
+		return presetList, nil
 	}
 }
 
@@ -361,4 +380,8 @@ func UpdatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 func mergePresets(oldPreset *crdapiv1.Preset, newPreset *crdapiv1.Preset, providerType crdapiv1.ProviderType) *crdapiv1.Preset {
 	oldPreset.Spec.OverrideProvider(providerType, &newPreset.Spec)
 	return oldPreset
+}
+
+func newPreset(name string, enabled bool) v2.Preset {
+	return v2.Preset{Name: name, Enabled: enabled}
 }

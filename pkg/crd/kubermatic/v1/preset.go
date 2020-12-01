@@ -30,17 +30,17 @@ type ProviderType string
 
 const (
 	ProviderDigitalocean ProviderType = "digitalocean"
-	ProviderHetzner                   = "hetzner"
-	ProviderAzure                     = "azure"
-	ProviderVSphere                   = "vsphere"
-	ProviderAWS                       = "aws"
-	ProviderOpenstack                 = "openstack"
-	ProviderPacket                    = "packet"
-	ProviderGCP                       = "gcp"
-	ProviderKubevirt                  = "kubevirt"
-	ProviderAlibaba                   = "alibaba"
-	ProviderAnexia                    = "anexia"
-	ProviderFake                      = "fake"
+	ProviderHetzner      ProviderType = "hetzner"
+	ProviderAzure        ProviderType = "azure"
+	ProviderVSphere      ProviderType = "vsphere"
+	ProviderAWS          ProviderType = "aws"
+	ProviderOpenstack    ProviderType = "openstack"
+	ProviderPacket       ProviderType = "packet"
+	ProviderGCP          ProviderType = "gcp"
+	ProviderKubevirt     ProviderType = "kubevirt"
+	ProviderAlibaba      ProviderType = "alibaba"
+	ProviderAnexia       ProviderType = "anexia"
+	ProviderFake         ProviderType = "fake"
 )
 
 func SupportedProviders() []ProviderType {
@@ -269,7 +269,7 @@ func (self VSphere) IsValid() bool {
 }
 
 type AWS struct {
-	PresetProvider
+	PresetProvider `json:"inline"`
 
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
