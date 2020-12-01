@@ -209,7 +209,7 @@ func (s PresetProvider) IsEnabled() bool {
 }
 
 type Digitalocean struct {
-	PresetProvider
+	PresetProvider `json:",inline"`
 
 	// Token is used to authenticate with the DigitalOcean API.
 	Token string `json:"token"`
@@ -220,7 +220,7 @@ func (self Digitalocean) IsValid() bool {
 }
 
 type Hetzner struct {
-	PresetProvider
+	PresetProvider `json:",inline"`
 
 	// Token is used to authenticate with the Hetzner API.
 	Token string `json:"token"`
@@ -231,7 +231,7 @@ func (self Hetzner) IsValid() bool {
 }
 
 type Azure struct {
-	PresetProvider
+	PresetProvider `json:",inline"`
 
 	TenantID       string `json:"tenantId"`
 	SubscriptionID string `json:"subscriptionId"`
@@ -253,7 +253,7 @@ func (self Azure) IsValid() bool {
 }
 
 type VSphere struct {
-	PresetProvider
+	PresetProvider `json:",inline"`
 
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -269,7 +269,7 @@ func (self VSphere) IsValid() bool {
 }
 
 type AWS struct {
-	PresetProvider `json:"inline"`
+	PresetProvider `json:",inline"`
 
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
@@ -287,7 +287,7 @@ func (self AWS) IsValid() bool {
 }
 
 type Openstack struct {
-	PresetProvider
+	PresetProvider `json:",inline"`
 
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -310,7 +310,7 @@ func (self Openstack) IsValid() bool {
 }
 
 type Packet struct {
-	PresetProvider
+	PresetProvider `json:",inline"`
 
 	APIKey    string `json:"apiKey"`
 	ProjectID string `json:"projectId"`
@@ -324,7 +324,7 @@ func (self Packet) IsValid() bool {
 }
 
 type GCP struct {
-	PresetProvider
+	PresetProvider `json:",inline"`
 
 	ServiceAccount string `json:"serviceAccount"`
 
@@ -343,7 +343,7 @@ type Fake struct {
 }
 
 type Kubevirt struct {
-	PresetProvider
+	PresetProvider `json:",inline"`
 
 	Kubeconfig string `json:"kubeconfig"`
 }
@@ -353,7 +353,7 @@ func (self Kubevirt) IsValid() bool {
 }
 
 type Alibaba struct {
-	PresetProvider
+	PresetProvider `json:",inline"`
 
 	AccessKeyID     string `json:"accessKeyId"`
 	AccessKeySecret string `json:"accessKeySecret"`
@@ -365,7 +365,7 @@ func (self Alibaba) IsValid() bool {
 }
 
 type Anexia struct {
-	PresetProvider
+	PresetProvider `json:",inline"`
 
 	// Token is used to authenticate with the Anexia API.
 	Token string `json:"token"`
