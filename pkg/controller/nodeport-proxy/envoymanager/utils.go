@@ -19,6 +19,7 @@ package envoymanager
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -37,29 +38,32 @@ const (
 )
 
 // ExposeType defines the strategy used to expose the service.
-type ExposeType string
+type ExposeType int
 
 const (
 	// NodePortType is the default ExposeType which creates a listener for each
 	// NodePort.
-	NodePortType ExposeType = "NodePort"
+	NodePortType ExposeType = iota
 	// SNIType configures Envoy to route TLS streams based on SNI
 	// without terminating them.
-	SNIType ExposeType = "SNI"
+	SNIType
 	// HTTP2ConnectType configures Envoy to terminate HTTP/2 Connect requests.
-	HTTP2ConnectType ExposeType = "HTTP2Connect"
+	HTTP2ConnectType
 )
+
+// exposeTypeStrings contains the string representation of the ExposeTypes.
+var exposeTypeStrings = [...]string{"NodePort", "SNI", "HTTP2Connect"}
 
 // ExposeTypeFromString returns the ExposeType which string representation
 // corresponds to the input string, and a boolean indicating whether the
 // corresponding ExposeType was found or not.
 func ExposeTypeFromString(s string) (ExposeType, bool) {
-	switch ExposeType(s) {
-	case NodePortType:
+	switch s {
+	case exposeTypeStrings[NodePortType]:
 		return NodePortType, true
-	case SNIType:
+	case exposeTypeStrings[SNIType]:
 		return SNIType, true
-	case HTTP2ConnectType:
+	case exposeTypeStrings[HTTP2ConnectType]:
 		return HTTP2ConnectType, true
 	default:
 		return NodePortType, false
@@ -68,15 +72,47 @@ func ExposeTypeFromString(s string) (ExposeType, bool) {
 
 // String returns the string representation of the ExposeType.
 func (e ExposeType) String() string {
-	return string(e)
+	return exposeTypeStrings[e]
 }
 
-// ServiceKey returns a string used to identify the given Service.
-func ServiceKey(service *corev1.Service) string {
-	return fmt.Sprintf("%s/%s", service.Namespace, service.Name)
+type ExposeTypes map[ExposeType]sets.Empty
+
+func NewExposeTypes(exposeTypes ...ExposeType) ExposeTypes {
+	ets := ExposeTypes{}
+	for _, et := range exposeTypes {
+		ets[et] = sets.Empty{}
+	}
+	return ets
 }
 
-// ServicePortKey returns a string used to identify the given ServicePort.
+func (e ExposeTypes) Has(item ExposeType) bool {
+	_, contained := e[item]
+	return contained
+}
+
+func (e ExposeTypes) Insert(item ExposeType) {
+	e[item] = sets.Empty{}
+}
+
+// SortServicesByCreationTimestamp sorts the Service slice in descending order
+// by creation timestamp (i.e. from oldest to newest).
+// UID alphanumeric ordering is used to break ties.
+func SortServicesByCreationTimestamp(items []corev1.Service) {
+	sort.Slice(items, func(i, j int) bool {
+		if it, jt := items[i].CreationTimestamp, items[j].CreationTimestamp; it != jt {
+			return jt.After(it.Time)
+		}
+		// Break ties with UIDs
+		return items[i].UID < items[j].UID
+	})
+}
+
+// ServiceKey returns a string used to identify the given v1.Service.
+func ServiceKey(svc *corev1.Service) string {
+	return fmt.Sprintf("%s/%s", svc.Namespace, svc.Name)
+}
+
+// ServicePortKey returns a string used to identify the given v1.ServicePort.
 func ServicePortKey(serviceKey string, servicePort *corev1.ServicePort) string {
 	if servicePort.Name == "" {
 		return serviceKey
@@ -88,39 +124,43 @@ func isExposed(obj metav1.Object, exposeAnnotationKey string) bool {
 	return len(extractExposeTypes(obj, exposeAnnotationKey)) > 0
 }
 
-func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) []ExposeType {
-	var types []ExposeType
+func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) ExposeTypes {
+	res := NewExposeTypes()
 	if obj.GetAnnotations() == nil {
-		return types
+		return res
 	}
 	// When legacy value 'true' is encountered NodePortType is returned for
 	// backward compatibility.
 	val := obj.GetAnnotations()[exposeAnnotationKey]
 	if val == "true" {
-		return append(types, NodePortType)
+		res.Insert(NodePortType)
+		return res
 	}
 	// Parse the comma separated list and return the list of ExposeType
 	ts := strings.Split(val, ",")
 	for i := range ts {
-		ts[i] = strings.TrimSpace(ts[i])
-	}
-	for _, t := range sets.NewString(ts...).List() {
-		e, ok := ExposeTypeFromString(t)
+		t, ok := ExposeTypeFromString(strings.TrimSpace(ts[i]))
 		if !ok {
-			return nil
+			// If we met a not valid token we consider the value invalid and
+			// return an empty set.
+			return NewExposeTypes()
 		}
-		types = append(types, e)
+		res.Insert(t)
 	}
-	return types
+	return res
 }
 
 // portNamesSet returns the set of port names extracted from the given Service.
-func portNamesSet(svc *corev1.Service) sets.String {
+func portNamesSet(svc *corev1.Service, filterFuncs ...func(corev1.ServicePort) bool) sets.String {
 	portNames := sets.NewString()
+OUTER:
 	for _, p := range svc.Spec.Ports {
-		if p.Protocol == corev1.ProtocolTCP {
-			portNames.Insert(p.Name)
+		for _, filter := range filterFuncs {
+			if ok := filter(p); !ok {
+				continue OUTER
+			}
 		}
+		portNames.Insert(p.Name)
 	}
 	return portNames
 }
@@ -141,7 +181,7 @@ func (p portHostMapping) portHostSets() (sets.String, sets.String) {
 // for SNI ExposeType.
 type portHostMapping map[string]string
 
-func portHostMappingFromService(svc *corev1.Service) (portHostMapping, error) {
+func portHostMappingFromAnnotation(svc *corev1.Service) (portHostMapping, error) {
 	m := portHostMapping{}
 	a := svc.GetAnnotations()
 	if a == nil {
@@ -153,19 +193,20 @@ func portHostMappingFromService(svc *corev1.Service) (portHostMapping, error) {
 	}
 	err := json.Unmarshal([]byte(val), &m)
 	if err != nil {
-		return m, errors.Wrap(err, "failed to unmarshal port host mapping for service")
+		return m, errors.Wrap(err, "failed to unmarshal port host mapping")
 	}
 	return m, nil
 }
 
 func (p portHostMapping) validate(svc *corev1.Service) error {
+	// TODO(irozzo): validate that hosts are well formed FQDN
 	portNames, hosts := p.portHostSets()
 	if len(p) > hosts.Len() {
 		return fmt.Errorf("duplicated hostname in port host mapping of service: %v", p)
 	}
-	actualPortNames := portNamesSet(svc)
-	if diff := portNames.Difference(actualPortNames); len(diff) > 0 {
-		return fmt.Errorf("ports declared in port host mapping not found in service: %v", diff.List())
+	tcpPortNames := portNamesSet(svc, func(p corev1.ServicePort) bool { return p.Protocol == corev1.ProtocolTCP })
+	if diff := portNames.Difference(tcpPortNames); len(diff) > 0 {
+		return fmt.Errorf("port name(s) not found in TCP service ports: %v", diff.List())
 	}
 	return nil
 }
