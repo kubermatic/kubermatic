@@ -69,6 +69,14 @@ type Options struct {
 	EnvoyHTTP2ConnectListenerPort int
 }
 
+func (o Options) isSNIEnabled() bool {
+	return o.EnvoySNIListenerPort > 0
+}
+
+func (o Options) isHTTP2ConnectEnabled() bool {
+	return o.EnvoyHTTP2ConnectListenerPort > 0
+}
+
 // NewReconciler returns a new Reconciler or an error if something goes wrong
 // during the initial snapshot setup.
 func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, opts Options) (*Reconciler, envoycachev3.SnapshotCache, error) {
@@ -81,9 +89,7 @@ func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlrunti
 		cache:   cache,
 	}
 
-	// Set initial snapshot
-	listeners, clusters := r.makeInitialResources()
-	if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshot("0.0.0", clusters, listeners)); err != nil {
+	if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshotBuilder(log, portHostMappingFromAnnotation, opts).build("0.0.0")); err != nil {
 		return nil, nil, errors.Wrap(err, "failed to set initial Envoy cache snapshot")
 	}
 	return &r, cache, nil
@@ -109,60 +115,46 @@ func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 }
 
 func (r *Reconciler) sync() error {
-	listeners, clusters := r.makeInitialResources()
-
-	nodePortServices := corev1.ServiceList{}
-	if err := r.List(r.ctx, &nodePortServices,
+	services := corev1.ServiceList{}
+	if err := r.List(r.ctx, &services,
 		ctrlruntimeclient.InNamespace(r.Namespace),
-		client.MatchingFields{r.ExposeAnnotationKey: NodePortType.String()},
+		client.MatchingFields{r.ExposeAnnotationKey: "true"},
 	); err != nil {
 		return errors.Wrap(err, "failed to list service's")
 	}
 
-	for _, service := range nodePortServices.Items {
-		serviceKey := ServiceKey(&service)
-		serviceLog := r.log.With("service", serviceKey)
+	// Sort services in descending order by creation timestamp, in order to
+	// skip newer services in case of 'hostname' conflict with SNI ExposeType.
+	// Note that this is not fair, as the annotations may be changed during the
+	// service lifetime. But this is a cheap solution and it is good enough for
+	// the current needs.
+	// A better option would be to use a CRD based approach and keeping sort
+	// based on "expose" timestamp.
+	SortServicesByCreationTimestamp(services.Items)
 
-		serviceLog.Debug("processing service")
-		// This is redundant as we are using the field selector, but as this
-		// check makes the unit tests easier (FakeClient does not play nice
-		// with field selectors) and the performance penalty is negligible in
-		// this context we can keep it at the moment.
-		if !isExposed(&service, r.ExposeAnnotationKey) {
-			serviceLog.Debugf("skipping service: it does not have the annotation %s=true", r.ExposeAnnotationKey)
-			continue
-		}
+	sb := newSnapshotBuilder(r.log, portHostMappingFromAnnotation, r.Options)
+	for _, service := range services.Items {
+		svcKey := ServiceKey(&service)
 
-		// We only manage NodePort services so Kubernetes takes care of allocating a unique port
-		if service.Spec.Type != corev1.ServiceTypeNodePort {
-			serviceLog.Warn("skipping service: it is not of type NodePort", "service")
-			return nil
-		}
+		ets := extractExposeTypes(&service, r.ExposeAnnotationKey)
 
+		// Get associated endpoints
 		eps := corev1.Endpoints{}
 		if err := r.Get(context.Background(), types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, &eps); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
-			return errors.Wrap(err, fmt.Sprintf("failed to get endpoints for service '%s'", serviceKey))
+			return errors.Wrap(err, fmt.Sprintf("failed to get endpoints for service '%s'", svcKey))
 		}
-		// If we have no pods, dont bother creating a cluster.
-		if len(eps.Subsets) == 0 {
-			serviceLog.Debug("skipping service: it has no running pods")
-			continue
-		}
-		l := r.makeListenersForNodePortService(&service)
-		c := r.makeClusters(&service, &eps)
-		listeners = append(listeners, l...)
-		clusters = append(clusters, c...)
-
+		// Add service to the service builder
+		sb.addService(&service, &eps, ets)
 	}
 
 	// Get current snapshot
 	currSnapshot, err := r.cache.GetSnapshot(r.EnvoyNodeName)
 	if err != nil {
 		r.log.Debugf("setting first snapshot: %v", err)
-		if err := r.cache.SetSnapshot(r.EnvoyNodeName, newSnapshot("0.0.0", clusters, listeners)); err != nil {
+		if err := r.cache.SetSnapshot(r.EnvoyNodeName, sb.build("0.0.0")); err != nil {
 			return errors.Wrap(err, "failed to set a new Envoy cache snapshot")
 		}
 		return nil
@@ -174,14 +166,14 @@ func (r *Reconciler) sync() error {
 	}
 
 	// Generate a new snapshot using the old version to be able to do a DeepEqual comparison
-	if reflect.DeepEqual(currSnapshot, newSnapshot(lastUsedVersion.String(), clusters, listeners)) {
+	if reflect.DeepEqual(currSnapshot, sb.build(lastUsedVersion.String())) {
 		r.log.Debug("no changes detected")
 		return nil
 	}
 
 	newVersion := lastUsedVersion.IncMajor()
 	r.log.Infow("detected a change. Updating the Envoy config cache...", "version", newVersion.String())
-	newSnapshot := newSnapshot(newVersion.String(), clusters, listeners)
+	newSnapshot := sb.build(newVersion.String())
 
 	if err := newSnapshot.Consistent(); err != nil {
 		return errors.Wrap(err, "new Envoy config snapshot is not consistent")
@@ -196,12 +188,11 @@ func (r *Reconciler) sync() error {
 
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(r.ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
-		var values []string
 		svc := raw.(*corev1.Service)
-		for _, t := range extractExposeTypes(svc, r.ExposeAnnotationKey) {
-			values = append(values, t.String())
+		if isExposed(svc, r.EnvoyNodeName) {
+			return []string{"true"}
 		}
-		return values
+		return nil
 	}); err != nil {
 		return fmt.Errorf("error occurred while adding service index: %w", err)
 	}
