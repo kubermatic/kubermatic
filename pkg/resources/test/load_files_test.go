@@ -27,7 +27,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	"github.com/ghodss/yaml"
 	"github.com/pmezard/go-difflib/difflib"
 

@@ -24,10 +24,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	httptransport "github.com/go-openapi/runtime/client"
+
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
+
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 

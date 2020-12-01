@@ -16,7 +16,7 @@ limitations under the License.
 
 package helm
 
-import "github.com/Masterminds/semver"
+import "github.com/Masterminds/semver/v3"
 
 // Client describes the operations that the Helm client is providing to
 // the installer. This is the minimum set of operations required to
