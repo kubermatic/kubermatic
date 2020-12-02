@@ -550,8 +550,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v2/presets/%s/status?provider=%s", tc.PresetName, tc.Provider), strings.NewReader(fmt.Sprintf(`{"enabled": %v}`, tc.Enabled)))
 			res := httptest.NewRecorder()
 
-			existingKubermaticObjs := make([]runtime.Object, 0)
-			existingKubermaticObjs = append(existingKubermaticObjs, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
+			existingKubermaticObjs := []runtime.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
 			if tc.ExistingPreset != nil {
 				existingKubermaticObjs = append(existingKubermaticObjs, tc.ExistingPreset)
 			}
@@ -565,6 +564,256 @@ func TestUpdatePresetStatus(t *testing.T) {
 			assert.Equal(t, tc.HTTPStatus, res.Code)
 
 			if res.Code != http.StatusOK {
+				return
+			}
+
+			preset := &kubermaticv1.Preset{}
+			if err := clientSets.FakeClient.Get(context.TODO(), client.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+				t.Fatalf("failed to get preset: %+v", err)
+			}
+
+			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
+				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
+			}
+		})
+	}
+}
+
+func TestCreatePreset(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name            string
+		PresetName      string
+		Provider        kubermaticv1.ProviderType
+		Body            string
+		ExistingPreset  *kubermaticv1.Preset
+		ExpectedPreset  *kubermaticv1.Preset
+		HTTPStatus      int
+		ExistingAPIUser *apiv1.User
+	}{
+		// scenario 1
+		{
+			Name:       "scenario 1: create digitalocean preset",
+			PresetName: "do-preset",
+			Provider:   kubermaticv1.ProviderDigitalocean,
+			Body: fmt.Sprintf(
+				`{
+						  "metadata": {
+							"name": "do-preset"
+						  },
+						  "spec": {
+							"digitalocean": {
+							  "token": "test"
+							}
+						  }
+			}`),
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{Token: "test"},
+				},
+			},
+			HTTPStatus:      http.StatusCreated,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 2
+		{
+			Name:       "scenario 2: create disabled digitalocean preset",
+			PresetName: "do-preset",
+			Provider:   kubermaticv1.ProviderDigitalocean,
+			Body: fmt.Sprintf(
+				`{
+						  "metadata": {
+							"name": "do-preset"
+						  },
+						  "spec": {
+							"digitalocean": {
+							  "token": "test",
+                              "enabled": false
+							}
+						  }
+			}`),
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						PresetProvider: kubermaticv1.PresetProvider{Enabled: boolPtr(false)},
+						Token:          "test",
+					},
+				},
+			},
+			HTTPStatus:      http.StatusCreated,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 3
+		{
+			Name:       "scenario 3: add new anexia provider to existing preset",
+			PresetName: "multi-preset",
+			Provider:   kubermaticv1.ProviderAnexia,
+			Body: fmt.Sprintf(
+				`{
+						  "metadata": {
+							"name": "multi-preset"
+						  },
+						  "spec": {
+							"anexia": {
+							  "token": "test"
+							}
+						  }
+			}`),
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "multi-preset"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "multi-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+					Anexia: &kubermaticv1.Anexia{
+						Token: "test",
+					},
+				},
+			},
+			HTTPStatus:      http.StatusCreated,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 4
+		{
+			Name:     "scenario 4: block overriding existing preset provider configuration",
+			Provider: kubermaticv1.ProviderDigitalocean,
+			Body: fmt.Sprintf(
+				`{
+				 "metadata": {
+					"name": "do-preset"
+				 },
+				 "spec": {
+					"digitalocean": {
+					  "token": "updated"
+					}
+				 }
+			}`),
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "do-preset"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+				},
+			},
+			HTTPStatus:      http.StatusConflict,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 5
+		{
+			Name:            "scenario 5: provided invalid provider name",
+			Provider:        "xyz",
+			Body:            "{}",
+			HTTPStatus:      http.StatusBadRequest,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 6
+		{
+			Name:     "scenario 6: missing provider configuration",
+			Provider: kubermaticv1.ProviderDigitalocean,
+			Body: fmt.Sprintf(
+				`{
+				 "metadata": {
+					"name": "do-preset"
+				 },
+				 "spec": {}
+			}`),
+			HTTPStatus:      http.StatusBadRequest,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 7
+		{
+			Name:     "scenario 7: missing required token field for digitalocean provider",
+			Provider: kubermaticv1.ProviderDigitalocean,
+			Body: fmt.Sprintf(
+				`{
+				 "metadata": {
+					"name": "do-preset"
+				 },
+				 "spec": { "digitalocean": {} }
+			}`),
+			HTTPStatus:      http.StatusBadRequest,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 8
+		{
+			Name:     "scenario 8: unexpected provider configuration when creating digitalocean preset",
+			Provider: kubermaticv1.ProviderDigitalocean,
+			Body: fmt.Sprintf(
+				`{
+				 "metadata": {
+					"name": "do-preset"
+				 },
+				 "spec": { 
+					"digitalocean": { "token": "test" }, 
+					"anexia": { "token": "test" }
+				 }
+			}`),
+			HTTPStatus:      http.StatusBadRequest,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 9
+		{
+			Name:     "scenario 9: block preset creation for regular user",
+			Provider: kubermaticv1.ProviderFake,
+			Body: fmt.Sprintf(
+				`{
+				 "metadata": {
+					"name": "fake-preset"
+				 },
+				 "spec": {
+					"fake": {
+					  "token": "test"
+					}
+				 }
+			}`),
+			HTTPStatus:      http.StatusForbidden,
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v2/providers/%s/presets", tc.Provider), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+
+			existingKubermaticObjs := []runtime.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
+			if tc.ExistingPreset != nil {
+				existingKubermaticObjs = append(existingKubermaticObjs, tc.ExistingPreset)
+			}
+
+			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+			assert.Equal(t, tc.HTTPStatus, res.Code)
+
+			if res.Code != http.StatusCreated {
 				return
 			}
 

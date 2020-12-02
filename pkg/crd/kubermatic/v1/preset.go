@@ -337,9 +337,13 @@ func (self GCP) IsValid() bool {
 }
 
 type Fake struct {
-	Token string `json:"token"`
+	PresetProvider `json:",inline"`
 
-	Datacenter string `json:"datacenter,omitempty"`
+	Token string `json:"token"`
+}
+
+func (self Fake) IsValid() bool {
+	return len(self.Token) > 0
 }
 
 type Kubevirt struct {

@@ -327,7 +327,7 @@ func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 		}
 
 		if hasProvider, _ := preset.Spec.HasProvider(crdapiv1.ProviderType(req.ProviderName)); hasProvider {
-			return nil, fmt.Errorf("preset with name %s already exists for the provider %s", preset.Name, req.ProviderName)
+			return nil, errors.New(http.StatusConflict, fmt.Sprintf("%s provider configuration already exists for preset %s", req.ProviderName, preset.Name))
 		}
 
 		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
