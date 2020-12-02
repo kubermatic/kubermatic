@@ -54,9 +54,10 @@ require (
 	github.com/nelsam/hel v0.0.0-20200611165952-2d829bae0c66 // indirect
 	github.com/oklog/run v1.1.0
 	github.com/onsi/ginkgo v1.14.2
-	github.com/onsi/gomega v1.10.3
+	github.com/onsi/gomega v1.10.1
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20201118071520-0d37681951a4
-	github.com/packethost/packngo v0.5.1
+	github.com/open-policy-agent/gatekeeper v0.0.0-20201111000257-4450f08fa95e
+	github.com/packethost/packngo v0.1.1-0.20190410075950-a02c426e4888
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
 	github.com/poy/onpar v1.0.1 // indirect
@@ -86,6 +87,7 @@ require (
 	k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 // git digest for VPA v0.4.0
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.19.4
+	k8s.io/component-base v0.19.4 // indirect
 	k8s.io/klog v1.0.0
 	k8s.io/kube-aggregator v0.19.4
 	k8s.io/kubectl v0.19.4
