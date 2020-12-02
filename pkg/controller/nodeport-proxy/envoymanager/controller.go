@@ -189,7 +189,7 @@ func (r *Reconciler) sync() error {
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(r.ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
 		svc := raw.(*corev1.Service)
-		if isExposed(svc, r.EnvoyNodeName) {
+		if isExposed(svc, r.ExposeAnnotationKey) {
 			return []string{"true"}
 		}
 		return nil
