@@ -213,7 +213,11 @@ type ClientService interface {
 
 	RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterAdminTokenOK, error)
 
+	RevokeClusterAdminTokenV2(params *RevokeClusterAdminTokenV2Params, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterAdminTokenV2OK, error)
+
 	RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterViewerTokenOK, error)
+
+	RevokeClusterViewerTokenV2(params *RevokeClusterViewerTokenV2Params, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterViewerTokenV2OK, error)
 
 	UnbindUserFromClusterRoleBinding(params *UnbindUserFromClusterRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromClusterRoleBindingOK, error)
 
@@ -3445,6 +3449,40 @@ func (a *Client) RevokeClusterAdminToken(params *RevokeClusterAdminTokenParams, 
 }
 
 /*
+  RevokeClusterAdminTokenV2 Revokes the current admin token
+*/
+func (a *Client) RevokeClusterAdminTokenV2(params *RevokeClusterAdminTokenV2Params, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterAdminTokenV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewRevokeClusterAdminTokenV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "revokeClusterAdminTokenV2",
+		Method:             "PUT",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/token",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RevokeClusterAdminTokenV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*RevokeClusterAdminTokenV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*RevokeClusterAdminTokenV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   RevokeClusterViewerToken Revokes the current viewer token
 */
 func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterViewerTokenOK, error) {
@@ -3475,6 +3513,40 @@ func (a *Client) RevokeClusterViewerToken(params *RevokeClusterViewerTokenParams
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*RevokeClusterViewerTokenDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  RevokeClusterViewerTokenV2 Revokes the current viewer token
+*/
+func (a *Client) RevokeClusterViewerTokenV2(params *RevokeClusterViewerTokenV2Params, authInfo runtime.ClientAuthInfoWriter) (*RevokeClusterViewerTokenV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewRevokeClusterViewerTokenV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "revokeClusterViewerTokenV2",
+		Method:             "PUT",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/viewertoken",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &RevokeClusterViewerTokenV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*RevokeClusterViewerTokenV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*RevokeClusterViewerTokenV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -17,6 +17,7 @@ limitations under the License.
 package cluster_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -30,12 +31,14 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -1902,6 +1905,89 @@ func TestListSSHKeysAssignedToClusterEndpoint(t *testing.T) {
 			actualKeys.EqualOrDie(wrappedExpectedKeys, t)
 		})
 	}
+}
+
+func TestRevokeClusterAdminTokenEndpoint(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name                   string
+		expectedResponse       string
+		httpStatus             int
+		clusterToGet           *kubermaticv1.Cluster
+		projectToSync          string
+		existingAPIUser        *apiv1.User
+		existingKubermaticObjs []runtime.Object
+		existingKubernrtesObjs []runtime.Object
+	}{
+		// scenario 1
+		{
+			name:             "scenario 1: the owner user revokes admin cluster token",
+			expectedResponse: `{}`,
+			clusterToGet:     test.GenDefaultCluster(),
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenDefaultCluster(),
+			),
+			existingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			name:             "scenario 2: the admin John revokes Bob's cluster token",
+			expectedResponse: `{}`,
+			clusterToGet:     test.GenDefaultCluster(),
+			httpStatus:       http.StatusOK,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenAdminUser("John", "john@acme.com", true),
+				test.GenDefaultCluster(),
+			),
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		// scenario 3
+		{
+			name:             "scenario 3: the user John can not revoke Bob's cluster token",
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
+			clusterToGet:     test.GenDefaultCluster(),
+			httpStatus:       http.StatusForbidden,
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenAdminUser("John", "john@acme.com", false),
+				test.GenDefaultCluster(),
+			),
+			existingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			// perform test
+			res := httptest.NewRecorder()
+			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/token", test.ProjectName, tc.clusterToGet.Name), nil)
+			ep.ServeHTTP(res, req)
+
+			// check assertions
+			test.CheckStatusCode(tc.httpStatus, res, t)
+			test.CompareWithResult(t, res, tc.expectedResponse)
+			if tc.httpStatus == http.StatusOK {
+				updatedCluster := &kubermaticv1.Cluster{}
+				if err := clientsSets.FakeClient.Get(context.Background(), types.NamespacedName{Name: test.DefaultClusterID}, updatedCluster); err != nil {
+					t.Fatalf("failed to get cluster from fake client: %v", err)
+				}
+				updatedToken := updatedCluster.Address.AdminToken
+				if err := kuberneteshelper.ValidateKubernetesToken(updatedToken); err != nil {
+					t.Fatalf("generated token '%s' is malformed: %v", updatedToken, err)
+				}
+				if updatedToken == tc.clusterToGet.Address.AdminToken {
+					t.Fatalf("generated token '%s' is exactly the same as the old one : %s", updatedToken, tc.clusterToGet.Address.AdminToken)
+				}
+			}
+		})
+	}
+
 }
 
 func genUser(name, email string, isAdmin bool) *kubermaticv1.User {
