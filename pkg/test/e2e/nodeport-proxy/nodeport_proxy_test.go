@@ -55,6 +55,7 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 			ginkgo.It("should be exposed", func() {
 				ginkgo.By("updating the lb service")
 				portsToBeExposed := sets.NewInt32()
+				logger.Debugw("computing ports to be exposed", "services", svcJig.Services)
 				for _, svc := range svcJig.Services {
 					portsToBeExposed = ExtractNodePorts(svc).Union(portsToBeExposed)
 				}
@@ -70,7 +71,9 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 				ginkgo.By("load-balancing on available endpoints")
 				for _, svc := range svcJig.Services {
 					lbSvc := deployer.GetLbService()
-					gomega.Expect(networkingTest.DialFromNode("127.0.0.1", int(FindExposingNodePort(lbSvc, svc.Spec.Ports[0].NodePort)), 5, 1, sets.NewString(svcJig.ServicePods[svc.Name]...))).Should(gomega.HaveLen(0), "All exposed endpoints should be hit")
+					targetNp := FindExposingNodePort(lbSvc, svc.Spec.Ports[0].NodePort)
+					logger.Debugw("found target nodeport in lb service", "service", svc, "port", targetNp)
+					gomega.Expect(networkingTest.DialFromNode("127.0.0.1", int(targetNp), 5, 1, sets.NewString(svcJig.ServicePods[svc.Name]...))).Should(gomega.HaveLen(0), "All exposed endpoints should be hit")
 				}
 			})
 		})

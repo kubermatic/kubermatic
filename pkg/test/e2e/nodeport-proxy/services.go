@@ -89,7 +89,9 @@ func (n *ServiceJig) CreateNodePortService(name string, nodePort int32, numPods 
 	if n.ServicePods == nil {
 		n.ServicePods = map[string][]string{}
 	}
+	n.Services = append(n.Services, svc)
 	n.ServicePods[svc.Name] = pods
+
 	return svc, err
 }
 

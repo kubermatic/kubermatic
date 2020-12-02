@@ -149,6 +149,7 @@ func (n *NetworkingTestConfig) DialFromNode(targetIP string, targetPort, maxTrie
 			n.Log.Infof("Failed to execute %q: %v, stdout: %q, stderr: %q", filterCmd, err, stdout, stderr)
 		} else {
 			trimmed := strings.TrimSpace(stdout)
+			n.Log.Debugf("Got response: %q", trimmed)
 			if trimmed != "" {
 				eps.Insert(trimmed)
 			}
