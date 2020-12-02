@@ -25,7 +25,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	"github.com/Masterminds/sprig"
 	"go.uber.org/zap"
 

@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 )
 
 // ErrVersionSkew denotes an error condition where a given kubelet/controlplane version pair is not supported
