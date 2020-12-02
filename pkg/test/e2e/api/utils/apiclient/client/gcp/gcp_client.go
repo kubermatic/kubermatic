@@ -29,21 +29,31 @@ type ClientService interface {
 
 	ListGCPDiskTypesNoCredentials(params *ListGCPDiskTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPDiskTypesNoCredentialsOK, error)
 
+	ListGCPDiskTypesNoCredentialsV2(params *ListGCPDiskTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPDiskTypesNoCredentialsV2OK, error)
+
 	ListGCPNetworks(params *ListGCPNetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksOK, error)
 
 	ListGCPNetworksNoCredentials(params *ListGCPNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksNoCredentialsOK, error)
+
+	ListGCPNetworksNoCredentialsV2(params *ListGCPNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksNoCredentialsV2OK, error)
 
 	ListGCPSizes(params *ListGCPSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesOK, error)
 
 	ListGCPSizesNoCredentials(params *ListGCPSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesNoCredentialsOK, error)
 
+	ListGCPSizesNoCredentialsV2(params *ListGCPSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesNoCredentialsV2OK, error)
+
 	ListGCPSubnetworks(params *ListGCPSubnetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksOK, error)
 
 	ListGCPSubnetworksNoCredentials(params *ListGCPSubnetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksNoCredentialsOK, error)
 
+	ListGCPSubnetworksNoCredentialsV2(params *ListGCPSubnetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksNoCredentialsV2OK, error)
+
 	ListGCPZones(params *ListGCPZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesOK, error)
 
 	ListGCPZonesNoCredentials(params *ListGCPZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesNoCredentialsOK, error)
+
+	ListGCPZonesNoCredentialsV2(params *ListGCPZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesNoCredentialsV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -117,6 +127,40 @@ func (a *Client) ListGCPDiskTypesNoCredentials(params *ListGCPDiskTypesNoCredent
 }
 
 /*
+  ListGCPDiskTypesNoCredentialsV2 Lists disk types from GCP
+*/
+func (a *Client) ListGCPDiskTypesNoCredentialsV2(params *ListGCPDiskTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPDiskTypesNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGCPDiskTypesNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listGCPDiskTypesNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/disktypes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGCPDiskTypesNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListGCPDiskTypesNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListGCPDiskTypesNoCredentialsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListGCPNetworks Lists networks from GCP
 */
 func (a *Client) ListGCPNetworks(params *ListGCPNetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksOK, error) {
@@ -181,6 +225,40 @@ func (a *Client) ListGCPNetworksNoCredentials(params *ListGCPNetworksNoCredentia
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListGCPNetworksNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListGCPNetworksNoCredentialsV2 Lists available GCP networks
+*/
+func (a *Client) ListGCPNetworksNoCredentialsV2(params *ListGCPNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPNetworksNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGCPNetworksNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listGCPNetworksNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/networks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGCPNetworksNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListGCPNetworksNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListGCPNetworksNoCredentialsV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -253,6 +331,40 @@ func (a *Client) ListGCPSizesNoCredentials(params *ListGCPSizesNoCredentialsPara
 }
 
 /*
+  ListGCPSizesNoCredentialsV2 Lists machine sizes from GCP
+*/
+func (a *Client) ListGCPSizesNoCredentialsV2(params *ListGCPSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSizesNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGCPSizesNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listGCPSizesNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGCPSizesNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListGCPSizesNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListGCPSizesNoCredentialsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListGCPSubnetworks Lists subnetworks from GCP
 */
 func (a *Client) ListGCPSubnetworks(params *ListGCPSubnetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksOK, error) {
@@ -321,6 +433,40 @@ func (a *Client) ListGCPSubnetworksNoCredentials(params *ListGCPSubnetworksNoCre
 }
 
 /*
+  ListGCPSubnetworksNoCredentialsV2 Lists available GCP subnetworks
+*/
+func (a *Client) ListGCPSubnetworksNoCredentialsV2(params *ListGCPSubnetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPSubnetworksNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGCPSubnetworksNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listGCPSubnetworksNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/subnetworks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGCPSubnetworksNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListGCPSubnetworksNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListGCPSubnetworksNoCredentialsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListGCPZones Lists available GCP zones
 */
 func (a *Client) ListGCPZones(params *ListGCPZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesOK, error) {
@@ -385,6 +531,40 @@ func (a *Client) ListGCPZonesNoCredentials(params *ListGCPZonesNoCredentialsPara
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListGCPZonesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListGCPZonesNoCredentialsV2 Lists available GCP zones
+*/
+func (a *Client) ListGCPZonesNoCredentialsV2(params *ListGCPZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListGCPZonesNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListGCPZonesNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listGCPZonesNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/gcp/zones",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListGCPZonesNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListGCPZonesNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListGCPZonesNoCredentialsV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
