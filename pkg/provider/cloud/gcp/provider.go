@@ -183,7 +183,7 @@ func ConnectToComputeService(serviceAccount string) (*compute.Service, string, e
 	sam := map[string]string{}
 	err = json.Unmarshal(b, &sam)
 	if err != nil {
-		return nil, "", fmt.Errorf("failed unmarshalling service account: %v", err)
+		return nil, "", fmt.Errorf("failed unmarshaling service account: %v", err)
 	}
 
 	projectID := sam["project_id"]
