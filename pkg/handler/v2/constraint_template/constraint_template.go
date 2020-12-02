@@ -199,7 +199,7 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePro
 		var patched *apiv2.ConstraintTemplate
 		err = json.Unmarshal(patchedJSON, &patched)
 		if err != nil {
-			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshall patch ct: %v", err))
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patch ct: %v", err))
 		}
 
 		// validate
