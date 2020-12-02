@@ -45,6 +45,11 @@ const (
 	// EtcdLauncher if enabled will apply the cluster level etcd-launcher feature flag on all clusters,
 	// unless it's explicitly disabled at the cluster level
 	EtcdLauncher = "EtcdLauncher"
+
+	// Tunneling expose strategy enables the expose strategy based on usage of
+	// HTTP/2 CONNECT for tunneling traffic from the worker nodes to the
+	// control plane.
+	TunnelingExposeStrategy = "TunnelingExposeStrategy"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.
