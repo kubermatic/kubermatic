@@ -40,6 +40,8 @@ const (
 	EnvoyDeploymentName   = "nodeport-proxy-envoy"
 	UpdaterDeploymentName = "nodeport-proxy-updater"
 	EnvoyPort             = 8002
+	EnvoySNIPort          = 6443
+	EnvoyHTTP2Connect     = 8080
 )
 
 func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, versions kubermatic.Versions) reconciling.NamedDeploymentCreatorGetter {
@@ -94,8 +96,9 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 				fmt.Sprintf("-envoy-stats-port=%d", EnvoyPort),
 			}
 			if cfg.Spec.FeatureGates.Has(features.TunnelingExposeStrategy) {
-				args = append(args, "-envoy-sni-port=6443")
-				args = append(args, "-envoy-http2-connect-port=8080")
+				args = append(args,
+					fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
+					fmt.Sprintf("-envoy-http2-connect-port=%d", EnvoyHTTP2Connect))
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -221,18 +224,16 @@ func UpdaterDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, see
 				fmt.Sprintf("-lb-name=%s", ServiceName),
 			}
 			if cfg.Spec.FeatureGates.Has(features.TunnelingExposeStrategy) {
-				args = append(args, "-envoy-sni-port=6443")
-				args = append(args, "-envoy-http2-connect-port=8080")
+				args = append(args,
+					fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
+					fmt.Sprintf("-envoy-http2-connect-port=%d", EnvoyHTTP2Connect))
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    "lb-updater",
 					Image:   seed.Spec.NodeportProxy.Updater.DockerRepository + ":" + versions.Kubermatic,
 					Command: []string{"/lb-updater"},
-					Args: []string{
-						"-lb-namespace=$(NAMESPACE)",
-						fmt.Sprintf("-lb-name=%s", ServiceName),
-					},
+					Args:    args,
 					Env: []corev1.EnvVar{
 						{
 							Name: "NAMESPACE",
