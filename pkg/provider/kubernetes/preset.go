@@ -36,10 +36,10 @@ import (
 type presetsGetter = func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error)
 
 // presetCreator is a function to create a preset
-type presetCreator = func(userInfo *provider.UserInfo, preset *kubermaticv1.Preset) (string, error)
+type presetCreator = func(preset *kubermaticv1.Preset) (string, error)
 
 // presetUpdater is a function to update a preset
-type presetUpdater = func(userInfo *provider.UserInfo, preset *kubermaticv1.Preset) (string, error)
+type presetUpdater = func(preset *kubermaticv1.Preset) (string, error)
 
 // LoadPresets loads the custom presets for supported providers
 func LoadPresets(yamlContent []byte) (*kubermaticv1.PresetList, error) {
@@ -103,16 +103,12 @@ func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (presetCreator, error) {
 	// Do not support preset creation if dynamic presets are not enabled
 	if !dynamicPresets {
-		return func(userInfo *provider.UserInfo, preset *kubermaticv1.Preset) (string, error) {
+		return func(preset *kubermaticv1.Preset) (string, error) {
 			return "", fmt.Errorf("preset creation not supported when dynamic presets feature is disabled")
 		}, nil
 	}
 
-	return func(userInfo *provider.UserInfo, preset *kubermaticv1.Preset) (string, error) {
-		if !userInfo.IsAdmin {
-			return "", fmt.Errorf("only admins can create presets")
-		}
-
+	return func(preset *kubermaticv1.Preset) (string, error) {
 		if err := client.Create(ctx, preset); err != nil {
 			return "", err
 		}
@@ -124,16 +120,12 @@ func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 func presetUpdaterFactory(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (presetUpdater, error) {
 	// Do not support preset update if dynamic presets are not enabled
 	if !dynamicPresets {
-		return func(userInfo *provider.UserInfo, preset *kubermaticv1.Preset) (string, error) {
+		return func(preset *kubermaticv1.Preset) (string, error) {
 			return "", fmt.Errorf("preset update not supported when dynamic presets feature is disabled")
 		}, nil
 	}
 
-	return func(userInfo *provider.UserInfo, preset *kubermaticv1.Preset) (string, error) {
-		if !userInfo.IsAdmin {
-			return "", fmt.Errorf("only admins can update presets")
-		}
-
+	return func(preset *kubermaticv1.Preset) (string, error) {
 		if err := client.Update(ctx, preset); err != nil {
 			return "", err
 		}
@@ -168,12 +160,12 @@ func NewPresetsProvider(ctx context.Context, client ctrlruntimeclient.Client, pr
 	return &PresetsProvider{getter, creator, patcher}, nil
 }
 
-func (m *PresetsProvider) CreatePreset(userInfo *provider.UserInfo, preset *kubermaticv1.Preset) (string, error) {
-	return m.creator(userInfo, preset)
+func (m *PresetsProvider) CreatePreset(preset *kubermaticv1.Preset) (string, error) {
+	return m.creator(preset)
 }
 
-func (m *PresetsProvider) UpdatePreset(userInfo *provider.UserInfo, preset *kubermaticv1.Preset) (string, error) {
-	return m.patcher(userInfo, preset)
+func (m *PresetsProvider) UpdatePreset(preset *kubermaticv1.Preset) (string, error) {
+	return m.patcher(preset)
 }
 
 // GetPresets returns presets which belong to the specific email group and for all users

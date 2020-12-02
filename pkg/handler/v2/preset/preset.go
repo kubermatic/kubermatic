@@ -74,7 +74,7 @@ type updatePresetStatusReq struct {
 	Provider string `json:"provider,omitempty"`
 	// in: body
 	// required: true
-	Body struct {Enabled bool}
+	Body struct {Enabled bool `json:"enabled"`}
 }
 
 func DecodeUpdatePresetStatus(_ context.Context, r *http.Request) (interface{}, error) {
@@ -120,6 +120,10 @@ func UpdatePresetStatus(presetsProvider provider.PresetProvider, userInfoGetter 
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		if !userInfo.IsAdmin {
+			return nil, errors.New(http.StatusForbidden, "only admins can update presets")
+		}
+
 		preset, err := presetsProvider.GetPreset(userInfo, req.PresetName)
 		if err != nil {
 			return nil, errors.New(http.StatusInternalServerError, err.Error())
@@ -127,16 +131,16 @@ func UpdatePresetStatus(presetsProvider provider.PresetProvider, userInfoGetter 
 
 		if len(req.Provider) == 0 {
 			preset.Spec.SetPresetStatus(req.Body.Enabled)
-			_, err := presetsProvider.UpdatePreset(userInfo, preset)
+			_, err = presetsProvider.UpdatePreset(preset)
 			return nil, err
 		}
 
 		if hasProvider, _ := preset.Spec.HasProvider(crdapiv1.ProviderType(req.Provider)); !hasProvider {
-			return nil, fmt.Errorf("missing provider configuration for: %s", req.Provider)
+			return nil, errors.New(http.StatusConflict, fmt.Sprintf("trying to update preset with missing provider configuration for: %s", req.Provider))
 		}
 
 		preset.Spec.SetPresetProviderStatus(crdapiv1.ProviderType(req.Provider), req.Body.Enabled)
-		_, err = presetsProvider.UpdatePreset(userInfo, preset)
+		_, err = presetsProvider.UpdatePreset(preset)
 		return nil, err
 	}
 }
@@ -309,9 +313,13 @@ func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		if !userInfo.IsAdmin {
+			return "", errors.New(http.StatusForbidden, "only admins can update presets")
+		}
+
 		preset, err := presetsProvider.GetPreset(userInfo, req.Body.Name)
 		if k8serrors.IsNotFound(err) {
-			return presetsProvider.CreatePreset(userInfo, &req.Body)
+			return presetsProvider.CreatePreset(&req.Body)
 		}
 
 		if err != nil && !k8serrors.IsNotFound(err) {
@@ -323,7 +331,7 @@ func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 		}
 
 		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
-		return presetsProvider.UpdatePreset(userInfo, preset)
+		return presetsProvider.UpdatePreset( preset)
 	}
 }
 
@@ -367,13 +375,17 @@ func UpdatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		if !userInfo.IsAdmin {
+			return "", errors.New(http.StatusForbidden, "only admins can update presets")
+		}
+
 		preset, err := presetsProvider.GetPreset(userInfo, req.Body.Name)
 		if err != nil {
 			return nil, err
 		}
 
 		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
-		return presetsProvider.UpdatePreset(userInfo, preset)
+		return presetsProvider.UpdatePreset(preset)
 	}
 }
 

@@ -17,6 +17,7 @@ limitations under the License.
 package preset_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -26,9 +27,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -96,7 +99,7 @@ func genPresetList() []runtime.Object {
 						Digitalocean: &kubermaticv1.Digitalocean{
 							PresetProvider: kubermaticv1.PresetProvider{
 								Datacenter: "a",
-								Enabled: boolPtr(false),
+								Enabled:    boolPtr(false),
 							},
 							Token: "token",
 						},
@@ -353,6 +356,225 @@ func TestListProviderPresets(t *testing.T) {
 			sortPresets(tc.ExpectedResponse.Items)
 			if res.Code == http.StatusOK && !reflect.DeepEqual(tc.ExpectedResponse, response) {
 				t.Errorf("expected\n%+v\ngot\n%+v", tc.ExpectedResponse, response)
+			}
+		})
+	}
+}
+
+func TestUpdatePresetStatus(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name            string
+		PresetName      string
+		Enabled         bool
+		Provider        kubermaticv1.ProviderType
+		ExistingPreset  *kubermaticv1.Preset
+		ExpectedPreset  *kubermaticv1.Preset
+		HTTPStatus      int
+		ExistingAPIUser *apiv1.User
+	}{
+		// scenario 1
+		{
+			Name:       "scenario 1: enable disabled preset",
+			PresetName: "disabled-preset",
+			Enabled:    true,
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "disabled-preset"},
+				Spec: kubermaticv1.PresetSpec{
+					Enabled: boolPtr(false),
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "disabled-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Enabled: boolPtr(true),
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 2
+		{
+			Name:       "scenario 2: disable enabled preset",
+			PresetName: "enabled-preset",
+			Enabled:    false,
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "enabled-preset"},
+				Spec: kubermaticv1.PresetSpec{
+					Enabled: boolPtr(true),
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "enabled-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Enabled: boolPtr(false),
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 3
+		{
+			Name:       "scenario 3: disable enabled preset with no enabled status set",
+			PresetName: "enabled-preset",
+			Enabled:    false,
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "enabled-preset"},
+				Spec:       kubermaticv1.PresetSpec{},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "enabled-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Enabled: boolPtr(false),
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 4
+		{
+			Name:       "scenario 4: enable disabled digitalocean preset",
+			PresetName: "disabled-do-preset",
+			Provider:   kubermaticv1.ProviderDigitalocean,
+			Enabled:    true,
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "disabled-do-preset"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						PresetProvider: kubermaticv1.PresetProvider{Enabled: boolPtr(false)},
+					},
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "disabled-do-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						PresetProvider: kubermaticv1.PresetProvider{Enabled: boolPtr(true)},
+					},
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 5
+		{
+			Name:       "scenario 5: disable enabled digitalocean preset",
+			PresetName: "enabled-do-preset",
+			Provider:   kubermaticv1.ProviderDigitalocean,
+			Enabled:    false,
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "enabled-do-preset"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						PresetProvider: kubermaticv1.PresetProvider{Enabled: boolPtr(true)},
+					},
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "enabled-do-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						PresetProvider: kubermaticv1.PresetProvider{Enabled: boolPtr(false)},
+					},
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 5
+		{
+			Name:       "scenario 6: disable enabled digitalocean preset with no enabled status set",
+			PresetName: "enabled-do-preset",
+			Provider:   kubermaticv1.ProviderDigitalocean,
+			Enabled:    false,
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "enabled-do-preset"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{},
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "enabled-do-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						PresetProvider: kubermaticv1.PresetProvider{Enabled: boolPtr(false)},
+					},
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 6
+		{
+			Name:            "scenario 6: block preset update for regular user",
+			PresetName:      "enabled-preset",
+			Enabled:         false,
+			HTTPStatus:      http.StatusForbidden,
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+
+		// scenario 7
+		{
+			Name:       "scenario 6: block status update when provider configuration missing",
+			PresetName: "preset",
+			Provider:   kubermaticv1.ProviderDigitalocean,
+			Enabled:    false,
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "preset"},
+				Spec:       kubermaticv1.PresetSpec{},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec:       kubermaticv1.PresetSpec{},
+			},
+			HTTPStatus:      http.StatusConflict,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v2/presets/%s/status?provider=%s", tc.PresetName, tc.Provider), strings.NewReader(fmt.Sprintf(`{"enabled": %v}`, tc.Enabled)))
+			res := httptest.NewRecorder()
+
+			existingKubermaticObjs := make([]runtime.Object, 0)
+			existingKubermaticObjs = append(existingKubermaticObjs, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
+			if tc.ExistingPreset != nil {
+				existingKubermaticObjs = append(existingKubermaticObjs, tc.ExistingPreset)
+			}
+
+			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+			assert.Equal(t, tc.HTTPStatus, res.Code)
+
+			if res.Code != http.StatusOK {
+				return
+			}
+
+			preset := &kubermaticv1.Preset{}
+			if err := clientSets.FakeClient.Get(context.TODO(), client.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+				t.Fatalf("failed to get preset: %+v", err)
+			}
+
+			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
+				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
 			}
 		})
 	}
