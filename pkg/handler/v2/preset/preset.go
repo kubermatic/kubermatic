@@ -57,7 +57,7 @@ func ListPresets(presetsProvider provider.PresetProvider, userInfoGetter provide
 				continue
 			}
 
-			presetList.Items = append(presetList.Items, newPreset(preset.Name, enabled))
+			presetList.Items = append(presetList.Items, newAPIPreset(preset, enabled))
 		}
 
 		return presetList, nil
@@ -226,7 +226,7 @@ func ListProviderPresets(presetsProvider provider.PresetProvider, userInfoGetter
 				continue
 			}
 
-			presetList.Items = append(presetList.Items, newPreset(preset.Name, enabled))
+			presetList.Items = append(presetList.Items, newAPIPreset(preset, enabled))
 		}
 
 		return presetList, nil
@@ -382,6 +382,13 @@ func mergePresets(oldPreset *crdapiv1.Preset, newPreset *crdapiv1.Preset, provid
 	return oldPreset
 }
 
-func newPreset(name string, enabled bool) v2.Preset {
-	return v2.Preset{Name: name, Enabled: enabled}
+func newAPIPreset(preset crdapiv1.Preset, enabled bool) v2.Preset {
+	providers := make([]crdapiv1.ProviderType, 0)
+	for _, providerType := range crdapiv1.SupportedProviders() {
+		if hasProvider, _ := preset.Spec.HasProvider(providerType); hasProvider {
+			providers = append(providers, providerType)
+		}
+	}
+
+	return v2.Preset{Name: preset.Name, Enabled: enabled, Providers: providers}
 }

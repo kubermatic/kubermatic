@@ -19,7 +19,7 @@ package v2
 import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 
-	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
 // ConstraintTemplate represents a gatekeeper ConstraintTemplate
@@ -36,8 +36,8 @@ type ConstraintTemplate struct {
 type Constraint struct {
 	Name string `json:"name"`
 
-	Spec   v1.ConstraintSpec `json:"spec"`
-	Status *ConstraintStatus `json:"status,omitempty"`
+	Spec   crdapiv1.ConstraintSpec `json:"spec"`
+	Status *ConstraintStatus       `json:"status,omitempty"`
 }
 
 // ConstraintStatus represents a constraint status which holds audit info
@@ -119,6 +119,7 @@ type PresetList struct {
 }
 
 type Preset struct {
-	Name    string `json:"name"`
-	Enabled bool   `json:"enabled"`
+	Name      string                  `json:"name"`
+	Enabled   bool                    `json:"enabled"`
+	Providers []crdapiv1.ProviderType `json:"providers"`
 }
