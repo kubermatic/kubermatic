@@ -45,7 +45,6 @@ import (
 )
 
 const (
-	namespace      = "kubermatic"
 	constraintName = "constraint"
 	kind           = "RequiredLabel"
 )
@@ -66,26 +65,26 @@ func TestReconcile(t *testing.T) {
 		{
 			name: "scenario 1: sync constraint to user cluster",
 			namespacedName: types.NamespacedName{
-				Namespace: namespace,
+				Namespace: "namespace",
 				Name:      constraintName,
 			},
 			expectedConstraint: test.GenDefaultAPIConstraint(constraintName, kind),
 			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
 				scheme.Scheme,
-				test.GenConstraint(constraintName, namespace, kind)),
+				test.GenConstraint(constraintName, "namespace", kind)),
 			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme),
 		},
 		{
 			name: "scenario 3: cleanup ct on user cluster when master ct is being terminated",
 			namespacedName: types.NamespacedName{
-				Namespace: namespace,
+				Namespace: "namespace",
 				Name:      constraintName,
 			},
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
 			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
 				scheme.Scheme,
 				func() *v1.Constraint {
-					c := test.GenConstraint(constraintName, namespace, kind)
+					c := test.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
 					c.Finalizers = []string{kubermaticapiv1.GatekeeperConstraintCleanupFinalizer}
@@ -121,7 +120,7 @@ func TestReconcile(t *testing.T) {
 				Version: constrainthandler.ConstraintsVersion,
 				Kind:    kind,
 			})
-			err := tc.userClient.Get(context.Background(), types.NamespacedName{Namespace: namespace, Name: constraintName}, reqLabel)
+			err := tc.userClient.Get(context.Background(), types.NamespacedName{Name: constraintName}, reqLabel)
 			if tc.expectedGetErrStatus != "" {
 				if err == nil {
 					t.Fatalf("expected error status %s, instead got constraint: %v", tc.expectedGetErrStatus, reqLabel)

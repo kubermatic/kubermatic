@@ -147,7 +147,7 @@ func (r *reconciler) reconcile(constraint *kubermaticv1.Constraint) error {
 		ConstraintCreatorGetter(constraint),
 	}
 
-	if err := reconciling.ReconcileUnstructureds(r.ctx, constraintCreatorGetters, constrainthandler.ConstraintNamespace, r.userClient); err != nil {
+	if err := reconciling.ReconcileUnstructureds(r.ctx, constraintCreatorGetters, "", r.userClient); err != nil {
 		return fmt.Errorf("failed to reconcile constraint: %v", err)
 	}
 
