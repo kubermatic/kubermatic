@@ -10,7 +10,7 @@ require (
 	github.com/Azure/go-autorest/autorest/to v0.3.0
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/sprig v2.17.1+incompatible
-	github.com/aliyun/alibaba-cloud-sdk-go v0.0.0-20190828035149-111b102694f9
+	github.com/aliyun/alibaba-cloud-sdk-go v1.61.733
 	github.com/apoydence/onpar v0.0.0-20200406201722-06f95a1c68e8 // indirect
 	github.com/aws/aws-sdk-go v1.27.4
 	github.com/coreos/go-oidc v2.2.1+incompatible
