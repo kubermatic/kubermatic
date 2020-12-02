@@ -51,9 +51,6 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// NodeDeploymentEvent represents type of events related to Node Deployment
-type NodeDeploymentEvent string
-
 // ClusterTypes holds a list of supported cluster types
 var ClusterTypes = sets.NewString(apiv1.OpenShiftClusterType, apiv1.KubernetesClusterType)
 

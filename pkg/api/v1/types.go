@@ -1646,5 +1646,5 @@ func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType 
 }
 
 const (
-	InitialMachineDeploymentRequestAnnotation = "InitialMachineDeploymentRequest"
+	InitialMachineDeploymentRequestAnnotation = "kubermatic.io/initial-machinedeployment-request"
 )
