@@ -30,7 +30,7 @@ import (
 	"testing"
 	"time"
 
-	ver "github.com/Masterminds/semver"
+	ver "github.com/Masterminds/semver/v3"
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	prometheusapi "github.com/prometheus/client_golang/api"
 

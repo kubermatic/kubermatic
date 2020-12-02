@@ -34,7 +34,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"go.uber.org/zap"
@@ -673,7 +673,7 @@ func createSSHKeys(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAu
 }
 
 func getLatestMinorVersions(versions []*semver.Version) []string {
-	minorMap := map[int64]*semver.Version{}
+	minorMap := map[uint64]*semver.Version{}
 
 	for i, version := range versions {
 		minor := version.Minor()

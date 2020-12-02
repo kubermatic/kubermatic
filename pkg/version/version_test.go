@@ -20,7 +20,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 )

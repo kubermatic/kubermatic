@@ -5,7 +5,7 @@
 package v1alpha1
 
 import (
-	semver "github.com/Masterminds/semver"
+	v3 "github.com/Masterminds/semver/v3"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	sets "k8s.io/apimachinery/pkg/util/sets"
 )
@@ -396,18 +396,18 @@ func (in *KubermaticVersioningConfiguration) DeepCopyInto(out *KubermaticVersion
 	*out = *in
 	if in.Versions != nil {
 		in, out := &in.Versions, &out.Versions
-		*out = make([]*semver.Version, len(*in))
+		*out = make([]*v3.Version, len(*in))
 		for i := range *in {
 			if (*in)[i] != nil {
 				in, out := &(*in)[i], &(*out)[i]
-				*out = new(semver.Version)
+				*out = new(v3.Version)
 				**out = **in
 			}
 		}
 	}
 	if in.Default != nil {
 		in, out := &in.Default, &out.Default
-		*out = new(semver.Version)
+		*out = new(v3.Version)
 		**out = **in
 	}
 	if in.Updates != nil {

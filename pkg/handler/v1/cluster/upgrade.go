@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/Masterminds/semver"
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"

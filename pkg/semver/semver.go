@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strconv"
 
-	semverlib "github.com/Masterminds/semver"
+	semverlib "github.com/Masterminds/semver/v3"
 )
 
 // Semver is struct that encapsulates semver.Semver struct so we can use it in API
