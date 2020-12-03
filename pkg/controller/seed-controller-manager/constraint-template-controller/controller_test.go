@@ -229,6 +229,6 @@ func newFakeClientProvider(client ctrlruntimeclient.Client) *fakeClientProvider 
 	}
 }
 
-func (f *fakeClientProvider) GetClient(c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
+func (f *fakeClientProvider) GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
 	return f.client, nil
 }

@@ -46,7 +46,7 @@ func ListClusterRoleEndpoint(ctx context.Context, userInfoGetter provider.UserIn
 		return nil, err
 	}
 
-	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+	client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -71,7 +71,7 @@ func ListClusterRoleNamesEndpoint(ctx context.Context, userInfoGetter provider.U
 		return nil, err
 	}
 
-	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+	client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -102,7 +102,7 @@ func ListRoleEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGette
 		return nil, err
 	}
 
-	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+	client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -127,7 +127,7 @@ func ListRoleNamesEndpoint(ctx context.Context, userInfoGetter provider.UserInfo
 		return nil, err
 	}
 
-	client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+	client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}

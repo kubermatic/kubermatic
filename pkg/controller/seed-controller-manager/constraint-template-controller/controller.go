@@ -55,7 +55,7 @@ const (
 
 // UserClusterClientProvider provides functionality to get a user cluster client
 type UserClusterClientProvider interface {
-	GetClient(c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
+	GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
 type reconciler struct {
@@ -204,7 +204,7 @@ func (r *reconciler) syncAllClusters(
 			var err error
 			userClusterClient, ok := r.userClusterClients[userCluster.Name]
 			if !ok {
-				userClusterClient, err = r.userClusterClientProvider.GetClient(&userCluster)
+				userClusterClient, err = r.userClusterClientProvider.GetClient(r.ctx, &userCluster)
 				if err != nil {
 					return fmt.Errorf("error getting client for cluster %s: %w", userCluster.Spec.HumanReadableName, err)
 				}
