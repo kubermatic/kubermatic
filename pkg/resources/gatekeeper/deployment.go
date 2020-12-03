@@ -228,12 +228,7 @@ func getControllerContainers(data gatekeeperData, existingContainers []corev1.Co
 		},
 		Env: []corev1.EnvVar{
 			{Name: "POD_NAMESPACE",
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						APIVersion: "v1",
-						FieldPath:  "metadata.namespace",
-					},
-				}},
+				Value: resources.GatekeeperNamespace},
 			{Name: "POD_NAME",
 				ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{
@@ -314,12 +309,7 @@ func getAuditContainers(data gatekeeperData, existingContainers []corev1.Contain
 		},
 		Env: []corev1.EnvVar{
 			{Name: "POD_NAMESPACE",
-				ValueFrom: &corev1.EnvVarSource{
-					FieldRef: &corev1.ObjectFieldSelector{
-						APIVersion: "v1",
-						FieldPath:  "metadata.namespace",
-					},
-				}},
+				Value: resources.GatekeeperNamespace},
 			{Name: "POD_NAME",
 				ValueFrom: &corev1.EnvVarSource{
 					FieldRef: &corev1.ObjectFieldSelector{

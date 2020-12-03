@@ -555,6 +555,9 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 		creators := []reconciling.NamedNamespaceCreatorGetter{
 			kubernetesdashboard.NamespaceCreator,
 		}
+		if r.opaIntegration {
+			creators = append(creators, gatekeeper.NamespaceCreator)
+		}
 		if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile namespaces: %v", err)
 		}
