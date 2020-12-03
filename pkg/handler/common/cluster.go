@@ -68,7 +68,7 @@ type patchCluster struct {
 
 func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClusterSpec,
 	projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider, exposeStrategy corev1.ServiceType,
+	seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider, exposeStrategy kubermaticv1.ExposeStrategy,
 	userInfoGetter provider.UserInfoGetter) (interface{}, error) {
 
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)

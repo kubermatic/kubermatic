@@ -17,6 +17,7 @@ limitations under the License.
 package openvpn
 
 import (
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -26,7 +27,7 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the external OpenVPN service
-func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.OpenVPNServerServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Name = resources.OpenVPNServerServiceName
@@ -35,7 +36,7 @@ func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceC
 			if se.Annotations == nil {
 				se.Annotations = map[string]string{}
 			}
-			if exposeStrategy == corev1.ServiceTypeNodePort {
+			if exposeStrategy == kubermaticv1.ExposeStrategyNodePort {
 				se.Annotations["nodeport-proxy.k8s.io/expose"] = "true"
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			} else {

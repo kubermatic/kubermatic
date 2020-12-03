@@ -28,7 +28,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
-	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -72,7 +71,7 @@ func TestReconcilingSeed(t *testing.T) {
 				},
 				Spec: kubermaticv1.SeedSpec{
 					Country:        "Germany",
-					ExposeStrategy: corev1.ServiceTypeNodePort,
+					ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 				},
 			},
 			existingSeeds: existingSeeds,
@@ -146,7 +145,7 @@ func TestReconcilingSeed(t *testing.T) {
 				},
 				Spec: kubermaticv1.SeedSpec{
 					Country:        "Germany",
-					ExposeStrategy: corev1.ServiceTypeClusterIP,
+					ExposeStrategy: kubermaticv1.ExposeStrategy("wtf"),
 				},
 			},
 			existingSeeds: existingSeeds,

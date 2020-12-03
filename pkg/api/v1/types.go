@@ -1600,7 +1600,7 @@ type SeedSpec struct {
 	// worker nodes in user clusters. However, proxy settings on nodes take precedence.
 	ProxySettings *kubermaticv1.ProxySettings `json:"proxy_settings,omitempty"`
 	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
-	ExposeStrategy corev1.ServiceType `json:"expose_strategy,omitempty"`
+	ExposeStrategy kubermaticv1.ExposeStrategy `json:"expose_strategy,omitempty"`
 }
 
 // swagger:model SeedNamesList
