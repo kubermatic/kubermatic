@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -100,12 +101,13 @@ func (s *awsScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
+func (s *awsScenario) NodeDeployments(ctx context.Context, num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
 	instanceType := "t2.medium"
 	volumeType := "gp2"
 	volumeSize := int64(100)
 
 	listVPCParams := &awsapiclient.ListAWSVPCSParams{
+		Context:         ctx,
 		AccessKeyID:     utilpointer.StringPtr(secrets.AWS.AccessKeyID),
 		SecretAccessKey: utilpointer.StringPtr(secrets.AWS.SecretAccessKey),
 		DC:              awsDC,
@@ -128,6 +130,7 @@ func (s *awsScenario) NodeDeployments(num int, secrets secrets) ([]apimodels.Nod
 	}
 
 	listSubnetParams := &awsapiclient.ListAWSSubnetsParams{
+		Context:         ctx,
 		AccessKeyID:     utilpointer.StringPtr(secrets.AWS.AccessKeyID),
 		SecretAccessKey: utilpointer.StringPtr(secrets.AWS.SecretAccessKey),
 		DC:              awsDC,

@@ -361,7 +361,7 @@ func main() {
 	opts.secrets.kubermaticAuthenticator = opts.kubermaticAuthenticator
 
 	if opts.kubermaticProjectID == "" {
-		projectID, err := createProject(opts.kubermaticClient, opts.kubermaticAuthenticator, log)
+		projectID, err := createProject(rootCtx, opts.kubermaticClient, opts.kubermaticAuthenticator, log)
 		if err != nil {
 			log.Fatalw("Failed to create project", zap.Error(err))
 		}
@@ -400,7 +400,7 @@ func main() {
 	opts.publicKeys = append(opts.publicKeys, e2eTestPubKeyBytes)
 	opts.homeDir = homeDir
 
-	if err := createSSHKeys(opts.kubermaticClient, opts.kubermaticAuthenticator, &opts, log); err != nil {
+	if err := createSSHKeys(rootCtx, opts.kubermaticClient, opts.kubermaticAuthenticator, &opts, log); err != nil {
 		log.Fatalw("Failed to create SSH keys", zap.Error(err))
 	}
 
@@ -442,7 +442,7 @@ func main() {
 	}
 	opts.seedGeneratedClient = seedGeneratedClient
 
-	seedGetter, err := provider.SeedGetterFactory(context.Background(), seedClusterClient, opts.kubermaticSeedName, opts.kubermaticNamespace)
+	seedGetter, err := provider.SeedGetterFactory(rootCtx, seedClusterClient, opts.kubermaticSeedName, opts.kubermaticNamespace)
 	if err != nil {
 		log.Fatalw("Failed to construct seedGetter", zap.Error(err))
 	}
@@ -461,7 +461,7 @@ func main() {
 	runner := newRunner(getScenarios(opts, log), &opts, log)
 
 	start := time.Now()
-	if err := runner.Run(); err != nil {
+	if err := runner.Run(rootCtx); err != nil {
 		log.Fatal(err)
 	}
 	log.Infof("Whole suite took: %.2f seconds", time.Since(start).Seconds())
@@ -612,10 +612,13 @@ func shuffle(vals []testScenario) []testScenario {
 	return ret
 }
 
-func createProject(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, log *zap.SugaredLogger) (string, error) {
+func createProject(ctx context.Context, client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, log *zap.SugaredLogger) (string, error) {
 	log.Info("Creating Kubermatic project...")
 
-	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: "kubermatic-conformance-tester"}}
+	params := &project.CreateProjectParams{
+		Context: ctx,
+		Body:    project.CreateProjectBody{Name: "kubermatic-conformance-tester"},
+	}
 	utils.SetupParams(nil, params, 3*time.Second, 1*time.Minute, http.StatusConflict)
 
 	result, err := client.Project.CreateProject(params, bearerToken)
@@ -628,7 +631,7 @@ func createProject(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAu
 	// logging a misleading error in the following loop, we just wait a few seconds
 	time.Sleep(3 * time.Second)
 
-	getProjectParams := &project.GetProjectParams{ProjectID: projectID}
+	getProjectParams := &project.GetProjectParams{Context: ctx, ProjectID: projectID}
 	utils.SetupParams(nil, getProjectParams, 2*time.Second, 1*time.Minute, http.StatusConflict)
 
 	if err := wait.PollImmediate(2*time.Second, 1*time.Minute, func() (bool, error) {
@@ -649,11 +652,12 @@ func createProject(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAu
 	return projectID, nil
 }
 
-func createSSHKeys(client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, opts *Opts, log *zap.SugaredLogger) error {
+func createSSHKeys(ctx context.Context, client *apiclient.KubermaticAPI, bearerToken runtime.ClientAuthInfoWriter, opts *Opts, log *zap.SugaredLogger) error {
 	for i, key := range opts.publicKeys {
 		log.Infow("Creating UserSSHKey", "pubkey", string(key))
 
 		body := &project.CreateSSHKeyParams{
+			Context:   ctx,
 			ProjectID: opts.kubermaticProjectID,
 			Key: &models.SSHKey{
 				Name: fmt.Sprintf("SSH Key No. %d", i+1),

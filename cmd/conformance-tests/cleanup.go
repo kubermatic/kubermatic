@@ -39,12 +39,11 @@ var (
 		kubernetesdashboard.Namespace)
 )
 
-func (r *testRunner) deleteAllNonDefaultNamespaces(log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
+func (r *testRunner) deleteAllNonDefaultNamespaces(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client) error {
 	log.Info("Removing non-default namespaces...")
 
 	return wait.Poll(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
 		namespaceList := &corev1.NamespaceList{}
-		ctx := context.Background()
 		if err := client.List(ctx, namespaceList); err != nil {
 			log.Errorw("Failed to list namespaces", zap.Error(err))
 			return false, nil

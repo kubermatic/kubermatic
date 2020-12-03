@@ -109,6 +109,6 @@ type fakeUserClusterConnectionProvider struct {
 	client ctrlruntimeclient.Client
 }
 
-func (f *fakeUserClusterConnectionProvider) GetClient(*kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
+func (f *fakeUserClusterConnectionProvider) GetClient(context.Context, *kubermaticv1.Cluster, ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
 	return f.client, nil
 }

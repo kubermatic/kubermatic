@@ -97,7 +97,7 @@ func ProxyEndpoint(
 				return nil, nil
 			}
 
-			token, err := clusterProvider.GetTokenForCustomerCluster(userInfo, userCluster)
+			token, err := clusterProvider.GetTokenForCustomerCluster(ctx, userInfo, userCluster)
 			if err != nil {
 				common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, fmt.Sprintf("error getting token for user %q: %v", userInfo.Email, err)))
 				return nil, nil

@@ -237,7 +237,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 		// Defer getting the client to make sure we only request it if we actually need it
 		userClusterClientGetter := func() (client.Client, error) {
-			userClusterClient, err := r.userClusterConnProvider.GetClient(cluster)
+			userClusterClient, err := r.userClusterConnProvider.GetClient(ctx, cluster)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 			}
@@ -306,7 +306,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 // clusterIsReachable checks if the cluster is reachable via its external name
 func (r *Reconciler) clusterIsReachable(ctx context.Context, c *kubermaticv1.Cluster) (bool, error) {
-	client, err := r.userClusterConnProvider.GetClient(c)
+	client, err := r.userClusterConnProvider.GetClient(ctx, c)
 	if err != nil {
 		return false, err
 	}

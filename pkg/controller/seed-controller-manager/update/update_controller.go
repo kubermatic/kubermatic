@@ -155,7 +155,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 func (r *Reconciler) nodeUpdate(ctx context.Context, cluster *kubermaticv1.Cluster, clusterType string) error {
-	c, err := r.userClusterConnectionProvider.GetClient(cluster)
+	c, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get usercluster client: %v", err)
 	}
