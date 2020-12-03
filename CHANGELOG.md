@@ -210,6 +210,15 @@ as well as the [2.15 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.15
 
 # Kubermatic 2.14
 
+## [v2.14.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.9)
+
+### Bugfixes
+
+- Create an RBAC role to allow kubeadm to get nodes. This fixes nodes failing to join kubeadm clusters running Kubernetes 1.18+ ([#6241](https://github.com/kubermatic/kubermatic/issues/6241))
+
+
+
+
 ## [v2.14.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.8)
 
 ### Misc
