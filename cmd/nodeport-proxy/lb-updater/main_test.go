@@ -31,17 +31,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-)
 
-func init() {
-	exposeAnnotationKey = defaultExposeAnnotationKey
-}
+	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
+)
 
 func TestReconciliation(t *testing.T) {
 	testCases := []struct {
-		name             string
-		initialServices  []runtime.Object
-		expectedServices corev1.ServiceList
+		name                     string
+		initialServices          []runtime.Object
+		expectedServices         corev1.ServiceList
+		sniListenerPort          int
+		http2ConnectListenerPort int
 	}{
 		{
 			name: "Service without annotation gets ignored",
@@ -515,6 +515,184 @@ func TestReconciliation(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:            "Activated SNI listener",
+			sniListenerPort: 6443,
+			initialServices: []runtime.Object{
+				&corev1.Service{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Service",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace:   "cluster",
+						Name:        "apiserver",
+						Annotations: map[string]string{"nodeport-proxy.k8s.io/expose": "true"},
+					},
+					Spec: corev1.ServiceSpec{
+						ClusterIP: "1.2.3.4",
+						Ports: []corev1.ServicePort{{
+							Port:     443,
+							NodePort: 30443,
+						}},
+					},
+				},
+				&corev1.Service{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Service",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "lb-ns",
+						Name:      "lb",
+					},
+				},
+			},
+			expectedServices: corev1.ServiceList{
+				Items: []corev1.Service{
+					{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Service",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace:   "cluster",
+							Name:        "apiserver",
+							Annotations: map[string]string{"nodeport-proxy.k8s.io/expose": "true"},
+						},
+						Spec: corev1.ServiceSpec{
+							ClusterIP: "1.2.3.4",
+							Ports: []corev1.ServicePort{{
+								Port:     443,
+								NodePort: 30443,
+							}},
+						},
+					},
+					{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Service",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace:       "lb-ns",
+							Name:            "lb",
+							ResourceVersion: "1",
+						},
+						Spec: corev1.ServiceSpec{
+							Ports: []corev1.ServicePort{
+								{
+									Name:       "cluster-apiserver-30443",
+									Port:       30443,
+									TargetPort: intstr.FromInt(30443),
+									Protocol:   corev1.ProtocolTCP,
+								},
+								{
+									Name:       "healthz",
+									Port:       8002,
+									TargetPort: intstr.FromInt(8002),
+									Protocol:   corev1.ProtocolTCP,
+								},
+								{
+									Name:       "sni-listener",
+									Port:       6443,
+									TargetPort: intstr.FromInt(6443),
+									Protocol:   corev1.ProtocolTCP,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:                     "Activated HTTP/2 CONNECT listener",
+			http2ConnectListenerPort: 8443,
+			initialServices: []runtime.Object{
+				&corev1.Service{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Service",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace:   "cluster",
+						Name:        "apiserver",
+						Annotations: map[string]string{"nodeport-proxy.k8s.io/expose": "true"},
+					},
+					Spec: corev1.ServiceSpec{
+						ClusterIP: "1.2.3.4",
+						Ports: []corev1.ServicePort{{
+							Port:     443,
+							NodePort: 30443,
+						}},
+					},
+				},
+				&corev1.Service{
+					TypeMeta: metav1.TypeMeta{
+						APIVersion: "v1",
+						Kind:       "Service",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Namespace: "lb-ns",
+						Name:      "lb",
+					},
+				},
+			},
+			expectedServices: corev1.ServiceList{
+				Items: []corev1.Service{
+					{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Service",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace:   "cluster",
+							Name:        "apiserver",
+							Annotations: map[string]string{"nodeport-proxy.k8s.io/expose": "true"},
+						},
+						Spec: corev1.ServiceSpec{
+							ClusterIP: "1.2.3.4",
+							Ports: []corev1.ServicePort{{
+								Port:     443,
+								NodePort: 30443,
+							}},
+						},
+					},
+					{
+						TypeMeta: metav1.TypeMeta{
+							APIVersion: "v1",
+							Kind:       "Service",
+						},
+						ObjectMeta: metav1.ObjectMeta{
+							Namespace:       "lb-ns",
+							Name:            "lb",
+							ResourceVersion: "1",
+						},
+						Spec: corev1.ServiceSpec{
+							Ports: []corev1.ServicePort{
+								{
+									Name:       "cluster-apiserver-30443",
+									Port:       30443,
+									TargetPort: intstr.FromInt(30443),
+									Protocol:   corev1.ProtocolTCP,
+								},
+								{
+									Name:       "healthz",
+									Port:       8002,
+									TargetPort: intstr.FromInt(8002),
+									Protocol:   corev1.ProtocolTCP,
+								},
+								{
+									Name:       "http2-connect-listener",
+									Port:       8443,
+									TargetPort: intstr.FromInt(8443),
+									Protocol:   corev1.ProtocolTCP,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -525,6 +703,11 @@ func TestReconciliation(t *testing.T) {
 				lbName:      "lb",
 				client:      client,
 				log:         zap.NewNop().Sugar(),
+				opts: envoymanager.Options{
+					ExposeAnnotationKey:           envoymanager.DefaultExposeAnnotationKey,
+					EnvoySNIListenerPort:          tc.sniListenerPort,
+					EnvoyHTTP2ConnectListenerPort: tc.http2ConnectListenerPort,
+				},
 			}
 
 			if _, err := updater.Reconcile(reconcile.Request{}); err != nil {
