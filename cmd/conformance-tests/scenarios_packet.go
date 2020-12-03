@@ -84,7 +84,7 @@ func (s *packetScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {
 	}
 }
 
-func (s *packetScenario) NodeDeployments(ctx context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
+func (s *packetScenario) NodeDeployments(_ context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	instanceType := "t1.small.x86"
 	replicas := int32(num)
 	return []apimodels.NodeDeployment{

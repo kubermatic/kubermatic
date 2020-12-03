@@ -75,7 +75,7 @@ func (s *alibabaScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 	}
 }
 
-func (s *alibabaScenario) NodeDeployments(ctx context.Context, num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
+func (s *alibabaScenario) NodeDeployments(_ context.Context, num int, secrets secrets) ([]apimodels.NodeDeployment, error) {
 	return []apimodels.NodeDeployment{
 		{
 			Spec: &apimodels.NodeDeploymentSpec{
