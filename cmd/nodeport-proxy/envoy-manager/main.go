@@ -42,6 +42,8 @@ func main() {
 	flag.StringVar(&ctrlOpts.EnvoyNodeName, "envoy-node-name", "kube", "Name of the envoy nodes to apply the config to via xds.")
 	flag.IntVar(&ctrlOpts.EnvoyAdminPort, "envoy-admin-port", 9001, "Envoys admin port")
 	flag.IntVar(&ctrlOpts.EnvoyStatsPort, "envoy-stats-port", 8002, "Limited port which should be opened on envoy to expose metrics and the health check. Endpoints are: /healthz & /stats")
+	flag.IntVar(&ctrlOpts.EnvoySNIListenerPort, "envoy-sni-port", 0, "Port used for SNI entry point.")
+	flag.IntVar(&ctrlOpts.EnvoyHTTP2ConnectListenerPort, "envoy-http2-connect-port", 0, "Port used for HTTP/2 CONNECT termination.")
 	flag.StringVar(&ctrlOpts.Namespace, "namespace", "", "The namespace we should use for pods and services. Leave empty for all namespaces.")
 	flag.StringVar(&ctrlOpts.ExposeAnnotationKey, "expose-annotation-key", envoymanager.DefaultExposeAnnotationKey, "The annotation key used to determine if a service should be exposed")
 	flag.Parse()

@@ -466,8 +466,8 @@ func (r *Reconciler) reconcileDeployments(cfg *operatorv1alpha1.KubermaticConfig
 	if !seed.Spec.NodeportProxy.Disable {
 		creators = append(
 			creators,
-			nodeportproxy.EnvoyDeploymentCreator(seed, r.versions),
-			nodeportproxy.UpdaterDeploymentCreator(seed, r.versions),
+			nodeportproxy.EnvoyDeploymentCreator(cfg, seed, r.versions),
+			nodeportproxy.UpdaterDeploymentCreator(cfg, seed, r.versions),
 		)
 	}
 
