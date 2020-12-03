@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -86,7 +87,7 @@ func (s *openStackScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpe
 	}
 }
 
-func (s *openStackScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
+func (s *openStackScenario) NodeDeployments(_ context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	osName := getOSNameFromSpec(s.nodeOsSpec)
 	image := "kubermatic-e2e-" + osName
 	flavor := "m1.small"

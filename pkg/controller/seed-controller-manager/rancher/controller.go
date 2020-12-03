@@ -62,7 +62,7 @@ const (
 
 // KubeconfigProvider provides functionality to get a clusters admin kubeconfig
 type KubeconfigProvider interface {
-	GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error)
+	GetAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) ([]byte, error)
 }
 
 type fileHandlingDone func()
@@ -335,7 +335,7 @@ func (r *Reconciler) applyRancherRegstrationCommand(ctx context.Context, log *za
 	if err != nil {
 		return fmt.Errorf("failed to read http response: %v", err)
 	}
-	kubeconfigFilename, kubeconfigDone, err := r.writeAdminKubeconfig(log, cluster)
+	kubeconfigFilename, kubeconfigDone, err := r.writeAdminKubeconfig(ctx, log, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to write the admin kubeconfig to the local filesystem: %v", err)
 	}
@@ -353,9 +353,9 @@ func (r *Reconciler) applyRancherRegstrationCommand(ctx context.Context, log *za
 	return nil
 }
 
-func (r *Reconciler) writeAdminKubeconfig(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
+func (r *Reconciler) writeAdminKubeconfig(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
 	// Write kubeconfig to disk
-	kubeconfig, err := r.kubeconfigProvider.GetAdminKubeconfig(cluster)
+	kubeconfig, err := r.kubeconfigProvider.GetAdminKubeconfig(ctx, cluster)
 	if err != nil {
 		return "", nil, fmt.Errorf("failed to get admin kubeconfig for cluster %s: %v", cluster.Name, err)
 	}

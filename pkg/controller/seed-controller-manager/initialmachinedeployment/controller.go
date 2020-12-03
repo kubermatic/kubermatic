@@ -50,7 +50,7 @@ const (
 
 // UserClusterClientProvider provides functionality to get a user cluster client
 type UserClusterClientProvider interface {
-	GetClient(c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
+	GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...clusterclient.ConfigOption) (ctrlruntimeclient.Client, error)
 }
 
 type Reconciler struct {
@@ -146,7 +146,7 @@ func (r *Reconciler) reconcile(cluster *kubermaticv1.Cluster) (*reconcile.Result
 		return nil, nil
 	}
 
-	userClusterClient, err := r.userClusterConnectionProvider.GetClient(cluster)
+	userClusterClient, err := r.userClusterConnectionProvider.GetClient(r.ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 	}

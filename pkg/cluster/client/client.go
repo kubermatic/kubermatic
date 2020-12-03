@@ -63,9 +63,9 @@ type Provider struct {
 
 // GetAdminKubeconfig returns the admin kubeconfig for the given cluster. For internal use
 // by ourselves only.
-func (p *Provider) GetAdminKubeconfig(c *kubermaticv1.Cluster) ([]byte, error) {
+func (p *Provider) GetAdminKubeconfig(ctx context.Context, c *kubermaticv1.Cluster) ([]byte, error) {
 	s := &corev1.Secret{}
-	if err := p.seedClient.Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.InternalUserClusterAdminKubeconfigSecretName}, s); err != nil {
+	if err := p.seedClient.Get(ctx, types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.InternalUserClusterAdminKubeconfigSecretName}, s); err != nil {
 		return nil, err
 	}
 	d := s.Data[resources.KubeconfigSecretKey]
@@ -100,8 +100,8 @@ func setExternalAddress(c *kubermaticv1.Cluster, config []byte) ([]byte, error) 
 type ConfigOption func(*restclient.Config) *restclient.Config
 
 // GetClientConfig returns the client config used for initiating a connection for the given cluster
-func (p *Provider) GetClientConfig(c *kubermaticv1.Cluster, options ...ConfigOption) (*restclient.Config, error) {
-	b, err := p.GetAdminKubeconfig(c)
+func (p *Provider) GetClientConfig(ctx context.Context, c *kubermaticv1.Cluster, options ...ConfigOption) (*restclient.Config, error) {
+	b, err := p.GetAdminKubeconfig(ctx, c)
 	if err != nil {
 		return nil, err
 	}
@@ -142,8 +142,8 @@ func (p *Provider) GetClientConfig(c *kubermaticv1.Cluster, options ...ConfigOpt
 }
 
 // GetClient returns a dynamic client
-func (p *Provider) GetClient(c *kubermaticv1.Cluster, options ...ConfigOption) (ctrlruntimeclient.Client, error) {
-	config, err := p.GetClientConfig(c, options...)
+func (p *Provider) GetClient(ctx context.Context, c *kubermaticv1.Cluster, options ...ConfigOption) (ctrlruntimeclient.Client, error) {
+	config, err := p.GetClientConfig(ctx, c, options...)
 	if err != nil {
 		return nil, err
 	}

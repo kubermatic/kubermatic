@@ -33,9 +33,8 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *testRunner) testUserclusterControllerRBAC(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, userClusterClient, seedClusterClient ctrlruntimeclient.Client) error {
+func (r *testRunner) testUserclusterControllerRBAC(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, userClusterClient, seedClusterClient ctrlruntimeclient.Client) error {
 	log.Info("Testing user cluster RBAC controller")
-	ctx := context.Background()
 	clusterNamespace := fmt.Sprintf("cluster-%s", cluster.Name)
 
 	// check if usercluster-controller was deployed on seed cluster

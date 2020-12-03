@@ -182,16 +182,16 @@ type ClusterProvider interface {
 	// GetAdminClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//
 	// Note that the client you will get has admin privileges
-	GetAdminClientForCustomerCluster(*kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
+	GetAdminClientForCustomerCluster(context.Context, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
 
 	// GetClientForCustomerCluster returns a client to interact with all resources in the given cluster
 	//
 	// Note that the client doesn't use admin account instead it authn/authz as userInfo(email, group)
-	GetClientForCustomerCluster(*UserInfo, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
+	GetClientForCustomerCluster(context.Context, *UserInfo, *kubermaticv1.Cluster) (ctrlruntimeclient.Client, error)
 
 	// GetTokenForCustomerCluster returns a token for the given cluster with permissions granted to group that
 	// user belongs to.
-	GetTokenForCustomerCluster(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (string, error)
+	GetTokenForCustomerCluster(context.Context, *UserInfo, *kubermaticv1.Cluster) (string, error)
 
 	// IsCluster checks if cluster exist with the given name
 	IsCluster(clusterName string) bool

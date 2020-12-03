@@ -56,7 +56,7 @@ func CreateClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 			return nil, err
 		}
 
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -91,7 +91,7 @@ func CreateRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoin
 			return nil, err
 		}
 
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -269,7 +269,7 @@ func GetClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.End
 			return nil, err
 		}
 
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -296,7 +296,7 @@ func GetRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 			return nil, err
 		}
 
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -324,7 +324,7 @@ func DeleteClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.
 			return nil, err
 		}
 
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -356,7 +356,7 @@ func DeleteRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoin
 			return nil, err
 		}
 
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -468,7 +468,7 @@ func PatchRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.Endpoint
 			return nil, err
 		}
 
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -563,7 +563,7 @@ func PatchClusterRoleEndpoint(userInfoGetter provider.UserInfoGetter) endpoint.E
 			return nil, err
 		}
 
-		client, err := clusterProvider.GetClientForCustomerCluster(userInfo, cluster)
+		client, err := clusterProvider.GetClientForCustomerCluster(ctx, userInfo, cluster)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

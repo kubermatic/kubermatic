@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/semver"
@@ -78,7 +79,7 @@ func (s *kubevirtScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec
 	}
 }
 
-func (s *kubevirtScenario) NodeDeployments(num int, _ secrets) ([]apimodels.NodeDeployment, error) {
+func (s *kubevirtScenario) NodeDeployments(_ context.Context, num int, _ secrets) ([]apimodels.NodeDeployment, error) {
 	var sourceURL string
 
 	switch {

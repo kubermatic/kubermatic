@@ -503,7 +503,7 @@ type fakeUserClusterConnection struct {
 	fakeDynamicClient ctrlruntimeclient.Client
 }
 
-func (f *fakeUserClusterConnection) GetClient(_ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
+func (f *fakeUserClusterConnection) GetClient(_ context.Context, _ *kubermaticv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
 	return f.fakeDynamicClient, nil
 }
 

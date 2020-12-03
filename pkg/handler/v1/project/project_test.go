@@ -505,7 +505,7 @@ func TestListProjectMethod(t *testing.T) {
 
 			endpointFun := project.ListEndpoint(userInfoGetter, test.NewFakeProjectProvider(), test.NewFakePrivilegedProjectProvider(), projectMemberProvider, projectMemberProvider, userProvider, clusterProviderGetter, test.BuildSeeds())
 
-			ctx := context.WithValue(context.TODO(), middleware.UserCRContextKey, tc.ExistingAPIUser)
+			ctx := context.WithValue(context.Background(), middleware.UserCRContextKey, tc.ExistingAPIUser)
 
 			projectsRaw, err := endpointFun(ctx, project.ListReq{})
 			resultProjectList := make([]apiv1.Project, 0)
@@ -549,7 +549,7 @@ type fakeUserClusterConnection struct {
 	fakeDynamicClient ctrlruntimeclient.Client
 }
 
-func (f *fakeUserClusterConnection) GetClient(_ *kubermaticapiv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
+func (f *fakeUserClusterConnection) GetClient(_ context.Context, _ *kubermaticapiv1.Cluster, _ ...k8cuserclusterclient.ConfigOption) (ctrlruntimeclient.Client, error) {
 	return f.fakeDynamicClient, nil
 }
 

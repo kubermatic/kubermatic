@@ -1270,7 +1270,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/integration-tests:3-1
+      - image: quay.io/kubermatic/integration-tests:4-1
         command:
         - make
         args:
