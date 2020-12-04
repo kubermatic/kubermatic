@@ -90,7 +90,9 @@ type updatePresetStatusReq struct {
 	Provider string `json:"provider,omitempty"`
 	// in: body
 	// required: true
-	Body struct {Enabled bool `json:"enabled"`}
+	Body struct {
+		Enabled bool `json:"enabled"`
+	}
 }
 
 func DecodeUpdatePresetStatus(_ context.Context, r *http.Request) (interface{}, error) {
@@ -347,7 +349,7 @@ func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 		}
 
 		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
-		return presetsProvider.UpdatePreset( preset)
+		return presetsProvider.UpdatePreset(preset)
 	}
 }
 

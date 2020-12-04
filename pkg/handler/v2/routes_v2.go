@@ -33,8 +33,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
-	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/preset"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 )
 
 // RegisterV2 declares all router paths for v2
