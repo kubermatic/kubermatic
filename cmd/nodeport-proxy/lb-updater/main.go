@@ -64,7 +64,7 @@ func main() {
 	flag.BoolVar(&namespaced, "namespaced", false, "Whether this controller should only watch services in the lbNamespace")
 	flag.StringVar(&opts.ExposeAnnotationKey, "expose-annotation-key", envoymanager.DefaultExposeAnnotationKey, "The annotation key used to determine if a Service should be exposed")
 	flag.IntVar(&opts.EnvoySNIListenerPort, "envoy-sni-port", 0, "Port used for SNI entry point.")
-	flag.IntVar(&opts.EnvoyHTTP2ConnectListenerPort, "envoy-http2-connect-port", 0, "Port used for HTTP/2 CONNECT termination.")
+	flag.IntVar(&opts.EnvoyTunnelingListenerPort, "envoy-tunneling-port", 0, "Port used for HTTP/2 CONNECT termination.")
 	flag.Parse()
 
 	// setup signal handler
@@ -168,11 +168,11 @@ func (u *LBUpdater) syncLB(s string) error {
 			Protocol:   corev1.ProtocolTCP,
 		})
 	}
-	if u.opts.IsHTTP2ConnectEnabled() {
+	if u.opts.IsTunnelingEnabled() {
 		wantLBPorts = append(wantLBPorts, corev1.ServicePort{
-			Name:       "http2-connect-listener",
-			Port:       int32(u.opts.EnvoyHTTP2ConnectListenerPort),
-			TargetPort: intstr.FromInt(u.opts.EnvoyHTTP2ConnectListenerPort),
+			Name:       "tunneling-listener",
+			Port:       int32(u.opts.EnvoyTunnelingListenerPort),
+			TargetPort: intstr.FromInt(u.opts.EnvoyTunnelingListenerPort),
 			Protocol:   corev1.ProtocolTCP,
 		})
 	}
@@ -275,7 +275,7 @@ func setNodePortAndName(portToSet *corev1.ServicePort, lbPorts []corev1.ServiceP
 			return
 		}
 	}
-	if portToSet.Name != "healthz" && portToSet.Name != "sni-listener" && portToSet.Name != "http2-connect-listener" {
+	if portToSet.Name != "healthz" && portToSet.Name != "sni-listener" && portToSet.Name != "tunneling-listener" {
 		portToSet.Name = fmt.Sprintf("%s-%d", portToSet.Name, portToSet.Port)
 	}
 	// We must reset the NodePort, it is being abused to carry over the port of the target service

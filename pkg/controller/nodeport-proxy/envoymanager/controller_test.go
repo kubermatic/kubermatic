@@ -54,12 +54,12 @@ func TestSync(t *testing.T) {
 	// Used for SNI conflict test
 	timeRef := time.Date(2020, time.December, 0, 0, 0, 0, 0, time.UTC)
 	tests := []struct {
-		name                     string
-		resources                []runtime.Object
-		sniListenerPort          int
-		http2ConnectListenerPort int
-		expectedClusters         map[string]*envoyclusterv3.Cluster
-		expectedListener         map[string]*envoylistenerv3.Listener
+		name                  string
+		resources             []runtime.Object
+		sniListenerPort       int
+		tunnelingListenerPort int
+		expectedClusters      map[string]*envoyclusterv3.Cluster
+		expectedListener      map[string]*envoylistenerv3.Listener
 	}{
 		{
 			name: "2-ports-2-pods-named-and-non-named-ports",
@@ -265,11 +265,11 @@ func TestSync(t *testing.T) {
 			expectedListener: map[string]*envoylistenerv3.Listener{},
 		},
 		{
-			name: "http2-connect",
+			name: "tunneling",
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
-					WithAnnotation(DefaultExposeAnnotationKey, "HTTP2Connect").
+					WithAnnotation(DefaultExposeAnnotationKey, "Tunneling").
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
@@ -278,20 +278,20 @@ func TestSync(t *testing.T) {
 					WithReadyAddressIP("172.16.0.1").
 					DoneWithEndpointSubset().Build(),
 			},
-			http2ConnectListenerPort: 443,
+			tunnelingListenerPort: 443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
 				"test/my-service-https": makeCluster(t, "test/my-service-https", 8443, "172.16.0.1"),
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{
-				"http2connect_listener": makeHTTP2ConnectListener(t, 443, hostClusterName{Cluster: "test/my-service-https", Hostname: "my-service.test.svc.cluster.local:443"}),
+				"tunneling_listener": makeTunnelingListener(t, 443, hostClusterName{Cluster: "test/my-service-https", Hostname: "my-service.test.svc.cluster.local:443"}),
 			},
 		},
 		{
-			name: "both-sni-and-http2-connect",
+			name: "both-sni-and-tunneling",
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
-					WithAnnotation(DefaultExposeAnnotationKey, "SNI,HTTP2Connect").
+					WithAnnotation(DefaultExposeAnnotationKey, "SNI,Tunneling").
 					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com"}`).
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
@@ -301,14 +301,14 @@ func TestSync(t *testing.T) {
 					WithReadyAddressIP("172.16.0.1").
 					DoneWithEndpointSubset().Build(),
 			},
-			http2ConnectListenerPort: 8080,
-			sniListenerPort:          8443,
+			tunnelingListenerPort: 8080,
+			sniListenerPort:       8443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
 				"test/my-service-https": makeCluster(t, "test/my-service-https", 8443, "172.16.0.1"),
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{
-				"http2connect_listener": makeHTTP2ConnectListener(t, 8080, hostClusterName{Cluster: "test/my-service-https", Hostname: "my-service.test.svc.cluster.local:443"}),
-				"sni_listener":          makeSNIListener(t, 8443, hostClusterName{Cluster: "test/my-service-https", Hostname: "host.com"}),
+				"tunneling_listener": makeTunnelingListener(t, 8080, hostClusterName{Cluster: "test/my-service-https", Hostname: "my-service.test.svc.cluster.local:443"}),
+				"sni_listener":       makeSNIListener(t, 8443, hostClusterName{Cluster: "test/my-service-https", Hostname: "host.com"}),
 			},
 		},
 		{
@@ -316,7 +316,7 @@ func TestSync(t *testing.T) {
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
-					WithAnnotation(DefaultExposeAnnotationKey, "SNI,HTTP2Connect").
+					WithAnnotation(DefaultExposeAnnotationKey, "SNI,Tunneling").
 					WithAnnotation(PortHostMappingAnnotationKey, `{"http": "host.com"}`). // port http does not exist
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
@@ -326,13 +326,13 @@ func TestSync(t *testing.T) {
 					WithReadyAddressIP("172.16.0.1").
 					DoneWithEndpointSubset().Build(),
 			},
-			http2ConnectListenerPort: 8080,
-			sniListenerPort:          8443,
+			tunnelingListenerPort: 8080,
+			sniListenerPort:       8443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
 				"test/my-service-https": makeCluster(t, "test/my-service-https", 8443, "172.16.0.1"),
 			},
 			expectedListener: map[string]*envoylistenerv3.Listener{
-				"http2connect_listener": makeHTTP2ConnectListener(t, 8080, hostClusterName{Cluster: "test/my-service-https", Hostname: "my-service.test.svc.cluster.local:443"}),
+				"tunneling_listener": makeTunnelingListener(t, 8080, hostClusterName{Cluster: "test/my-service-https", Hostname: "my-service.test.svc.cluster.local:443"}),
 			},
 		},
 	}
@@ -346,10 +346,10 @@ func TestSync(t *testing.T) {
 				log,
 				client,
 				Options{
-					EnvoyNodeName:                 "node-name",
-					ExposeAnnotationKey:           DefaultExposeAnnotationKey,
-					EnvoySNIListenerPort:          test.sniListenerPort,
-					EnvoyHTTP2ConnectListenerPort: test.http2ConnectListenerPort,
+					EnvoyNodeName:              "node-name",
+					ExposeAnnotationKey:        DefaultExposeAnnotationKey,
+					EnvoySNIListenerPort:       test.sniListenerPort,
+					EnvoyTunnelingListenerPort: test.tunnelingListenerPort,
 				},
 			)
 
@@ -460,7 +460,7 @@ func makeSNIListener(t *testing.T, portValue uint32, hostClusterNames ...hostClu
 	return sb.makeSNIListener(fcs...)
 }
 
-func makeHTTP2ConnectListener(t *testing.T, portValue int, hostClusterNames ...hostClusterName) *envoylistenerv3.Listener {
+func makeTunnelingListener(t *testing.T, portValue int, hostClusterNames ...hostClusterName) *envoylistenerv3.Listener {
 	var vhs []*envoyroutev3.VirtualHost
 	for _, hostClusterName := range hostClusterNames {
 		vhs = append(vhs, &envoyroutev3.VirtualHost{
@@ -491,7 +491,7 @@ func makeHTTP2ConnectListener(t *testing.T, portValue int, hostClusterNames ...h
 		})
 	}
 	sb := &snapshotBuilder{}
-	sb.EnvoyHTTP2ConnectListenerPort = portValue
+	sb.EnvoyTunnelingListenerPort = portValue
 	sb.log = zaptest.NewLogger(t).Sugar()
 	return sb.makeTunnelingListener(vhs...)
 }

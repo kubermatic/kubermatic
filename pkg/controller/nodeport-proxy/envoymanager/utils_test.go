@@ -49,18 +49,18 @@ func TestExtractExposeType(t *testing.T) {
 			wantExposeTypes: NewExposeTypes(),
 		},
 		{
-			name:            "Both HTTP2 Connet and SNI",
-			svc:             makeService("", "HTTP2Connect, SNI"),
-			wantExposeTypes: NewExposeTypes(HTTP2ConnectType, SNIType),
+			name:            "Both Tunneling and SNI",
+			svc:             makeService("", "Tunneling, SNI"),
+			wantExposeTypes: NewExposeTypes(TunnelingType, SNIType),
 		},
 		{
-			name:            "Both HTTP2 Connet and SNI #2",
-			svc:             makeService("", "HTTP2Connect,SNI"),
-			wantExposeTypes: NewExposeTypes(HTTP2ConnectType, SNIType),
+			name:            "Both Tunneling and SNI #2",
+			svc:             makeService("", "Tunneling,SNI"),
+			wantExposeTypes: NewExposeTypes(TunnelingType, SNIType),
 		},
 		{
 			name:            "Malformed value",
-			svc:             makeService("", "HTTP2Connect SNI"),
+			svc:             makeService("", "Tunneling SNI"),
 			wantExposeTypes: NewExposeTypes(),
 		},
 		{

@@ -21,22 +21,17 @@ import (
 	"strings"
 )
 
-var AllExposeStrategies = NewExposeStrategiesSet(ExposeStrategyNodePort, ExposeStrategyLoadBalancer, ExposeStrategyTunneling)
+// AllExposeStrategies is a set containing all the ExposeStrategy.
+// TODO(irozzo) ExposeStrategyTunneling is not exposed yet as it is not fully
+// implemented.
+var AllExposeStrategies = NewExposeStrategiesSet(ExposeStrategyNodePort, ExposeStrategyLoadBalancer)
 
 // ExposeStrategyFromString returns the expose strategy which String
 // representation corresponds to the input string, and a bool saying whether a
 // match was found or not.
 func ExposeStrategyFromString(s string) (ExposeStrategy, bool) {
-	switch ExposeStrategy(s) {
-	case ExposeStrategyNodePort:
-		return ExposeStrategyNodePort, true
-	case ExposeStrategyLoadBalancer:
-		return ExposeStrategyLoadBalancer, true
-	case ExposeStrategyTunneling:
-		return ExposeStrategyTunneling, true
-	default:
-		return ExposeStrategyNodePort, false
-	}
+	es := ExposeStrategy(s)
+	return es, AllExposeStrategies.Has(es)
 }
 
 // String returns the string representation of the ExposeStrategy.
@@ -65,7 +60,7 @@ func (e ExposeStrategiesSet) Has(item ExposeStrategy) bool {
 // Has returns true if and only if item is contained in the set.
 func (e ExposeStrategiesSet) String() string {
 	es := make([]string, 0, len(e))
-	for k, _ := range e {
+	for k := range e {
 		es = append(es, string(k))
 	}
 	// can be easily optimized in terms of allocations by using a bytes buffer
