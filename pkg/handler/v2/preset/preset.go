@@ -180,13 +180,13 @@ func (l listProviderPresetsReq) matchesDatacenter(datacenter string) bool {
 }
 
 // Validate validates listProviderPresetsReq request
-func (r listProviderPresetsReq) Validate() error {
-	if len(r.ProviderName) == 0 {
+func (l listProviderPresetsReq) Validate() error {
+	if len(l.ProviderName) == 0 {
 		return fmt.Errorf("the provider name cannot be empty")
 	}
 
-	if !crdapiv1.IsProviderSupported(r.ProviderName) {
-		return fmt.Errorf("invalid provider name %s", r.ProviderName)
+	if !crdapiv1.IsProviderSupported(l.ProviderName) {
+		return fmt.Errorf("invalid provider name %s", l.ProviderName)
 	}
 
 	return nil
