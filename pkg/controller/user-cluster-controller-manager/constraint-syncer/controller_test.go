@@ -74,7 +74,7 @@ func TestReconcile(t *testing.T) {
 			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme),
 		},
 		{
-			name: "scenario 3: cleanup ct on user cluster when master ct is being terminated",
+			name: "scenario 2: cleanup gatekeeper constraint on user cluster when kubermatic constraint on seed cluster is being terminated",
 			namespacedName: types.NamespacedName{
 				Namespace: "namespace",
 				Name:      constraintName,
