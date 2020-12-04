@@ -13807,6 +13807,11 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "ExposeStrategy": {
+      "type": "string",
+      "title": "ExposeStrategy is the strategy to expose the cluster with.",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "ExternalDocumentation": {
       "type": "object",
       "title": "ExternalDocumentation allows referencing an external resource for extended documentation.",
@@ -16386,7 +16391,7 @@
           "x-go-name": "SeedDatacenters"
         },
         "expose_strategy": {
-          "$ref": "#/definitions/ServiceType"
+          "$ref": "#/definitions/ExposeStrategy"
         },
         "kubeconfig": {
           "$ref": "#/definitions/ObjectReference"
@@ -16437,7 +16442,7 @@
           "x-go-name": "SeedDatacenters"
         },
         "expose_strategy": {
-          "$ref": "#/definitions/ServiceType"
+          "$ref": "#/definitions/ExposeStrategy"
         },
         "kubeconfig": {
           "$ref": "#/definitions/ObjectReference"
@@ -16541,11 +16546,6 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
-    "ServiceType": {
-      "description": "Service Type string describes ingress methods for a service",
-      "type": "string",
-      "x-go-package": "k8s.io/api/core/v1"
     },
     "SettingSpec": {
       "type": "object",
