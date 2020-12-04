@@ -23,9 +23,6 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -35,6 +32,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -137,7 +136,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			// get match
-			matchMap, err := UnmarshallToJSONMap(tc.expectedConstraint.Spec.Match)
+			matchMap, err := unmarshallToJSONMap(tc.expectedConstraint.Spec.Match)
 			if err != nil {
 				t.Fatalf("failed to unmarshall expected match: %v", err)
 			}

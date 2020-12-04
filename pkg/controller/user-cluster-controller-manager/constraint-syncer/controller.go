@@ -45,7 +45,6 @@ import (
 )
 
 const (
-	// This controller syncs kubermatic constraints to the gatekeeper constraints on the user cluster
 	controllerName       = "constraint_controller"
 	constraintAPIVersion = "constraints.gatekeeper.sh/v1beta1"
 	spec                 = "spec"
@@ -144,7 +143,7 @@ func (r *reconciler) reconcile(constraint *kubermaticv1.Constraint) error {
 	}
 
 	constraintCreatorGetters := []reconciling.NamedUnstructuredCreatorGetter{
-		ConstraintCreatorGetter(constraint),
+		constraintCreatorGetter(constraint),
 	}
 
 	if err := reconciling.ReconcileUnstructureds(r.ctx, constraintCreatorGetters, "", r.userClient); err != nil {
@@ -154,8 +153,8 @@ func (r *reconciler) reconcile(constraint *kubermaticv1.Constraint) error {
 	return nil
 }
 
-// ConstraintCreatorGetter returns the unstructured gatekeeper Constraint object.
-func ConstraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.NamedUnstructuredCreatorGetter {
+// constraintCreatorGetter returns the unstructured gatekeeper Constraint object.
+func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.NamedUnstructuredCreatorGetter {
 	return func() (string, string, string, reconciling.UnstructuredCreator) {
 		return constraint.Name, constraint.Spec.ConstraintType, constraintAPIVersion, func(u *unstructured.Unstructured) (*unstructured.Unstructured, error) {
 			var params map[string]interface{}
@@ -171,7 +170,7 @@ func ConstraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 			}
 
 			// set Match
-			matchMap, err := UnmarshallToJSONMap(&constraint.Spec.Match)
+			matchMap, err := unmarshallToJSONMap(&constraint.Spec.Match)
 			if err != nil {
 				return nil, err
 			}
@@ -186,7 +185,7 @@ func ConstraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 	}
 }
 
-func UnmarshallToJSONMap(object interface{}) (map[string]interface{}, error) {
+func unmarshallToJSONMap(object interface{}) (map[string]interface{}, error) {
 
 	raw, err := json.Marshal(object)
 	if err != nil {
