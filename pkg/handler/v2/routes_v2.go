@@ -2944,7 +2944,7 @@ func (r Routing) listAzureSubnets() http.Handler {
 
 // swagger:route GET /api/v2/presets preset listPresetsV2
 //
-//    List presets
+//     Lists presets
 //
 //
 //     Produces:
@@ -2952,7 +2952,7 @@ func (r Routing) listAzureSubnets() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []Preset
+//       200: PresetList
 //       401: empty
 //       403: empty
 func (r Routing) listPresets() http.Handler {
@@ -2969,7 +2969,7 @@ func (r Routing) listPresets() http.Handler {
 
 // swagger:route PUT /api/v2/presets/{preset_name}/status preset updatePresetStatusV2
 //
-//    Updates the status of a preset. It can enable or disable it, so that it won't be listed by the list endpoints.
+//     Updates the status of a preset. It can enable or disable it, so that it won't be listed by the list endpoints.
 //
 //
 //     Consumes:
@@ -2997,7 +2997,7 @@ func (r Routing) updatePresetStatus() http.Handler {
 
 // swagger:route GET /api/v2/providers/{provider_name}/presets preset listProviderPresetsV2
 //
-//    List presets for the provider
+//     Lists presets for the provider
 //
 //
 //     Produces:
@@ -3005,7 +3005,7 @@ func (r Routing) updatePresetStatus() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []Preset
+//       200: PresetList
 //       401: empty
 //       403: empty
 func (r Routing) listProviderPresets() http.Handler {
@@ -3022,7 +3022,7 @@ func (r Routing) listProviderPresets() http.Handler {
 
 // swagger:route POST /api/v2/providers/{provider_name}/presets preset createPresetV2
 //
-//    Create the preset
+//     Creates the preset
 //
 //     Consumes:
 //	   - application/json
@@ -3049,7 +3049,7 @@ func (r Routing) createPreset() http.Handler {
 
 // swagger:route PUT /api/v2/providers/{provider_name}/presets preset updatePresetV2
 //
-//    Updates the given preset using JSON Merge Patch method (https://tools.ietf.org/html/rfc7396).
+//	   Updates provider preset
 //
 //     Consumes:
 //	   - application/json
