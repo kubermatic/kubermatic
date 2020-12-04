@@ -873,7 +873,7 @@ func TestUpdatePreset(t *testing.T) {
 				Spec: kubermaticv1.PresetSpec{
 					Digitalocean: &kubermaticv1.Digitalocean{
 						PresetProvider: kubermaticv1.PresetProvider{Enabled: boolPtr(false)},
-						Token: "updated",
+						Token:          "updated",
 					},
 				},
 			},
@@ -903,7 +903,7 @@ func TestUpdatePreset(t *testing.T) {
 				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Alibaba: &kubermaticv1.Alibaba{
-						AccessKeyID: "test",
+						AccessKeyID:     "test",
 						AccessKeySecret: "test",
 					},
 				},
@@ -913,7 +913,7 @@ func TestUpdatePreset(t *testing.T) {
 				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Alibaba: &kubermaticv1.Alibaba{
-						AccessKeyID: "updated",
+						AccessKeyID:     "updated",
 						AccessKeySecret: "updated",
 					},
 				},
@@ -949,12 +949,12 @@ func TestUpdatePreset(t *testing.T) {
 						Token: "test",
 					},
 					Openstack: &kubermaticv1.Openstack{
-						Username: "test",
-						Password: "test",
-						TenantID: "test",
-						Domain: "test",
+						Username:       "test",
+						Password:       "test",
+						TenantID:       "test",
+						Domain:         "test",
 						FloatingIPPool: "test",
-						RouterID: "test",
+						RouterID:       "test",
 					},
 				},
 			},
@@ -969,7 +969,7 @@ func TestUpdatePreset(t *testing.T) {
 						Username: "updated",
 						Password: "updated",
 						TenantID: "updated",
-						Domain: "updated",
+						Domain:   "updated",
 					},
 				},
 			},
@@ -1004,12 +1004,12 @@ func TestUpdatePreset(t *testing.T) {
 				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
 				Spec: kubermaticv1.PresetSpec{
 					Openstack: &kubermaticv1.Openstack{
-						Username: "test",
-						Password: "test",
-						TenantID: "test",
-						Domain: "test",
+						Username:       "test",
+						Password:       "test",
+						TenantID:       "test",
+						Domain:         "test",
 						FloatingIPPool: "test",
-						RouterID: "test",
+						RouterID:       "test",
 					},
 				},
 			},

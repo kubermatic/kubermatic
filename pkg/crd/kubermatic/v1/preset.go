@@ -24,8 +24,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-
-
 type ProviderType string
 
 const (
@@ -168,7 +166,7 @@ func (s PresetSpec) Validate(providerType ProviderType) error {
 
 	validateableType := reflect.TypeOf(new(Validateable)).Elem()
 	if !providerField.Type().Implements(validateableType) {
-		return fmt.Errorf("provider %s does not implement Validateable interface\n", providerField.Type().Name())
+		return fmt.Errorf("provider %s does not implement Validateable interface", providerField.Type().Name())
 	}
 
 	validateable := providerField.Interface().(Validateable)
@@ -217,8 +215,8 @@ type Digitalocean struct {
 	Token string `json:"token"`
 }
 
-func (self Digitalocean) IsValid() bool {
-	return len(self.Token) > 0
+func (s Digitalocean) IsValid() bool {
+	return len(s.Token) > 0
 }
 
 type Hetzner struct {
@@ -228,8 +226,8 @@ type Hetzner struct {
 	Token string `json:"token"`
 }
 
-func (self Hetzner) IsValid() bool {
-	return len(self.Token) > 0
+func (s Hetzner) IsValid() bool {
+	return len(s.Token) > 0
 }
 
 type Azure struct {
@@ -247,11 +245,11 @@ type Azure struct {
 	SecurityGroup  string `json:"securityGroup,omitempty"`
 }
 
-func (self Azure) IsValid() bool {
-	return len(self.TenantID) > 0 &&
-		len(self.SubscriptionID) > 0 &&
-		len(self.ClientID) > 0 &&
-		len(self.ClientSecret) > 0
+func (s Azure) IsValid() bool {
+	return len(s.TenantID) > 0 &&
+		len(s.SubscriptionID) > 0 &&
+		len(s.ClientID) > 0 &&
+		len(s.ClientSecret) > 0
 }
 
 type VSphere struct {
@@ -265,9 +263,9 @@ type VSphere struct {
 	DatastoreCluster string `json:"datastoreCluster,omitempty"`
 }
 
-func (self VSphere) IsValid() bool {
-	return len(self.Username) > 0 &&
-		len(self.Password) > 0
+func (s VSphere) IsValid() bool {
+	return len(s.Username) > 0 &&
+		len(s.Password) > 0
 }
 
 type AWS struct {
@@ -283,9 +281,9 @@ type AWS struct {
 	ControlPlaneRoleARN string `json:"roleARN,omitempty"`
 }
 
-func (self AWS) IsValid() bool {
-	return len(self.AccessKeyID) > 0 &&
-		len(self.SecretAccessKey) > 0
+func (s AWS) IsValid() bool {
+	return len(s.AccessKeyID) > 0 &&
+		len(s.SecretAccessKey) > 0
 }
 
 type Openstack struct {
@@ -304,11 +302,11 @@ type Openstack struct {
 	SubnetID       string `json:"subnetID,omitempty"`
 }
 
-func (self Openstack) IsValid() bool {
-	return len(self.Username) > 0 &&
-		len(self.Password) > 0 &&
-		(len(self.Tenant) > 0 || len(self.TenantID) > 0) &&
-		len(self.Domain) > 0
+func (s Openstack) IsValid() bool {
+	return len(s.Username) > 0 &&
+		len(s.Password) > 0 &&
+		(len(s.Tenant) > 0 || len(s.TenantID) > 0) &&
+		len(s.Domain) > 0
 }
 
 type Packet struct {
@@ -320,9 +318,9 @@ type Packet struct {
 	BillingCycle string `json:"billingCycle,omitempty"`
 }
 
-func (self Packet) IsValid() bool {
-	return len(self.APIKey) > 0 &&
-		len(self.ProjectID) > 0
+func (s Packet) IsValid() bool {
+	return len(s.APIKey) > 0 &&
+		len(s.ProjectID) > 0
 }
 
 type GCP struct {
@@ -334,8 +332,8 @@ type GCP struct {
 	Subnetwork string `json:"subnetwork,omitempty"`
 }
 
-func (self GCP) IsValid() bool {
-	return len(self.ServiceAccount) > 0
+func (s GCP) IsValid() bool {
+	return len(s.ServiceAccount) > 0
 }
 
 type Fake struct {
@@ -344,8 +342,8 @@ type Fake struct {
 	Token string `json:"token"`
 }
 
-func (self Fake) IsValid() bool {
-	return len(self.Token) > 0
+func (s Fake) IsValid() bool {
+	return len(s.Token) > 0
 }
 
 type Kubevirt struct {
@@ -354,8 +352,8 @@ type Kubevirt struct {
 	Kubeconfig string `json:"kubeconfig"`
 }
 
-func (self Kubevirt) IsValid() bool {
-	return len(self.Kubeconfig) > 0
+func (s Kubevirt) IsValid() bool {
+	return len(s.Kubeconfig) > 0
 }
 
 type Alibaba struct {
@@ -365,9 +363,9 @@ type Alibaba struct {
 	AccessKeySecret string `json:"accessKeySecret"`
 }
 
-func (self Alibaba) IsValid() bool {
-	return len(self.AccessKeyID) > 0 &&
-		len(self.AccessKeySecret) > 0
+func (s Alibaba) IsValid() bool {
+	return len(s.AccessKeyID) > 0 &&
+		len(s.AccessKeySecret) > 0
 }
 
 type Anexia struct {
@@ -377,6 +375,6 @@ type Anexia struct {
 	Token string `json:"token"`
 }
 
-func (self Anexia) IsValid() bool {
-	return len(self.Token) > 0
+func (s Anexia) IsValid() bool {
+	return len(s.Token) > 0
 }
