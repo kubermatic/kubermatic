@@ -24,7 +24,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 
 type ProviderType string
 
@@ -69,6 +69,8 @@ func IsProviderSupported(name string) bool {
 
 	return false
 }
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 // PresetList is the type representing a PresetList
 type PresetList struct {
