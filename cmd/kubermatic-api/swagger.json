@@ -8306,6 +8306,67 @@
         }
       }
     },
+    "/api/v2/presets": {
+      "get": {
+        "description": "Lists presets",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "operationId": "listPresetsV2",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/PresetList"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/presets/{preset_name}/status": {
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "summary": "Updates the status of a preset. It can enable or disable it, so that it won't be listed by the list endpoints.",
+        "operationId": "updatePresetStatusV2",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters": {
       "get": {
         "produces": [
@@ -12882,9 +12943,140 @@
           }
         }
       }
+    },
+    "/api/v2/providers/{provider_name}/presets": {
+      "get": {
+        "description": "Lists presets for the provider",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "operationId": "listProviderPresetsV2",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/PresetList"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "put": {
+        "description": "Updates provider preset",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "operationId": "updatePresetV2",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/string"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates the preset",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "preset"
+        ],
+        "operationId": "createPresetV2",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/string"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
+    "AWS": {
+      "type": "object",
+      "properties": {
+        "accessKeyId": {
+          "type": "string",
+          "x-go-name": "AccessKeyID"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "instanceProfileName": {
+          "type": "string",
+          "x-go-name": "InstanceProfileName"
+        },
+        "roleARN": {
+          "type": "string",
+          "x-go-name": "ControlPlaneRoleARN"
+        },
+        "routeTableId": {
+          "type": "string",
+          "x-go-name": "RouteTableID"
+        },
+        "secretAccessKey": {
+          "type": "string",
+          "x-go-name": "SecretAccessKey"
+        },
+        "securityGroupID": {
+          "type": "string",
+          "x-go-name": "SecurityGroupID"
+        },
+        "vpcId": {
+          "type": "string",
+          "x-go-name": "VPCID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "AWSCloudSpec": {
       "type": "object",
       "title": "AWSCloudSpec specifies access data to Amazon Web Services.",
@@ -13459,6 +13651,28 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "Alibaba": {
+      "type": "object",
+      "properties": {
+        "accessKeyId": {
+          "type": "string",
+          "x-go-name": "AccessKeyID"
+        },
+        "accessKeySecret": {
+          "type": "string",
+          "x-go-name": "AccessKeySecret"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "AlibabaCloudSpec": {
       "type": "object",
       "title": "AlibabaCloudSpec specifies the access data to Alibaba.",
@@ -13563,6 +13777,25 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "Anexia": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "token": {
+          "description": "Token is used to authenticate with the Anexia API.",
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "AnexiaCloudSpec": {
       "type": "object",
       "title": "AnexiaCloudSpec specifies the access data to Anexia.",
@@ -13625,6 +13858,56 @@
         "enabled": {
           "type": "boolean",
           "x-go-name": "Enabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "Azure": {
+      "type": "object",
+      "properties": {
+        "clientId": {
+          "type": "string",
+          "x-go-name": "ClientID"
+        },
+        "clientSecret": {
+          "type": "string",
+          "x-go-name": "ClientSecret"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "resourceGroup": {
+          "type": "string",
+          "x-go-name": "ResourceGroup"
+        },
+        "routeTable": {
+          "type": "string",
+          "x-go-name": "RouteTableName"
+        },
+        "securityGroup": {
+          "type": "string",
+          "x-go-name": "SecurityGroup"
+        },
+        "subnet": {
+          "type": "string",
+          "x-go-name": "SubnetName"
+        },
+        "subscriptionId": {
+          "type": "string",
+          "x-go-name": "SubscriptionID"
+        },
+        "tenantId": {
+          "type": "string",
+          "x-go-name": "TenantID"
+        },
+        "vnet": {
+          "type": "string",
+          "x-go-name": "VNetName"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -14845,6 +15128,25 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
+    "Digitalocean": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "token": {
+          "description": "Token is used to authenticate with the DigitalOcean API.",
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "DigitaloceanCloudSpec": {
       "type": "object",
       "title": "DigitaloceanCloudSpec specifies access data to DigitalOcean.",
@@ -15074,6 +15376,24 @@
       },
       "x-go-package": "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
     },
+    "Fake": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "token": {
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "FakeCloudSpec": {
       "type": "object",
       "title": "FakeCloudSpec specifies access data for a fake cloud.",
@@ -15084,6 +15404,12 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "FieldsV1": {
+      "description": "Each key is either a '.' representing the field itself, and will always map to an empty set,\nor a string representing a sub-field or item. The string will follow one of these four formats:\n'f:\u003cname\u003e', where \u003cname\u003e is the name of a field in a struct, or key in a map\n'v:\u003cvalue\u003e', where \u003cvalue\u003e is the exact json formatted value of a list item\n'i:\u003cindex\u003e', where \u003cindex\u003e is position of a item in a list\n'k:\u003ckeys\u003e', where \u003ckeys\u003e is a map of  a list item's key fields to their unique values\nIf a key maps to an empty Fields value, the field that key represents is part of the set.\n\nThe exact format is defined in sigs.k8s.io/structured-merge-diff\n+protobuf.options.(gogoproto.goproto_stringer)=false",
+      "type": "object",
+      "title": "FieldsV1 stores a set of fields in a data structure like a Trie, in JSON format.",
+      "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
     },
     "FlatcarSpec": {
       "description": "FlatcarSpec contains Flatcar Linux specific settings",
@@ -15096,6 +15422,32 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "GCP": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "network": {
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "serviceAccount": {
+          "type": "string",
+          "x-go-name": "ServiceAccount"
+        },
+        "subnetwork": {
+          "type": "string",
+          "x-go-name": "Subnetwork"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "GCPCloudSpec": {
       "type": "object",
@@ -15453,6 +15805,25 @@
     "HealthStatus": {
       "type": "integer",
       "format": "int64",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "Hetzner": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "token": {
+          "description": "Token is used to authenticate with the Hetzner API.",
+          "type": "string",
+          "x-go-name": "Token"
+        }
+      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "HetznerCloudSpec": {
@@ -15874,6 +16245,24 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "Kubevirt": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "kubeconfig": {
+          "type": "string",
+          "x-go-name": "Kubeconfig"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "KubevirtCloudSpec": {
       "type": "object",
       "title": "KubevirtCloudSpec specifies the access data to Kubevirt.",
@@ -16055,6 +16444,42 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "ManagedFieldsEntry": {
+      "description": "ManagedFieldsEntry is a workflow-id, a FieldSet and the group version of the resource\nthat the fieldset applies to.",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the version of this resource that this field set\napplies to. The format is \"group/version\" just like the top-level\nAPIVersion field. It is necessary to track the version of a field\nset because it cannot be automatically converted.",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "fieldsType": {
+          "description": "FieldsType is the discriminator for the different fields format and version.\nThere is currently only one possible value: \"FieldsV1\"",
+          "type": "string",
+          "x-go-name": "FieldsType"
+        },
+        "fieldsV1": {
+          "$ref": "#/definitions/FieldsV1"
+        },
+        "manager": {
+          "description": "Manager is an identifier of the workflow managing these fields.",
+          "type": "string",
+          "x-go-name": "Manager"
+        },
+        "operation": {
+          "$ref": "#/definitions/ManagedFieldsOperationType"
+        },
+        "time": {
+          "$ref": "#/definitions/Time"
+        }
+      },
+      "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
+    },
+    "ManagedFieldsOperationType": {
+      "type": "string",
+      "title": "ManagedFieldsOperationType is the type of operation which lead to a ManagedFieldsEntry being created.",
+      "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
     },
     "MasterVersion": {
       "description": "MasterVersion describes a version of the master components",
@@ -16723,6 +17148,60 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
+    "Openstack": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "domain": {
+          "type": "string",
+          "x-go-name": "Domain"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "floatingIpPool": {
+          "type": "string",
+          "x-go-name": "FloatingIPPool"
+        },
+        "network": {
+          "type": "string",
+          "x-go-name": "Network"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "routerID": {
+          "type": "string",
+          "x-go-name": "RouterID"
+        },
+        "securityGroups": {
+          "type": "string",
+          "x-go-name": "SecurityGroups"
+        },
+        "subnetID": {
+          "type": "string",
+          "x-go-name": "SubnetID"
+        },
+        "tenant": {
+          "type": "string",
+          "x-go-name": "Tenant"
+        },
+        "tenantID": {
+          "type": "string",
+          "x-go-name": "TenantID"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "OpenstackAvailabilityZone": {
       "type": "object",
       "title": "OpenstackAvailabilityZone is the object representing a openstack availability zone.",
@@ -17004,6 +17483,67 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "OwnerReference": {
+      "description": "OwnerReference contains enough information to let you identify an owning\nobject. An owning object must be in the same namespace as the dependent, or\nbe cluster-scoped, so there is no namespace field.",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "API version of the referent.",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "blockOwnerDeletion": {
+          "description": "If true, AND if the owner has the \"foregroundDeletion\" finalizer, then\nthe owner cannot be deleted from the key-value store until this\nreference is removed.\nDefaults to false.\nTo set this field, a user needs \"delete\" permission of the owner,\notherwise 422 (Unprocessable Entity) will be returned.\n+optional",
+          "type": "boolean",
+          "x-go-name": "BlockOwnerDeletion"
+        },
+        "controller": {
+          "description": "If true, this reference points to the managing controller.\n+optional",
+          "type": "boolean",
+          "x-go-name": "Controller"
+        },
+        "kind": {
+          "description": "Kind of the referent.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "name": {
+          "description": "Name of the referent.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#names",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "uid": {
+          "$ref": "#/definitions/UID"
+        }
+      },
+      "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
+    },
+    "Packet": {
+      "type": "object",
+      "properties": {
+        "apiKey": {
+          "type": "string",
+          "x-go-name": "APIKey"
+        },
+        "billingCycle": {
+          "type": "string",
+          "x-go-name": "BillingCycle"
+        },
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "projectId": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "PacketCPU": {
       "type": "object",
       "title": "PacketCPU represents an array of Packet CPUs. It is a part of PacketSize.",
@@ -17228,6 +17768,168 @@
         }
       },
       "x-go-package": "k8s.io/api/rbac/v1"
+    },
+    "Preset": {
+      "description": "Preset is the type representing a Preset",
+      "type": "object",
+      "properties": {
+        "annotations": {
+          "description": "Annotations is an unstructured key value map stored with a resource that may be\nset by external tools to store and retrieve arbitrary metadata. They are not\nqueryable and should be preserved when modifying objects.\nMore info: http://kubernetes.io/docs/user-guide/annotations\n+optional",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Annotations"
+        },
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object.\nServers should convert recognized schemas to the latest internal value, and\nmay reject unrecognized values.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources\n+optional",
+          "type": "string",
+          "x-go-name": "APIVersion"
+        },
+        "clusterName": {
+          "description": "The name of the cluster which the object belongs to.\nThis is used to distinguish resources with same name and namespace in different clusters.\nThis field is not set anywhere right now and apiserver is going to ignore it if set in create or update request.\n+optional",
+          "type": "string",
+          "x-go-name": "ClusterName"
+        },
+        "creationTimestamp": {
+          "$ref": "#/definitions/Time"
+        },
+        "deletionGracePeriodSeconds": {
+          "description": "Number of seconds allowed for this object to gracefully terminate before\nit will be removed from the system. Only set when deletionTimestamp is also set.\nMay only be shortened.\nRead-only.\n+optional",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "DeletionGracePeriodSeconds"
+        },
+        "deletionTimestamp": {
+          "$ref": "#/definitions/Time"
+        },
+        "finalizers": {
+          "description": "Must be empty before the object is deleted from the registry. Each entry\nis an identifier for the responsible component that will remove the entry\nfrom the list. If the deletionTimestamp of the object is non-nil, entries\nin this list can only be removed.\nFinalizers may be processed and removed in any order.  Order is NOT enforced\nbecause it introduces significant risk of stuck finalizers.\nfinalizers is a shared field, any actor with permission can reorder it.\nIf the finalizer list is processed in order, then this can lead to a situation\nin which the component responsible for the first finalizer in the list is\nwaiting for a signal (field value, external system, or other) produced by a\ncomponent responsible for a finalizer later in the list, resulting in a deadlock.\nWithout enforced ordering finalizers are free to order amongst themselves and\nare not vulnerable to ordering changes in the list.\n+optional\n+patchStrategy=merge",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Finalizers"
+        },
+        "generateName": {
+          "description": "GenerateName is an optional prefix, used by the server, to generate a unique\nname ONLY IF the Name field has not been provided.\nIf this field is used, the name returned to the client will be different\nthan the name passed. This value will also be combined with a unique suffix.\nThe provided value has the same validation rules as the Name field,\nand may be truncated by the length of the suffix required to make the value\nunique on the server.\n\nIf this field is specified and the generated name exists, the server will\nNOT return a 409 - instead, it will either return 201 Created or 500 with Reason\nServerTimeout indicating a unique name could not be found in the time allotted, and the client\nshould retry (optionally after the time indicated in the Retry-After header).\n\nApplied only if Name is not specified.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#idempotency\n+optional",
+          "type": "string",
+          "x-go-name": "GenerateName"
+        },
+        "generation": {
+          "description": "A sequence number representing a specific generation of the desired state.\nPopulated by the system. Read-only.\n+optional",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Generation"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents.\nServers may infer this from the endpoint the client submits requests to.\nCannot be updated.\nIn CamelCase.\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds\n+optional",
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "labels": {
+          "description": "Map of string keys and values that can be used to organize and categorize\n(scope and select) objects. May match selectors of replication controllers\nand services.\nMore info: http://kubernetes.io/docs/user-guide/labels\n+optional",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
+        "managedFields": {
+          "description": "ManagedFields maps workflow-id and version to the set of fields\nthat are managed by that workflow. This is mostly for internal\nhousekeeping, and users typically shouldn't need to set or\nunderstand this field. A workflow can be the user's name, a\ncontroller's name, or the name of a specific apply path like\n\"ci-cd\". The set of fields is always in the version that the\nworkflow used when modifying the object.\n\n+optional",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ManagedFieldsEntry"
+          },
+          "x-go-name": "ManagedFields"
+        },
+        "name": {
+          "description": "Name must be unique within a namespace. Is required when creating resources, although\nsome resources may allow a client to request the generation of an appropriate name\nautomatically. Name is primarily intended for creation idempotence and configuration\ndefinition.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/identifiers#names\n+optional",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "namespace": {
+          "description": "Namespace defines the space within which each name must be unique. An empty namespace is\nequivalent to the \"default\" namespace, but \"default\" is the canonical representation.\nNot all objects are required to be scoped to a namespace - the value of this field for\nthose objects will be empty.\n\nMust be a DNS_LABEL.\nCannot be updated.\nMore info: http://kubernetes.io/docs/user-guide/namespaces\n+optional",
+          "type": "string",
+          "x-go-name": "Namespace"
+        },
+        "ownerReferences": {
+          "description": "List of objects depended by this object. If ALL objects in the list have\nbeen deleted, this object will be garbage collected. If this object is managed by a controller,\nthen an entry in this list will point to this controller, with the controller field set to true.\nThere cannot be more than one managing controller.\n+optional\n+patchMergeKey=uid\n+patchStrategy=merge",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OwnerReference"
+          },
+          "x-go-name": "OwnerReferences"
+        },
+        "resourceVersion": {
+          "description": "An opaque value that represents the internal version of this object that can\nbe used by clients to determine when objects have changed. May be used for optimistic\nconcurrency, change detection, and the watch operation on a resource or set of resources.\nClients must treat these values as opaque and passed unmodified back to the server.\nThey may only be valid for a particular resource or set of resources.\n\nPopulated by the system.\nRead-only.\nValue must be treated as opaque by clients and .\nMore info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#concurrency-control-and-consistency\n+optional",
+          "type": "string",
+          "x-go-name": "ResourceVersion"
+        },
+        "selfLink": {
+          "description": "SelfLink is a URL representing this object.\nPopulated by the system.\nRead-only.\n\nDEPRECATED\nKubernetes will stop propagating this field in 1.20 release and the field is planned\nto be removed in 1.21 release.\n+optional",
+          "type": "string",
+          "x-go-name": "SelfLink"
+        },
+        "spec": {
+          "$ref": "#/definitions/PresetSpec"
+        },
+        "uid": {
+          "$ref": "#/definitions/UID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "PresetSpec": {
+      "description": "Presets specifies default presets for supported providers",
+      "type": "object",
+      "properties": {
+        "alibaba": {
+          "$ref": "#/definitions/Alibaba"
+        },
+        "anexia": {
+          "$ref": "#/definitions/Anexia"
+        },
+        "aws": {
+          "$ref": "#/definitions/AWS"
+        },
+        "azure": {
+          "$ref": "#/definitions/Azure"
+        },
+        "digitalocean": {
+          "$ref": "#/definitions/Digitalocean"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "fake": {
+          "$ref": "#/definitions/Fake"
+        },
+        "gcp": {
+          "$ref": "#/definitions/GCP"
+        },
+        "hetzner": {
+          "$ref": "#/definitions/Hetzner"
+        },
+        "kubevirt": {
+          "$ref": "#/definitions/Kubevirt"
+        },
+        "openstack": {
+          "$ref": "#/definitions/Openstack"
+        },
+        "packet": {
+          "$ref": "#/definitions/Packet"
+        },
+        "requiredEmailDomain": {
+          "type": "string",
+          "x-go-name": "RequiredEmailDomain"
+        },
+        "vsphere": {
+          "$ref": "#/definitions/VSphere"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "Project": {
       "description": "Project is a top-level container for a set of resources",
@@ -18149,6 +18851,40 @@
         "selectedTheme": {
           "type": "string",
           "x-go-name": "SelectedTheme"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "VSphere": {
+      "type": "object",
+      "properties": {
+        "datacenter": {
+          "type": "string",
+          "x-go-name": "Datacenter"
+        },
+        "datastore": {
+          "type": "string",
+          "x-go-name": "Datastore"
+        },
+        "datastoreCluster": {
+          "type": "string",
+          "x-go-name": "DatastoreCluster"
+        },
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "password": {
+          "type": "string",
+          "x-go-name": "Password"
+        },
+        "username": {
+          "type": "string",
+          "x-go-name": "Username"
+        },
+        "vmNetName": {
+          "type": "string",
+          "x-go-name": "VMNetName"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
