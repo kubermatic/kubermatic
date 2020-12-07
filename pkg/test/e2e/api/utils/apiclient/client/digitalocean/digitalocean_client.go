@@ -29,6 +29,8 @@ type ClientService interface {
 
 	ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesNoCredentialsOK, error)
 
+	ListDigitaloceanSizesNoCredentialsV2(params *ListDigitaloceanSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesNoCredentialsV2OK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -97,6 +99,40 @@ func (a *Client) ListDigitaloceanSizesNoCredentials(params *ListDigitaloceanSize
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListDigitaloceanSizesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListDigitaloceanSizesNoCredentialsV2 Lists sizes from digitalocean
+*/
+func (a *Client) ListDigitaloceanSizesNoCredentialsV2(params *ListDigitaloceanSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListDigitaloceanSizesNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListDigitaloceanSizesNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listDigitaloceanSizesNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/digitalocean/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListDigitaloceanSizesNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListDigitaloceanSizesNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListDigitaloceanSizesNoCredentialsV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
