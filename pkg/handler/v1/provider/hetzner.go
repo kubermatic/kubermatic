@@ -20,50 +20,19 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"regexp"
 
 	"github.com/go-kit/kit/endpoint"
-	"github.com/hetznercloud/hcloud-go/hcloud"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
-	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
-
-var reStandardSize = regexp.MustCompile("(^cx)")
-var reDedicatedSize = regexp.MustCompile("(^ccx)")
 
 func HetznerSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(HetznerSizesNoCredentialsReq)
-		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-
-		cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
-		if err != nil {
-			return nil, err
-		}
-
-		if cluster.Spec.Cloud.Hetzner == nil {
-			return nil, errors.NewNotFound("cloud spec for ", req.ClusterID)
-		}
-
-		assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
-		if !ok {
-			return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
-		}
-
-		secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
-		hetznerToken, err := hetzner.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector)
-		if err != nil {
-			return nil, err
-		}
-
-		return hetznerSize(ctx, hetznerToken)
+		return providercommon.HetznerSizeWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
 	}
 }
 
@@ -85,45 +54,8 @@ func HetznerSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter
 				token = credentials.Token
 			}
 		}
-		return hetznerSize(ctx, token)
+		return providercommon.HetznerSize(ctx, token)
 	}
-}
-
-func hetznerSize(ctx context.Context, token string) (apiv1.HetznerSizeList, error) {
-	client := hcloud.NewClient(hcloud.WithToken(token))
-
-	listOptions := hcloud.ServerTypeListOpts{
-		ListOpts: hcloud.ListOpts{
-			Page:    1,
-			PerPage: 1000,
-		},
-	}
-
-	sizes, _, err := client.ServerType.List(ctx, listOptions)
-	if err != nil {
-		return apiv1.HetznerSizeList{}, fmt.Errorf("failed to list sizes: %v", err)
-	}
-
-	sizeList := apiv1.HetznerSizeList{}
-
-	for _, size := range sizes {
-		s := apiv1.HetznerSize{
-			ID:          size.ID,
-			Name:        size.Name,
-			Description: size.Description,
-			Cores:       size.Cores,
-			Memory:      size.Memory,
-			Disk:        size.Disk,
-		}
-		switch {
-		case reStandardSize.MatchString(size.Name):
-			sizeList.Standard = append(sizeList.Standard, s)
-		case reDedicatedSize.MatchString(size.Name):
-			sizeList.Dedicated = append(sizeList.Dedicated, s)
-		}
-	}
-
-	return sizeList, nil
 }
 
 // HetznerSizesNoCredentialsReq represent a request for hetzner sizes EP
