@@ -69,6 +69,17 @@ func RoleCreator() (string, reconciling.RoleCreator) {
 				},
 				Verbs: []string{"update"},
 			},
+			{
+				APIGroups: []string{"kubermatic.k8s.io"},
+				Resources: []string{"constraints"},
+				Verbs: []string{
+					"get",
+					"list",
+					"watch",
+					"patch",
+					"update",
+				},
+			},
 		}
 		return r, nil
 	}

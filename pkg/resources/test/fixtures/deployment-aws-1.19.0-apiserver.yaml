@@ -328,7 +328,11 @@ spec:
       - command:
         - /bin/sh
         - -ec
-        - until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key --dial-timeout=2s --endpoints='https://etcd-0.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-1.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-2.etcd.cluster-de-test-01.svc.cluster.local.:2379' put kubermatic/quorum-check something; do echo waiting for etcd; sleep 2; done;
+        - until ETCDCTL_API=3 /usr/local/bin/etcdctl --cacert=/etc/etcd/pki/client/ca.crt
+          --cert=/etc/etcd/pki/client/apiserver-etcd-client.crt --key=/etc/etcd/pki/client/apiserver-etcd-client.key
+          --dial-timeout=2s --endpoints='https://etcd-0.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-1.etcd.cluster-de-test-01.svc.cluster.local.:2379,https://etcd-2.etcd.cluster-de-test-01.svc.cluster.local.:2379'
+          put kubermatic/quorum-check something; do echo waiting for etcd; sleep 2;
+          done;
         image: gcr.io/etcd-development/etcd:v3.4.3
         name: etcd-running
         resources: {}
