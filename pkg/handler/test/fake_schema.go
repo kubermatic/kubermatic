@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package constraint_test
+package test
 
 import (
 	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -24,13 +24,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
-
-//
-//func init() {
-//	if err := AddToScheme(scheme.Scheme); err != nil {
-//		panic(fmt.Sprintf("failed to add v1beta1 scheme: %v", err))
-//	}
-//}
 
 var SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 
