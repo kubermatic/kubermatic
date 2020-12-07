@@ -73,7 +73,7 @@ func ListPresets(presetsProvider provider.PresetProvider, userInfoGetter provide
 				continue
 			}
 
-			presetList.Items = append(presetList.Items, newAPIPreset(preset, enabled))
+			presetList.Items = append(presetList.Items, newAPIPreset(&preset, enabled))
 		}
 
 		return presetList, nil
@@ -164,7 +164,7 @@ func UpdatePresetStatus(presetsProvider provider.PresetProvider, userInfoGetter 
 }
 
 // listProviderPresetsReq represents a request for a list of presets
-// swagger:parameters listPresets
+// swagger:parameters listProviderPresets
 type listProviderPresetsReq struct {
 	listPresetsReq `json:",inline"`
 
@@ -248,7 +248,7 @@ func ListProviderPresets(presetsProvider provider.PresetProvider, userInfoGetter
 				continue
 			}
 
-			presetList.Items = append(presetList.Items, newAPIPreset(preset, enabled))
+			presetList.Items = append(presetList.Items, newAPIPreset(&preset, enabled))
 		}
 
 		return presetList, nil
@@ -349,7 +349,14 @@ func CreatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 		}
 
 		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
-		return presetsProvider.UpdatePreset(preset)
+		preset, err = presetsProvider.UpdatePreset(preset)
+		if err != nil {
+			return nil, err
+		}
+
+		providerType := crdapiv1.ProviderType(req.ProviderName)
+		enabled := preset.Spec.IsEnabled() && preset.Spec.IsProviderEnabled(providerType)
+		return newAPIPreset(preset, enabled), nil
 	}
 }
 
@@ -403,7 +410,14 @@ func UpdatePreset(presetsProvider provider.PresetProvider, userInfoGetter provid
 		}
 
 		preset = mergePresets(preset, &req.Body, crdapiv1.ProviderType(req.ProviderName))
-		return presetsProvider.UpdatePreset(preset)
+		preset, err = presetsProvider.UpdatePreset(preset)
+		if err != nil {
+			return nil, err
+		}
+
+		providerType := crdapiv1.ProviderType(req.ProviderName)
+		enabled := preset.Spec.IsEnabled() && preset.Spec.IsProviderEnabled(providerType)
+		return newAPIPreset(preset, enabled), nil
 	}
 }
 
@@ -412,7 +426,7 @@ func mergePresets(oldPreset *crdapiv1.Preset, newPreset *crdapiv1.Preset, provid
 	return oldPreset
 }
 
-func newAPIPreset(preset crdapiv1.Preset, enabled bool) v2.Preset {
+func newAPIPreset(preset *crdapiv1.Preset, enabled bool) v2.Preset {
 	providers := make([]crdapiv1.ProviderType, 0)
 	for _, providerType := range crdapiv1.SupportedProviders() {
 		if hasProvider, _ := preset.Spec.HasProvider(providerType); hasProvider {

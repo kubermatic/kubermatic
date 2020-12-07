@@ -185,6 +185,11 @@ func (s PresetSpec) IsEnabled() bool {
 	return *s.Enabled
 }
 
+func (s PresetSpec) IsProviderEnabled(provider ProviderType) bool {
+	presetProvider := s.GetPresetProvider(provider)
+	return presetProvider != nil && presetProvider.IsEnabled()
+}
+
 func (s *PresetSpec) OverrideProvider(providerType ProviderType, spec *PresetSpec) {
 	dest := s.getProviderValue(providerType)
 	src := spec.getProviderValue(providerType)

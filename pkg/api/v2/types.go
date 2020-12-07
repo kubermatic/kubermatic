@@ -114,10 +114,14 @@ type GVK struct {
 	Kind    string `json:"kind,omitempty"`
 }
 
+// PresetList represents a list of presets
+// swagger:model PresetList
 type PresetList struct {
 	Items []Preset `json:"items"`
 }
 
+// Preset represents a preset
+// swagger:model Preset
 type Preset struct {
 	Name      string                  `json:"name"`
 	Enabled   bool                    `json:"enabled"`
