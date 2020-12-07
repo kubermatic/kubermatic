@@ -233,7 +233,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listExternalClusterNodesMetrics())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/kubernetes/clusters/{}/events").
+		Path("/projects/{project_id}/kubernetes/clusters/{cluster_id}/events").
 		Handler(r.listExternalClusterEvents())
 
 	// Define a set of endpoints for gatekeeper constraint templates
