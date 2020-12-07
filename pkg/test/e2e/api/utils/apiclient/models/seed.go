@@ -38,7 +38,7 @@ type Seed struct {
 	SeedDatacenters map[string]Datacenter `json:"datacenters,omitempty"`
 
 	// expose strategy
-	ExposeStrategy ServiceType `json:"expose_strategy,omitempty"`
+	ExposeStrategy ExposeStrategy `json:"expose_strategy,omitempty"`
 
 	// kubeconfig
 	Kubeconfig *ObjectReference `json:"kubeconfig,omitempty"`
