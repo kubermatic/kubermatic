@@ -2942,7 +2942,7 @@ func (r Routing) listAzureSubnets() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/presets preset listPresetsV2
+// swagger:route GET /api/v2/presets preset listPresets
 //
 //     Lists presets
 //
@@ -2967,7 +2967,7 @@ func (r Routing) listPresets() http.Handler {
 	)
 }
 
-// swagger:route PUT /api/v2/presets/{preset_name}/status preset updatePresetStatusV2
+// swagger:route PUT /api/v2/presets/{preset_name}/status preset updatePresetStatus
 //
 //     Updates the status of a preset. It can enable or disable it, so that it won't be listed by the list endpoints.
 //
@@ -2995,7 +2995,7 @@ func (r Routing) updatePresetStatus() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/providers/{provider_name}/presets preset listProviderPresetsV2
+// swagger:route GET /api/v2/providers/{provider_name}/presets preset listProviderPresets
 //
 //     Lists presets for the provider
 //
@@ -3020,7 +3020,7 @@ func (r Routing) listProviderPresets() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v2/providers/{provider_name}/presets preset createPresetV2
+// swagger:route POST /api/v2/providers/{provider_name}/presets preset createPreset
 //
 //     Creates the preset
 //
@@ -3047,7 +3047,7 @@ func (r Routing) createPreset() http.Handler {
 	)
 }
 
-// swagger:route PUT /api/v2/providers/{provider_name}/presets preset updatePresetV2
+// swagger:route PUT /api/v2/providers/{provider_name}/presets preset updatePreset
 //
 //	   Updates provider preset
 //

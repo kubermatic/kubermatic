@@ -8315,7 +8315,15 @@
         "tags": [
           "preset"
         ],
-        "operationId": "listPresetsV2",
+        "operationId": "listPresets",
+        "parameters": [
+          {
+            "type": "boolean",
+            "x-go-name": "Disabled",
+            "name": "disabled",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "PresetList",
@@ -8350,7 +8358,36 @@
           "preset"
         ],
         "summary": "Updates the status of a preset. It can enable or disable it, so that it won't be listed by the list endpoints.",
-        "operationId": "updatePresetStatusV2",
+        "operationId": "updatePresetStatus",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "PresetName",
+            "name": "preset_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Provider",
+            "name": "provider",
+            "in": "query"
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean",
+                  "x-go-name": "Enabled"
+                }
+              }
+            }
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
@@ -12956,7 +12993,28 @@
         "tags": [
           "preset"
         ],
-        "operationId": "listProviderPresetsV2",
+        "operationId": "listProviderPresets",
+        "parameters": [
+          {
+            "type": "boolean",
+            "x-go-name": "Disabled",
+            "name": "disabled",
+            "in": "query"
+          },
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Datacenter",
+            "name": "datacenter",
+            "in": "query"
+          }
+        ],
         "responses": {
           "200": {
             "description": "PresetList",
@@ -12989,7 +13047,24 @@
         "tags": [
           "preset"
         ],
-        "operationId": "updatePresetV2",
+        "operationId": "updatePreset",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Preset"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Preset",
@@ -13022,7 +13097,24 @@
         "tags": [
           "preset"
         ],
-        "operationId": "createPresetV2",
+        "operationId": "createPreset",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProviderName",
+            "name": "provider_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Preset"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Preset",
