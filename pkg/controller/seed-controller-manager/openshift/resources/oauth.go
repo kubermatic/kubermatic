@@ -28,6 +28,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
@@ -194,7 +195,7 @@ func OauthConfigMapCreator(data openshiftData) reconciling.NamedConfigMapCreator
 }
 
 // OauthServiceCreator returns the function to reconcile the external Oauth service
-func OauthServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
+func OauthServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return OAuthServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			se.Labels = resources.BaseAppLabels(name, nil)
@@ -202,7 +203,7 @@ func OauthServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedSer
 			if se.Annotations == nil {
 				se.Annotations = map[string]string{}
 			}
-			if exposeStrategy == corev1.ServiceTypeNodePort {
+			if exposeStrategy == kubermaticv1.ExposeStrategyNodePort {
 				se.Annotations["nodeport-proxy.k8s.io/expose"] = "true"
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			} else {

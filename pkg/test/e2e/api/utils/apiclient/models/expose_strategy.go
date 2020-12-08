@@ -9,12 +9,12 @@ import (
 	"github.com/go-openapi/strfmt"
 )
 
-// ServiceType Service Type string describes ingress methods for a service
+// ExposeStrategy ExposeStrategy is the strategy to expose the cluster with.
 //
-// swagger:model ServiceType
-type ServiceType string
+// swagger:model ExposeStrategy
+type ExposeStrategy string
 
-// Validate validates this service type
-func (m ServiceType) Validate(formats strfmt.Registry) error {
+// Validate validates this expose strategy
+func (m ExposeStrategy) Validate(formats strfmt.Registry) error {
 	return nil
 }

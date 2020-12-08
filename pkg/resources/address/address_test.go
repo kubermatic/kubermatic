@@ -72,7 +72,7 @@ func TestSyncClusterAddress(t *testing.T) {
 		name                 string
 		apiserverService     corev1.Service
 		frontproxyService    corev1.Service
-		exposeStrategy       corev1.ServiceType
+		exposeStrategy       kubermaticv1.ExposeStrategy
 		seedDNSOverwrite     string
 		expectedExternalName string
 		expectedIP           string
@@ -94,7 +94,7 @@ func TestSyncClusterAddress(t *testing.T) {
 					},
 				},
 			},
-			exposeStrategy:       corev1.ServiceTypeLoadBalancer,
+			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
 			expectedExternalName: "1.2.3.4",
 			expectedIP:           "1.2.3.4",
 			expectedPort:         int32(443),
@@ -115,7 +115,7 @@ func TestSyncClusterAddress(t *testing.T) {
 					},
 				},
 			},
-			exposeStrategy:       corev1.ServiceTypeLoadBalancer,
+			exposeStrategy:       kubermaticv1.ExposeStrategyLoadBalancer,
 			seedDNSOverwrite:     "alias-europe-west3-c",
 			expectedExternalName: "1.2.3.4",
 			expectedIP:           "1.2.3.4",
@@ -135,7 +135,7 @@ func TestSyncClusterAddress(t *testing.T) {
 						}},
 				},
 			},
-			exposeStrategy:       corev1.ServiceTypeNodePort,
+			exposeStrategy:       kubermaticv1.ExposeStrategyNodePort,
 			expectedExternalName: fmt.Sprintf("%s.%s.%s", fakeClusterName, fakeDCName, fakeExternalURL),
 			expectedIP:           externalIP,
 			expectedPort:         int32(32000),
@@ -154,7 +154,7 @@ func TestSyncClusterAddress(t *testing.T) {
 						},
 					},
 				}},
-			exposeStrategy:       corev1.ServiceTypeNodePort,
+			exposeStrategy:       kubermaticv1.ExposeStrategyNodePort,
 			seedDNSOverwrite:     "alias-europe-west3-c",
 			expectedExternalName: fmt.Sprintf("%s.alias-europe-west3-c.%s", fakeClusterName, fakeExternalURL),
 			expectedIP:           externalIP,

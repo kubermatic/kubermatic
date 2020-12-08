@@ -119,8 +119,8 @@ func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints
 		includePorts = ports.Union(includePorts)
 		sb.fcs = append(sb.fcs, fcs...)
 	}
-	// Create virtual hosts for HTTP2ConnectType
-	if expTypes.Has(HTTP2ConnectType) && sb.IsHTTP2ConnectEnabled() {
+	// Create virtual hosts for TunnelingType
+	if expTypes.Has(TunnelingType) && sb.IsTunnelingEnabled() {
 		vhs, ports := sb.makeTunnelingVirtualHosts(svc)
 		includePorts = ports.Union(includePorts)
 		sb.vhs = append(sb.vhs, vhs...)
@@ -337,17 +337,17 @@ func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHos
 		panic(errors.Wrap(err, "failed to marshal HTTP Connection Manager"))
 	}
 
-	sb.log.Debugf("using a listener on port %d", sb.EnvoyHTTP2ConnectListenerPort)
+	sb.log.Debugf("using a listener on port %d", sb.EnvoyTunnelingListenerPort)
 
 	tunnelingListener := &envoylistenerv3.Listener{
-		Name: "http2connect_listener",
+		Name: "tunneling_listener",
 		Address: &envoycorev3.Address{
 			Address: &envoycorev3.Address_SocketAddress{
 				SocketAddress: &envoycorev3.SocketAddress{
 					Protocol: envoycorev3.SocketAddress_TCP,
 					Address:  "0.0.0.0",
 					PortSpecifier: &envoycorev3.SocketAddress_PortValue{
-						PortValue: uint32(sb.EnvoyHTTP2ConnectListenerPort),
+						PortValue: uint32(sb.EnvoyTunnelingListenerPort),
 					},
 				},
 			},

@@ -198,14 +198,12 @@ func convertKubermaticConfiguration(values *helmValues, targetNamespace string) 
 	config.Spec.Ingress.CertificateIssuer.Name = "letsencrypt-prod"
 	config.Spec.Ingress.CertificateIssuer.Kind = certmanagerv1alpha2.ClusterIssuerKind
 
-	if values.Kubermatic.ExposeStrategy != "" && values.Kubermatic.ExposeStrategy != string(common.DefaultExposeStrategy) {
-		allowed := sets.NewString(string(operatorv1alpha1.NodePortStrategy), string(operatorv1alpha1.LoadBalancerStrategy))
-
-		if !allowed.Has(values.Kubermatic.ExposeStrategy) {
-			return nil, fmt.Errorf("invalid expose strategy '%s', choose one of %v", values.Kubermatic.ExposeStrategy, allowed.List())
+	if values.Kubermatic.ExposeStrategy != "" {
+		if es, ok := kubermaticv1.ExposeStrategyFromString(values.Kubermatic.ExposeStrategy); ok {
+			config.Spec.ExposeStrategy = es
+		} else {
+			return nil, fmt.Errorf("invalid expose strategy '%s', choose one of %v", values.Kubermatic.ExposeStrategy, kubermaticv1.AllExposeStrategies)
 		}
-
-		config.Spec.ExposeStrategy = operatorv1alpha1.ExposeStrategy(values.Kubermatic.ExposeStrategy)
 	}
 
 	pullSecret, err := base64.StdEncoding.DecodeString(values.Kubermatic.ImagePullSecretData)

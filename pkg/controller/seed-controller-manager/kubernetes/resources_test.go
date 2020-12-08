@@ -91,7 +91,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			Name: "test-cluster",
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			ExposeStrategy: corev1.ServiceTypeLoadBalancer,
+			ExposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "my-dc",
 			},

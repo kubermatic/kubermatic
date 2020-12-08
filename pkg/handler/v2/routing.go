@@ -31,9 +31,9 @@ import (
 	"github.com/go-kit/kit/log"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -67,7 +67,7 @@ type Routing struct {
 	saTokenAuthenticator                  serviceaccount.TokenAuthenticator
 	saTokenGenerator                      serviceaccount.TokenGenerator
 	eventRecorderProvider                 provider.EventRecorderProvider
-	exposeStrategy                        corev1.ServiceType
+	exposeStrategy                        kubermaticv1.ExposeStrategy
 	accessibleAddons                      sets.String
 	userInfoGetter                        provider.UserInfoGetter
 	settingsProvider                      provider.SettingsProvider

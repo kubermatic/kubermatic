@@ -130,7 +130,7 @@ func TestResources(t *testing.T) {
 						Cloud: kubermaticv1.CloudSpec{
 							DatacenterName: "alias-europe-west3-c",
 						},
-						ExposeStrategy: corev1.ServiceTypeNodePort,
+						ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 						Openshift:      &kubermaticv1.Openshift{},
 						Version:        *semver.NewSemverOrDie("4.1.9"),
 					},

@@ -24,8 +24,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-
-	corev1 "k8s.io/api/core/v1"
 )
 
 func (r *Reconciler) getOSData(ctx context.Context, cluster *kubermaticv1.Cluster, versions kubermatic.Versions) (*openshiftData, error) {
@@ -117,7 +115,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cluster *kubermatic
 		return fmt.Errorf("failed to reconcile Deployments: %v", err)
 	}
 
-	if osData.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+	if osData.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		if err := nodeportproxy.EnsureResources(ctx, r.Client, osData); err != nil {
 			return fmt.Errorf("failed to ensure NodePortProxy resources: %v", err)
 		}

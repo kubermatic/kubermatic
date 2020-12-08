@@ -95,7 +95,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	}
 
 	frontProxyLoadBalancerServiceIP := ""
-	if m.cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+	if m.cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		frontProxyLoadBalancerService := &corev1.Service{}
 		nn := types.NamespacedName{Namespace: m.cluster.Status.NamespaceName, Name: resources.FrontLoadBalancerServiceName}
 		if err := m.client.Get(ctx, nn, frontProxyLoadBalancerService); err != nil {
@@ -113,7 +113,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 
 	// External Name
 	externalName := ""
-	if m.cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+	if m.cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		externalName = frontProxyLoadBalancerServiceIP
 	} else {
 		externalName = fmt.Sprintf("%s.%s.%s", m.cluster.Name, subdomain, m.externalURL)
@@ -137,7 +137,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 
 	// IP
 	ip := ""
-	if m.cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+	if m.cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		ip = frontProxyLoadBalancerServiceIP
 	} else {
 		var err error

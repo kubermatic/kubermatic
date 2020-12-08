@@ -19,6 +19,7 @@ package hack
 import (
 	"net/http"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	v2 "k8c.io/kubermatic/v2/pkg/handler/v2"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -37,7 +38,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -113,7 +113,7 @@ func NewTestRouting(
 		SATokenAuthenticator:                  saTokenAuthenticator,
 		SATokenGenerator:                      saTokenGenerator,
 		EventRecorderProvider:                 eventRecorderProvider,
-		ExposeStrategy:                        corev1.ServiceTypeNodePort,
+		ExposeStrategy:                        kubermaticv1.ExposeStrategyNodePort,
 		AccessibleAddons:                      sets.String{},
 		UserInfoGetter:                        userInfoGetter,
 		SettingsProvider:                      settingsProvider,

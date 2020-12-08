@@ -19,6 +19,8 @@ package apiserver
 import (
 	"testing"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -26,16 +28,16 @@ import (
 func TestServiceCreatorRequiresExposeStrategy(t *testing.T) {
 	testCases := []struct {
 		name           string
-		exposeStrategy corev1.ServiceType
+		exposeStrategy kubermaticv1.ExposeStrategy
 		errExpected    bool
 	}{
 		{
 			name:           "NodePort is accepted as exposeStrategy",
-			exposeStrategy: corev1.ServiceTypeNodePort,
+			exposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 		},
 		{
 			name:           "LoadBalancer is accepted as exposeStrategy",
-			exposeStrategy: corev1.ServiceTypeLoadBalancer,
+			exposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 		},
 		{
 			name:        "Empty is not accepted as exposeStrategy",
@@ -57,12 +59,14 @@ func TestServiceCreatorRequiresExposeStrategy(t *testing.T) {
 func TestServiceCreatorSetsPort(t *testing.T) {
 	testCases := []struct {
 		name               string
+		exposeStrategy     kubermaticv1.ExposeStrategy
 		inService          *corev1.Service
 		expectedPort       int32
 		expectedTargetPort intstr.IntOrString
 	}{
 		{
-			name: "Empty LoadBalancer service, port 443",
+			name:           "Empty LoadBalancer service, port 443",
+			exposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,
 			inService: &corev1.Service{
 				Spec: corev1.ServiceSpec{
 					Type: corev1.ServiceTypeNodePort,
@@ -72,7 +76,8 @@ func TestServiceCreatorSetsPort(t *testing.T) {
 			expectedTargetPort: intstr.FromInt(6443),
 		},
 		{
-			name: "Empty NodePort service, port 443",
+			name:           "Empty NodePort service, port 443",
+			exposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 			inService: &corev1.Service{
 				Spec: corev1.ServiceSpec{
 					Type: corev1.ServiceTypeNodePort,
@@ -82,7 +87,8 @@ func TestServiceCreatorSetsPort(t *testing.T) {
 			expectedTargetPort: intstr.FromInt(6443),
 		},
 		{
-			name: "NodePort service with allocation, allocation is used everywhere",
+			name:           "NodePort service with allocation, allocation is used everywhere",
+			exposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 			inService: &corev1.Service{
 				Spec: corev1.ServiceSpec{
 					Type: corev1.ServiceTypeNodePort,
@@ -104,7 +110,7 @@ func TestServiceCreatorSetsPort(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, creator := ServiceCreator(tc.inService.Spec.Type)()
+			_, creator := ServiceCreator(tc.exposeStrategy)()
 			svc, err := creator(tc.inService)
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err)
