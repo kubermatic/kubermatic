@@ -47,12 +47,14 @@ const (
 	// SNIType configures Envoy to route TLS streams based on SNI
 	// without terminating them.
 	SNIType
-	// HTTP2ConnectType configures Envoy to terminate HTTP/2 Connect requests.
-	HTTP2ConnectType
+	// TunnelingType configures Envoy to terminate the tunnel and stream the
+	// data to the destination.
+	// The only supported tunneling tecnique at the moment in HTTP/2 Connect.
+	TunnelingType
 )
 
 // exposeTypeStrings contains the string representation of the ExposeTypes.
-var exposeTypeStrings = [...]string{"NodePort", "SNI", "HTTP2Connect"}
+var exposeTypeStrings = [...]string{"NodePort", "SNI", "Tunneling"}
 
 // ExposeTypeFromString returns the ExposeType which string representation
 // corresponds to the input string, and a boolean indicating whether the
@@ -63,8 +65,8 @@ func ExposeTypeFromString(s string) (ExposeType, bool) {
 		return NodePortType, true
 	case exposeTypeStrings[SNIType]:
 		return SNIType, true
-	case exposeTypeStrings[HTTP2ConnectType]:
-		return HTTP2ConnectType, true
+	case exposeTypeStrings[TunnelingType]:
+		return TunnelingType, true
 	default:
 		return NodePortType, false
 	}

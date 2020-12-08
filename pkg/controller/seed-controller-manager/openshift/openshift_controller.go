@@ -663,7 +663,7 @@ func getAllServiceCreators(osData *openshiftData) []reconciling.NamedServiceCrea
 		metricsserver.ServiceCreator(),
 	}
 
-	if osData.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+	if osData.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator())
 	}
 

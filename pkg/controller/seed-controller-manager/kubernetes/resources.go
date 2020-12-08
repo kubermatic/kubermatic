@@ -133,7 +133,7 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
-	if cluster.Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		if err := nodeportproxy.EnsureResources(ctx, r.Client, data); err != nil {
 			return fmt.Errorf("failed to ensure NodePortProxy resources: %v", err)
 		}
@@ -220,7 +220,7 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 		metricsserver.ServiceCreator(),
 	}
 
-	if data.Cluster().Spec.ExposeStrategy == corev1.ServiceTypeLoadBalancer {
+	if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		creators = append(creators, nodeportproxy.FrontLoadBalancerServiceCreator())
 	}
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {

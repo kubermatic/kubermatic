@@ -37,11 +37,11 @@ import (
 
 func TestReconciliation(t *testing.T) {
 	testCases := []struct {
-		name                     string
-		initialServices          []runtime.Object
-		expectedServices         corev1.ServiceList
-		sniListenerPort          int
-		http2ConnectListenerPort int
+		name                  string
+		initialServices       []runtime.Object
+		expectedServices      corev1.ServiceList
+		sniListenerPort       int
+		tunnelingListenerPort int
 	}{
 		{
 			name: "Service without annotation gets ignored",
@@ -605,8 +605,8 @@ func TestReconciliation(t *testing.T) {
 			},
 		},
 		{
-			name:                     "Activated HTTP/2 CONNECT listener",
-			http2ConnectListenerPort: 8443,
+			name:                  "Activated HTTP/2 CONNECT listener",
+			tunnelingListenerPort: 8443,
 			initialServices: []runtime.Object{
 				&corev1.Service{
 					TypeMeta: metav1.TypeMeta{
@@ -682,7 +682,7 @@ func TestReconciliation(t *testing.T) {
 									Protocol:   corev1.ProtocolTCP,
 								},
 								{
-									Name:       "http2-connect-listener",
+									Name:       "tunneling-listener",
 									Port:       8443,
 									TargetPort: intstr.FromInt(8443),
 									Protocol:   corev1.ProtocolTCP,
@@ -704,9 +704,9 @@ func TestReconciliation(t *testing.T) {
 				client:      client,
 				log:         zap.NewNop().Sugar(),
 				opts: envoymanager.Options{
-					ExposeAnnotationKey:           envoymanager.DefaultExposeAnnotationKey,
-					EnvoySNIListenerPort:          tc.sniListenerPort,
-					EnvoyHTTP2ConnectListenerPort: tc.http2ConnectListenerPort,
+					ExposeAnnotationKey:        envoymanager.DefaultExposeAnnotationKey,
+					EnvoySNIListenerPort:       tc.sniListenerPort,
+					EnvoyTunnelingListenerPort: tc.tunnelingListenerPort,
 				},
 			}
 

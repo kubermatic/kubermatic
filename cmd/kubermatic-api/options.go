@@ -23,6 +23,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -30,7 +31,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -45,7 +45,7 @@ type serverRunOptions struct {
 	presetsFile      string
 	swaggerFile      string
 	domain           string
-	exposeStrategy   corev1.ServiceType
+	exposeStrategy   kubermaticv1.ExposeStrategy
 	dynamicPresets   bool
 	namespace        string
 	log              kubermaticlog.Options
@@ -117,13 +117,10 @@ func newServerRunOptions() (serverRunOptions, error) {
 	}
 	s.featureGates = featureGates
 
-	switch rawExposeStrategy {
-	case "NodePort":
-		s.exposeStrategy = corev1.ServiceTypeNodePort
-	case "LoadBalancer":
-		s.exposeStrategy = corev1.ServiceTypeLoadBalancer
-	default:
-		return s, fmt.Errorf("--expose-strategy must be either `NodePort` or `LoadBalancer`, got %q", rawExposeStrategy)
+	var validExposeStrategy bool
+	s.exposeStrategy, validExposeStrategy = kubermaticv1.ExposeStrategyFromString(rawExposeStrategy)
+	if !validExposeStrategy {
+		return s, fmt.Errorf("--expose-strategy must be one of: %s, got %q", kubermaticv1.AllExposeStrategies, rawExposeStrategy)
 	}
 
 	s.accessibleAddons = sets.NewString(strings.Split(rawAccessibleAddons, ",")...)

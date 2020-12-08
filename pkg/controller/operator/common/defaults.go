@@ -49,7 +49,7 @@ const (
 	DefaultSeedControllerMgrReplicas              = 1
 	DefaultMasterControllerMgrReplicas            = 1
 	DefaultAPIServerReplicas                      = 2
-	DefaultExposeStrategy                         = operatorv1alpha1.NodePortStrategy
+	DefaultExposeStrategy                         = kubermaticv1.ExposeStrategyNodePort
 	DefaultVPARecommenderDockerRepository         = "gcr.io/google_containers/vpa-recommender"
 	DefaultVPAUpdaterDockerRepository             = "gcr.io/google_containers/vpa-updater"
 	DefaultVPAAdmissionControllerDockerRepository = "gcr.io/google_containers/vpa-admission-controller"

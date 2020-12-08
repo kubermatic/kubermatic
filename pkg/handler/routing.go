@@ -24,6 +24,7 @@ import (
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -32,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
-	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -67,7 +67,7 @@ type Routing struct {
 	saTokenAuthenticator                  serviceaccount.TokenAuthenticator
 	saTokenGenerator                      serviceaccount.TokenGenerator
 	eventRecorderProvider                 provider.EventRecorderProvider
-	exposeStrategy                        corev1.ServiceType
+	exposeStrategy                        kubermaticv1.ExposeStrategy
 	accessibleAddons                      sets.String
 	userInfoGetter                        provider.UserInfoGetter
 	settingsProvider                      provider.SettingsProvider
@@ -156,7 +156,7 @@ type RoutingParams struct {
 	SATokenAuthenticator                  serviceaccount.TokenAuthenticator
 	SATokenGenerator                      serviceaccount.TokenGenerator
 	EventRecorderProvider                 provider.EventRecorderProvider
-	ExposeStrategy                        corev1.ServiceType
+	ExposeStrategy                        kubermaticv1.ExposeStrategy
 	AccessibleAddons                      sets.String
 	UserInfoGetter                        provider.UserInfoGetter
 	SettingsProvider                      provider.SettingsProvider

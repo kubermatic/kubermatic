@@ -110,7 +110,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			Annotations: map[string]string{"kubermatic.io/openshift": "true"},
 		},
 		Spec: kubermaticv1.ClusterSpec{
-			ExposeStrategy: corev1.ServiceTypeLoadBalancer,
+			ExposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "my-dc",
 			},

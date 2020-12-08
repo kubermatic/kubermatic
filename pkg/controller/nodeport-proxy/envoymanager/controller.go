@@ -62,19 +62,19 @@ type Options struct {
 	// When the value is less or equal than 0 the SNI Listener is disabled and
 	// won't be configured in Envoy.
 	EnvoySNIListenerPort int
-	// EnvoyHTTP2ConnectListenerPort is the port used to listen for HTTP/2
+	// EnvoyTunnelingListenerPort is the port used to listen for HTTP/2
 	// CONNECT requests.
 	// When the value is less or equal than 0 the HTTP/2 CONNECT Listener is
 	// disabled and won't be configured in Envoy.
-	EnvoyHTTP2ConnectListenerPort int
+	EnvoyTunnelingListenerPort int
 }
 
 func (o Options) IsSNIEnabled() bool {
 	return o.EnvoySNIListenerPort > 0
 }
 
-func (o Options) IsHTTP2ConnectEnabled() bool {
-	return o.EnvoyHTTP2ConnectListenerPort > 0
+func (o Options) IsTunnelingEnabled() bool {
+	return o.EnvoyTunnelingListenerPort > 0
 }
 
 // NewReconciler returns a new Reconciler or an error if something goes wrong

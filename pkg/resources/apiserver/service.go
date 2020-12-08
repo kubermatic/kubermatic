@@ -19,6 +19,8 @@ package apiserver
 import (
 	"fmt"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -28,7 +30,7 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the external API server service
-func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			// Always set it to NodePort. Even when using exposeStrategy==LoadBalancer, we create
@@ -40,10 +42,12 @@ func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceC
 			if se.Annotations == nil {
 				se.Annotations = map[string]string{}
 			}
-			if exposeStrategy != corev1.ServiceTypeNodePort && exposeStrategy != corev1.ServiceTypeLoadBalancer {
-				return nil, fmt.Errorf("exposeStrategy on the cluster must be one of `NodePort` or `LoadBalancer, got %q`", exposeStrategy)
+
+			if exposeStrategy != kubermaticv1.ExposeStrategyNodePort && exposeStrategy != kubermaticv1.ExposeStrategyLoadBalancer && exposeStrategy != kubermaticv1.ExposeStrategyTunneling {
+				return nil, fmt.Errorf("unsupported expose strategy: %q", exposeStrategy)
 			}
-			if exposeStrategy == corev1.ServiceTypeNodePort {
+
+			if exposeStrategy == kubermaticv1.ExposeStrategyNodePort {
 				se.Annotations["nodeport-proxy.k8s.io/expose"] = "true"
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			} else {

@@ -99,12 +99,8 @@ func (r *Reconciler) reconcile(seed *kubermaticv1.Seed, client ctrlruntimeclient
 	seedCreators := []reconciling.NamedSeedCreatorGetter{
 		seedCreator(seed),
 	}
-	supportedStrategies := map[corev1.ServiceType]struct{}{
-		corev1.ServiceTypeNodePort:     {},
-		corev1.ServiceTypeLoadBalancer: {},
-	}
 	if seed.Spec.ExposeStrategy != "" {
-		if _, ok := supportedStrategies[seed.Spec.ExposeStrategy]; !ok {
+		if !kubermaticv1.AllExposeStrategies.Has(seed.Spec.ExposeStrategy) {
 			return fmt.Errorf("failed to validate seed: invalid Seed Expose Strategy %s", seed.Spec.ExposeStrategy)
 		}
 	}

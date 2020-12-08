@@ -220,7 +220,7 @@ func TestLoadFiles(t *testing.T) {
 						},
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						ExposeStrategy: corev1.ServiceTypeLoadBalancer,
+						ExposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,
 						Cloud:          cloudspec,
 						Version:        *ksemver.NewSemverOrDie(ver.Version.String()),
 						ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{

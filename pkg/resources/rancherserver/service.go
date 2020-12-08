@@ -20,13 +20,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 // ServiceCreator creates the service for rancher server
-func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.RancherServerServiceName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Name = resources.RancherServerServiceName
@@ -34,7 +35,7 @@ func ServiceCreator(exposeStrategy corev1.ServiceType) reconciling.NamedServiceC
 			if s.Annotations == nil {
 				s.Annotations = map[string]string{}
 			}
-			if exposeStrategy == corev1.ServiceTypeNodePort {
+			if exposeStrategy == kubermaticv1.ExposeStrategyNodePort {
 				s.Annotations["nodeport-proxy.k8s.io/expose"] = "true"
 				delete(s.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			} else {
