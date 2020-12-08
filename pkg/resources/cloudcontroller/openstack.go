@@ -171,13 +171,19 @@ func getOSFlags(data *resources.TemplateData) []string {
 }
 
 func getOSVersion(version semver.Semver) (string, error) {
+	if version.Major() < 17 {
+		return "", fmt.Errorf("Kubernetes version %s is not supported", version.String())
+	}
+
 	switch version.Minor() {
 	case 17:
 		return "1.17.0", nil
 	case 18:
 		return "1.18.0", nil
+	case 19:
+		return "1.19.2", nil
 	default:
-		return "", fmt.Errorf("Kubernetes version %s is not supported", version.String())
+		return "1.19.2", nil
 	}
 }
 
