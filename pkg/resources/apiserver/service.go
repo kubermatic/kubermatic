@@ -18,9 +18,11 @@ package apiserver
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
+	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -30,29 +32,37 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the external API server service
-func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, internalName string) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
-			// Always set it to NodePort. Even when using exposeStrategy==LoadBalancer, we create
-			// one LoadBalancer for two Services (APIServer and openVPN) and use the nodePortProxy in
-			// namespaced mode to redirect the traffic to the right service depending on its port.
-			// We use a nodePort Service because that gives us a concurrency-safe allocation mechanism
-			// for a unique port
-			se.Spec.Type = corev1.ServiceTypeNodePort
 			if se.Annotations == nil {
 				se.Annotations = map[string]string{}
 			}
 
-			if exposeStrategy != kubermaticv1.ExposeStrategyNodePort && exposeStrategy != kubermaticv1.ExposeStrategyLoadBalancer && exposeStrategy != kubermaticv1.ExposeStrategyTunneling {
-				return nil, fmt.Errorf("unsupported expose strategy: %q", exposeStrategy)
-			}
-
-			if exposeStrategy == kubermaticv1.ExposeStrategyNodePort {
-				se.Annotations["nodeport-proxy.k8s.io/expose"] = "true"
+			switch exposeStrategy {
+			case kubermaticv1.ExposeStrategyNodePort:
+				se.Spec.Type = corev1.ServiceTypeNodePort
+				se.Annotations[envoymanager.DefaultExposeAnnotationKey] = envoymanager.NodePortType.String()
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
-			} else {
+			case kubermaticv1.ExposeStrategyLoadBalancer:
+				// Even when using exposeStrategy==LoadBalancer, we create
+				// one LoadBalancer for two Services (APIServer and openVPN) and use the nodePortProxy in
+				// namespaced mode to redirect the traffic to the right service depending on its port.
+				// We use a nodePort Service because that gives us a concurrency-safe allocation mechanism
+				// for a unique port
+				se.Spec.Type = corev1.ServiceTypeNodePort
 				se.Annotations[nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey] = "true"
-				delete(se.Annotations, "nodeport-proxy.k8s.io/expose")
+				delete(se.Annotations, envoymanager.DefaultExposeAnnotationKey)
+			case kubermaticv1.ExposeStrategyTunneling:
+				se.Spec.Type = corev1.ServiceTypeClusterIP
+				// When using exposeStrategy==Tunneling we need to expose
+				// the APIServer both with the SNI and the Tunneling listeners.
+				se.Annotations[envoymanager.DefaultExposeAnnotationKey] = strings.Join([]string{envoymanager.SNIType.String(), envoymanager.TunnelingType.String()}, ",")
+				// We map the secure port to the internal name for SNI routing.
+				se.Annotations[envoymanager.PortHostMappingAnnotationKey] = fmt.Sprintf(`{"secure": %q}`, internalName)
+				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
+			default:
+				return nil, fmt.Errorf("unsupported expose strategy: %q", exposeStrategy)
 			}
 
 			se.Spec.Selector = map[string]string{
@@ -75,12 +85,15 @@ func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.Name
 			se.Spec.Ports[0].Name = "secure"
 			se.Spec.Ports[0].Protocol = corev1.ProtocolTCP
 			se.Spec.Ports[0].Port = 443
-			// We assign the target port the same value as the NodePort port.
-			// The reason is that we need  both access the apiserver using
-			// this service (i.e. from seed cluster) and from the kubernetes
-			// nodeport service in the default namespace of the user cluster.
-			se.Spec.Ports[0].TargetPort = intstr.FromInt(int(se.Spec.Ports[0].NodePort))
-
+			if exposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+				se.Spec.Ports[0].TargetPort = intstr.FromInt(resources.APIServerSecurePort)
+			} else {
+				// We assign the target port the same value as the NodePort port.
+				// The reason is that we need  both access the apiserver using
+				// this service (i.e. from seed cluster) and from the kubernetes
+				// nodeport service in the default namespace of the user cluster.
+				se.Spec.Ports[0].TargetPort = intstr.FromInt(int(se.Spec.Ports[0].NodePort))
+			}
 			return se, nil
 		}
 	}

@@ -27,9 +27,10 @@ import (
 
 func TestServiceCreatorRequiresExposeStrategy(t *testing.T) {
 	testCases := []struct {
-		name           string
-		exposeStrategy kubermaticv1.ExposeStrategy
-		errExpected    bool
+		name            string
+		exposeStrategy  kubermaticv1.ExposeStrategy
+		internalService string
+		errExpected     bool
 	}{
 		{
 			name:           "NodePort is accepted as exposeStrategy",
@@ -47,7 +48,7 @@ func TestServiceCreatorRequiresExposeStrategy(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, creator := ServiceCreator(tc.exposeStrategy)()
+			_, creator := ServiceCreator(tc.exposeStrategy, tc.internalService)()
 			_, err := creator(&corev1.Service{})
 			if (err != nil) != tc.errExpected {
 				t.Errorf("Expected err: %t, but got err %v", tc.errExpected, err)
@@ -60,6 +61,7 @@ func TestServiceCreatorSetsPort(t *testing.T) {
 	testCases := []struct {
 		name               string
 		exposeStrategy     kubermaticv1.ExposeStrategy
+		internalService    string
 		inService          *corev1.Service
 		expectedPort       int32
 		expectedTargetPort intstr.IntOrString
@@ -106,11 +108,31 @@ func TestServiceCreatorSetsPort(t *testing.T) {
 			expectedPort:       int32(443),
 			expectedTargetPort: intstr.FromInt(32000),
 		},
+		{
+			name:           "With tunneling strategy KAS uses 6443 as secure port",
+			exposeStrategy: kubermaticv1.ExposeStrategyTunneling,
+			inService: &corev1.Service{
+				Spec: corev1.ServiceSpec{
+					Type: corev1.ServiceTypeNodePort,
+					Ports: []corev1.ServicePort{
+						{
+							Name:       "my-fancy-port",
+							Port:       int32(8080),
+							TargetPort: intstr.FromInt(8080),
+							Protocol:   corev1.ProtocolUDP,
+							NodePort:   int32(32000),
+						},
+					},
+				},
+			},
+			expectedPort:       int32(443),
+			expectedTargetPort: intstr.FromInt(6443),
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			_, creator := ServiceCreator(tc.exposeStrategy)()
+			_, creator := ServiceCreator(tc.exposeStrategy, tc.internalService)()
 			svc, err := creator(tc.inService)
 			if err != nil {
 				t.Fatalf("Unexpected error: %v", err)

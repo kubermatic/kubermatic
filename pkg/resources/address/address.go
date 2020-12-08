@@ -165,7 +165,14 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 
 	// Port
 	port := service.Spec.Ports[0].NodePort
-	if m.cluster.Address.Port != port {
+
+	// Use the nodeport value for KAS secure port when strategy is NodePort or
+	// LoadBalancer. This is because the same service will be accessed both
+	// locally and passing from nodeport proxy.
+	if (m.cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyNodePort ||
+		m.cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer) &&
+		m.cluster.Address.Port != port {
+
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.Port = port
 		})
