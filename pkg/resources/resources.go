@@ -317,6 +317,8 @@ const (
 
 	// KubermaticNamespace is the main kubermatic namespace
 	KubermaticNamespace = "kubermatic"
+	// GatekeeperNamespace is the main gatkeeper namespace where the gatekeeper config is stored
+	GatekeeperNamespace = "gatekeeper-system"
 
 	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only
 	DefaultOwnerReadOnlyMode = 0400
