@@ -26,18 +26,17 @@ import (
 	"strings"
 	"testing"
 
-	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/diff"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
-	providerv1 "k8c.io/kubermatic/v2/pkg/handler/v1/provider"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
+	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/diff"
 )
 
 var (
@@ -409,7 +408,7 @@ func TestMeetsOpentackNodeSizeRequirement(t *testing.T) {
 	}
 	for _, testToRun := range tests {
 		t.Run(testToRun.name, func(t *testing.T) {
-			if providerv1.MeetsOpenstackNodeSizeRequirement(testToRun.apiSize, testToRun.nodeSizeRequirement) != testToRun.meetsRequirement {
+			if providercommon.MeetsOpenstackNodeSizeRequirement(testToRun.apiSize, testToRun.nodeSizeRequirement) != testToRun.meetsRequirement {
 				t.Errorf("expected result to be %v, but got %v", testToRun.meetsRequirement, !testToRun.meetsRequirement)
 			}
 		})
