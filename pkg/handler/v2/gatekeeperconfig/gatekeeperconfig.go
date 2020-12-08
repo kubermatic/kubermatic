@@ -38,8 +38,8 @@ import (
 
 const (
 	// Gatekeeper only uses the configs from the namespace which is set as "gatekeeper namespace" in the gatekeeper controller and audit.
-	// For our deployment, its always `kubermatic`
-	ConfigNamespace = "kube-system"
+	// For our deployment, its always `gatekeeper-system`
+	ConfigNamespace = "gatekeeper-system"
 	// Gatekeeper audit also hardcodes the config name to `config`
 	ConfigName = "config"
 )
@@ -75,7 +75,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 }
 
 // gatekeeperConfigReq defines HTTP request for the gatekeeper sync config
-// swagger:parameters getGatekeeperConfig
+// swagger:parameters getGatekeeperConfig deleteGatekeeperConfig
 type gatekeeperConfigReq struct {
 	cluster.GetClusterReq
 }
@@ -107,4 +107,31 @@ func convertExternalToAPI(conf *configv1alpha1.Config) (*apiv2.GatekeeperConfig,
 	}
 
 	return apiConf, nil
+}
+
+func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(gatekeeperConfigReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		clus, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		clusterCli, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, clus, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		conf := &configv1alpha1.Config{}
+		conf.SetName(ConfigName)
+		conf.SetNamespace(ConfigNamespace)
+		if err := clusterCli.Delete(ctx, conf); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return nil, nil
+	}
 }

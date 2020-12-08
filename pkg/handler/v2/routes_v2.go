@@ -281,6 +281,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config").
 		Handler(r.getGatekeeperConfig())
 
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config").
+		Handler(r.deleteGatekeeperConfig())
+
 	// Defines a set of HTTP endpoints for managing addons
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/installableaddons").
@@ -1334,6 +1338,33 @@ func (r Routing) getGatekeeperConfig() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(gatekeeperconfig.GetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		gatekeeperconfig.DecodeGatkeeperConfigReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config project getGatekeeperConfig
+//
+//     Deletes the gatekeeper sync config for the specified cluster.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteGatekeeperConfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(gatekeeperconfig.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		gatekeeperconfig.DecodeGatkeeperConfigReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
