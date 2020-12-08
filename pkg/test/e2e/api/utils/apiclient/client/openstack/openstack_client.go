@@ -29,25 +29,37 @@ type ClientService interface {
 
 	ListOpenstackAvailabilityZonesNoCredentials(params *ListOpenstackAvailabilityZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackAvailabilityZonesNoCredentialsOK, error)
 
+	ListOpenstackAvailabilityZonesNoCredentialsV2(params *ListOpenstackAvailabilityZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackAvailabilityZonesNoCredentialsV2OK, error)
+
 	ListOpenstackNetworks(params *ListOpenstackNetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackNetworksOK, error)
 
 	ListOpenstackNetworksNoCredentials(params *ListOpenstackNetworksNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackNetworksNoCredentialsOK, error)
+
+	ListOpenstackNetworksNoCredentialsV2(params *ListOpenstackNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackNetworksNoCredentialsV2OK, error)
 
 	ListOpenstackSecurityGroups(params *ListOpenstackSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSecurityGroupsOK, error)
 
 	ListOpenstackSecurityGroupsNoCredentials(params *ListOpenstackSecurityGroupsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSecurityGroupsNoCredentialsOK, error)
 
+	ListOpenstackSecurityGroupsNoCredentialsV2(params *ListOpenstackSecurityGroupsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSecurityGroupsNoCredentialsV2OK, error)
+
 	ListOpenstackSizes(params *ListOpenstackSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSizesOK, error)
 
 	ListOpenstackSizesNoCredentials(params *ListOpenstackSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSizesNoCredentialsOK, error)
+
+	ListOpenstackSizesNoCredentialsV2(params *ListOpenstackSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSizesNoCredentialsV2OK, error)
 
 	ListOpenstackSubnets(params *ListOpenstackSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSubnetsOK, error)
 
 	ListOpenstackSubnetsNoCredentials(params *ListOpenstackSubnetsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSubnetsNoCredentialsOK, error)
 
+	ListOpenstackSubnetsNoCredentialsV2(params *ListOpenstackSubnetsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSubnetsNoCredentialsV2OK, error)
+
 	ListOpenstackTenants(params *ListOpenstackTenantsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackTenantsOK, error)
 
 	ListOpenstackTenantsNoCredentials(params *ListOpenstackTenantsNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackTenantsNoCredentialsOK, error)
+
+	ListOpenstackTenantsNoCredentialsV2(params *ListOpenstackTenantsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackTenantsNoCredentialsV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -121,6 +133,40 @@ func (a *Client) ListOpenstackAvailabilityZonesNoCredentials(params *ListOpensta
 }
 
 /*
+  ListOpenstackAvailabilityZonesNoCredentialsV2 Lists availability zones from openstack
+*/
+func (a *Client) ListOpenstackAvailabilityZonesNoCredentialsV2(params *ListOpenstackAvailabilityZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackAvailabilityZonesNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListOpenstackAvailabilityZonesNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listOpenstackAvailabilityZonesNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/availabilityzones",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListOpenstackAvailabilityZonesNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListOpenstackAvailabilityZonesNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListOpenstackAvailabilityZonesNoCredentialsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListOpenstackNetworks Lists networks from openstack
 */
 func (a *Client) ListOpenstackNetworks(params *ListOpenstackNetworksParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackNetworksOK, error) {
@@ -185,6 +231,40 @@ func (a *Client) ListOpenstackNetworksNoCredentials(params *ListOpenstackNetwork
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListOpenstackNetworksNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListOpenstackNetworksNoCredentialsV2 Lists networks from openstack
+*/
+func (a *Client) ListOpenstackNetworksNoCredentialsV2(params *ListOpenstackNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackNetworksNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListOpenstackNetworksNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listOpenstackNetworksNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/networks",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListOpenstackNetworksNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListOpenstackNetworksNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListOpenstackNetworksNoCredentialsV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -257,6 +337,40 @@ func (a *Client) ListOpenstackSecurityGroupsNoCredentials(params *ListOpenstackS
 }
 
 /*
+  ListOpenstackSecurityGroupsNoCredentialsV2 Lists security groups from openstack
+*/
+func (a *Client) ListOpenstackSecurityGroupsNoCredentialsV2(params *ListOpenstackSecurityGroupsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSecurityGroupsNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListOpenstackSecurityGroupsNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listOpenstackSecurityGroupsNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/securitygroups",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListOpenstackSecurityGroupsNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListOpenstackSecurityGroupsNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListOpenstackSecurityGroupsNoCredentialsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListOpenstackSizes Lists sizes from openstack
 */
 func (a *Client) ListOpenstackSizes(params *ListOpenstackSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSizesOK, error) {
@@ -321,6 +435,40 @@ func (a *Client) ListOpenstackSizesNoCredentials(params *ListOpenstackSizesNoCre
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListOpenstackSizesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListOpenstackSizesNoCredentialsV2 Lists sizes from openstack
+*/
+func (a *Client) ListOpenstackSizesNoCredentialsV2(params *ListOpenstackSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSizesNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListOpenstackSizesNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listOpenstackSizesNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListOpenstackSizesNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListOpenstackSizesNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListOpenstackSizesNoCredentialsV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -393,6 +541,40 @@ func (a *Client) ListOpenstackSubnetsNoCredentials(params *ListOpenstackSubnetsN
 }
 
 /*
+  ListOpenstackSubnetsNoCredentialsV2 Lists subnets from openstack
+*/
+func (a *Client) ListOpenstackSubnetsNoCredentialsV2(params *ListOpenstackSubnetsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackSubnetsNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListOpenstackSubnetsNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listOpenstackSubnetsNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/subnets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListOpenstackSubnetsNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListOpenstackSubnetsNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListOpenstackSubnetsNoCredentialsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListOpenstackTenants Lists tenants from openstack
 */
 func (a *Client) ListOpenstackTenants(params *ListOpenstackTenantsParams, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackTenantsOK, error) {
@@ -457,6 +639,40 @@ func (a *Client) ListOpenstackTenantsNoCredentials(params *ListOpenstackTenantsN
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListOpenstackTenantsNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListOpenstackTenantsNoCredentialsV2 Lists tenants from openstack
+*/
+func (a *Client) ListOpenstackTenantsNoCredentialsV2(params *ListOpenstackTenantsNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListOpenstackTenantsNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListOpenstackTenantsNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listOpenstackTenantsNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/openstack/tenants",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListOpenstackTenantsNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListOpenstackTenantsNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListOpenstackTenantsNoCredentialsV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
