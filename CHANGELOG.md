@@ -1,5 +1,14 @@
 # Kubermatic 2.15
 
+## [v2.15.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.6)
+
+### Misc
+
+- Dex does not require cert-manager CRDs to be installed anymore, certificates are acquired via Ingress annotation ([#6282](https://github.com/kubermatic/kubermatic/issues/6282))
+
+
+
+
 ## [v2.15.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.5)
 
 ### Bugfixes
