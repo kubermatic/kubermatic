@@ -19,6 +19,13 @@ metadata:
   name: dex
   annotations:
     kubernetes.io/ingress.class: "{{ .Values.dex.ingress.class }}"
+    {{- with .Values.dex.certIssuer }}
+    {{- if eq .kind "ClusterIssuer" }}
+    cert-manager.io/cluster-issuer: {{ .name | quote }}
+    {{- else }}
+    cert-manager.io/issuer: {{ .name | quote }}
+    {{- end }}
+    {{- end }}
 spec:
   tls:
   - secretName: dex-tls
