@@ -15,7 +15,7 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRole
 metadata:
-  name: dex
+  name: '{{ template "name" . }}'
 rules:
 - apiGroups: ["dex.coreos.com"] # API group created by dex
   resources: ["*"]
