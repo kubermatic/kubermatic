@@ -40,7 +40,7 @@ const (
 	// Gatekeeper only uses the configs from the namespace which is set as "gatekeeper namespace" in the gatekeeper controller and audit.
 	// For our deployment, its always `gatekeeper-system`
 	ConfigNamespace = "gatekeeper-system"
-	// Gatekeeper audit also hardcodes the config name to `config`
+	// Gatekeeper audit also uses the hardcoded config name `config`
 	ConfigName = "config"
 )
 
@@ -98,15 +98,31 @@ func convertExternalToAPI(conf *configv1alpha1.Config) (*apiv2.GatekeeperConfig,
 
 	specRaw, err := json.Marshal(&conf.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("Error marshalling gatekeeper config spec: %v", err)
+		return nil, fmt.Errorf("error marshalling gatekeeper config spec: %v", err)
 	}
 
 	err = json.Unmarshal(specRaw, &apiConf.Spec)
 	if err != nil {
-		return nil, fmt.Errorf("Error unmarshalling gatekeeper config spec: %v", err)
+		return nil, fmt.Errorf("error unmarshalling gatekeeper config spec: %v", err)
 	}
 
 	return apiConf, nil
+}
+
+func convertAPIToExternal(conf *apiv2.GatekeeperConfig) (*configv1alpha1.Config, error) {
+	externalConf := &configv1alpha1.Config{}
+
+	specRaw, err := json.Marshal(&conf.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling gatekeeper config spec: %v", err)
+	}
+
+	err = json.Unmarshal(specRaw, &externalConf.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("error unmarshalling gatekeeper config spec: %v", err)
+	}
+
+	return externalConf, nil
 }
 
 func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
@@ -134,4 +150,60 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 		return nil, nil
 	}
+}
+
+func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(createGatekeeperConfigReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		clus, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		clusterCli, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, clus, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		conf, err := convertAPIToExternal(&req.Body)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
+		}
+		conf.SetName(ConfigName)
+		conf.SetNamespace(ConfigNamespace)
+
+		if err := clusterCli.Create(ctx, conf); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return req.Body, nil
+	}
+}
+
+// createGatekeeperConfigReq defines HTTP request for the gatekeeper config create
+// swagger:parameters createGatekeeperConfig
+type createGatekeeperConfigReq struct {
+	cluster.GetClusterReq
+	// in: body
+	// required: true
+	Body apiv2.GatekeeperConfig
+}
+
+func DecodeCreateGatkeeperConfigReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req createGatekeeperConfigReq
+
+	cr, err := cluster.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.GetClusterReq = cr.(cluster.GetClusterReq)
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+	return req, nil
 }

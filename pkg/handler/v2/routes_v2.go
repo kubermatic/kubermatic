@@ -276,7 +276,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/constraints/{constraint_name}").
 		Handler(r.patchConstraint())
 
-	// Defines a set of HTTP endpoints for managing gatkeeper config
+	// Defines a set of HTTP endpoints for managing gatekeeper config
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config").
 		Handler(r.getGatekeeperConfig())
@@ -284,6 +284,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config").
 		Handler(r.deleteGatekeeperConfig())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config").
+		Handler(r.createGatekeeperConfig())
 
 	// Defines a set of HTTP endpoints for managing addons
 	mux.Methods(http.MethodGet).
@@ -1366,6 +1370,35 @@ func (r Routing) deleteGatekeeperConfig() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(gatekeeperconfig.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		gatekeeperconfig.DecodeGatkeeperConfigReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config project createGatekeeperConfig
+//
+//     Creates a gatekeeper config for the given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: GatekeeperConfig
+//       401: empty
+//       403: empty
+func (r Routing) createGatekeeperConfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(gatekeeperconfig.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		gatekeeperconfig.DecodeCreateGatkeeperConfigReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
