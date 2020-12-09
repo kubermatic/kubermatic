@@ -29,9 +29,13 @@ type ClientService interface {
 
 	ListAlibabaInstanceTypesNoCredentials(params *ListAlibabaInstanceTypesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaInstanceTypesNoCredentialsOK, error)
 
+	ListAlibabaInstanceTypesNoCredentialsV2(params *ListAlibabaInstanceTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaInstanceTypesNoCredentialsV2OK, error)
+
 	ListAlibabaZones(params *ListAlibabaZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaZonesOK, error)
 
 	ListAlibabaZonesNoCredentials(params *ListAlibabaZonesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaZonesNoCredentialsOK, error)
+
+	ListAlibabaZonesNoCredentialsV2(params *ListAlibabaZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaZonesNoCredentialsV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
 }
@@ -105,6 +109,40 @@ func (a *Client) ListAlibabaInstanceTypesNoCredentials(params *ListAlibabaInstan
 }
 
 /*
+  ListAlibabaInstanceTypesNoCredentialsV2 Lists available Alibaba Instance Types
+*/
+func (a *Client) ListAlibabaInstanceTypesNoCredentialsV2(params *ListAlibabaInstanceTypesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaInstanceTypesNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAlibabaInstanceTypesNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAlibabaInstanceTypesNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/alibaba/instancetypes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAlibabaInstanceTypesNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAlibabaInstanceTypesNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAlibabaInstanceTypesNoCredentialsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   ListAlibabaZones lists available alibaba zones
 */
 func (a *Client) ListAlibabaZones(params *ListAlibabaZonesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaZonesOK, error) {
@@ -169,6 +207,40 @@ func (a *Client) ListAlibabaZonesNoCredentials(params *ListAlibabaZonesNoCredent
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListAlibabaZonesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListAlibabaZonesNoCredentialsV2 Lists available Alibaba Instance Types
+*/
+func (a *Client) ListAlibabaZonesNoCredentialsV2(params *ListAlibabaZonesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAlibabaZonesNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAlibabaZonesNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAlibabaZonesNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/alibaba/zones",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAlibabaZonesNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAlibabaZonesNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAlibabaZonesNoCredentialsV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
