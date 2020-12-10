@@ -24,7 +24,7 @@ import (
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -92,7 +92,7 @@ func ClusterRoleBindingCreator(cfg *operatorv1alpha1.KubermaticConfiguration) re
 
 func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedIngressCreatorGetter {
 	return func() (string, reconciling.IngressCreator) {
-		return ingressName, func(i *extensionsv1beta1.Ingress) (*extensionsv1beta1.Ingress, error) {
+		return ingressName, func(i *networkingv1beta1.Ingress) (*networkingv1beta1.Ingress, error) {
 			if i.Annotations == nil {
 				i.Annotations = make(map[string]string)
 			}
@@ -115,7 +115,7 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 					return nil, fmt.Errorf("unknown Certificate Issuer Kind %q configured", issuer.Kind)
 				}
 
-				i.Spec.TLS = []extensionsv1beta1.IngressTLS{
+				i.Spec.TLS = []networkingv1beta1.IngressTLS{
 					{
 						Hosts:      []string{cfg.Spec.Ingress.Domain},
 						SecretName: certificateSecretName,
@@ -123,7 +123,7 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 				}
 			}
 
-			i.Spec.Backend = &extensionsv1beta1.IngressBackend{
+			i.Spec.Backend = &networkingv1beta1.IngressBackend{
 				ServiceName: uiServiceName,
 				ServicePort: intstr.FromInt(80),
 			}
@@ -132,7 +132,7 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 			// "ImplementationSpecific". To prevent reconcile loops in previous
 			// Kubernetes versions, this code is carefully written to not
 			// overwrite a PathType that has been defaulted by the apiserver.
-			var pathType *extensionsv1beta1.PathType
+			var pathType *networkingv1beta1.PathType
 
 			// As we control the entire rule set anyway, it's enough to find
 			// the first pathType -- they will all be identical eventually.
@@ -145,16 +145,16 @@ func IngressCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.N
 				}
 			}
 
-			i.Spec.Rules = []extensionsv1beta1.IngressRule{
+			i.Spec.Rules = []networkingv1beta1.IngressRule{
 				{
 					Host: cfg.Spec.Ingress.Domain,
-					IngressRuleValue: extensionsv1beta1.IngressRuleValue{
-						HTTP: &extensionsv1beta1.HTTPIngressRuleValue{
-							Paths: []extensionsv1beta1.HTTPIngressPath{
+					IngressRuleValue: networkingv1beta1.IngressRuleValue{
+						HTTP: &networkingv1beta1.HTTPIngressRuleValue{
+							Paths: []networkingv1beta1.HTTPIngressPath{
 								{
 									Path:     "/api",
 									PathType: pathType,
-									Backend: extensionsv1beta1.IngressBackend{
+									Backend: networkingv1beta1.IngressBackend{
 										ServiceName: apiServiceName,
 										ServicePort: intstr.FromInt(80),
 									},

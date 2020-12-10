@@ -138,8 +138,8 @@ func main() {
 			{
 				ResourceName:       "Ingress",
 				ResourceNamePlural: "Ingresses",
-				ImportAlias:        "extensionsv1beta1",
-				ResourceImportPath: "k8s.io/api/extensions/v1beta1",
+				ImportAlias:        "networkingv1beta1",
+				ResourceImportPath: "k8s.io/api/networking/v1beta1",
 			},
 			{
 				ResourceName:       "Seed",

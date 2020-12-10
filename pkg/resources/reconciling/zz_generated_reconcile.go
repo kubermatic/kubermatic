@@ -16,7 +16,7 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
-	extensionsv1beta1 "k8s.io/api/extensions/v1beta1"
+	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -732,7 +732,7 @@ func ReconcileAPIServices(ctx context.Context, namedGetters []NamedAPIServiceCre
 }
 
 // IngressCreator defines an interface to create/update Ingresss
-type IngressCreator = func(existing *extensionsv1beta1.Ingress) (*extensionsv1beta1.Ingress, error)
+type IngressCreator = func(existing *networkingv1beta1.Ingress) (*networkingv1beta1.Ingress, error)
 
 // NamedIngressCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedIngressCreatorGetter = func() (name string, create IngressCreator)
@@ -742,9 +742,9 @@ type NamedIngressCreatorGetter = func() (name string, create IngressCreator)
 func IngressObjectWrapper(create IngressCreator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
-			return create(existing.(*extensionsv1beta1.Ingress))
+			return create(existing.(*networkingv1beta1.Ingress))
 		}
-		return create(&extensionsv1beta1.Ingress{})
+		return create(&networkingv1beta1.Ingress{})
 	}
 }
 
@@ -760,7 +760,7 @@ func ReconcileIngresses(ctx context.Context, namedGetters []NamedIngressCreatorG
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &extensionsv1beta1.Ingress{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &networkingv1beta1.Ingress{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Ingress %s/%s: %v", namespace, name, err)
 		}
 	}
