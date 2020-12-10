@@ -28,6 +28,7 @@ import (
 	autoscaling "k8s.io/api/autoscaling/v1"
 	batch "k8s.io/api/batch/v1"
 	extensions "k8s.io/api/extensions/v1beta1"
+	networking "k8s.io/api/networking/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -80,7 +81,8 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 			},
 			{
 				APIGroups: []string{""},
-				Resources: []string{"configmaps",
+				Resources: []string{
+					"configmaps",
 					"endpoints",
 					"persistentvolumeclaims",
 					"pods",
@@ -95,7 +97,8 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 			},
 			{
 				APIGroups: []string{""},
-				Resources: []string{"bindings",
+				Resources: []string{
+					"bindings",
 					"events",
 					"limitranges",
 					"namespaces/status",
@@ -109,7 +112,8 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 			},
 			{
 				APIGroups: []string{apps.GroupName},
-				Resources: []string{"controllerrevisions",
+				Resources: []string{
+					"controllerrevisions",
 					"daemonsets",
 					"deployments",
 					"deployments/scale",
@@ -132,7 +136,8 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 			},
 			{
 				APIGroups: []string{extensions.GroupName},
-				Resources: []string{"daemonsets",
+				Resources: []string{
+					"daemonsets",
 					"deployments",
 					"deployments/scale",
 					"ingresses",
@@ -144,7 +149,7 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 				Verbs: verbs,
 			},
 			{
-				APIGroups: []string{"networking.k8s.io"},
+				APIGroups: []string{networking.GroupName},
 				Resources: []string{"ingresses", "networkpolicies"},
 				Verbs:     verbs,
 			},
