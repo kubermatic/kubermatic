@@ -55,3 +55,61 @@ type Violation struct {
 	Name              string `json:"name,omitempty"`
 	Namespace         string `json:"namespace,omitempty"`
 }
+
+// GatekeeperConfig represents a gatekeeper config
+// swagger:model GatekeeperConfig
+type GatekeeperConfig struct {
+	Spec GatekeeperConfigSpec `json:"spec"`
+}
+
+type GatekeeperConfigSpec struct {
+	// Configuration for syncing k8s objects
+	Sync Sync `json:"sync,omitempty"`
+
+	// Configuration for validation
+	Validation Validation `json:"validation,omitempty"`
+
+	// Configuration for namespace exclusion
+	Match []MatchEntry `json:"match,omitempty"`
+
+	// Configuration for readiness tracker
+	Readiness ReadinessSpec `json:"readiness,omitempty"`
+}
+
+type Sync struct {
+	// If non-empty, entries on this list will be replicated into OPA
+	SyncOnly []GVK `json:"syncOnly,omitempty"`
+}
+
+type Validation struct {
+	// List of requests to trace. Both "user" and "kinds" must be specified
+	Traces []Trace `json:"traces,omitempty"`
+}
+
+type Trace struct {
+	// Only trace requests from the specified user
+	User string `json:"user,omitempty"`
+	// Only trace requests of the following GroupVersionKind
+	Kind GVK `json:"kind,omitempty"`
+	// Also dump the state of OPA with the trace. Set to `All` to dump everything.
+	Dump string `json:"dump,omitempty"`
+}
+
+type MatchEntry struct {
+	// Namespaces which will be excluded
+	ExcludedNamespaces []string `json:"excludedNamespaces,omitempty"`
+	// Processes which will be excluded in the given namespaces (sync, webhook, audit, *)
+	Processes []string `json:"processes,omitempty"`
+}
+
+type ReadinessSpec struct {
+	// enables stats for gatekeeper audit
+	StatsEnabled bool `json:"statsEnabled,omitempty"`
+}
+
+// GVK group version kind of a resource
+type GVK struct {
+	Group   string `json:"group,omitempty"`
+	Version string `json:"version,omitempty"`
+	Kind    string `json:"kind,omitempty"`
+}

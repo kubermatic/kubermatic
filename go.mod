@@ -56,6 +56,7 @@ require (
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.3
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20201118071520-0d37681951a4
+	github.com/open-policy-agent/gatekeeper v0.0.0-20201111000257-4450f08fa95e
 	github.com/packethost/packngo v0.5.1
 	github.com/pkg/errors v0.9.1
 	github.com/pmezard/go-difflib v1.0.0
