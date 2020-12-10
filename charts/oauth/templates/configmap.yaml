@@ -12,13 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-kind: ConfigMap
 apiVersion: v1
+kind: ConfigMap
 metadata:
   name: dex
 data:
   config.yaml: |
-    issuer: {{ .Values.dex.ingress.scheme }}://{{ .Values.dex.ingress.host }}{{ .Values.dex.ingress.path }}
+    issuer: "{{ .Values.dex.ingress.scheme }}://{{ .Values.dex.ingress.host }}{{ .Values.dex.ingress.path }}"
     oauth2:
       skipApprovalScreen: true
       responseTypes:
@@ -35,8 +35,6 @@ data:
       logoURL: theme/logo.svg
     telemetry:
       http: 0.0.0.0:5558
-    # this is a requirement for static passwords, so we just enable it by default
-    enablePasswordDB: true
 {{ if .Values.dex.expiry }}
     expiry:
 {{ toYaml .Values.dex.expiry | indent 6 }}
@@ -53,12 +51,8 @@ data:
     staticClients:
 {{ toYaml .Values.dex.clients | indent 6 }}
 {{- end }}
-{{ if or .Values.dex.staticPasswords .Values.dex.staticPasswordLogins }}
+{{ if .Values.dex.staticPasswords }}
+    enablePasswordDB: true
     staticPasswords:
-{{- if .Values.dex.staticPasswords }}
 {{ toYaml .Values.dex.staticPasswords | indent 6 }}
-{{- end }}
-{{- if .Values.dex.staticPasswordLogins }}
-{{ toYaml .Values.dex.staticPasswordLogins | indent 6 }}
-{{- end }}
 {{- end }}
