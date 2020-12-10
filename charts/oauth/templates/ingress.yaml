@@ -13,7 +13,7 @@
 # limitations under the License.
 
 {{ if ne .Values.dex.ingress.class "non-existent" }}
-apiVersion: extensions/v1beta1
+apiVersion: networking.k8s.io/v1beta1
 kind: Ingress
 metadata:
   name: dex
