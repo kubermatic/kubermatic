@@ -15,7 +15,7 @@
 prometheus:
   image:
     repository: quay.io/prometheus/prometheus
-    tag: v2.20.1
+    tag: v2.23.0
     pullPolicy: IfNotPresent
 
   host: ''
