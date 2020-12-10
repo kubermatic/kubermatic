@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 
-	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/test"
 )
 
@@ -52,7 +52,7 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 				// nodePort set to 0 so that it gets allocated dynamically.
 				gomega.Expect(svcJig.CreateServiceWithPods(
 					test.NewServiceBuilder(test.NamespacedName{Name: "service-a"}).
-						WithAnnotation(envoymanager.DefaultExposeAnnotationKey, "true").
+						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "true").
 						WithSelector(map[string]string{"apps": "app-a"}).
 						WithServiceType(corev1.ServiceTypeNodePort).
 						WithServicePort("http", 80, 0, intstr.FromInt(8080), corev1.ProtocolTCP).
@@ -60,7 +60,7 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 					NotTo(gomega.BeNil(), "NodePort service creation failed")
 				gomega.Expect(svcJig.CreateServiceWithPods(
 					test.NewServiceBuilder(test.NamespacedName{Name: "service-b"}).
-						WithAnnotation(envoymanager.DefaultExposeAnnotationKey, "true").
+						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "true").
 						WithSelector(map[string]string{"apps": "app-b"}).
 						WithServiceType(corev1.ServiceTypeNodePort).
 						WithServicePort("http", 80, 0, intstr.FromInt(8080), corev1.ProtocolTCP).
@@ -98,8 +98,8 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 			ginkgo.BeforeEach(func() {
 				gomega.Expect(svcJig.CreateServiceWithPods(
 					test.NewServiceBuilder(test.NamespacedName{Name: "service-a"}).
-						WithAnnotation(envoymanager.DefaultExposeAnnotationKey, envoymanager.SNIType.String()).
-						WithAnnotation(envoymanager.PortHostMappingAnnotationKey, `{"https":"service-a.example.com"}`).
+						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, nodeportproxy.SNIType.String()).
+						WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https":"service-a.example.com"}`).
 						WithSelector(map[string]string{"apps": "app-a"}).
 						WithServiceType(corev1.ServiceTypeClusterIP).
 						WithServicePort("https", 6443, 0, intstr.FromInt(6443), corev1.ProtocolTCP).
@@ -107,8 +107,8 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 					NotTo(gomega.BeNil(), "ClusterIP service creation failed")
 				gomega.Expect(svcJig.CreateServiceWithPods(
 					test.NewServiceBuilder(test.NamespacedName{Name: "service-b"}).
-						WithAnnotation(envoymanager.DefaultExposeAnnotationKey, envoymanager.SNIType.String()).
-						WithAnnotation(envoymanager.PortHostMappingAnnotationKey, `{"https":"service-b.example.com"}`).
+						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, nodeportproxy.SNIType.String()).
+						WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https":"service-b.example.com"}`).
 						WithSelector(map[string]string{"apps": "app-b"}).
 						WithServiceType(corev1.ServiceTypeClusterIP).
 						WithServicePort("https", 6443, 0, intstr.FromInt(6443), corev1.ProtocolTCP).
@@ -131,7 +131,7 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 			ginkgo.BeforeEach(func() {
 				gomega.Expect(svcJig.CreateServiceWithPods(
 					test.NewServiceBuilder(test.NamespacedName{Name: "service-a"}).
-						WithAnnotation(envoymanager.DefaultExposeAnnotationKey, envoymanager.TunnelingType.String()).
+						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, nodeportproxy.TunnelingType.String()).
 						WithSelector(map[string]string{"apps": "app-a"}).
 						WithServiceType(corev1.ServiceTypeClusterIP).
 						WithServicePort("https", 8080, 0, intstr.FromInt(8088), corev1.ProtocolTCP).
@@ -139,7 +139,7 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 					NotTo(gomega.BeNil(), "ClusterIP service creation failed")
 				gomega.Expect(svcJig.CreateServiceWithPods(
 					test.NewServiceBuilder(test.NamespacedName{Name: "service-b"}).
-						WithAnnotation(envoymanager.DefaultExposeAnnotationKey, envoymanager.TunnelingType.String()).
+						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, nodeportproxy.TunnelingType.String()).
 						WithSelector(map[string]string{"apps": "app-b"}).
 						WithServiceType(corev1.ServiceTypeClusterIP).
 						WithServicePort("https", 8080, 0, intstr.FromInt(8088), corev1.ProtocolTCP).
@@ -170,7 +170,7 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 					NotTo(gomega.BeNil(), "NodePort service creation failed")
 				gomega.Expect(svcJig.CreateServiceWithPods(
 					test.NewServiceBuilder(test.NamespacedName{Name: "service-b"}).
-						WithAnnotation(envoymanager.DefaultExposeAnnotationKey, "false").
+						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "false").
 						WithSelector(map[string]string{"apps": "app-b"}).
 						WithServiceType(corev1.ServiceTypeNodePort).
 						WithServicePort("http", 80, 0, intstr.FromInt(8080), corev1.ProtocolTCP).

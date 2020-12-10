@@ -19,7 +19,6 @@ package openvpn
 import (
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
@@ -42,15 +41,15 @@ func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.Name
 			switch exposeStrategy {
 			case kubermaticv1.ExposeStrategyNodePort:
 				se.Spec.Type = corev1.ServiceTypeNodePort
-				se.Annotations[envoymanager.DefaultExposeAnnotationKey] = "true"
+				se.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = "true"
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			case kubermaticv1.ExposeStrategyLoadBalancer:
 				se.Spec.Type = corev1.ServiceTypeNodePort
 				se.Annotations[nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey] = "true"
-				delete(se.Annotations, envoymanager.DefaultExposeAnnotationKey)
+				delete(se.Annotations, nodeportproxy.DefaultExposeAnnotationKey)
 			case kubermaticv1.ExposeStrategyTunneling:
 				se.Spec.Type = corev1.ServiceTypeClusterIP
-				se.Annotations[envoymanager.DefaultExposeAnnotationKey] = envoymanager.TunnelingType.String()
+				se.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = nodeportproxy.TunnelingType.String()
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			default:
 				return nil, fmt.Errorf("unsupported expose strategy: %q", exposeStrategy)

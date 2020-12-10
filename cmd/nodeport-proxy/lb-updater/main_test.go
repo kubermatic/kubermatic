@@ -33,6 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 )
 
 func TestReconciliation(t *testing.T) {
@@ -704,7 +705,7 @@ func TestReconciliation(t *testing.T) {
 				client:      client,
 				log:         zap.NewNop().Sugar(),
 				opts: envoymanager.Options{
-					ExposeAnnotationKey:        envoymanager.DefaultExposeAnnotationKey,
+					ExposeAnnotationKey:        nodeportproxy.DefaultExposeAnnotationKey,
 					EnvoySNIListenerPort:       tc.sniListenerPort,
 					EnvoyTunnelingListenerPort: tc.tunnelingListenerPort,
 				},

@@ -22,7 +22,6 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
-	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -42,7 +41,7 @@ func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, internalName str
 			switch exposeStrategy {
 			case kubermaticv1.ExposeStrategyNodePort:
 				se.Spec.Type = corev1.ServiceTypeNodePort
-				se.Annotations[envoymanager.DefaultExposeAnnotationKey] = envoymanager.NodePortType.String()
+				se.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = nodeportproxy.NodePortType.String()
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			case kubermaticv1.ExposeStrategyLoadBalancer:
 				// Even when using exposeStrategy==LoadBalancer, we create
@@ -52,14 +51,14 @@ func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, internalName str
 				// for a unique port
 				se.Spec.Type = corev1.ServiceTypeNodePort
 				se.Annotations[nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey] = "true"
-				delete(se.Annotations, envoymanager.DefaultExposeAnnotationKey)
+				delete(se.Annotations, nodeportproxy.DefaultExposeAnnotationKey)
 			case kubermaticv1.ExposeStrategyTunneling:
 				se.Spec.Type = corev1.ServiceTypeClusterIP
 				// When using exposeStrategy==Tunneling we need to expose
 				// the APIServer both with the SNI and the Tunneling listeners.
-				se.Annotations[envoymanager.DefaultExposeAnnotationKey] = strings.Join([]string{envoymanager.SNIType.String(), envoymanager.TunnelingType.String()}, ",")
+				se.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = strings.Join([]string{nodeportproxy.SNIType.String(), nodeportproxy.TunnelingType.String()}, ",")
 				// We map the secure port to the internal name for SNI routing.
-				se.Annotations[envoymanager.PortHostMappingAnnotationKey] = fmt.Sprintf(`{"secure": %q}`, internalName)
+				se.Annotations[nodeportproxy.PortHostMappingAnnotationKey] = fmt.Sprintf(`{"secure": %q}`, internalName)
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			default:
 				return nil, fmt.Errorf("unsupported expose strategy: %q", exposeStrategy)
