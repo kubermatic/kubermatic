@@ -1348,7 +1348,7 @@ func (r Routing) getGatekeeperConfig() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config project getGatekeeperConfig
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config project deleteGatekeeperConfig
 //
 //     Deletes the gatekeeper sync config for the specified cluster.
 //

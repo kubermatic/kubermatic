@@ -9434,6 +9434,154 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Gets the gatekeeper sync config for the specified cluster.",
+        "operationId": "getGatekeeperConfig",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "GatekeeperConfig",
+            "schema": {
+              "$ref": "#/definitions/GatekeeperConfig"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a gatekeeper config for the given cluster",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "operationId": "createGatekeeperConfig",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/GatekeeperConfig"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "GatekeeperConfig",
+            "schema": {
+              "$ref": "#/definitions/GatekeeperConfig"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Deletes the gatekeeper sync config for the specified cluster.",
+        "operationId": "deleteGatekeeperConfig",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/health": {
       "get": {
         "description": "Returns the cluster's component health status",
@@ -14368,6 +14516,58 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "GVK": {
+      "description": "GVK group version kind of a resource",
+      "type": "object",
+      "properties": {
+        "group": {
+          "type": "string",
+          "x-go-name": "Group"
+        },
+        "kind": {
+          "type": "string",
+          "x-go-name": "Kind"
+        },
+        "version": {
+          "type": "string",
+          "x-go-name": "Version"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GatekeeperConfig": {
+      "description": "GatekeeperConfig represents a gatekeeper config",
+      "type": "object",
+      "properties": {
+        "spec": {
+          "$ref": "#/definitions/GatekeeperConfigSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "GatekeeperConfigSpec": {
+      "type": "object",
+      "properties": {
+        "match": {
+          "description": "Configuration for namespace exclusion",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/MatchEntry"
+          },
+          "x-go-name": "Match"
+        },
+        "readiness": {
+          "$ref": "#/definitions/ReadinessSpec"
+        },
+        "sync": {
+          "$ref": "#/definitions/Sync"
+        },
+        "validation": {
+          "$ref": "#/definitions/Validation"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "GlobalCustomLinks": {
       "description": "GlobalCustomLinks defines custom links for global settings",
       "type": "array",
@@ -15093,6 +15293,28 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "MatchEntry": {
+      "type": "object",
+      "properties": {
+        "excludedNamespaces": {
+          "description": "Namespaces which will be excluded",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "ExcludedNamespaces"
+        },
+        "processes": {
+          "description": "Processes which will be excluded in the given namespaces (sync, webhook, audit, *)",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Processes"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "Names": {
       "type": "object",
@@ -16477,6 +16699,17 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "ReadinessSpec": {
+      "type": "object",
+      "properties": {
+        "statsEnabled": {
+          "description": "enables stats for gatekeeper audit",
+          "type": "boolean",
+          "x-go-name": "StatsEnabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "ResourceLabelMap": {
       "type": "object",
       "title": "ResourceLabelMap defines list of labels grouped by specific resource types.",
@@ -16904,6 +17137,20 @@
       },
       "x-go-package": "k8s.io/api/rbac/v1"
     },
+    "Sync": {
+      "type": "object",
+      "properties": {
+        "syncOnly": {
+          "description": "If non-empty, entries on this list will be replicated into OPA",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/GVK"
+          },
+          "x-go-name": "SyncOnly"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
     "TaintSpec": {
       "description": "TaintSpec defines a node taint",
       "type": "object",
@@ -16950,6 +17197,25 @@
       "format": "date-time",
       "title": "A Time represents an instant in time with nanosecond precision.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "Trace": {
+      "type": "object",
+      "properties": {
+        "dump": {
+          "description": "Also dump the state of OPA with the trace. Set to `All` to dump everything.",
+          "type": "string",
+          "x-go-name": "Dump"
+        },
+        "kind": {
+          "$ref": "#/definitions/GVK"
+        },
+        "user": {
+          "description": "Only trace requests from the specified user",
+          "type": "string",
+          "x-go-name": "User"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "UID": {
       "description": "UID is a type that holds unique ID values, including UUIDs.  Because we\ndon't ONLY use UUIDs, this is an alias to string.  Being a type captures\nintent and helps make sure that UIDs and names do not get conflated.",
