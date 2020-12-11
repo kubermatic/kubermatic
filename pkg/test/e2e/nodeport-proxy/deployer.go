@@ -152,6 +152,7 @@ func (d *Deployer) SetUp() error {
 			}
 		}
 	}
+	d.Log.Debugw("deployed nodeport-proxy", "version", d.Versions.Kubermatic)
 	return nil
 }
 

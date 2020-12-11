@@ -75,7 +75,7 @@ else
         --ginkgo.failOnPending \
         --ginkgo.trace \
         --ginkgo.progress \
-        -- --kubeconfig "${HOME}/.kube/config" \
+        --kubeconfig "${HOME}/.kube/config" \
         --kubermatic-tag "${TAG}" \
         --debug-log
 fi

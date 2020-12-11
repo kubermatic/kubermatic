@@ -98,7 +98,7 @@ func EnvoyDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, seed 
 			if cfg.Spec.FeatureGates.Has(features.TunnelingExposeStrategy) {
 				args = append(args,
 					fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
-					fmt.Sprintf("-envoy-tunneling-connect-port=%d", EnvoyTunnelingPort))
+					fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort))
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -226,7 +226,7 @@ func UpdaterDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, see
 			if cfg.Spec.FeatureGates.Has(features.TunnelingExposeStrategy) {
 				args = append(args,
 					fmt.Sprintf("-envoy-sni-port=%d", EnvoySNIPort),
-					fmt.Sprintf("-envoy-tunneling-connect-port=%d", EnvoyTunnelingPort))
+					fmt.Sprintf("-envoy-tunneling-port=%d", EnvoyTunnelingPort))
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
