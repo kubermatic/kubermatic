@@ -29,6 +29,8 @@ type ClientService interface {
 
 	ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesNoCredentialsOK, error)
 
+	ListPacketSizesNoCredentialsV2(params *ListPacketSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesNoCredentialsV2OK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -97,6 +99,40 @@ func (a *Client) ListPacketSizesNoCredentials(params *ListPacketSizesNoCredentia
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListPacketSizesNoCredentialsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListPacketSizesNoCredentialsV2 Lists sizes from packet
+*/
+func (a *Client) ListPacketSizesNoCredentialsV2(params *ListPacketSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListPacketSizesNoCredentialsV2OK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListPacketSizesNoCredentialsV2Params()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listPacketSizesNoCredentialsV2",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/packet/sizes",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListPacketSizesNoCredentialsV2Reader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListPacketSizesNoCredentialsV2OK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListPacketSizesNoCredentialsV2Default)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
