@@ -44,8 +44,15 @@ type ServiceJig struct {
 	ServicePods map[string][]string
 }
 
-// CreateNodePortService deploys a service and the associated pods.
-func (n *ServiceJig) CreateNodePortService(name string, nodePort int32, numPods int32, annotations map[string]string) (*corev1.Service, error) {
+// CreateServiceWithPods deploys a service and the associated pods.
+func (n *ServiceJig) CreateServiceWithPods(svc *corev1.Service, numPods int32, https bool) (*corev1.Service, error) {
+	if len(svc.Spec.Ports) == 0 {
+		return nil, errors.New("failed to create service: at least one port is required")
+	}
+	if len(svc.Spec.Selector) == 0 {
+		return nil, errors.New("failed to create service: selector is required")
+	}
+
 	// Create the namespace to host the service
 	ns := n.newNamespaceTemplate()
 	n.Log.Debugw("Creating namespace", "service", ns)
@@ -56,23 +63,18 @@ func (n *ServiceJig) CreateNodePortService(name string, nodePort int32, numPods 
 	} else {
 		// Set back namespace name in case it was generated
 		n.Namespace = ns.Name
-		n.Log.Debugw("Setting generated namespace to SeriviceJig", "namespace", n.Namespace)
+		n.Log.Debugw("Setting generated namespace to ServiceJig", "namespace", n.Namespace)
 	}
 
-	labels := map[string]string{"apps": name}
-	// Finally create service
-	svc := n.newServiceTemplate(name, n.Namespace, annotations, labels)
-	svc.Spec.Type = corev1.ServiceTypeNodePort
-	svc.Spec.Ports[0].NodePort = nodePort
+	svc.Namespace = n.Namespace
 	n.Log.Debugw("Creating nodeport service", "service", svc)
 	if err := n.Client.Create(context.TODO(), svc); err != nil {
 		return nil, errors.Wrap(err, "failed to create service of type nodeport")
 	}
 	gomega.Expect(svc).NotTo(gomega.BeNil())
-	gomega.Expect(ExtractNodePorts(svc)).To(gomega.HaveLen(1))
 
 	// Create service pods
-	rc := n.newRCTemplate(name, n.Namespace, numPods, labels)
+	rc := n.newRCFromService(svc, https, numPods)
 	n.Log.Debugw("Creating replication controller", "rc", rc)
 	if err := n.Client.Create(context.TODO(), rc); err != nil {
 		return nil, err
@@ -107,55 +109,46 @@ func (n *ServiceJig) newNamespaceTemplate() *corev1.Namespace {
 	return ns
 }
 
-func (n *ServiceJig) newServiceTemplate(name, namespace string,
-	annotations, labels map[string]string) *corev1.Service {
-	svc := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:        name,
-			Namespace:   namespace,
-			Annotations: annotations,
-			Labels:      labels,
-		},
-		Spec: corev1.ServiceSpec{
-			Selector: labels,
-			Ports: []corev1.ServicePort{
-				{
-					Protocol:   corev1.ProtocolTCP,
-					Port:       80,
-					TargetPort: intstr.FromInt(8080),
-				},
-			},
-		},
+func (n *ServiceJig) newRCFromService(svc *corev1.Service, https bool, replicas int32) *corev1.ReplicationController {
+	var args []string
+	var port intstr.IntOrString
+	var scheme corev1.URIScheme
+	if https {
+		port = svc.Spec.Ports[0].TargetPort
+		args = []string{"netexec", fmt.Sprintf("--http-port=%d", port.IntValue()), "--tls-cert-file=/localhost.crt", "--tls-private-key-file=/localhost.key"}
+		scheme = corev1.URISchemeHTTPS
+	} else {
+		port = svc.Spec.Ports[0].TargetPort
+		args = []string{"netexec", fmt.Sprintf("--http-port=%d", port.IntValue())}
+		scheme = corev1.URISchemeHTTP
 	}
-	return svc
-}
 
-func (n *ServiceJig) newRCTemplate(name, namespace string, replicas int32, labels map[string]string) *corev1.ReplicationController {
 	rc := &corev1.ReplicationController{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: namespace,
-			Labels:    labels,
+			Name:      svc.Name,
+			Namespace: svc.Namespace,
+			Labels:    svc.Spec.Selector,
 		},
 		Spec: corev1.ReplicationControllerSpec{
 			Replicas: &replicas,
-			Selector: labels,
+			Selector: svc.Spec.Selector,
 			Template: &corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
-					Labels: labels,
+					Labels: svc.Spec.Selector,
 				},
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
 						{
 							Name:  "agnhost",
 							Image: AgnhostImage,
-							Args:  []string{"serve-hostname", "--port=8080"},
+							Args:  args,
 							ReadinessProbe: &corev1.Probe{
 								PeriodSeconds: 3,
 								Handler: corev1.Handler{
 									HTTPGet: &corev1.HTTPGetAction{
-										Port: intstr.FromInt(8080),
-										Path: "/",
+										Port:   port,
+										Path:   "/",
+										Scheme: scheme,
 									},
 								},
 							},

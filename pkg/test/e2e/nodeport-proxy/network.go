@@ -125,12 +125,28 @@ func (n *NetworkingTestConfig) CleanUp() error {
 // maxTries == minTries will confirm that we see the expected endpoints and no
 // more for maxTries. Use this if you want to eg: fail a readiness check on a
 // pod and confirm it doesn't show up as an endpoint.
-func (n *NetworkingTestConfig) DialFromNode(targetIP string, targetPort, maxTries, minTries int, expectedEps sets.String) sets.String {
+func (n *NetworkingTestConfig) DialFromNode(targetIP string, targetPort, maxTries, minTries int, expectedEps sets.String, https bool, args ...string) sets.String {
 	ipPort := net.JoinHostPort(targetIP, strconv.Itoa(targetPort))
 	// The current versions of curl included in CentOS and RHEL distros
 	// misinterpret square brackets around IPv6 as globbing, so use the -g
 	// argument to disable globbing to handle the IPv6 case.
-	cmd := fmt.Sprintf("curl -g -q -s --max-time 15 --connect-timeout 1 http://%s/hostName", ipPort)
+	c := []string{
+		"curl",
+		"-k",
+		"-g",
+		"-q",
+		"-s",
+		"--max-time 15",
+		"--connect-timeout 1",
+	}
+
+	c = append(c, args...)
+	if https {
+		c = append(c, fmt.Sprintf("https://%s/hostName", ipPort))
+	} else {
+		c = append(c, fmt.Sprintf("http://%s/hostName", ipPort))
+	}
+	cmd := strings.Join(c, " ")
 
 	// TODO: This simply tells us that we can reach the endpoints. Check that
 	// the probability of hitting a specific endpoint is roughly the same as

@@ -56,6 +56,7 @@ type ServiceBuilder struct {
 
 	serviceType  corev1.ServiceType
 	servicePorts []corev1.ServicePort
+	selector     map[string]string
 }
 
 // NewServiceBuilder returns a ServiceBuilder to be used to build a v1.Service
@@ -70,6 +71,11 @@ func NewServiceBuilder(nn NamespacedName) *ServiceBuilder {
 	}
 }
 
+func (b *ServiceBuilder) WithLabel(key, value string) *ServiceBuilder {
+	_ = b.ObjectBuilder.WithLabel(key, value)
+	return b
+}
+
 func (b *ServiceBuilder) WithAnnotation(key, value string) *ServiceBuilder {
 	_ = b.ObjectBuilder.WithAnnotation(key, value)
 	return b
@@ -82,6 +88,11 @@ func (b *ServiceBuilder) WithCreationTimestamp(time time.Time) *ServiceBuilder {
 
 func (b *ServiceBuilder) WithServiceType(serviceType corev1.ServiceType) *ServiceBuilder {
 	b.serviceType = serviceType
+	return b
+}
+
+func (b *ServiceBuilder) WithSelector(selector map[string]string) *ServiceBuilder {
+	b.selector = selector
 	return b
 }
 
@@ -109,8 +120,9 @@ func (b ServiceBuilder) Build() *corev1.Service {
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta(b.ObjectBuilder),
 		Spec: corev1.ServiceSpec{
-			Type:  b.serviceType,
-			Ports: b.servicePorts,
+			Type:     b.serviceType,
+			Ports:    b.servicePorts,
+			Selector: b.selector,
 		},
 	}
 }
