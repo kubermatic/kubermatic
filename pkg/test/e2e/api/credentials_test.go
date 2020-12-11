@@ -141,10 +141,14 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 				req.Header.Set("Location", tc.location)
 			}
 
-			// should be able to perform at least 4 calls in case request
-			// timeout is hit all the times
-			client := utils.NewHTTPClientWithRetries(t, 10*time.Second, 1*time.Second, 50*time.Second)
-
+			// with those settings the cumulative sleep duration is ~ 8s
+			// when all attempts are made.
+			client := &http.Client{
+				Transport: utils.NewRoundTripperWithRetries(t, 15*time.Second, utils.Backoff{
+					Steps:    4,
+					Duration: 1 * time.Second,
+					Factor:   1.5}),
+			}
 			resp, err := client.Do(req)
 			if err != nil {
 				t.Fatalf("error reading response: %v", err)

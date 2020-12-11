@@ -1133,7 +1133,11 @@ func (r *runner) UpdateDC(seed, dcToUpdate string, dc *models.Datacenter) (*mode
 		DCToUpdate: dcToUpdate,
 		Seed:       seed,
 	}
-	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusBadRequest)
+	utils.SetupRetryParams(r.test, params, utils.Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	}, http.StatusBadRequest)
 
 	updatedDC, err := r.client.Datacenter.UpdateDC(params, r.bearerToken)
 	if err != nil {
