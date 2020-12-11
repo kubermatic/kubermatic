@@ -18,10 +18,12 @@ package seed
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
@@ -39,6 +41,7 @@ func newSeedValidator(
 	workerName string,
 	client ctrlruntimeclient.Client,
 	seedClientGetter provider.SeedClientGetter,
+	features features.FeatureGate,
 ) (*validator, error) {
 	labelSelector, err := workerlabel.LabelSelector(workerName)
 	if err != nil {
@@ -50,6 +53,7 @@ func newSeedValidator(
 		seedClientGetter: seedClientGetter,
 		lock:             &sync.Mutex{},
 		listOpts:         listOpts,
+		features:         features,
 	}, nil
 }
 
@@ -62,6 +66,7 @@ type validator struct {
 	lock             *sync.Mutex
 	// Can be used to insert a labelSelector
 	listOpts *ctrlruntimeclient.ListOptions
+	features features.FeatureGate
 }
 
 // Validate returns an error if the given seed does not pass all validation steps.
@@ -101,6 +106,11 @@ func (v *validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op ad
 }
 
 func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, existingSeeds map[string]*kubermaticv1.Seed, isDelete bool) error {
+	// check wether the expose strategy is allowed or not.
+	if subject.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling && !v.features.Enabled(features.TunnelingExposeStrategy) {
+		return errors.New("cannot create seed using Tunneling as a default expose strategy, the TunnelingExposeStrategy feature gate is not enabled.")
+	}
+
 	// this can be nil on new seed clusters
 	existingSeed := existingSeeds[subject.Name]
 

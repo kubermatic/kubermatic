@@ -24,6 +24,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
@@ -52,6 +53,7 @@ type controllerRunOptions struct {
 	seedvalidationHook      validation.WebhookOpts
 	enableLeaderElection    bool
 	leaderElectionNamespace string
+	featureGates            features.FeatureGate
 
 	workerName string
 	namespace  string
@@ -73,7 +75,7 @@ type controllerContext struct {
 
 func main() {
 	ctrlCtx := &controllerContext{}
-	runOpts := controllerRunOptions{}
+	runOpts := controllerRunOptions{featureGates: features.FeatureGate{}}
 	klog.InitFlags(nil)
 	pprofOpts := &pprof.Opts{}
 	pprofOpts.AddFlags(flag.CommandLine)
@@ -87,6 +89,7 @@ func main() {
 	flag.BoolVar(&runOpts.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. "+
 		"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&runOpts.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
+	flag.Var(&runOpts.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
 	addFlags(flag.CommandLine)
 	flag.Parse()
 

@@ -71,9 +71,8 @@ type serverRunOptions struct {
 }
 
 func newServerRunOptions() (serverRunOptions, error) {
-	s := serverRunOptions{}
+	s := serverRunOptions{featureGates: features.FeatureGate{}}
 	var (
-		rawFeatureGates     string
 		rawExposeStrategy   string
 		rawAccessibleAddons string
 		oidcCAFile          string
@@ -102,7 +101,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.oidcIssuerCookieHashKey, "oidc-issuer-cookie-hash-key", "", "Hash key authenticates the cookie value using HMAC. It is recommended to use a key with 32 or 64 bytes.")
 	flag.BoolVar(&s.oidcIssuerCookieSecureMode, "oidc-issuer-cookie-secure-mode", true, "When true cookie received only with HTTPS. Set false for local deployment with HTTP")
 	flag.BoolVar(&s.oidcIssuerOfflineAccessAsScope, "oidc-issuer-offline-access-as-scope", true, "Set it to false if OIDC provider requires to set \"access_type=offline\" query param when accessing the refresh token")
-	flag.StringVar(&rawFeatureGates, "feature-gates", "", "A set of key=value pairs that describe feature gates for various features.")
+	flag.Var(&s.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
 	flag.StringVar(&s.domain, "domain", "localhost", "A domain name on which the server is deployed")
 	flag.StringVar(&s.serviceAccountSigningKey, "service-account-signing-key", "", "Signing key authenticates the service account's token value using HMAC. It is recommended to use a key with 32 bytes or longer.")
 	flag.StringVar(&rawExposeStrategy, "expose-strategy", "NodePort", "The strategy to expose the controlplane with, either \"NodePort\" which creates NodePorts with a \"nodeport-proxy.k8s.io/expose: true\" annotation or \"LoadBalancer\", which creates a LoadBalancer")
@@ -110,12 +109,6 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	addFlags(flag.CommandLine)
 	flag.Parse()
-
-	featureGates, err := features.NewFeatures(rawFeatureGates)
-	if err != nil {
-		return s, err
-	}
-	s.featureGates = featureGates
 
 	var validExposeStrategy bool
 	s.exposeStrategy, validExposeStrategy = kubermaticv1.ExposeStrategyFromString(rawExposeStrategy)
