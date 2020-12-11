@@ -181,8 +181,8 @@ func (u *LBUpdater) syncLB(s string) error {
 	for _, service := range services.Items {
 		serviceLog := u.log.With("namespace", service.Namespace).With("name", service.Name)
 
-		if service.Annotations[u.opts.ExposeAnnotationKey] != "true" {
-			serviceLog.Debugw("Skipping service as the annotation is not set to 'true'", "annotation", u.opts.ExposeAnnotationKey)
+		if e := service.Annotations[u.opts.ExposeAnnotationKey]; e != "true" && e != nodeportproxy.NodePortType.String() {
+			serviceLog.Debugw("Skipping service as the annotation is not set to 'true' or NodePort", "annotation", u.opts.ExposeAnnotationKey)
 			continue
 		}
 

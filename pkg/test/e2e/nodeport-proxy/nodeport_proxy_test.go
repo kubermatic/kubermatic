@@ -52,7 +52,7 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 				// nodePort set to 0 so that it gets allocated dynamically.
 				gomega.Expect(svcJig.CreateServiceWithPods(
 					test.NewServiceBuilder(test.NamespacedName{Name: "service-a"}).
-						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "true").
+						WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, nodeportproxy.NodePortType.String()).
 						WithSelector(map[string]string{"apps": "app-a"}).
 						WithServiceType(corev1.ServiceTypeNodePort).
 						WithServicePort("http", 80, 0, intstr.FromInt(8080), corev1.ProtocolTCP).
