@@ -31,6 +31,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/wait"
 )
 
+type Backoff wait.Backoff
+
 const (
 	apiRequestTimeout = 10 * time.Second
 )
@@ -39,31 +41,40 @@ type requestParameterHolder interface {
 	SetHTTPClient(*http.Client)
 }
 
+// SetupParams configures retries for HTTP calls for a total period defined by
+// 'timeout' parameter and for an 'interval' duration.
+// Deprecated: Use SetupRetryParams instead.
 func SetupParams(t *testing.T, p requestParameterHolder, interval time.Duration, timeout time.Duration, ignoredStatusCodes ...int) {
-	p.SetHTTPClient(NewHTTPClientWithRetries(t, apiRequestTimeout, interval, timeout, ignoredStatusCodes...))
+	// set backoff factor to 1 to fallback to linear backoff
+	SetupRetryParams(t, p, Backoff{Duration: interval, Steps: int(timeout / interval), Factor: 1},
+		ignoredStatusCodes...)
 }
 
-func NewHTTPClientWithRetries(t *testing.T, requestTimeout time.Duration, retryInterval, retryTimeout time.Duration, ignoredStatusCodes ...int) *http.Client {
-	return &http.Client{
-		Transport: &relaxedRoundtripper{
-			test:               t,
-			ignoredStatusCodes: sets.NewInt(ignoredStatusCodes...),
-			retryInterval:      retryInterval,
-			retryTimeout:       retryTimeout,
-			requestTimeout:     requestTimeout,
-		},
+// SetupRetryParams configure retries for HTTP calls based on backoff
+// parameters.
+func SetupRetryParams(t *testing.T, p requestParameterHolder, backoff Backoff, ignoredStatusCodes ...int) {
+	p.SetHTTPClient(&http.Client{
+		Transport: NewRoundTripperWithRetries(t, apiRequestTimeout, backoff, ignoredStatusCodes...),
+	})
+}
+
+func NewRoundTripperWithRetries(t *testing.T, requestTimeout time.Duration, backoff Backoff, ignoredStatusCodes ...int) http.RoundTripper {
+	return &retryRoundTripper{
+		Backoff:            backoff,
+		test:               t,
+		ignoredStatusCodes: sets.NewInt(ignoredStatusCodes...),
+		requestTimeout:     requestTimeout,
 	}
 }
 
-type relaxedRoundtripper struct {
+type retryRoundTripper struct {
+	Backoff
+	requestTimeout     time.Duration
 	test               *testing.T
 	ignoredStatusCodes sets.Int
-	retryInterval      time.Duration
-	retryTimeout       time.Duration
-	requestTimeout     time.Duration
 }
 
-func (r *relaxedRoundtripper) RoundTrip(request *http.Request) (*http.Response, error) {
+func (r *retryRoundTripper) RoundTrip(request *http.Request) (*http.Response, error) {
 	var (
 		bodyBytes []byte
 		response  *http.Response
@@ -84,14 +95,12 @@ func (r *relaxedRoundtripper) RoundTrip(request *http.Request) (*http.Response, 
 		r.test.Logf("%s %s", request.Method, request.URL.Path)
 	}
 
-	attempts := 0
-
-	// TODO(irozzo): Probably using an exponential backoff instead is more
-	// appropriate and avoids too many calls.
-	err := wait.PollImmediate(r.retryInterval, r.retryTimeout, func() (bool, error) {
+	// do at least an attempt
+	if r.Backoff.Steps <= 0 {
+		r.Backoff.Steps = 1
+	}
+	err := wait.ExponentialBackoff(wait.Backoff(r.Backoff), func() (bool, error) {
 		var reqErr error
-
-		attempts++
 
 		// create a fresh timeout that starts *now*
 		// NB: Do *not* cancel this context, as the context controls the
@@ -135,15 +144,13 @@ func (r *relaxedRoundtripper) RoundTrip(request *http.Request) (*http.Response, 
 	})
 
 	if err != nil {
-		// because our Poll function never returns an error, err must be ErrWaitTimeout;
-		// RoundTrippers must never return a response and an error at the same time.
-		return nil, errors.Wrapf(multiErr, "request did not succeed after %v (%d attempts, ignoring HTTP codes %v)", r.retryTimeout, attempts, r.ignoredStatusCodes.List())
+		return nil, errors.Wrapf(multiErr, "request did not succeed after %d attempts (ignoring HTTP codes %v)", r.Steps, r.ignoredStatusCodes.List())
 	}
 
 	return response, nil
 }
 
-func (r *relaxedRoundtripper) isTransientError(resp *http.Response) bool {
+func (r *retryRoundTripper) isTransientError(resp *http.Response) bool {
 	// 5xx return codes may be associated to recoverable
 	// conditions, with the exception of 501 (Not implemented)
 	return resp.StatusCode == 0 || (resp.StatusCode >= 500 && resp.StatusCode != http.StatusNotImplemented) || r.ignoredStatusCodes.Has(resp.StatusCode)

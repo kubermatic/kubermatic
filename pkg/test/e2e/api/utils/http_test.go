@@ -29,7 +29,7 @@ func TestHttpClientWithRetries(t *testing.T) {
 		name              string
 		handlerFuncs      []http.HandlerFunc
 		retryInterval     time.Duration
-		retryTimeout      time.Duration
+		numRetries        int
 		requestTimeout    time.Duration
 		allowedErrorCodes []int
 		expStatus         int
@@ -43,7 +43,9 @@ func TestHttpClientWithRetries(t *testing.T) {
 					fmt.Fprintln(w, "success")
 				},
 			},
-			expStatus: 200,
+
+			numRetries: 1,
+			expStatus:  200,
 		},
 		{
 			name: "success after 2 allowed error codes",
@@ -62,7 +64,7 @@ func TestHttpClientWithRetries(t *testing.T) {
 				},
 			},
 			retryInterval:     1 * time.Millisecond,
-			retryTimeout:      10 * time.Millisecond,
+			numRetries:        3,
 			allowedErrorCodes: []int{404},
 			expStatus:         200,
 		},
@@ -79,7 +81,7 @@ func TestHttpClientWithRetries(t *testing.T) {
 				},
 			},
 			retryInterval: 1 * time.Millisecond,
-			retryTimeout:  10 * time.Millisecond,
+			numRetries:    2,
 			expStatus:     200,
 		},
 		{
@@ -105,7 +107,7 @@ func TestHttpClientWithRetries(t *testing.T) {
 				},
 			},
 			retryInterval: 1 * time.Millisecond,
-			retryTimeout:  10 * time.Millisecond,
+			numRetries:    3,
 			expErr:        true,
 		},
 		{
@@ -129,7 +131,7 @@ func TestHttpClientWithRetries(t *testing.T) {
 				},
 			},
 			retryInterval:  1 * time.Millisecond,
-			retryTimeout:   10 * time.Millisecond,
+			numRetries:     3,
 			requestTimeout: 10 * time.Millisecond,
 			expStatus:      200,
 		},
@@ -144,7 +146,7 @@ func TestHttpClientWithRetries(t *testing.T) {
 				},
 			},
 			retryInterval:  1 * time.Millisecond,
-			retryTimeout:   10 * time.Millisecond,
+			numRetries:     3,
 			requestTimeout: 10 * time.Microsecond,
 			expErr:         true,
 		},
@@ -155,7 +157,8 @@ func TestHttpClientWithRetries(t *testing.T) {
 			if tt.requestTimeout == 0 {
 				tt.requestTimeout = apiRequestTimeout
 			}
-			cli := NewHTTPClientWithRetries(t, tt.requestTimeout, tt.retryInterval, tt.retryTimeout, tt.allowedErrorCodes...)
+			rt := NewRoundTripperWithRetries(t, tt.requestTimeout, Backoff{Steps: tt.numRetries, Duration: tt.retryInterval, Factor: 1.0}, tt.allowedErrorCodes...)
+			cli := &http.Client{Transport: rt}
 			req, err := http.NewRequest("GET", ts.URL, nil)
 			if err != nil {
 				t.Fatalf("Error occurred while creating request: %v", err)
