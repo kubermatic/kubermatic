@@ -106,9 +106,9 @@ func (v *validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op ad
 }
 
 func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, existingSeeds map[string]*kubermaticv1.Seed, isDelete bool) error {
-	// check wether the expose strategy is allowed or not.
+	// check whether the expose strategy is allowed or not.
 	if subject.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling && !v.features.Enabled(features.TunnelingExposeStrategy) {
-		return errors.New("cannot create seed using Tunneling as a default expose strategy, the TunnelingExposeStrategy feature gate is not enabled.")
+		return errors.New("cannot create seed using Tunneling as a default expose strategy, the TunnelingExposeStrategy feature gate is not enabled")
 	}
 
 	// this can be nil on new seed clusters

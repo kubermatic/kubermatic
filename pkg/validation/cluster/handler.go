@@ -87,7 +87,7 @@ func (h *AdmissionHandler) validateCreateOrUpdate(c *kubermaticv1.Cluster) error
 	}
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling &&
 		!h.features.Enabled(features.TunnelingExposeStrategy) {
-		return errors.New("cannot create cluster with Tunneling expose strategy, TunnelingExposeStrategy feature gate is not enabled.")
+		return errors.New("cannot create cluster with Tunneling expose strategy, the TunnelingExposeStrategy feature gate is not enabled")
 	}
 	return nil
 }
