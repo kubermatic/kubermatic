@@ -42,6 +42,7 @@ spec:
       - name: thanos
         image: '{{ .Values.prometheus.thanos.image.repository }}:{{ .Values.prometheus.thanos.image.tag }}'
         args:
+        - tools
         - bucket
         - web
         - --refresh=10m
