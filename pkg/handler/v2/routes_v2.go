@@ -31,6 +31,7 @@ import (
 	constrainttemplate "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
+	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/handler/v2/kubernetes-dashboard"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 )
@@ -403,6 +404,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/packet/sizes").
 		Handler(r.listPacketSizesNoCredentials())
+
+	// Defines a set of kubernetes-dashboard-specific endpoints
+	mux.PathPrefix("/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy").
+		Handler(r.kubernetesDashboardProxy())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -2723,5 +2728,31 @@ func (r Routing) listPacketSizesNoCredentials() http.Handler {
 		provider.DecodePacketSizesNoCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy
+//
+//    Proxies the Kubernetes Dashboard. Requires a valid bearer token. The token can be obtained
+//    using the /api/v1/projects/{project_id}/clusters/{cluster_id}/dashboard/login
+//    endpoint.
+//
+//     Responses:
+//       default: empty
+func (r Routing) kubernetesDashboardProxy() http.Handler {
+	return kubernetesdashboard.ProxyEndpoint(
+		r.log,
+		middleware.TokenExtractor(r.tokenExtractors),
+		r.projectProvider,
+		r.privilegedProjectProvider,
+		r.userInfoGetter,
+		r.settingsProvider,
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			// TODO: Instead of using an admin client to talk to the seed, we should provide a seed
+			// client that allows access to the cluster namespace only
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		),
 	)
 }
