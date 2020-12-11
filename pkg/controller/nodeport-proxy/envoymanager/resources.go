@@ -309,7 +309,7 @@ func (sb *snapshotBuilder) makeTunnelingVirtualHosts(service *corev1.Service) (v
 
 func (sb *snapshotBuilder) makeTunnelingListener(vhs ...*envoyroutev3.VirtualHost) *envoylistenerv3.Listener {
 	hcm := &envoyhttpconnectionmanagerv3.HttpConnectionManager{
-		CodecType:  envoyhttpconnectionmanagerv3.HttpConnectionManager_HTTP2,
+		CodecType:  envoyhttpconnectionmanagerv3.HttpConnectionManager_AUTO,
 		StatPrefix: "ingress_http",
 		RouteSpecifier: &envoyhttpconnectionmanagerv3.HttpConnectionManager_RouteConfig{
 			RouteConfig: &envoyroutev3.RouteConfiguration{

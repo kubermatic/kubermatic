@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	features "k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -36,6 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -76,6 +78,9 @@ func (d *Deployer) SetUp() error {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "kubermatic",
 			Namespace: d.Namespace,
+		},
+		Spec: operatorv1alpha1.KubermaticConfigurationSpec{
+			FeatureGates: sets.NewString(features.TunnelingExposeStrategy),
 		},
 	}
 
