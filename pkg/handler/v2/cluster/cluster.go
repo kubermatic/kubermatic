@@ -32,7 +32,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/klog"
 )
@@ -526,4 +528,33 @@ func findSeedNameForDatacenter(ctx context.Context, datacenter string) (string, 
 		}
 	}
 	return "", fmt.Errorf("can not find seed for datacenter %s", datacenter)
+}
+
+// GetClusterProviderFromRequest returns cluster and cluster provider based on the provided request.
+func GetClusterProviderFromRequest(
+	ctx context.Context,
+	request interface{},
+	projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter) (*kubermaticv1.Cluster, *kubernetesprovider.ClusterProvider, error) {
+
+	req, ok := request.(GetClusterReq)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusBadRequest, "invalid request")
+	}
+
+	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+	if err != nil {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, err.Error())
+	}
+
+	rawClusterProvider, ok := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "no clusterProvider in request")
+	}
+	clusterProvider, ok := rawClusterProvider.(*kubernetesprovider.ClusterProvider)
+	if !ok {
+		return nil, nil, kubermaticerrors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+	}
+	return cluster, clusterProvider, nil
 }
