@@ -10490,6 +10490,100 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/alibaba/instancetypes": {
+      "get": {
+        "description": "Lists available Alibaba Instance Types",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "alibaba"
+        ],
+        "operationId": "listAlibabaInstanceTypesNoCredentialsV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AlibabaInstanceTypeList",
+            "schema": {
+              "$ref": "#/definitions/AlibabaInstanceTypeList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/alibaba/zones": {
+      "get": {
+        "description": "Lists available Alibaba Instance Types",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "alibaba"
+        ],
+        "operationId": "listAlibabaZonesNoCredentialsV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AlibabaZoneList",
+            "schema": {
+              "$ref": "#/definitions/AlibabaZoneList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/sizes": {
       "get": {
         "description": "Lists available AWS sizes",
@@ -11236,6 +11330,141 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/OpenstackTenant"
+              }
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/packet/sizes": {
+      "get": {
+        "description": "Lists sizes from packet",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "packet"
+        ],
+        "operationId": "listPacketSizesNoCredentialsV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PacketSizeList",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PacketSizeList"
+              }
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vsphere/folders": {
+      "get": {
+        "description": "Lists folders from vsphere datacenter",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vsphere"
+        ],
+        "operationId": "listVSphereFoldersNoCredentialsV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VSphereFolder",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VSphereFolder"
+              }
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/vsphere/networks": {
+      "get": {
+        "description": "Lists networks from vsphere datacenter",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vsphere"
+        ],
+        "operationId": "listVSphereNetworksNoCredentialsV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VSphereNetwork",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VSphereNetwork"
               }
             }
           },
