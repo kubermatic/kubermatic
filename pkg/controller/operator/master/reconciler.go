@@ -299,7 +299,7 @@ func (r *Reconciler) reconcileServices(config *operatorv1alpha1.KubermaticConfig
 	creators := []reconciling.NamedServiceCreatorGetter{
 		kubermatic.APIServiceCreator(config),
 		kubermatic.UIServiceCreator(config),
-		common.SeedAdmissionServiceCreator(config, r.Client),
+		common.AdmissionServiceCreator(config, r.Client),
 	}
 
 	if err := reconciling.ReconcileServices(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
