@@ -394,11 +394,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listVSphereFoldersNoCredentials())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/instancetypes").
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/alibaba/instancetypes").
 		Handler(r.listAlibabaInstanceTypesNoCredentials())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/providers/alibaba/zones").
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/alibaba/zones").
 		Handler(r.listAlibabaZonesNoCredentials())
 
 	mux.Methods(http.MethodGet).
