@@ -122,9 +122,18 @@ type ClusterSpec struct {
 	// Openshift holds all openshift-specific settings
 	Openshift *Openshift `json:"openshift,omitempty"`
 
-	UsePodSecurityPolicyAdmissionPlugin bool     `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
-	UsePodNodeSelectorAdmissionPlugin   bool     `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
-	AdmissionPlugins                    []string `json:"admissionPlugins,omitempty"`
+	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
+	UsePodNodeSelectorAdmissionPlugin   bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
+	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
+	// It's used by the backend to create a configuration file for this plugin.
+	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.
+	// The format in a file:
+	// podNodeSelectorPluginConfig:
+	//  clusterDefaultNodeSelector: <node-selectors-labels>
+	//  namespace1: <node-selectors-labels>
+	//  namespace2: <node-selectors-labels>
+	PodNodeSelectorAdmissionPluginConfig map[string]string `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
+	AdmissionPlugins                     []string          `json:"admissionPlugins,omitempty"`
 
 	AuditLogging *AuditLoggingSettings `json:"auditLogging,omitempty"`
 
