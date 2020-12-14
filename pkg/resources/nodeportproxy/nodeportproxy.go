@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -44,7 +45,71 @@ const (
 	// We use it when clusters get exposed via a LoadBalancer, to allow re-using that LoadBalancer
 	// for both the kube-apiserver and the openVPN server
 	NodePortProxyExposeNamespacedAnnotationKey = "nodeport-proxy.k8s.io/expose-namespaced"
+	DefaultExposeAnnotationKey                 = "nodeport-proxy.k8s.io/expose"
+	// PortHostMappingAnnotationKey contains the mapping between the port to be
+	// exposed and the hostname, this is only used when the ExposeType is
+	// SNIType.
+	PortHostMappingAnnotationKey = "nodeport-proxy.k8s.io/port-mapping"
 )
+
+// ExposeType defines the strategy used to expose the service.
+type ExposeType int
+
+const (
+	// NodePortType is the default ExposeType which creates a listener for each
+	// NodePort.
+	NodePortType ExposeType = iota
+	// SNIType configures Envoy to route TLS streams based on SNI
+	// without terminating them.
+	SNIType
+	// TunnelingType configures Envoy to terminate the tunnel and stream the
+	// data to the destination.
+	// The only supported tunneling tecnique at the moment in HTTP/2 Connect.
+	TunnelingType
+)
+
+// exposeTypeStrings contains the string representation of the ExposeTypes.
+var exposeTypeStrings = [...]string{"NodePort", "SNI", "Tunneling"}
+
+// ExposeTypeFromString returns the ExposeType which string representation
+// corresponds to the input string, and a boolean indicating whether the
+// corresponding ExposeType was found or not.
+func ExposeTypeFromString(s string) (ExposeType, bool) {
+	switch s {
+	case exposeTypeStrings[NodePortType]:
+		return NodePortType, true
+	case exposeTypeStrings[SNIType]:
+		return SNIType, true
+	case exposeTypeStrings[TunnelingType]:
+		return TunnelingType, true
+	default:
+		return NodePortType, false
+	}
+}
+
+// String returns the string representation of the ExposeType.
+func (e ExposeType) String() string {
+	return exposeTypeStrings[e]
+}
+
+type ExposeTypes map[ExposeType]sets.Empty
+
+func NewExposeTypes(exposeTypes ...ExposeType) ExposeTypes {
+	ets := ExposeTypes{}
+	for _, et := range exposeTypes {
+		ets[et] = sets.Empty{}
+	}
+	return ets
+}
+
+func (e ExposeTypes) Has(item ExposeType) bool {
+	_, contained := e[item]
+	return contained
+}
+
+func (e ExposeTypes) Insert(item ExposeType) {
+	e[item] = sets.Empty{}
+}
 
 var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{

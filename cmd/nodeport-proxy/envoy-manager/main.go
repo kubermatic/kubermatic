@@ -25,6 +25,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
@@ -45,7 +46,7 @@ func main() {
 	flag.IntVar(&ctrlOpts.EnvoySNIListenerPort, "envoy-sni-port", 0, "Port used for SNI entry point.")
 	flag.IntVar(&ctrlOpts.EnvoyTunnelingListenerPort, "envoy-tunneling-port", 0, "Port used for HTTP/2 CONNECT termination.")
 	flag.StringVar(&ctrlOpts.Namespace, "namespace", "", "The namespace we should use for pods and services. Leave empty for all namespaces.")
-	flag.StringVar(&ctrlOpts.ExposeAnnotationKey, "expose-annotation-key", envoymanager.DefaultExposeAnnotationKey, "The annotation key used to determine if a service should be exposed")
+	flag.StringVar(&ctrlOpts.ExposeAnnotationKey, "expose-annotation-key", nodeportproxy.DefaultExposeAnnotationKey, "The annotation key used to determine if a service should be exposed")
 	flag.Parse()
 
 	// setup signal handler

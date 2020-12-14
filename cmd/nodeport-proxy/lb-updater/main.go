@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
 	corev1 "k8s.io/api/core/v1"
@@ -62,7 +63,7 @@ func main() {
 	flag.StringVar(&lbName, "lb-name", "nodeport-lb", "name of the LoadBalancer service to manage.")
 	flag.StringVar(&lbNamespace, "lb-namespace", "nodeport-proxy", "namespace of the LoadBalancer service to manage. Needs to exist")
 	flag.BoolVar(&namespaced, "namespaced", false, "Whether this controller should only watch services in the lbNamespace")
-	flag.StringVar(&opts.ExposeAnnotationKey, "expose-annotation-key", envoymanager.DefaultExposeAnnotationKey, "The annotation key used to determine if a Service should be exposed")
+	flag.StringVar(&opts.ExposeAnnotationKey, "expose-annotation-key", nodeportproxy.DefaultExposeAnnotationKey, "The annotation key used to determine if a Service should be exposed")
 	flag.IntVar(&opts.EnvoySNIListenerPort, "envoy-sni-port", 0, "Port used for SNI entry point.")
 	flag.IntVar(&opts.EnvoyTunnelingListenerPort, "envoy-tunneling-port", 0, "Port used for HTTP/2 CONNECT termination.")
 	flag.Parse()
@@ -180,8 +181,8 @@ func (u *LBUpdater) syncLB(s string) error {
 	for _, service := range services.Items {
 		serviceLog := u.log.With("namespace", service.Namespace).With("name", service.Name)
 
-		if service.Annotations[u.opts.ExposeAnnotationKey] != "true" {
-			serviceLog.Debugw("Skipping service as the annotation is not set to 'true'", "annotation", u.opts.ExposeAnnotationKey)
+		if e := service.Annotations[u.opts.ExposeAnnotationKey]; e != "true" && e != nodeportproxy.NodePortType.String() {
+			serviceLog.Debugw("Skipping service as the annotation is not set to 'true' or NodePort", "annotation", u.opts.ExposeAnnotationKey)
 			continue
 		}
 

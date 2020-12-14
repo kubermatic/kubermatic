@@ -27,74 +27,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 )
-
-const (
-	DefaultExposeAnnotationKey = "nodeport-proxy.k8s.io/expose"
-	// PortHostMappingAnnotationKey contains the mapping between the port to be
-	// exposed and the hostname, this is only used when the ExposeType is
-	// SNIType.
-	PortHostMappingAnnotationKey = "nodeport-proxy.k8s.io/port-mapping"
-)
-
-// ExposeType defines the strategy used to expose the service.
-type ExposeType int
-
-const (
-	// NodePortType is the default ExposeType which creates a listener for each
-	// NodePort.
-	NodePortType ExposeType = iota
-	// SNIType configures Envoy to route TLS streams based on SNI
-	// without terminating them.
-	SNIType
-	// TunnelingType configures Envoy to terminate the tunnel and stream the
-	// data to the destination.
-	// The only supported tunneling tecnique at the moment in HTTP/2 Connect.
-	TunnelingType
-)
-
-// exposeTypeStrings contains the string representation of the ExposeTypes.
-var exposeTypeStrings = [...]string{"NodePort", "SNI", "Tunneling"}
-
-// ExposeTypeFromString returns the ExposeType which string representation
-// corresponds to the input string, and a boolean indicating whether the
-// corresponding ExposeType was found or not.
-func ExposeTypeFromString(s string) (ExposeType, bool) {
-	switch s {
-	case exposeTypeStrings[NodePortType]:
-		return NodePortType, true
-	case exposeTypeStrings[SNIType]:
-		return SNIType, true
-	case exposeTypeStrings[TunnelingType]:
-		return TunnelingType, true
-	default:
-		return NodePortType, false
-	}
-}
-
-// String returns the string representation of the ExposeType.
-func (e ExposeType) String() string {
-	return exposeTypeStrings[e]
-}
-
-type ExposeTypes map[ExposeType]sets.Empty
-
-func NewExposeTypes(exposeTypes ...ExposeType) ExposeTypes {
-	ets := ExposeTypes{}
-	for _, et := range exposeTypes {
-		ets[et] = sets.Empty{}
-	}
-	return ets
-}
-
-func (e ExposeTypes) Has(item ExposeType) bool {
-	_, contained := e[item]
-	return contained
-}
-
-func (e ExposeTypes) Insert(item ExposeType) {
-	e[item] = sets.Empty{}
-}
 
 // SortServicesByCreationTimestamp sorts the Service slice in descending order
 // by creation timestamp (i.e. from oldest to newest).
@@ -126,8 +61,8 @@ func isExposed(obj metav1.Object, exposeAnnotationKey string) bool {
 	return len(extractExposeTypes(obj, exposeAnnotationKey)) > 0
 }
 
-func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) ExposeTypes {
-	res := NewExposeTypes()
+func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) nodeportproxy.ExposeTypes {
+	res := nodeportproxy.NewExposeTypes()
 	if obj.GetAnnotations() == nil {
 		return res
 	}
@@ -135,17 +70,17 @@ func extractExposeTypes(obj metav1.Object, exposeAnnotationKey string) ExposeTyp
 	// backward compatibility.
 	val := obj.GetAnnotations()[exposeAnnotationKey]
 	if val == "true" {
-		res.Insert(NodePortType)
+		res.Insert(nodeportproxy.NodePortType)
 		return res
 	}
 	// Parse the comma separated list and return the list of ExposeType
 	ts := strings.Split(val, ",")
 	for i := range ts {
-		t, ok := ExposeTypeFromString(strings.TrimSpace(ts[i]))
+		t, ok := nodeportproxy.ExposeTypeFromString(strings.TrimSpace(ts[i]))
 		if !ok {
 			// If we met a not valid token we consider the value invalid and
 			// return an empty set.
-			return NewExposeTypes()
+			return nodeportproxy.NewExposeTypes()
 		}
 		res.Insert(t)
 	}
@@ -189,7 +124,7 @@ func portHostMappingFromAnnotation(svc *corev1.Service) (portHostMapping, error)
 	if a == nil {
 		return m, nil
 	}
-	val, ok := a[PortHostMappingAnnotationKey]
+	val, ok := a[nodeportproxy.PortHostMappingAnnotationKey]
 	if !ok {
 		return m, nil
 	}
