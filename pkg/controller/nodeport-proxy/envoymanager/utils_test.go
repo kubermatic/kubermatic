@@ -25,53 +25,55 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 )
 
 func TestExtractExposeType(t *testing.T) {
 	var testcases = []struct {
 		name            string
 		svc             *corev1.Service
-		wantExposeTypes ExposeTypes
+		wantExposeTypes nodeportproxy.ExposeTypes
 	}{
 		{
 			name:            "Legacy value",
 			svc:             makeService("", "true"),
-			wantExposeTypes: NewExposeTypes(NodePortType),
+			wantExposeTypes: nodeportproxy.NewExposeTypes(nodeportproxy.NodePortType),
 		},
 		{
 			name:            "New value",
 			svc:             makeService("", "NodePort"),
-			wantExposeTypes: NewExposeTypes(NodePortType),
+			wantExposeTypes: nodeportproxy.NewExposeTypes(nodeportproxy.NodePortType),
 		},
 		{
 			name:            "No value",
 			svc:             makeService("", ""),
-			wantExposeTypes: NewExposeTypes(),
+			wantExposeTypes: nodeportproxy.NewExposeTypes(),
 		},
 		{
 			name:            "Both Tunneling and SNI",
 			svc:             makeService("", "Tunneling, SNI"),
-			wantExposeTypes: NewExposeTypes(TunnelingType, SNIType),
+			wantExposeTypes: nodeportproxy.NewExposeTypes(nodeportproxy.TunnelingType, nodeportproxy.SNIType),
 		},
 		{
 			name:            "Both Tunneling and SNI #2",
 			svc:             makeService("", "Tunneling,SNI"),
-			wantExposeTypes: NewExposeTypes(TunnelingType, SNIType),
+			wantExposeTypes: nodeportproxy.NewExposeTypes(nodeportproxy.TunnelingType, nodeportproxy.SNIType),
 		},
 		{
 			name:            "Malformed value",
 			svc:             makeService("", "Tunneling SNI"),
-			wantExposeTypes: NewExposeTypes(),
+			wantExposeTypes: nodeportproxy.NewExposeTypes(),
 		},
 		{
 			name:            "Malformed value #2",
 			svc:             makeService("", "True"),
-			wantExposeTypes: NewExposeTypes(),
+			wantExposeTypes: nodeportproxy.NewExposeTypes(),
 		},
 	}
 	for _, tt := range testcases {
 		t.Run(tt.name, func(t *testing.T) {
-			e := extractExposeTypes(tt.svc, DefaultExposeAnnotationKey)
+			e := extractExposeTypes(tt.svc, nodeportproxy.DefaultExposeAnnotationKey)
 
 			if diff := deep.Equal(tt.wantExposeTypes, e); diff != nil {
 				t.Errorf("Got export types. Diff to expected: %v", diff)
@@ -230,8 +232,8 @@ func makeService(portHostMappingVal string, exposeTypeVal string, ports ...corev
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "foo",
 			Annotations: map[string]string{
-				PortHostMappingAnnotationKey: portHostMappingVal,
-				DefaultExposeAnnotationKey:   exposeTypeVal,
+				nodeportproxy.PortHostMappingAnnotationKey: portHostMappingVal,
+				nodeportproxy.DefaultExposeAnnotationKey:   exposeTypeVal,
 			},
 		},
 		Spec: corev1.ServiceSpec{

@@ -46,6 +46,8 @@ import (
 	envoycachev3 "github.com/envoyproxy/go-control-plane/pkg/cache/v3"
 	"github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
+
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 )
 
 const clusterConnectTimeout = 1 * time.Second
@@ -85,7 +87,7 @@ func newSnapshotBuilder(log *zap.SugaredLogger, portHostMappingGetter portHostMa
 }
 
 // addService adds a Service to the builder with the associated service types.
-func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints, expTypes ExposeTypes) {
+func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints, expTypes nodeportproxy.ExposeTypes) {
 	svcKey := ServiceKey(svc)
 	svcLog := sb.log.With("service", svcKey)
 	// If service has no ready pods associated, don't bother creating any
@@ -102,7 +104,7 @@ func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints
 	// Exclude all ports by default, to avoid creating unused clusters.
 	var includePorts sets.String
 	// Create listeners for NodePortType
-	if expTypes.Has(NodePortType) {
+	if expTypes.Has(nodeportproxy.NodePortType) {
 		// We only manage NodePort services so Kubernetes takes care of allocating a unique port
 		if svc.Spec.Type != corev1.ServiceTypeNodePort {
 			svcLog.Warn("skipping service: it is not of type NodePort", "service")
@@ -114,13 +116,13 @@ func (sb *snapshotBuilder) addService(svc *corev1.Service, eps *corev1.Endpoints
 		}
 	}
 	// Create filter chains for SNIType
-	if expTypes.Has(SNIType) && sb.IsSNIEnabled() {
+	if expTypes.Has(nodeportproxy.SNIType) && sb.IsSNIEnabled() {
 		fcs, ports := sb.makeSNIFilterChains(svcLog, svc)
 		includePorts = ports.Union(includePorts)
 		sb.fcs = append(sb.fcs, fcs...)
 	}
 	// Create virtual hosts for TunnelingType
-	if expTypes.Has(TunnelingType) && sb.IsTunnelingEnabled() {
+	if expTypes.Has(nodeportproxy.TunnelingType) && sb.IsTunnelingEnabled() {
 		vhs, ports := sb.makeTunnelingVirtualHosts(svc)
 		includePorts = ports.Union(includePorts)
 		sb.vhs = append(sb.vhs, vhs...)

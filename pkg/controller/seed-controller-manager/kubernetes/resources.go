@@ -212,7 +212,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 // GetServiceCreators returns all service creators that are currently in use
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
 	creators := []reconciling.NamedServiceCreatorGetter{
-		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy),
+		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.InternalName),
 		openvpn.ServiceCreator(data.Cluster().Spec.ExposeStrategy),
 		etcd.ServiceCreator(data),
 		dns.ServiceCreator(),

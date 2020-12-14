@@ -17,6 +17,8 @@ limitations under the License.
 package openvpn
 
 import (
+	"fmt"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
@@ -36,17 +38,25 @@ func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.Name
 			if se.Annotations == nil {
 				se.Annotations = map[string]string{}
 			}
-			if exposeStrategy == kubermaticv1.ExposeStrategyNodePort {
-				se.Annotations["nodeport-proxy.k8s.io/expose"] = "true"
+			switch exposeStrategy {
+			case kubermaticv1.ExposeStrategyNodePort:
+				se.Spec.Type = corev1.ServiceTypeNodePort
+				se.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = "true"
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
-			} else {
+			case kubermaticv1.ExposeStrategyLoadBalancer:
+				se.Spec.Type = corev1.ServiceTypeNodePort
 				se.Annotations[nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey] = "true"
-				delete(se.Annotations, "nodeport-proxy.k8s.io/expose")
+				delete(se.Annotations, nodeportproxy.DefaultExposeAnnotationKey)
+			case kubermaticv1.ExposeStrategyTunneling:
+				se.Spec.Type = corev1.ServiceTypeClusterIP
+				se.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = nodeportproxy.TunnelingType.String()
+				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
+			default:
+				return nil, fmt.Errorf("unsupported expose strategy: %q", exposeStrategy)
 			}
 			se.Spec.Selector = map[string]string{
 				resources.AppLabelKey: name,
 			}
-			se.Spec.Type = corev1.ServiceTypeNodePort
 			if len(se.Spec.Ports) == 0 {
 				se.Spec.Ports = make([]corev1.ServicePort, 1)
 			}

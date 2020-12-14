@@ -47,6 +47,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/test"
 )
 
@@ -66,7 +67,7 @@ func TestSync(t *testing.T) {
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
 					WithServiceType(corev1.ServiceTypeNodePort).
-					WithAnnotation(DefaultExposeAnnotationKey, "true").
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "true").
 					WithServicePort("https", 443, 32000, intstr.FromString("https"), corev1.ProtocolTCP).
 					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
 					Build(),
@@ -91,7 +92,7 @@ func TestSync(t *testing.T) {
 			name: "1-port-2-pods-one-unhealthy",
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
-					WithAnnotation(DefaultExposeAnnotationKey, "NodePort").
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "NodePort").
 					WithServiceType(corev1.ServiceTypeNodePort).
 					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
 					Build(),
@@ -126,7 +127,7 @@ func TestSync(t *testing.T) {
 			name: "1-port-service-without-pods",
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
-					WithAnnotation(DefaultExposeAnnotationKey, "NodePort").
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "NodePort").
 					WithServiceType(corev1.ServiceTypeNodePort).
 					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
 					Build(),
@@ -140,8 +141,8 @@ func TestSync(t *testing.T) {
 			name: "1-sni-service-with-1-exposed-port",
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
-					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
-					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com"}`).
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com"}`).
 					WithServicePort("http", 80, 0, intstr.FromString("http"), corev1.ProtocolTCP).
 					WithServicePort("https", 8080, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
@@ -165,8 +166,8 @@ func TestSync(t *testing.T) {
 			name: "1-sni-service-with-2-exposed-ports",
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
-					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
-					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com", "admin": "admin.host.com"}`).
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com", "admin": "admin.host.com"}`).
 					WithServicePort("http", 80, 0, intstr.FromString("http"), corev1.ProtocolTCP).
 					WithServicePort("https", 8080, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					WithServicePort("admin", 6443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
@@ -195,8 +196,8 @@ func TestSync(t *testing.T) {
 			name: "sni-listener-not-enabled",
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
-					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
-					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com"}`).
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com"}`).
 					WithServicePort("https", 8080, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
@@ -215,8 +216,8 @@ func TestSync(t *testing.T) {
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "newer-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
-					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
-					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com"}`).
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com"}`).
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "newer-service", Namespace: "test"}).
@@ -226,8 +227,8 @@ func TestSync(t *testing.T) {
 					DoneWithEndpointSubset().Build(),
 				test.NewServiceBuilder(test.NamespacedName{Name: "older-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef).
-					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
-					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com"}`).
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com"}`).
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "older-service", Namespace: "test"}).
@@ -250,8 +251,8 @@ func TestSync(t *testing.T) {
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "udp-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
-					WithAnnotation(DefaultExposeAnnotationKey, "SNI").
-					WithAnnotation(PortHostMappingAnnotationKey, `{"": "host.com"}`).
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
+					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"": "host.com"}`).
 					WithServicePort("", 1025, 0, intstr.FromString(""), corev1.ProtocolUDP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "udp-service", Namespace: "test"}).
@@ -269,7 +270,7 @@ func TestSync(t *testing.T) {
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
-					WithAnnotation(DefaultExposeAnnotationKey, "Tunneling").
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "Tunneling").
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
@@ -291,8 +292,8 @@ func TestSync(t *testing.T) {
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
-					WithAnnotation(DefaultExposeAnnotationKey, "SNI,Tunneling").
-					WithAnnotation(PortHostMappingAnnotationKey, `{"https": "host.com"}`).
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI,Tunneling").
+					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com"}`).
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
@@ -316,8 +317,8 @@ func TestSync(t *testing.T) {
 			resources: []runtime.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
-					WithAnnotation(DefaultExposeAnnotationKey, "SNI,Tunneling").
-					WithAnnotation(PortHostMappingAnnotationKey, `{"http": "host.com"}`). // port http does not exist
+					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI,Tunneling").
+					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"http": "host.com"}`). // port http does not exist
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
@@ -347,7 +348,7 @@ func TestSync(t *testing.T) {
 				client,
 				Options{
 					EnvoyNodeName:              "node-name",
-					ExposeAnnotationKey:        DefaultExposeAnnotationKey,
+					ExposeAnnotationKey:        nodeportproxy.DefaultExposeAnnotationKey,
 					EnvoySNIListenerPort:       test.sniListenerPort,
 					EnvoyTunnelingListenerPort: test.tunnelingListenerPort,
 				},
@@ -565,7 +566,7 @@ func TestEndpointToService(t *testing.T) {
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace:   "foo",
 						Name:        "bar",
-						Annotations: map[string]string{DefaultExposeAnnotationKey: "true"},
+						Annotations: map[string]string{nodeportproxy.DefaultExposeAnnotationKey: "true"},
 					},
 				},
 			},
@@ -579,7 +580,7 @@ func TestEndpointToService(t *testing.T) {
 			log := zaptest.NewLogger(t).Sugar()
 			client := fakectrlruntimeclient.NewFakeClient(tt.resources...)
 			res := (&Reconciler{
-				Options: Options{ExposeAnnotationKey: DefaultExposeAnnotationKey},
+				Options: Options{ExposeAnnotationKey: nodeportproxy.DefaultExposeAnnotationKey},
 				Client:  client,
 				ctx:     context.TODO(),
 				log:     log,
@@ -602,7 +603,7 @@ func TestExposeAnnotationPredicate(t *testing.T) {
 			name: "Should be accepted when annotation has the good value",
 			obj: &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{DefaultExposeAnnotationKey: "true"},
+					Annotations: map[string]string{nodeportproxy.DefaultExposeAnnotationKey: "true"},
 				},
 			},
 			expectAccept: true,
@@ -616,7 +617,7 @@ func TestExposeAnnotationPredicate(t *testing.T) {
 			name: "Should be rejected when annotation value is wrong",
 			obj: &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{DefaultExposeAnnotationKey: "tru"},
+					Annotations: map[string]string{nodeportproxy.DefaultExposeAnnotationKey: "tru"},
 				},
 			},
 			expectAccept: false,
@@ -625,7 +626,7 @@ func TestExposeAnnotationPredicate(t *testing.T) {
 			name: "Should be rejected when annotation value has wrong case",
 			obj: &corev1.Service{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{DefaultExposeAnnotationKey: "True"},
+					Annotations: map[string]string{nodeportproxy.DefaultExposeAnnotationKey: "True"},
 				},
 			},
 			expectAccept: false,
@@ -644,7 +645,7 @@ func TestExposeAnnotationPredicate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.annotationKey == "" {
-				tt.annotationKey = DefaultExposeAnnotationKey
+				tt.annotationKey = nodeportproxy.DefaultExposeAnnotationKey
 			}
 			p := exposeAnnotationPredicate{annotation: tt.annotationKey, log: zaptest.NewLogger(t).Sugar()}
 			if got, exp := p.Create(event.CreateEvent{Meta: tt.obj, Object: tt.obj}), tt.expectAccept; got != exp {
