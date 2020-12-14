@@ -31,18 +31,19 @@ import (
 // Spec builds ClusterSpec kubermatic Custom Resource from API Cluster
 func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*kubermaticv1.ClusterSpec, error) {
 	spec := &kubermaticv1.ClusterSpec{
-		HumanReadableName:                   apiCluster.Name,
-		Cloud:                               apiCluster.Spec.Cloud,
-		MachineNetworks:                     apiCluster.Spec.MachineNetworks,
-		OIDC:                                apiCluster.Spec.OIDC,
-		UpdateWindow:                        apiCluster.Spec.UpdateWindow,
-		Version:                             apiCluster.Spec.Version,
-		UsePodSecurityPolicyAdmissionPlugin: apiCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
-		UsePodNodeSelectorAdmissionPlugin:   apiCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
-		AuditLogging:                        apiCluster.Spec.AuditLogging,
-		Openshift:                           apiCluster.Spec.Openshift,
-		AdmissionPlugins:                    apiCluster.Spec.AdmissionPlugins,
-		OPAIntegration:                      apiCluster.Spec.OPAIntegration,
+		HumanReadableName:                    apiCluster.Name,
+		Cloud:                                apiCluster.Spec.Cloud,
+		MachineNetworks:                      apiCluster.Spec.MachineNetworks,
+		OIDC:                                 apiCluster.Spec.OIDC,
+		UpdateWindow:                         apiCluster.Spec.UpdateWindow,
+		Version:                              apiCluster.Spec.Version,
+		UsePodSecurityPolicyAdmissionPlugin:  apiCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
+		UsePodNodeSelectorAdmissionPlugin:    apiCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
+		AuditLogging:                         apiCluster.Spec.AuditLogging,
+		Openshift:                            apiCluster.Spec.Openshift,
+		AdmissionPlugins:                     apiCluster.Spec.AdmissionPlugins,
+		OPAIntegration:                       apiCluster.Spec.OPAIntegration,
+		PodNodeSelectorAdmissionPluginConfig: apiCluster.Spec.PodNodeSelectorAdmissionPluginConfig,
 	}
 
 	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
