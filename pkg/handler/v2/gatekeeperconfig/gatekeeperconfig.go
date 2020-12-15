@@ -20,8 +20,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	configv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 
@@ -205,5 +207,87 @@ func DecodeCreateGatkeeperConfigReq(c context.Context, r *http.Request) (interfa
 	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
 	}
+	return req, nil
+}
+
+func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchGatekeeperConfigReq)
+		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+		clus, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		clusterCli, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, clus, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		originalConf := &configv1alpha1.Config{}
+		if err := clusterCli.Get(ctx, types.NamespacedName{Namespace: ConfigNamespace, Name: ConfigName}, originalConf); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		origninalAPIConfig, err := convertExternalToAPI(originalConf)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		// patch
+		originalJSON, err := json.Marshal(origninalAPIConfig)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current gatkeeper config: %v", err))
+		}
+
+		patchedJSON, err := jsonpatch.MergePatch(originalJSON, req.Patch)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch gatkeeper config: %v", err))
+		}
+
+		var patched *apiv2.GatekeeperConfig
+		err = json.Unmarshal(patchedJSON, &patched)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshall patch gatekeeper config: %v", err))
+		}
+
+		patchedGatekeeperConfig, err := convertAPIToExternal(patched)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusInternalServerError, err.Error())
+		}
+		patchedGatekeeperConfig.ObjectMeta = originalConf.ObjectMeta
+
+		if err := clusterCli.Update(ctx, patchedGatekeeperConfig); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return patched, nil
+	}
+}
+
+// patchGatekeeperConfigReq defines HTTP request for patching gatkeeperconfig
+// swagger:parameters patchGatekeeperConfig
+type patchGatekeeperConfigReq struct {
+	gatekeeperConfigReq
+	// in: body
+	Patch json.RawMessage
+}
+
+// DecodePatchGatekeeperConfigReq decodes http request into patchGatekeeperConfigReq
+func DecodePatchGatekeeperConfigReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchGatekeeperConfigReq
+
+	ctReq, err := DecodeGatkeeperConfigReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.gatekeeperConfigReq = ctReq.(gatekeeperConfigReq)
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
 	return req, nil
 }
