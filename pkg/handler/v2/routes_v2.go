@@ -290,6 +290,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config").
 		Handler(r.createGatekeeperConfig())
 
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config").
+		Handler(r.patchGatekeeperConfig())
+
 	// Defines a set of HTTP endpoints for managing addons
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/installableaddons").
@@ -1432,6 +1436,33 @@ func (r Routing) createGatekeeperConfig() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(gatekeeperconfig.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		gatekeeperconfig.DecodeCreateGatkeeperConfigReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config project patchGatekeeperConfig
+//
+//     Patches the gatekeeper config for the specified cluster.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: GatekeeperConfig
+//       401: empty
+//       403: empty
+func (r Routing) patchGatekeeperConfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(gatekeeperconfig.PatchEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		gatekeeperconfig.DecodePatchGatekeeperConfigReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

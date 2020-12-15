@@ -211,6 +211,8 @@ type ClientService interface {
 
 	PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*PatchConstraintOK, error)
 
+	PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter) (*PatchGatekeeperConfigOK, error)
+
 	PatchMachineDeployment(params *PatchMachineDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchMachineDeploymentOK, error)
 
 	PatchNodeDeployment(params *PatchNodeDeploymentParams, authInfo runtime.ClientAuthInfoWriter) (*PatchNodeDeploymentOK, error)
@@ -3415,6 +3417,40 @@ func (a *Client) PatchConstraint(params *PatchConstraintParams, authInfo runtime
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PatchConstraintDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchGatekeeperConfig patches the gatekeeper config for the specified cluster
+*/
+func (a *Client) PatchGatekeeperConfig(params *PatchGatekeeperConfigParams, authInfo runtime.ClientAuthInfoWriter) (*PatchGatekeeperConfigOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchGatekeeperConfigParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchGatekeeperConfig",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchGatekeeperConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchGatekeeperConfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchGatekeeperConfigDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
