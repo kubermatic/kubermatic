@@ -66,7 +66,7 @@ func ProxyEndpoint(
 			return
 		}
 
-		request, err := common.DecodeGetClusterReq(ctx, r)
+		request, err := cluster.DecodeGetClusterReq(ctx, r)
 		if err != nil {
 			common.WriteHTTPError(log, w, kubermaticerrors.New(http.StatusBadRequest, err.Error()))
 			return
