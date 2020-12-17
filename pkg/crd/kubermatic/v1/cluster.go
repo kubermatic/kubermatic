@@ -191,8 +191,6 @@ const (
 	ClusterConditionAddonControllerReconcilingSuccess             ClusterConditionType = "AddonControllerReconciledSuccessfully"
 	ClusterConditionAddonInstallerControllerReconcilingSuccess    ClusterConditionType = "AddonInstallerControllerReconciledSuccessfully"
 	ClusterConditionBackupControllerReconcilingSuccess            ClusterConditionType = "BackupControllerReconciledSuccessfully"
-	ClusterConditionEtcdRestoreControllerReconcilingSuccess       ClusterConditionType = "EtcdRestoreControllerReconciledSuccessfully"
-	ClusterConditionBackupScheduleControllerReconcilingSuccess    ClusterConditionType = "BackupScheduleControllerReconciledSuccessfully"
 	ClusterConditionCloudControllerReconcilingSuccess             ClusterConditionType = "CloudControllerReconcilledSuccessfully"
 	ClusterConditionComponentDefaulterReconcilingSuccess          ClusterConditionType = "ComponentDefaulterReconciledSuccessfully"
 	ClusterConditionUpdateControllerReconcilingSuccess            ClusterConditionType = "UpdateControllerReconciledSuccessfully"
