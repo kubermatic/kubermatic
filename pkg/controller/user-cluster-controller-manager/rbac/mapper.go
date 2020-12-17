@@ -22,7 +22,11 @@ import (
 	"regexp"
 	"strings"
 
+	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+	configv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
+
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 
 	apps "k8s.io/api/apps/v1"
 	autoscaling "k8s.io/api/autoscaling/v1"
@@ -151,6 +155,21 @@ func GenerateRBACClusterRole(resourceName string) (*rbacv1.ClusterRole, error) {
 			{
 				APIGroups: []string{networking.GroupName},
 				Resources: []string{"ingresses", "networkpolicies"},
+				Verbs:     verbs,
+			},
+			{
+				APIGroups: []string{gatekeeperv1beta1.SchemeGroupVersion.Group},
+				Resources: []string{"constrainttemplates"},
+				Verbs:     verbs,
+			},
+			{
+				APIGroups: []string{constraint.ConstraintsGroup},
+				Resources: []string{"*"},
+				Verbs:     verbs,
+			},
+			{
+				APIGroups: []string{configv1alpha1.GroupVersion.Group},
+				Resources: []string{"configs"},
 				Verbs:     verbs,
 			},
 		},
