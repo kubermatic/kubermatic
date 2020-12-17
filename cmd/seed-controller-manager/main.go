@@ -175,15 +175,14 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	ctrlCtx := &controllerContext{
-		ctx:                         rootCtx,
-		runOptions:                  options,
-		mgr:                         mgr,
-		clientProvider:              clientProvider,
-		seedGetter:                  seedGetter,
-		dockerPullConfigJSON:        dockerPullConfigJSON,
-		etcdBackupRestoreController: options.etcdBackupRestoreController,
-		log:                         log,
-		versions:                    versions,
+		ctx:                  rootCtx,
+		runOptions:           options,
+		mgr:                  mgr,
+		clientProvider:       clientProvider,
+		seedGetter:           seedGetter,
+		dockerPullConfigJSON: dockerPullConfigJSON,
+		log:                  log,
+		versions:             versions,
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

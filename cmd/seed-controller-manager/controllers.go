@@ -148,7 +148,7 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.etcdLauncherImage,
 		ctrlCtx.runOptions.dnatControllerImage,
-		ctrlCtx.runOptions.etcdBackupRestoreController,
+		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
 		backupInterval,
 		openshiftcontroller.Features{
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
@@ -187,7 +187,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
 		ctrlCtx.runOptions.concurrentClusterUpdate,
-		ctrlCtx.runOptions.etcdBackupRestoreController,
+		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
 		backupInterval,
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
@@ -207,7 +207,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 }
 
 func createEtcdBackupController(ctrlCtx *controllerContext) error {
-	if !ctrlCtx.etcdBackupRestoreController {
+	if !ctrlCtx.runOptions.enableEtcdBackupRestoreController {
 		return nil
 	}
 	storeContainer, err := getContainerFromFile(ctrlCtx.runOptions.backupContainerFile)
@@ -247,7 +247,7 @@ func createBackupController(ctrlCtx *controllerContext) error {
 		return err
 	}
 	var cleanupContainer *corev1.Container
-	if !ctrlCtx.etcdBackupRestoreController {
+	if !ctrlCtx.runOptions.enableEtcdBackupRestoreController {
 		cleanupContainer, err = getContainerFromFile(ctrlCtx.runOptions.cleanupContainerFile)
 	} else {
 		// new backup controller is enabled, this one will only be run to delete any existing backup cronjob.
@@ -271,12 +271,12 @@ func createBackupController(ctrlCtx *controllerContext) error {
 		backupInterval,
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.versions,
-		ctrlCtx.etcdBackupRestoreController,
+		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
 	)
 }
 
 func createEtcdRestoreController(ctrlCtx *controllerContext) error {
-	if !ctrlCtx.etcdBackupRestoreController {
+	if !ctrlCtx.runOptions.enableEtcdBackupRestoreController {
 		return nil
 	}
 	return etcdrestorecontroller.Add(
