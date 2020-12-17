@@ -480,6 +480,13 @@ func TestLoadFiles(t *testing.T) {
 							Namespace:       cluster.Status.NamespaceName,
 						},
 					},
+					&corev1.ConfigMap{
+						ObjectMeta: metav1.ObjectMeta{
+							ResourceVersion: "123456",
+							Name:            resources.AdmissionControlConfigMapName,
+							Namespace:       cluster.Status.NamespaceName,
+						},
+					},
 					&corev1.Service{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      resources.ApiserverServiceName,
