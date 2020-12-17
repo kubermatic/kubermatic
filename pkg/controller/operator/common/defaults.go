@@ -688,7 +688,7 @@ command:
 - -c
 - |
   set -e
-  s3cmd --access_key=$ACCESS_KEY_ID --secret_key=$SECRET_ACCESS_KEY --host=$ENDPOINT --host-bucket='%(bucket).'$ENDPOINT put /backup/snapshot.db s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_CREATE
+  s3cmd --no-check-certificate --access_key=$ACCESS_KEY_ID --secret_key=$SECRET_ACCESS_KEY --host=$ENDPOINT --host-bucket='%(bucket).'$ENDPOINT put /backup/snapshot.db s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_CREATE
 env:
 - name: ACCESS_KEY_ID
   valueFrom:
@@ -722,7 +722,7 @@ command:
 - /bin/sh
 - -c
 - |
-  s3cmd --access_key=$ACCESS_KEY_ID --secret_key=$SECRET_ACCESS_KEY --host=$ENDPOINT --host-bucket='%(bucket).'$ENDPOINT del s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_DELETE
+  s3cmd --no-check-certificate --access_key=$ACCESS_KEY_ID --secret_key=$SECRET_ACCESS_KEY --host=$ENDPOINT --host-bucket='%(bucket).'$ENDPOINT del s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_DELETE
   case $? in
   12)
     # backup no longer exists, which is fine
