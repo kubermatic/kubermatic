@@ -24,6 +24,16 @@ type ClusterSpec struct {
 	// MachineNetworks optionally specifies the parameters for IPAM.
 	MachineNetworks []*MachineNetworkingConfig `json:"machineNetworks"`
 
+	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
+	// It's used by the backend to create a configuration file for this plugin.
+	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.
+	// The format in a file:
+	// podNodeSelectorPluginConfig:
+	// clusterDefaultNodeSelector: <node-selectors-labels>
+	// namespace1: <node-selectors-labels>
+	// namespace2: <node-selectors-labels>
+	PodNodeSelectorAdmissionPluginConfig map[string]string `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
+
 	// If active the PodNodeSelector admission plugin is configured at the apiserver
 	UsePodNodeSelectorAdmissionPlugin bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
 
