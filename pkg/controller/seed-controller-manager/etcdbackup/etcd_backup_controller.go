@@ -181,6 +181,8 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	log = r.log.With("cluster", cluster.Name, "backupConfig", backupConfig.Name)
 
+	var suppressedError error
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
@@ -190,14 +192,29 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.versions,
 		kubermaticv1.ClusterConditionNone,
 		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, log, backupConfig, cluster)
+			result, err := r.reconcile(ctx, log, backupConfig, cluster)
+			if kerrors.IsConflict(err) {
+				// benign update conflict -- remember this so we can
+				// suppress log.Error and event generation below
+				suppressedError = err
+			}
+			return result, err
 		},
 	)
 	if err != nil {
-		log.Errorw("Reconciling failed", zap.Error(err))
-		r.recorder.Event(backupConfig, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
-			"failed to reconcile etcd backup config %q: %v", backupConfig.Name, err)
+		if suppressedError != nil {
+			// we know that err is a 1-element Aggregate containing just suppressedError
+			// because we pass ClusterConditionNone above and thus ClusterReconcileWrapper()
+			// couldn't have risen any additional errors
+			log.Debugw("Benign update conflict error; will retry", zap.Error(suppressedError))
+			result = &reconcile.Result{RequeueAfter: 30 * time.Second}
+			err = nil
+		} else {
+			log.Errorw("Reconciling failed", zap.Error(err))
+			r.recorder.Event(backupConfig, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+			r.recorder.Eventf(cluster, corev1.EventTypeWarning, "ReconcilingError",
+				"failed to reconcile etcd backup config %q: %v", backupConfig.Name, err)
+		}
 	}
 	if result == nil {
 		result = &reconcile.Result{}
