@@ -23,6 +23,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -63,6 +64,17 @@ func AdmissionControlCreator(data *resources.TemplateData) reconciling.NamedConf
 				Kind:       "AdmissionConfiguration",
 				Plugins:    []AdmissionPluginConfiguration{},
 			}
+
+			deprecatedVersion, err := semver.NewSemver("1.17")
+			if err != nil {
+				return nil, err
+			}
+
+			// Deprecated in v1.17 in favor of apiserver.config.k8s.io/v1
+			if data.Cluster().Spec.Version.LessThan(deprecatedVersion.Version) {
+				admissionConfiguration.APIVersion = "apiserver.k8s.io/v1alpha1"
+			}
+
 			if usePodNodeSelectorAdmissionPlugin(data) {
 				podNodeSelector := AdmissionPluginConfiguration{
 					Name: resources.PodNodeSelectorAdmissionPlugin,
