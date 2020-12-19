@@ -48,7 +48,7 @@ func NewAdmissionHandler(features features.FeatureGate) *AdmissionHandler {
 }
 
 func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
-	h.log = l.WithName("seed-validation-handler")
+	h.log = l.WithName("cluster-validation-handler")
 	return nil
 }
 
@@ -70,15 +70,15 @@ func (h *AdmissionHandler) Handle(_ context.Context, req webhook.AdmissionReques
 		}
 		validationErr := h.validateCreateOrUpdate(cluster)
 		if validationErr != nil {
-			h.log.Info("seed admission failed", "error", validationErr)
-			return webhook.Denied(fmt.Sprintf("seed validation request %s rejected: %v", req.UID, validationErr))
+			h.log.Info("cluster admission failed", "error", validationErr)
+			return webhook.Denied(fmt.Sprintf("cluster validation request %s rejected: %v", req.UID, validationErr))
 		}
 	case admissionv1beta1.Delete:
 		// NOP we always allow delete operarions at the moment
 	default:
-		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on seed resources", req.Operation))
+		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on cluster resources", req.Operation))
 	}
-	return webhook.Allowed(fmt.Sprintf("seed validation request %s allowed", req.UID))
+	return webhook.Allowed(fmt.Sprintf("cluster validation request %s allowed", req.UID))
 }
 
 func (h *AdmissionHandler) validateCreateOrUpdate(c *kubermaticv1.Cluster) error {
