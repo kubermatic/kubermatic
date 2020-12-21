@@ -875,6 +875,22 @@ func TestPatchCluster(t *testing.T) {
 					return cluster
 				}(), genUser("John", "john@acme.com", false)),
 		},
+		// scenario 8
+		{
+			Name:             "scenario 8: update the pod node selector admission plugin config",
+			Body:             `{"spec":{"version":"1.2.3","podNodeSelectorAdmissionPluginConfig":{"clusterDefaultNodeSelector":"env=development"}}}`,
+			ExpectedResponse: `{"id":"keen-snyder","name":"clusterAbc","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"1.2.3","oidc":{},"podNodeSelectorAdmissionPluginConfig":{"clusterDefaultNodeSelector":"env=development"}},"status":{"version":"1.2.3","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885"}}`,
+			cluster:          "keen-snyder",
+			HTTPStatus:       http.StatusOK,
+			project:          test.GenDefaultProject().Name,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
+					cluster.Spec.Cloud.DatacenterName = fakeDC
+					return cluster
+				}()),
+		},
 	}
 
 	for _, tc := range testcases {
