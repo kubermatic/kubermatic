@@ -766,6 +766,13 @@ func (r *testRunner) testCluster(
 		log.Errorf("Failed to verify that pod and node metrics are available: %v", err)
 	}
 
+	// Do etcd-launcher tests - we don't retry this.
+	if err := junitReporterWrapper(
+		"[Kubermatic] Test etcd-launcher experimental features..", report, func() error {
+			return r.testEtcdLauncher(ctx, log, cluster)
+		}); err != nil {
+		log.Errorf("failed to verify etcd-launcher experimental features: %v", err)
+	}
 	return nil
 }
 
