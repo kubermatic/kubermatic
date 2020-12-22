@@ -1102,8 +1102,11 @@ func (r *runner) CreateDC(seed string, dc *models.Datacenter) (*models.Datacente
 		},
 		Seed: seed,
 	}
-	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-
+	utils.SetupRetryParams(r.test, params, utils.Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 	createdDC, err := r.client.Datacenter.CreateDC(params, r.bearerToken)
 	if err != nil {
 		return nil, err
@@ -1153,8 +1156,11 @@ func (r *runner) PatchDC(seed, dcToPatch, patch string) (*models.Datacenter, err
 		DCToPatch: dcToPatch,
 		Seed:      seed,
 	}
-	utils.SetupParams(r.test, params, 1*time.Second, 3*time.Minute)
-
+	utils.SetupRetryParams(r.test, params, utils.Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	}, http.StatusBadRequest)
 	patchedDC, err := r.client.Datacenter.PatchDC(params, r.bearerToken)
 	if err != nil {
 		return nil, err
