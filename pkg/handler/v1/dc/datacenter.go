@@ -142,6 +142,7 @@ func GetDatacenter(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter
 
 	// Get the DCs and immediately filter out the ones restricted by e-mail domain if user is not admin
 	dcs := getAPIDCsFromSeedMap(seeds)
+	allDCs := dcs
 	if !userInfo.IsAdmin {
 		dcs, err = filterDCsByEmail(userInfo, dcs)
 		if err != nil {
@@ -150,7 +151,7 @@ func GetDatacenter(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter
 		}
 	}
 
-	return filterDCsByName(dcs, datacenterToGet)
+	return filterDCsByName(dcs, datacenterToGet, allDCs)
 }
 
 // GetEndpointForProvider an HTTP endpoint that returns a specified apiv1.Datacenter for a specified provider
@@ -183,11 +184,12 @@ func GetEndpointForProvider(seedsGetter provider.SeedsGetter, userInfoGetter pro
 			}
 		}
 
-		return filterDCsByName(dcs, req.Datacenter)
+		// TODO print out the whole seed and all datacenters when this below fails
+		return filterDCsByName(dcs, req.Datacenter, dcs)
 	}
 }
 
-func filterDCsByName(dcs []apiv1.Datacenter, dcName string) (apiv1.Datacenter, error) {
+func filterDCsByName(dcs []apiv1.Datacenter, dcName string, allDCs []apiv1.Datacenter) (apiv1.Datacenter, error) {
 	var foundDCs []apiv1.Datacenter
 	for _, unfilteredDC := range dcs {
 		if unfilteredDC.Metadata.Name == dcName {
@@ -199,7 +201,8 @@ func filterDCsByName(dcs []apiv1.Datacenter, dcName string) (apiv1.Datacenter, e
 		return apiv1.Datacenter{}, fmt.Errorf("did not find one but %d datacenters for name %q", n, dcName)
 	}
 	if len(foundDCs) == 0 {
-		return apiv1.Datacenter{}, errors.NewNotFound("datacenter", dcName)
+		return apiv1.Datacenter{}, errors.New(http.StatusNotFound, fmt.Sprintf("%s %q not found. All DCs: %v", "datacenter", dcName,
+			allDCs))
 	}
 
 	return foundDCs[0], nil
@@ -598,6 +601,7 @@ func GetEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provide
 
 		// Get the DCs and immediately filter out the ones restricted by e-mail domain if user is not admin
 		dcs := getAPIDCsFromSeed(seed)
+		allDCs := dcs
 		if !userInfo.IsAdmin {
 			dcs, err = filterDCsByEmail(userInfo, dcs)
 			if err != nil {
@@ -606,7 +610,7 @@ func GetEndpointForSeed(seedsGetter provider.SeedsGetter, userInfoGetter provide
 			}
 		}
 
-		return filterDCsByName(dcs, req.DC)
+		return filterDCsByName(dcs, req.DC, allDCs)
 	}
 }
 
