@@ -63,6 +63,7 @@ func RegistryOperatorFactory(data openshiftData) reconciling.NamedDeploymentCrea
 			if err != nil {
 				return nil, err
 			}
+			d.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:    openshiftRegistryOperatorName,
 				Image:   image,
@@ -86,7 +87,7 @@ func RegistryOperatorFactory(data openshiftData) reconciling.NamedDeploymentCrea
 			}
 			d.Spec.Template.Labels, err = data.GetPodTemplateLabels(openshiftRegistryOperatorName, d.Spec.Template.Spec.Volumes, nil)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to add template labels: %v", err)
 			}
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString(openshiftRegistryOperatorName), "Config,imageregistry.operator.openshift.io/v1")
 			if err != nil {

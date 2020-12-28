@@ -84,6 +84,7 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 				return nil, err
 			}
 
+			d.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  "network-operator",
 				Image: image,
@@ -117,7 +118,7 @@ func OpenshiftNetworkOperatorCreatorFactory(data openshiftData) reconciling.Name
 
 			d.Spec.Template.Labels, err = data.GetPodTemplateLabels(openshiftNetworkOperatorDeploymentName, d.Spec.Template.Spec.Volumes, nil)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to add template labels: %v", err)
 			}
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString("network-operator"), "Network,operator.openshift.io/v1")

@@ -86,6 +86,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 				return nil, err
 			}
 
+			d.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  "console",
 				Image: image,
@@ -177,7 +178,7 @@ func ConsoleDeployment(data openshiftData) reconciling.NamedDeploymentCreatorGet
 
 			podLabels, err := data.GetPodTemplateLabels(consoleDeploymentName, d.Spec.Template.Spec.Volumes, nil)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to add template labels: %v", err)
 			}
 			d.Spec.Template.Labels = podLabels
 

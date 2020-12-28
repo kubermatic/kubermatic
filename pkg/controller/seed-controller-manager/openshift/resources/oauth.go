@@ -374,6 +374,7 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 				},
 			}
 
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  OauthName,
 				Image: image,
@@ -445,7 +446,7 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(OpenshiftAPIServerDeploymentName, data.Cluster().Name)
 			podLabels, err := data.GetPodTemplateLabels(OauthName, dep.Spec.Template.Spec.Volumes, nil)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to add template labels: %v", err)
 			}
 			dep.Spec.Template.Labels = podLabels
 

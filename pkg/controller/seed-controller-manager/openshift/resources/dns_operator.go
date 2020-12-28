@@ -82,6 +82,7 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 				return nil, err
 			}
 
+			d.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  openshiftDNSOperatorContainerName,
 				Image: image,
@@ -113,7 +114,7 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 
 			d.Spec.Template.Labels, err = data.GetPodTemplateLabels(openshiftDNSOperatorDeploymentName, d.Spec.Template.Spec.Volumes, nil)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to add template labels: %v", err)
 			}
 
 			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, d.Spec.Template.Spec, sets.NewString(openshiftDNSOperatorContainerName), "DNS,operator.openshift.io/v1", "Network,config.openshift.io/v1")

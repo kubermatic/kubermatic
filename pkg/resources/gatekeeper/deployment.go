@@ -120,6 +120,7 @@ func ControllerDeploymentCreator(data gatekeeperData) reconciling.NamedDeploymen
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
 			dep.Spec.Template.Spec.Volumes = volumes
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = getControllerContainers(data, dep.Spec.Template.Spec.Containers)
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
@@ -167,6 +168,7 @@ func AuditDeploymentCreator(data gatekeeperData) reconciling.NamedDeploymentCrea
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
 			dep.Spec.Template.Spec.Volumes = volumes
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = getAuditContainers(data, dep.Spec.Template.Spec.Containers)
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {

@@ -81,6 +81,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
