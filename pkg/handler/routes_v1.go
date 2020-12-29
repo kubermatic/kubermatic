@@ -137,6 +137,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAWSVPCS())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/aws/{dc}/securitygroups").
+		Handler(r.listAWSSecurityGroups())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/gcp/disktypes").
 		Handler(r.listGCPDiskTypes())
 
@@ -840,6 +844,28 @@ func (r Routing) listAWSVPCS() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AWSVPCEndpoint(r.presetsProvider, r.seedsGetter, r.userInfoGetter)),
 		provider.DecodeAWSVPCReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/aws/{dc}/securitygroups aws listAWSSecurityGroups
+//
+// Lists available AWS Security Groups
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AWSSecurityGroupList
+func (r Routing) listAWSSecurityGroups() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AWSSecurityGroupsEndpoint(r.presetsProvider, r.seedsGetter, r.userInfoGetter)),
+		provider.DecodeAWSSecurityGroupsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

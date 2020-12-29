@@ -6461,6 +6461,56 @@
         }
       }
     },
+    "/api/v1/providers/aws/{dc}/securitygroups": {
+      "get": {
+        "description": "Lists available AWS Security Groups",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "aws"
+        ],
+        "operationId": "listAWSSecurityGroups",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "AccessKeyID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "SecretAccessKey",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "x-go-name": "DC",
+            "name": "dc",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AWSSecurityGroupList",
+            "schema": {
+              "$ref": "#/definitions/AWSSecurityGroupList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/aws/{dc}/subnets": {
       "get": {
         "description": "Lists available AWS subnets",
@@ -12622,6 +12672,33 @@
           "x-go-name": "VolumeType",
           "example": "gp2, io1, st1, sc1, standard"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "AWSSecurityGroup": {
+      "type": "object",
+      "title": "AWSSecurityGroup represents a object of AWS Security Group.",
+      "properties": {
+        "description": {
+          "type": "string",
+          "x-go-name": "Description"
+        },
+        "groupID": {
+          "type": "string",
+          "x-go-name": "GroupID"
+        },
+        "groupName": {
+          "type": "string",
+          "x-go-name": "GroupName"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "AWSSecurityGroupList": {
+      "type": "array",
+      "title": "AWSSecurityGroupList represents an array of AWS Security Group.",
+      "items": {
+        "$ref": "#/definitions/AWSSecurityGroup"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
