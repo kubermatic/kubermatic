@@ -195,6 +195,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 				return nil, err
 			}
 
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				*dnatControllerSidecar,
@@ -285,7 +286,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(OpenshiftAPIServerDeploymentName, data.Cluster().Name)
 			podLabels, err := data.GetPodTemplateLabels(OpenshiftAPIServerDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("failed to add template labels: %v", err)
 			}
 			dep.Spec.Template.Labels = podLabels
 

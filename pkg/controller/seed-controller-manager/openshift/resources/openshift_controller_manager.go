@@ -172,6 +172,7 @@ func OpenshiftControllerManagerDeploymentCreator(ctx context.Context, data opens
 				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 			}
 
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{

@@ -116,6 +116,7 @@ func DeploymentCreator(data metricsServerData) reconciling.NamedDeploymentCreato
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
 
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,
