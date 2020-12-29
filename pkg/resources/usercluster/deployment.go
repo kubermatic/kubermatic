@@ -158,6 +158,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				args = append(args, "-cloud-credential-secret-template", string(cloudCredentialSecretTemplate))
 			}
 
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    name,

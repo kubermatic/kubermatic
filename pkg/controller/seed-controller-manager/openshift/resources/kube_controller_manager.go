@@ -278,6 +278,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 				}
 				kubeControllerManagerContainerName := "kube-controller-manager"
 
+				dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 				dep.Spec.Template.Spec.Containers = []corev1.Container{
 					*openvpnSidecar,
 					{
@@ -317,7 +318,7 @@ func KubeControllerManagerDeploymentCreatorFactory(data kubeControllerManagerDat
 				}
 				podLabels, err := data.GetPodTemplateLabels(resources.ControllerManagerDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
 				if err != nil {
-					return nil, err
+					return nil, fmt.Errorf("failed to add template labels: %v", err)
 				}
 				dep.Spec.Template.Labels = podLabels
 				wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(resources.ControllerManagerDeploymentName))

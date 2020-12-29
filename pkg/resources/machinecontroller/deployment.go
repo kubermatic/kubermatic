@@ -135,6 +135,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 
 			externalCloudProvider := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,

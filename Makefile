@@ -57,7 +57,6 @@ install:
 showenv:
 	@go env
 
-.PHONY: download-gocache
 download-gocache:
 	@./hack/ci/download-gocache.sh
 	@# Prevent this from getting executed multiple times
