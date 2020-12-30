@@ -154,6 +154,17 @@ func TestTokenAccessForProject(t *testing.T) {
 			if !strings.Contains(err.Error(), "403") {
 				t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
 			}
+
+			// check if SA can create a new project
+			_, err = apiRunnerWithSAToken.CreateProject(rand.String(10))
+			if err == nil {
+				t.Fatal("expected error, SA can not create a project")
+			}
+
+			if !strings.Contains(err.Error(), "403") {
+				t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
+			}
+
 		})
 	}
 }
