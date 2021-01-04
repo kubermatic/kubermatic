@@ -63,6 +63,7 @@ func RegistryOperatorFactory(data openshiftData) reconciling.NamedDeploymentCrea
 			if err != nil {
 				return nil, err
 			}
+			d.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:    openshiftRegistryOperatorName,
 				Image:   image,

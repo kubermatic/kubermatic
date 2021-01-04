@@ -50,6 +50,7 @@ func CloudCredentialOperator(data openshiftData) reconciling.NamedDeploymentCrea
 				{Name: openshiftImagePullSecretName},
 			}
 			d.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
+			d.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:    cloudCredentialOperatorDeploymentName,
 				Command: []string{"/root/manager", "--log-level", "debug"},
