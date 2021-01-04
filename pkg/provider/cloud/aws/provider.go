@@ -714,3 +714,23 @@ func GetVPCS(accessKeyID, secretAccessKey, region string) ([]*ec2.Vpc, error) {
 
 	return vpcOut.Vpcs, nil
 }
+
+// GetSecurityGroups returns the list of AWS Security Group.
+func GetSecurityGroups(accessKeyID, secretAccessKey, region string) ([]*ec2.SecurityGroup, error) {
+	client, err := GetClientSet(accessKeyID, secretAccessKey, region)
+	if err != nil {
+		return nil, err
+	}
+
+	sgOut, err := client.EC2.DescribeSecurityGroups(&ec2.DescribeSecurityGroupsInput{})
+
+	if err != nil {
+		if awsErr, ok := err.(awserr.Error); ok && awsErr.Code() == authFailure {
+			return nil, httperror.New(401, fmt.Sprintf("failed to list Security Groups: %s", awsErr.Message()))
+		}
+
+		return nil, fmt.Errorf("failed to list Security Groups: %v", err)
+	}
+
+	return sgOut.SecurityGroups, nil
+}
