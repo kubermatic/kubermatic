@@ -25,6 +25,8 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ListAWSSecurityGroups(params *ListAWSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSecurityGroupsOK, error)
+
 	ListAWSSizes(params *ListAWSSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesOK, error)
 
 	ListAWSSizesNoCredentials(params *ListAWSSizesNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSizesNoCredentialsOK, error)
@@ -40,6 +42,40 @@ type ClientService interface {
 	ListAWSVPCS(params *ListAWSVPCSParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSVPCSOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  ListAWSSecurityGroups Lists available AWS Security Groups
+*/
+func (a *Client) ListAWSSecurityGroups(params *ListAWSSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAWSSecurityGroupsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAWSSecurityGroupsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAWSSecurityGroups",
+		Method:             "GET",
+		PathPattern:        "/api/v1/providers/aws/{dc}/securitygroups",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAWSSecurityGroupsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAWSSecurityGroupsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAWSSecurityGroupsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
