@@ -74,6 +74,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 			}
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
 
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,

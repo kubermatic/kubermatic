@@ -373,6 +373,7 @@ func OauthDeploymentCreator(data openshiftData) reconciling.NamedDeploymentCreat
 				},
 			}
 
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  OauthName,
 				Image: image,

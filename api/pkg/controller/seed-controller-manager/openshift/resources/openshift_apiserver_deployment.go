@@ -195,6 +195,7 @@ func OpenshiftAPIServerDeploymentCreator(ctx context.Context, data openshiftData
 				return nil, err
 			}
 
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				*dnatControllerSidecar,
