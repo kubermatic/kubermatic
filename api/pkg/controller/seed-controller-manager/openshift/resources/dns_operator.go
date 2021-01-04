@@ -82,6 +82,7 @@ func OpenshiftDNSOperatorFactory(data openshiftData) reconciling.NamedDeployment
 				return nil, err
 			}
 
+			d.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:  openshiftDNSOperatorContainerName,
 				Image: image,

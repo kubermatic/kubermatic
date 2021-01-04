@@ -37,7 +37,6 @@ const (
 func CloudCredentialOperator(data openshiftData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return cloudCredentialOperatorDeploymentName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-
 			image, err := cloudCredentialOperatorImage(data.Cluster().Spec.Version.String(), data.ImageRegistry(""))
 			if err != nil {
 				return nil, err
@@ -50,6 +49,7 @@ func CloudCredentialOperator(data openshiftData) reconciling.NamedDeploymentCrea
 				{Name: openshiftImagePullSecretName},
 			}
 			d.Spec.Template.Spec.AutomountServiceAccountToken = utilpointer.BoolPtr(false)
+			d.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			d.Spec.Template.Spec.Containers = []corev1.Container{{
 				Name:    cloudCredentialOperatorDeploymentName,
 				Command: []string{"/root/manager", "--log-level", "debug"},

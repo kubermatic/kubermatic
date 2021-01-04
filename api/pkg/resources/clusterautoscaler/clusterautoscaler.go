@@ -97,6 +97,7 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 
 			dep.Spec.Template.Spec.Volumes = volumes
 
+			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    resources.ClusterAutoscalerDeploymentName,
