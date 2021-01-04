@@ -1645,6 +1645,8 @@ const (
 	ExternalClusterKubeconfigCleanupFinalizer = "kubermatic.io/cleanup-kubeconfig-secret"
 	// GatekeeperConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on user cluster need cleanup
 	GatekeeperConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-constraint-templates"
+	// GatekeeperMasterConstraintTemplateCleanupFinalizer indicates that synced gatekeeper Constraint Templates on seed clusters need cleanup
+	GatekeeperMasterConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-master-constraint-templates"
 	// GatekeeperConstraintCleanupFinalizer indicates that gatkeeper constraints on the user cluster need cleanup
 	GatekeeperConstraintCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-constraints"
 )
