@@ -45,6 +45,7 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	utilerrors "k8s.io/apimachinery/pkg/util/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -73,77 +74,73 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		cloudConfig:   cloudConfig,
 	}
 
-	// Must be first because of openshift
+	var errs []error
+
 	if err := r.ensureAPIServices(ctx, data); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
-	// We need to reconcile namespaces and services next to make sure
-	// the openshift apiservices become available ASAP
 	if err := r.reconcileNamespaces(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileServiceAcconts(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileUnstructured(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcilePodDisruptionBudgets(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileDeployments(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileServices(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileClusterRoles(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileClusterRoleBindings(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileRoles(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileRoleBindings(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileCRDs(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileMutatingWebhookConfigurations(ctx, data); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileConfigMaps(ctx, data); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
 	if err := r.reconcileSecrets(ctx, data); err != nil {
-		return err
+		errs = append(errs, err)
 	}
+
 	if err := r.reconcileDaemonSet(ctx); err != nil {
-		return err
+		errs = append(errs, err)
 	}
 
-	if err := r.reconcileValidatingWebhookConfigurations(ctx, data); err != nil {
-		return err
-	}
-
-	return nil
+	return utilerrors.NewAggregate(errs)
 }
 
 func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) error {
