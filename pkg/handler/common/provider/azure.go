@@ -22,6 +22,8 @@ import (
 	"net/http"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-06-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-06-01/network"
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-02-01/resources"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -47,21 +49,37 @@ var NewAzureClientSet = func(subscriptionID, clientID, clientSecret, tenantID st
 	if err != nil {
 		return nil, err
 	}
+	securityGroupsClient := network.NewSecurityGroupsClient(subscriptionID)
+	securityGroupsClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+	if err != nil {
+		return nil, err
+	}
+	resourceGroupsClient := resources.NewGroupsClient(subscriptionID)
+	resourceGroupsClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+	if err != nil {
+		return nil, err
+	}
 
 	return &azureClientSetImpl{
-		vmSizeClient: sizesClient,
-		skusClient:   skusClient,
+		vmSizeClient:         sizesClient,
+		skusClient:           skusClient,
+		securityGroupsClient: securityGroupsClient,
+		resourceGroupsClient: resourceGroupsClient,
 	}, nil
 }
 
 type azureClientSetImpl struct {
-	vmSizeClient compute.VirtualMachineSizesClient
-	skusClient   compute.ResourceSkusClient
+	vmSizeClient         compute.VirtualMachineSizesClient
+	skusClient           compute.ResourceSkusClient
+	securityGroupsClient network.SecurityGroupsClient
+	resourceGroupsClient resources.GroupsClient
 }
 
 type AzureClientSet interface {
 	ListVMSize(ctx context.Context, location string) ([]compute.VirtualMachineSize, error)
 	ListSKU(ctx context.Context, location string) ([]compute.ResourceSku, error)
+	ListSecurityGroups(ctx context.Context, resourceGroupName string) ([]network.SecurityGroup, error)
+	ListResourceGroups(ctx context.Context) ([]resources.Group, error)
 }
 
 func (s *azureClientSetImpl) ListSKU(ctx context.Context, _ string) ([]compute.ResourceSku, error) {
@@ -78,6 +96,23 @@ func (s *azureClientSetImpl) ListVMSize(ctx context.Context, location string) ([
 		return nil, fmt.Errorf("failed to list sizes: %v", err)
 	}
 	return *sizesResult.Value, nil
+}
+
+func (s *azureClientSetImpl) ListSecurityGroups(ctx context.Context, resourceGroupName string) ([]network.SecurityGroup, error) {
+	securityGroups, err := s.securityGroupsClient.List(ctx, resourceGroupName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list security groups: %v", err)
+	}
+	return securityGroups.Values(), nil
+}
+
+func (s *azureClientSetImpl) ListResourceGroups(ctx context.Context) ([]resources.Group, error) {
+	resourceGroups, err := s.resourceGroupsClient.List(ctx, "", nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list resource groups: %v", err)
+	}
+	return resourceGroups.Values(), nil
+
 }
 
 func AzureSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
@@ -290,4 +325,46 @@ func AzureSKUAvailabilityZones(ctx context.Context, subscriptionID, clientID, cl
 	}
 
 	return nil, nil
+}
+
+func AzureSecurityGroupEndpoint(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, resourceGroup string) (*apiv1.AzureSecurityGroupsList, error) {
+	securityGroupsClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer for security groups client: %v", err)
+	}
+
+	securityGroupList, err := securityGroupsClient.ListSecurityGroups(ctx, resourceGroup)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list security group resources: %v", err)
+	}
+
+	apiSecurityGroups := &apiv1.AzureSecurityGroupsList{}
+	for _, sg := range securityGroupList {
+		if location == *sg.Location {
+			apiSecurityGroups.SecurityGroups = append(apiSecurityGroups.SecurityGroups, *sg.Name)
+		}
+	}
+
+	return apiSecurityGroups, nil
+}
+
+func AzureResourceGroupEndpoint(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location string) (*apiv1.AzureResourceGroupsList, error) {
+	securityGroupsClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer for security groups client: %v", err)
+	}
+
+	resourceGroupList, err := securityGroupsClient.ListResourceGroups(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list security group resources: %v", err)
+	}
+
+	apiResourceGroups := &apiv1.AzureResourceGroupsList{}
+	for _, rg := range resourceGroupList {
+		if location == *rg.Location {
+			apiResourceGroups.ResourceGroups = append(apiResourceGroups.ResourceGroups, *rg.Name)
+		}
+	}
+
+	return apiResourceGroups, nil
 }
