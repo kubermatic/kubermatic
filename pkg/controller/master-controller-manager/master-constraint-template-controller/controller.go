@@ -22,20 +22,7 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-
-	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
@@ -44,6 +31,19 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 const (
@@ -133,11 +133,18 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, constraintTemplate *kuber
 		}
 
 		err := r.syncAllSeeds(log, constraintTemplate, func(seedClusterClient client.Client, ct *kubermaticv1.ConstraintTemplate) error {
-			return seedClusterClient.Delete(r.ctx, &kubermaticv1.ConstraintTemplate{
+			err := seedClusterClient.Delete(r.ctx, &kubermaticv1.ConstraintTemplate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: constraintTemplate.Name,
 				},
 			})
+
+			if kerrors.IsNotFound(err) {
+				log.Debug("constraint template not found, returning")
+				return nil
+			}
+
+			return err
 		})
 		if err != nil {
 			return err
