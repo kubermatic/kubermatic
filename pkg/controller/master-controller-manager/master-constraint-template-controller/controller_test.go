@@ -24,12 +24,6 @@ import (
 
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 
-	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/handler/test"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
-
 	apiextensionv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -40,15 +34,16 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 )
 
 const ctName = "requiredlabels"
 
 func TestReconcile(t *testing.T) {
-	workerSelector, err := workerlabel.LabelSelector("")
-	if err != nil {
-		t.Fatalf("failed to build worker-name selector: %v", err)
-	}
 
 	testCases := []struct {
 		name                 string
@@ -84,11 +79,10 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 
 			r := &reconciler{
-				ctx:                     context.Background(),
-				log:                     kubermaticlog.Logger,
-				workerNameLabelSelector: workerSelector,
-				recorder:                &record.FakeRecorder{},
-				masterClient:            tc.masterClient,
+				ctx:          context.Background(),
+				log:          kubermaticlog.Logger,
+				recorder:     &record.FakeRecorder{},
+				masterClient: tc.masterClient,
 				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 					return tc.seedClient, nil
 				},

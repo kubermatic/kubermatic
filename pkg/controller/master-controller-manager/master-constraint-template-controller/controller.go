@@ -22,19 +22,12 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
+	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/client-go/tools/record"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,6 +36,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
+	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
 const (
@@ -51,33 +52,28 @@ const (
 )
 
 type reconciler struct {
-	ctx                     context.Context
-	log                     *zap.SugaredLogger
-	workerNameLabelSelector labels.Selector
-	recorder                record.EventRecorder
-	masterClient            ctrlruntimeclient.Client
-	seedClientGetter        provider.SeedClientGetter
+	ctx              context.Context
+	log              *zap.SugaredLogger
+	recorder         record.EventRecorder
+	masterClient     ctrlruntimeclient.Client
+	namespace        string
+	seedClientGetter provider.SeedClientGetter
 }
 
 func Add(ctx context.Context,
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
-	workerName string,
 	numWorkers int,
+	namespace string,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter) error {
 
-	workerSelector, err := workerlabel.LabelSelector(workerName)
-	if err != nil {
-		return fmt.Errorf("failed to build worker-name selector: %v", err)
-	}
-
 	reconciler := &reconciler{
-		ctx:                     ctx,
-		log:                     log.Named(ControllerName),
-		workerNameLabelSelector: workerSelector,
-		recorder:                mgr.GetEventRecorderFor(ControllerName),
-		masterClient:            mgr.GetClient(),
-		seedClientGetter:        provider.SeedClientGetterFactory(seedKubeconfigGetter),
+		ctx:              ctx,
+		log:              log.Named(ControllerName),
+		recorder:         mgr.GetEventRecorderFor(ControllerName),
+		masterClient:     mgr.GetClient(),
+		namespace:        namespace,
+		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -90,6 +86,14 @@ func Add(ctx context.Context,
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
 		return fmt.Errorf("failed to create watch for constraintTemplates: %v", err)
+	}
+
+	if err := c.Watch(
+		&source.Kind{Type: &kubermaticv1.Seed{}},
+		enqueueAllConstraintTemplates(reconciler.masterClient, reconciler.log),
+		predicate.ByNamespace(namespace),
+	); err != nil {
+		return fmt.Errorf("failed to create watcher: %v", err)
 	}
 
 	return nil
@@ -170,7 +174,7 @@ func (r *reconciler) syncAllSeeds(
 	action func(seedClusterClient client.Client, ct *kubermaticv1.ConstraintTemplate) error) error {
 
 	seedList := &kubermaticv1.SeedList{}
-	if err := r.masterClient.List(r.ctx, seedList, &ctrlruntimeclient.ListOptions{LabelSelector: r.workerNameLabelSelector}); err != nil {
+	if err := r.masterClient.List(r.ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: r.namespace}); err != nil {
 		return fmt.Errorf("failed listing clusters: %w", err)
 	}
 
@@ -199,4 +203,22 @@ func constraintTemplateCreatorGetter(kubeCT *kubermaticv1.ConstraintTemplate) re
 			return ct, nil
 		}
 	}
+}
+
+func enqueueAllConstraintTemplates(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *handler.EnqueueRequestsFromMapFunc {
+	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+		var requests []reconcile.Request
+
+		ctList := &kubermaticv1.ConstraintTemplateList{}
+		if err := client.List(context.Background(), ctList); err != nil {
+			log.Error(err)
+			utilruntime.HandleError(fmt.Errorf("failed to list constraint templates: %v", err))
+		}
+		for _, ct := range ctList.Items {
+			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
+				Name: ct.Name,
+			}})
+		}
+		return requests
+	})}
 }

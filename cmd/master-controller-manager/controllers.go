@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
+	masterconstrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-template-controller"
 	projectlabelsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-label-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	seedproxy "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-proxy"
@@ -77,6 +78,9 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create seedproxy controller: %v", err)
 	}
 	if err := externalcluster.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log); err != nil {
+		return fmt.Errorf("failed to create external cluster controller: %v", err)
+	}
+	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create external cluster controller: %v", err)
 	}
 
