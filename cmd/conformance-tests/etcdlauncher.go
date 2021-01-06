@@ -41,6 +41,8 @@ const (
 )
 
 func (r *testRunner) testEtcdLauncher(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+	return nil
+
 	// So far, the etcdlauncher is experimental. We need to enable it first
 	log.Info("Testing etcd-launcher experimental features...")
 	log.Info("Enabling etcd-launcher...")
