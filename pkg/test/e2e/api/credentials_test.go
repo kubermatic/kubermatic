@@ -19,6 +19,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -26,9 +27,9 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/apimachinery/pkg/api/equality"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 func TestListCredentials(t *testing.T) {
@@ -65,15 +66,18 @@ func TestListCredentials(t *testing.T) {
 			expectedList: []string{"e2e-gcp", "e2e-gcp-datacenter"},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
-			credentialList, err := apiRunner.ListCredentials(tc.provider, tc.datacenter)
+			testClient := utils.NewTestClient(masterToken, t)
+			credentialList, err := testClient.ListCredentials(tc.provider, tc.datacenter)
 			if err != nil {
 				t.Fatalf("failed to get credential names for provider %s: %v", tc.provider, err)
 			}
@@ -109,7 +113,9 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 		},
 	}
 
-	endpoint, err := getAPIEndpoint()
+	ctx := context.Background()
+
+	endpoint, err := utils.APIEndpoint()
 	if err != nil {
 		t.Fatalf("failed to determine Kubermatic API endpoint: %v", err)
 	}
@@ -121,7 +127,7 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
@@ -158,7 +164,6 @@ func TestProviderEndpointsWithCredentials(t *testing.T) {
 			if resp.StatusCode != tc.expectedCode {
 				t.Errorf("failed to get expected response [%d] from %q endpoint: %v", tc.expectedCode, tc.path, err)
 			}
-
 		})
 	}
 }

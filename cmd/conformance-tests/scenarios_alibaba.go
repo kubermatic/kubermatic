@@ -21,7 +21,7 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/semver"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
+	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
 const alibabaDC = "alibaba-eu-central-1a"

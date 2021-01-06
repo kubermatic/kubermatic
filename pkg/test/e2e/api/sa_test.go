@@ -19,8 +19,11 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"strings"
 	"testing"
+
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 )
@@ -39,26 +42,29 @@ func TestCreateSA(t *testing.T) {
 			group: "viewers",
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
-			project, err := apiRunner.CreateProject(rand.String(10))
+			testClient := utils.NewTestClient(masterToken, t)
+			project, err := testClient.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("failed to create project: %v", err)
 			}
-			defer cleanUpProject(t, project.ID)
+			defer cleanupProject(t, project.ID)
 
-			sa, err := apiRunner.CreateServiceAccount(rand.String(10), tc.group, project.ID)
+			sa, err := testClient.CreateServiceAccount(rand.String(10), tc.group, project.ID)
 			if err != nil {
 				t.Fatalf("failed to create service account: %v", err)
 			}
 
-			if _, err := apiRunner.AddTokenToServiceAccount(rand.String(10), sa.ID, project.ID); err != nil {
+			if _, err := testClient.AddTokenToServiceAccount(rand.String(10), sa.ID, project.ID); err != nil {
 				t.Fatalf("failed to create token: %v", err)
 			}
 		})
@@ -80,36 +86,39 @@ func TestTokenAccessForProject(t *testing.T) {
 			group: "viewers",
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
-			project, err := apiRunner.CreateProject(rand.String(10))
+			testClient := utils.NewTestClient(masterToken, t)
+			project, err := testClient.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("failed to create project: %v", err)
 			}
-			defer cleanUpProject(t, project.ID)
+			defer cleanupProject(t, project.ID)
 
-			sa, err := apiRunner.CreateServiceAccount(rand.String(10), tc.group, project.ID)
+			sa, err := testClient.CreateServiceAccount(rand.String(10), tc.group, project.ID)
 			if err != nil {
 				t.Fatalf("failed to create service account: %v", err)
 			}
 
-			sa, err = apiRunner.GetServiceAccount(sa.ID, project.ID)
+			sa, err = testClient.GetServiceAccount(sa.ID, project.ID)
 			if err != nil {
 				t.Fatalf("failed to get service account: %v", err)
 			}
 
-			saToken, err := apiRunner.AddTokenToServiceAccount(rand.String(10), sa.ID, project.ID)
+			saToken, err := testClient.AddTokenToServiceAccount(rand.String(10), sa.ID, project.ID)
 			if err != nil {
 				t.Fatalf("failed to create token: %v", err)
 			}
 
-			apiRunnerWithSAToken := createRunner(saToken.Token, t)
+			apiRunnerWithSAToken := utils.NewTestClient(saToken.Token, t)
 
 			project, err = apiRunnerWithSAToken.GetProject(project.ID)
 			if err != nil {
@@ -140,11 +149,11 @@ func TestTokenAccessForProject(t *testing.T) {
 			}
 
 			// check access to not owned project
-			notOwnedProject, err := apiRunner.CreateProject(rand.String(10))
+			notOwnedProject, err := testClient.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("failed to create project: %v", err)
 			}
-			defer cleanUpProject(t, notOwnedProject.ID)
+			defer cleanupProject(t, notOwnedProject.ID)
 
 			_, err = apiRunnerWithSAToken.GetProject(notOwnedProject.ID)
 			if err == nil {
@@ -164,7 +173,6 @@ func TestTokenAccessForProject(t *testing.T) {
 			if !strings.Contains(err.Error(), "403") {
 				t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
 			}
-
 		})
 	}
 }

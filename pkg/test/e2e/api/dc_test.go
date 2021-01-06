@@ -19,10 +19,12 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"reflect"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
 func TestListDCForProvider(t *testing.T) {
@@ -37,16 +39,19 @@ func TestListDCForProvider(t *testing.T) {
 			expectedDCNames: []string{"do-ams3", "do-fra1"},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
+			testClient := utils.NewTestClient(masterToken, t)
 
-			dcs, err := apiRunner.ListDCForProvider(tc.provider)
+			dcs, err := testClient.ListDCForProvider(tc.provider)
 			if err != nil {
 				t.Fatalf("failed to get dcs list: %v", err)
 			}
@@ -91,14 +96,17 @@ func TestGetDCForProvider(t *testing.T) {
 			},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
+			apiRunner := utils.NewTestClient(masterToken, t)
 
 			dc, err := apiRunner.GetDCForProvider(tc.provider, tc.dc)
 			if err != nil {
@@ -139,16 +147,19 @@ func TestCreateDC(t *testing.T) {
 			},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			adminMasterToken, err := retrieveAdminMasterToken()
+			adminMasterToken, err := utils.RetrieveAdminMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
-			adminAPIRunner := createRunner(adminMasterToken, t)
+			adminTestClient := utils.NewTestClient(adminMasterToken, t)
 
-			dc, err := adminAPIRunner.CreateDC(tc.seed, tc.dc)
+			dc, err := adminTestClient.CreateDC(tc.seed, tc.dc)
 			if err != nil {
 				t.Fatalf("failed to create dc: %v", err)
 			}
@@ -158,13 +169,13 @@ func TestCreateDC(t *testing.T) {
 					*tc.dc.Metadata, *tc.dc.Spec, *tc.dc.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
 			}
 
-			_, err = adminAPIRunner.GetDCForSeed(tc.seed, tc.dc.Metadata.Name)
+			_, err = adminTestClient.GetDCForSeed(tc.seed, tc.dc.Metadata.Name)
 			if err != nil {
 				t.Fatalf("failed to get dc: %v", err)
 			}
 
 			// user can't create DC with the same name in the same seed
-			_, err = adminAPIRunner.CreateDC(tc.seed, tc.dc)
+			_, err = adminTestClient.CreateDC(tc.seed, tc.dc)
 			if err == nil {
 				t.Fatalf("expected error, shouldn't be able to create DC with existing name in the same seed")
 			}
@@ -198,26 +209,29 @@ func TestDeleteDC(t *testing.T) {
 			},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			adminMasterToken, err := retrieveAdminMasterToken()
+			adminMasterToken, err := utils.RetrieveAdminMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
-			adminAPIRunner := createRunner(adminMasterToken, t)
+			adminTestClient := utils.NewTestClient(adminMasterToken, t)
 
-			_, err = adminAPIRunner.CreateDC(tc.seed, tc.dc)
+			_, err = adminTestClient.CreateDC(tc.seed, tc.dc)
 			if err != nil {
 				t.Fatalf("failed to create dc: %v", err)
 			}
 
-			_, err = adminAPIRunner.GetDCForSeed(tc.seed, tc.dc.Metadata.Name)
+			_, err = adminTestClient.GetDCForSeed(tc.seed, tc.dc.Metadata.Name)
 			if err != nil {
 				t.Fatalf("failed to get dc: %v", err)
 			}
 
-			err = adminAPIRunner.DeleteDC(tc.seed, tc.dc.Metadata.Name)
+			err = adminTestClient.DeleteDC(tc.seed, tc.dc.Metadata.Name)
 			if err != nil {
 				t.Fatalf("failed to delete dc: %v", err)
 			}
@@ -267,16 +281,19 @@ func TestUpdateDC(t *testing.T) {
 			},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			adminMasterToken, err := retrieveAdminMasterToken()
+			adminMasterToken, err := utils.RetrieveAdminMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
-			adminAPIRunner := createRunner(adminMasterToken, t)
+			adminTestClient := utils.NewTestClient(adminMasterToken, t)
 
-			dc, err := adminAPIRunner.CreateDC(tc.seed, tc.originalDC)
+			dc, err := adminTestClient.CreateDC(tc.seed, tc.originalDC)
 			if err != nil {
 				t.Fatalf("failed to create dc: %v", err)
 			}
@@ -286,12 +303,12 @@ func TestUpdateDC(t *testing.T) {
 					*tc.originalDC.Metadata, *tc.originalDC.Spec, *tc.originalDC.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
 			}
 
-			_, err = adminAPIRunner.GetDCForSeed(tc.seed, tc.originalDC.Metadata.Name)
+			_, err = adminTestClient.GetDCForSeed(tc.seed, tc.originalDC.Metadata.Name)
 			if err != nil {
 				t.Fatalf("failed to get dc: %v", err)
 			}
 
-			updatedDC, err := adminAPIRunner.UpdateDC(tc.seed, tc.originalDC.Metadata.Name, tc.updatedDC)
+			updatedDC, err := adminTestClient.UpdateDC(tc.seed, tc.originalDC.Metadata.Name, tc.updatedDC)
 			if err != nil {
 				t.Fatalf("failed to update dc: %v", err)
 			}
@@ -348,16 +365,19 @@ func TestPatchDC(t *testing.T) {
 			},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			adminMasterToken, err := retrieveAdminMasterToken()
+			adminMasterToken, err := utils.RetrieveAdminMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
-			adminAPIRunner := createRunner(adminMasterToken, t)
+			adminTestClient := utils.NewTestClient(adminMasterToken, t)
 
-			dc, err := adminAPIRunner.CreateDC(tc.seed, tc.originalDC)
+			dc, err := adminTestClient.CreateDC(tc.seed, tc.originalDC)
 			if err != nil {
 				t.Fatalf("failed to create dc: %v", err)
 			}
@@ -367,12 +387,12 @@ func TestPatchDC(t *testing.T) {
 					*tc.originalDC.Metadata, *tc.originalDC.Spec, *tc.originalDC.Spec.Node, *dc.Metadata, *dc.Spec, *dc.Spec.Node)
 			}
 
-			_, err = adminAPIRunner.GetDCForSeed(tc.seed, tc.originalDC.Metadata.Name)
+			_, err = adminTestClient.GetDCForSeed(tc.seed, tc.originalDC.Metadata.Name)
 			if err != nil {
 				t.Fatalf("failed to get dc: %v", err)
 			}
 
-			patchedDC, err := adminAPIRunner.PatchDC(tc.seed, tc.originalDC.Metadata.Name, tc.patch)
+			patchedDC, err := adminTestClient.PatchDC(tc.seed, tc.originalDC.Metadata.Name, tc.patch)
 			if err != nil {
 				t.Fatalf("failed to patch dc: %v", err)
 			}
@@ -413,16 +433,19 @@ func TestGetDCForSeed(t *testing.T) {
 			},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
+			testClient := utils.NewTestClient(masterToken, t)
 
-			dc, err := apiRunner.GetDCForSeed(tc.seed, tc.dc)
+			dc, err := testClient.GetDCForSeed(tc.seed, tc.dc)
 			if err != nil {
 				t.Fatalf("failed to get dc: %v", err)
 			}
@@ -447,16 +470,19 @@ func TestListDCForSeed(t *testing.T) {
 			expectedDCNames: []string{"alibaba-eu-central-1a", "aws-eu-central-1a", "azure-westeurope", "byo-kubernetes", "do-ams3", "do-fra1", "gcp-westeurope", "hetzner-nbg1", "kubevirt-europe-west3-c", "packet-ewr1", "syseleven-dbl1", "vsphere-ger"},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
+			testClient := utils.NewTestClient(masterToken, t)
 
-			dcs, err := apiRunner.ListDCForSeed(tc.seed)
+			dcs, err := testClient.ListDCForSeed(tc.seed)
 			if err != nil {
 				t.Fatalf("failed to get dcs list: %v", err)
 			}
@@ -501,16 +527,19 @@ func TestGetDC(t *testing.T) {
 			},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
+			testClient := utils.NewTestClient(masterToken, t)
 
-			dc, err := apiRunner.GetDC(tc.dc)
+			dc, err := testClient.GetDC(tc.dc)
 			if err != nil {
 				t.Fatalf("failed to get dc: %v", err)
 			}
@@ -533,16 +562,19 @@ func TestListDC(t *testing.T) {
 			expectedDCNames: []string{"alibaba-eu-central-1a", "aws-eu-central-1a", "azure-westeurope", "byo-kubernetes", "do-ams3", "do-fra1", "gcp-westeurope", "hetzner-nbg1", "kubevirt-europe-west3-c", "packet-ewr1", "syseleven-dbl1", "vsphere-ger"},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
+			testClient := utils.NewTestClient(masterToken, t)
 
-			dcs, err := apiRunner.ListDC()
+			dcs, err := testClient.ListDC()
 			if err != nil {
 				t.Fatalf("failed to get dcs list: %v", err)
 			}
