@@ -73,6 +73,32 @@ to prewarm a local Docker registry, for example in offline setups.
 
 TBD
 
+## run-conformance-tests.sh
+
+Compiles the conformance tests and then runs them in a local Docker
+container (by default). This requires KKP and an OIDC provider (like Dex)
+to be installed, with a `$KUBECONFIG` pointing to the KKP master cluster.
+
+The tests run against a single provider, specified via the `PROVIDER`
+environment variable (default: `aws`). See this script for the
+credential variables for each provider.
+
+OIDC credentials need to be provided either by specifying
+`KUBERMATIC_OIDC_LOGIN` and `KUBERMATIC_OIDC_PASSWORD` environment
+variables or by setting `CREATE_OIDC_TOKEN=false` and setting
+a predefined `KUBEMATIC_OIDC_TOKEN` variable.
+
+Run this script with `-help` to see a list of all available flags on
+the conformance tests. Many of these are set by this script, but you
+can add and override as you like. NB: If test tests run inside a
+container, make sure paths and environment variables can be properly
+resolved.
+
+To disable the Docker container, set the variable `NO_DOCKER=true`.
+In this mode, you need to have the kube-test binaries and all other
+dependencies installed locally on your machine, but it makes testing
+against a local KKP setup much easier.
+
 ## run-dashboard-and-api.sh
 
 TBD
@@ -84,6 +110,12 @@ TBD
 ## run-master-controller-manager.sh
 
 TBD
+
+## run-nodeport-proxy-e2e-test-in-kind.sh
+
+This script sets up a local KKP installation in kind, deploys a
+couple of test Presets and Users and then runs the e2e tests for the
+nodeport-proxy.
 
 ## run-operator.sh
 
@@ -175,6 +207,10 @@ TBD
 TBD
 
 ## verify-prometheus-rules.sh
+
+TBD
+
+## verify-spelling.sh
 
 TBD
 

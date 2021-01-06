@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package api
+package etcdlauncher
 
 import (
 	"context"
@@ -24,6 +24,8 @@ import (
 )
 
 func cleanupProject(t *testing.T, id string) {
+	t.Log("cleaning up project and cluster...")
+
 	// use a dedicated context so that cleanups always run, even
 	// if the context inside a test was already cancelled
 	token, err := utils.RetrieveAdminMasterToken(context.Background())

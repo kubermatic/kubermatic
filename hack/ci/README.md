@@ -38,10 +38,6 @@ TBD
 
 TBD
 
-## deploy-run.sh
-
-TBD
-
 ## deploy.sh
 
 This script is used by all other `deploy-*` scripts to handle the
@@ -83,7 +79,7 @@ This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the e2e tests for the
 API.
 
-## run-conformance-tester.sh
+## run-conformance-tests.sh
 
 After having set up a local KKP installation, this script is then
 used to run the conformance-tester for a given cloud provider.
@@ -93,6 +89,11 @@ used to run the conformance-tester for a given cloud provider.
 This script sets up a local KKP installation in kind and then
 runs the conformance-tester to create userclusters and check their
 Kubernetes conformance.
+
+## run-etcd-launcher-tests.sh
+
+This script sets up a local KKP installation in kind, deploys a
+couple of test Presets and Users and then runs the etcd-launcher tests.
 
 ## run-lint.sh
 
@@ -106,6 +107,10 @@ environment.
 
 TODO: This needs to be cleaned up greatly and adjusted to the KKP
 Operator. The presubmit job for this script is currently not used.
+
+## setup-kind-cluster.sh
+
+TBD
 
 ## setup-kubermatic-in-kind.sh
 
