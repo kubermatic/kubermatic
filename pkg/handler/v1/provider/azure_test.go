@@ -224,9 +224,13 @@ func (s *mockSizeClientImpl) ListVMSize(ctx context.Context, location string) ([
 	return *s.machineSizeList.Value, nil
 }
 
-func (s *mockSizeClientImpl) ListSecurityGroups(ctx context.Context, resourceGroupName string) ([]network.SecurityGroup, error) {
+func (s *mockSizeClientImpl) ListSecurityGroups(_ context.Context, _ string) ([]network.SecurityGroup, error) {
 	return nil, nil
 }
-func (s *mockSizeClientImpl) ListResourceGroups(ctx context.Context) ([]resources.Group, error) {
+func (s *mockSizeClientImpl) ListResourceGroups(_ context.Context) ([]resources.Group, error) {
+	return nil, nil
+}
+
+func (s *mockSizeClientImpl) ListRouteTables(_ context.Context, _ string) ([]network.RouteTable, error) {
 	return nil, nil
 }

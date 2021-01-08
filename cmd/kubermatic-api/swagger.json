@@ -12631,6 +12631,69 @@
         }
       }
     },
+    "/api/v2/providers/azure/routetables": {
+      "get": {
+        "description": "Lists available VM route tables",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "azure"
+        ],
+        "operationId": "listAzureRouteTables",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "SubscriptionID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "TenantID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ClientSecret",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ResourceGroup",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Location",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AzureRouteTablesList",
+            "schema": {
+              "$ref": "#/definitions/AzureRouteTablesList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/azure/securitygroups": {
       "get": {
         "description": "Lists available VM security groups",
@@ -13579,6 +13642,20 @@
             "type": "string"
           },
           "x-go-name": "ResourceGroups"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "AzureRouteTablesList": {
+      "description": "AzureRouteTablesList is the object representing the route tables for vms in azure cloud provider",
+      "type": "object",
+      "properties": {
+        "routeTables": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RouteTables"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"

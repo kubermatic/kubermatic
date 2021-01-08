@@ -33,6 +33,8 @@ type ClientService interface {
 
 	ListAzureResourceGroups(params *ListAzureResourceGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureResourceGroupsOK, error)
 
+	ListAzureRouteTables(params *ListAzureRouteTablesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureRouteTablesOK, error)
+
 	ListAzureSecurityGroups(params *ListAzureSecurityGroupsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSecurityGroupsOK, error)
 
 	ListAzureSizes(params *ListAzureSizesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesOK, error)
@@ -177,6 +179,40 @@ func (a *Client) ListAzureResourceGroups(params *ListAzureResourceGroupsParams, 
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListAzureResourceGroupsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListAzureRouteTables Lists available VM route tables
+*/
+func (a *Client) ListAzureRouteTables(params *ListAzureRouteTablesParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureRouteTablesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAzureRouteTablesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAzureRouteTables",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/azure/routetables",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAzureRouteTablesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAzureRouteTablesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAzureRouteTablesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
