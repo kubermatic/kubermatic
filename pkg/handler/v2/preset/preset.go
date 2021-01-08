@@ -427,10 +427,13 @@ func mergePresets(oldPreset *crdapiv1.Preset, newPreset *crdapiv1.Preset, provid
 }
 
 func newAPIPreset(preset *crdapiv1.Preset, enabled bool) v2.Preset {
-	providers := make([]crdapiv1.ProviderType, 0)
+	providers := make([]v2.PresetProvider, 0)
 	for _, providerType := range crdapiv1.SupportedProviders() {
 		if hasProvider, _ := preset.Spec.HasProvider(providerType); hasProvider {
-			providers = append(providers, providerType)
+			providers = append(providers, v2.PresetProvider{
+				Name: providerType,
+				Enabled: preset.Spec.GetPresetProvider(providerType).IsEnabled(),
+			})
 		}
 	}
 

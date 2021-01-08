@@ -123,7 +123,14 @@ type PresetList struct {
 // Preset represents a preset
 // swagger:model Preset
 type Preset struct {
-	Name      string                  `json:"name"`
-	Enabled   bool                    `json:"enabled"`
-	Providers []crdapiv1.ProviderType `json:"providers"`
+	Name      string           `json:"name"`
+	Enabled   bool             `json:"enabled"`
+	Providers []PresetProvider `json:"providers"`
+}
+
+// PresetProvider represents a preset provider
+// swagger:model PresetProvider
+type PresetProvider struct {
+	Name    crdapiv1.ProviderType `json:"name"`
+	Enabled bool                  `json:"enabled"`
 }

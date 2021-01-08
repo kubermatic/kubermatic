@@ -300,7 +300,7 @@ type Openstack struct {
 	TenantID string `json:"tenantID"`
 	Domain   string `json:"domain"`
 
-	Network        string `json:"network,,omitempty"`
+	Network        string `json:"network,omitempty"`
 	SecurityGroups string `json:"securityGroups,omitempty"`
 	FloatingIPPool string `json:"floatingIpPool,omitempty"`
 	RouterID       string `json:"routerID,omitempty"`
