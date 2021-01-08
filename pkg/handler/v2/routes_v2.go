@@ -412,6 +412,17 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	// Defines a set of kubernetes-dashboard-specific endpoints
 	mux.PathPrefix("/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy").
 		Handler(r.kubernetesDashboardProxy())
+
+	// Defines a set of HTTP endpoint for interacting with
+	// various cloud providers
+	mux.Methods(http.MethodGet).
+		Path("/providers/azure/securitygroups").
+		Handler(r.listAzureSecurityGroups())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/azure/resourcegroups").
+		Handler(r.listAzureResourceGroups())
+
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -2785,5 +2796,49 @@ func (r Routing) kubernetesDashboardProxy() http.Handler {
 			// client that allows access to the cluster namespace only
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		),
+	)
+}
+
+// swagger:route GET /api/v2/providers/azure/securitygroups azure listAzureSecurityGroups
+//
+// Lists available VM security groups
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AzureSecurityGroupsList
+func (r Routing) listAzureSecurityGroups() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AzureSecurityGroupsEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeAzureSecurityGroupsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/azure/resourcegroups azure listAzureResourceGroups
+//
+// Lists available VM resource groups
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AzureResourceGroupsList
+func (r Routing) listAzureResourceGroups() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AzureResourceGroupsEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeAzureResourceGroupsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
 	)
 }

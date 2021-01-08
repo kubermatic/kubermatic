@@ -25,6 +25,8 @@ import (
 	"testing"
 
 	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-06-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-06-01/network"
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-02-01/resources"
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -220,4 +222,11 @@ func (s *mockSizeClientImpl) ListVMSize(ctx context.Context, location string) ([
 	}
 
 	return *s.machineSizeList.Value, nil
+}
+
+func (s *mockSizeClientImpl) ListSecurityGroups(ctx context.Context, resourceGroupName string) ([]network.SecurityGroup, error) {
+	return nil, nil
+}
+func (s *mockSizeClientImpl) ListResourceGroups(ctx context.Context) ([]resources.Group, error) {
+	return nil, nil
 }
