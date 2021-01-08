@@ -324,6 +324,18 @@ type DigitaloceanSize struct {
 	Regions      []string `json:"regions"`
 }
 
+// AzureSecurityGroupsList is the object representing the security groups for vms in azure cloud provider
+// swagger:model AzureSecurityGroupsList
+type AzureSecurityGroupsList struct {
+	SecurityGroups []string `json:"securityGroups"`
+}
+
+// AzureResourceGroupsList is the object representing the resource groups for vms in azure cloud provider
+// swagger:model AzureResourceGroupsList
+type AzureResourceGroupsList struct {
+	ResourceGroups []string `json:"resourceGroups"`
+}
+
 // AzureAvailabilityZonesList is the object representing the availability zones for vms in azure cloud provider
 // swagger:model AzureAvailabilityZonesList
 type AzureAvailabilityZonesList struct {

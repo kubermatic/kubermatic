@@ -18,6 +18,7 @@ package provider
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -27,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
@@ -41,6 +43,67 @@ func AzureAvailabilityZonesWithClusterCredentialsEndpoint(projectProvider provid
 		req := request.(azureAvailabilityZonesNoCredentialsReq)
 		return providercommon.AzureAvailabilityZonesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID, req.SKUName)
 	}
+}
+
+func AzureSecurityGroupsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(azureSecurityGroupsReq)
+		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetsProvider)
+		if err != nil {
+			return nil, err
+		}
+		return providercommon.AzureSecurityGroupEndpoint(ctx, credentials.subscriptionID, credentials.clientID, credentials.clientSecret, credentials.tenantID, req.Location, req.ResourceGroup)
+	}
+}
+
+func AzureResourceGroupsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(azureResourceGroupsReq)
+		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetsProvider)
+		if err != nil {
+			return nil, err
+		}
+		return providercommon.AzureResourceGroupEndpoint(ctx, credentials.subscriptionID, credentials.clientID, credentials.clientSecret, credentials.tenantID, req.Location)
+	}
+}
+
+type azureCredentials struct {
+	subscriptionID string
+	tenantID       string
+	clientID       string
+	clientSecret   string
+}
+
+func getAzureCredentialsFromReq(ctx context.Context, req azureCommonReq, userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) (*azureCredentials, error) {
+	subscriptionID := req.SubscriptionID
+	clientID := req.ClientID
+	clientSecret := req.ClientSecret
+	tenantID := req.TenantID
+
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if len(req.Credential) > 0 {
+		preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+		}
+		if credentials := preset.Spec.Azure; credentials != nil {
+			subscriptionID = credentials.SubscriptionID
+			clientID = credentials.ClientID
+			clientSecret = credentials.ClientSecret
+			tenantID = credentials.TenantID
+		}
+	}
+
+	return &azureCredentials{
+		subscriptionID: subscriptionID,
+		tenantID:       tenantID,
+		clientID:       clientID,
+		clientSecret:   clientSecret,
+	}, nil
 }
 
 // azureSizeNoCredentialsReq represent a request for Azure VM sizes
@@ -99,5 +162,75 @@ func DecodeAzureAvailabilityZonesNoCredentialsReq(c context.Context, r *http.Req
 	}
 	req.azureSizeNoCredentialsReq = lr.(azureSizeNoCredentialsReq)
 	req.SKUName = r.Header.Get("SKUName")
+	return req, nil
+}
+
+// azureCommonReq represent a request for Azure support
+type azureCommonReq struct {
+	// in: header
+	SubscriptionID string
+	// in: header
+	TenantID string
+	// in: header
+	ClientID string
+	// in: header
+	ClientSecret string
+	// in: header
+	// Credential predefined Kubermatic credential name from the presets
+	Credential string
+}
+
+func DecodeAzureCommonReq(_ context.Context, r *http.Request) (interface{}, error) {
+	var req azureCommonReq
+
+	req.SubscriptionID = r.Header.Get("SubscriptionID")
+	req.TenantID = r.Header.Get("TenantID")
+	req.ClientID = r.Header.Get("ClientID")
+	req.ClientSecret = r.Header.Get("ClientSecret")
+	req.Credential = r.Header.Get("Credential")
+	return req, nil
+}
+
+// azureSecurityGroupsReq represent a request for Azure VM security groups
+// swagger:parameters listAzureSecurityGroups
+type azureSecurityGroupsReq struct {
+	azureCommonReq
+
+	// in: header
+	ResourceGroup string
+	// in: header
+	Location string
+}
+
+func DecodeAzureSecurityGroupsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req azureSecurityGroupsReq
+	common, err := DecodeAzureCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.azureCommonReq = common.(azureCommonReq)
+	req.ResourceGroup = r.Header.Get("ResourceGroup")
+	req.Location = r.Header.Get("Location")
+	return req, nil
+}
+
+// azureResourceGroupsReq represent a request for Azure VM resource groups
+// swagger:parameters listAzureResourceGroups
+type azureResourceGroupsReq struct {
+	azureCommonReq
+
+	// in: header
+	Location string
+}
+
+func DecodeAzureResourceGroupsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req azureResourceGroupsReq
+	common, err := DecodeAzureCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.azureCommonReq = common.(azureCommonReq)
+
+	req.Location = r.Header.Get("Location")
 	return req, nil
 }
