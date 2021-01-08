@@ -44,7 +44,7 @@ functionalities provided by the CCM and other components like KAS, KCM and
 Kubelets.
 
 The reconciling logic of the `cluster_controller` in the
-seed-controller-manager has to be enhanced to detect wheter a migration was
+seed-controller-manager has to be enhanced to detect whether a migration was
 triggered and determine the stage of the migration in order to apply the
 required adjustments to the resources involved (KAS, KCM, CCM).
 
@@ -99,7 +99,7 @@ to distinguish between a fresh install and a migration.
 The final step consisting in rolling out the machine-deployment is left
 to the operator. This is necessary in order for the kubelets be set with the
 right flags, as we do not have a strategy to update the flags in place.
-Note that even withoug this final step the CCM is fully working.
+Note that even without this final step the CCM is fully working.
 
 ## Task & effort:
 
