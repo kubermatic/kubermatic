@@ -243,7 +243,7 @@ func ListProviderPresets(presetsProvider provider.PresetProvider, userInfoGetter
 				continue
 			}
 
-			// Only enabled presets are request and preset is disabled
+			// Skip disabled presets when not requested
 			if !req.Disabled && (!preset.Spec.IsEnabled() || !presetProvider.IsEnabled()) {
 				continue
 			}
