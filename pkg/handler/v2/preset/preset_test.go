@@ -161,13 +161,13 @@ func TestListPresets(t *testing.T) {
 			Disabled: false,
 			ExpectedResponse: &v2.PresetList{
 				Items: []v2.Preset{
-					{Name: "enabled", Enabled: true, Providers: []kubermaticv1.ProviderType{}},
-					{Name: "enabled-do", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "disabled-do", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-do-with-dc", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "disabled-do-with-dc", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-do-with-acme-email", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-multi-provider", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean, kubermaticv1.ProviderAnexia}},
+					{Name: "enabled", Enabled: true, Providers: []v2.PresetProvider{}},
+					{Name: "enabled-do", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "disabled-do", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, false}}},
+					{Name: "enabled-do-with-dc", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "disabled-do-with-dc", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, false}}},
+					{Name: "enabled-do-with-acme-email", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "enabled-multi-provider", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}, {kubermaticv1.ProviderAnexia, true}}},
 				},
 			},
 			HTTPStatus:             http.StatusOK,
@@ -181,14 +181,14 @@ func TestListPresets(t *testing.T) {
 			Disabled: true,
 			ExpectedResponse: &v2.PresetList{
 				Items: []v2.Preset{
-					{Name: "enabled", Enabled: true, Providers: []kubermaticv1.ProviderType{}},
-					{Name: "disabled", Providers: []kubermaticv1.ProviderType{}},
-					{Name: "enabled-do", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "disabled-do", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-do-with-dc", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "disabled-do-with-dc", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-do-with-acme-email", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-multi-provider", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean, kubermaticv1.ProviderAnexia}},
+					{Name: "enabled", Enabled: true, Providers: []v2.PresetProvider{}},
+					{Name: "disabled", Providers: []v2.PresetProvider{}},
+					{Name: "enabled-do", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "disabled-do", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, false}}},
+					{Name: "enabled-do-with-dc", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "disabled-do-with-dc", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, false}}},
+					{Name: "enabled-do-with-acme-email", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "enabled-multi-provider", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}, {kubermaticv1.ProviderAnexia, true}}},
 				},
 			},
 			HTTPStatus:             http.StatusOK,
@@ -246,10 +246,10 @@ func TestListProviderPresets(t *testing.T) {
 			Provider: string(kubermaticv1.ProviderDigitalocean),
 			ExpectedResponse: &v2.PresetList{
 				Items: []v2.Preset{
-					{Name: "enabled-do", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-do-with-dc", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-do-with-acme-email", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-multi-provider", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean, kubermaticv1.ProviderAnexia}},
+					{Name: "enabled-do", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "enabled-do-with-dc", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "enabled-do-with-acme-email", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "enabled-multi-provider", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}, {kubermaticv1.ProviderAnexia, true}}},
 				},
 			},
 			HTTPStatus:             http.StatusOK,
@@ -264,12 +264,12 @@ func TestListProviderPresets(t *testing.T) {
 			Provider: string(kubermaticv1.ProviderDigitalocean),
 			ExpectedResponse: &v2.PresetList{
 				Items: []v2.Preset{
-					{Name: "enabled-do", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-do-with-dc", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "disabled-do-with-dc", Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-do-with-acme-email", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "disabled-do", Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-					{Name: "enabled-multi-provider", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean, kubermaticv1.ProviderAnexia}},
+					{Name: "enabled-do", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "enabled-do-with-dc", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "disabled-do-with-dc", Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, false}}},
+					{Name: "enabled-do-with-acme-email", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+					{Name: "disabled-do", Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, false}}},
+					{Name: "enabled-multi-provider", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}, {kubermaticv1.ProviderAnexia, true}}},
 				},
 			},
 			HTTPStatus:             http.StatusOK,
@@ -284,7 +284,7 @@ func TestListProviderPresets(t *testing.T) {
 			Provider:   string(kubermaticv1.ProviderDigitalocean),
 			Datacenter: "a",
 			ExpectedResponse: &v2.PresetList{Items: []v2.Preset{
-				{Name: "enabled-do-with-dc", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
+				{Name: "enabled-do-with-dc", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
 			}},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
@@ -298,8 +298,8 @@ func TestListProviderPresets(t *testing.T) {
 			Provider:   string(kubermaticv1.ProviderDigitalocean),
 			Datacenter: "a",
 			ExpectedResponse: &v2.PresetList{Items: []v2.Preset{
-				{Name: "enabled-do-with-dc", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
-				{Name: "disabled-do-with-dc", Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean}},
+				{Name: "enabled-do-with-dc", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}}},
+				{Name: "disabled-do-with-dc", Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, false}}},
 			}},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
@@ -312,7 +312,7 @@ func TestListProviderPresets(t *testing.T) {
 			Disabled: false,
 			Provider: string(kubermaticv1.ProviderAnexia),
 			ExpectedResponse: &v2.PresetList{Items: []v2.Preset{
-				{Name: "enabled-multi-provider", Enabled: true, Providers: []kubermaticv1.ProviderType{kubermaticv1.ProviderDigitalocean, kubermaticv1.ProviderAnexia}},
+				{Name: "enabled-multi-provider", Enabled: true, Providers: []v2.PresetProvider{{kubermaticv1.ProviderDigitalocean, true}, {kubermaticv1.ProviderAnexia, true}}},
 			}},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
@@ -367,7 +367,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 		Name            string
 		PresetName      string
 		Enabled         bool
-		Provider        kubermaticv1.ProviderType
+		Provider        v2.PresetProvider
 		ExistingPreset  *kubermaticv1.Preset
 		ExpectedPreset  *kubermaticv1.Preset
 		HTTPStatus      int
@@ -441,7 +441,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 		{
 			Name:       "scenario 4: enable disabled digitalocean preset",
 			PresetName: "disabled-do-preset",
-			Provider:   kubermaticv1.ProviderDigitalocean,
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
 			Enabled:    true,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "disabled-do-preset"},
@@ -468,7 +468,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 		{
 			Name:       "scenario 5: disable enabled digitalocean preset",
 			PresetName: "enabled-do-preset",
-			Provider:   kubermaticv1.ProviderDigitalocean,
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
 			Enabled:    false,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "enabled-do-preset"},
@@ -495,7 +495,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 		{
 			Name:       "scenario 6: disable enabled digitalocean preset with no enabled status set",
 			PresetName: "enabled-do-preset",
-			Provider:   kubermaticv1.ProviderDigitalocean,
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
 			Enabled:    false,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "enabled-do-preset"},
@@ -529,7 +529,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 		{
 			Name:       "scenario 6: block status update when provider configuration missing",
 			PresetName: "preset",
-			Provider:   kubermaticv1.ProviderDigitalocean,
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
 			Enabled:    false,
 			ExistingPreset: &kubermaticv1.Preset{
 				ObjectMeta: v1.ObjectMeta{Name: "preset"},
@@ -547,7 +547,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v2/presets/%s/status?provider=%s", tc.PresetName, tc.Provider), strings.NewReader(fmt.Sprintf(`{"enabled": %v}`, tc.Enabled)))
+			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v2/presets/%s/status?provider=%s", tc.PresetName, tc.Provider.Name), strings.NewReader(fmt.Sprintf(`{"enabled": %v}`, tc.Enabled)))
 			res := httptest.NewRecorder()
 
 			existingKubermaticObjs := []runtime.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
@@ -584,7 +584,7 @@ func TestCreatePreset(t *testing.T) {
 	testcases := []struct {
 		Name            string
 		PresetName      string
-		Provider        kubermaticv1.ProviderType
+		Provider        v2.PresetProvider
 		Body            string
 		ExistingPreset  *kubermaticv1.Preset
 		ExpectedPreset  *kubermaticv1.Preset
@@ -595,7 +595,7 @@ func TestCreatePreset(t *testing.T) {
 		{
 			Name:       "scenario 1: create digitalocean preset",
 			PresetName: "do-preset",
-			Provider:   kubermaticv1.ProviderDigitalocean,
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
 			Body: `{
 					  "metadata": {
 						"name": "do-preset"
@@ -621,7 +621,7 @@ func TestCreatePreset(t *testing.T) {
 		{
 			Name:       "scenario 2: create disabled digitalocean preset",
 			PresetName: "do-preset",
-			Provider:   kubermaticv1.ProviderDigitalocean,
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
 			Body: `{
 					  "metadata": {
 						"name": "do-preset"
@@ -651,7 +651,7 @@ func TestCreatePreset(t *testing.T) {
 		{
 			Name:       "scenario 3: add new anexia provider to existing preset",
 			PresetName: "multi-preset",
-			Provider:   kubermaticv1.ProviderAnexia,
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderAnexia, Enabled: true},
 			Body: `{
 					  "metadata": {
 						"name": "multi-preset"
@@ -690,7 +690,7 @@ func TestCreatePreset(t *testing.T) {
 		// scenario 4
 		{
 			Name:     "scenario 4: block overriding existing preset provider configuration",
-			Provider: kubermaticv1.ProviderDigitalocean,
+			Provider: v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
 			Body: `{
 					 "metadata": {
 						"name": "do-preset"
@@ -717,7 +717,7 @@ func TestCreatePreset(t *testing.T) {
 		// scenario 5
 		{
 			Name:            "scenario 5: provided invalid provider name",
-			Provider:        "xyz",
+			Provider:        v2.PresetProvider{Name: "xyz", Enabled: true},
 			Body:            "{}",
 			HTTPStatus:      http.StatusBadRequest,
 			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
@@ -726,7 +726,7 @@ func TestCreatePreset(t *testing.T) {
 		// scenario 6
 		{
 			Name:     "scenario 6: missing provider configuration",
-			Provider: kubermaticv1.ProviderDigitalocean,
+			Provider: v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
 			Body: `{
 					 "metadata": {
 						"name": "do-preset"
@@ -740,7 +740,7 @@ func TestCreatePreset(t *testing.T) {
 		// scenario 7
 		{
 			Name:     "scenario 7: missing required token field for digitalocean provider",
-			Provider: kubermaticv1.ProviderDigitalocean,
+			Provider: v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
 			Body: `{
 					 "metadata": {
 						"name": "do-preset"
@@ -754,7 +754,7 @@ func TestCreatePreset(t *testing.T) {
 		// scenario 8
 		{
 			Name:     "scenario 8: unexpected provider configuration when creating digitalocean preset",
-			Provider: kubermaticv1.ProviderDigitalocean,
+			Provider: v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
 			Body: `{
 					 "metadata": {
 						"name": "do-preset"
@@ -771,7 +771,7 @@ func TestCreatePreset(t *testing.T) {
 		// scenario 9
 		{
 			Name:     "scenario 9: block preset creation for regular user",
-			Provider: kubermaticv1.ProviderFake,
+			Provider: v2.PresetProvider{Name: kubermaticv1.ProviderFake, Enabled: true},
 			Body: `{
 					 "metadata": {
 						"name": "fake-preset"
@@ -789,7 +789,7 @@ func TestCreatePreset(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v2/providers/%s/presets", tc.Provider), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v2/providers/%s/presets", tc.Provider.Name), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 
 			existingKubermaticObjs := []runtime.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
@@ -826,7 +826,7 @@ func TestUpdatePreset(t *testing.T) {
 	testcases := []struct {
 		Name            string
 		PresetName      string
-		Provider        kubermaticv1.ProviderType
+		Provider        v2.PresetProvider
 		Body            string
 		ExistingPreset  *kubermaticv1.Preset
 		ExpectedPreset  *kubermaticv1.Preset
@@ -837,7 +837,7 @@ func TestUpdatePreset(t *testing.T) {
 		{
 			Name:       "scenario 1: update digitalocean preset token and disable it",
 			PresetName: "do-preset",
-			Provider:   kubermaticv1.ProviderDigitalocean,
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderDigitalocean, Enabled: true},
 			Body: `{
 					  "metadata": {
 						"name": "do-preset"
@@ -876,7 +876,7 @@ func TestUpdatePreset(t *testing.T) {
 		{
 			Name:       "scenario 2: update alibaba credentials",
 			PresetName: "alibaba-preset",
-			Provider:   kubermaticv1.ProviderAlibaba,
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderAlibaba, Enabled: true},
 			Body: `{
 					  "metadata": {
 						"name": "alibaba-preset"
@@ -916,7 +916,7 @@ func TestUpdatePreset(t *testing.T) {
 		{
 			Name:       "scenario 3: omit optional openstack fields to remove them",
 			PresetName: "openstack-preset",
-			Provider:   kubermaticv1.ProviderOpenstack,
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderOpenstack, Enabled: true},
 			Body: `{
 					  "metadata": {
 						"name": "openstack-preset"
@@ -970,7 +970,7 @@ func TestUpdatePreset(t *testing.T) {
 		{
 			Name:       "scenario 4: block user from updating multiple providers at once",
 			PresetName: "openstack-preset",
-			Provider:   kubermaticv1.ProviderOpenstack,
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderOpenstack, Enabled: true},
 			Body: `{
 					  "metadata": {
 						"name": "openstack-preset"
@@ -1008,7 +1008,7 @@ func TestUpdatePreset(t *testing.T) {
 		// scenario 5
 		{
 			Name:     "scenario 5: block preset update for regular user",
-			Provider: kubermaticv1.ProviderFake,
+			Provider: v2.PresetProvider{Name: kubermaticv1.ProviderFake, Enabled: true},
 			Body: `{
 					 "metadata": {
 						"name": "fake-preset"
@@ -1026,7 +1026,7 @@ func TestUpdatePreset(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v2/providers/%s/presets", tc.Provider), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v2/providers/%s/presets", tc.Provider.Name), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 
 			existingKubermaticObjs := []runtime.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}

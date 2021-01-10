@@ -17498,7 +17498,7 @@
         "providers": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/ProviderType"
+            "$ref": "#/definitions/PresetProvider"
           },
           "x-go-name": "Providers"
         }
@@ -17515,6 +17515,20 @@
             "$ref": "#/definitions/Preset"
           },
           "x-go-name": "Items"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "PresetProvider": {
+      "description": "PresetProvider represents a preset provider",
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "name": {
+          "$ref": "#/definitions/ProviderType"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"

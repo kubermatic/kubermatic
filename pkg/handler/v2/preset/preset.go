@@ -431,7 +431,7 @@ func newAPIPreset(preset *crdapiv1.Preset, enabled bool) v2.Preset {
 	for _, providerType := range crdapiv1.SupportedProviders() {
 		if hasProvider, _ := preset.Spec.HasProvider(providerType); hasProvider {
 			providers = append(providers, v2.PresetProvider{
-				Name: providerType,
+				Name:    providerType,
 				Enabled: preset.Spec.GetPresetProvider(providerType).IsEnabled(),
 			})
 		}

@@ -25,7 +25,7 @@ type Preset struct {
 	Name string `json:"name,omitempty"`
 
 	// providers
-	Providers []ProviderType `json:"providers"`
+	Providers []*PresetProvider `json:"providers"`
 }
 
 // Validate validates this preset
@@ -49,12 +49,17 @@ func (m *Preset) validateProviders(formats strfmt.Registry) error {
 	}
 
 	for i := 0; i < len(m.Providers); i++ {
+		if swag.IsZero(m.Providers[i]) { // not required
+			continue
+		}
 
-		if err := m.Providers[i].Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("providers" + "." + strconv.Itoa(i))
+		if m.Providers[i] != nil {
+			if err := m.Providers[i].Validate(formats); err != nil {
+				if ve, ok := err.(*errors.Validation); ok {
+					return ve.ValidateName("providers" + "." + strconv.Itoa(i))
+				}
+				return err
 			}
-			return err
 		}
 
 	}
