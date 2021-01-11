@@ -284,7 +284,10 @@ func TestListProviderPresets(t *testing.T) {
 			Provider:   string(kubermaticv1.ProviderDigitalocean),
 			Datacenter: "a",
 			ExpectedResponse: &v2.PresetList{Items: []v2.Preset{
+				{Name: "enabled-do", Enabled: true, Providers: []v2.PresetProvider{{Name: kubermaticv1.ProviderDigitalocean, Enabled: true}}},
 				{Name: "enabled-do-with-dc", Enabled: true, Providers: []v2.PresetProvider{{Name: kubermaticv1.ProviderDigitalocean, Enabled: true}}},
+				{Name: "enabled-do-with-acme-email", Enabled: true, Providers: []v2.PresetProvider{{Name: kubermaticv1.ProviderDigitalocean, Enabled: true}}},
+				{Name: "enabled-multi-provider", Enabled: true, Providers: []v2.PresetProvider{{Name: kubermaticv1.ProviderDigitalocean, Enabled: true}, {Name: kubermaticv1.ProviderAnexia, Enabled: true}}},
 			}},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
@@ -298,8 +301,12 @@ func TestListProviderPresets(t *testing.T) {
 			Provider:   string(kubermaticv1.ProviderDigitalocean),
 			Datacenter: "a",
 			ExpectedResponse: &v2.PresetList{Items: []v2.Preset{
+				{Name: "enabled-do", Enabled: true, Providers: []v2.PresetProvider{{Name: kubermaticv1.ProviderDigitalocean, Enabled: true}}},
+				{Name: "disabled-do", Providers: []v2.PresetProvider{{Name: kubermaticv1.ProviderDigitalocean}}},
 				{Name: "enabled-do-with-dc", Enabled: true, Providers: []v2.PresetProvider{{Name: kubermaticv1.ProviderDigitalocean, Enabled: true}}},
 				{Name: "disabled-do-with-dc", Providers: []v2.PresetProvider{{Name: kubermaticv1.ProviderDigitalocean}}},
+				{Name: "enabled-do-with-acme-email", Enabled: true, Providers: []v2.PresetProvider{{Name: kubermaticv1.ProviderDigitalocean, Enabled: true}}},
+				{Name: "enabled-multi-provider", Enabled: true, Providers: []v2.PresetProvider{{Name: kubermaticv1.ProviderDigitalocean, Enabled: true}, {Name: kubermaticv1.ProviderAnexia, Enabled: true}}},
 			}},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
