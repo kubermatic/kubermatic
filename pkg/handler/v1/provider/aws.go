@@ -277,9 +277,9 @@ func AWSSecurityGroupsEndpoint(presetsProvider provider.PresetProvider, seedsGet
 	}
 }
 
-func listSecurityGroup(accessKeyID, secretAccessKey, region string) (apiv1.AWSSecurityGroupList, error) {
+func listSecurityGroup(accessKeyID, secretAccessKey, region string) (*apiv1.AWSSecurityGroupList, error) {
 
-	securityGroupList := apiv1.AWSSecurityGroupList{}
+	securityGroupList := &apiv1.AWSSecurityGroupList{}
 
 	securityGroups, err := awsprovider.GetSecurityGroups(accessKeyID, secretAccessKey, region)
 	if err != nil {
@@ -287,11 +287,7 @@ func listSecurityGroup(accessKeyID, secretAccessKey, region string) (apiv1.AWSSe
 	}
 
 	for _, sg := range securityGroups {
-		securityGroupList = append(securityGroupList, apiv1.AWSSecurityGroup{
-			Description: *sg.Description,
-			GroupID:     *sg.GroupId,
-			GroupName:   *sg.GroupName,
-		})
+		securityGroupList.IDs = append(securityGroupList.IDs, *sg.GroupId)
 	}
 
 	return securityGroupList, nil

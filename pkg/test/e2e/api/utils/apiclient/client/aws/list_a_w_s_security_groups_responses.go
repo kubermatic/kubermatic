@@ -51,21 +51,23 @@ func NewListAWSSecurityGroupsOK() *ListAWSSecurityGroupsOK {
 AWSSecurityGroupList
 */
 type ListAWSSecurityGroupsOK struct {
-	Payload models.AWSSecurityGroupList
+	Payload *models.AWSSecurityGroupList
 }
 
 func (o *ListAWSSecurityGroupsOK) Error() string {
 	return fmt.Sprintf("[GET /api/v1/providers/aws/{dc}/securitygroups][%d] listAWSSecurityGroupsOK  %+v", 200, o.Payload)
 }
 
-func (o *ListAWSSecurityGroupsOK) GetPayload() models.AWSSecurityGroupList {
+func (o *ListAWSSecurityGroupsOK) GetPayload() *models.AWSSecurityGroupList {
 	return o.Payload
 }
 
 func (o *ListAWSSecurityGroupsOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
 
+	o.Payload = new(models.AWSSecurityGroupList)
+
 	// response payload
-	if err := consumer.Consume(response.Body(), &o.Payload); err != nil && err != io.EOF {
+	if err := consumer.Consume(response.Body(), o.Payload); err != nil && err != io.EOF {
 		return err
 	}
 
