@@ -176,7 +176,7 @@ type listProviderPresetsReq struct {
 }
 
 func (l listProviderPresetsReq) matchesDatacenter(datacenter string) bool {
-	return len(l.Datacenter) == 0 || strings.EqualFold(l.Datacenter, datacenter)
+	return len(datacenter) == 0 || len(l.Datacenter) == 0 || strings.EqualFold(l.Datacenter, datacenter)
 }
 
 // Validate validates listProviderPresetsReq request
