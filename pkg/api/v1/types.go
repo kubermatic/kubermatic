@@ -154,17 +154,11 @@ type AWSTag struct {
 	Value string `json:"value"`
 }
 
-// AWSSecurityGroup represents a object of AWS Security Group.
-// swagger:model AWSSecurityGroup
-type AWSSecurityGroup struct {
-	Description string `json:"description"`
-	GroupID     string `json:"groupID"`
-	GroupName   string `json:"groupName"`
-}
-
 // AWSSecurityGroupList represents an array of AWS Security Group.
 // swagger:model AWSSecurityGroupList
-type AWSSecurityGroupList []AWSSecurityGroup
+type AWSSecurityGroupList struct {
+	IDs []string `json:"ids,omitempty"`
+}
 
 // AWSVPCList represents an array of AWS VPC's.
 // swagger:model AWSVPCList
