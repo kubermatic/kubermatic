@@ -156,6 +156,11 @@ func main() {
 				ImportAlias:        "gatekeeperv1beta1",
 				ResourceImportPath: "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1",
 			},
+			{
+				ResourceName:     "ConstraintTemplate",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
 		},
 	}
 
@@ -200,7 +205,7 @@ import (
 )
 
 {{ range .Resources }}
-{{ namedReconcileFunc .ResourceName .ImportAlias .DefaultingFunc .RequiresRecreate .ResourceNamePlural }}
+{{ namedReconcileFunc .ResourceName .ImportAlias .DefaultingFunc .RequiresRecreate .ResourceNamePlural .APIVersionPrefix}}
 {{- end }}
 
 `))
@@ -217,9 +222,12 @@ type reconcileFunctionData struct {
 	// Whether the resource must be recreated instead of updated. Required
 	// e.G. for PDBs
 	RequiresRecreate bool
+	// Optional: adds an api version prefix to the generated functions to avoid duplication when different resources
+	// have the same ResourceName
+	APIVersionPrefix string
 }
 
-func namedReconcileFunc(resourceName, importAlias, defaultingFunc string, requiresRecreate bool, plural string) (string, error) {
+func namedReconcileFunc(resourceName, importAlias, defaultingFunc string, requiresRecreate bool, plural, apiVersionPrefix string) (string, error) {
 	if len(plural) == 0 {
 		plural = fmt.Sprintf("%ss", resourceName)
 	}
@@ -231,12 +239,14 @@ func namedReconcileFunc(resourceName, importAlias, defaultingFunc string, requir
 		ImportAlias        string
 		DefaultingFunc     string
 		RequiresRecreate   bool
+		APIVersionPrefix   string
 	}{
 		ResourceName:       resourceName,
 		ResourceNamePlural: plural,
 		ImportAlias:        importAlias,
 		DefaultingFunc:     defaultingFunc,
 		RequiresRecreate:   requiresRecreate,
+		APIVersionPrefix:   apiVersionPrefix,
 	})
 
 	if err != nil {
@@ -252,15 +262,15 @@ var (
 	}
 )
 
-var namedReconcileFunctionTemplate = template.Must(template.New("").Funcs(reconcileFunctionTplFuncs).Parse(`// {{ .ResourceName }}Creator defines an interface to create/update {{ .ResourceName }}s
-type {{ .ResourceName }}Creator = func(existing *{{ .ImportAlias }}.{{ .ResourceName }}) (*{{ .ImportAlias }}.{{ .ResourceName }}, error)
+var namedReconcileFunctionTemplate = template.Must(template.New("").Funcs(reconcileFunctionTplFuncs).Parse(`// {{ .APIVersionPrefix }}{{ .ResourceName }}Creator defines an interface to create/update {{ .ResourceName }}s
+type {{ .APIVersionPrefix }}{{ .ResourceName }}Creator = func(existing *{{ .ImportAlias }}.{{ .ResourceName }}) (*{{ .ImportAlias }}.{{ .ResourceName }}, error)
 
-// Named{{ .ResourceName }}CreatorGetter returns the name of the resource and the corresponding creator function
-type Named{{ .ResourceName }}CreatorGetter = func() (name string, create {{ .ResourceName }}Creator)
+// Named{{ .APIVersionPrefix }}{{ .ResourceName }}CreatorGetter returns the name of the resource and the corresponding creator function
+type Named{{ .APIVersionPrefix }}{{ .ResourceName }}CreatorGetter = func() (name string, create {{ .APIVersionPrefix }}{{ .ResourceName }}Creator)
 
-// {{ .ResourceName }}ObjectWrapper adds a wrapper so the {{ .ResourceName }}Creator matches ObjectCreator.
+// {{ .APIVersionPrefix }}{{ .ResourceName }}ObjectWrapper adds a wrapper so the {{ .APIVersionPrefix }}{{ .ResourceName }}Creator matches ObjectCreator.
 // This is needed as Go does not support function interface matching.
-func {{ .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectCreator {
+func {{ .APIVersionPrefix }}{{ .ResourceName }}ObjectWrapper(create {{ .APIVersionPrefix }}{{ .ResourceName }}Creator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
 			return create(existing.(*{{ .ImportAlias }}.{{ .ResourceName }}))
@@ -269,14 +279,14 @@ func {{ .ResourceName }}ObjectWrapper(create {{ .ResourceName }}Creator) ObjectC
 	}
 }
 
-// Reconcile{{ .ResourceNamePlural }} will create and update the {{ .ResourceNamePlural }} coming from the passed {{ .ResourceName }}Creator slice
-func Reconcile{{ .ResourceNamePlural }}(ctx context.Context, namedGetters []Named{{ .ResourceName }}CreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+// Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }} will create and update the {{ .APIVersionPrefix }}{{ .ResourceNamePlural }} coming from the passed {{ .APIVersionPrefix }}{{ .ResourceName }}Creator slice
+func Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }}(ctx context.Context, namedGetters []Named{{ .APIVersionPrefix }}{{ .ResourceName }}CreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
 {{- if .DefaultingFunc }}
 		create = {{ .DefaultingFunc }}(create)
 {{- end }}
-		createObject := {{ .ResourceName }}ObjectWrapper(create)
+		createObject := {{ .APIVersionPrefix }}{{ .ResourceName }}ObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
 
