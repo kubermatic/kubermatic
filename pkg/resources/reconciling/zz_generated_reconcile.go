@@ -878,3 +878,40 @@ func ReconcileConstraintTemplates(ctx context.Context, namedGetters []NamedConst
 
 	return nil
 }
+
+// KubermaticV1ConstraintTemplateCreator defines an interface to create/update ConstraintTemplates
+type KubermaticV1ConstraintTemplateCreator = func(existing *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error)
+
+// NamedKubermaticV1ConstraintTemplateCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1ConstraintTemplateCreatorGetter = func() (name string, create KubermaticV1ConstraintTemplateCreator)
+
+// KubermaticV1ConstraintTemplateObjectWrapper adds a wrapper so the KubermaticV1ConstraintTemplateCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1ConstraintTemplateObjectWrapper(create KubermaticV1ConstraintTemplateCreator) ObjectCreator {
+	return func(existing runtime.Object) (runtime.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.ConstraintTemplate))
+		}
+		return create(&kubermaticv1.ConstraintTemplate{})
+	}
+}
+
+// ReconcileKubermaticV1ConstraintTemplates will create and update the KubermaticV1ConstraintTemplates coming from the passed KubermaticV1ConstraintTemplateCreator slice
+func ReconcileKubermaticV1ConstraintTemplates(ctx context.Context, namedGetters []NamedKubermaticV1ConstraintTemplateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1ConstraintTemplateObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.ConstraintTemplate{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ConstraintTemplate %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
