@@ -27,7 +27,7 @@ function cleanup() {
 trap cleanup EXIT SIGINT SIGTERM
 
 ROOT_DIR="$(realpath .)"
-DIFFROOT="${ROOT_DIR}/pkg/test/e2e/api/utils/apiclient"
+DIFFROOT="${ROOT_DIR}/pkg/test/e2e/utils/apiclient"
 
 TMP_DIFFROOT=$(mktemp -d)
 

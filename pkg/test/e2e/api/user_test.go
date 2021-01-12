@@ -19,8 +19,10 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"testing"
 
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
@@ -35,21 +37,23 @@ func TestDeleteProjectOwner(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
-			project, err := apiRunner.CreateProject(rand.String(10))
+			testClient := utils.NewTestClient(masterToken, t)
+			project, err := testClient.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("failed to create project: %v", err)
 			}
-			defer cleanUpProject(t, project.ID)
+			defer cleanupProject(t, project.ID)
 
-			projectUsers, err := apiRunner.GetProjectUsers(project.ID)
+			projectUsers, err := testClient.GetProjectUsers(project.ID)
 			if err != nil {
 				t.Fatalf("failed to get the project user: %v", err)
 			}
@@ -64,7 +68,7 @@ func TestDeleteProjectOwner(t *testing.T) {
 				}
 			}
 
-			err = apiRunner.DeleteUserFromProject(project.ID, projectUsers[0].ID)
+			err = testClient.DeleteUserFromProject(project.ID, projectUsers[0].ID)
 			if err == nil {
 				t.Fatal("expected error when delete owner of the project")
 			}
@@ -89,26 +93,28 @@ func TestAddUserToProject(t *testing.T) {
 		},
 	}
 
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
-			project, err := apiRunner.CreateProject(rand.String(10))
+			testClient := utils.NewTestClient(masterToken, t)
+			project, err := testClient.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("failed to create project: %v", err)
 			}
-			defer cleanUpProject(t, project.ID)
+			defer cleanupProject(t, project.ID)
 
-			_, err = apiRunner.AddProjectUser(project.ID, tc.newUserEmail, tc.newUserName, tc.newUserGroup)
+			_, err = testClient.AddProjectUser(project.ID, tc.newUserEmail, tc.newUserName, tc.newUserGroup)
 			if err != nil {
 				t.Fatalf("failed to add user to project: %v", err)
 			}
 
-			projectUsers, err := apiRunner.GetProjectUsers(project.ID)
+			projectUsers, err := testClient.GetProjectUsers(project.ID)
 			if err != nil {
 				t.Fatalf("failed to get the project users: %v", err)
 			}

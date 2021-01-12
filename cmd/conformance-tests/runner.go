@@ -45,10 +45,10 @@ import (
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
-	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
-	projectclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
+	projectclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
+	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -766,13 +766,6 @@ func (r *testRunner) testCluster(
 		log.Errorf("Failed to verify that pod and node metrics are available: %v", err)
 	}
 
-	// Do etcd-launcher tests - we don't retry this.
-	if err := junitReporterWrapper(
-		"[Kubermatic] Test etcd-launcher experimental features..", report, func() error {
-			return r.testEtcdLauncher(ctx, log, cluster)
-		}); err != nil {
-		log.Errorf("failed to verify etcd-launcher experimental features: %v", err)
-	}
 	return nil
 }
 

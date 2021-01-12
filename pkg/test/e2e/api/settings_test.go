@@ -19,6 +19,7 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -26,7 +27,8 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -59,17 +61,20 @@ func TestGetDefaultGlobalSettings(t *testing.T) {
 			},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var masterToken string
 
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
-			apiRunner := createRunner(masterToken, t)
+			testClient := utils.NewTestClient(masterToken, t)
 
-			settings, err := apiRunner.GetGlobalSettings()
+			settings, err := testClient.GetGlobalSettings()
 			if err != nil {
 				t.Fatalf("failed to get global settings: %v", err)
 			}
@@ -80,8 +85,8 @@ func TestGetDefaultGlobalSettings(t *testing.T) {
 	}
 }
 
-func setUserProjectsLimit(t *testing.T, r *runner, limit int) {
-	_, err := r.UpdateGlobalSettings(json.RawMessage(fmt.Sprintf(`{"userProjectsLimit":%d}`, limit)))
+func setUserProjectsLimit(t *testing.T, c *utils.TestClient, limit int) {
+	_, err := c.UpdateGlobalSettings(json.RawMessage(fmt.Sprintf(`{"userProjectsLimit":%d}`, limit)))
 	if err != nil {
 		t.Fatalf("failed to update global settings: %v", err)
 	}
@@ -97,28 +102,31 @@ func TestUserProjectsLimit(t *testing.T) {
 			projectsLimit: 1,
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var masterToken string
 
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
-			apiRunner := createRunner(masterToken, t)
+			testClient := utils.NewTestClient(masterToken, t)
 			// change for admin user
-			adminMasterToken, err := retrieveAdminMasterToken()
+			adminMasterToken, err := utils.RetrieveAdminMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
-			adminAPIRunner := createRunner(adminMasterToken, t)
+			adminTestClient := utils.NewTestClient(adminMasterToken, t)
 
-			setUserProjectsLimit(t, adminAPIRunner, tc.projectsLimit)
-			defer setUserProjectsLimit(t, adminAPIRunner, 0)
+			setUserProjectsLimit(t, adminTestClient, tc.projectsLimit)
+			defer setUserProjectsLimit(t, adminTestClient, 0)
 
 			for i := 0; i < (tc.projectsLimit + 1); i++ {
-				_, err := apiRunner.CreateProject(rand.String(10))
+				_, err := testClient.CreateProject(rand.String(10))
 				if err != nil && i < tc.projectsLimit {
 					t.Fatalf("failed to create project: %v", err)
 				}
@@ -140,20 +148,23 @@ func TestAdminUserProjectsLimit(t *testing.T) {
 			projectsLimit: 1,
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			adminMasterToken, err := retrieveAdminMasterToken()
+			adminMasterToken, err := utils.RetrieveAdminMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
-			adminAPIRunner := createRunner(adminMasterToken, t)
+			adminTestClient := utils.NewTestClient(adminMasterToken, t)
 
-			setUserProjectsLimit(t, adminAPIRunner, tc.projectsLimit)
-			defer setUserProjectsLimit(t, adminAPIRunner, 0)
+			setUserProjectsLimit(t, adminTestClient, tc.projectsLimit)
+			defer setUserProjectsLimit(t, adminTestClient, 0)
 
 			for i := 0; i < (tc.projectsLimit + 1); i++ {
-				_, err := adminAPIRunner.CreateProject(rand.String(10))
+				_, err := adminTestClient.CreateProject(rand.String(10))
 				if err != nil {
 					t.Fatalf("failed to create project: %v", err)
 				}
@@ -171,36 +182,41 @@ func TestRestrictProjectCreation(t *testing.T) {
 			name: "user failed to create any project, admin can create projects",
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var masterToken string
 
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
-			apiRunner := createRunner(masterToken, t)
+			testClient := utils.NewTestClient(masterToken, t)
+
 			// change for admin user
-			adminMasterToken, err := retrieveAdminMasterToken()
+			adminMasterToken, err := utils.RetrieveAdminMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get admin master token: %v", err)
 			}
 
-			adminAPIRunner := createRunner(adminMasterToken, t)
-			_, err = adminAPIRunner.UpdateGlobalSettings(json.RawMessage(`{"restrictProjectCreation":true}`))
+			adminTestClient := utils.NewTestClient(adminMasterToken, t)
+
+			_, err = adminTestClient.UpdateGlobalSettings(json.RawMessage(`{"restrictProjectCreation":true}`))
 			if err != nil {
 				t.Fatalf("failed to update global settings: %v", err)
 			}
 
 			defer func() {
-				_, err = adminAPIRunner.UpdateGlobalSettings(json.RawMessage(`{"restrictProjectCreation":false}`))
+				_, err = adminTestClient.UpdateGlobalSettings(json.RawMessage(`{"restrictProjectCreation":false}`))
 				if err != nil {
 					t.Fatalf("failed to update global settings: %v", err)
 				}
 			}()
 
 			// regular user can't create projects
-			_, err = apiRunner.CreateProject(rand.String(10))
+			_, err = testClient.CreateProject(rand.String(10))
 			if err == nil {
 				t.Fatal("expected error during cluster creation")
 			}
@@ -213,11 +229,11 @@ func TestRestrictProjectCreation(t *testing.T) {
 			}
 
 			// admin can create projects
-			project, err := adminAPIRunner.CreateProject(rand.String(10))
+			project, err := adminTestClient.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("admin failed to create eproject: %v", err)
 			}
-			if err := adminAPIRunner.DeleteProject(project.ID); err != nil {
+			if err := adminTestClient.DeleteProject(project.ID); err != nil {
 				t.Fatalf("admin failed to delete project: %v", err)
 			}
 		})
