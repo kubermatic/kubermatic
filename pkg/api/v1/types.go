@@ -318,6 +318,12 @@ type DigitaloceanSize struct {
 	Regions      []string `json:"regions"`
 }
 
+// AzureRouteTablesList is the object representing the route tables for vms in azure cloud provider
+// swagger:model AzureRouteTablesList
+type AzureRouteTablesList struct {
+	RouteTables []string `json:"routeTables"`
+}
+
 // AzureSecurityGroupsList is the object representing the security groups for vms in azure cloud provider
 // swagger:model AzureSecurityGroupsList
 type AzureSecurityGroupsList struct {

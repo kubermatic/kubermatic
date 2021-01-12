@@ -59,12 +59,18 @@ var NewAzureClientSet = func(subscriptionID, clientID, clientSecret, tenantID st
 	if err != nil {
 		return nil, err
 	}
+	routeTablesClient := network.NewRouteTablesClient(subscriptionID)
+	routeTablesClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+	if err != nil {
+		return nil, err
+	}
 
 	return &azureClientSetImpl{
 		vmSizeClient:         sizesClient,
 		skusClient:           skusClient,
 		securityGroupsClient: securityGroupsClient,
 		resourceGroupsClient: resourceGroupsClient,
+		routeTablesClient:    routeTablesClient,
 	}, nil
 }
 
@@ -72,6 +78,7 @@ type azureClientSetImpl struct {
 	vmSizeClient         compute.VirtualMachineSizesClient
 	skusClient           compute.ResourceSkusClient
 	securityGroupsClient network.SecurityGroupsClient
+	routeTablesClient    network.RouteTablesClient
 	resourceGroupsClient resources.GroupsClient
 }
 
@@ -80,6 +87,7 @@ type AzureClientSet interface {
 	ListSKU(ctx context.Context, location string) ([]compute.ResourceSku, error)
 	ListSecurityGroups(ctx context.Context, resourceGroupName string) ([]network.SecurityGroup, error)
 	ListResourceGroups(ctx context.Context) ([]resources.Group, error)
+	ListRouteTables(ctx context.Context, resourceGroupName string) ([]network.RouteTable, error)
 }
 
 func (s *azureClientSetImpl) ListSKU(ctx context.Context, _ string) ([]compute.ResourceSku, error) {
@@ -104,6 +112,15 @@ func (s *azureClientSetImpl) ListSecurityGroups(ctx context.Context, resourceGro
 		return nil, fmt.Errorf("failed to list security groups: %v", err)
 	}
 	return securityGroups.Values(), nil
+}
+
+func (s *azureClientSetImpl) ListRouteTables(ctx context.Context, resourceGroupName string) ([]network.RouteTable, error) {
+	routeTables, err := s.routeTablesClient.List(ctx, resourceGroupName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list resource groups: %v", err)
+	}
+	return routeTables.Values(), nil
+
 }
 
 func (s *azureClientSetImpl) ListResourceGroups(ctx context.Context) ([]resources.Group, error) {
@@ -367,4 +384,25 @@ func AzureResourceGroupEndpoint(ctx context.Context, subscriptionID, clientID, c
 	}
 
 	return apiResourceGroups, nil
+}
+
+func AzureRouteTableEndpoint(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, resourceGroup string) (*apiv1.AzureRouteTablesList, error) {
+	routeTableClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer for security groups client: %v", err)
+	}
+
+	routeTableList, err := routeTableClient.ListRouteTables(ctx, resourceGroup)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list route table resources: %v", err)
+	}
+
+	apiRouteTables := &apiv1.AzureRouteTablesList{}
+	for _, rt := range routeTableList {
+		if location == *rt.Location {
+			apiRouteTables.RouteTables = append(apiRouteTables.RouteTables, *rt.Name)
+		}
+	}
+
+	return apiRouteTables, nil
 }

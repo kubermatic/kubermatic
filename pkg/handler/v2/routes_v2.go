@@ -423,6 +423,9 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/azure/resourcegroups").
 		Handler(r.listAzureResourceGroups())
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/azure/routetables").
+		Handler(r.listAzureRouteTables())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -2838,6 +2841,28 @@ func (r Routing) listAzureResourceGroups() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AzureResourceGroupsEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAzureResourceGroupsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/azure/routetables azure listAzureRouteTables
+//
+// Lists available VM route tables
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AzureRouteTablesList
+func (r Routing) listAzureRouteTables() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AzureRouteTablesEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeAzureRouteTablesReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
