@@ -129,7 +129,7 @@ func genConstraintTemplate(name string, delete bool) *kubermaticv1.ConstraintTem
 	if delete {
 		deleteTime := metav1.NewTime(time.Now())
 		ct.DeletionTimestamp = &deleteTime
-		ct.Finalizers = append(ct.Finalizers, v1.GatekeeperMasterConstraintTemplateCleanupFinalizer)
+		ct.Finalizers = append(ct.Finalizers, v1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
 	}
 
 	return ct

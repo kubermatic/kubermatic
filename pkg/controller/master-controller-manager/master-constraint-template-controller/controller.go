@@ -93,7 +93,7 @@ func Add(ctx context.Context,
 		enqueueAllConstraintTemplates(reconciler.masterClient, reconciler.log),
 		predicate.ByNamespace(namespace),
 	); err != nil {
-		return fmt.Errorf("failed to create watcher: %v", err)
+		return fmt.Errorf("failed to create seed watcher: %v", err)
 	}
 
 	return nil
@@ -128,7 +128,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 func (r *reconciler) reconcile(log *zap.SugaredLogger, constraintTemplate *kubermaticv1.ConstraintTemplate) error {
 
 	if constraintTemplate.DeletionTimestamp != nil {
-		if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperMasterConstraintTemplateCleanupFinalizer) {
+		if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer) {
 			return nil
 		}
 
@@ -151,16 +151,16 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, constraintTemplate *kuber
 		}
 
 		oldConstraintTemplate := constraintTemplate.DeepCopy()
-		kuberneteshelper.RemoveFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperMasterConstraintTemplateCleanupFinalizer)
+		kuberneteshelper.RemoveFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
 		if err := r.masterClient.Patch(r.ctx, constraintTemplate, client.MergeFrom(oldConstraintTemplate)); err != nil {
 			return fmt.Errorf("failed to remove constraint template finalizer %s: %v", constraintTemplate.Name, err)
 		}
 		return nil
 	}
 
-	if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperMasterConstraintTemplateCleanupFinalizer) {
+	if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer) {
 		oldConstraintTemplate := constraintTemplate.DeepCopy()
-		kuberneteshelper.AddFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperMasterConstraintTemplateCleanupFinalizer)
+		kuberneteshelper.AddFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
 		if err := r.masterClient.Patch(r.ctx, constraintTemplate, client.MergeFrom(oldConstraintTemplate)); err != nil {
 			return fmt.Errorf("failed to set constraint template finalizer %s: %v", constraintTemplate.Name, err)
 		}
@@ -182,7 +182,7 @@ func (r *reconciler) syncAllSeeds(
 
 	seedList := &kubermaticv1.SeedList{}
 	if err := r.masterClient.List(r.ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: r.namespace}); err != nil {
-		return fmt.Errorf("failed listing clusters: %w", err)
+		return fmt.Errorf("failed listing seeds: %w", err)
 	}
 
 	for _, seed := range seedList.Items {

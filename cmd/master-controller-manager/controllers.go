@@ -81,7 +81,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create external cluster controller: %v", err)
 	}
 	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create external cluster controller: %v", err)
+		return fmt.Errorf("failed to create master constraint template controller: %v", err)
 	}
 
 	return nil
