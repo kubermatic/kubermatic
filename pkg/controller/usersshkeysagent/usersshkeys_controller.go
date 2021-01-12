@@ -112,6 +112,12 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, fmt.Errorf("failed to fetch user ssh keys: %v", err)
 	}
 
+	// if there was no user ssh keys attached to the user cluster, the agent won't carry out any updates,
+	// however, if any ssh keys were attached to the cluster, then those newly attached keys will override any pre-existent ones
+	if len(secret.Data) == 0 {
+		return reconcile.Result{}, nil
+	}
+
 	if err := r.updateAuthorizedKeys(secret.Data); err != nil {
 		r.log.Errorw("Failed reconciling user ssh key secret", zap.Error(err))
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile user ssh keys: %v", err)
