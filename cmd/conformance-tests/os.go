@@ -17,7 +17,7 @@ limitations under the License.
 package main
 
 import (
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
+	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
 func getOSNameFromSpec(spec apimodels.OperatingSystemSpec) string {

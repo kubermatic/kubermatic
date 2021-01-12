@@ -19,8 +19,11 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"reflect"
 	"testing"
+
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 )
@@ -37,25 +40,28 @@ func TestCreateSSHKey(t *testing.T) {
 			publicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== user@example.com ",
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
-			project, err := apiRunner.CreateProject(rand.String(10))
+			testClient := utils.NewTestClient(masterToken, t)
+			project, err := testClient.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("failed to create project: %v", err)
 			}
-			defer cleanUpProject(t, project.ID)
+			defer cleanupProject(t, project.ID)
 
-			sshKey, err := apiRunner.CreateUserSSHKey(project.ID, tc.keyName, tc.publicKey)
+			sshKey, err := testClient.CreateUserSSHKey(project.ID, tc.keyName, tc.publicKey)
 			if err != nil {
 				t.Fatalf("failed to get create SSH key: %v", err)
 			}
-			sshKeys, err := apiRunner.ListUserSSHKey(project.ID)
+			sshKeys, err := testClient.ListUserSSHKey(project.ID)
 			if err != nil {
 				t.Fatalf("failed to list SSH keys: %v", err)
 			}
@@ -67,7 +73,7 @@ func TestCreateSSHKey(t *testing.T) {
 			}
 
 			// user can't create SSH key with the same name
-			_, err = apiRunner.CreateUserSSHKey(project.ID, tc.keyName, tc.publicKey)
+			_, err = testClient.CreateUserSSHKey(project.ID, tc.keyName, tc.publicKey)
 			if err == nil {
 				t.Fatalf("expected error, shouldn't create SSH key with existing name")
 			}
@@ -87,29 +93,32 @@ func TestDeleteSSHKey(t *testing.T) {
 			publicKey: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC8LlXSRW4HUYAjzx1+r5JzpjXIDDyFkWZzBQ8aU14J8LdMyQsU6/ZKuO5IKoWWVoPi0e63qSjkXPTjnUAwpE62hDm6uLaPgIlc3ND+8d9xbItS+gyXk9TSkC3emrsCWpS76W3KjLwyz5euIfnMCQZSASM7F5CrNg6XSppOgRWlyY09VEKi9PmvEDKCy5JNt6afcUzB3rAOK3SYZ0BYDyrVjuqTcMZwRodryxKb/jxDS+qQNplBNuUBqUzqjuKyI5oAk+aVTYIfTwgBTQyZT7So/u70gSDbRp9uHI05PkH60IftAHdYu4TJTmCwJxLW/suOEx3PPvIsUP14XQUZgmDJEuIuWDlsvfOo9DXZNnl832SGvTyhclBpsauWJ1OwOllT+hlM7u8dwcb70GD/OzCG7RSEatVoiNtg4XdeUf4kiqqzKZEqpopHQqwVKMhlhPKKulY0vrtetJxaLokEwPOYyycxlXsNBK2ei/IbGan+uI39v0s30ySWKzr+M9z0QlLAG7rjgCSWFSmy+Ez2fxU5HQQTNCep8+VjNeI79uO9VDJ8qvV/y6fDtrwgl67hUgDcHyv80TzVROTGFBMCP7hyswArT0GxpL9q7PjPU92D43UEDY5YNOZN2A976O5jd4bPrWp0mKsye1BhLrct16Xdn9x68D8nS2T1uSSWovFhkQ== user@example.com ",
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
-			project, err := apiRunner.CreateProject(rand.String(10))
+			testClient := utils.NewTestClient(masterToken, t)
+			project, err := testClient.CreateProject(rand.String(10))
 			if err != nil {
 				t.Fatalf("failed to create project: %v", err)
 			}
-			defer cleanUpProject(t, project.ID)
+			defer cleanupProject(t, project.ID)
 
-			sshKey, err := apiRunner.CreateUserSSHKey(project.ID, tc.keyName, tc.publicKey)
+			sshKey, err := testClient.CreateUserSSHKey(project.ID, tc.keyName, tc.publicKey)
 			if err != nil {
 				t.Fatalf("failed to get create SSH key: %v", err)
 			}
 
-			if err := apiRunner.DeleteUserSSHKey(project.ID, sshKey.ID); err != nil {
+			if err := testClient.DeleteUserSSHKey(project.ID, sshKey.ID); err != nil {
 				t.Fatalf("failed to delete SSH key: %v", err)
 			}
-			sshKeys, err := apiRunner.ListUserSSHKey(project.ID)
+			sshKeys, err := testClient.ListUserSSHKey(project.ID)
 			if err != nil {
 				t.Fatalf("failed to list SSH keys: %v", err)
 			}

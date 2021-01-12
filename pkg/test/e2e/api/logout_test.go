@@ -19,12 +19,15 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/credentials"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/datacenter"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
+
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
@@ -42,27 +45,30 @@ func TestLogout(t *testing.T) {
 			isAdmin: true,
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			var masterToken string
 			var err error
 
 			if tc.isAdmin {
-				masterToken, err = retrieveAdminMasterToken()
+				masterToken, err = utils.RetrieveAdminMasterToken(ctx)
 			} else {
-				masterToken, err = retrieveMasterToken()
+				masterToken, err = utils.RetrieveMasterToken(ctx)
 			}
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
-			if err := apiRunner.Logout(); err != nil {
+			testClient := utils.NewTestClient(masterToken, t)
+			if err := testClient.Logout(); err != nil {
 				t.Fatal(err)
 			}
 
 			// test projection creation
-			_, err = apiRunner.CreateProject(rand.String(10))
+			_, err = testClient.CreateProject(rand.String(10))
 			if err == nil {
 				t.Fatal("create project: expected error")
 			}
@@ -71,7 +77,7 @@ func TestLogout(t *testing.T) {
 			}
 
 			// test listing datacenters
-			_, err = apiRunner.ListDC()
+			_, err = testClient.ListDC()
 			if err == nil {
 				t.Fatal("list datacenter: expected error")
 			}
@@ -84,7 +90,7 @@ func TestLogout(t *testing.T) {
 			}
 
 			// test listing credentials
-			_, err = apiRunner.ListCredentials("gcp", "gcp-westeurope")
+			_, err = testClient.ListCredentials("gcp", "gcp-westeurope")
 			if err == nil {
 				t.Fatal("list credentials: expected error")
 			}

@@ -69,13 +69,13 @@ GIT_SSH_COMMAND="ssh -o CheckHostIP=no -i /ssh/id_rsa" git clone "$URL" "$tempdi
 
 # rewrite all the import paths
 echo "Rewriting import paths"
-sed_expression="s#k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient#github.com/kubermatic/go-kubermatic#g"
-time find pkg/test/e2e/api/utils/apiclient/ -type f -exec sed "$sed_expression" -i {} \;
+sed_expression="s#k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient#github.com/kubermatic/go-kubermatic#g"
+time find pkg/test/e2e/utils/apiclient/ -type f -exec sed "$sed_expression" -i {} \;
 
 # sync the files
 echo "Synchronizing the files"
-rsync --archive --verbose --delete "./pkg/test/e2e/api/utils/apiclient/client/" "$tempdir/client/"
-rsync --archive --verbose --delete "./pkg/test/e2e/api/utils/apiclient/models/" "$tempdir/models/"
+rsync --archive --verbose --delete "./pkg/test/e2e/utils/apiclient/client/" "$tempdir/client/"
+rsync --archive --verbose --delete "./pkg/test/e2e/utils/apiclient/models/" "$tempdir/models/"
 
 # commit and push
 commit_and_push "$tempdir" "$PULL_BASE_REF" "$(git rev-parse HEAD)"

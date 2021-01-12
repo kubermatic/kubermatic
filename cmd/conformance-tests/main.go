@@ -49,13 +49,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
 	kubermaticsignals "k8c.io/kubermatic/v2/pkg/signals"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api"
-	apitest "k8c.io/kubermatic/v2/pkg/test/e2e/api"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
-	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/project"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/dex"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/dex"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -300,7 +298,7 @@ func main() {
 	}
 	log.Infow("Enabled versions", "versions", opts.versions)
 
-	kubermaticClient, err := api.NewKubermaticClient(opts.kubermaticEndpoint)
+	kubermaticClient, err := utils.NewKubermaticClient(opts.kubermaticEndpoint)
 	if err != nil {
 		log.Fatalf("Failed to create Kubermatic API client: %v", err)
 	}
@@ -334,7 +332,7 @@ func main() {
 		// same way.
 		// Also, the API E2E tests use environment variables to get the values
 		// into the `go test` runs.
-		login, password, err := apitest.OIDCCredentials()
+		login, password, err := utils.OIDCCredentials()
 		if err != nil {
 			log.Fatalf("Invalid OIDC credentials: %v", err)
 		}

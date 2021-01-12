@@ -16,7 +16,7 @@
 
 ### This script sets up a local KKP installation in kind, deploys a
 ### couple of test Presets and Users and then runs the e2e tests for the
-### API.
+### nodeport-proxy.
 
 set -euo pipefail
 

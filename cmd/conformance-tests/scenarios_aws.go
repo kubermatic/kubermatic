@@ -23,9 +23,9 @@ import (
 	"time"
 
 	"k8c.io/kubermatic/v2/pkg/semver"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/api/utils"
-	awsapiclient "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/client/aws"
-	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/api/utils/apiclient/models"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	awsapiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/aws"
+	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
 	"k8s.io/apimachinery/pkg/util/sets"
 	utilpointer "k8s.io/utils/pointer"

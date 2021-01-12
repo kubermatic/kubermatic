@@ -52,6 +52,7 @@ const (
 	UpdatedByVPALabelKey = "updated-by-vpa"
 
 	DefaultEtcdClusterSize = 3
+	MinEtcdClusterSize     = 3
 	MaxEtcdClusterSize     = 9
 )
 

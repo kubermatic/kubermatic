@@ -19,8 +19,11 @@ limitations under the License.
 package api
 
 import (
+	"context"
 	"sort"
 	"testing"
+
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -42,15 +45,18 @@ func TestGCPZones(t *testing.T) {
 			resultList:          []string{"europe-west3-a", "europe-west3-b", "europe-west3-c"},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
-			credentialList, err := apiRunner.ListCredentials(tc.provider, "")
+			testClient := utils.NewTestClient(masterToken, t)
+			credentialList, err := testClient.ListCredentials(tc.provider, "")
 			if err != nil {
 				t.Fatalf("failed to get credential names for provider %s: %v", tc.provider, err)
 			}
@@ -58,7 +64,7 @@ func TestGCPZones(t *testing.T) {
 				t.Fatalf("expected: %v, got %v", tc.expectedCredentials, credentialList)
 			}
 
-			zoneList, err := apiRunner.ListGCPZones(credentialList[0], tc.datacenter)
+			zoneList, err := testClient.ListGCPZones(credentialList[0], tc.datacenter)
 			if err != nil {
 				t.Fatalf("failed to get zones %v", err)
 			}
@@ -89,15 +95,18 @@ func TestGCPDiskTypes(t *testing.T) {
 			resultList:          []string{"pd-ssd", "pd-standard"},
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
-			credentialList, err := apiRunner.ListCredentials(tc.provider, "")
+			testClient := utils.NewTestClient(masterToken, t)
+			credentialList, err := testClient.ListCredentials(tc.provider, "")
 			if err != nil {
 				t.Fatalf("failed to get credential names for provider %s: %v", tc.provider, err)
 			}
@@ -105,7 +114,7 @@ func TestGCPDiskTypes(t *testing.T) {
 				t.Fatalf("expected: %v, got %v", tc.expectedCredentials, credentialList)
 			}
 
-			diskTypeList, err := apiRunner.ListGCPDiskTypes(credentialList[0], tc.zone)
+			diskTypeList, err := testClient.ListGCPDiskTypes(credentialList[0], tc.zone)
 			if err != nil {
 				t.Fatalf("failed to get disk types: %v", err)
 			}
@@ -133,15 +142,18 @@ func TestGCPSizes(t *testing.T) {
 			zone:                "europe-west3-c",
 		},
 	}
+
+	ctx := context.Background()
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			masterToken, err := retrieveMasterToken()
+			masterToken, err := utils.RetrieveMasterToken(ctx)
 			if err != nil {
 				t.Fatalf("failed to get master token: %v", err)
 			}
 
-			apiRunner := createRunner(masterToken, t)
-			credentialList, err := apiRunner.ListCredentials(tc.provider, "")
+			testClient := utils.NewTestClient(masterToken, t)
+			credentialList, err := testClient.ListCredentials(tc.provider, "")
 			if err != nil {
 				t.Fatalf("failed to get credential names for provider %s: %v", tc.provider, err)
 			}
@@ -149,7 +161,7 @@ func TestGCPSizes(t *testing.T) {
 				t.Fatalf("expected: %v, but got %v", tc.expectedCredentials, credentialList)
 			}
 
-			_, err = apiRunner.ListGCPSizes(credentialList[0], tc.zone)
+			_, err = testClient.ListGCPSizes(credentialList[0], tc.zone)
 			if err != nil {
 				t.Fatalf("failed to get sizes: %v", err)
 			}
