@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/openstack"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/operations"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/packet"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/preset"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/seed"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
