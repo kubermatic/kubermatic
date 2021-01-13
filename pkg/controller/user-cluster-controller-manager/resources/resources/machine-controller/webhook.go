@@ -24,56 +24,62 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // MutatingwebhookConfigurationCreator returns the MutatingwebhookConfiguration for the machine controller
 func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
-		return resources.MachineControllerMutatingWebhookConfigurationName, func(mutatingWebhookConfiguration *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error) {
-			failurePolicy := admissionregistrationv1beta1.Fail
+		return resources.MachineControllerMutatingWebhookConfigurationName, func(mutatingWebhookConfiguration *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
+			failurePolicy := admissionregistrationv1.Fail
+			sideEffects := admissionregistrationv1.SideEffectClassNone
 			mdURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./machinedeployments", resources.MachineControllerWebhookServiceName, namespace)
 			mURL := fmt.Sprintf("https://%s.%s.svc.cluster.local./machines", resources.MachineControllerWebhookServiceName, namespace)
+			reviewVersions := []string{"v1", "v1beta1"}
 
 			// This only gets set when the APIServer supports it, so carry it over
-			var scope *admissionregistrationv1beta1.ScopeType
+			var scope *admissionregistrationv1.ScopeType
 			if len(mutatingWebhookConfiguration.Webhooks) != 2 {
-				mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1beta1.MutatingWebhook{{}, {}}
+				mutatingWebhookConfiguration.Webhooks = []admissionregistrationv1.MutatingWebhook{{}, {}}
 			} else if len(mutatingWebhookConfiguration.Webhooks[0].Rules) > 0 {
 				scope = mutatingWebhookConfiguration.Webhooks[0].Rules[0].Scope
 			}
 
 			mutatingWebhookConfiguration.Webhooks[0].Name = fmt.Sprintf("%s-machinedeployments", resources.MachineControllerMutatingWebhookConfigurationName)
 			mutatingWebhookConfiguration.Webhooks[0].NamespaceSelector = &metav1.LabelSelector{}
+			mutatingWebhookConfiguration.Webhooks[0].SideEffects = &sideEffects
 			mutatingWebhookConfiguration.Webhooks[0].FailurePolicy = &failurePolicy
-			mutatingWebhookConfiguration.Webhooks[0].Rules = []admissionregistrationv1beta1.RuleWithOperations{{
-				Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
-				Rule: admissionregistrationv1beta1.Rule{
+			mutatingWebhookConfiguration.Webhooks[0].AdmissionReviewVersions = reviewVersions
+			mutatingWebhookConfiguration.Webhooks[0].Rules = []admissionregistrationv1.RuleWithOperations{{
+				Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update},
+				Rule: admissionregistrationv1.Rule{
 					APIGroups:   []string{clusterAPIGroup},
 					APIVersions: []string{clusterAPIVersion},
 					Resources:   []string{"machinedeployments"},
 					Scope:       scope,
 				},
 			}}
-			mutatingWebhookConfiguration.Webhooks[0].ClientConfig = admissionregistrationv1beta1.WebhookClientConfig{
+			mutatingWebhookConfiguration.Webhooks[0].ClientConfig = admissionregistrationv1.WebhookClientConfig{
 				URL:      &mdURL,
 				CABundle: triple.EncodeCertPEM(caCert),
 			}
 
 			mutatingWebhookConfiguration.Webhooks[1].Name = fmt.Sprintf("%s-machines", resources.MachineControllerMutatingWebhookConfigurationName)
 			mutatingWebhookConfiguration.Webhooks[1].NamespaceSelector = &metav1.LabelSelector{}
+			mutatingWebhookConfiguration.Webhooks[0].SideEffects = &sideEffects
 			mutatingWebhookConfiguration.Webhooks[1].FailurePolicy = &failurePolicy
-			mutatingWebhookConfiguration.Webhooks[1].Rules = []admissionregistrationv1beta1.RuleWithOperations{{
-				Operations: []admissionregistrationv1beta1.OperationType{admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update},
-				Rule: admissionregistrationv1beta1.Rule{
+			mutatingWebhookConfiguration.Webhooks[0].AdmissionReviewVersions = reviewVersions
+			mutatingWebhookConfiguration.Webhooks[1].Rules = []admissionregistrationv1.RuleWithOperations{{
+				Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update},
+				Rule: admissionregistrationv1.Rule{
 					APIGroups:   []string{clusterAPIGroup},
 					APIVersions: []string{clusterAPIVersion},
 					Resources:   []string{"machines"},
 					Scope:       scope,
 				},
 			}}
-			mutatingWebhookConfiguration.Webhooks[1].ClientConfig = admissionregistrationv1beta1.WebhookClientConfig{
+			mutatingWebhookConfiguration.Webhooks[1].ClientConfig = admissionregistrationv1.WebhookClientConfig{
 				URL:      &mURL,
 				CABundle: triple.EncodeCertPEM(caCert),
 			}

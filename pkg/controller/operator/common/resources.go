@@ -28,7 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -191,28 +191,28 @@ func SeedAdmissionWebhookName(cfg *operatorv1alpha1.KubermaticConfiguration) str
 
 func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
-		return SeedAdmissionWebhookName(cfg), func(hook *admissionregistrationv1beta1.ValidatingWebhookConfiguration) (*admissionregistrationv1beta1.ValidatingWebhookConfiguration, error) {
-			matchPolicy := admissionregistrationv1beta1.Exact
-			failurePolicy := admissionregistrationv1beta1.Fail
-			sideEffects := admissionregistrationv1beta1.SideEffectClassUnknown
-			scope := admissionregistrationv1beta1.AllScopes
+		return SeedAdmissionWebhookName(cfg), func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
+			sideEffects := admissionregistrationv1.SideEffectClassUnknown
+			scope := admissionregistrationv1.AllScopes
 
 			ca, err := seedWebhookCABundle(cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %v", err)
 			}
 
-			hook.Webhooks = []admissionregistrationv1beta1.ValidatingWebhook{
+			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "seeds.kubermatic.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{admissionregistrationv1beta1.SchemeGroupVersion.Version},
+					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
 					TimeoutSeconds:          pointer.Int32Ptr(30),
-					ClientConfig: admissionregistrationv1beta1.WebhookClientConfig{
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
 						CABundle: ca,
-						Service: &admissionregistrationv1beta1.ServiceReference{
+						Service: &admissionregistrationv1.ServiceReference{
 							Name:      seedWebhookServiceName,
 							Namespace: cfg.Namespace,
 							Path:      pointer.StringPtr("/validate-kubermatic-k8s-io-seed"),
@@ -225,16 +225,16 @@ func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 						},
 					},
 					ObjectSelector: &metav1.LabelSelector{},
-					Rules: []admissionregistrationv1beta1.RuleWithOperations{
+					Rules: []admissionregistrationv1.RuleWithOperations{
 						{
-							Rule: admissionregistrationv1beta1.Rule{
+							Rule: admissionregistrationv1.Rule{
 								APIGroups:   []string{kubermaticv1.GroupName},
 								APIVersions: []string{"*"},
 								Resources:   []string{"seeds"},
 								Scope:       &scope,
 							},
-							Operations: []admissionregistrationv1beta1.OperationType{
-								admissionregistrationv1beta1.OperationAll,
+							Operations: []admissionregistrationv1.OperationType{
+								admissionregistrationv1.OperationAll,
 							},
 						},
 					},

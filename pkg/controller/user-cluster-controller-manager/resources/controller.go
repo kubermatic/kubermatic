@@ -31,7 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -150,8 +150,8 @@ func Add(
 		&rbacv1.RoleBinding{},
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
-		&admissionregistrationv1beta1.MutatingWebhookConfiguration{},
-		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
+		&admissionregistrationv1.MutatingWebhookConfiguration{},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 		&apiextensionsv1beta1.CustomResourceDefinition{},
 	}
 
