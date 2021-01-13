@@ -27,7 +27,7 @@ import (
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
@@ -139,7 +139,7 @@ func Add(
 
 	globalTypesToWatch := []runtime.Object{
 		&rbacv1.ClusterRoleBinding{},
-		&admissionregistrationv1beta1.ValidatingWebhookConfiguration{},
+		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 	}
 
 	for _, t := range globalTypesToWatch {
