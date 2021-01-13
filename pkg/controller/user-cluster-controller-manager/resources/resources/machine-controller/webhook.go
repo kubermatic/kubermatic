@@ -67,9 +67,9 @@ func MutatingwebhookConfigurationCreator(caCert *x509.Certificate, namespace str
 
 			mutatingWebhookConfiguration.Webhooks[1].Name = fmt.Sprintf("%s-machines", resources.MachineControllerMutatingWebhookConfigurationName)
 			mutatingWebhookConfiguration.Webhooks[1].NamespaceSelector = &metav1.LabelSelector{}
-			mutatingWebhookConfiguration.Webhooks[0].SideEffects = &sideEffects
+			mutatingWebhookConfiguration.Webhooks[1].SideEffects = &sideEffects
 			mutatingWebhookConfiguration.Webhooks[1].FailurePolicy = &failurePolicy
-			mutatingWebhookConfiguration.Webhooks[0].AdmissionReviewVersions = reviewVersions
+			mutatingWebhookConfiguration.Webhooks[1].AdmissionReviewVersions = reviewVersions
 			mutatingWebhookConfiguration.Webhooks[1].Rules = []admissionregistrationv1.RuleWithOperations{{
 				Operations: []admissionregistrationv1.OperationType{admissionregistrationv1.Create, admissionregistrationv1.Update},
 				Rule: admissionregistrationv1.Rule{
