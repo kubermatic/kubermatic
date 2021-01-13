@@ -205,7 +205,7 @@ func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "seeds.kubermatic.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version},
+					AdmissionReviewVersions: []string{"v1beta1"},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,

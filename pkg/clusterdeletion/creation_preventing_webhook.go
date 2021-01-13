@@ -29,6 +29,8 @@ import (
 // and will prevent all creation requests from succeeding.
 func creationPreventingWebhook(apiGroup string, resources []string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	failurePolicy := admissionregistrationv1.Fail
+	sideEffects := admissionregistrationv1.SideEffectClassNone
+
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return "kubernetes-cluster-cleanup-" + strings.Join(resources, "-"),
 			func(vwc *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
@@ -61,6 +63,8 @@ func creationPreventingWebhook(apiGroup string, resources []string) reconciling.
 					},
 				}
 				vwc.Webhooks[0].FailurePolicy = &failurePolicy
+				vwc.Webhooks[0].SideEffects = &sideEffects
+				vwc.Webhooks[0].AdmissionReviewVersions = []string{"v1"}
 				return vwc, nil
 			}
 	}
