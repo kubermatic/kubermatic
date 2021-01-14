@@ -520,8 +520,9 @@ func getFlatcarOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtensi
 
 		ProvisioningUtility: flatcar.Ignition,
 	}
-	// set cloud init only for anexia provider
-	if nodeSpec.Cloud.Anexia != nil {
+	// set cloud init only for anexia and aws(due to the userdata size limit on aws, ignition increases the size drastically).
+	// This should be temporary until the new operating system manager is added to KKP.
+	if nodeSpec.Cloud.Anexia != nil || nodeSpec.Cloud.AWS != nil {
 		config.ProvisioningUtility = flatcar.CloudInit
 	}
 
