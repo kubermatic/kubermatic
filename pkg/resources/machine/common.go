@@ -520,8 +520,8 @@ func getFlatcarOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtensi
 
 		ProvisioningUtility: flatcar.Ignition,
 	}
-	// set cloud init only for anexia provider
-	if nodeSpec.Cloud.Anexia != nil {
+	// set cloud init only for anexia and aws(due too the userdata size on aws, that ignition adds) provider
+	if nodeSpec.Cloud.Anexia != nil || nodeSpec.Cloud.AWS != nil {
 		config.ProvisioningUtility = flatcar.CloudInit
 	}
 
