@@ -234,3 +234,11 @@ func (s *mockSizeClientImpl) ListResourceGroups(_ context.Context) ([]resources.
 func (s *mockSizeClientImpl) ListRouteTables(_ context.Context, _ string) ([]network.RouteTable, error) {
 	return nil, nil
 }
+
+func (s *mockSizeClientImpl) ListVnets(_ context.Context, _ string) ([]network.VirtualNetwork, error) {
+	return nil, nil
+}
+
+func (s *mockSizeClientImpl) ListSubnets(_ context.Context, _, _ string) ([]network.Subnet, error) {
+	return nil, nil
+}

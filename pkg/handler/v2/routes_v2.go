@@ -426,6 +426,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/providers/azure/routetables").
 		Handler(r.listAzureRouteTables())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/azure/subnets").
+		Handler(r.listAzureSubnets())
+
+	mux.Methods(http.MethodGet).
+		Path("/providers/azure/vnets").
+		Handler(r.listAzureVnets())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -2863,6 +2871,50 @@ func (r Routing) listAzureRouteTables() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AzureRouteTablesEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAzureRouteTablesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/azure/vnets azure listAzureVnets
+//
+// Lists available VM virtual networks
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AzureVirtualNetworksList
+func (r Routing) listAzureVnets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AzureVirtualNetworksEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeAzureVirtualNetworksReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/azure/subnets azure listAzureSubnets
+//
+// Lists available VM subnets
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AzureSubnetsList
+func (r Routing) listAzureSubnets() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AzureSubnetsEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeAzureSubnetsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

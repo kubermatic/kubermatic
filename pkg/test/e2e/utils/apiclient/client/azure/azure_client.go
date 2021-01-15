@@ -43,6 +43,10 @@ type ClientService interface {
 
 	ListAzureSizesNoCredentialsV2(params *ListAzureSizesNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSizesNoCredentialsV2OK, error)
 
+	ListAzureSubnets(params *ListAzureSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSubnetsOK, error)
+
+	ListAzureVnets(params *ListAzureVnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureVnetsOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -349,6 +353,74 @@ func (a *Client) ListAzureSizesNoCredentialsV2(params *ListAzureSizesNoCredentia
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListAzureSizesNoCredentialsV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListAzureSubnets Lists available VM subnets
+*/
+func (a *Client) ListAzureSubnets(params *ListAzureSubnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureSubnetsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAzureSubnetsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAzureSubnets",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/azure/subnets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAzureSubnetsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAzureSubnetsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAzureSubnetsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListAzureVnets Lists available VM virtual networks
+*/
+func (a *Client) ListAzureVnets(params *ListAzureVnetsParams, authInfo runtime.ClientAuthInfoWriter) (*ListAzureVnetsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListAzureVnetsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listAzureVnets",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/azure/vnets",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListAzureVnetsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListAzureVnetsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListAzureVnetsDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

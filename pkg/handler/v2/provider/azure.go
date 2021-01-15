@@ -78,6 +78,28 @@ func AzureRouteTablesEndpoint(presetsProvider provider.PresetProvider, userInfoG
 	}
 }
 
+func AzureVirtualNetworksEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(azureVirtualNetworksReq)
+		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetsProvider)
+		if err != nil {
+			return nil, err
+		}
+		return providercommon.AzureVnetEndpoint(ctx, credentials.subscriptionID, credentials.clientID, credentials.clientSecret, credentials.tenantID, req.Location, req.ResourceGroup)
+	}
+}
+
+func AzureSubnetsEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(azureSubnetsReq)
+		credentials, err := getAzureCredentialsFromReq(ctx, req.azureCommonReq, userInfoGetter, presetsProvider)
+		if err != nil {
+			return nil, err
+		}
+		return providercommon.AzureSubnetEndpoint(ctx, credentials.subscriptionID, credentials.clientID, credentials.clientSecret, credentials.tenantID, req.ResourceGroup, req.VirtualNetwork)
+	}
+}
+
 type azureCredentials struct {
 	subscriptionID string
 	tenantID       string
@@ -266,5 +288,51 @@ func DecodeAzureRouteTablesReq(c context.Context, r *http.Request) (interface{},
 	req.azureCommonReq = common.(azureCommonReq)
 	req.ResourceGroup = r.Header.Get("ResourceGroup")
 	req.Location = r.Header.Get("Location")
+	return req, nil
+}
+
+// azureVirtualNetworksReq represent a request for Azure VM virtual networks
+// swagger:parameters listAzureVnets
+type azureVirtualNetworksReq struct {
+	azureCommonReq
+
+	// in: header
+	ResourceGroup string
+	// in: header
+	Location string
+}
+
+func DecodeAzureVirtualNetworksReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req azureVirtualNetworksReq
+	common, err := DecodeAzureCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.azureCommonReq = common.(azureCommonReq)
+	req.ResourceGroup = r.Header.Get("ResourceGroup")
+	req.Location = r.Header.Get("Location")
+	return req, nil
+}
+
+// azureSubnetsReq represent a request for Azure VM subnets
+// swagger:parameters listAzureSubnets
+type azureSubnetsReq struct {
+	azureCommonReq
+
+	// in: header
+	ResourceGroup string
+	// in: header
+	VirtualNetwork string
+}
+
+func DecodeAzureSubnetsReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req azureSubnetsReq
+	common, err := DecodeAzureCommonReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.azureCommonReq = common.(azureCommonReq)
+	req.ResourceGroup = r.Header.Get("ResourceGroup")
+	req.VirtualNetwork = r.Header.Get("VirtualNetwork")
 	return req, nil
 }
