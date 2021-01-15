@@ -24,12 +24,12 @@ import (
 	"os"
 	"strings"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
+
 	"k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
 // presetsGetter is a function to retrieve preset list

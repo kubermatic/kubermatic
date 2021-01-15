@@ -25,13 +25,14 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 
 	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // listPresetsReq represents a request for a list of presets

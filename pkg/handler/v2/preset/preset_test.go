@@ -29,15 +29,16 @@ import (
 
 	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	v2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func boolPtr(value bool) *bool {
