@@ -15,7 +15,7 @@ spec:
     metadata:
       annotations:
         prometheus.io/path: /metrics
-        prometheus.io/port: "8085"
+        prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
       creationTimestamp: null
       labels:
@@ -35,7 +35,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-logtostderr","-v","4","-cluster-dns","169.254.20.10","-internal-listen-address","0.0.0.0:8085"]}'
+        - '{"command":"/usr/local/bin/machine-controller","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-logtostderr","-v","4","-cluster-dns","169.254.20.10","-health-probe-address","0.0.0.0:8085","-metrics-address","0.0.0.0:8080"]}'
         - --crd-to-wait-for
         - Machine,cluster.k8s.io/v1alpha1
         command:
@@ -55,11 +55,11 @@ spec:
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
         - name: KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: docker.io/kubermatic/machine-controller:v1.20.2
+        image: docker.io/kubermatic/machine-controller:v1.23.1
         livenessProbe:
           failureThreshold: 3
           httpGet:
-            path: /ready
+            path: /readyz
             port: 8085
             scheme: HTTP
           initialDelaySeconds: 15

@@ -60,7 +60,7 @@ spec:
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
         - name: KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: docker.io/kubermatic/machine-controller:v1.20.2
+        image: docker.io/kubermatic/machine-controller:v1.23.1
         livenessProbe:
           failureThreshold: 8
           httpGet:
