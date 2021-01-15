@@ -17,8 +17,56 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+	"reflect"
+	"strings"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+type ProviderType string
+
+const (
+	ProviderDigitalocean ProviderType = "digitalocean"
+	ProviderHetzner      ProviderType = "hetzner"
+	ProviderAzure        ProviderType = "azure"
+	ProviderVSphere      ProviderType = "vsphere"
+	ProviderAWS          ProviderType = "aws"
+	ProviderOpenstack    ProviderType = "openstack"
+	ProviderPacket       ProviderType = "packet"
+	ProviderGCP          ProviderType = "gcp"
+	ProviderKubevirt     ProviderType = "kubevirt"
+	ProviderAlibaba      ProviderType = "alibaba"
+	ProviderAnexia       ProviderType = "anexia"
+	ProviderFake         ProviderType = "fake"
+)
+
+func SupportedProviders() []ProviderType {
+	return []ProviderType{
+		ProviderDigitalocean,
+		ProviderHetzner,
+		ProviderAzure,
+		ProviderVSphere,
+		ProviderAWS,
+		ProviderOpenstack,
+		ProviderPacket,
+		ProviderGCP,
+		ProviderKubevirt,
+		ProviderAlibaba,
+		ProviderAnexia,
+		ProviderFake,
+	}
+}
+
+func IsProviderSupported(name string) bool {
+	for _, provider := range SupportedProviders() {
+		if strings.EqualFold(name, string(provider)) {
+			return true
+		}
+	}
+
+	return false
+}
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -61,23 +109,135 @@ type PresetSpec struct {
 
 	Fake                *Fake  `json:"fake,omitempty"`
 	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
+	Enabled             *bool  `json:"enabled,omitempty"`
+}
+
+func (s *PresetSpec) getProviderValue(providerType ProviderType) reflect.Value {
+	spec := reflect.ValueOf(s).Elem()
+	if spec.Kind() != reflect.Struct {
+		return reflect.Value{}
+	}
+
+	ignoreCaseCompare := func(name string) bool {
+		return strings.EqualFold(name, string(providerType))
+	}
+
+	provider := reflect.Indirect(spec).FieldByNameFunc(ignoreCaseCompare)
+	return provider
+}
+
+func (s *PresetSpec) SetPresetStatus(enabled bool) {
+	s.Enabled = &enabled
+}
+
+func (s *PresetSpec) SetPresetProviderStatus(providerType ProviderType, enabled bool) {
+	provider := s.getProviderValue(providerType)
+
+	ignoreCaseCompare := func(name string) bool {
+		return strings.EqualFold(name, "Enabled")
+	}
+
+	enabledField := reflect.Indirect(provider).FieldByNameFunc(ignoreCaseCompare)
+	enabledField.Set(reflect.ValueOf(&enabled))
+}
+
+func (s PresetSpec) HasProvider(providerType ProviderType) (bool, reflect.Value) {
+	provider := s.getProviderValue(providerType)
+	return !provider.IsZero(), provider
+}
+
+func (s PresetSpec) GetPresetProvider(providerType ProviderType) *PresetProvider {
+	hasProvider, providerField := s.HasProvider(providerType)
+	if !hasProvider {
+		return nil
+	}
+
+	presetSpecBaseFieldName := "PresetProvider"
+	presetBaseField := reflect.Indirect(providerField).FieldByName(presetSpecBaseFieldName)
+	presetBase := presetBaseField.Interface().(PresetProvider)
+	return &presetBase
+}
+
+func (s PresetSpec) Validate(providerType ProviderType) error {
+	hasProvider, providerField := s.HasProvider(providerType)
+	if !hasProvider {
+		return fmt.Errorf("missing provider configuration for: %s", providerType)
+	}
+
+	validateableType := reflect.TypeOf(new(Validateable)).Elem()
+	if !providerField.Type().Implements(validateableType) {
+		return fmt.Errorf("provider %s does not implement Validateable interface", providerField.Type().Name())
+	}
+
+	validateable := providerField.Interface().(Validateable)
+	if !validateable.IsValid() {
+		return fmt.Errorf("required fields missing for provider spec: %s", providerType)
+	}
+
+	return nil
+}
+
+func (s PresetSpec) IsEnabled() bool {
+	if s.Enabled == nil {
+		return true
+	}
+
+	return *s.Enabled
+}
+
+func (s PresetSpec) IsProviderEnabled(provider ProviderType) bool {
+	presetProvider := s.GetPresetProvider(provider)
+	return presetProvider != nil && presetProvider.IsEnabled()
+}
+
+func (s *PresetSpec) OverrideProvider(providerType ProviderType, spec *PresetSpec) {
+	dest := s.getProviderValue(providerType)
+	src := spec.getProviderValue(providerType)
+	dest.Set(src)
+}
+
+type Validateable interface {
+	IsValid() bool
+}
+
+type PresetProvider struct {
+	Enabled    *bool  `json:"enabled,omitempty"`
+	Datacenter string `json:"datacenter,omitempty"`
+}
+
+func (s PresetProvider) IsEnabled() bool {
+	if s.Enabled == nil {
+		return true
+	}
+
+	return *s.Enabled
 }
 
 type Digitalocean struct {
+	PresetProvider `json:",inline"`
+
 	// Token is used to authenticate with the DigitalOcean API.
 	Token string `json:"token"`
+}
 
-	Datacenter string `json:"datacenter,omitempty"`
+func (s Digitalocean) IsValid() bool {
+	return len(s.Token) > 0
 }
 
 type Hetzner struct {
+	PresetProvider `json:",inline"`
+
 	// Token is used to authenticate with the Hetzner API.
 	Token string `json:"token"`
+}
 
-	Datacenter string `json:"datacenter,omitempty"`
+func (s Hetzner) IsValid() bool {
+	return len(s.Token) > 0
 }
 
 type Azure struct {
+	PresetProvider `json:",inline"`
+
 	TenantID       string `json:"tenantId"`
 	SubscriptionID string `json:"subscriptionId"`
 	ClientID       string `json:"clientId"`
@@ -88,21 +248,34 @@ type Azure struct {
 	SubnetName     string `json:"subnet,omitempty"`
 	RouteTableName string `json:"routeTable,omitempty"`
 	SecurityGroup  string `json:"securityGroup,omitempty"`
+}
 
-	Datacenter string `json:"datacenter,omitempty"`
+func (s Azure) IsValid() bool {
+	return len(s.TenantID) > 0 &&
+		len(s.SubscriptionID) > 0 &&
+		len(s.ClientID) > 0 &&
+		len(s.ClientSecret) > 0
 }
 
 type VSphere struct {
+	PresetProvider `json:",inline"`
+
 	Username string `json:"username"`
 	Password string `json:"password"`
 
 	VMNetName        string `json:"vmNetName,omitempty"`
 	Datastore        string `json:"datastore,omitempty"`
 	DatastoreCluster string `json:"datastoreCluster,omitempty"`
-	Datacenter       string `json:"datacenter,omitempty"`
+}
+
+func (s VSphere) IsValid() bool {
+	return len(s.Username) > 0 &&
+		len(s.Password) > 0
 }
 
 type AWS struct {
+	PresetProvider `json:",inline"`
+
 	AccessKeyID     string `json:"accessKeyId"`
 	SecretAccessKey string `json:"secretAccessKey"`
 
@@ -111,66 +284,102 @@ type AWS struct {
 	InstanceProfileName string `json:"instanceProfileName,omitempty"`
 	SecurityGroupID     string `json:"securityGroupID,omitempty"`
 	ControlPlaneRoleARN string `json:"roleARN,omitempty"`
+}
 
-	Datacenter string `json:"datacenter,omitempty"`
+func (s AWS) IsValid() bool {
+	return len(s.AccessKeyID) > 0 &&
+		len(s.SecretAccessKey) > 0
 }
 
 type Openstack struct {
+	PresetProvider `json:",inline"`
+
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Tenant   string `json:"tenant"`
 	TenantID string `json:"tenantID"`
 	Domain   string `json:"domain"`
 
-	Network        string `json:"network,,omitempty"`
+	Network        string `json:"network,omitempty"`
 	SecurityGroups string `json:"securityGroups,omitempty"`
 	FloatingIPPool string `json:"floatingIpPool,omitempty"`
 	RouterID       string `json:"routerID,omitempty"`
 	SubnetID       string `json:"subnetID,omitempty"`
+}
 
-	Datacenter string `json:"datacenter,omitempty"`
+func (s Openstack) IsValid() bool {
+	return len(s.Username) > 0 &&
+		len(s.Password) > 0 &&
+		(len(s.Tenant) > 0 || len(s.TenantID) > 0) &&
+		len(s.Domain) > 0
 }
 
 type Packet struct {
+	PresetProvider `json:",inline"`
+
 	APIKey    string `json:"apiKey"`
 	ProjectID string `json:"projectId"`
 
 	BillingCycle string `json:"billingCycle,omitempty"`
+}
 
-	Datacenter string `json:"datacenter,omitempty"`
+func (s Packet) IsValid() bool {
+	return len(s.APIKey) > 0 &&
+		len(s.ProjectID) > 0
 }
 
 type GCP struct {
+	PresetProvider `json:",inline"`
+
 	ServiceAccount string `json:"serviceAccount"`
 
 	Network    string `json:"network,omitempty"`
 	Subnetwork string `json:"subnetwork,omitempty"`
+}
 
-	Datacenter string `json:"datacenter,omitempty"`
+func (s GCP) IsValid() bool {
+	return len(s.ServiceAccount) > 0
 }
 
 type Fake struct {
-	Token string `json:"token"`
+	PresetProvider `json:",inline"`
 
-	Datacenter string `json:"datacenter,omitempty"`
+	Token string `json:"token"`
+}
+
+func (s Fake) IsValid() bool {
+	return len(s.Token) > 0
 }
 
 type Kubevirt struct {
-	Kubeconfig string `json:"kubeconfig"`
+	PresetProvider `json:",inline"`
 
-	Datacenter string `json:"datacenter,omitempty"`
+	Kubeconfig string `json:"kubeconfig"`
+}
+
+func (s Kubevirt) IsValid() bool {
+	return len(s.Kubeconfig) > 0
 }
 
 type Alibaba struct {
+	PresetProvider `json:",inline"`
+
 	AccessKeyID     string `json:"accessKeyId"`
 	AccessKeySecret string `json:"accessKeySecret"`
+}
 
-	Datacenter string `json:"datacenter,omitempty"`
+func (s Alibaba) IsValid() bool {
+	return len(s.AccessKeyID) > 0 &&
+		len(s.AccessKeySecret) > 0
 }
 
 type Anexia struct {
+	PresetProvider `json:",inline"`
+
 	// Token is used to authenticate with the Anexia API.
 	Token string `json:"token"`
+}
 
-	Datacenter string `json:"datacenter,omitempty"`
+func (s Anexia) IsValid() bool {
+	return len(s.Token) > 0
 }

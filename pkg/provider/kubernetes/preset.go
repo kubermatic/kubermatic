@@ -27,12 +27,19 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
+	"k8s.io/apimachinery/pkg/api/errors"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 )
 
 // presetsGetter is a function to retrieve preset list
 type presetsGetter = func(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error)
+
+// presetCreator is a function to create a preset
+type presetCreator = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
+
+// presetUpdater is a function to update a preset
+type presetUpdater = func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error)
 
 // LoadPresets loads the custom presets for supported providers
 func LoadPresets(yamlContent []byte) (*kubermaticv1.PresetList, error) {
@@ -93,27 +100,82 @@ func presetsGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, 
 	}, nil
 }
 
+func presetCreatorFactory(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (presetCreator, error) {
+	// Do not support preset creation if dynamic presets are not enabled
+	if !dynamicPresets {
+		return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+			return nil, fmt.Errorf("preset creation not supported when dynamic presets feature is disabled")
+		}, nil
+	}
+
+	return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+		if err := client.Create(ctx, preset); err != nil {
+			return nil, err
+		}
+
+		return preset, nil
+	}, nil
+}
+
+func presetUpdaterFactory(ctx context.Context, client ctrlruntimeclient.Client, dynamicPresets bool) (presetUpdater, error) {
+	// Do not support preset update if dynamic presets are not enabled
+	if !dynamicPresets {
+		return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+			return nil, fmt.Errorf("preset update not supported when dynamic presets feature is disabled")
+		}, nil
+	}
+
+	return func(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+		if err := client.Update(ctx, preset); err != nil {
+			return nil, err
+		}
+
+		return preset, nil
+	}, nil
+}
+
 // PresetsProvider is a object to handle presets from a predefined config
 type PresetsProvider struct {
-	presetsGetter presetsGetter
+	getter  presetsGetter
+	creator presetCreator
+	patcher presetUpdater
 }
 
 func NewPresetsProvider(ctx context.Context, client ctrlruntimeclient.Client, presetsFile string, dynamicPresets bool) (*PresetsProvider, error) {
-	presetsGetter, err := presetsGetterFactory(ctx, client, presetsFile, dynamicPresets)
+	getter, err := presetsGetterFactory(ctx, client, presetsFile, dynamicPresets)
 	if err != nil {
 		return nil, err
 	}
-	return &PresetsProvider{presetsGetter: presetsGetter}, nil
+
+	creator, err := presetCreatorFactory(ctx, client, dynamicPresets)
+	if err != nil {
+		return nil, err
+	}
+
+	patcher, err := presetUpdaterFactory(ctx, client, dynamicPresets)
+	if err != nil {
+		return nil, err
+	}
+
+	return &PresetsProvider{getter, creator, patcher}, nil
+}
+
+func (m *PresetsProvider) CreatePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+	return m.creator(preset)
+}
+
+func (m *PresetsProvider) UpdatePreset(preset *kubermaticv1.Preset) (*kubermaticv1.Preset, error) {
+	return m.patcher(preset)
 }
 
 // GetPresets returns presets which belong to the specific email group and for all users
 func (m *PresetsProvider) GetPresets(userInfo *provider.UserInfo) ([]kubermaticv1.Preset, error) {
-	return m.presetsGetter(userInfo)
+	return m.getter(userInfo)
 }
 
 // GetPreset returns preset with the name which belong to the specific email group
 func (m *PresetsProvider) GetPreset(userInfo *provider.UserInfo, name string) (*kubermaticv1.Preset, error) {
-	presets, err := m.presetsGetter(userInfo)
+	presets, err := m.getter(userInfo)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +185,7 @@ func (m *PresetsProvider) GetPreset(userInfo *provider.UserInfo, name string) (*
 		}
 	}
 
-	return nil, fmt.Errorf("missing preset '%s' for the user '%s'", name, userInfo.Email)
+	return nil, errors.NewNotFound(kubermaticv1.Resource("preset"), name)
 }
 
 func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList) ([]kubermaticv1.Preset, error) {
