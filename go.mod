@@ -5,14 +5,14 @@ go 1.14
 require (
 	code.cloudfoundry.org/go-pubsub v0.0.0-20180503211407-becd51dc37cb
 	github.com/Azure/azure-sdk-for-go v49.0.0+incompatible
-	github.com/Azure/go-autorest/autorest v0.11.12
-	github.com/Azure/go-autorest/autorest/azure/auth v0.5.3
+	github.com/Azure/go-autorest/autorest v0.11.13
+	github.com/Azure/go-autorest/autorest/azure/auth v0.5.5
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/sprig/v3 v3.1.0
-	github.com/aliyun/alibaba-cloud-sdk-go v1.61.749
+	github.com/aliyun/alibaba-cloud-sdk-go v1.61.751
 	github.com/apoydence/onpar v0.0.0-20200406201722-06f95a1c68e8 // indirect
-	github.com/aws/aws-sdk-go v1.36.1
+	github.com/aws/aws-sdk-go v1.36.2
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4
@@ -35,7 +35,6 @@ require (
 	github.com/go-test/deep v1.0.7
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.3
-	github.com/google/uuid v1.1.2 // indirect
 	github.com/gophercloud/gophercloud v0.14.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0
@@ -48,7 +47,7 @@ require (
 	github.com/iancoleman/strcase v0.1.2
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jetstack/cert-manager v1.1.0
-	github.com/kubermatic/machine-controller v1.20.2
+	github.com/kubermatic/machine-controller v1.23.1
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/nelsam/hel v0.0.0-20200611165952-2d829bae0c66 // indirect
@@ -72,11 +71,10 @@ require (
 	go.etcd.io/etcd/v3 v3.3.0-rc.0.0.20200728214110-6c81b20ec8de
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392
-	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
-	golang.org/x/tools v0.0.0-20201017001424-6003fad69a88
-	gomodules.xyz/jsonpatch/v2 v2.1.0 // indirect
-	google.golang.org/api v0.15.0
-	google.golang.org/grpc v1.27.1
+	golang.org/x/oauth2 v0.0.0-20201109201403-9fd604954f58
+	golang.org/x/tools v0.0.0-20201202200335-bef1c476418a
+	google.golang.org/api v0.36.0
+	google.golang.org/grpc v1.33.2
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -93,11 +91,13 @@ require (
 	k8s.io/metrics v0.19.4
 	k8s.io/test-infra v0.0.0-20200220102703-18fae0a00a2c
 	k8s.io/utils v0.0.0-20201110183641-67b214c5f920
-	sigs.k8s.io/controller-runtime v0.6.4
+	sigs.k8s.io/controller-runtime v0.7.0
 	sigs.k8s.io/yaml v1.2.0
 )
 
 replace (
+	// etcd.v3 needs an old version for the google.golang.org/grpc/naming package, which got removed in grpc 1.30+
+	google.golang.org/grpc => google.golang.org/grpc v1.29.1
 	k8s.io/api => k8s.io/api v0.19.4
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.19.4
 	k8s.io/apimachinery => k8s.io/apimachinery v0.19.4
@@ -106,4 +106,6 @@ replace (
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.19.4
 	k8s.io/kubelet => k8s.io/kubelet v0.19.4
 	k8s.io/metrics => k8s.io/metrics v0.19.4
+	// stick to an older version until we have time to update
+	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.6.4
 )

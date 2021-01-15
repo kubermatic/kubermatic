@@ -12,7 +12,7 @@ import (
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	gatekeeperv1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
+	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
@@ -621,7 +621,7 @@ func ReconcileCronJobs(ctx context.Context, namedGetters []NamedCronJobCreatorGe
 }
 
 // MutatingWebhookConfigurationCreator defines an interface to create/update MutatingWebhookConfigurations
-type MutatingWebhookConfigurationCreator = func(existing *admissionregistrationv1beta1.MutatingWebhookConfiguration) (*admissionregistrationv1beta1.MutatingWebhookConfiguration, error)
+type MutatingWebhookConfigurationCreator = func(existing *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error)
 
 // NamedMutatingWebhookConfigurationCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedMutatingWebhookConfigurationCreatorGetter = func() (name string, create MutatingWebhookConfigurationCreator)
@@ -631,9 +631,9 @@ type NamedMutatingWebhookConfigurationCreatorGetter = func() (name string, creat
 func MutatingWebhookConfigurationObjectWrapper(create MutatingWebhookConfigurationCreator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
-			return create(existing.(*admissionregistrationv1beta1.MutatingWebhookConfiguration))
+			return create(existing.(*admissionregistrationv1.MutatingWebhookConfiguration))
 		}
-		return create(&admissionregistrationv1beta1.MutatingWebhookConfiguration{})
+		return create(&admissionregistrationv1.MutatingWebhookConfiguration{})
 	}
 }
 
@@ -649,7 +649,7 @@ func ReconcileMutatingWebhookConfigurations(ctx context.Context, namedGetters []
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1beta1.MutatingWebhookConfiguration{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, false); err != nil {
 			return fmt.Errorf("failed to ensure MutatingWebhookConfiguration %s/%s: %v", namespace, name, err)
 		}
 	}
@@ -658,7 +658,7 @@ func ReconcileMutatingWebhookConfigurations(ctx context.Context, namedGetters []
 }
 
 // ValidatingWebhookConfigurationCreator defines an interface to create/update ValidatingWebhookConfigurations
-type ValidatingWebhookConfigurationCreator = func(existing *admissionregistrationv1beta1.ValidatingWebhookConfiguration) (*admissionregistrationv1beta1.ValidatingWebhookConfiguration, error)
+type ValidatingWebhookConfigurationCreator = func(existing *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error)
 
 // NamedValidatingWebhookConfigurationCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedValidatingWebhookConfigurationCreatorGetter = func() (name string, create ValidatingWebhookConfigurationCreator)
@@ -668,9 +668,9 @@ type NamedValidatingWebhookConfigurationCreatorGetter = func() (name string, cre
 func ValidatingWebhookConfigurationObjectWrapper(create ValidatingWebhookConfigurationCreator) ObjectCreator {
 	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
-			return create(existing.(*admissionregistrationv1beta1.ValidatingWebhookConfiguration))
+			return create(existing.(*admissionregistrationv1.ValidatingWebhookConfiguration))
 		}
-		return create(&admissionregistrationv1beta1.ValidatingWebhookConfiguration{})
+		return create(&admissionregistrationv1.ValidatingWebhookConfiguration{})
 	}
 }
 
@@ -686,7 +686,7 @@ func ReconcileValidatingWebhookConfigurations(ctx context.Context, namedGetters 
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1beta1.ValidatingWebhookConfiguration{}, false); err != nil {
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ValidatingWebhookConfiguration %s/%s: %v", namespace, name, err)
 		}
 	}
