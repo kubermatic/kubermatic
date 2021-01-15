@@ -125,6 +125,13 @@ type ClusterSpec struct {
 
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 	UsePodNodeSelectorAdmissionPlugin   bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
+
+	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
+	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
+	// to the created cluster. Otherwise, there will be user ssh keys sync(except the one that's added during cluster
+	// creation will be added) in the cluster.
+	EnableUserSSHKeyAgent bool `json:"enableUserSSHKeyAgent,omitempty"`
+
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
 	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.

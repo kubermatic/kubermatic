@@ -87,6 +87,7 @@ type controllerRunOptions struct {
 	updateWindowLength            string
 	dnsClusterIP                  string
 	opaIntegration                bool
+	useSSHKeyAgent                bool
 }
 
 func main() {
@@ -116,6 +117,7 @@ func main() {
 	flag.StringVar(&runOp.updateWindowStart, "update-window-start", "", "The start time of the update window, e.g. 02:00")
 	flag.StringVar(&runOp.updateWindowLength, "update-window-length", "", "The length of the update window, e.g. 1h")
 	flag.BoolVar(&runOp.opaIntegration, "opa-integration", false, "Enable OPA integration in user cluster")
+	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -235,6 +237,7 @@ func main() {
 		runOp.dnsClusterIP,
 		runOp.opaIntegration,
 		versions,
+		runOp.useSSHKeyAgent,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
