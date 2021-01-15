@@ -17,8 +17,8 @@ LABEL maintainer="support@kubermatic.com"
 
 ENV KUBERMATIC_CHARTS_DIRECTORY=/opt/charts/
 
-ADD https://storage.googleapis.com/kubernetes-release/release/v1.18.8/bin/linux/amd64/kubectl /usr/local/bin/kubectl
-RUN wget -O- https://get.helm.sh/helm-v3.3.1-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
+ADD https://storage.googleapis.com/kubernetes-release/release/v1.19.7/bin/linux/amd64/kubectl /usr/local/bin/kubectl
+RUN wget -O- https://get.helm.sh/helm-v3.5.0-linux-amd64.tar.gz | tar xzOf - linux-amd64/helm > /usr/local/bin/helm
 
 # We need the ca-certs so they api doesn't crash because it can't verify the certificate of Dex
 RUN chmod +x /usr/local/bin/kubectl /usr/local/bin/helm && apk add ca-certificates
@@ -27,7 +27,6 @@ RUN chmod +x /usr/local/bin/kubectl /usr/local/bin/helm && apk add ca-certificat
 COPY ./_build/image-loader \
      ./_build/kubermatic-api \
      ./_build/kubermatic-operator \
-     ./_build/kubermatic-operator-util \
      ./_build/kubermatic-installer \
      ./_build/master-controller-manager \
      ./_build/owner-remover \
