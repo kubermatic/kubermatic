@@ -737,6 +737,13 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 		*out = new(Openshift)
 		**out = **in
 	}
+	if in.PodNodeSelectorAdmissionPluginConfig != nil {
+		in, out := &in.PodNodeSelectorAdmissionPluginConfig, &out.PodNodeSelectorAdmissionPluginConfig
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.AdmissionPlugins != nil {
 		in, out := &in.AdmissionPlugins, &out.AdmissionPlugins
 		*out = make([]string, len(*in))
