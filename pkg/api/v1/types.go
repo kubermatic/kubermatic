@@ -318,6 +318,18 @@ type DigitaloceanSize struct {
 	Regions      []string `json:"regions"`
 }
 
+// AzureSubnetsList is the object representing the subnets for vms in azure cloud provider
+// swagger:model AzureSubnetsList
+type AzureSubnetsList struct {
+	Subnets []string `json:"subnets"`
+}
+
+// AzureVirtualNetworksList is the object representing the virtual network for vms in azure cloud provider
+// swagger:model AzureVirtualNetworksList
+type AzureVirtualNetworksList struct {
+	VirtualNetworks []string `json:"virtualNetworks"`
+}
+
 // AzureRouteTablesList is the object representing the route tables for vms in azure cloud provider
 // swagger:model AzureRouteTablesList
 type AzureRouteTablesList struct {

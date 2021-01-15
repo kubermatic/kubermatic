@@ -64,12 +64,24 @@ var NewAzureClientSet = func(subscriptionID, clientID, clientSecret, tenantID st
 	if err != nil {
 		return nil, err
 	}
+	subnetsClient := network.NewSubnetsClient(subscriptionID)
+	subnetsClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+	if err != nil {
+		return nil, err
+	}
+	vnetClient := network.NewVirtualNetworksClient(subscriptionID)
+	vnetClient.Authorizer, err = auth.NewClientCredentialsConfig(clientID, clientSecret, tenantID).Authorizer()
+	if err != nil {
+		return nil, err
+	}
 
 	return &azureClientSetImpl{
 		vmSizeClient:         sizesClient,
 		skusClient:           skusClient,
 		securityGroupsClient: securityGroupsClient,
 		resourceGroupsClient: resourceGroupsClient,
+		subnetsClient:        subnetsClient,
+		vnetClient:           vnetClient,
 		routeTablesClient:    routeTablesClient,
 	}, nil
 }
@@ -80,6 +92,8 @@ type azureClientSetImpl struct {
 	securityGroupsClient network.SecurityGroupsClient
 	routeTablesClient    network.RouteTablesClient
 	resourceGroupsClient resources.GroupsClient
+	subnetsClient        network.SubnetsClient
+	vnetClient           network.VirtualNetworksClient
 }
 
 type AzureClientSet interface {
@@ -88,6 +102,8 @@ type AzureClientSet interface {
 	ListSecurityGroups(ctx context.Context, resourceGroupName string) ([]network.SecurityGroup, error)
 	ListResourceGroups(ctx context.Context) ([]resources.Group, error)
 	ListRouteTables(ctx context.Context, resourceGroupName string) ([]network.RouteTable, error)
+	ListVnets(ctx context.Context, resourceGroupName string) ([]network.VirtualNetwork, error)
+	ListSubnets(ctx context.Context, resourceGroupName, virtualNetworkName string) ([]network.Subnet, error)
 }
 
 func (s *azureClientSetImpl) ListSKU(ctx context.Context, _ string) ([]compute.ResourceSku, error) {
@@ -129,6 +145,23 @@ func (s *azureClientSetImpl) ListResourceGroups(ctx context.Context) ([]resource
 		return nil, fmt.Errorf("failed to list resource groups: %v", err)
 	}
 	return resourceGroups.Values(), nil
+
+}
+func (s *azureClientSetImpl) ListSubnets(ctx context.Context, resourceGroupName, virtualNetworkName string) ([]network.Subnet, error) {
+	subnets, err := s.subnetsClient.List(ctx, resourceGroupName, virtualNetworkName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list subnets: %v", err)
+	}
+	return subnets.Values(), nil
+
+}
+
+func (s *azureClientSetImpl) ListVnets(ctx context.Context, resourceGroupName string) ([]network.VirtualNetwork, error) {
+	vnets, err := s.vnetClient.List(ctx, resourceGroupName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list vnets: %v", err)
+	}
+	return vnets.Values(), nil
 
 }
 
@@ -405,4 +438,44 @@ func AzureRouteTableEndpoint(ctx context.Context, subscriptionID, clientID, clie
 	}
 
 	return apiRouteTables, nil
+}
+
+func AzureVnetEndpoint(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, resourceGroup string) (*apiv1.AzureVirtualNetworksList, error) {
+	vnetClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer for virtual network client: %v", err)
+	}
+
+	vnetList, err := vnetClient.ListVnets(ctx, resourceGroup)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list virtual network resources: %v", err)
+	}
+
+	vnets := &apiv1.AzureVirtualNetworksList{}
+	for _, vn := range vnetList {
+		if location == *vn.Location {
+			vnets.VirtualNetworks = append(vnets.VirtualNetworks, *vn.Name)
+		}
+	}
+
+	return vnets, nil
+}
+
+func AzureSubnetEndpoint(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, resourceGroup, virtualNetwork string) (*apiv1.AzureSubnetsList, error) {
+	subnetClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create authorizer for subnet client: %v", err)
+	}
+
+	subnetList, err := subnetClient.ListSubnets(ctx, resourceGroup, virtualNetwork)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list virtual network resources: %v", err)
+	}
+
+	subnets := &apiv1.AzureSubnetsList{}
+	for _, sb := range subnetList {
+		subnets.Subnets = append(subnets.Subnets, *sb.Name)
+	}
+
+	return subnets, nil
 }
