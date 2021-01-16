@@ -202,6 +202,12 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
+        - --service-account-signing-key-file
+        - /etc/kubernetes/service-account-key/sa.key
+        - --service-account-issuer
+        - kubernetes.default.svc
+        - --api-audiences
+        - kubernetes.default.svc
         - --kubelet-preferred-address-types
         - ExternalIP,InternalIP
         - --cloud-provider
