@@ -242,6 +242,9 @@ func TestLoadFiles(t *testing.T) {
 								Gateway: "192.168.1.1",
 							},
 						},
+						ServiceAccount: &kubermaticv1.ServiceAccountSettings{
+							TokenVolumeProjectionEnabled: true,
+						},
 					},
 					Address: kubermaticv1.ClusterAddress{
 						ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",

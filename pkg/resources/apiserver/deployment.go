@@ -270,6 +270,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	admissionPlugins.Insert(data.Cluster().Spec.AdmissionPlugins...)
 
+	serviceAccountKeyFile := "/etc/kubernetes/service-account-key/sa.key"
 	flags := []string{
 		// The advertise address is used as endpoint address for the kubernetes
 		// service in the default namespace of the user cluster.
@@ -290,7 +291,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--external-hostname", data.Cluster().Address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
 		"--enable-bootstrap-token-auth",
-		"--service-account-key-file", "/etc/kubernetes/service-account-key/sa.key",
+		"--service-account-key-file", serviceAccountKeyFile,
 		// There are efforts upstream adding support for multiple cidr's. Until that has landed, we'll take the first entry
 		"--service-cluster-ip-range", data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0],
 		"--service-node-port-range", nodePortRange,
@@ -319,6 +320,23 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	if endpointReconcilingDisabled {
 		flags = append(flags, "--endpoint-reconciler-type=none")
+	}
+
+	if data.Cluster().Spec.ServiceAccount != nil &&
+		data.Cluster().Spec.ServiceAccount.TokenVolumeProjectionEnabled {
+		flags = append(flags, "--service-account-signing-key-file", serviceAccountKeyFile)
+
+		serviceAccountIssuer := data.Cluster().Spec.ServiceAccount.Issuer
+		if serviceAccountIssuer == "" {
+			serviceAccountIssuer = "kubernetes.default.svc"
+		}
+		flags = append(flags, "--service-account-issuer", serviceAccountIssuer)
+
+		apiAudiences := data.Cluster().Spec.ServiceAccount.APIAudiences
+		if len(apiAudiences) == 0 {
+			apiAudiences = []string{serviceAccountIssuer}
+		}
+		flags = append(flags, "--api-audiences", strings.Join(apiAudiences, ","))
 	}
 
 	if data.Cluster().Spec.Cloud.GCP != nil {
