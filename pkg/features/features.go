@@ -59,14 +59,28 @@ type FeatureGate map[string]bool
 // and returns a FeatureGate.
 func NewFeatures(rawFeatures string) (FeatureGate, error) {
 	fGate := FeatureGate{}
-	for _, s := range strings.Split(rawFeatures, ",") {
+	return fGate, fGate.Set(rawFeatures)
+}
+
+func (f FeatureGate) String() string {
+	activeFeatures := make([]string, 0, len(f))
+	for f, isActive := range f {
+		if isActive {
+			activeFeatures = append(activeFeatures, f)
+		}
+	}
+	return strings.Join(activeFeatures, ", ")
+}
+
+func (f FeatureGate) Set(s string) error {
+	for _, s := range strings.Split(s, ",") {
 		if len(s) == 0 {
 			continue
 		}
 
 		arr := strings.SplitN(s, "=", 2)
 		if len(arr) != 2 {
-			return nil, fmt.Errorf("missing bool value for feature gate key = %s", s)
+			return fmt.Errorf("missing bool value for feature gate key = %s", s)
 		}
 
 		k := strings.TrimSpace(arr[0])
@@ -74,12 +88,11 @@ func NewFeatures(rawFeatures string) (FeatureGate, error) {
 
 		boolValue, err := strconv.ParseBool(v)
 		if err != nil {
-			return nil, fmt.Errorf("invalid value %v for feature gate key = %s, use true|false instead", v, k)
+			return fmt.Errorf("invalid value %v for feature gate key = %s, use true|false instead", v, k)
 		}
-		fGate[k] = boolValue
+		f[k] = boolValue
 	}
-
-	return fGate, nil
+	return nil
 }
 
 // Enabled returns true if the feature gate value of a particular feature is true.

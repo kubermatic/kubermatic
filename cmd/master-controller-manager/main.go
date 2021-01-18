@@ -24,6 +24,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/metrics"
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
@@ -32,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/validation"
+	clustervalidation "k8c.io/kubermatic/v2/pkg/validation/cluster"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -52,6 +54,7 @@ type controllerRunOptions struct {
 	seedvalidationHook      validation.WebhookOpts
 	enableLeaderElection    bool
 	leaderElectionNamespace string
+	featureGates            features.FeatureGate
 
 	workerName string
 	namespace  string
@@ -73,7 +76,7 @@ type controllerContext struct {
 
 func main() {
 	ctrlCtx := &controllerContext{}
-	runOpts := controllerRunOptions{}
+	runOpts := controllerRunOptions{featureGates: features.FeatureGate{}}
 	klog.InitFlags(nil)
 	pprofOpts := &pprof.Opts{}
 	pprofOpts.AddFlags(flag.CommandLine)
@@ -87,6 +90,7 @@ func main() {
 	flag.BoolVar(&runOpts.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. "+
 		"Enabling this will ensure there is only one active controller manager.")
 	flag.StringVar(&runOpts.leaderElectionNamespace, "leader-election-namespace", "", "Leader election namespace. In-cluster discovery will be attempted in such case.")
+	flag.Var(&runOpts.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
@@ -167,7 +171,7 @@ func main() {
 			log.Fatalw("failed to build Seed validation handler", zap.Error(err))
 		}
 		h.SetupWebhookWithManager(mgr)
-
+		clustervalidation.NewAdmissionHandler(runOpts.featureGates).SetupWebhookWithManager(mgr)
 	} else {
 		log.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
 	}

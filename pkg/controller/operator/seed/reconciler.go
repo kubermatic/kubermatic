@@ -201,6 +201,10 @@ func (r *Reconciler) cleanupDeletedSeed(cfg *operatorv1alpha1.KubermaticConfigur
 		return fmt.Errorf("failed to clean up ValidatingWebhookConfiguration: %v", err)
 	}
 
+	if err := common.CleanupClusterResource(client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, common.ClusterAdmissionWebhookName); err != nil {
+		return fmt.Errorf("failed to clean up Seed ValidatingWebhookConfiguration: %v", err)
+	}
+
 	oldSeed := seed.DeepCopy()
 	kubernetes.RemoveFinalizer(seed, common.CleanupFinalizer)
 
@@ -524,7 +528,7 @@ func (r *Reconciler) reconcileServices(cfg *operatorv1alpha1.KubermaticConfigura
 	log.Debug("reconciling Services")
 
 	creators := []reconciling.NamedServiceCreatorGetter{
-		common.SeedAdmissionServiceCreator(cfg, client),
+		common.AdmissionServiceCreator(cfg, client),
 	}
 
 	if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
@@ -563,6 +567,7 @@ func (r *Reconciler) reconcileAdmissionWebhooks(cfg *operatorv1alpha1.Kubermatic
 
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(cfg, client),
+		common.ClusterAdmissionWebhookCreator(cfg, client),
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(r.ctx, creators, "", client); err != nil {

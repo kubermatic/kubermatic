@@ -37,6 +37,7 @@ import (
 	metricserver "k8c.io/kubermatic/v2/pkg/metrics/server"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
+	clustervalidation "k8c.io/kubermatic/v2/pkg/validation/cluster"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	ctrl "sigs.k8s.io/controller-runtime"
 
@@ -166,7 +167,11 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		if err != nil {
 			log.Fatalw("Failed to build Seed validation handler", zap.Error(err))
 		}
+
+		// Setup the admission handler for kubermatic Seed CRDs
 		h.SetupWebhookWithManager(mgr)
+		// Setup the admission handler for kubermatic Cluster CRDs
+		clustervalidation.NewAdmissionHandler(options.featureGates).SetupWebhookWithManager(mgr)
 	}
 
 	ctrlCtx := &controllerContext{

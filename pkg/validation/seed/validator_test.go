@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
@@ -42,6 +43,7 @@ func TestValidate(t *testing.T) {
 		seedToValidate   *kubermaticv1.Seed
 		existingSeeds    []*kubermaticv1.Seed
 		existingClusters []*kubermaticv1.Cluster
+		features         features.FeatureGate
 		isDelete         bool
 		errExpected      bool
 	}{
@@ -429,6 +431,31 @@ func TestValidate(t *testing.T) {
 			isDelete:    true,
 			errExpected: true,
 		},
+		{
+			name: "Adding a seed with TunnelingExposeStrategy should succeed when feature gate is enabled",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					ExposeStrategy: kubermaticv1.ExposeStrategyTunneling,
+				},
+			},
+			features: features.FeatureGate{features.TunnelingExposeStrategy: true},
+		},
+		{
+			name: "Adding a seed with TunnelingExposeStrategy should fail when feature gate is not enabled",
+			seedToValidate: &kubermaticv1.Seed{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "new-seed",
+				},
+				Spec: kubermaticv1.SeedSpec{
+					ExposeStrategy: kubermaticv1.ExposeStrategyTunneling,
+				},
+			},
+			features:    features.FeatureGate{},
+			errExpected: true,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -445,6 +472,7 @@ func TestValidate(t *testing.T) {
 				lock:     &sync.Mutex{},
 				listOpts: &ctrlruntimeclient.ListOptions{},
 				client:   client,
+				features: tc.features,
 				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 					return client, nil
 				},

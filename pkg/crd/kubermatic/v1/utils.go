@@ -22,9 +22,7 @@ import (
 )
 
 // AllExposeStrategies is a set containing all the ExposeStrategy.
-// TODO(irozzo) ExposeStrategyTunneling is not exposed yet as it is not fully
-// implemented.
-var AllExposeStrategies = NewExposeStrategiesSet(ExposeStrategyNodePort, ExposeStrategyLoadBalancer)
+var AllExposeStrategies = NewExposeStrategiesSet(ExposeStrategyNodePort, ExposeStrategyLoadBalancer, ExposeStrategyTunneling)
 
 // ExposeStrategyFromString returns the expose strategy which String
 // representation corresponds to the input string, and a bool saying whether a

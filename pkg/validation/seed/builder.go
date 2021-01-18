@@ -24,6 +24,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 )
 
@@ -32,12 +33,19 @@ type ValidationHandlerBuilder struct {
 	workerName          string
 	seedName            string
 	singleSeedValidator *ensureSingleSeedValidatorWrapper
+	features            features.FeatureGate
 }
 
 // Client sets the client to get API resources on the cluster the handler is
 // used for.
 func (v *ValidationHandlerBuilder) Client(client ctrlruntimeclient.Client) *ValidationHandlerBuilder {
 	v.client = client
+	return v
+}
+
+// FeatureGates sets the feature gates.
+func (v *ValidationHandlerBuilder) FeatureGates(features features.FeatureGate) *ValidationHandlerBuilder {
+	v.features = features
 	return v
 }
 
@@ -84,6 +92,7 @@ func (v *ValidationHandlerBuilder) Build(ctx context.Context) (AdmissionHandler,
 		v.workerName,
 		v.client,
 		seedClientGetter,
+		v.features,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("error occurred while creating seed validator: %v", err)
