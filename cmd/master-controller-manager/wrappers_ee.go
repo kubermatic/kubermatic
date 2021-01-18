@@ -45,5 +45,6 @@ func seedValidationHandler(ctx context.Context, client ctrlruntimeclient.Client,
 	return (&seedvalidation.ValidationHandlerBuilder{}).
 		Client(client).
 		WorkerName(options.workerName).
+		FeatureGates(options.featureGates).
 		Build(ctx)
 }
