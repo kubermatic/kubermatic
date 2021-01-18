@@ -55,6 +55,9 @@ type ClusterSpec struct {
 	// openshift
 	Openshift *Openshift `json:"openshift,omitempty"`
 
+	// service account
+	ServiceAccount *ServiceAccountSettings `json:"serviceAccount,omitempty"`
+
 	// update window
 	UpdateWindow *UpdateWindow `json:"updateWindow,omitempty"`
 
@@ -87,6 +90,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateOpenshift(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateServiceAccount(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -207,6 +214,24 @@ func (m *ClusterSpec) validateOpenshift(formats strfmt.Registry) error {
 		if err := m.Openshift.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("openshift")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) validateServiceAccount(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ServiceAccount) { // not required
+		return nil
+	}
+
+	if m.ServiceAccount != nil {
+		if err := m.ServiceAccount.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("serviceAccount")
 			}
 			return err
 		}

@@ -739,6 +739,9 @@ type ClusterSpec struct {
 	// AuditLogging
 	AuditLogging *kubermaticv1.AuditLoggingSettings `json:"auditLogging,omitempty"`
 
+	// ServiceAccount contains service account related settings for the kube-apiserver of user cluster.
+	ServiceAccount *kubermaticv1.ServiceAccountSettings `json:"serviceAccount,omitempty"`
+
 	// Openshift holds all openshift-specific settings
 	Openshift *kubermaticv1.Openshift `json:"openshift,omitempty"`
 
@@ -762,6 +765,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		AuditLogging                         *kubermaticv1.AuditLoggingSettings     `json:"auditLogging,omitempty"`
 		AdmissionPlugins                     []string                               `json:"admissionPlugins,omitempty"`
 		PodNodeSelectorAdmissionPluginConfig map[string]string                      `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
+		ServiceAccount                       *kubermaticv1.ServiceAccountSettings   `json:"serviceAccount,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -788,6 +792,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		AuditLogging:                         cs.AuditLogging,
 		AdmissionPlugins:                     cs.AdmissionPlugins,
 		PodNodeSelectorAdmissionPluginConfig: cs.PodNodeSelectorAdmissionPluginConfig,
+		ServiceAccount:                       cs.ServiceAccount,
 	})
 
 	return ret, err

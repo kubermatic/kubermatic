@@ -14475,6 +14475,9 @@
           },
           "x-go-name": "PodNodeSelectorAdmissionPluginConfig"
         },
+        "serviceAccount": {
+          "$ref": "#/definitions/ServiceAccountSettings"
+        },
         "updateWindow": {
           "$ref": "#/definitions/UpdateWindow"
         },
@@ -18146,6 +18149,29 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "ServiceAccountSettings": {
+      "type": "object",
+      "properties": {
+        "apiAudiences": {
+          "description": "APIAudiences are the Identifiers of the API\nIf this is not specified, it will be set to a single element list containing the issuer URL",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "APIAudiences"
+        },
+        "issuer": {
+          "description": "Issuer is the identifier of the service account token issuer\nIf this is not specified, it will be set to the default value kubernetes.default.svc",
+          "type": "string",
+          "x-go-name": "Issuer"
+        },
+        "tokenVolumeProjectionEnabled": {
+          "type": "boolean",
+          "x-go-name": "TokenVolumeProjectionEnabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "ServiceAccountToken": {
       "description": "ServiceAccountToken represent an API service account token",
