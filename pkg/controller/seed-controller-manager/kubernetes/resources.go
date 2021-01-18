@@ -20,9 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/rbac/v1"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
@@ -480,58 +477,10 @@ func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Clu
 }
 
 func (r *Reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context, data *resources.TemplateData) error {
-	// Remove service
-	if err := r.Client.Delete(ctx, &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperWebhookServiceName,
-			Namespace: data.Cluster().Status.NamespaceName,
-		},
-	}); err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to ensure OPA integration service is removed: %v", err)
-	}
-
-	// remove deployments
-	if err := r.Client.Delete(ctx, &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperControllerDeploymentName,
-			Namespace: data.Cluster().Status.NamespaceName,
-		},
-	}); err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to ensure OPA integration controller deployment is removed: %v", err)
-	}
-	if err := r.Client.Delete(ctx, &appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperAuditDeploymentName,
-			Namespace: data.Cluster().Status.NamespaceName,
-		},
-	}); err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to ensure OPA integration controller deployment is removed: %v", err)
-	}
-
-	// Remove RBACs
-	if err := r.Client.Delete(ctx, &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperServiceAccountName,
-			Namespace: data.Cluster().Status.NamespaceName,
-		},
-	}); err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to ensure OPA integration service account is removed")
-	}
-	if err := r.Client.Delete(ctx, &v1.Role{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperRoleName,
-			Namespace: data.Cluster().Status.NamespaceName,
-		},
-	}); err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to ensure OPA integration role is removed")
-	}
-	if err := r.Client.Delete(ctx, &v1.RoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.GatekeeperRoleBindingName,
-			Namespace: data.Cluster().Status.NamespaceName,
-		},
-	}); err != nil && !errors.IsNotFound(err) {
-		return fmt.Errorf("failed to ensure OPA integration role binding is removed")
+	for _, resource := range gatekeeper.GetResourcesToRemoveOnDelete(data.Cluster().Status.NamespaceName) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure OPA integration is removed/not present: %v", err)
+		}
 	}
 
 	return nil
