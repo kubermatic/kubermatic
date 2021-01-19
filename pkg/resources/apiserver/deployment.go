@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -250,6 +251,8 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		nodePortRange = defaultNodePortRange
 	}
 
+	cluster := data.Cluster()
+
 	admissionPlugins := sets.NewString(
 		"NamespaceLifecycle",
 		"LimitRanger",
@@ -261,39 +264,39 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"Priority",
 		"ResourceQuota",
 	)
-	if data.Cluster().Spec.UsePodSecurityPolicyAdmissionPlugin {
+	if cluster.Spec.UsePodSecurityPolicyAdmissionPlugin {
 		admissionPlugins.Insert("PodSecurityPolicy")
 	}
-	if data.Cluster().Spec.UsePodNodeSelectorAdmissionPlugin {
+	if cluster.Spec.UsePodNodeSelectorAdmissionPlugin {
 		admissionPlugins.Insert(resources.PodNodeSelectorAdmissionPlugin)
 	}
 
-	admissionPlugins.Insert(data.Cluster().Spec.AdmissionPlugins...)
+	admissionPlugins.Insert(cluster.Spec.AdmissionPlugins...)
 
-	serviceAccountKeyFile := "/etc/kubernetes/service-account-key/sa.key"
+	serviceAccountKeyFile := filepath.Join("/etc/kubernetes/service-account-key", resources.ServiceAccountKeySecretKey)
 	flags := []string{
 		// The advertise address is used as endpoint address for the kubernetes
 		// service in the default namespace of the user cluster.
-		"--advertise-address", data.Cluster().Address.IP,
+		"--advertise-address", cluster.Address.IP,
 		// The secure port is used as target port for the kubernetes service in
 		// the default namespace of the user cluster, we use the NodePort value
 		// for being able to access the apiserver from the usercluster side.
-		"--secure-port", fmt.Sprint(data.Cluster().Address.Port),
-		"--kubernetes-service-node-port", fmt.Sprint(data.Cluster().Address.Port),
+		"--secure-port", fmt.Sprint(cluster.Address.Port),
+		"--kubernetes-service-node-port", fmt.Sprint(cluster.Address.Port),
 		"--etcd-servers", strings.Join(etcdEndpoints, ","),
 		"--etcd-cafile", "/etc/etcd/pki/client/ca.crt",
-		"--etcd-certfile", "/etc/etcd/pki/client/apiserver-etcd-client.crt",
-		"--etcd-keyfile", "/etc/etcd/pki/client/apiserver-etcd-client.key",
+		"--etcd-certfile", filepath.Join("/etc/etcd/pki/client", resources.ApiserverEtcdClientCertificateCertSecretKey),
+		"--etcd-keyfile", filepath.Join("/etc/etcd/pki/client", resources.ApiserverEtcdClientCertificateKeySecretKey),
 		"--storage-backend", "etcd3",
 		"--enable-admission-plugins", strings.Join(admissionPlugins.List(), ","),
 		"--admission-control-config-file", "/etc/kubernetes/adm-control/admission-control.yaml",
 		"--authorization-mode", "Node,RBAC",
-		"--external-hostname", data.Cluster().Address.ExternalName,
+		"--external-hostname", cluster.Address.ExternalName,
 		"--token-auth-file", "/etc/kubernetes/tokens/tokens.csv",
 		"--enable-bootstrap-token-auth",
 		"--service-account-key-file", serviceAccountKeyFile,
 		// There are efforts upstream adding support for multiple cidr's. Until that has landed, we'll take the first entry
-		"--service-cluster-ip-range", data.Cluster().Spec.ClusterNetwork.Services.CIDRBlocks[0],
+		"--service-cluster-ip-range", cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0],
 		"--service-node-port-range", nodePortRange,
 		"--allow-privileged",
 		"--audit-log-maxage", "30",
@@ -322,24 +325,35 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, "--endpoint-reconciler-type=none")
 	}
 
-	if data.Cluster().Spec.ServiceAccount != nil &&
-		data.Cluster().Spec.ServiceAccount.TokenVolumeProjectionEnabled {
-		flags = append(flags, "--service-account-signing-key-file", serviceAccountKeyFile)
+	// enable service account signing key and issuer in Kubernetes 1.20 or when
+	// explicitly enabled in the cluster object
+	saConfig := cluster.Spec.ServiceAccount
+	if cluster.Spec.Version.Minor() >= 20 || (saConfig != nil && saConfig.TokenVolumeProjectionEnabled) {
+		var audiences []string
 
-		serviceAccountIssuer := data.Cluster().Spec.ServiceAccount.Issuer
-		if serviceAccountIssuer == "" {
-			serviceAccountIssuer = "kubernetes.default.svc"
-		}
-		flags = append(flags, "--service-account-issuer", serviceAccountIssuer)
+		issuer := cluster.Address.URL
+		if saConfig != nil {
+			if saConfig.Issuer != "" {
+				issuer = saConfig.Issuer
+			}
 
-		apiAudiences := data.Cluster().Spec.ServiceAccount.APIAudiences
-		if len(apiAudiences) == 0 {
-			apiAudiences = []string{serviceAccountIssuer}
+			if len(saConfig.APIAudiences) > 0 {
+				audiences = saConfig.APIAudiences
+			}
 		}
-		flags = append(flags, "--api-audiences", strings.Join(apiAudiences, ","))
+
+		if len(audiences) == 0 {
+			audiences = []string{issuer}
+		}
+
+		flags = append(flags,
+			"--service-account-issuer", issuer,
+			"--service-account-signing-key-file", serviceAccountKeyFile,
+			"--api-audiences", strings.Join(audiences, ","),
+		)
 	}
 
-	if data.Cluster().Spec.Cloud.GCP != nil {
+	if cluster.Spec.Cloud.GCP != nil {
 		flags = append(flags, "--kubelet-preferred-address-types", "InternalIP")
 	} else {
 		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
@@ -351,17 +365,18 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
 	}
 
-	if data.Cluster().Spec.OIDC.IssuerURL != "" && data.Cluster().Spec.OIDC.ClientID != "" {
-		flags = append(flags, "--oidc-issuer-url", data.Cluster().Spec.OIDC.IssuerURL)
-		flags = append(flags, "--oidc-client-id", data.Cluster().Spec.OIDC.ClientID)
-		if data.Cluster().Spec.OIDC.UsernameClaim != "" {
-			flags = append(flags, "--oidc-username-claim", data.Cluster().Spec.OIDC.UsernameClaim)
+	oidcSettings := cluster.Spec.OIDC
+	if oidcSettings.IssuerURL != "" && oidcSettings.ClientID != "" {
+		flags = append(flags, "--oidc-issuer-url", oidcSettings.IssuerURL)
+		flags = append(flags, "--oidc-client-id", oidcSettings.ClientID)
+		if oidcSettings.UsernameClaim != "" {
+			flags = append(flags, "--oidc-username-claim", oidcSettings.UsernameClaim)
 		}
-		if data.Cluster().Spec.OIDC.GroupsClaim != "" {
-			flags = append(flags, "--oidc-groups-claim", data.Cluster().Spec.OIDC.GroupsClaim)
+		if oidcSettings.GroupsClaim != "" {
+			flags = append(flags, "--oidc-groups-claim", oidcSettings.GroupsClaim)
 		}
-		if data.Cluster().Spec.OIDC.RequiredClaim != "" {
-			flags = append(flags, "--oidc-required-claim", data.Cluster().Spec.OIDC.RequiredClaim)
+		if oidcSettings.RequiredClaim != "" {
+			flags = append(flags, "--oidc-required-claim", oidcSettings.RequiredClaim)
 		}
 	} else if enableOIDCAuthentication {
 		flags = append(flags,

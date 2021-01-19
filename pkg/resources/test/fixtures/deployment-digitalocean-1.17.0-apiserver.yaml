@@ -202,12 +202,12 @@ spec:
         - X-Remote-Group
         - --requestheader-username-headers
         - X-Remote-User
+        - --service-account-issuer
+        - https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000
         - --service-account-signing-key-file
         - /etc/kubernetes/service-account-key/sa.key
-        - --service-account-issuer
-        - kubernetes.default.svc
         - --api-audiences
-        - kubernetes.default.svc
+        - https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000
         - --kubelet-preferred-address-types
         - ExternalIP,InternalIP
         - --oidc-issuer-url

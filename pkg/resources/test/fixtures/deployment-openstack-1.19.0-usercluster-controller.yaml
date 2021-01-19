@@ -39,7 +39,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-cluster-url","","-dns-cluster-ip","10.240.16.10","-openvpn-server-port","30003","-overwrite-registry","","-openshift=false","-version","1.19.0","-cloud-provider-name","openstack","-owner-email","","-opa-integration=false","--ipam-controller-network","192.168.1.1/24,192.168.1.1,8.8.8.8","-node-labels","{\"my-label\":\"my-value\"}"]}'
+        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-cluster-url","https://jh8j81chn.europe-west3-c.dev.kubermatic.io:30000","-dns-cluster-ip","10.240.16.10","-openvpn-server-port","30003","-overwrite-registry","","-openshift=false","-version","1.19.0","-cloud-provider-name","openstack","-owner-email","","-opa-integration=false","--ipam-controller-network","192.168.1.1/24,192.168.1.1,8.8.8.8","-node-labels","{\"my-label\":\"my-value\"}"]}'
         command:
         - /http-prober-bin/http-prober
         env:
