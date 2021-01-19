@@ -21,6 +21,12 @@ type ClusterSpec struct {
 	// Additional Admission Controller plugins
 	AdmissionPlugins []string `json:"admissionPlugins"`
 
+	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
+	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
+	// to the created cluster. Otherwise, there will be user ssh keys sync(except the one that's added during cluster
+	// creation will be added) in the cluster.
+	EnableUserSSHKeyAgent bool `json:"enableUserSSHKeyAgent,omitempty"`
+
 	// MachineNetworks optionally specifies the parameters for IPAM.
 	MachineNetworks []*MachineNetworkingConfig `json:"machineNetworks"`
 
