@@ -178,8 +178,10 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 		partialCluster.Spec.UsePodSecurityPolicyAdmissionPlugin = true
 	}
 
-	if body.Cluster.Spec.EnableUserSSHKeyAgent {
+	if body.Cluster.Spec.EnableUserSSHKeyAgent == nil {
 		partialCluster.Spec.EnableUserSSHKeyAgent = true
+	} else {
+		partialCluster.Spec.EnableUserSSHKeyAgent = *body.Cluster.Spec.EnableUserSSHKeyAgent
 	}
 
 	// Generate the name here so that it can be used in the secretName below.
@@ -834,7 +836,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, fil
 			AuditLogging:                         internalCluster.Spec.AuditLogging,
 			UsePodSecurityPolicyAdmissionPlugin:  internalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
 			UsePodNodeSelectorAdmissionPlugin:    internalCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
-			EnableUserSSHKeyAgent:                internalCluster.Spec.EnableUserSSHKeyAgent,
+			EnableUserSSHKeyAgent:                &internalCluster.Spec.EnableUserSSHKeyAgent,
 			AdmissionPlugins:                     internalCluster.Spec.AdmissionPlugins,
 			OPAIntegration:                       internalCluster.Spec.OPAIntegration,
 			PodNodeSelectorAdmissionPluginConfig: internalCluster.Spec.PodNodeSelectorAdmissionPluginConfig,

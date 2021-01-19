@@ -14451,7 +14451,7 @@
           "$ref": "#/definitions/CloudSpec"
         },
         "enableUserSSHKeyAgent": {
-          "description": "EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.\nIf it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach\nto the created cluster. Otherwise, there will be user ssh keys sync(except the one that's added during cluster\ncreation will be added) in the cluster.",
+          "description": "EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.\nIf it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach\nto the created cluster. Otherwise, there will be user ssh keys sync(except the one that's added during cluster\ncreation will be added) in the cluster. The agent is enabled by default",
           "type": "boolean",
           "x-go-name": "EnableUserSSHKeyAgent"
         },

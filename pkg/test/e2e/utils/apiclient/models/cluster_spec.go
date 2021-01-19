@@ -24,7 +24,7 @@ type ClusterSpec struct {
 	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
 	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
 	// to the created cluster. Otherwise, there will be user ssh keys sync(except the one that's added during cluster
-	// creation will be added) in the cluster.
+	// creation will be added) in the cluster. The agent is enabled by default
 	EnableUserSSHKeyAgent bool `json:"enableUserSSHKeyAgent,omitempty"`
 
 	// MachineNetworks optionally specifies the parameters for IPAM.
