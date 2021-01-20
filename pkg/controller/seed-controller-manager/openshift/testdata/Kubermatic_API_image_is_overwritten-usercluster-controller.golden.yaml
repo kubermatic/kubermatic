@@ -42,7 +42,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-cluster-url","https://test-cluster.alias-europe-west3-c.dev.kubermatic.io:0","-dns-cluster-ip","10.240.16.10","-openvpn-server-port","0","-overwrite-registry","","-openshift=true","-version","4.1.9","-cloud-provider-name","","-owner-email","","-opa-integration=false","-openshift-console-callback-uri","https://dev.kubermatic.io/api/v1/projects//dc/alias-europe-west3-c/clusters/test-cluster/openshift/console/proxy/auth/callback"]}'
+        - '{"command":"/usr/local/bin/user-cluster-controller-manager","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-metrics-listen-address","0.0.0.0:8085","-health-listen-address","0.0.0.0:8086","-namespace","$(NAMESPACE)","-cluster-url","https://test-cluster.alias-europe-west3-c.dev.kubermatic.io:0","-dns-cluster-ip","10.240.16.10","-openvpn-server-port","0","-overwrite-registry","","-openshift=true","-version","4.1.9","-cloud-provider-name","","-owner-email","","-enable-ssh-key-agent=false","-opa-integration=false","-openshift-console-callback-uri","https://dev.kubermatic.io/api/v1/projects//dc/alias-europe-west3-c/clusters/test-cluster/openshift/console/proxy/auth/callback"]}'
         command:
         - /http-prober-bin/http-prober
         env:

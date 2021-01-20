@@ -14450,6 +14450,11 @@
         "cloud": {
           "$ref": "#/definitions/CloudSpec"
         },
+        "enableUserSSHKeyAgent": {
+          "description": "EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.\nIf it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach\nto the created cluster. If the agent was disabled, it won't be deployed in the user cluster, thus after\nthe cluster creation any attached ssh keys won't be synced to the worker nodes. Once the agent is enabled/disabled\nit cannot be changed after the cluster is being created.",
+          "type": "boolean",
+          "x-go-name": "EnableUserSSHKeyAgent"
+        },
         "machineNetworks": {
           "description": "MachineNetworks optionally specifies the parameters for IPAM.",
           "type": "array",

@@ -147,13 +147,14 @@ func TestResourceReconciliationIdempotency(t *testing.T) {
 		Client:     mgr.GetClient(),
 		seedClient: seedClient,
 		// Openshift means that we deploy some more resources, so enable it.
-		openshift:  true,
-		version:    "4.1.18",
-		namespace:  seedNamespace,
-		platform:   "aws",
-		clusterURL: &url.URL{},
-		rLock:      &sync.Mutex{},
-		log:        kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar(),
+		openshift:       true,
+		version:         "4.1.18",
+		namespace:       seedNamespace,
+		platform:        "aws",
+		clusterURL:      &url.URL{},
+		rLock:           &sync.Mutex{},
+		log:             kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar(),
+		userSSHKeyAgent: true,
 	}
 
 	if err := mgr.GetClient().Create(ctx, &corev1.Namespace{
