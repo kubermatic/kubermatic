@@ -29,7 +29,7 @@ import (
 
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
-	"k8c.io/kubermatic/v2/pkg/install/stack/kubermatic"
+	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
@@ -84,7 +84,7 @@ var (
 	}
 	deployStorageClassFlag = cli.StringFlag{
 		Name:  "storageclass",
-		Usage: fmt.Sprintf("Type of StorageClass to create (one of %v)", kubermatic.SupportedStorageClassProviders().List()),
+		Usage: fmt.Sprintf("Type of StorageClass to create (one of %v)", kubermaticmaster.SupportedStorageClassProviders().List()),
 	}
 )
 
@@ -175,7 +175,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		subLogger := log.Prefix(logrus.NewEntry(logger), "   ")
 
-		kubermaticConfig, helmValues, validationErrors := kubermatic.ValidateConfiguration(kubermaticConfig, helmValues, subLogger)
+		kubermaticConfig, helmValues, validationErrors := kubermaticmaster.ValidateConfiguration(kubermaticConfig, helmValues, subLogger)
 		if len(validationErrors) > 0 {
 			logger.Error("⛔ The provided configuration files are invalid:")
 
@@ -257,7 +257,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 }
 
 func installKubermaticMasterStack(ctx context.Context, logger logrus.FieldLogger, opt *deployOptions) error {
-	supportedProviders := kubermatic.SupportedStorageClassProviders()
+	supportedProviders := kubermaticmaster.SupportedStorageClassProviders()
 	chosenProvider := opt.cli.String(deployStorageClassFlag.Name)
 	if chosenProvider != "" && !supportedProviders.Has(chosenProvider) {
 		return fmt.Errorf("invalid storage class provider %q given (--%s)", chosenProvider, deployStorageClassFlag.Name)
@@ -265,7 +265,7 @@ func installKubermaticMasterStack(ctx context.Context, logger logrus.FieldLogger
 
 	logger.Info("🧩 Deploying KKP master stack…")
 
-	options := kubermatic.Options{
+	options := kubermaticmaster.Options{
 		HelmValues:                 opt.helmValues,
 		KubermaticConfiguration:    opt.kubermaticConfig,
 		RawKubermaticConfiguration: opt.rawKubermaticConfig,
@@ -274,7 +274,7 @@ func installKubermaticMasterStack(ctx context.Context, logger logrus.FieldLogger
 		StorageClassProvider:       chosenProvider,
 	}
 
-	return kubermatic.Deploy(ctx, opt.subLogger, opt.kubeClient, opt.helmClient, options)
+	return kubermaticmaster.Deploy(ctx, opt.subLogger, opt.kubeClient, opt.helmClient, options)
 }
 
 func greeting() string {
