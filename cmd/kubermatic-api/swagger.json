@@ -13966,6 +13966,7 @@
           "x-go-name": "DataDiskSize"
         },
         "imageID": {
+          "description": "ImageID represents the ID of the image that should be used to run the node",
           "type": "string",
           "x-go-name": "ImageID"
         },
