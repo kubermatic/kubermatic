@@ -18,7 +18,6 @@ package v1
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/Masterminds/semver/v3"
 	"strings"
@@ -1175,7 +1174,7 @@ func (spec *DigitaloceanNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(missing) > 0 {
-		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
 
 	// Inlined anonymous mirror structure to allow usage of real marshal after validation
@@ -1212,7 +1211,7 @@ func (spec *HetznerNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(missing) > 0 {
-		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
 
 	res := struct {
@@ -1258,7 +1257,7 @@ func (spec *AzureNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(missing) > 0 {
-		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
 
 	res := struct {
@@ -1311,7 +1310,7 @@ func (spec *VSphereNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(missing) > 0 {
-		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
 
 	res := struct {
@@ -1370,7 +1369,7 @@ func (spec *OpenstackNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(missing) > 0 {
-		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
 
 	res := struct {
@@ -1438,7 +1437,7 @@ func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(missing) > 0 {
-		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
 
 	res := struct {
@@ -1483,7 +1482,7 @@ func (spec *PacketNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(missing) > 0 {
-		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
 
 	res := struct {
@@ -1530,7 +1529,7 @@ func (spec *GCPNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(missing) > 0 {
-		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
 
 	res := struct {
@@ -1607,7 +1606,7 @@ func (spec *KubevirtNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(missing) > 0 {
-		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
 
 	res := struct {
@@ -1669,7 +1668,7 @@ func (spec *AlibabaNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(missing) > 0 {
-		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
 
 	res := struct {
@@ -1737,7 +1736,7 @@ func (spec *AnexiaNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	if len(missing) > 0 {
-		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+		return []byte{}, fmt.Errorf("missing or invalid required parameter(s): %s", strings.Join(missing, ", "))
 	}
 
 	res := struct {

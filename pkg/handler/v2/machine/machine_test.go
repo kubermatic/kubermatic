@@ -955,7 +955,7 @@ func TestListNodesForCluster(t *testing.T) {
 							AWS: &apiv1.AWSNodeSpec{
 								InstanceType:     "t2.micro",
 								VolumeSize:       50,
-								VolumeType: "standard",
+								VolumeType:       "standard",
 								AvailabilityZone: "eu-central-1a",
 								SubnetID:         "subnet-2bff4f43",
 							},
@@ -1011,7 +1011,7 @@ func TestListNodesForCluster(t *testing.T) {
 							AWS: &apiv1.AWSNodeSpec{
 								InstanceType:     "t2.micro",
 								VolumeSize:       50,
-								VolumeType: "standard",
+								VolumeType:       "standard",
 								AvailabilityZone: "eu-central-1a",
 								SubnetID:         "subnet-2bff4f43",
 							},
@@ -1100,7 +1100,7 @@ func TestListNodesForCluster(t *testing.T) {
 							AWS: &apiv1.AWSNodeSpec{
 								InstanceType:     "t2.micro",
 								VolumeSize:       50,
-								VolumeType: "standard",
+								VolumeType:       "standard",
 								AvailabilityZone: "eu-central-1a",
 								SubnetID:         "subnet-2bff4f43",
 							},
