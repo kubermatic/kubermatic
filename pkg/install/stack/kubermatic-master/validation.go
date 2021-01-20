@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
-func ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error) {
+func (_ *MasterStack) ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error) {
 	kubermaticFailures := validateKubermaticConfiguration(config)
 	for idx, e := range kubermaticFailures {
 		kubermaticFailures[idx] = prefixError("KubermaticConfiguration: ", e)

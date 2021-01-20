@@ -27,6 +27,7 @@ import (
 
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
+	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
@@ -35,7 +36,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -63,48 +63,54 @@ const (
 	StorageClassName = "kubermatic-fast"
 )
 
-type Options struct {
-	StorageClassProvider       string
-	HelmValues                 *yamled.Document
-	KubermaticConfiguration    *operatorv1alpha1.KubermaticConfiguration
-	RawKubermaticConfiguration *unstructured.Unstructured
-	ForceHelmReleaseUpgrade    bool
-	ChartsDirectory            string
+type MasterStack struct{}
+
+func NewStack() stack.Stack {
+	return &MasterStack{}
 }
 
-func Deploy(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt Options) error {
-	if err := deployStorageClass(ctx, logger, kubeClient, opt); err != nil {
+func (_ *MasterStack) Name() string {
+	return "KKP master stack"
+}
+
+func (_ *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
+	if err := deployStorageClass(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy StorageClass: %v", err)
 	}
 
-	if err := deployNginxIngressController(ctx, logger, kubeClient, helmClient, opt); err != nil {
+	if err := deployNginxIngressController(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy nginx-ingress-controller: %v", err)
 	}
 
-	if err := deployCertManager(ctx, logger, kubeClient, helmClient, opt); err != nil {
+	if err := deployCertManager(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy cert-manager: %v", err)
 	}
 
-	if err := deployDex(ctx, logger, kubeClient, helmClient, opt); err != nil {
+	if err := deployDex(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy Dex: %v", err)
 	}
 
-	if err := deployKubermaticOperator(ctx, logger, kubeClient, helmClient, opt); err != nil {
+	if err := deployKubermaticOperator(ctx, opt.Logger, opt.KubeClient, opt.HelmClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy Kubermatic Operator: %v", err)
 	}
 
-	if err := applyKubermaticConfiguration(ctx, logger, kubeClient, opt); err != nil {
+	if err := applyKubermaticConfiguration(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to apply Kubermatic Configuration: %v", err)
 	}
 
-	showDNSSettings(ctx, logger, kubeClient, opt)
+	showDNSSettings(ctx, opt.Logger, opt.KubeClient, opt)
 
 	return nil
 }
 
-func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt Options) error {
+func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	logger.Infof("💾 Deploying %s StorageClass…", StorageClassName)
 	sublogger := log.Prefix(logger, "   ")
+
+	chosenProvider := opt.StorageClassProvider
+	if chosenProvider != "" && !common.SupportedStorageClassProviders().Has(chosenProvider) {
+		return fmt.Errorf("invalid provider %q given", chosenProvider)
+	}
 
 	cls := storagev1.StorageClass{}
 	key := types.NamespacedName{Name: StorageClassName}
@@ -148,7 +154,7 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 	return nil
 }
 
-func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt Options) error {
+func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	logger.Info("📦 Deploying nginx-ingress-controller…")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -177,7 +183,7 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 	return nil
 }
 
-func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt Options) error {
+func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	logger.Info("📦 Deploying cert-manager…")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -221,7 +227,7 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 	return nil
 }
 
-func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt Options) error {
+func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	logger.Info("📦 Deploying Dex…")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -248,7 +254,7 @@ func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntime
 	return nil
 }
 
-func deployKubermaticOperator(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt Options) error {
+func deployKubermaticOperator(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	logger.Info("📦 Deploying Kubermatic Operator…")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -281,7 +287,7 @@ func deployKubermaticOperator(ctx context.Context, logger *logrus.Entry, kubeCli
 	return nil
 }
 
-func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt Options) error {
+func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	logger.Info("📝 Applying Kubermatic Configuration…")
 
 	existingConfig := &operatorv1alpha1.KubermaticConfiguration{}
@@ -317,7 +323,7 @@ func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kub
 // showDNSSettings attempts to inform the user about required DNS settings
 // to be made. If errors happen, only warnings are printed, but the installation
 // can still succeed.
-func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt Options) {
+func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) {
 	logger.Info("📡 Determining DNS settings…")
 	sublogger := log.Prefix(logger, "   ")
 
@@ -352,7 +358,7 @@ func (t nginxTargetPod) prefererdTarget() string {
 	return t.ip
 }
 
-func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt Options) {
+func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) {
 	logger.Debugf("Listing nginx-ingress-controller pods…")
 
 	podList := v1.PodList{}
@@ -454,7 +460,7 @@ func showHostNetworkDNSSettings(ctx context.Context, logger *logrus.Entry, kubeC
 	logger.Info("")
 }
 
-func showLoadBalancerDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt Options) {
+func showLoadBalancerDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) {
 	svcName := types.NamespacedName{
 		Namespace: NginxIngressControllerNamespace,
 		Name:      "nginx-ingress-controller",

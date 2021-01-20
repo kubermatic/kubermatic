@@ -30,6 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
+	"k8c.io/kubermatic/v2/pkg/install/stack"
 	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
@@ -156,6 +157,23 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 				deployHelmBinaryFlag.EnvVar)
 		}
 
+		var kubermaticStack stack.Stack
+		stackName := ctx.Args().First()
+		switch stackName {
+		case "kubermatic-seed":
+			kubermaticStack = kubermaticseed.NewStack()
+
+		case "kubermatic-master":
+			fallthrough
+
+		default:
+			kubermaticStack = kubermaticmaster.NewStack()
+		}
+
+		if kubermaticStack == nil {
+			return fmt.Errorf("unknown stack %q specified", stackName)
+		}
+
 		logger.WithFields(fields).Info("🛫 Initializing installer…")
 
 		// load config files
@@ -178,7 +196,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		subLogger := log.Prefix(logrus.NewEntry(logger), "   ")
 
-		kubermaticConfig, helmValues, validationErrors := kubermaticmaster.ValidateConfiguration(kubermaticConfig, helmValues, subLogger)
+		kubermaticConfig, helmValues, validationErrors := kubermaticStack.ValidateConfiguration(kubermaticConfig, helmValues, subLogger)
 		if len(validationErrors) > 0 {
 			logger.Error("⛔ The provided configuration files are invalid:")
 
@@ -236,28 +254,21 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
 
-		opt := &deployOptions{
-			cli:                 ctx,
-			helmClient:          helmClient,
-			kubeClient:          kubeClient,
-			helmValues:          helmValues,
-			kubermaticConfig:    kubermaticConfig,
-			rawKubermaticConfig: rawKubermaticConfig,
-			subLogger:           subLogger,
+		opt := stack.DeployOptions{
+			HelmClient:                 helmClient,
+			KubeClient:                 kubeClient,
+			HelmValues:                 helmValues,
+			KubermaticConfiguration:    kubermaticConfig,
+			RawKubermaticConfiguration: rawKubermaticConfig,
+			Logger:                     subLogger,
+			StorageClassProvider:       ctx.String(deployStorageClassFlag.Name),
+			ForceHelmReleaseUpgrade:    ctx.Bool(deployForceFlag.Name),
+			ChartsDirectory:            ctx.GlobalString(chartsDirectoryFlag.Name),
 		}
 
-		switch ctx.Args().First() {
-		case "kubermatic-seed":
-			err = installKubermaticSeedStack(appContext, logger, opt)
+		logger.Info("🧩 Deploying %s…", kubermaticStack.Name())
 
-		case "kubermatic-master":
-			fallthrough
-
-		default:
-			err = installKubermaticMasterStack(appContext, logger, opt)
-		}
-
-		if err != nil {
+		if err := kubermaticStack.Deploy(appContext, opt); err != nil {
 			return err
 		}
 
@@ -265,48 +276,6 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		return nil
 	}))
-}
-
-func installKubermaticMasterStack(ctx context.Context, logger logrus.FieldLogger, opt *deployOptions) error {
-	supportedProviders := common.SupportedStorageClassProviders()
-	chosenProvider := opt.cli.String(deployStorageClassFlag.Name)
-	if chosenProvider != "" && !supportedProviders.Has(chosenProvider) {
-		return fmt.Errorf("invalid storage class provider %q given (--%s)", chosenProvider, deployStorageClassFlag.Name)
-	}
-
-	logger.Info("🧩 Deploying KKP master stack…")
-
-	options := kubermaticmaster.Options{
-		HelmValues:                 opt.helmValues,
-		KubermaticConfiguration:    opt.kubermaticConfig,
-		RawKubermaticConfiguration: opt.rawKubermaticConfig,
-		ForceHelmReleaseUpgrade:    opt.cli.Bool(deployForceFlag.Name),
-		ChartsDirectory:            opt.cli.GlobalString(chartsDirectoryFlag.Name),
-		StorageClassProvider:       chosenProvider,
-	}
-
-	return kubermaticmaster.Deploy(ctx, opt.subLogger, opt.kubeClient, opt.helmClient, options)
-}
-
-func installKubermaticSeedStack(ctx context.Context, logger logrus.FieldLogger, opt *deployOptions) error {
-	supportedProviders := common.SupportedStorageClassProviders()
-	chosenProvider := opt.cli.String(deployStorageClassFlag.Name)
-	if chosenProvider != "" && !supportedProviders.Has(chosenProvider) {
-		return fmt.Errorf("invalid storage class provider %q given (--%s)", chosenProvider, deployStorageClassFlag.Name)
-	}
-
-	logger.Info("🧩 Deploying KKP seed stack…")
-
-	options := kubermaticseed.Options{
-		HelmValues:                 opt.helmValues,
-		KubermaticConfiguration:    opt.kubermaticConfig,
-		RawKubermaticConfiguration: opt.rawKubermaticConfig,
-		ForceHelmReleaseUpgrade:    opt.cli.Bool(deployForceFlag.Name),
-		ChartsDirectory:            opt.cli.GlobalString(chartsDirectoryFlag.Name),
-		StorageClassProvider:       chosenProvider,
-	}
-
-	return kubermaticseed.Deploy(ctx, opt.subLogger, opt.kubeClient, opt.helmClient, options)
 }
 
 func greeting() string {
