@@ -725,8 +725,9 @@ type ClusterSpec struct {
 
 	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
 	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
-	// to the created cluster. Otherwise, there will be user ssh keys sync(except the one that's added during cluster
-	// creation will be added) in the cluster. The agent is enabled by default
+	// to the created cluster. If the agent was disabled, it won't be deployed in the user cluster, thus after
+	// the cluster creation any attached ssh keys won't be synced to the worker nodes. Once the agent is enabled/disabled
+	// it cannot be changed after the cluster is being created.
 	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
 
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
@@ -1707,5 +1708,4 @@ func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType 
 
 const (
 	InitialMachineDeploymentRequestAnnotation = "kubermatic.io/initial-machinedeployment-request"
-	UserSSHKeyAgentEnabledAnnotation          = "kubermatic.io/user-ssh-key-agent-enabled"
 )
