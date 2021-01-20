@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubermaticmaster
+package common
 
 import (
 	"context"
@@ -26,6 +26,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	StorageClassName = "kubermatic-fast"
 )
 
 type storageClassFactory func(context.Context, *logrus.Entry, ctrlruntimeclient.Client, string) (storagev1.StorageClass, error)
@@ -113,6 +117,15 @@ var (
 		},
 	}
 )
+
+func StorageClassCreator(provider string) (storageClassFactory, error) {
+	factory, ok := storageClassFactories[provider]
+	if !ok {
+		return nil, fmt.Errorf("unknown StorageClass provider %q", provider)
+	}
+
+	return factory, nil
+}
 
 func SupportedStorageClassProviders() sets.String {
 	return sets.StringKeySet(storageClassFactories)

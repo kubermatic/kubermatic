@@ -27,6 +27,7 @@ import (
 
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
+	"k8c.io/kubermatic/v2/pkg/install/stack/common"
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
@@ -56,6 +57,8 @@ const (
 	KubermaticOperatorChartName   = "kubermatic-operator"
 	KubermaticOperatorReleaseName = KubermaticOperatorChartName
 	KubermaticOperatorNamespace   = "kubermatic"
+
+	NodePortProxyService = "nodeport-proxy"
 
 	StorageClassName = "kubermatic-fast"
 )
@@ -126,7 +129,10 @@ func deployStorageClass(ctx context.Context, logger *logrus.Entry, kubeClient ct
 		return fmt.Errorf("no %s StorageClass found", StorageClassName)
 	}
 
-	factory := storageClassFactories[opt.StorageClassProvider]
+	factory, err := common.StorageClassCreator(opt.StorageClassProvider)
+	if err != nil {
+		return fmt.Errorf("invalid StorageClass provider: %v", err)
+	}
 
 	sc, err := factory(ctx, sublogger, kubeClient, StorageClassName)
 	if err != nil {
@@ -309,7 +315,7 @@ func applyKubermaticConfiguration(ctx context.Context, logger *logrus.Entry, kub
 }
 
 // showDNSSettings attempts to inform the user about required DNS settings
-// to be made. If errors happen, only warnings areprinted, but the installation
+// to be made. If errors happen, only warnings are printed, but the installation
 // can still succeed.
 func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt Options) {
 	logger.Info("📡 Determining DNS settings…")
