@@ -723,6 +723,13 @@ type ClusterSpec struct {
 	// If active the PodNodeSelector admission plugin is configured at the apiserver
 	UsePodNodeSelectorAdmissionPlugin bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
 
+	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
+	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
+	// to the created cluster. If the agent was disabled, it won't be deployed in the user cluster, thus after
+	// the cluster creation any attached ssh keys won't be synced to the worker nodes. Once the agent is enabled/disabled
+	// it cannot be changed after the cluster is being created.
+	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
+
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
 	// The key:value from the map is converted to the namespace:<node-selectors-labels> in the file.
@@ -762,6 +769,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		UpdateWindow                         *kubermaticv1.UpdateWindow             `json:"updateWindow,omitempty"`
 		UsePodSecurityPolicyAdmissionPlugin  bool                                   `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 		UsePodNodeSelectorAdmissionPlugin    bool                                   `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
+		EnableUserSSHKeyAgent                *bool                                  `json:"enableUserSSHKeyAgent,omitempty"`
 		AuditLogging                         *kubermaticv1.AuditLoggingSettings     `json:"auditLogging,omitempty"`
 		AdmissionPlugins                     []string                               `json:"admissionPlugins,omitempty"`
 		PodNodeSelectorAdmissionPluginConfig map[string]string                      `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
@@ -789,6 +797,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		UpdateWindow:                         cs.UpdateWindow,
 		UsePodSecurityPolicyAdmissionPlugin:  cs.UsePodSecurityPolicyAdmissionPlugin,
 		UsePodNodeSelectorAdmissionPlugin:    cs.UsePodNodeSelectorAdmissionPlugin,
+		EnableUserSSHKeyAgent:                cs.EnableUserSSHKeyAgent,
 		AuditLogging:                         cs.AuditLogging,
 		AdmissionPlugins:                     cs.AdmissionPlugins,
 		PodNodeSelectorAdmissionPluginConfig: cs.PodNodeSelectorAdmissionPluginConfig,

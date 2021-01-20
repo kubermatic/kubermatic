@@ -30,6 +30,12 @@ import (
 
 // Spec builds ClusterSpec kubermatic Custom Resource from API Cluster
 func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*kubermaticv1.ClusterSpec, error) {
+	var userSSHKeysAgentEnabled = true
+
+	if apiCluster.Spec.EnableUserSSHKeyAgent != nil {
+		userSSHKeysAgentEnabled = *apiCluster.Spec.EnableUserSSHKeyAgent
+	}
+
 	spec := &kubermaticv1.ClusterSpec{
 		HumanReadableName:                    apiCluster.Name,
 		Cloud:                                apiCluster.Spec.Cloud,
@@ -39,6 +45,7 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter
 		Version:                              apiCluster.Spec.Version,
 		UsePodSecurityPolicyAdmissionPlugin:  apiCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
 		UsePodNodeSelectorAdmissionPlugin:    apiCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
+		EnableUserSSHKeyAgent:                userSSHKeysAgentEnabled,
 		AuditLogging:                         apiCluster.Spec.AuditLogging,
 		Openshift:                            apiCluster.Spec.Openshift,
 		AdmissionPlugins:                     apiCluster.Spec.AdmissionPlugins,

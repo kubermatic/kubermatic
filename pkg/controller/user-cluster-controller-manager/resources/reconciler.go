@@ -173,6 +173,10 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		usersshkeys.ServiceAccountCreator(),
 	}
 
+	if r.userSSHKeyAgent {
+		creators = append(creators, usersshkeys.ServiceAccountCreator())
+	}
+
 	if r.openshift {
 		creators = append(creators, openshift.TokenOwnerServiceAccount)
 	}
@@ -206,7 +210,10 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 	creators := []reconciling.NamedRoleCreatorGetter{
 		machinecontroller.KubeSystemRoleCreator(),
 		clusterautoscaler.KubeSystemRoleCreator(),
-		usersshkeys.RoleCreator(),
+	}
+
+	if r.userSSHKeyAgent {
+		creators = append(creators, usersshkeys.RoleCreator())
 	}
 
 	if err := reconciling.ReconcileRoles(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -273,8 +280,12 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 		scheduler.RoleBindingAuthDelegator(),
 		controllermanager.RoleBindingAuthDelegator(),
 		clusterautoscaler.KubeSystemRoleBindingCreator(),
-		usersshkeys.RoleBindingCreator(),
 	}
+
+	if r.userSSHKeyAgent {
+		creators = append(creators, usersshkeys.RoleBindingCreator())
+	}
+
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in kube-system Namespace: %v", err)
 	}
@@ -498,9 +509,13 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		openvpn.ClientCertificate(data.openVPNCACert),
-		usersshkeys.SecretCreator(data.userSSHKeys),
 		cloudcontroller.CloudConfig(data.cloudConfig),
 	}
+
+	if r.userSSHKeyAgent {
+		creators = append(creators, usersshkeys.SecretCreator(data.userSSHKeys))
+	}
+
 	if r.openshift {
 		creators = append(creators, openshift.OAuthBootstrapPasswordCreatorGetter(r.seedClient, r.namespace))
 		if r.cloudCredentialSecretTemplate != nil {
@@ -535,9 +550,12 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 }
 
 func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
-	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
-		usersshkeys.DaemonSetCreator(r.versions),
+	var dsCreators []reconciling.NamedDaemonSetCreatorGetter
+
+	if r.userSSHKeyAgent {
+		dsCreators = append(dsCreators, usersshkeys.DaemonSetCreator(r.versions))
 	}
+
 	if !r.openshift {
 		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator())
 	}
