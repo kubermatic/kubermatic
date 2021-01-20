@@ -32,11 +32,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/stack/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
+	"k8c.io/kubermatic/v2/pkg/util/yamled"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -87,9 +90,10 @@ var (
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
 	return cli.Command{
-		Name:   "deploy",
-		Usage:  "Installs or upgrades the current installation to the installer's built-in version",
-		Action: DeployAction(logger, versions),
+		Name:      "deploy",
+		Usage:     "Installs or upgrades the current installation to the installer's built-in version",
+		Action:    DeployAction(logger, versions),
+		ArgsUsage: "[STACK=kubermatic-master]",
 		Flags: []cli.Flag{
 			deployForceFlag,
 			deployConfigFlag,
@@ -101,6 +105,16 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			deployStorageClassFlag,
 		},
 	}
+}
+
+type deployOptions struct {
+	cli                 *cli.Context
+	subLogger           *logrus.Entry
+	helmClient          helm.Client
+	kubeClient          ctrlruntimeclient.Client
+	helmValues          *yamled.Document
+	kubermaticConfig    *operatorv1alpha1.KubermaticConfiguration
+	rawKubermaticConfig *unstructured.Unstructured
 }
 
 func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cli.ActionFunc {
@@ -140,12 +154,6 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		}
 
 		logger.WithFields(fields).Info("🛫 Initializing installer…")
-
-		supportedProviders := kubermatic.SupportedStorageClassProviders()
-		chosenProvider := ctx.String(deployStorageClassFlag.Name)
-		if chosenProvider != "" && !supportedProviders.Has(chosenProvider) {
-			return fmt.Errorf("invalid storage class provider %q given (--%s)", chosenProvider, deployStorageClassFlag.Name)
-		}
 
 		// load config files
 		if len(kubeconfig) == 0 {
@@ -221,17 +229,24 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
 
-		logger.Info("🧩 Deploying kubermatic stack…")
-		opt := kubermatic.Options{
-			HelmValues:                 helmValues,
-			KubermaticConfiguration:    kubermaticConfig,
-			RawKubermaticConfiguration: rawKubermaticConfig,
-			ForceHelmReleaseUpgrade:    ctx.Bool(deployForceFlag.Name),
-			ChartsDirectory:            ctx.GlobalString(chartsDirectoryFlag.Name),
-			StorageClassProvider:       chosenProvider,
+		opt := &deployOptions{
+			cli:                 ctx,
+			helmClient:          helmClient,
+			kubeClient:          kubeClient,
+			helmValues:          helmValues,
+			kubermaticConfig:    kubermaticConfig,
+			rawKubermaticConfig: rawKubermaticConfig,
+			subLogger:           subLogger,
 		}
 
-		if err := kubermatic.Deploy(appContext, subLogger, kubeClient, helmClient, opt); err != nil {
+		switch ctx.Args().First() {
+		case "kubermatic-master":
+			fallthrough
+		default:
+			err = installKubermaticMasterStack(appContext, logger, opt)
+		}
+
+		if err != nil {
 			return err
 		}
 
@@ -239,6 +254,27 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		return nil
 	}))
+}
+
+func installKubermaticMasterStack(ctx context.Context, logger logrus.FieldLogger, opt *deployOptions) error {
+	supportedProviders := kubermatic.SupportedStorageClassProviders()
+	chosenProvider := opt.cli.String(deployStorageClassFlag.Name)
+	if chosenProvider != "" && !supportedProviders.Has(chosenProvider) {
+		return fmt.Errorf("invalid storage class provider %q given (--%s)", chosenProvider, deployStorageClassFlag.Name)
+	}
+
+	logger.Info("🧩 Deploying KKP master stack…")
+
+	options := kubermatic.Options{
+		HelmValues:                 opt.helmValues,
+		KubermaticConfiguration:    opt.kubermaticConfig,
+		RawKubermaticConfiguration: opt.rawKubermaticConfig,
+		ForceHelmReleaseUpgrade:    opt.cli.Bool(deployForceFlag.Name),
+		ChartsDirectory:            opt.cli.GlobalString(chartsDirectoryFlag.Name),
+		StorageClassProvider:       chosenProvider,
+	}
+
+	return kubermatic.Deploy(ctx, opt.subLogger, opt.kubeClient, opt.helmClient, options)
 }
 
 func greeting() string {
