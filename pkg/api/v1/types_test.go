@@ -284,7 +284,7 @@ func TestVSphereNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 3: should fail when cpus and memory are provided",
 			&VSphereNodeSpec{
-				CPUs: 1,
+				CPUs:   1,
 				Memory: 1,
 			},
 			"missing or invalid required parameter(s): diskSizeGB, template",
@@ -292,8 +292,8 @@ func TestVSphereNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 4: should fail when cpus, memory and disk size are provided",
 			&VSphereNodeSpec{
-				CPUs: 1,
-				Memory: 1,
+				CPUs:       1,
+				Memory:     1,
 				DiskSizeGB: &[]int64{1}[0],
 			},
 			"missing or invalid required parameter(s): template",
@@ -301,30 +301,30 @@ func TestVSphereNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 5: should fail when cpus count is wrong",
 			&VSphereNodeSpec{
-				CPUs: 0,
-				Memory: 1,
+				CPUs:       0,
+				Memory:     1,
 				DiskSizeGB: &[]int64{1}[0],
-				Template: "test-template",
+				Template:   "test-template",
 			},
 			"missing or invalid required parameter(s): cpus",
 		},
 		{
 			"case 6: should fail when memory count is wrong",
 			&VSphereNodeSpec{
-				CPUs: 1,
-				Memory: 0,
+				CPUs:       1,
+				Memory:     0,
 				DiskSizeGB: &[]int64{1}[0],
-				Template: "test-template",
+				Template:   "test-template",
 			},
 			"missing or invalid required parameter(s): memory",
 		},
 		{
 			"case 7: should fail when disk size is wrong",
 			&VSphereNodeSpec{
-				CPUs: 1,
-				Memory: 1,
+				CPUs:       1,
+				Memory:     1,
 				DiskSizeGB: &[]int64{0}[0],
-				Template: "test-template",
+				Template:   "test-template",
 			},
 			"missing or invalid required parameter(s): diskSizeGB",
 		},
@@ -384,8 +384,8 @@ func TestOpenstackNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 4: should marshal when all required parameters are provided",
 			&OpenstackNodeSpec{
-				Flavor:                    "test-flavor",
-				Image:                     "test-image",
+				Flavor: "test-flavor",
+				Image:  "test-image",
 			},
 			"{\"flavor\":\"test-flavor\",\"image\":\"test-image\",\"diskSize\":null,\"availabilityZone\":\"\",\"instanceReadyCheckPeriod\":\"\",\"instanceReadyCheckTimeout\":\"\"}",
 		},
@@ -442,18 +442,18 @@ func TestAWSNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 3: should fail when volume size is wrong",
 			&AWSNodeSpec{
-				VolumeSize: 0,
+				VolumeSize:   0,
 				InstanceType: "test-instance",
-				VolumeType: "test-volume",
+				VolumeType:   "test-volume",
 			},
 			"missing or invalid required parameter(s): diskSize",
 		},
 		{
 			"case 4: should marshal when all required parameters are provided",
 			&AWSNodeSpec{
-				InstanceType:     "test-instance",
-				VolumeSize:       1,
-				VolumeType:       "test-volume",
+				InstanceType: "test-instance",
+				VolumeSize:   1,
+				VolumeType:   "test-volume",
 			},
 			"{\"instanceType\":\"test-instance\",\"diskSize\":1,\"volumeType\":\"test-volume\",\"ami\":\"\",\"tags\":null,\"availabilityZone\":\"\",\"subnetID\":\"\",\"assignPublicIP\":null}",
 		},
@@ -682,28 +682,28 @@ func TestAlibabaNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 2: should fail when only instanceType is provided",
 			&AlibabaNodeSpec{
-				InstanceType:            "test-instance",
+				InstanceType: "test-instance",
 			},
 			"missing or invalid required parameter(s): diskSize, diskType, vSwitchID, internetMaxBandwidthOut, zoneID",
 		},
 		{
 			"case 3: should fail when only diskSize is provided",
 			&AlibabaNodeSpec{
-				DiskSize:                "1",
+				DiskSize: "1",
 			},
 			"missing or invalid required parameter(s): instanceType, diskType, vSwitchID, internetMaxBandwidthOut, zoneID",
 		},
 		{
 			"case 4: should fail when only diskType is provided",
 			&AlibabaNodeSpec{
-				DiskType:                "test-disk",
+				DiskType: "test-disk",
 			},
 			"missing or invalid required parameter(s): instanceType, diskSize, vSwitchID, internetMaxBandwidthOut, zoneID",
 		},
 		{
 			"case 5: should fail when only vSwitchID is provided",
 			&AlibabaNodeSpec{
-				VSwitchID:               "test-vswitch",
+				VSwitchID: "test-vswitch",
 			},
 			"missing or invalid required parameter(s): instanceType, diskSize, diskType, internetMaxBandwidthOut, zoneID",
 		},
@@ -717,7 +717,7 @@ func TestAlibabaNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 7: should fail when only zoneID is provided",
 			&AlibabaNodeSpec{
-				ZoneID:                  "test-zone",
+				ZoneID: "test-zone",
 			},
 			"missing or invalid required parameter(s): instanceType, diskSize, diskType, vSwitchID, internetMaxBandwidthOut",
 		},
@@ -765,7 +765,7 @@ func TestAnexiaNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 2: should fail when only vlanID is provided",
 			&AnexiaNodeSpec{
-				VlanID:     "test-vlan",
+				VlanID: "test-vlan",
 			},
 			"missing or invalid required parameter(s): cpus, memory, diskSize, templateID",
 		},
@@ -779,21 +779,21 @@ func TestAnexiaNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 4: should fail when only cpus is provided",
 			&AnexiaNodeSpec{
-				CPUs:       1,
+				CPUs: 1,
 			},
 			"missing or invalid required parameter(s): vlanID, memory, diskSize, templateID",
 		},
 		{
 			"case 5: should fail when only memory is provided",
 			&AnexiaNodeSpec{
-				Memory:     1,
+				Memory: 1,
 			},
 			"missing or invalid required parameter(s): vlanID, cpus, diskSize, templateID",
 		},
 		{
 			"case 6: should fail when only diskSize is provided",
 			&AnexiaNodeSpec{
-				DiskSize:   1,
+				DiskSize: 1,
 			},
 			"missing or invalid required parameter(s): vlanID, cpus, memory, templateID",
 		},
