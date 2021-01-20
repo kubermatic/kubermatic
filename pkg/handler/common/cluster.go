@@ -361,6 +361,7 @@ func PatchEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	newInternalCluster.Spec.AuditLogging = patchedCluster.Spec.AuditLogging
 	newInternalCluster.Spec.Openshift = patchedCluster.Spec.Openshift
 	newInternalCluster.Spec.UpdateWindow = patchedCluster.Spec.UpdateWindow
+	newInternalCluster.Spec.PodNodeSelectorAdmissionPluginConfig = patchedCluster.Spec.PodNodeSelectorAdmissionPluginConfig
 
 	incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfoGetter, clusterProvider, newInternalCluster, projectID)
 	if err != nil {
@@ -686,15 +687,16 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, fil
 		Labels:          internalCluster.Labels,
 		InheritedLabels: internalCluster.Status.InheritedLabels,
 		Spec: apiv1.ClusterSpec{
-			Cloud:                               internalCluster.Spec.Cloud,
-			Version:                             internalCluster.Spec.Version,
-			MachineNetworks:                     internalCluster.Spec.MachineNetworks,
-			OIDC:                                internalCluster.Spec.OIDC,
-			UpdateWindow:                        internalCluster.Spec.UpdateWindow,
-			AuditLogging:                        internalCluster.Spec.AuditLogging,
-			UsePodSecurityPolicyAdmissionPlugin: internalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
-			UsePodNodeSelectorAdmissionPlugin:   internalCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
-			AdmissionPlugins:                    internalCluster.Spec.AdmissionPlugins,
+			Cloud:                                internalCluster.Spec.Cloud,
+			Version:                              internalCluster.Spec.Version,
+			MachineNetworks:                      internalCluster.Spec.MachineNetworks,
+			OIDC:                                 internalCluster.Spec.OIDC,
+			UpdateWindow:                         internalCluster.Spec.UpdateWindow,
+			AuditLogging:                         internalCluster.Spec.AuditLogging,
+			UsePodSecurityPolicyAdmissionPlugin:  internalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
+			UsePodNodeSelectorAdmissionPlugin:    internalCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
+			AdmissionPlugins:                     internalCluster.Spec.AdmissionPlugins,
+			PodNodeSelectorAdmissionPluginConfig: internalCluster.Spec.PodNodeSelectorAdmissionPluginConfig,
 		},
 		Status: apiv1.ClusterStatus{
 			Version: internalCluster.Spec.Version,

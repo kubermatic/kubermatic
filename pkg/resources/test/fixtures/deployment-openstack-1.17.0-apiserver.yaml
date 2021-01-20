@@ -19,6 +19,7 @@ spec:
         prometheus.io/scrape_with_kube_cert: "true"
       creationTimestamp: null
       labels:
+        adm-control-configmap-revision: "123456"
         apiserver-etcd-client-certificate-secret-revision: "123456"
         apiserver-proxy-client-certificate-secret-revision: "123456"
         apiserver-tls-secret-revision: "123456"
@@ -153,6 +154,8 @@ spec:
         - etcd3
         - --enable-admission-plugins
         - DefaultStorageClass,DefaultTolerationSeconds,LimitRanger,MutatingAdmissionWebhook,NamespaceLifecycle,Priority,ResourceQuota,ServiceAccount,ValidatingAdmissionWebhook
+        - --admission-control-config-file
+        - /etc/kubernetes/adm-control/admission-control.yaml
         - --authorization-mode
         - Node,RBAC
         - --external-hostname
@@ -296,6 +299,9 @@ spec:
           readOnly: true
         - mountPath: /var/log/kubernetes/audit
           name: audit-log
+        - mountPath: /etc/kubernetes/adm-control
+          name: adm-control
+          readOnly: true
         - mountPath: /etc/ssl/certs
           name: ca-certs
           readOnly: true
@@ -373,6 +379,9 @@ spec:
         name: audit-config
       - emptyDir: {}
         name: audit-log
+      - configMap:
+          name: adm-control
+        name: adm-control
       - hostPath:
           path: /etc/ssl/certs
           type: DirectoryOrCreate

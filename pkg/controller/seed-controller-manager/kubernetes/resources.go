@@ -358,6 +358,7 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 		openvpn.ServerClientConfigsConfigMapCreator(data),
 		dns.ConfigMapCreator(data),
 		apiserver.AuditConfigMapCreator(),
+		apiserver.AdmissionControlCreator(data),
 	}
 }
 
