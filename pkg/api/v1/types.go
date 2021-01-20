@@ -18,8 +18,10 @@ package v1
 
 import (
 	"encoding/json"
-
+	"errors"
+	"fmt"
 	"github.com/Masterminds/semver/v3"
+	"strings"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
@@ -1165,12 +1167,61 @@ type DigitaloceanNodeSpec struct {
 	Tags []string `json:"tags"`
 }
 
+func (spec *DigitaloceanNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if len(spec.Size) == 0 {
+		missing = append(missing, "size")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+	}
+
+	// Inlined anonymous mirror structure to allow usage of real marshal after validation
+	res := struct {
+		Size       string   `json:"size"`
+		Backups    bool     `json:"backups"`
+		IPv6       bool     `json:"ipv6"`
+		Monitoring bool     `json:"monitoring"`
+		Tags       []string `json:"tags"`
+	}{
+		Size:       spec.Size,
+		Backups:    spec.Backups,
+		IPv6:       spec.IPv6,
+		Monitoring: spec.Monitoring,
+		Tags:       spec.Tags,
+	}
+
+	return json.Marshal(&res)
+}
+
 // HetznerNodeSpec Hetzner node settings
 // swagger:model HetznerNodeSpec
 type HetznerNodeSpec struct {
 	// server type
 	// required: true
 	Type string `json:"type"`
+}
+
+func (spec *HetznerNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if len(spec.Type) == 0 {
+		missing = append(missing, "type")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+	}
+
+	res := struct {
+		Type string `json:"type"`
+	}{
+		Type: spec.Type,
+	}
+
+	return json.Marshal(&res)
 }
 
 // AzureNodeSpec describes settings for an Azure node
@@ -1193,8 +1244,42 @@ type AzureNodeSpec struct {
 	DataDiskSize int32 `json:"dataDiskSize"`
 	// Zones represents the availability zones for azure vms
 	// required: false
-	Zones   []string `json:"zones"`
-	ImageID string   `json:"imageID"`
+	Zones []string `json:"zones"`
+	// ImageID represents the ID of the image that should be used to run the node
+	// required: false
+	ImageID string `json:"imageID"`
+}
+
+func (spec *AzureNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if len(spec.Size) == 0 {
+		missing = append(missing, "size")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+	}
+
+	res := struct {
+		Size           string            `json:"size"`
+		AssignPublicIP bool              `json:"assignPublicIP"`
+		Tags           map[string]string `json:"tags,omitempty"`
+		OSDiskSize     int32             `json:"osDiskSize"`
+		DataDiskSize   int32             `json:"dataDiskSize"`
+		Zones          []string          `json:"zones"`
+		ImageID        string            `json:"imageID"`
+	}{
+		Size:           spec.Size,
+		AssignPublicIP: spec.AssignPublicIP,
+		Tags:           spec.Tags,
+		OSDiskSize:     spec.OSDiskSize,
+		DataDiskSize:   spec.DataDiskSize,
+		Zones:          spec.Zones,
+		ImageID:        spec.ImageID,
+	}
+
+	return json.Marshal(&res)
 }
 
 // VSphereNodeSpec VSphere node settings
@@ -1204,6 +1289,44 @@ type VSphereNodeSpec struct {
 	Memory     int    `json:"memory"`
 	DiskSizeGB *int64 `json:"diskSizeGB,omitempty"`
 	Template   string `json:"template"`
+}
+
+func (spec *VSphereNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if spec.CPUs < 1 {
+		missing = append(missing, "cpus")
+	}
+
+	if spec.Memory < 1 {
+		missing = append(missing, "memory")
+	}
+
+	if spec.DiskSizeGB == nil || spec.DiskSizeGB != nil && *spec.DiskSizeGB < 1 {
+		missing = append(missing, "diskSizeGB")
+	}
+
+	if len(spec.Template) == 0 {
+		missing = append(missing, "template")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+	}
+
+	res := struct {
+		CPUs       int    `json:"cpus"`
+		Memory     int    `json:"memory"`
+		DiskSizeGB *int64 `json:"diskSizeGB,omitempty"`
+		Template   string `json:"template"`
+	}{
+		CPUs:       spec.CPUs,
+		Memory:     spec.Memory,
+		DiskSizeGB: spec.DiskSizeGB,
+		Template:   spec.Template,
+	}
+
+	return json.Marshal(&res)
 }
 
 // OpenstackNodeSpec openstack node settings
@@ -1235,6 +1358,44 @@ type OpenstackNodeSpec struct {
 	InstanceReadyCheckTimeout string `json:"instanceReadyCheckTimeout"`
 }
 
+func (spec *OpenstackNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if len(spec.Flavor) == 0 {
+		missing = append(missing, "flavor")
+	}
+
+	if len(spec.Image) == 0 {
+		missing = append(missing, "image")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+	}
+
+	res := struct {
+		Flavor                    string            `json:"flavor"`
+		Image                     string            `json:"image"`
+		Tags                      map[string]string `json:"tags,omitempty"`
+		UseFloatingIP             bool              `json:"useFloatingIP,omitempty"`
+		RootDiskSizeGB            *int              `json:"diskSize"`
+		AvailabilityZone          string            `json:"availabilityZone"`
+		InstanceReadyCheckPeriod  string            `json:"instanceReadyCheckPeriod"`
+		InstanceReadyCheckTimeout string            `json:"instanceReadyCheckTimeout"`
+	}{
+		Flavor:                    spec.Flavor,
+		Image:                     spec.Image,
+		Tags:                      spec.Tags,
+		UseFloatingIP:             spec.UseFloatingIP,
+		RootDiskSizeGB:            spec.RootDiskSizeGB,
+		AvailabilityZone:          spec.AvailabilityZone,
+		InstanceReadyCheckPeriod:  spec.InstanceReadyCheckPeriod,
+		InstanceReadyCheckTimeout: spec.InstanceReadyCheckTimeout,
+	}
+
+	return json.Marshal(&res)
+}
+
 // AWSNodeSpec aws specific node settings
 // swagger:model AWSNodeSpec
 type AWSNodeSpec struct {
@@ -1261,6 +1422,48 @@ type AWSNodeSpec struct {
 	AssignPublicIP *bool `json:"assignPublicIP"`
 }
 
+func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if len(spec.InstanceType) == 0 {
+		missing = append(missing, "instanceType")
+	}
+
+	if spec.VolumeSize < 1 {
+		missing = append(missing, "diskSize")
+	}
+
+	if len(spec.VolumeType) == 0 {
+		missing = append(missing, "volumeType")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+	}
+
+	res := struct {
+		InstanceType     string            `json:"instanceType"`
+		VolumeSize       int64             `json:"diskSize"`
+		VolumeType       string            `json:"volumeType"`
+		AMI              string            `json:"ami"`
+		Tags             map[string]string `json:"tags"`
+		AvailabilityZone string            `json:"availabilityZone"`
+		SubnetID         string            `json:"subnetID"`
+		AssignPublicIP   *bool             `json:"assignPublicIP"`
+	}{
+		InstanceType:     spec.InstanceType,
+		VolumeSize:       spec.VolumeSize,
+		VolumeType:       spec.VolumeType,
+		AMI:              spec.AMI,
+		Tags:             spec.Tags,
+		AvailabilityZone: spec.AvailabilityZone,
+		SubnetID:         spec.SubnetID,
+		AssignPublicIP:   spec.AssignPublicIP,
+	}
+
+	return json.Marshal(&res)
+}
+
 // PacketNodeSpec specifies packet specific node settings
 // swagger:model PacketNodeSpec
 type PacketNodeSpec struct {
@@ -1270,6 +1473,28 @@ type PacketNodeSpec struct {
 	// additional instance tags
 	// required: false
 	Tags []string `json:"tags"`
+}
+
+func (spec *PacketNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if len(spec.InstanceType) == 0 {
+		missing = append(missing, "instanceType")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+	}
+
+	res := struct {
+		InstanceType string   `json:"instanceType"`
+		Tags         []string `json:"tags"`
+	}{
+		InstanceType: spec.InstanceType,
+		Tags:         spec.Tags,
+	}
+
+	return json.Marshal(&res)
 }
 
 // GCPNodeSpec gcp specific node settings
@@ -1283,6 +1508,52 @@ type GCPNodeSpec struct {
 	Labels      map[string]string `json:"labels"`
 	Tags        []string          `json:"tags"`
 	CustomImage string            `json:"customImage"`
+}
+
+func (spec *GCPNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if len(spec.Zone) == 0 {
+		missing = append(missing, "zone")
+	}
+
+	if spec.DiskSize < 1 {
+		missing = append(missing, "diskSize")
+	}
+
+	if len(spec.MachineType) == 0 {
+		missing = append(missing, "machineType")
+	}
+
+	if len(spec.DiskType) == 0 {
+		missing = append(missing, "diskType")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+	}
+
+	res := struct {
+		Zone        string            `json:"zone"`
+		MachineType string            `json:"machineType"`
+		DiskSize    int64             `json:"diskSize"`
+		DiskType    string            `json:"diskType"`
+		Preemptible bool              `json:"preemptible"`
+		Labels      map[string]string `json:"labels"`
+		Tags        []string          `json:"tags"`
+		CustomImage string            `json:"customImage"`
+	}{
+		Zone:        spec.Zone,
+		MachineType: spec.MachineType,
+		DiskSize:    spec.DiskSize,
+		DiskType:    spec.DiskType,
+		Preemptible: spec.Preemptible,
+		Labels:      spec.Labels,
+		Tags:        spec.Tags,
+		CustomImage: spec.CustomImage,
+	}
+
+	return json.Marshal(&res)
 }
 
 // KubevirtNodeSpec kubevirt specific node settings
@@ -1308,6 +1579,56 @@ type KubevirtNodeSpec struct {
 	PVCSize string `json:"pvcSize"`
 }
 
+func (spec *KubevirtNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if len(spec.CPUs) == 0 {
+		missing = append(missing, "cpus")
+	}
+
+	if len(spec.Memory) == 0 {
+		missing = append(missing, "memory")
+	}
+
+	if len(spec.Namespace) == 0 {
+		missing = append(missing, "namespace")
+	}
+
+	if len(spec.SourceURL) == 0 {
+		missing = append(missing, "sourceURL")
+	}
+
+	if len(spec.StorageClassName) == 0 {
+		missing = append(missing, "storageClassName")
+	}
+
+	if len(spec.PVCSize) == 0 {
+		missing = append(missing, "pvcSize")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+	}
+
+	res := struct {
+		CPUs             string `json:"cpus"`
+		Memory           string `json:"memory"`
+		Namespace        string `json:"namespace"`
+		SourceURL        string `json:"sourceURL"`
+		StorageClassName string `json:"storageClassName"`
+		PVCSize          string `json:"pvcSize"`
+	}{
+		CPUs:             spec.CPUs,
+		Memory:           spec.Memory,
+		Namespace:        spec.Namespace,
+		SourceURL:        spec.SourceURL,
+		StorageClassName: spec.StorageClassName,
+		PVCSize:          spec.PVCSize,
+	}
+
+	return json.Marshal(&res)
+}
+
 // AlibabaNodeSpec alibaba specific node settings
 // swagger:model AlibabaNodeSpec
 type AlibabaNodeSpec struct {
@@ -1318,6 +1639,58 @@ type AlibabaNodeSpec struct {
 	InternetMaxBandwidthOut string            `json:"internetMaxBandwidthOut"`
 	Labels                  map[string]string `json:"labels"`
 	ZoneID                  string            `json:"zoneID"`
+}
+
+func (spec *AlibabaNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if len(spec.InstanceType) == 0 {
+		missing = append(missing, "instanceType")
+	}
+
+	if len(spec.DiskSize) == 0 {
+		missing = append(missing, "diskSize")
+	}
+
+	if len(spec.DiskType) == 0 {
+		missing = append(missing, "diskType")
+	}
+
+	if len(spec.VSwitchID) == 0 {
+		missing = append(missing, "vSwitchID")
+	}
+
+	if len(spec.InternetMaxBandwidthOut) == 0 {
+		missing = append(missing, "internetMaxBandwidthOut")
+	}
+
+	if len(spec.ZoneID) == 0 {
+		missing = append(missing, "zoneID")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+	}
+
+	res := struct {
+		InstanceType            string            `json:"instanceType"`
+		DiskSize                string            `json:"diskSize"`
+		DiskType                string            `json:"diskType"`
+		VSwitchID               string            `json:"vSwitchID"`
+		InternetMaxBandwidthOut string            `json:"internetMaxBandwidthOut"`
+		Labels                  map[string]string `json:"labels"`
+		ZoneID                  string            `json:"zoneID"`
+	}{
+		InstanceType:            spec.InstanceType,
+		VSwitchID:               spec.VSwitchID,
+		DiskSize:                spec.DiskSize,
+		DiskType:                spec.DiskType,
+		InternetMaxBandwidthOut: spec.InternetMaxBandwidthOut,
+		Labels:                  spec.Labels,
+		ZoneID:                  spec.ZoneID,
+	}
+
+	return json.Marshal(&res)
 }
 
 // AnexiaNodeSpec anexia specific node settings
@@ -1338,6 +1711,50 @@ type AnexiaNodeSpec struct {
 	// DiskSize states the disk size that node will have.
 	// required: true
 	DiskSize int64 `json:"diskSize"`
+}
+
+func (spec *AnexiaNodeSpec) MarshalJSON() ([]byte, error) {
+	missing := make([]string, 0)
+
+	if len(spec.VlanID) == 0 {
+		missing = append(missing, "vlanID")
+	}
+
+	if spec.CPUs < 1 {
+		missing = append(missing, "cpus")
+	}
+
+	if spec.Memory < 1 {
+		missing = append(missing, "memory")
+	}
+
+	if spec.DiskSize < 1 {
+		missing = append(missing, "diskSize")
+	}
+
+	if len(spec.TemplateID) == 0 {
+		missing = append(missing, "templateID")
+	}
+
+	if len(missing) > 0 {
+		return []byte{}, errors.New(fmt.Sprintf("missing or invalid required parameter(s): %s", strings.Join(missing, ", ")))
+	}
+
+	res := struct {
+		VlanID     string `json:"vlanID"`
+		TemplateID string `json:"templateID"`
+		CPUs       int    `json:"cpus"`
+		Memory     int64  `json:"memory"`
+		DiskSize   int64  `json:"diskSize"`
+	}{
+		VlanID:     spec.VlanID,
+		TemplateID: spec.TemplateID,
+		DiskSize:   spec.DiskSize,
+		CPUs:       spec.CPUs,
+		Memory:     spec.Memory,
+	}
+
+	return json.Marshal(&res)
 }
 
 // NodeResources cpu and memory of a node
