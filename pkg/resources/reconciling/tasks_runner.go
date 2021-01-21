@@ -107,7 +107,7 @@ func (tr *TasksGraphBuilder) AddTask(id TaskID, task TaskFn, dependencies ...Tas
 
 // Build creates a nes TaskGraph based on the TaskFn added so far.
 // It returns a non-nil error if some invariants are violated.
-// * All dependencies shoud be present.
+// * All dependencies should be present.
 // * No cycles between tasks.
 func (tr *TasksGraphBuilder) Build() (TasksGraph, error) {
 	tr.mark = make(map[*taskNode]struct{})
@@ -167,7 +167,7 @@ func (tr *TasksGraphBuilder) visitRec(n *taskNode) error {
 				return err
 			}
 		} else {
-			return fmt.Errorf("depenency of node %s was not found: %s", n.id, c)
+			return fmt.Errorf("dependency of node %s was not found: %s", n.id, c)
 		}
 	}
 
