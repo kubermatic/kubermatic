@@ -55,8 +55,9 @@ spec:
         {{- end }}
         - -worker-count={{ .Values.kubermatic.masterController.workerCount }}
         - -namespace=$(NAMESPACE)
-        - -seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/serverCert.pem
-        - -seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/serverKey.pem
+        - -admissionwebhook-cert-dir=/opt/seed-webhook-serving-cert/
+        - -admissionwebhook-cert-name=serverCert.pem
+        - -admissionwebhook-key-name=serverKey.pem
         - -logtostderr
         {{- if .Values.kubermatic.masterController.debugLog }}
         - -log-debug=true
