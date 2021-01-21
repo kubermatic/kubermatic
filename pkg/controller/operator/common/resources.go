@@ -252,7 +252,7 @@ func ClusterAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguratio
 		return ClusterAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
-			sideEffects := admissionregistrationv1.SideEffectClassUnknown
+			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.ClusterScope
 
 			ca, err := webhookCABundle(cfg, client)
@@ -263,7 +263,7 @@ func ClusterAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguratio
 			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "clusters.kubermatic.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version},
+					AdmissionReviewVersions: []string{"v1beta1"},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
 					SideEffects:             &sideEffects,
