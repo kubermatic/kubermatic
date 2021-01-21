@@ -226,6 +226,8 @@ const (
 	PrometheusConfigConfigMapName = "prometheus"
 	//AuditConfigMapName is the name for the configmap that contains the content of the file that will be passed to the apiserver with the flag "--audit-policy-file".
 	AuditConfigMapName = "audit-config"
+	//AdmissionControlConfigMapName is the name for the configmap that contains the Admission Controller config file
+	AdmissionControlConfigMapName = "adm-control"
 
 	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"
@@ -367,6 +369,9 @@ const (
 	IPVSProxyMode = "ipvs"
 	// IPTablesProxyMode defines the iptables kube-proxy mode.
 	IPTablesProxyMode = "iptables"
+
+	// PodNodeSelectorAdmissionPlugin defines PodNodeSelector admission plugin
+	PodNodeSelectorAdmissionPlugin = "PodNodeSelector"
 )
 
 const (
