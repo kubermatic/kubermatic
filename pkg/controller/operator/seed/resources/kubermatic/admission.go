@@ -22,7 +22,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -34,31 +33,9 @@ import (
 )
 
 const (
-	ClusterWebhookServingCASecretName   = "cluster-webhook-ca"
-	ClusterWebhookServingCertSecretName = "cluster-webhook-cert"
-	clusterWebhookCommonName            = "cluster-webhook"
-	clusterWebhookServiceName           = "cluster-webhook"
-	ClusterAdmissionWebhookName         = "kubermatic-clusters"
+	clusterWebhookServiceName   = "cluster-webhook"
+	ClusterAdmissionWebhookName = "kubermatic-clusters"
 )
-
-func ClusterWebhookServingCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
-	creator := certificates.GetCACreator(clusterWebhookCommonName)
-
-	return func() (string, reconciling.SecretCreator) {
-		return ClusterWebhookServingCASecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			s, err := creator(s)
-			if err != nil {
-				return s, fmt.Errorf("failed to reconcile cluster-webhook CA: %v", err)
-			}
-
-			return s, nil
-		}
-	}
-}
-
-func ClusterWebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
-	return common.WebhookServingCertSecretCreator(cfg, client, clusterWebhookCommonName, ClusterWebhookServingCASecretName, ClusterWebhookServingCertSecretName)
-}
 
 func ClusterAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
@@ -68,7 +45,7 @@ func ClusterAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguratio
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.ClusterScope
 
-			ca, err := common.WebhookCABundle(ClusterWebhookServingCASecretName, cfg, client)
+			ca, err := common.WebhookCABundle(cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %v", err)
 			}

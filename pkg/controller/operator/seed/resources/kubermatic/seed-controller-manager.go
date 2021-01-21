@@ -66,8 +66,8 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				"-worker-count=4",
 				fmt.Sprintf("-backup-container=/opt/backup/%s", storeContainerKey),
 				fmt.Sprintf("-cleanup-container=/opt/backup/%s", cleanupContainerKey),
-				fmt.Sprintf("-seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertSecretKey),
-				fmt.Sprintf("-seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertKeySecretKey),
+				fmt.Sprintf("-seed-admissionwebhook-cert-file=/opt/webhook-serving-cert/%s", resources.ServingCertSecretKey),
+				fmt.Sprintf("-seed-admissionwebhook-key-file=/opt/webhook-serving-cert/%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-external-url=%s", cfg.Spec.Ingress.Domain),
 				fmt.Sprintf("-datacenter-name=%s", seed.Name),
@@ -127,10 +127,10 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 					},
 				},
 				{
-					Name: "seed-webhook-serving-cert",
+					Name: "webhook-serving-cert",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.SeedWebhookServingCertSecretName,
+							SecretName: common.WebhookServingCertSecretName,
 						},
 					},
 				},
@@ -148,8 +148,8 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 					ReadOnly:  true,
 				},
 				{
-					Name:      "seed-webhook-serving-cert",
-					MountPath: "/opt/seed-webhook-serving-cert/",
+					Name:      "webhook-serving-cert",
+					MountPath: "/opt/webhook-serving-cert/",
 					ReadOnly:  true,
 				},
 			}

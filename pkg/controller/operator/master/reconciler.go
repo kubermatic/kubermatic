@@ -203,8 +203,8 @@ func (r *Reconciler) reconcileSecrets(config *operatorv1alpha1.KubermaticConfigu
 	logger.Debug("Reconciling Secrets")
 
 	creators := []reconciling.NamedSecretCreatorGetter{
-		common.SeedWebhookServingCASecretCreator(config),
-		common.SeedWebhookServingCertSecretCreator(config, r.Client),
+		common.WebhookServingCASecretCreator(config),
+		common.WebhookServingCertSecretCreator(config, r.Client),
 		common.ExtraFilesSecretCreator(config),
 	}
 

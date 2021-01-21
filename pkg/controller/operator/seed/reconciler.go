@@ -430,10 +430,8 @@ func (r *Reconciler) reconcileSecrets(cfg *operatorv1alpha1.KubermaticConfigurat
 
 	creators := []reconciling.NamedSecretCreatorGetter{
 		common.ExtraFilesSecretCreator(cfg),
-		common.SeedWebhookServingCASecretCreator(cfg),
-		common.SeedWebhookServingCertSecretCreator(cfg, client),
-		kubermaticseed.ClusterWebhookServingCASecretCreator(cfg),
-		kubermaticseed.ClusterWebhookServingCertSecretCreator(cfg, client),
+		common.WebhookServingCASecretCreator(cfg),
+		common.WebhookServingCertSecretCreator(cfg, client),
 	}
 
 	if cfg.Spec.ImagePullSecret != "" {

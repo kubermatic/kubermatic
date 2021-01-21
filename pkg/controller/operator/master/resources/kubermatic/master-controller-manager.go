@@ -57,10 +57,10 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
-					Name: "seed-webhook-serving-cert",
+					Name: "webhook-serving-cert",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.SeedWebhookServingCertSecretName,
+							SecretName: common.WebhookServingCertSecretName,
 						},
 					},
 				},
@@ -72,8 +72,8 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 				"-worker-count=20",
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.MasterController.PProfEndpoint),
-				fmt.Sprintf("-seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertSecretKey),
-				fmt.Sprintf("-seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/%s", resources.ServingCertKeySecretKey),
+				fmt.Sprintf("-seed-admissionwebhook-cert-file=/opt/webhook-serving-cert/%s", resources.ServingCertSecretKey),
+				fmt.Sprintf("-seed-admissionwebhook-key-file=/opt/webhook-serving-cert/%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
 			}
 
@@ -108,8 +108,8 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      "seed-webhook-serving-cert",
-							MountPath: "/opt/seed-webhook-serving-cert/",
+							Name:      "webhook-serving-cert",
+							MountPath: "/opt/webhook-serving-cert/",
 							ReadOnly:  true,
 						},
 					},
