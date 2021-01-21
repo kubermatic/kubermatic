@@ -70,10 +70,11 @@ func MasterControllerManagerDeploymentCreator(cfg *operatorv1alpha1.KubermaticCo
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
 				"-worker-count=20",
+				"-admissionwebhook-cert-dir=/opt/webhook-serving-cert/",
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.MasterController.PProfEndpoint),
-				fmt.Sprintf("-seed-admissionwebhook-cert-file=/opt/webhook-serving-cert/%s", resources.ServingCertSecretKey),
-				fmt.Sprintf("-seed-admissionwebhook-key-file=/opt/webhook-serving-cert/%s", resources.ServingCertKeySecretKey),
+				fmt.Sprintf("-admissionwebhook-cert-name=%s", resources.ServingCertSecretKey),
+				fmt.Sprintf("-admissionwebhook-key-name=%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-feature-gates=%s", common.StringifyFeatureGates(cfg)),
 			}
 
