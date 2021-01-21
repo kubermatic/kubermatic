@@ -432,6 +432,8 @@ func (r *Reconciler) reconcileSecrets(cfg *operatorv1alpha1.KubermaticConfigurat
 		common.ExtraFilesSecretCreator(cfg),
 		common.SeedWebhookServingCASecretCreator(cfg),
 		common.SeedWebhookServingCertSecretCreator(cfg, client),
+		common.ClusterWebhookServingCASecretCreator(cfg),
+		common.ClusterWebhookServingCertSecretCreator(cfg, client),
 	}
 
 	if cfg.Spec.ImagePullSecret != "" {
@@ -528,7 +530,8 @@ func (r *Reconciler) reconcileServices(cfg *operatorv1alpha1.KubermaticConfigura
 	log.Debug("reconciling Services")
 
 	creators := []reconciling.NamedServiceCreatorGetter{
-		common.AdmissionServiceCreator(cfg, client),
+		common.SeedAdmissionServiceCreator(cfg, client),
+		common.ClusterAdmissionServiceCreator(cfg, client),
 	}
 
 	if err := reconciling.ReconcileServices(r.ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
