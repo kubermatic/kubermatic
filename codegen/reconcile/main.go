@@ -283,6 +283,16 @@ func {{ .APIVersionPrefix }}{{ .ResourceName }}ObjectWrapper(create {{ .APIVersi
 func Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }}(ctx context.Context, namedGetters []Named{{ .APIVersionPrefix }}{{ .ResourceName }}CreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return Reconcile{{ .APIVersionPrefix }}{{ .ResourceName }}TaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// Reconcile{{ .APIVersionPrefix }}{{ .ResourceName }}TaskFn will return a TaskFn to create or update
+// the {{ .ResourceName }} coming from the passed {{ .ResourceName }}Creator.
+func Reconcile{{ .APIVersionPrefix }}{{ .ResourceName }}TaskFn(create {{ .APIVersionPrefix }}{{ .ResourceName }}Creator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 {{- if .DefaultingFunc }}
 		create = {{ .DefaultingFunc }}(create)
 {{- end }}
@@ -295,11 +305,11 @@ func Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }}(ctx context.Conte
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &{{ .ImportAlias }}.{{ .ResourceName }}{}, {{ .RequiresRecreate}}); err != nil {
-			return fmt.Errorf("failed to ensure {{ .ResourceName }} %s/%s: %v", namespace, name, err)
+			return fmt.Errorf("failed to ensure {{ .APIVersionPrefix }}{{ .ResourceName }} %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 `))

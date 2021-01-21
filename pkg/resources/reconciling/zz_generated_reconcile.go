@@ -45,6 +45,16 @@ func NamespaceObjectWrapper(create NamespaceCreator) ObjectCreator {
 func ReconcileNamespaces(ctx context.Context, namedGetters []NamedNamespaceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileNamespaceTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileNamespaceTaskFn will return a TaskFn to create or update
+// the Namespace coming from the passed NamespaceCreator.
+func ReconcileNamespaceTaskFn(create NamespaceCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := NamespaceObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -56,9 +66,9 @@ func ReconcileNamespaces(ctx context.Context, namedGetters []NamedNamespaceCreat
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.Namespace{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Namespace %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // ServiceCreator defines an interface to create/update Services
@@ -82,6 +92,16 @@ func ServiceObjectWrapper(create ServiceCreator) ObjectCreator {
 func ReconcileServices(ctx context.Context, namedGetters []NamedServiceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileServiceTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileServiceTaskFn will return a TaskFn to create or update
+// the Service coming from the passed ServiceCreator.
+func ReconcileServiceTaskFn(create ServiceCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := ServiceObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -93,9 +113,9 @@ func ReconcileServices(ctx context.Context, namedGetters []NamedServiceCreatorGe
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.Service{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Service %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // SecretCreator defines an interface to create/update Secrets
@@ -119,6 +139,16 @@ func SecretObjectWrapper(create SecretCreator) ObjectCreator {
 func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileSecretTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileSecretTaskFn will return a TaskFn to create or update
+// the Secret coming from the passed SecretCreator.
+func ReconcileSecretTaskFn(create SecretCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := SecretObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -130,9 +160,9 @@ func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretCreatorGett
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.Secret{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Secret %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // ConfigMapCreator defines an interface to create/update ConfigMaps
@@ -156,6 +186,16 @@ func ConfigMapObjectWrapper(create ConfigMapCreator) ObjectCreator {
 func ReconcileConfigMaps(ctx context.Context, namedGetters []NamedConfigMapCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileConfigMapTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileConfigMapTaskFn will return a TaskFn to create or update
+// the ConfigMap coming from the passed ConfigMapCreator.
+func ReconcileConfigMapTaskFn(create ConfigMapCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := ConfigMapObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -167,9 +207,9 @@ func ReconcileConfigMaps(ctx context.Context, namedGetters []NamedConfigMapCreat
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.ConfigMap{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ConfigMap %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // ServiceAccountCreator defines an interface to create/update ServiceAccounts
@@ -193,6 +233,16 @@ func ServiceAccountObjectWrapper(create ServiceAccountCreator) ObjectCreator {
 func ReconcileServiceAccounts(ctx context.Context, namedGetters []NamedServiceAccountCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileServiceAccountTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileServiceAccountTaskFn will return a TaskFn to create or update
+// the ServiceAccount coming from the passed ServiceAccountCreator.
+func ReconcileServiceAccountTaskFn(create ServiceAccountCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := ServiceAccountObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -204,9 +254,9 @@ func ReconcileServiceAccounts(ctx context.Context, namedGetters []NamedServiceAc
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &corev1.ServiceAccount{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ServiceAccount %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // StatefulSetCreator defines an interface to create/update StatefulSets
@@ -230,6 +280,16 @@ func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
 func ReconcileStatefulSets(ctx context.Context, namedGetters []NamedStatefulSetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileStatefulSetTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileStatefulSetTaskFn will return a TaskFn to create or update
+// the StatefulSet coming from the passed StatefulSetCreator.
+func ReconcileStatefulSetTaskFn(create StatefulSetCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		create = DefaultStatefulSet(create)
 		createObject := StatefulSetObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
@@ -242,9 +302,9 @@ func ReconcileStatefulSets(ctx context.Context, namedGetters []NamedStatefulSetC
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appsv1.StatefulSet{}, false); err != nil {
 			return fmt.Errorf("failed to ensure StatefulSet %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // DeploymentCreator defines an interface to create/update Deployments
@@ -268,6 +328,16 @@ func DeploymentObjectWrapper(create DeploymentCreator) ObjectCreator {
 func ReconcileDeployments(ctx context.Context, namedGetters []NamedDeploymentCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileDeploymentTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileDeploymentTaskFn will return a TaskFn to create or update
+// the Deployment coming from the passed DeploymentCreator.
+func ReconcileDeploymentTaskFn(create DeploymentCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		create = DefaultDeployment(create)
 		createObject := DeploymentObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
@@ -280,9 +350,9 @@ func ReconcileDeployments(ctx context.Context, namedGetters []NamedDeploymentCre
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appsv1.Deployment{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Deployment %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // DaemonSetCreator defines an interface to create/update DaemonSets
@@ -306,6 +376,16 @@ func DaemonSetObjectWrapper(create DaemonSetCreator) ObjectCreator {
 func ReconcileDaemonSets(ctx context.Context, namedGetters []NamedDaemonSetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileDaemonSetTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileDaemonSetTaskFn will return a TaskFn to create or update
+// the DaemonSet coming from the passed DaemonSetCreator.
+func ReconcileDaemonSetTaskFn(create DaemonSetCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		create = DefaultDaemonSet(create)
 		createObject := DaemonSetObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
@@ -318,9 +398,9 @@ func ReconcileDaemonSets(ctx context.Context, namedGetters []NamedDaemonSetCreat
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &appsv1.DaemonSet{}, false); err != nil {
 			return fmt.Errorf("failed to ensure DaemonSet %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // PodDisruptionBudgetCreator defines an interface to create/update PodDisruptionBudgets
@@ -344,6 +424,16 @@ func PodDisruptionBudgetObjectWrapper(create PodDisruptionBudgetCreator) ObjectC
 func ReconcilePodDisruptionBudgets(ctx context.Context, namedGetters []NamedPodDisruptionBudgetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcilePodDisruptionBudgetTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcilePodDisruptionBudgetTaskFn will return a TaskFn to create or update
+// the PodDisruptionBudget coming from the passed PodDisruptionBudgetCreator.
+func ReconcilePodDisruptionBudgetTaskFn(create PodDisruptionBudgetCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := PodDisruptionBudgetObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -355,9 +445,9 @@ func ReconcilePodDisruptionBudgets(ctx context.Context, namedGetters []NamedPodD
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &policyv1beta1.PodDisruptionBudget{}, true); err != nil {
 			return fmt.Errorf("failed to ensure PodDisruptionBudget %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // VerticalPodAutoscalerCreator defines an interface to create/update VerticalPodAutoscalers
@@ -381,6 +471,16 @@ func VerticalPodAutoscalerObjectWrapper(create VerticalPodAutoscalerCreator) Obj
 func ReconcileVerticalPodAutoscalers(ctx context.Context, namedGetters []NamedVerticalPodAutoscalerCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileVerticalPodAutoscalerTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileVerticalPodAutoscalerTaskFn will return a TaskFn to create or update
+// the VerticalPodAutoscaler coming from the passed VerticalPodAutoscalerCreator.
+func ReconcileVerticalPodAutoscalerTaskFn(create VerticalPodAutoscalerCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := VerticalPodAutoscalerObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -392,9 +492,9 @@ func ReconcileVerticalPodAutoscalers(ctx context.Context, namedGetters []NamedVe
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &autoscalingv1beta2.VerticalPodAutoscaler{}, false); err != nil {
 			return fmt.Errorf("failed to ensure VerticalPodAutoscaler %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // ClusterRoleBindingCreator defines an interface to create/update ClusterRoleBindings
@@ -418,6 +518,16 @@ func ClusterRoleBindingObjectWrapper(create ClusterRoleBindingCreator) ObjectCre
 func ReconcileClusterRoleBindings(ctx context.Context, namedGetters []NamedClusterRoleBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileClusterRoleBindingTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileClusterRoleBindingTaskFn will return a TaskFn to create or update
+// the ClusterRoleBinding coming from the passed ClusterRoleBindingCreator.
+func ReconcileClusterRoleBindingTaskFn(create ClusterRoleBindingCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := ClusterRoleBindingObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -429,9 +539,9 @@ func ReconcileClusterRoleBindings(ctx context.Context, namedGetters []NamedClust
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.ClusterRoleBinding{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ClusterRoleBinding %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // ClusterRoleCreator defines an interface to create/update ClusterRoles
@@ -455,6 +565,16 @@ func ClusterRoleObjectWrapper(create ClusterRoleCreator) ObjectCreator {
 func ReconcileClusterRoles(ctx context.Context, namedGetters []NamedClusterRoleCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileClusterRoleTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileClusterRoleTaskFn will return a TaskFn to create or update
+// the ClusterRole coming from the passed ClusterRoleCreator.
+func ReconcileClusterRoleTaskFn(create ClusterRoleCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := ClusterRoleObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -466,9 +586,9 @@ func ReconcileClusterRoles(ctx context.Context, namedGetters []NamedClusterRoleC
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.ClusterRole{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ClusterRole %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // RoleCreator defines an interface to create/update Roles
@@ -492,6 +612,16 @@ func RoleObjectWrapper(create RoleCreator) ObjectCreator {
 func ReconcileRoles(ctx context.Context, namedGetters []NamedRoleCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileRoleTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileRoleTaskFn will return a TaskFn to create or update
+// the Role coming from the passed RoleCreator.
+func ReconcileRoleTaskFn(create RoleCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := RoleObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -503,9 +633,9 @@ func ReconcileRoles(ctx context.Context, namedGetters []NamedRoleCreatorGetter, 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.Role{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Role %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // RoleBindingCreator defines an interface to create/update RoleBindings
@@ -529,6 +659,16 @@ func RoleBindingObjectWrapper(create RoleBindingCreator) ObjectCreator {
 func ReconcileRoleBindings(ctx context.Context, namedGetters []NamedRoleBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileRoleBindingTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileRoleBindingTaskFn will return a TaskFn to create or update
+// the RoleBinding coming from the passed RoleBindingCreator.
+func ReconcileRoleBindingTaskFn(create RoleBindingCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := RoleBindingObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -540,9 +680,9 @@ func ReconcileRoleBindings(ctx context.Context, namedGetters []NamedRoleBindingC
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &rbacv1.RoleBinding{}, false); err != nil {
 			return fmt.Errorf("failed to ensure RoleBinding %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // CustomResourceDefinitionCreator defines an interface to create/update CustomResourceDefinitions
@@ -566,6 +706,16 @@ func CustomResourceDefinitionObjectWrapper(create CustomResourceDefinitionCreato
 func ReconcileCustomResourceDefinitions(ctx context.Context, namedGetters []NamedCustomResourceDefinitionCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileCustomResourceDefinitionTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileCustomResourceDefinitionTaskFn will return a TaskFn to create or update
+// the CustomResourceDefinition coming from the passed CustomResourceDefinitionCreator.
+func ReconcileCustomResourceDefinitionTaskFn(create CustomResourceDefinitionCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := CustomResourceDefinitionObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -577,9 +727,9 @@ func ReconcileCustomResourceDefinitions(ctx context.Context, namedGetters []Name
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiextensionsv1beta1.CustomResourceDefinition{}, false); err != nil {
 			return fmt.Errorf("failed to ensure CustomResourceDefinition %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // CronJobCreator defines an interface to create/update CronJobs
@@ -603,6 +753,16 @@ func CronJobObjectWrapper(create CronJobCreator) ObjectCreator {
 func ReconcileCronJobs(ctx context.Context, namedGetters []NamedCronJobCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileCronJobTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileCronJobTaskFn will return a TaskFn to create or update
+// the CronJob coming from the passed CronJobCreator.
+func ReconcileCronJobTaskFn(create CronJobCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		create = DefaultCronJob(create)
 		createObject := CronJobObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
@@ -615,9 +775,9 @@ func ReconcileCronJobs(ctx context.Context, namedGetters []NamedCronJobCreatorGe
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &batchv1beta1.CronJob{}, false); err != nil {
 			return fmt.Errorf("failed to ensure CronJob %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // MutatingWebhookConfigurationCreator defines an interface to create/update MutatingWebhookConfigurations
@@ -641,6 +801,16 @@ func MutatingWebhookConfigurationObjectWrapper(create MutatingWebhookConfigurati
 func ReconcileMutatingWebhookConfigurations(ctx context.Context, namedGetters []NamedMutatingWebhookConfigurationCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileMutatingWebhookConfigurationTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileMutatingWebhookConfigurationTaskFn will return a TaskFn to create or update
+// the MutatingWebhookConfiguration coming from the passed MutatingWebhookConfigurationCreator.
+func ReconcileMutatingWebhookConfigurationTaskFn(create MutatingWebhookConfigurationCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := MutatingWebhookConfigurationObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -652,9 +822,9 @@ func ReconcileMutatingWebhookConfigurations(ctx context.Context, namedGetters []
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1.MutatingWebhookConfiguration{}, false); err != nil {
 			return fmt.Errorf("failed to ensure MutatingWebhookConfiguration %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // ValidatingWebhookConfigurationCreator defines an interface to create/update ValidatingWebhookConfigurations
@@ -678,6 +848,16 @@ func ValidatingWebhookConfigurationObjectWrapper(create ValidatingWebhookConfigu
 func ReconcileValidatingWebhookConfigurations(ctx context.Context, namedGetters []NamedValidatingWebhookConfigurationCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileValidatingWebhookConfigurationTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileValidatingWebhookConfigurationTaskFn will return a TaskFn to create or update
+// the ValidatingWebhookConfiguration coming from the passed ValidatingWebhookConfigurationCreator.
+func ReconcileValidatingWebhookConfigurationTaskFn(create ValidatingWebhookConfigurationCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := ValidatingWebhookConfigurationObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -689,9 +869,9 @@ func ReconcileValidatingWebhookConfigurations(ctx context.Context, namedGetters 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &admissionregistrationv1.ValidatingWebhookConfiguration{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ValidatingWebhookConfiguration %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // APIServiceCreator defines an interface to create/update APIServices
@@ -715,6 +895,16 @@ func APIServiceObjectWrapper(create APIServiceCreator) ObjectCreator {
 func ReconcileAPIServices(ctx context.Context, namedGetters []NamedAPIServiceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileAPIServiceTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileAPIServiceTaskFn will return a TaskFn to create or update
+// the APIService coming from the passed APIServiceCreator.
+func ReconcileAPIServiceTaskFn(create APIServiceCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := APIServiceObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -726,9 +916,9 @@ func ReconcileAPIServices(ctx context.Context, namedGetters []NamedAPIServiceCre
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiregistrationv1beta1.APIService{}, false); err != nil {
 			return fmt.Errorf("failed to ensure APIService %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // IngressCreator defines an interface to create/update Ingresss
@@ -752,6 +942,16 @@ func IngressObjectWrapper(create IngressCreator) ObjectCreator {
 func ReconcileIngresses(ctx context.Context, namedGetters []NamedIngressCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileIngressTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileIngressTaskFn will return a TaskFn to create or update
+// the Ingress coming from the passed IngressCreator.
+func ReconcileIngressTaskFn(create IngressCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := IngressObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -763,9 +963,9 @@ func ReconcileIngresses(ctx context.Context, namedGetters []NamedIngressCreatorG
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &networkingv1beta1.Ingress{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Ingress %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // SeedCreator defines an interface to create/update Seeds
@@ -789,6 +989,16 @@ func SeedObjectWrapper(create SeedCreator) ObjectCreator {
 func ReconcileSeeds(ctx context.Context, namedGetters []NamedSeedCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileSeedTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileSeedTaskFn will return a TaskFn to create or update
+// the Seed coming from the passed SeedCreator.
+func ReconcileSeedTaskFn(create SeedCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := SeedObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -800,9 +1010,9 @@ func ReconcileSeeds(ctx context.Context, namedGetters []NamedSeedCreatorGetter, 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.Seed{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Seed %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // CertificateCreator defines an interface to create/update Certificates
@@ -826,6 +1036,16 @@ func CertificateObjectWrapper(create CertificateCreator) ObjectCreator {
 func ReconcileCertificates(ctx context.Context, namedGetters []NamedCertificateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileCertificateTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileCertificateTaskFn will return a TaskFn to create or update
+// the Certificate coming from the passed CertificateCreator.
+func ReconcileCertificateTaskFn(create CertificateCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := CertificateObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -837,9 +1057,9 @@ func ReconcileCertificates(ctx context.Context, namedGetters []NamedCertificateC
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &certmanagerv1alpha2.Certificate{}, false); err != nil {
 			return fmt.Errorf("failed to ensure Certificate %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // ConstraintTemplateCreator defines an interface to create/update ConstraintTemplates
@@ -863,6 +1083,16 @@ func ConstraintTemplateObjectWrapper(create ConstraintTemplateCreator) ObjectCre
 func ReconcileConstraintTemplates(ctx context.Context, namedGetters []NamedConstraintTemplateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileConstraintTemplateTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileConstraintTemplateTaskFn will return a TaskFn to create or update
+// the ConstraintTemplate coming from the passed ConstraintTemplateCreator.
+func ReconcileConstraintTemplateTaskFn(create ConstraintTemplateCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := ConstraintTemplateObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -874,9 +1104,9 @@ func ReconcileConstraintTemplates(ctx context.Context, namedGetters []NamedConst
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &gatekeeperv1beta1.ConstraintTemplate{}, false); err != nil {
 			return fmt.Errorf("failed to ensure ConstraintTemplate %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
 
 // KubermaticV1ConstraintTemplateCreator defines an interface to create/update ConstraintTemplates
@@ -900,6 +1130,16 @@ func KubermaticV1ConstraintTemplateObjectWrapper(create KubermaticV1ConstraintTe
 func ReconcileKubermaticV1ConstraintTemplates(ctx context.Context, namedGetters []NamedKubermaticV1ConstraintTemplateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
+		return ReconcileKubermaticV1ConstraintTemplateTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+	}
+
+	return nil
+}
+
+// ReconcileKubermaticV1ConstraintTemplateTaskFn will return a TaskFn to create or update
+// the ConstraintTemplate coming from the passed ConstraintTemplateCreator.
+func ReconcileKubermaticV1ConstraintTemplateTaskFn(create KubermaticV1ConstraintTemplateCreator, name, namespace string, objectModifiers ...ObjectModifier) TaskFn {
+	return func(ctx context.Context, client ctrlruntimeclient.Client) error {
 		createObject := KubermaticV1ConstraintTemplateObjectWrapper(create)
 		createObject = createWithNamespace(createObject, namespace)
 		createObject = createWithName(createObject, name)
@@ -909,9 +1149,9 @@ func ReconcileKubermaticV1ConstraintTemplates(ctx context.Context, namedGetters 
 		}
 
 		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.ConstraintTemplate{}, false); err != nil {
-			return fmt.Errorf("failed to ensure ConstraintTemplate %s/%s: %v", namespace, name, err)
+			return fmt.Errorf("failed to ensure KubermaticV1ConstraintTemplate %s/%s: %v", namespace, name, err)
 		}
-	}
 
-	return nil
+		return nil
+	}
 }
