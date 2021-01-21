@@ -198,7 +198,7 @@ func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 		return SeedAdmissionWebhookName(cfg), func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
-			sideEffects := admissionregistrationv1.SideEffectClassUnknown
+			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.AllScopes
 
 			ca, err := WebhookCABundle(SeedWebhookServingCASecretName, cfg, client)
