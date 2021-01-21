@@ -36,14 +36,11 @@ import (
 	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
-	"k8c.io/kubermatic/v2/pkg/util/yamled"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/wait"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -109,16 +106,6 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			deployStorageClassFlag,
 		},
 	}
-}
-
-type deployOptions struct {
-	cli                 *cli.Context
-	subLogger           *logrus.Entry
-	helmClient          helm.Client
-	kubeClient          ctrlruntimeclient.Client
-	helmValues          *yamled.Document
-	kubermaticConfig    *operatorv1alpha1.KubermaticConfiguration
-	rawKubermaticConfig *unstructured.Unstructured
 }
 
 func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cli.ActionFunc {
@@ -266,7 +253,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			ChartsDirectory:            ctx.GlobalString(chartsDirectoryFlag.Name),
 		}
 
-		logger.Info("🧩 Deploying %s…", kubermaticStack.Name())
+		logger.Infof("🧩 Deploying %s…", kubermaticStack.Name())
 
 		if err := kubermaticStack.Deploy(appContext, opt); err != nil {
 			return err

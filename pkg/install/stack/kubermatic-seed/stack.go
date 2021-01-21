@@ -56,11 +56,11 @@ func NewStack() stack.Stack {
 	return &SeedStack{}
 }
 
-func (_ *SeedStack) Name() string {
+func (*SeedStack) Name() string {
 	return "KKP seed stack"
 }
 
-func (_ *SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
+func (*SeedStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 	if err := deployStorageClass(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy StorageClass: %v", err)
 	}
@@ -186,7 +186,7 @@ func deployS3Exporter(ctx context.Context, logger *logrus.Entry, kubeClient ctrl
 // showDNSSettings attempts to inform the user about required DNS settings
 // to be made. If errors happen, only warnings are printed, but the installation
 // can still succeed.
-func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) {
+func showDNSSettings(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Reader, opt stack.DeployOptions) {
 	logger.Info("📡 Determining DNS settings…")
 
 	logger = log.Prefix(logger, "   ")

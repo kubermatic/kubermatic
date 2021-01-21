@@ -32,10 +32,10 @@ const (
 	StorageClassName = "kubermatic-fast"
 )
 
-type storageClassFactory func(context.Context, *logrus.Entry, ctrlruntimeclient.Client, string) (storagev1.StorageClass, error)
+type StorageClassFactory func(context.Context, *logrus.Entry, ctrlruntimeclient.Client, string) (storagev1.StorageClass, error)
 
 var (
-	storageClassFactories = map[string]storageClassFactory{
+	storageClassFactories = map[string]StorageClassFactory{
 		"copy-default": func(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, name string) (storagev1.StorageClass, error) {
 			s := &storagev1.StorageClass{
 				Parameters: map[string]string{},
@@ -118,7 +118,7 @@ var (
 	}
 )
 
-func StorageClassCreator(provider string) (storageClassFactory, error) {
+func StorageClassCreator(provider string) (StorageClassFactory, error) {
 	factory, ok := storageClassFactories[provider]
 	if !ok {
 		return nil, fmt.Errorf("unknown StorageClass provider %q", provider)

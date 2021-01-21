@@ -69,11 +69,11 @@ func NewStack() stack.Stack {
 	return &MasterStack{}
 }
 
-func (_ *MasterStack) Name() string {
+func (*MasterStack) Name() string {
 	return "KKP master stack"
 }
 
-func (_ *MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
+func (*MasterStack) Deploy(ctx context.Context, opt stack.DeployOptions) error {
 	if err := deployStorageClass(ctx, opt.Logger, opt.KubeClient, opt); err != nil {
 		return fmt.Errorf("failed to deploy StorageClass: %v", err)
 	}
