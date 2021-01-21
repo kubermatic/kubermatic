@@ -148,9 +148,9 @@ func TestRunTaskGraph(t *testing.T) {
 				FailedTasks:  map[TaskID]error{},
 				SkippedTasks: map[TaskID]struct{}{},
 				SuccessTasks: map[TaskID]struct{}{
-					"task1": struct{}{},
-					"task2": struct{}{},
-					"task3": struct{}{},
+					"task1": {},
+					"task2": {},
+					"task3": {},
 				},
 			},
 		},
@@ -168,13 +168,13 @@ func TestRunTaskGraph(t *testing.T) {
 					"task4": errors.New("task 4 failed"),
 				},
 				SkippedTasks: map[TaskID]struct{}{
-					"task5": struct{}{},
-					"task6": struct{}{},
+					"task5": {},
+					"task6": {},
 				},
 				SuccessTasks: map[TaskID]struct{}{
-					"task1": struct{}{},
-					"task2": struct{}{},
-					"task3": struct{}{},
+					"task1": {},
+					"task2": {},
+					"task3": {},
 				},
 			},
 		},
@@ -194,10 +194,10 @@ func TestRunTaskGraph(t *testing.T) {
 				},
 				SkippedTasks: map[TaskID]struct{}{},
 				SuccessTasks: map[TaskID]struct{}{
-					"task1": struct{}{},
-					"task2": struct{}{},
-					"task3": struct{}{},
-					"task5": struct{}{},
+					"task1": {},
+					"task2": {},
+					"task3": {},
+					"task5": {},
 				},
 			},
 		},
@@ -214,7 +214,7 @@ func TestRunTaskGraph(t *testing.T) {
 			// as tasks are run sequentially in the same gorouting so far we
 			// can expect that the completion order and the start order match.
 			// This login has to be changed if we parallelize tasks in future.
-			for i, _ := range test.graph {
+			for i := range test.graph {
 				expRunOrder = append(expRunOrder, test.graph[i].id)
 			}
 			if diff := deep.Equal(rh.runOrder, expRunOrder); diff != nil {
