@@ -69,11 +69,6 @@ const (
 	SeedWebhookServingCertSecretName      = "seed-webhook-cert"
 	seedWebhookCommonName                 = "seed-webhook"
 	seedWebhookServiceName                = "seed-webhook"
-	ClusterWebhookServingCASecretName     = "cluster-webhook-ca"
-	ClusterWebhookServingCertSecretName   = "cluster-webhook-cert"
-	clusterWebhookCommonName              = "cluster-webhook"
-	clusterWebhookServiceName             = "cluster-webhook"
-	ClusterAdmissionWebhookName           = "kubermatic-clusters"
 	IngressName                           = "kubermatic"
 	MasterControllerManagerDeploymentName = "kubermatic-master-controller-manager"
 	SeedControllerManagerDeploymentName   = "kubermatic-seed-controller-manager"
@@ -162,30 +157,11 @@ func SeedWebhookServingCASecretCreator(cfg *operatorv1alpha1.KubermaticConfigura
 	}
 }
 
-func ClusterWebhookServingCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
-	creator := certificates.GetCACreator(clusterWebhookCommonName)
-
-	return func() (string, reconciling.SecretCreator) {
-		return ClusterWebhookServingCASecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			s, err := creator(s)
-			if err != nil {
-				return s, fmt.Errorf("failed to reconcile cluster-webhook CA: %v", err)
-			}
-
-			return s, nil
-		}
-	}
-}
-
 func SeedWebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
-	return webhookServingCertSecretCreator(cfg, client, seedWebhookCommonName, SeedWebhookServingCASecretName, SeedWebhookServingCertSecretName)
+	return WebhookServingCertSecretCreator(cfg, client, seedWebhookCommonName, SeedWebhookServingCASecretName, SeedWebhookServingCertSecretName)
 }
 
-func ClusterWebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedSecretCreatorGetter {
-	return webhookServingCertSecretCreator(cfg, client, clusterWebhookCommonName, ClusterWebhookServingCASecretName, ClusterWebhookServingCertSecretName)
-}
-
-func webhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client, commonName string, caSecretName string, certSecretName string) reconciling.NamedSecretCreatorGetter {
+func WebhookServingCertSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client, commonName string, caSecretName string, certSecretName string) reconciling.NamedSecretCreatorGetter {
 	altNames := []string{
 		fmt.Sprintf("%s.%s", commonName, cfg.Namespace),
 		fmt.Sprintf("%s.%s.svc", commonName, cfg.Namespace),
@@ -225,7 +201,7 @@ func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 			sideEffects := admissionregistrationv1.SideEffectClassUnknown
 			scope := admissionregistrationv1.AllScopes
 
-			ca, err := webhookCABundle(SeedWebhookServingCASecretName, cfg, client)
+			ca, err := WebhookCABundle(SeedWebhookServingCASecretName, cfg, client)
 			if err != nil {
 				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %v", err)
 			}
@@ -274,59 +250,6 @@ func SeedAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 	}
 }
 
-func ClusterAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
-	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
-		return ClusterAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
-			matchPolicy := admissionregistrationv1.Exact
-			failurePolicy := admissionregistrationv1.Fail
-			sideEffects := admissionregistrationv1.SideEffectClassNone
-			scope := admissionregistrationv1.ClusterScope
-
-			ca, err := webhookCABundle(ClusterWebhookServingCASecretName, cfg, client)
-			if err != nil {
-				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %v", err)
-			}
-
-			hook.Webhooks = []admissionregistrationv1.ValidatingWebhook{
-				{
-					Name:                    "clusters.kubermatic.io", // this should be a FQDN
-					AdmissionReviewVersions: []string{"v1beta1"},
-					MatchPolicy:             &matchPolicy,
-					FailurePolicy:           &failurePolicy,
-					SideEffects:             &sideEffects,
-					TimeoutSeconds:          pointer.Int32Ptr(30),
-					ClientConfig: admissionregistrationv1.WebhookClientConfig{
-						CABundle: ca,
-						Service: &admissionregistrationv1.ServiceReference{
-							Name:      clusterWebhookServiceName,
-							Namespace: cfg.Namespace,
-							Path:      pointer.StringPtr("/validate-kubermatic-k8s-io-cluster"),
-							Port:      pointer.Int32Ptr(443),
-						},
-					},
-					ObjectSelector: &metav1.LabelSelector{},
-					Rules: []admissionregistrationv1.RuleWithOperations{
-						{
-							Rule: admissionregistrationv1.Rule{
-								APIGroups:   []string{kubermaticv1.GroupName},
-								APIVersions: []string{"*"},
-								Resources:   []string{"clusters"},
-								Scope:       &scope,
-							},
-							Operations: []admissionregistrationv1.OperationType{
-								admissionregistrationv1.Create,
-								admissionregistrationv1.Update,
-							},
-						},
-					},
-				},
-			}
-
-			return hook, nil
-		}
-	}
-}
-
 // SeedAdmissionServiceCreator creates the Service for the Seed Admission webhook.
 // This service is created on master and seed clusters, because on masters the original
 // copy of a Seed is validated, and on seed clusters the synced copy is validated
@@ -351,30 +274,6 @@ func SeedAdmissionServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration, 
 			}
 
 			s.Spec.Selector = selector
-
-			return s, nil
-		}
-	}
-}
-
-// ClusterAdmissionServiceCreator creates the Service for the Cluster Admission webhook.
-// This service is created only on seed clusters.
-func ClusterAdmissionServiceCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
-		return clusterWebhookServiceName, func(s *corev1.Service) (*corev1.Service, error) {
-			s.Spec.Type = corev1.ServiceTypeClusterIP
-
-			if len(s.Spec.Ports) != 1 {
-				s.Spec.Ports = make([]corev1.ServicePort, 1)
-			}
-
-			s.Spec.Ports[0].Name = "https"
-			s.Spec.Ports[0].Port = 443
-			s.Spec.Ports[0].TargetPort = intstr.FromInt(8100)
-			s.Spec.Ports[0].Protocol = corev1.ProtocolTCP
-			s.Spec.Selector = map[string]string{
-				NameLabel: SeedControllerManagerDeploymentName,
-			}
 
 			return s, nil
 		}
@@ -421,7 +320,7 @@ func determineSeedWebhookServiceSelector(cfg *operatorv1alpha1.KubermaticConfigu
 	return nil, fmt.Errorf("neither master- nor seed-controller-manager exist in namespace %s", cfg.Namespace)
 }
 
-func webhookCABundle(secretName string, cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) ([]byte, error) {
+func WebhookCABundle(secretName string, cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) ([]byte, error) {
 	secret := corev1.Secret{}
 	key := types.NamespacedName{
 		Name:      secretName,
