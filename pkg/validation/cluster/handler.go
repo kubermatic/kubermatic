@@ -28,7 +28,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 
 	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -38,12 +41,14 @@ type AdmissionHandler struct {
 	log      logr.Logger
 	decoder  *admission.Decoder
 	features features.FeatureGate
+	client   client.Client
 }
 
 // NewAdmissionHandler returns a new cluster.AdmissionHandler.
-func NewAdmissionHandler(features features.FeatureGate) *AdmissionHandler {
+func NewAdmissionHandler(client client.Client, features features.FeatureGate) *AdmissionHandler {
 	return &AdmissionHandler{
 		features: features,
+		client:   client,
 	}
 }
 
@@ -57,7 +62,7 @@ func (h *AdmissionHandler) InjectDecoder(d *admission.Decoder) error {
 	return nil
 }
 
-func (h *AdmissionHandler) Handle(_ context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
+func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequest) webhook.AdmissionResponse {
 	cluster := &kubermaticv1.Cluster{}
 
 	switch req.Operation {
@@ -68,11 +73,18 @@ func (h *AdmissionHandler) Handle(_ context.Context, req webhook.AdmissionReques
 		if err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
+
 		validationErr := h.validateCreateOrUpdate(cluster)
 		if validationErr != nil {
 			h.log.Info("cluster admission failed", "error", validationErr)
 			return webhook.Denied(fmt.Sprintf("cluster validation request %s rejected: %v", req.UID, validationErr))
 		}
+
+		if err := h.rejectEnableUserSSHKeyAgentUpdate(ctx, cluster); err != nil {
+			h.log.Info("cluster admission failed", "error", err)
+			return webhook.Denied(fmt.Sprintf("cluster validation request %s rejected: %v", req.UID, err))
+		}
+
 	case admissionv1beta1.Delete:
 		// NOP we always allow delete operarions at the moment
 	default:
@@ -94,4 +106,27 @@ func (h *AdmissionHandler) validateCreateOrUpdate(c *kubermaticv1.Cluster) error
 
 func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrl.Manager) {
 	mgr.GetWebhookServer().Register("/validate-kubermatic-k8s-io-cluster", &webhook.Admission{Handler: h})
+}
+
+func (h *AdmissionHandler) rejectEnableUserSSHKeyAgentUpdate(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	var (
+		oldCluster = &kubermaticv1.Cluster{}
+		nName      = types.NamespacedName{Name: cluster.Name}
+	)
+
+	if h.client != nil {
+		if err := h.client.Get(ctx, nName, oldCluster); err != nil {
+			if kerrors.IsNotFound(err) {
+				return nil
+			}
+
+			return fmt.Errorf("failed to fetch cluster name=%s: %v", cluster.Name, err)
+		}
+
+		if oldCluster.Spec.EnableUserSSHKeyAgent != cluster.Spec.EnableUserSSHKeyAgent {
+			return errors.New("enableUserSSHKeyAgent field cannot be updated after cluster creation")
+		}
+	}
+
+	return nil
 }
