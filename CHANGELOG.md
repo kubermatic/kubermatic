@@ -1,5 +1,19 @@
 # Kubermatic 2.15
 
+## [v2.15.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.7)
+
+### Misc
+
+- [ATTN] Fix orphaned apiserver-is-running initContainers in usercluster controlplane. This can cause a short reconciliation burst to bring older usercluster resources in all Seed clusters up to date. Tune the maxReconcileLimit if needed ([#6336](https://github.com/kubermatic/kubermatic/issues/6336))
+- Dex does not require cert-manager CRDs to be installed anymore, certificates are acquired via Ingress annotation ([#6284](https://github.com/kubermatic/kubermatic/issues/6284))
+- Add option to specify Pod Node Selector Configuration ([#2957](https://github.com/kubermatic/dashboard/issues/2957))
+- Extend Cluster CRD for PodNodeSelectorAdmissionPluginConfig ([#6402](https://github.com/kubermatic/kubermatic/issues/6402))
+- Add admission control configuration for the user cluster API deployment ([#6431](https://github.com/kubermatic/kubermatic/issues/6431))
+- Default to the latest available OpenStack CCM version. This fixes a bug where newly-created OpenStack clusters running Kubernetes 1.19 were using the in-tree cloud provider instead of the external CCM. Those clusters will remain to use the in-tree cloud provider until the CCM migration mechanism is not implemented. The OpenStack clusters running Kubernetes 1.19+ and created with KKP 2.15.6+ will use the external CCM ([#6300](https://github.com/kubermatic/kubermatic/issues/6300))
+
+
+
+
 ## [v2.15.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.6)
 
 ### Misc
@@ -233,10 +247,10 @@ as well as the [2.15 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.15
 
 ### Misc
 
-- [ATTN] Fix orphaned apiserver-is-running initContainers in usercluster controlplane. This can cause a short reconciliation burst to bring older usercluster resources in all Seed clusters up to date. Tune the maxReconcileLimit if needed ([#6335](https://github.com/kubermatic/dashboard/issues/6335))
+- [ATTN] Fix orphaned apiserver-is-running initContainers in usercluster controlplane. This can cause a short reconciliation burst to bring older usercluster resources in all Seed clusters up to date. Tune the maxReconcileLimit if needed ([#6335](https://github.com/kubermatic/kubermatic/issues/6335))
 - Add option to specify Pod Node Selector Configuration ([#2961](https://github.com/kubermatic/dashboard/issues/2961))
-- Extend Cluster CRD for PodNodeSelectorAdmissionPluginConfig ([#6401](https://github.com/kubermatic/dashboard/issues/6401))
-- Add admission control configuration for the user cluster API deployment ([#6418](https://github.com/kubermatic/dashboard/issues/6418))
+- Extend Cluster CRD for PodNodeSelectorAdmissionPluginConfig ([#6401](https://github.com/kubermatic/kubermatic/issues/6401))
+- Add admission control configuration for the user cluster API deployment ([#6418](https://github.com/kubermatic/kubermatic/issues/6418))
 
 
 
