@@ -283,7 +283,9 @@ func {{ .APIVersionPrefix }}{{ .ResourceName }}ObjectWrapper(create {{ .APIVersi
 func Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }}(ctx context.Context, namedGetters []Named{{ .APIVersionPrefix }}{{ .ResourceName }}CreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return Reconcile{{ .APIVersionPrefix }}{{ .ResourceName }}TaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := Reconcile{{ .APIVersionPrefix }}{{ .ResourceName }}TaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil

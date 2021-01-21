@@ -45,7 +45,9 @@ func NamespaceObjectWrapper(create NamespaceCreator) ObjectCreator {
 func ReconcileNamespaces(ctx context.Context, namedGetters []NamedNamespaceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileNamespaceTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileNamespaceTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -92,7 +94,9 @@ func ServiceObjectWrapper(create ServiceCreator) ObjectCreator {
 func ReconcileServices(ctx context.Context, namedGetters []NamedServiceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileServiceTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileServiceTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -139,7 +143,9 @@ func SecretObjectWrapper(create SecretCreator) ObjectCreator {
 func ReconcileSecrets(ctx context.Context, namedGetters []NamedSecretCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileSecretTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileSecretTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -186,7 +192,9 @@ func ConfigMapObjectWrapper(create ConfigMapCreator) ObjectCreator {
 func ReconcileConfigMaps(ctx context.Context, namedGetters []NamedConfigMapCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileConfigMapTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileConfigMapTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -233,7 +241,9 @@ func ServiceAccountObjectWrapper(create ServiceAccountCreator) ObjectCreator {
 func ReconcileServiceAccounts(ctx context.Context, namedGetters []NamedServiceAccountCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileServiceAccountTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileServiceAccountTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -280,7 +290,9 @@ func StatefulSetObjectWrapper(create StatefulSetCreator) ObjectCreator {
 func ReconcileStatefulSets(ctx context.Context, namedGetters []NamedStatefulSetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileStatefulSetTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileStatefulSetTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -328,7 +340,9 @@ func DeploymentObjectWrapper(create DeploymentCreator) ObjectCreator {
 func ReconcileDeployments(ctx context.Context, namedGetters []NamedDeploymentCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileDeploymentTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileDeploymentTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -376,7 +390,9 @@ func DaemonSetObjectWrapper(create DaemonSetCreator) ObjectCreator {
 func ReconcileDaemonSets(ctx context.Context, namedGetters []NamedDaemonSetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileDaemonSetTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileDaemonSetTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -424,7 +440,9 @@ func PodDisruptionBudgetObjectWrapper(create PodDisruptionBudgetCreator) ObjectC
 func ReconcilePodDisruptionBudgets(ctx context.Context, namedGetters []NamedPodDisruptionBudgetCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcilePodDisruptionBudgetTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcilePodDisruptionBudgetTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -471,7 +489,9 @@ func VerticalPodAutoscalerObjectWrapper(create VerticalPodAutoscalerCreator) Obj
 func ReconcileVerticalPodAutoscalers(ctx context.Context, namedGetters []NamedVerticalPodAutoscalerCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileVerticalPodAutoscalerTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileVerticalPodAutoscalerTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -518,7 +538,9 @@ func ClusterRoleBindingObjectWrapper(create ClusterRoleBindingCreator) ObjectCre
 func ReconcileClusterRoleBindings(ctx context.Context, namedGetters []NamedClusterRoleBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileClusterRoleBindingTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileClusterRoleBindingTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -565,7 +587,9 @@ func ClusterRoleObjectWrapper(create ClusterRoleCreator) ObjectCreator {
 func ReconcileClusterRoles(ctx context.Context, namedGetters []NamedClusterRoleCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileClusterRoleTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileClusterRoleTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -612,7 +636,9 @@ func RoleObjectWrapper(create RoleCreator) ObjectCreator {
 func ReconcileRoles(ctx context.Context, namedGetters []NamedRoleCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileRoleTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileRoleTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -659,7 +685,9 @@ func RoleBindingObjectWrapper(create RoleBindingCreator) ObjectCreator {
 func ReconcileRoleBindings(ctx context.Context, namedGetters []NamedRoleBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileRoleBindingTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileRoleBindingTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -706,7 +734,9 @@ func CustomResourceDefinitionObjectWrapper(create CustomResourceDefinitionCreato
 func ReconcileCustomResourceDefinitions(ctx context.Context, namedGetters []NamedCustomResourceDefinitionCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileCustomResourceDefinitionTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileCustomResourceDefinitionTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -753,7 +783,9 @@ func CronJobObjectWrapper(create CronJobCreator) ObjectCreator {
 func ReconcileCronJobs(ctx context.Context, namedGetters []NamedCronJobCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileCronJobTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileCronJobTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -801,7 +833,9 @@ func MutatingWebhookConfigurationObjectWrapper(create MutatingWebhookConfigurati
 func ReconcileMutatingWebhookConfigurations(ctx context.Context, namedGetters []NamedMutatingWebhookConfigurationCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileMutatingWebhookConfigurationTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileMutatingWebhookConfigurationTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -848,7 +882,9 @@ func ValidatingWebhookConfigurationObjectWrapper(create ValidatingWebhookConfigu
 func ReconcileValidatingWebhookConfigurations(ctx context.Context, namedGetters []NamedValidatingWebhookConfigurationCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileValidatingWebhookConfigurationTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileValidatingWebhookConfigurationTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -895,7 +931,9 @@ func APIServiceObjectWrapper(create APIServiceCreator) ObjectCreator {
 func ReconcileAPIServices(ctx context.Context, namedGetters []NamedAPIServiceCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileAPIServiceTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileAPIServiceTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -942,7 +980,9 @@ func IngressObjectWrapper(create IngressCreator) ObjectCreator {
 func ReconcileIngresses(ctx context.Context, namedGetters []NamedIngressCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileIngressTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileIngressTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -989,7 +1029,9 @@ func SeedObjectWrapper(create SeedCreator) ObjectCreator {
 func ReconcileSeeds(ctx context.Context, namedGetters []NamedSeedCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileSeedTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileSeedTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1036,7 +1078,9 @@ func CertificateObjectWrapper(create CertificateCreator) ObjectCreator {
 func ReconcileCertificates(ctx context.Context, namedGetters []NamedCertificateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileCertificateTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileCertificateTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1083,7 +1127,9 @@ func ConstraintTemplateObjectWrapper(create ConstraintTemplateCreator) ObjectCre
 func ReconcileConstraintTemplates(ctx context.Context, namedGetters []NamedConstraintTemplateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileConstraintTemplateTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileConstraintTemplateTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -1130,7 +1176,9 @@ func KubermaticV1ConstraintTemplateObjectWrapper(create KubermaticV1ConstraintTe
 func ReconcileKubermaticV1ConstraintTemplates(ctx context.Context, namedGetters []NamedKubermaticV1ConstraintTemplateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
 	for _, get := range namedGetters {
 		name, create := get()
-		return ReconcileKubermaticV1ConstraintTemplateTaskFn(create, name, namespace, objectModifiers...)(ctx, client)
+		if err := ReconcileKubermaticV1ConstraintTemplateTaskFn(create, name, namespace, objectModifiers...)(ctx, client); err != nil {
+			return err
+		}
 	}
 
 	return nil
