@@ -23,7 +23,7 @@ type AzureNodeSpec struct {
 	// Data disk size in GB
 	DataDiskSize int32 `json:"dataDiskSize,omitempty"`
 
-	// image ID
+	// ImageID represents the ID of the image that should be used to run the node
 	ImageID string `json:"imageID,omitempty"`
 
 	// OS disk size in GB
