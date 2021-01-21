@@ -51,38 +51,52 @@ func (opts *WebhookOpts) AddFlags(fs *flag.FlagSet, includeDeprecatedFlags bool)
 	fs.StringVar(&opts.keyName, "admissionwebhook-key-name", "", "The key file name")
 }
 
+// Configured() must be called after the Validate() function has normalized the
+// deprecated flags.
+func (opts *WebhookOpts) Configured() bool {
+	return opts.certName != "" && opts.keyName != ""
+}
+
+func (opts *WebhookOpts) Validate() error {
+	// translate deprecated flag into new structure
+	if opts.ListenAddress != "" {
+		host, port, err := net.SplitHostPort(opts.ListenAddress)
+		if err != nil {
+			return fmt.Errorf("failed to parse admission webhook listen address: %v", err)
+		}
+
+		opts.listenHost = host
+		opts.listenPort, _ = strconv.Atoi(port)
+		opts.ListenAddress = ""
+	}
+
+	// controller-runtime server do not support cert file and key file being in
+	// different directories; this is not fully backward compatible
+	if opts.CertFile != "" && opts.KeyFile != "" && filepath.Dir(opts.CertFile) != filepath.Dir(opts.KeyFile) {
+		return fmt.Errorf("certificate file %q and key file %q must be located in the same directory", opts.CertFile, opts.certDir)
+	}
+
+	if opts.CertFile != "" {
+		opts.certDir = filepath.Dir(opts.CertFile)
+		opts.certName = filepath.Base(opts.CertFile)
+		opts.CertFile = ""
+	}
+
+	if opts.KeyFile != "" {
+		opts.certDir = filepath.Dir(opts.KeyFile)
+		opts.keyName = filepath.Base(opts.KeyFile)
+		opts.KeyFile = ""
+	}
+
+	return nil
+}
+
 func (opts *WebhookOpts) Configure(s *webhook.Server) error {
 	s.CertDir = opts.certDir
 	s.CertName = opts.certName
 	s.KeyName = opts.keyName
 	s.Host = opts.listenHost
 	s.Port = opts.listenPort
-
-	// handle deprecated flags
-	if opts.ListenAddress != "" {
-		host, port, err := net.SplitHostPort(opts.ListenAddress)
-		if err != nil {
-			return fmt.Errorf("failed to parse seed admission webhook listen address: %v", err)
-		}
-		s.Host = host
-		s.Port, _ = strconv.Atoi(port)
-	}
-	// controller-runtime server do not support cert file and key file being in
-	// different directories
-	// this is not fully backward compatible
-	if opts.CertFile != "" && opts.KeyFile != "" && filepath.Dir(opts.CertFile) != filepath.Dir(opts.KeyFile) {
-		return fmt.Errorf("certificate file %q and key file %q provided respectively with flags seed-admissionwebhook-cert-file and seed-admissionwebhook-cert-file must be located in the same directory", opts.CertFile, opts.certDir)
-	}
-
-	if opts.CertFile != "" {
-		s.CertDir = filepath.Dir(opts.CertFile)
-		s.CertName = filepath.Base(opts.CertFile)
-	}
-
-	if opts.KeyFile != "" {
-		s.CertDir = filepath.Dir(opts.KeyFile)
-		s.KeyName = filepath.Base(opts.KeyFile)
-	}
 
 	return nil
 }

@@ -158,7 +158,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Failed to get clientProvider", zap.Error(err))
 	}
 
-	if options.validationWebhook.CertFile != "" && options.validationWebhook.KeyFile != "" {
+	if options.validationWebhook.Configured() {
 		if err := options.validationWebhook.Configure(mgr.GetWebhookServer()); err != nil {
 			log.Fatalw("Failed to configure admission webhook server", zap.Error(err))
 		}

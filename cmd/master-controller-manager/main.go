@@ -33,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/validation"
-	clustervalidation "k8c.io/kubermatic/v2/pkg/validation/cluster"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -51,7 +50,7 @@ const (
 
 type controllerRunOptions struct {
 	internalAddr            string
-	seedvalidationHook      validation.WebhookOpts
+	validationHook          validation.WebhookOpts
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 	featureGates            features.FeatureGate
@@ -82,7 +81,7 @@ func main() {
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
-	runOpts.seedvalidationHook.AddFlags(flag.CommandLine, true)
+	runOpts.validationHook.AddFlags(flag.CommandLine, true)
 	flag.StringVar(&runOpts.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served.")
@@ -108,6 +107,10 @@ func main() {
 	ctrlCtx.namespace = runOpts.namespace
 
 	cli.Hello(log, "Master Controller-Manager", logOpts.Debug, nil)
+
+	if err := runOpts.validationHook.Validate(); err != nil {
+		log.Fatalw("invalid admission webhook configuration", zap.Error(err))
+	}
 
 	// TODO remove label selector when everything is migrated to controller-runtime
 	selector, err := workerlabel.LabelSelector(runOpts.workerName)
@@ -160,8 +163,8 @@ func main() {
 		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
 
-	if runOpts.seedvalidationHook.CertFile != "" || runOpts.seedvalidationHook.KeyFile != "" {
-		if err := runOpts.seedvalidationHook.Configure(mgr.GetWebhookServer()); err != nil {
+	if runOpts.validationHook.Configured() {
+		if err := runOpts.validationHook.Configure(mgr.GetWebhookServer()); err != nil {
 			log.Fatalw("failed to configure admission webhook server", zap.Error(err))
 		}
 
@@ -171,9 +174,8 @@ func main() {
 			log.Fatalw("failed to build Seed validation handler", zap.Error(err))
 		}
 		h.SetupWebhookWithManager(mgr)
-		clustervalidation.NewAdmissionHandler(runOpts.featureGates).SetupWebhookWithManager(mgr)
 	} else {
-		log.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
+		log.Info("the validatingAdmissionWebhook server cannot be started because certificate was not configured")
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

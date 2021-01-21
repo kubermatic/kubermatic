@@ -153,6 +153,10 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
+	if err := c.validationWebhook.Validate(); err != nil {
+		return c, fmt.Errorf("invalid admission webhook configuration: %v", err)
+	}
+
 	etcdDiskSize, err := resource.ParseQuantity(rawEtcdDiskSize)
 	if err != nil {
 		return c, fmt.Errorf("failed to parse value of flag etcd-disk-size (%q): %v", rawEtcdDiskSize, err)

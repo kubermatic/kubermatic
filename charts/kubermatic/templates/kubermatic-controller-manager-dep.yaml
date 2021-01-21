@@ -144,8 +144,9 @@ spec:
         - -scheduler-default-replicas={{ .Values.kubermatic.schedulerDefaultReplicas}}
         - -max-parallel-reconcile={{ .Values.kubermatic.maxParallelReconcile}}
         - -namespace=$(NAMESPACE)
-        - -seed-admissionwebhook-cert-file=/opt/seed-webhook-serving-cert/serverCert.pem
-        - -seed-admissionwebhook-key-file=/opt/seed-webhook-serving-cert/serverKey.pem
+        - -admissionwebhook-cert-dir=/opt/seed-webhook-serving-cert/
+        - -admissionwebhook-cert-name=serverCert.pem
+        - -admissionwebhook-key-name=serverKey.pem
         {{- if .Values.kubermatic.apiserverEndpointReconcilingDisabled }}
         - -apiserver-reconciling-disabled-by-default=true
         {{- else }}
