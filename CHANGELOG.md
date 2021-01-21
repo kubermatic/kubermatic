@@ -229,6 +229,18 @@ as well as the [2.15 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.15
 
 # Kubermatic 2.14
 
+## [v2.14.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.10)
+
+### Misc
+
+- [ATTN] Fix orphaned apiserver-is-running initContainers in usercluster controlplane. This can cause a short reconciliation burst to bring older usercluster resources in all Seed clusters up to date. Tune the maxReconcileLimit if needed ([#6335](https://github.com/kubermatic/dashboard/issues/6335))
+- Add option to specify Pod Node Selector Configuration ([#2961](https://github.com/kubermatic/dashboard/issues/2961))
+- Extend Cluster CRD for PodNodeSelectorAdmissionPluginConfig ([#6401](https://github.com/kubermatic/dashboard/issues/6401))
+- Add admission control configuration for the user cluster API deployment ([#6418](https://github.com/kubermatic/dashboard/issues/6418))
+
+
+
+
 ## [v2.14.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.9)
 
 ### Bugfixes
