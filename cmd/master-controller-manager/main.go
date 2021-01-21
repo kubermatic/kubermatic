@@ -33,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 	"k8c.io/kubermatic/v2/pkg/validation"
-	clustervalidation "k8c.io/kubermatic/v2/pkg/validation/cluster"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -171,7 +170,6 @@ func main() {
 			log.Fatalw("failed to build Seed validation handler", zap.Error(err))
 		}
 		h.SetupWebhookWithManager(mgr)
-		clustervalidation.NewAdmissionHandler(runOpts.featureGates).SetupWebhookWithManager(mgr)
 	} else {
 		log.Info("the validatingAdmissionWebhook server can not be started because seed-admissionwebhook-cert-file and seed-admissionwebhook-key-file are empty")
 	}
