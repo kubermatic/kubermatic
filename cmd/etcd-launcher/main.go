@@ -18,27 +18,26 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
-	"log"
+	"io"
 	"net/url"
 	"os"
 	"os/exec"
-	"path"
+	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"go.etcd.io/etcd/v3/clientv3"
 	"go.etcd.io/etcd/v3/etcdserver/api/v3rpc/rpctypes"
 	"go.etcd.io/etcd/v3/etcdserver/etcdserverpb"
 	"go.etcd.io/etcd/v3/pkg/transport"
 	"go.uber.org/zap"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources"
-
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -54,7 +53,7 @@ const (
 	initialStateNew          = "new"
 )
 
-type config struct {
+type etcdCluster struct {
 	namespace             string
 	clusterSize           int
 	podName               string
@@ -66,145 +65,202 @@ type config struct {
 	initialState          string
 }
 
-type etcdCluster struct {
-	config *config
-}
-
 func main() {
+	log := createLogger()
+
 	// normal workflow, we don't do migrations anymore
 	e := &etcdCluster{}
 	err := e.parseConfigFlags()
 	if err != nil {
-		log.Fatalf("failed to get launcher configuration: %v", err)
+		log.Panicw("failed to get launcher configuration", zap.Error(err))
 	}
-
-	logOpts := kubermaticlog.NewDefaultOptions()
-	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
-	log := rawLog.Sugar()
 
 	// here we find the cluster state
-	config, err := rest.InClusterConfig()
+	clusterClient, err := inClusterClient(log)
 	if err != nil {
-		log.Fatalw("failed to get in cluster config", zap.Error(err))
-	}
-	clusterClient, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
-	if err != nil {
-		log.Fatalw("failed to create cluster client", zap.Error(err))
+		log.Panicw("get in-cluster client", zap.Error(err))
 	}
 
-	k8cCluster := kubermaticv1.Cluster{}
-	if err := clusterClient.Get(context.Background(), types.NamespacedName{Name: strings.ReplaceAll(e.config.namespace, "cluster-", ""), Namespace: ""}, &k8cCluster); err != nil {
-		log.Fatalw("failed to get cluster", zap.Error(err))
+	k8cCluster, err := getK8cCluster(clusterClient, strings.ReplaceAll(e.namespace, "cluster-", ""), log)
+	if err != nil {
+		log.Panicw("get user cluster", zap.Error(err))
 	}
-	initialMembers := initialMemberList(e.config.clusterSize, e.config.namespace)
 
-	e.config.initialState = initialStateNew
-	// check if the etcd cluster is initialized successfully.
+	e.initialState = initialStateNew
+	// check if the etcd cluster is initialized succcesfully.
 	if k8cCluster.Status.HasConditionValue(kubermaticv1.ClusterConditionEtcdClusterInitialized, corev1.ConditionTrue) {
-		e.config.initialState = initialStateExisting
+		e.initialState = initialStateExisting
 	}
 
 	log.Info("initializing etcd..")
-	log.Infof("initial-state: %s", e.config.initialState)
-	log.Infof("initial-cluster: %s", strings.Join(initialMembers, ","))
+	log.Infof("initial-state: %s", e.initialState)
+	log.Infof("initial-cluster: %s", strings.Join(initialMemberList(e.clusterSize, e.namespace), ","))
 
-	if _, err := os.Stat(etcdCommandPath); os.IsNotExist(err) {
-		log.Fatalw("can't find command", "command-path", etcdCommandPath, zap.Error(err))
-	}
 	// setup and start etcd command
-	cmd := exec.Command(etcdCommandPath, etcdCmd(e.config)...)
-	cmd.Env = os.Environ()
-	cmd.Stderr = os.Stderr
-	cmd.Stdout = os.Stdout
-	log.Infof("starting etcd command: %s", cmd.String())
-	if err = cmd.Start(); err != nil {
-		log.Fatalf("failed to start etcd: %v", err)
-	}
-
-	if err = wait.Poll(1*time.Second, 30*time.Second, e.isClusterHealthy); err != nil {
-		log.Fatalf("manager thread failed to connect to cluster: %v", err)
-	}
-
-	isMemeber, err := e.isClusterMember(e.config.podName)
+	etcdCmd, err := startEtcdCmd(e, log)
 	if err != nil {
-		log.Fatalf("failed to check cluster membership: %v", err)
+		log.Panicw("start etcd cmd", zap.Error(err))
 	}
-	if isMemeber {
-		log.Infof("%s is a member", e.config.podName)
-		for {
-			// handle changes to peerURLs
-			if err := e.updatePeerURL(); err != nil {
-				log.Fatalf("failed to update peerURL: %v", err)
-			}
-			// reconcile dead members
-			containsUnwantedMembers, err := e.containsUnwantedMembers()
+
+	if err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
+		return e.isClusterHealthy(log)
+	}); err != nil {
+		log.Panicw("manager thread failed to connect to cluster", zap.Error(err))
+	}
+
+	thisMember, err := e.getMemberByName(e.podName, log)
+	if err != nil {
+		log.Panicw("failed to check cluster membership", zap.Error(err))
+	}
+	if thisMember != nil {
+		log.Infof("%s is a member", thisMember.Name)
+
+		if _, err := os.Stat(filepath.Join(e.dataDir, "member")); os.IsNotExist(err) {
+			client, err := e.getClusterClient()
 			if err != nil {
-				log.Warnw("failed to list members ", zap.Error(err))
-				time.Sleep(10 * time.Second)
-				continue
+				log.Panicw("can't find cluster client: %v", zap.Error(err))
 			}
-			// we only need to reconcile if we have members that we shouldn't have
-			if !containsUnwantedMembers {
-				log.Info("cluster members reconciled..")
-				break
+			log.Warnw("No data dir, to ensure recovery removing and adding the member")
+			_, err = client.MemberRemove(context.Background(), thisMember.ID)
+			if err != nil {
+				close(client, log)
+				log.Panicw("remove itself due to data dir loss", zap.Error(err))
 			}
-			// to avoide race conditions, we will run only on the cluster leader
-			leader, err := e.isLeader()
-			if err != nil || !leader {
-				log.Warnw("failed to remove member, error occurred or didn't get the current leader", zap.Error(err))
-				time.Sleep(10 * time.Second)
-				continue
-			}
-			if err := e.removeDeadMembers(log); err != nil {
-				log.Warnw("failed to remove member", zap.Error(err))
-				continue
+			close(client, log)
+			if err := joinCluster(e, log); err != nil {
+				log.Panicw("join cluster as fresh member", zap.Error(err))
 			}
 		}
-	} else { // new etcd member, need to join the cluster
-		log.Info("pod is not a cluster member, trying to join..")
-		// remove possibly stale member data dir..
-		log.Info("removing possibly stale data dir")
-		_ = os.RemoveAll(path.Join(e.config.dataDir, "member"))
-		// join the cluster
-		client, err := e.getClusterClient()
-		if err != nil {
-			log.Fatalf("can't find cluster client: %v", err)
-		}
-		defer client.Close()
-
-		if _, err := client.MemberAdd(context.Background(), []string{fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace)}); err != nil {
-			log.Fatalf("failed to join cluster: %v", err)
-		}
-		log.Info("joined etcd cluster successfully.")
+	} else if err := joinCluster(e, log); err != nil {
+		log.Panicw("join cluster as fresh member", zap.Error(err))
 	}
 
-	if err = cmd.Wait(); err != nil {
-		log.Fatal(err)
+	// handle changes to peerURLs (https -> http)
+	if err := e.updatePeerURLToHTTP(log); err != nil {
+		log.Panicw("failed to update peerURL", zap.Error(err))
+	}
+
+	// reconcile dead members
+	if err = wait.PollInfinite(10*time.Second, func() (done bool, err error) {
+		return deleteUnwantedDeadMembers(e, log)
+	}); err != nil {
+		log.Panicw("manager thread failed to connect to cluster", zap.Error(err))
+	}
+
+	if err = etcdCmd.Wait(); err != nil {
+		log.Panic(err)
 	}
 }
 
-func (e *etcdCluster) updatePeerURL() error {
-	members, err := e.listMembers()
+func createLogger() *zap.SugaredLogger {
+	logOpts := kubermaticlog.NewDefaultOptions()
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
+	return rawLog.Sugar()
+}
+
+func inClusterClient(log *zap.SugaredLogger) (ctrlruntimeclient.Client, error) {
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get in cluster config")
+	}
+	client, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{})
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create cluster client")
+	}
+	return client, nil
+}
+
+func getK8cCluster(client ctrlruntimeclient.Client, name string, log *zap.SugaredLogger) (*kubermaticv1.Cluster, error) {
+	ret := kubermaticv1.Cluster{}
+	if err := client.Get(context.Background(), types.NamespacedName{Name: name, Namespace: ""}, &ret); err != nil {
+		return nil, err
+	}
+	return &ret, nil
+}
+
+func startEtcdCmd(e *etcdCluster, log *zap.SugaredLogger) (*exec.Cmd, error) {
+	if _, err := os.Stat(etcdCommandPath); os.IsNotExist(err) {
+		return nil, errors.Wrap(err, "find etcd executable")
+	}
+
+	cmd := exec.Command(etcdCommandPath, etcdCmd(e)...)
+	cmd.Env = os.Environ()
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	log.Infof("starting etcd command: %s %s", etcdCommandPath, strings.Join(etcdCmd(e), " "))
+	if err := cmd.Start(); err != nil {
+		return nil, errors.Wrap(err, "failed to start etcd")
+	}
+	return cmd, nil
+}
+
+func deleteUnwantedDeadMembers(e *etcdCluster, log *zap.SugaredLogger) (bool, error) {
+	containsUnwantedMembers, err := e.containsUnwantedMembers(log)
+	if err != nil {
+		log.Warnw("failed to list members ", zap.Error(err))
+		return false, nil
+	}
+	// we only need to reconcile if we have members that we shouldn't have
+	if !containsUnwantedMembers {
+		log.Info("cluster members reconciled..")
+		return true, nil
+	}
+	// to avoide race conditions, we will run only on the cluster leader
+	leader, err := e.isLeader(log)
+	if err != nil || !leader {
+		log.Warnw("failed to remove member, error occurred or didn't get the current leader", zap.Error(err))
+		return false, nil
+	}
+	if err := e.removeDeadMembers(log); err != nil {
+		log.Warnw("failed to remove member", zap.Error(err))
+	}
+
+	return false, nil
+}
+
+func joinCluster(e *etcdCluster, log *zap.SugaredLogger) error {
+	log.Info("pod is not a cluster member, trying to join..")
+	// remove possibly stale member data dir..
+	log.Info("removing possibly stale data dir")
+	if err := os.RemoveAll(e.dataDir); err != nil {
+		return errors.Wrap(err, "removing possible stale data dir")
+	}
+	// join the cluster
+	client, err := e.getClusterClient()
+	if err != nil {
+		return errors.Wrap(err, "can't find cluster client")
+	}
+
+	if _, err := client.MemberAdd(context.Background(), []string{fmt.Sprintf("http://%s.etcd.%s.svc.cluster.local:2380", e.podName, e.namespace)}); err != nil {
+		close(client, log)
+		return errors.Wrap(err, "add itself as a member")
+	}
+
+	defer close(client, log)
+
+	log.Info("joined etcd cluster succcesfully.")
+	return nil
+}
+
+func (e *etcdCluster) updatePeerURLToHTTP(log *zap.SugaredLogger) error {
+	members, err := e.listMembers(log)
 	if err != nil {
 		return err
 	}
+	client, err := e.getClusterClient()
+	if err != nil {
+		return err
+	}
+	defer close(client, log)
 	for _, member := range members {
 		peerURL, err := url.Parse(member.PeerURLs[0])
 		if err != nil {
 			return err
 		}
-		if member.Name == e.config.podName && peerURL.Scheme == "https" {
-			client, err := e.getClusterClient()
-			if err != nil {
-				return err
-			}
-			defer client.Close()
+		if member.Name == e.podName && peerURL.Scheme == "https" {
 			peerURL.Scheme = "http"
 			_, err = client.MemberUpdate(context.Background(), member.ID, []string{peerURL.String()})
-			if err != nil {
-				return err
-			}
-			break
+			return err
 		}
 	}
 	return nil
@@ -239,48 +295,45 @@ func (e *etcdCluster) endpoint() string {
 }
 
 func (e *etcdCluster) parseConfigFlags() error {
-	config := &config{}
-
-	flag.StringVar(&config.namespace, "namespace", "", "namespace of the user cluster")
-	flag.IntVar(&config.clusterSize, "etcd-cluster-size", defaultClusterSize, "number of replicas in the etcd cluster")
-	flag.StringVar(&config.podName, "pod-name", "", "name of this etcd pod")
-	flag.StringVar(&config.podIP, "pod-ip", "", "IP address of this etcd pod")
-	flag.StringVar(&config.etcdctlAPIVersion, "api-version", defaultEtcdctlAPIVersion, "etcdctl API version")
-	flag.StringVar(&config.token, "token", "", "etcd database token")
-	flag.BoolVar(&config.enableCorruptionCheck, "enable-corruption-check", false, "enable etcd experimental corruption check")
+	flag.StringVar(&e.namespace, "namespace", "", "namespace of the user cluster")
+	flag.IntVar(&e.clusterSize, "etcd-cluster-size", defaultClusterSize, "number of replicas in the etcd cluster")
+	flag.StringVar(&e.podName, "pod-name", "", "name of this etcd pod")
+	flag.StringVar(&e.podIP, "pod-ip", "", "IP address of this etcd pod")
+	flag.StringVar(&e.etcdctlAPIVersion, "api-version", defaultEtcdctlAPIVersion, "etcdctl API version")
+	flag.StringVar(&e.token, "token", "", "etcd database token")
+	flag.BoolVar(&e.enableCorruptionCheck, "enable-corruption-check", false, "enable etcd experimental corruption check")
 	flag.Parse()
 
-	if config.namespace == "" {
+	if e.namespace == "" {
 		return errors.New("-namespace is not set")
 	}
 
-	if config.clusterSize < defaultClusterSize {
+	if e.clusterSize < defaultClusterSize {
 		return fmt.Errorf("-etcd-cluster-size is smaller than %d", defaultClusterSize)
 	}
 
-	if config.podName == "" {
+	if e.podName == "" {
 		return errors.New("-pod-name is not set")
 	}
 
-	if config.podIP == "" {
+	if e.podIP == "" {
 		return errors.New("-pod-ip is not set")
 	}
 
-	if config.etcdctlAPIVersion != "2" && config.etcdctlAPIVersion != "3" {
+	if e.etcdctlAPIVersion != "2" && e.etcdctlAPIVersion != "3" {
 		return errors.New("-api-version is either 2 or 3")
 	}
 
-	if config.token == "" {
+	if e.token == "" {
 		return errors.New("-token is not set")
 	}
 
-	config.dataDir = fmt.Sprintf("/var/run/etcd/pod_%s/", config.podName)
+	e.dataDir = fmt.Sprintf("/var/run/etcd/pod_%s/", e.podName)
 
-	e.config = config
 	return nil
 }
 
-func etcdCmd(config *config) []string {
+func etcdCmd(config *etcdCluster) []string {
 	cmd := []string{
 		fmt.Sprintf("--name=%s", config.podName),
 		fmt.Sprintf("--data-dir=%s", config.dataDir),
@@ -309,7 +362,7 @@ func etcdCmd(config *config) []string {
 }
 
 func (e *etcdCluster) getClusterClient() (*clientv3.Client, error) {
-	endpoints := clientEndpoints(e.config.clusterSize, e.config.namespace)
+	endpoints := clientEndpoints(e.clusterSize, e.namespace)
 	return e.getClientWithEndpoints(endpoints)
 }
 
@@ -344,12 +397,12 @@ func (e *etcdCluster) getClientWithEndpoints(eps []string) (*clientv3.Client, er
 
 }
 
-func (e *etcdCluster) listMembers() ([]*etcdserverpb.Member, error) {
-	client, err := e.getClientWithEndpoints(clientEndpoints(e.config.clusterSize, e.config.namespace))
+func (e *etcdCluster) listMembers(log *zap.SugaredLogger) ([]*etcdserverpb.Member, error) {
+	client, err := e.getClientWithEndpoints(clientEndpoints(e.clusterSize, e.namespace))
 	if err != nil {
 		return nil, fmt.Errorf("can't find cluster client: %v", err)
 	}
-	defer client.Close()
+	defer close(client, log)
 
 	resp, err := client.MemberList(context.Background())
 	if err != nil {
@@ -358,61 +411,64 @@ func (e *etcdCluster) listMembers() ([]*etcdserverpb.Member, error) {
 	return resp.Members, err
 }
 
-func (e *etcdCluster) isClusterMember(name string) (bool, error) {
-	members, err := e.listMembers()
+func (e *etcdCluster) getMemberByName(name string, log *zap.SugaredLogger) (*etcdserverpb.Member, error) {
+	members, err := e.listMembers(log)
 	if err != nil {
-		return false, err
-	}
-	if len(members) == 0 {
-		return false, nil
+		return nil, err
 	}
 	for _, member := range members {
 		url, err := url.Parse(member.PeerURLs[0])
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		// if the member is not started yet, its name would be empty, in that case, we match for peerURL host.
-		if member.Name == name || url.Host == fmt.Sprintf("%s.etcd.%s.svc.cluster.local:2380", e.config.podName, e.config.namespace) {
+		if member.Name == name || url.Host == fmt.Sprintf("%s.etcd.%s.svc.cluster.local:2380", e.podName, e.namespace) {
+			return member, nil
+		}
+	}
+	return nil, nil
+}
+
+func (e *etcdCluster) containsUnwantedMembers(log *zap.SugaredLogger) (bool, error) {
+	members, err := e.listMembers(log)
+	if err != nil {
+		return false, err
+	}
+	expectedMembers := peerURLsList(e.clusterSize, e.namespace)
+	for _, member := range members {
+		if len(member.GetPeerURLs()) != 1 {
+			return true, nil
+		}
+		peerURL, err := url.Parse(member.PeerURLs[0])
+		if err != nil {
+			return false, err
+		}
+		if !contains(expectedMembers, peerURL.Host) {
 			return true, nil
 		}
 	}
 	return false, nil
 }
 
-func (e *etcdCluster) containsUnwantedMembers() (bool, error) {
-	members, err := e.listMembers()
-	if err != nil {
-		return false, err
-	}
-	expectedMembers := peerURLsList(e.config.clusterSize, e.config.namespace)
-membersLoop:
-	for _, member := range members {
-		for _, expectedMember := range expectedMembers {
-			if len(member.GetPeerURLs()) == 1 {
-				peerURL, err := url.Parse(member.PeerURLs[0])
-				if err != nil {
-					return false, err
-				}
-				if expectedMember == peerURL.Host {
-					continue membersLoop
-				}
-			}
+func contains(list []string, v string) bool {
+	for _, item := range list {
+		if item == v {
+			return true
 		}
-		return true, nil
 	}
-	return false, nil
+	return false
 }
 
-func (e *etcdCluster) isClusterHealthy() (bool, error) {
-	return e.isHealthyWithEndpoints(clientEndpoints(e.config.clusterSize, e.config.namespace))
+func (e *etcdCluster) isClusterHealthy(log *zap.SugaredLogger) (bool, error) {
+	return e.isHealthyWithEndpoints(clientEndpoints(e.clusterSize, e.namespace), log)
 }
 
-func (e *etcdCluster) isHealthyWithEndpoints(endpoints []string) (bool, error) {
+func (e *etcdCluster) isHealthyWithEndpoints(endpoints []string, log *zap.SugaredLogger) (bool, error) {
 	client, err := e.getClientWithEndpoints(endpoints)
 	if err != nil {
 		return false, err
 	}
-	defer client.Close()
+	defer close(client, log)
 	// just get a key from etcd, this is how `etcdctl endpoint health` works!
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	_, err = client.Get(ctx, "healthy")
@@ -424,12 +480,12 @@ func (e *etcdCluster) isHealthyWithEndpoints(endpoints []string) (bool, error) {
 	return true, nil
 }
 
-func (e *etcdCluster) isLeader() (bool, error) {
+func (e *etcdCluster) isLeader(log *zap.SugaredLogger) (bool, error) {
 	localClient, err := e.getLocalClient()
 	if err != nil {
 		return false, err
 	}
-	defer localClient.Close()
+	defer close(localClient, log)
 
 	for i := 0; i < 10; i++ {
 		resp, err := localClient.Status(context.Background(), e.endpoint())
@@ -445,7 +501,7 @@ func (e *etcdCluster) isLeader() (bool, error) {
 }
 
 func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger) error {
-	members, err := e.listMembers()
+	members, err := e.listMembers(log)
 	if err != nil {
 		return err
 	}
@@ -454,16 +510,16 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger) error {
 	if err != nil {
 		return fmt.Errorf("can't find cluster client: %v", err)
 	}
-	defer client.Close()
+	defer close(client, log)
 
 	for _, member := range members {
-		if member.Name == e.config.podName {
+		if member.Name == e.podName {
 			continue
 		}
 		if err = wait.Poll(1*time.Second, 30*time.Second, func() (bool, error) {
 			// we use the cluster FQDN endpoint url here. Using the IP endpoint will
 			// fail because the certificates don't include Pod IP addresses.
-			return e.isHealthyWithEndpoints(member.ClientURLs[len(member.ClientURLs)-1:])
+			return e.isHealthyWithEndpoints(member.ClientURLs[len(member.ClientURLs)-1:], log)
 		}); err != nil {
 			log.Infow("member is not responding, removing from cluster", "member-name", member.Name)
 			_, err = client.MemberRemove(context.Background(), member.ID)
@@ -471,4 +527,11 @@ func (e *etcdCluster) removeDeadMembers(log *zap.SugaredLogger) error {
 		}
 	}
 	return nil
+}
+
+func close(c io.Closer, log *zap.SugaredLogger) {
+	err := c.Close()
+	if err != nil {
+		log.Warn(zap.Error(err))
+	}
 }
