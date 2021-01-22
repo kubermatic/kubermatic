@@ -12984,6 +12984,57 @@
         }
       }
     },
+    "/api/v2/providers/vsphere/datastores": {
+      "get": {
+        "description": "Lists datastores from vsphere datacenter",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "vsphere"
+        ],
+        "operationId": "listVSphereDatastores",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Username",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Password",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "DatacenterName",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "VSphereDatastoreList",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/VSphereDatastoreList"
+              }
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/providers/{provider_name}/presets": {
       "get": {
         "description": "Lists presets for the provider",
@@ -18550,6 +18601,20 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "VSphereDatastoreList": {
+      "type": "object",
+      "title": "VSphereDatastoreList is the object representing a vsphere datastores.",
+      "properties": {
+        "datastores": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Datastores"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "VSphereFolder": {
       "type": "object",

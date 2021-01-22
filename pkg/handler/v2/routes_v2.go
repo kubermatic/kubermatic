@@ -436,6 +436,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/azure/vnets").
 		Handler(r.listAzureVnets())
 
+	mux.Methods(http.MethodGet).
+		Path("/providers/vsphere/datastores").
+		Handler(r.listVSphereDatastores())
+
 	// Define a set of endpoints for preset management
 	mux.Methods(http.MethodGet).
 		Path("/presets").
@@ -2915,6 +2919,28 @@ func (r Routing) listAzureVnets() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AzureVirtualNetworksEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAzureVirtualNetworksReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/providers/vsphere/datastores vsphere listVSphereDatastores
+//
+// Lists datastores from vsphere datacenter
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []VSphereDatastoreList
+func (r Routing) listVSphereDatastores() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.VsphereDatastoreEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeVSphereDatastoresReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
