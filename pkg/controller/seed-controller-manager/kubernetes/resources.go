@@ -89,10 +89,6 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
-	if err := r.ensureClusterRoleBindings(ctx, data); err != nil {
-		return err
-	}
-
 	// check that all StatefulSets are created
 	if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
 		return err
@@ -136,6 +132,13 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer {
 		if err := nodeportproxy.EnsureResources(ctx, r.Client, data); err != nil {
 			return fmt.Errorf("failed to ensure NodePortProxy resources: %v", err)
+		}
+	}
+
+	// Try to remove OPA integration if its disabled
+	if data.Cluster().Spec.OPAIntegration == nil || !data.Cluster().Spec.OPAIntegration.Enabled {
+		if err := r.ensureOPAIntegrationIsRemoved(ctx, data); err != nil {
+			return err
 		}
 	}
 
@@ -378,17 +381,6 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	return nil
 }
 
-func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, data *resources.TemplateData) error {
-	namedClusterRoleBindingCreatorGetters := []reconciling.NamedClusterRoleBindingCreatorGetter{}
-	if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled {
-		namedClusterRoleBindingCreatorGetters = append(namedClusterRoleBindingCreatorGetters, gatekeeper.ClusterRoleBindingCreator(data))
-	}
-	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingCreatorGetters, "", r.Client); err != nil {
-		return fmt.Errorf("failed to ensure ClusterRoleBindings: %v", err)
-	}
-	return nil
-}
-
 // GetConfigMapCreators returns all ConfigMapCreators that are currently in use
 func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfigMapCreatorGetter {
 	return []reconciling.NamedConfigMapCreatorGetter{
@@ -482,4 +474,14 @@ func (r *Reconciler) ensureStatefulSets(ctx context.Context, c *kubermaticv1.Clu
 	creators := GetStatefulSetCreators(data, r.features.EtcdDataCorruptionChecks)
 
 	return reconciling.ReconcileStatefulSets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
+}
+
+func (r *Reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context, data *resources.TemplateData) error {
+	for _, resource := range gatekeeper.GetResourcesToRemoveOnDelete(data.Cluster().Status.NamespaceName) {
+		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure OPA integration is removed/not present: %v", err)
+		}
+	}
+
+	return nil
 }

@@ -240,6 +240,13 @@ const (
 	//PrometheusRoleBindingName is the name for the Prometheus rolebinding
 	PrometheusRoleBindingName = "prometheus"
 
+	//GatekeeperRoleName is the name for the Gatekeeper role
+	GatekeeperRoleName = "gatekeeper-manager-role"
+	//GatekeeperRoleBindingName is the name for the Gatekeeper rolebinding
+	GatekeeperRoleBindingName = "gatekeeper-manager-rolebinding"
+	//GatekeeperServiceAccountName is the name for the Gatekeeper service account
+	GatekeeperServiceAccountName = "gatekeeper-admin"
+
 	//CloudControllerManagerRoleBindingName is the name for the cloud controller manager rolebinding.
 	CloudControllerManagerRoleBindingName = "cloud-controller-manager"
 
