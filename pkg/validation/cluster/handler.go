@@ -74,15 +74,10 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 
-		validationErr := h.validateCreateOrUpdate(cluster)
+		validationErr := h.validateCreateOrUpdate(ctx, cluster)
 		if validationErr != nil {
 			h.log.Info("cluster admission failed", "error", validationErr)
 			return webhook.Denied(fmt.Sprintf("cluster validation request %s rejected: %v", req.UID, validationErr))
-		}
-
-		if err := h.rejectEnableUserSSHKeyAgentUpdate(ctx, cluster); err != nil {
-			h.log.Info("cluster admission failed", "error", err)
-			return webhook.Denied(fmt.Sprintf("cluster validation request %s rejected: %v", req.UID, err))
 		}
 
 	case admissionv1beta1.Delete:
@@ -93,7 +88,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	return webhook.Allowed(fmt.Sprintf("cluster validation request %s allowed", req.UID))
 }
 
-func (h *AdmissionHandler) validateCreateOrUpdate(c *kubermaticv1.Cluster) error {
+func (h *AdmissionHandler) validateCreateOrUpdate(ctx context.Context, c *kubermaticv1.Cluster) error {
 	if !kubermaticv1.AllExposeStrategies.Has(c.Spec.ExposeStrategy) {
 		return fmt.Errorf("unknown expose strategy %q, use one between: %s", c.Spec.ExposeStrategy, kubermaticv1.AllExposeStrategies)
 	}
@@ -101,6 +96,12 @@ func (h *AdmissionHandler) validateCreateOrUpdate(c *kubermaticv1.Cluster) error
 		!h.features.Enabled(features.TunnelingExposeStrategy) {
 		return errors.New("cannot create cluster with Tunneling expose strategy, the TunnelingExposeStrategy feature gate is not enabled")
 	}
+
+	if err := h.rejectUserSSHKeyAgentChanges(ctx, c); err != nil {
+		h.log.Info("cluster admission failed", "error", err)
+		return err
+	}
+
 	return nil
 }
 
@@ -108,10 +109,10 @@ func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrl.Manager) {
 	mgr.GetWebhookServer().Register("/validate-kubermatic-k8s-io-cluster", &webhook.Admission{Handler: h})
 }
 
-func (h *AdmissionHandler) rejectEnableUserSSHKeyAgentUpdate(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (h *AdmissionHandler) rejectUserSSHKeyAgentChanges(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	var (
 		oldCluster = &kubermaticv1.Cluster{}
-		nName      = types.NamespacedName{Name: cluster.Name, Namespace: cluster.Namespace}
+		nName      = types.NamespacedName{Name: cluster.Name}
 	)
 
 	if h.client != nil {

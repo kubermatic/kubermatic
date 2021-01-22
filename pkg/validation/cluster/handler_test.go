@@ -52,7 +52,7 @@ func TestHandle(t *testing.T) {
 		client      client.Client
 	}{
 		{
-			name: "Delete cluster succeess",
+			name: "Delete cluster success",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1beta1.AdmissionRequest{
 					Operation: admissionv1beta1.Delete,
@@ -61,8 +61,7 @@ func TestHandle(t *testing.T) {
 						Version: kubermaticv1.GroupVersion,
 						Kind:    "Cluster",
 					},
-					Name:      "cluster",
-					Namespace: "kubermatic",
+					Name: "cluster",
 				},
 			},
 			wantAllowed: true,
@@ -77,8 +76,7 @@ func TestHandle(t *testing.T) {
 						Version: kubermaticv1.GroupVersion,
 						Kind:    "Cluster",
 					},
-					Name:      "foo",
-					Namespace: "kubermatic",
+					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "Tunneling"}.Do(),
 					},
@@ -97,8 +95,7 @@ func TestHandle(t *testing.T) {
 						Version: kubermaticv1.GroupVersion,
 						Kind:    "Cluster",
 					},
-					Name:      "foo",
-					Namespace: "kubermatic",
+					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "Tunneling"}.Do(),
 					},
@@ -117,8 +114,7 @@ func TestHandle(t *testing.T) {
 						Version: kubermaticv1.GroupVersion,
 						Kind:    "Cluster",
 					},
-					Name:      "foo",
-					Namespace: "kubermatic",
+					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort"}.Do(),
 					},
@@ -136,8 +132,7 @@ func TestHandle(t *testing.T) {
 						Version: kubermaticv1.GroupVersion,
 						Kind:    "Cluster",
 					},
-					Name:      "foo",
-					Namespace: "kubermatic",
+					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "ciao"}.Do(),
 					},
@@ -155,8 +150,7 @@ func TestHandle(t *testing.T) {
 						Version: kubermaticv1.GroupVersion,
 						Kind:    "Cluster",
 					},
-					Name:      "foo",
-					Namespace: "kubermatic",
+					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: true}.Do(),
 					},
@@ -166,8 +160,7 @@ func TestHandle(t *testing.T) {
 			client: fake.NewFakeClient(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "kubermatic",
+						Name: "foo",
 					},
 					Spec: kubermaticv1.ClusterSpec{
 						EnableUserSSHKeyAgent: true,
@@ -184,8 +177,7 @@ func TestHandle(t *testing.T) {
 						Version: kubermaticv1.GroupVersion,
 						Kind:    "Cluster",
 					},
-					Name:      "foo",
-					Namespace: "kubermatic",
+					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: false}.Do(),
 					},
@@ -195,8 +187,7 @@ func TestHandle(t *testing.T) {
 			client: fake.NewFakeClient(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      "foo",
-						Namespace: "kubermatic",
+						Name: "foo",
 					},
 					Spec: kubermaticv1.ClusterSpec{
 						EnableUserSSHKeyAgent: false,
