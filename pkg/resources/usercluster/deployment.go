@@ -135,6 +135,11 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
 			}, getNetworkArgs(data)...)
 
+			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+				args = append(args, "-tunneling-agent-ip", data.Cluster().Address.IP)
+				args = append(args, "-kas-secure-port", fmt.Sprint(data.Cluster().Address.Port))
+			}
+
 			if openshiftConsoleCallbackURI := data.Cluster().Address.OpenshiftConsoleCallBack; openshiftConsoleCallbackURI != "" {
 				args = append(args, "-openshift-console-callback-uri", openshiftConsoleCallbackURI)
 			}

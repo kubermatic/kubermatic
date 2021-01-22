@@ -19,6 +19,7 @@ package resources
 import (
 	"context"
 	"fmt"
+	"net"
 
 	openshiftresources "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/openshift/resources"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
@@ -26,6 +27,7 @@ import (
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
 	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
+	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	kubestatemetrics "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
@@ -135,6 +137,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err := r.reconcileSecrets(ctx, data); err != nil {
 		return err
 	}
+
 	if err := r.reconcileDaemonSet(ctx); err != nil {
 		return err
 	}
@@ -488,16 +491,40 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		return fmt.Errorf("failed to reconcile ConfigMaps in kube-public namespace: %v", err)
 	}
 
-	creators = []reconciling.NamedConfigMapCreatorGetter{
-		openvpn.ClientConfigConfigMapCreator(r.clusterURL.Hostname(), r.openvpnServerPort),
+	if len(r.tunnelingAgentIP) > 0 {
+		creators = []reconciling.NamedConfigMapCreatorGetter{
+			openvpn.ClientConfigConfigMapCreator(r.tunnelingAgentIP.String(), r.openvpnServerPort),
+			envoyagent.ConfigMapCreator(envoyagent.Config{
+				AdminPort: 9902,
+				ProxyHost: r.clusterURL.Hostname(),
+				ProxyPort: 8088,
+				Listeners: []envoyagent.Listener{
+					{
+						BindAddress: r.tunnelingAgentIP.String(),
+						BindPort:    r.openvpnServerPort,
+						Authority:   net.JoinHostPort(fmt.Sprintf("openvpn-server.%s.svc.cluster.local", r.namespace), "1194"),
+					},
+					{
+						BindAddress: r.tunnelingAgentIP.String(),
+						BindPort:    r.kasSecurePort,
+						Authority:   net.JoinHostPort(fmt.Sprintf("apiserver-external.%s.svc.cluster.local", r.namespace), "6443"),
+					},
+				},
+			}),
+		}
+	} else {
+		creators = []reconciling.NamedConfigMapCreatorGetter{
+			openvpn.ClientConfigConfigMapCreator(r.clusterURL.Hostname(), r.openvpnServerPort),
+		}
 	}
+
 	if r.openshift {
 		creators = append(creators, openshift.ControlplaneConfigCreator(r.platform))
 	} else {
-		creators = append(creators, []reconciling.NamedConfigMapCreatorGetter{
+		creators = append(creators,
 			coredns.ConfigMapCreator(),
 			nodelocaldns.ConfigMapCreator(r.dnsClusterIP),
-		}...)
+		)
 	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -558,6 +585,10 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
 
 	if !r.openshift {
 		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator())
+	}
+
+	if len(r.tunnelingAgentIP) > 0 {
+		dsCreators = append(dsCreators, envoyagent.DaemonSetCreator(r.tunnelingAgentIP, r.versions))
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -649,7 +680,10 @@ func (r *reconciler) reconcileDeployments(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
-	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{coredns.DeploymentCreator()}
+	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{
+		coredns.DeploymentCreator(),
+	}
+
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", metav1.NamespaceSystem, err)
 	}

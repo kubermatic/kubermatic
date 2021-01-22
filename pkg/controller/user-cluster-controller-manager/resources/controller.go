@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"sync"
 	"time"
@@ -67,7 +68,9 @@ func Add(
 	namespace string,
 	cloudProviderName string,
 	clusterURL *url.URL,
-	openvpnServerPort int,
+	openvpnServerPort uint32,
+	kasSecurePort uint32,
+	tunnelingAgentIP net.IP,
 	registerReconciledCheck func(name string, check healthcheck.Check),
 	cloudCredentialSecretTemplate *corev1.Secret,
 	openshiftConsoleCallbackURI string,
@@ -83,6 +86,8 @@ func Add(
 		namespace:                     namespace,
 		clusterURL:                    clusterURL,
 		openvpnServerPort:             openvpnServerPort,
+		kasSecurePort:                 kasSecurePort,
+		tunnelingAgentIP:              tunnelingAgentIP,
 		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
 		log:                           log,
 		platform:                      cloudProviderName,
@@ -226,7 +231,9 @@ type reconciler struct {
 	cache                         cache.Cache
 	namespace                     string
 	clusterURL                    *url.URL
-	openvpnServerPort             int
+	openvpnServerPort             uint32
+	kasSecurePort                 uint32
+	tunnelingAgentIP              net.IP
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
 	openshiftConsoleCallbackURI   string

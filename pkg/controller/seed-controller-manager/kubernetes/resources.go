@@ -67,8 +67,10 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return fmt.Errorf("failed to sync address: %v", err)
 	}
 
-	// We should not proceed without having an IP address. Its required for all Kubeconfigs & triggers errors otherwise.
-	if cluster.Address.IP == "" {
+	// We should not proceed without having an IP address unless tunneling
+	// strategy is used. Its required for all Kubeconfigs & triggers errors
+	// otherwise.
+	if cluster.Address.IP == "" && cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
 		return nil
 	}
 
@@ -212,7 +214,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 // GetServiceCreators returns all service creators that are currently in use
 func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedServiceCreatorGetter {
 	creators := []reconciling.NamedServiceCreatorGetter{
-		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.InternalName),
+		apiserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy, data.Cluster().Address.ExternalName),
 		openvpn.ServiceCreator(data.Cluster().Spec.ExposeStrategy),
 		etcd.ServiceCreator(data),
 		dns.ServiceCreator(),

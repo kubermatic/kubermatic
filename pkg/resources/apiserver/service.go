@@ -31,7 +31,7 @@ import (
 )
 
 // ServiceCreator returns the function to reconcile the external API server service
-func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, internalName string) reconciling.NamedServiceCreatorGetter {
+func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, externalURL string) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return resources.ApiserverServiceName, func(se *corev1.Service) (*corev1.Service, error) {
 			if se.Annotations == nil {
@@ -58,7 +58,7 @@ func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, internalName str
 				// the APIServer both with the SNI and the Tunneling listeners.
 				se.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = strings.Join([]string{nodeportproxy.SNIType.String(), nodeportproxy.TunnelingType.String()}, ",")
 				// We map the secure port to the internal name for SNI routing.
-				se.Annotations[nodeportproxy.PortHostMappingAnnotationKey] = fmt.Sprintf(`{"secure": %q}`, internalName)
+				se.Annotations[nodeportproxy.PortHostMappingAnnotationKey] = fmt.Sprintf(`{"secure": %q}`, externalURL)
 				delete(se.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			default:
 				return nil, fmt.Errorf("unsupported expose strategy: %q", exposeStrategy)

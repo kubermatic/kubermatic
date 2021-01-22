@@ -49,18 +49,9 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 				return nil, fmt.Errorf("failed to get cluster ca: %v", err)
 			}
 
-			externalIP := data.Cluster().Address.IP
-			if externalIP == "" {
-				return nil, errors.New("externalIP is unset")
-			}
-
 			inClusterIP, err := resources.InClusterApiserverIP(data.Cluster())
 			if err != nil {
 				return nil, fmt.Errorf("failed to get the in-cluster ClusterIP for the apiserver: %v", err)
-			}
-			externalIPParsed := net.ParseIP(externalIP)
-			if externalIPParsed == nil {
-				return nil, errors.New("no external IP")
 			}
 
 			altNames := certutil.AltNames{
@@ -79,10 +70,22 @@ func TLSServingCertificateCreator(data tlsServingCertCreatorData) reconciling.Na
 					fmt.Sprintf("%s.%s.svc.cluster.local", resources.ApiserverServiceName, data.Cluster().Status.NamespaceName),
 				},
 				IPs: []net.IP{
-					externalIPParsed,
 					*inClusterIP,
 					net.ParseIP("127.0.0.1"),
 				},
+			}
+
+			if data.Cluster().Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
+				externalIP := data.Cluster().Address.IP
+				if externalIP == "" {
+					return nil, errors.New("externalIP is unset")
+				}
+
+				externalIPParsed := net.ParseIP(externalIP)
+				if externalIPParsed == nil {
+					return nil, errors.New("no external IP")
+				}
+				altNames.IPs = append(altNames.IPs, externalIPParsed)
 			}
 
 			if b, exists := se.Data[resources.ApiserverTLSCertSecretKey]; exists {
