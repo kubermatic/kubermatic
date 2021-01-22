@@ -111,7 +111,7 @@ func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrl.Manager) {
 func (h *AdmissionHandler) rejectEnableUserSSHKeyAgentUpdate(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	var (
 		oldCluster = &kubermaticv1.Cluster{}
-		nName      = types.NamespacedName{Name: cluster.Name}
+		nName      = types.NamespacedName{Name: cluster.Name, Namespace: cluster.Namespace}
 	)
 
 	if h.client != nil {

@@ -31,6 +31,8 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 var (
@@ -47,9 +49,10 @@ func TestHandle(t *testing.T) {
 		req         webhook.AdmissionRequest
 		wantAllowed bool
 		features    features.FeatureGate
+		client      client.Client
 	}{
 		{
-			name: "delete cluster succeess",
+			name: "Delete cluster succeess",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1beta1.AdmissionRequest{
 					Operation: admissionv1beta1.Delete,
@@ -142,6 +145,64 @@ func TestHandle(t *testing.T) {
 			},
 			wantAllowed: false,
 		},
+		{
+			name: "Reject EnableUserSSHKey agent update",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1beta1.AdmissionRequest{
+					Operation: admissionv1beta1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name:      "foo",
+					Namespace: "kubermatic",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: true}.Do(),
+					},
+				},
+			},
+			wantAllowed: false,
+			client: fake.NewFakeClient(
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: "kubermatic",
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						EnableUserSSHKeyAgent: true,
+					},
+				}),
+		},
+		{
+			name: "Accept EnableUserSSHKey agent update when the value did not change",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1beta1.AdmissionRequest{
+					Operation: admissionv1beta1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name:      "foo",
+					Namespace: "kubermatic",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: false}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			client: fake.NewFakeClient(
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "foo",
+						Namespace: "kubermatic",
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						EnableUserSSHKeyAgent: false,
+					},
+				}),
+		},
 	}
 	for _, tt := range tests {
 		d, err := admission.NewDecoder(testScheme)
@@ -152,6 +213,7 @@ func TestHandle(t *testing.T) {
 			log:      &logrtesting.NullLogger{},
 			decoder:  d,
 			features: tt.features,
+			client:   tt.client,
 		}
 		t.Run(tt.name, func(t *testing.T) {
 			if res := handler.Handle(context.TODO(), tt.req); res.Allowed != tt.wantAllowed {
@@ -163,9 +225,10 @@ func TestHandle(t *testing.T) {
 }
 
 type rawClusterGen struct {
-	Name           string
-	Namespace      string
-	ExposeStrategy string
+	Name             string
+	Namespace        string
+	ExposeStrategy   string
+	EnableUserSSHKey bool
 }
 
 func (r rawClusterGen) Do() []byte {
@@ -177,7 +240,8 @@ func (r rawClusterGen) Do() []byte {
 	"namespace": "{{ .Namespace}}"
   },
   "spec": {
-	"exposeStrategy": "{{ .ExposeStrategy }}"
+	"exposeStrategy": "{{ .ExposeStrategy }}",
+    "enableUserSSHKey": {{ .EnableUserSSHKey }}
   }
 }`)
 	sb := bytes.Buffer{}
