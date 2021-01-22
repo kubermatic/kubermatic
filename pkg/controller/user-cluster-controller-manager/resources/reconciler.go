@@ -44,6 +44,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -141,6 +142,13 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 
 	if err := r.reconcileValidatingWebhookConfigurations(ctx, data); err != nil {
 		return err
+	}
+
+	// Try to delete OPA integration deployment if its present
+	if !r.opaIntegration {
+		if err := r.ensureOPAIntegrationIsRemoved(ctx); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -672,4 +680,14 @@ type reconcileData struct {
 	openVPNCACert *resources.ECDSAKeyPair
 	userSSHKeys   map[string][]byte
 	cloudConfig   []byte
+}
+
+func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
+	for _, resource := range gatekeeper.GetResourcesToRemoveOnDelete() {
+		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure OPA integration is removed/not present: %v", err)
+		}
+	}
+
+	return nil
 }

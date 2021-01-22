@@ -17,9 +17,6 @@ limitations under the License.
 package gatekeeper
 
 import (
-	"fmt"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -27,10 +24,8 @@ import (
 )
 
 const (
-	roleName               = "gatekeeper-manager-role"
-	roleBindingName        = "gatekeeper-manager-rolebinding"
-	clusterRoleName        = "gatekeeper-manager-role"
-	clusterRoleBindingName = "gatekeeper-manager-rolebinding"
+	roleName        = "gatekeeper-manager-role"
+	roleBindingName = "gatekeeper-manager-rolebinding"
 )
 
 // ServiceAccountCreator returns a func to create/update the ServiceAccount used by gatekeeper.
@@ -77,33 +72,5 @@ func RoleBindingCreator() (string, reconciling.RoleBindingCreator) {
 			},
 		}
 		return rb, nil
-	}
-}
-
-// gatekeeperClusterRoleBindingData is the data needed to construct the Gatekeeper clusterRoleBinding
-type gatekeeperClusterRoleBindingData interface {
-	Cluster() *kubermaticv1.Cluster
-}
-
-func ClusterRoleBindingCreator(data gatekeeperClusterRoleBindingData) reconciling.NamedClusterRoleBindingCreatorGetter {
-	name := fmt.Sprintf("%s.%s", data.Cluster().Name, clusterRoleBindingName)
-	return func() (string, reconciling.ClusterRoleBindingCreator) {
-		return name, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.RoleRef = rbacv1.RoleRef{
-				APIGroup: rbacv1.GroupName,
-				Kind:     "ClusterRole",
-				Name:     clusterRoleName,
-			}
-
-			crb.Subjects = []rbacv1.Subject{
-				{
-					Kind:      rbacv1.ServiceAccountKind,
-					Name:      serviceAccountName,
-					Namespace: data.Cluster().Name,
-				},
-			}
-
-			return crb, nil
-		}
 	}
 }
