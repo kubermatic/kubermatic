@@ -26,6 +26,7 @@ import (
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
 	dnatcontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/dnat-controller"
+	envoyagent "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/envoy-agent"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/gatekeeper"
 	kubestatemetrics "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kube-state-metrics"
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
@@ -39,6 +40,7 @@ import (
 	systembasicuser "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
 	userauth "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -486,6 +488,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		creators = append(creators, []reconciling.NamedConfigMapCreatorGetter{
 			coredns.ConfigMapCreator(),
 			nodelocaldns.ConfigMapCreator(r.dnsClusterIP),
+			envoyagent.ConfigMapCreator(r.namespace, r.clusterURL.Hostname()),
 		}...)
 	}
 
@@ -534,12 +537,16 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	return nil
 }
 
-func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
+func (r *reconciler) reconcileDaemonSet(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
 		usersshkeys.DaemonSetCreator(r.versions),
 	}
 	if !r.openshift {
 		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator())
+	}
+
+	if cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
+		dsCreators = append(dsCreators, envoyagent.DaemonSetCreator())
 	}
 
 	if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, metav1.NamespaceSystem, r.Client); err != nil {
@@ -631,7 +638,10 @@ func (r *reconciler) reconcileDeployments(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
-	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{coredns.DeploymentCreator()}
+	kubeSystemCreators := []reconciling.NamedDeploymentCreatorGetter{
+		coredns.DeploymentCreator(),
+	}
+
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", metav1.NamespaceSystem, err)
 	}

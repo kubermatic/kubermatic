@@ -514,6 +514,11 @@ const (
 )
 
 const (
+	EnvoyAgentConfigMapName = "envoy-agent"
+	EnvoyAgentDaemonSetName = "envoy-agent"
+)
+
+const (
 	NodeLocalDNSServiceAccountName = "node-local-dns"
 	NodeLocalDNSConfigMapName      = "node-local-dns"
 	NodeLocalDNSDaemonSetName      = "node-local-dns"
