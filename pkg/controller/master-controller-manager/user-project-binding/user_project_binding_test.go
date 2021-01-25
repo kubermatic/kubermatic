@@ -98,6 +98,7 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
 			objs := []runtime.Object{}
 
 			for _, user := range test.existingUsers {
@@ -115,9 +116,9 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 			kubermaticFakeClient := fake.NewFakeClient(objs...)
 
 			// act
-			target := reconcileSyncProjectBinding{ctx: context.TODO(), Client: kubermaticFakeClient}
+			target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
 
-			err := target.ensureNotProjectOwnerForBinding(test.bindingToSync)
+			err := target.ensureNotProjectOwnerForBinding(ctx, test.bindingToSync)
 
 			// validate
 			if err != nil {
@@ -125,7 +126,7 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 			}
 			updatedProject := &kubermaticv1.Project{}
 
-			err = kubermaticFakeClient.Get(target.ctx, controllerclient.ObjectKey{Name: "thunderball"}, updatedProject)
+			err = kubermaticFakeClient.Get(ctx, controllerclient.ObjectKey{Name: "thunderball"}, updatedProject)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -187,6 +188,7 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
 			objs := []runtime.Object{}
 			for _, user := range test.existingUsers {
 				objs = append(objs, user)
@@ -202,8 +204,8 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 			kubermaticFakeClient := fake.NewFakeClient(objs...)
 
 			// act
-			target := reconcileSyncProjectBinding{ctx: context.TODO(), Client: kubermaticFakeClient}
-			err := target.ensureProjectOwnerForBinding(test.bindingToSync)
+			target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
+			err := target.ensureProjectOwnerForBinding(ctx, test.bindingToSync)
 
 			// validate
 			if err != nil {
@@ -212,7 +214,7 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 
 			updatedProject := &kubermaticv1.Project{}
 
-			err = kubermaticFakeClient.Get(target.ctx, controllerclient.ObjectKey{Name: "thunderball"}, updatedProject)
+			err = kubermaticFakeClient.Get(ctx, controllerclient.ObjectKey{Name: "thunderball"}, updatedProject)
 			if err != nil {
 				t.Fatal(err)
 			}

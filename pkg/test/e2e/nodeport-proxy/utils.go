@@ -67,7 +67,7 @@ func GetClientsOrDie() (ctrlclient.Client, rest.Interface, *rest.Config) {
 	if err != nil {
 		panic(errors.Wrap(err, "failed to get pod GVK"))
 	}
-	podRestClient, err := apiutil.RESTClientForGVK(gvk, config, serializer.NewCodecFactory(scheme))
+	podRestClient, err := apiutil.RESTClientForGVK(gvk, false, config, serializer.NewCodecFactory(scheme))
 	if err != nil {
 		panic(errors.Wrap(err, "failed to create pod rest client"))
 	}

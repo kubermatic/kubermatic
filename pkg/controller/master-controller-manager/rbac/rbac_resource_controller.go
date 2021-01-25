@@ -22,17 +22,16 @@ import (
 
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/util/workqueue"
-	"k8s.io/klog"
 )
 
 type resourcesController struct {
@@ -74,7 +73,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 			continue
 		}
 
-		if err = rcc.Watch(&source.Kind{Type: clonedObject}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
+		if err = rcc.Watch(&source.Kind{Type: clonedObject.(client.Object)}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
 			return nil, err
 		}
 	}
@@ -106,7 +105,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 				continue
 			}
 
-			if err = rc.Watch(&source.Kind{Type: clonedObject}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
+			if err = rc.Watch(&source.Kind{Type: clonedObject.(client.Object)}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
 				return nil, err
 			}
 		}

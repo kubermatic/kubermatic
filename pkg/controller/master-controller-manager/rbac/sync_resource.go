@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
@@ -30,6 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/klog"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -45,7 +45,7 @@ const (
 // we cannot use OwnerReferences for cluster resources because they are on clusters that don't have corresponding
 // project resource and will be automatically gc'ed
 func (c *resourcesController) syncProjectResource(ctx context.Context, key client.ObjectKey) error {
-	obj := c.objectType.DeepCopyObject()
+	obj := c.objectType.DeepCopyObject().(client.Object)
 	if err := c.client.Get(ctx, key, obj); err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil

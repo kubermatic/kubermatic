@@ -43,7 +43,6 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 		{
 			name: "Test cleanup cluster ids in UserSSHKey on cluster deletion",
 			reconciler: &Reconciler{
-				ctx: context.Background(),
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				client: fake.NewFakeClient(
 					&kubermaticv1.UserSSHKeyList{
@@ -95,13 +94,15 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := tc.reconciler.Reconcile(tc.request); err != nil {
+			ctx := context.Background()
+
+			if _, err := tc.reconciler.Reconcile(ctx, tc.request); err != nil {
 				t.Fatalf("failed reconciling test: %v", err)
 			}
 
 			userSSHKey := &kubermaticv1.UserSSHKey{}
 			identifier := types.NamespacedName{Namespace: "test_namespace", Name: "test_user_ssh_keys"}
-			if err := tc.reconciler.client.Get(context.Background(), identifier, userSSHKey); err != nil {
+			if err := tc.reconciler.client.Get(ctx, identifier, userSSHKey); err != nil {
 				t.Fatalf("failed to get usersshkey: %v", err)
 			}
 

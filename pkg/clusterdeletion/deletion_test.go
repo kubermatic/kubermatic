@@ -109,7 +109,9 @@ func TestCleanUpPVUsingWorkloads(t *testing.T) {
 					Name:      metav1Object.GetName(),
 				}
 
-				err := client.Get(ctx, nn, object.DeepCopyObject())
+				copy := object.DeepCopyObject().(controllerruntimeclient.Object)
+
+				err := client.Get(ctx, nn, copy)
 				if kerrors.IsNotFound(err) != tc.objDeletionExpected {
 					t.Errorf("Expected object %q to be deleted=%t", nn.String(), tc.objDeletionExpected)
 				}

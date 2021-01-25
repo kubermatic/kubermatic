@@ -169,13 +169,12 @@ func TestReconcilingSeed(t *testing.T) {
 				Client:   masterClient,
 				recorder: record.NewFakeRecorder(10),
 				log:      log,
-				ctx:      ctx,
 				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 					return seedClient, nil
 				},
 			}
 
-			err := reconciler.reconcile(test.input, seedClient, log)
+			err := reconciler.reconcile(ctx, test.input, seedClient, log)
 			if test.shouldFail && err == nil {
 				t.Fatalf("check for %s failed", test.name)
 			}
@@ -183,10 +182,7 @@ func TestReconcilingSeed(t *testing.T) {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
-			key, err := ctrlruntimeclient.ObjectKeyFromObject(test.input)
-			if err != nil {
-				t.Fatalf("could not create object key for seed: %v", err)
-			}
+			key := ctrlruntimeclient.ObjectKeyFromObject(test.input)
 
 			result := &kubermaticv1.Seed{}
 			if err := seedClient.Get(ctx, key, result); err != nil && kerrors.IsNotFound(err) {

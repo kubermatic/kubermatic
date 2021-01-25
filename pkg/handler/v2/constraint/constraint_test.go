@@ -36,6 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestListConstraints(t *testing.T) {
@@ -133,7 +134,7 @@ func TestListConstraints(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjects {
-				err = clientsSets.FakeClient.Create(ctx, gkObject)
+				err = clientsSets.FakeClient.Create(ctx, gkObject.(client.Object))
 				if err != nil {
 					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
 				}
@@ -241,7 +242,7 @@ func TestGetConstraints(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjects {
-				err = clientsSets.FakeClient.Create(ctx, gkObject)
+				err = clientsSets.FakeClient.Create(ctx, gkObject.(client.Object))
 				if err != nil {
 					t.Fatalf("failed to create gk object due to %v", err)
 				}

@@ -31,7 +31,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -185,7 +184,7 @@ func (r *Reconciler) sync(ctx context.Context) error {
 }
 
 func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw client.Object) []string {
 		svc := raw.(*corev1.Service)
 		if isExposed(svc, r.ExposeAnnotationKey) {
 			return []string{"true"}
@@ -236,22 +235,22 @@ type exposeAnnotationPredicate struct {
 
 // Create returns true if the Create event should be processed
 func (e exposeAnnotationPredicate) Create(event event.CreateEvent) bool {
-	return e.match(event.Meta)
+	return e.match(event.Object)
 }
 
 // Delete returns true if the Delete event should be processed
 func (e exposeAnnotationPredicate) Delete(event event.DeleteEvent) bool {
-	return e.match(event.Meta)
+	return e.match(event.Object)
 }
 
 // Update returns true if the Update event should be processed
 func (e exposeAnnotationPredicate) Update(event event.UpdateEvent) bool {
-	return e.match(event.MetaNew)
+	return e.match(event.ObjectNew)
 }
 
 // Generic returns true if the Generic event should be processed
 func (e exposeAnnotationPredicate) Generic(event event.GenericEvent) bool {
-	return e.match(event.Meta)
+	return e.match(event.Object)
 }
 
 func (e exposeAnnotationPredicate) match(obj metav1.Object) bool {

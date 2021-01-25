@@ -40,6 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -89,7 +90,7 @@ func Add(
 	}
 
 	// watch for changes to KubermaticConfigurations in the master cluster and reconcile all seeds
-	configEventHandler := newEventHandler(func(_ handler.MapObject) []reconcile.Request {
+	configEventHandler := handler.EnqueueRequestsFromMapFunc(func(_ client.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("Failed to handle request", zap.Error(err))
@@ -138,7 +139,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	eventHandler := util.EnqueueConst(seedName)
 
 	watch := func(t runtime.Object, preds ...predicate.Predicate) error {
-		seedTypeWatch := &source.Kind{Type: t}
+		seedTypeWatch := &source.Kind{Type: t.(client.Object)}
 
 		if err := seedTypeWatch.InjectCache(cache); err != nil {
 			return fmt.Errorf("failed to inject cache into watch for %T: %v", t, err)
@@ -215,12 +216,4 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	}
 
 	return nil
-}
-
-// newEventHandler takes a obj->request mapper function and wraps it into an
-// handler.EnqueueRequestsFromMapFunc.
-func newEventHandler(rf handler.ToRequestsFunc) *handler.EnqueueRequestsFromMapFunc {
-	return &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: rf,
-	}
 }

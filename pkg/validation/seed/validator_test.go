@@ -25,7 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -478,9 +478,9 @@ func TestValidate(t *testing.T) {
 				},
 			}
 
-			op := admissionv1beta1.Create
+			op := admissionv1.Create
 			if tc.isDelete {
-				op = admissionv1beta1.Delete
+				op = admissionv1.Delete
 			}
 			err := sv.Validate(context.Background(), tc.seedToValidate, op)
 
@@ -497,7 +497,7 @@ func TestSingleSeedValidateFunc(t *testing.T) {
 		name      string
 		namespace string
 		seed      *kubermaticv1.Seed
-		op        admissionv1beta1.Operation
+		op        admissionv1.Operation
 		wantErr   bool
 	}{
 		{
@@ -509,7 +509,7 @@ func TestSingleSeedValidateFunc(t *testing.T) {
 					Namespace: "kubermatic",
 				},
 			},
-			op:      admissionv1beta1.Create,
+			op:      admissionv1.Create,
 			wantErr: false,
 		},
 		{
@@ -521,7 +521,7 @@ func TestSingleSeedValidateFunc(t *testing.T) {
 					Namespace: "kube-system",
 				},
 			},
-			op:      admissionv1beta1.Create,
+			op:      admissionv1.Create,
 			wantErr: true,
 		},
 		{
@@ -533,7 +533,7 @@ func TestSingleSeedValidateFunc(t *testing.T) {
 					Namespace: "kubermatic",
 				},
 			},
-			op:      admissionv1beta1.Create,
+			op:      admissionv1.Create,
 			wantErr: true,
 		},
 		{
@@ -545,7 +545,7 @@ func TestSingleSeedValidateFunc(t *testing.T) {
 					Namespace: "kube-system",
 				},
 			},
-			op:      admissionv1beta1.Delete,
+			op:      admissionv1.Delete,
 			wantErr: false,
 		},
 	}
@@ -558,6 +558,6 @@ func TestSingleSeedValidateFunc(t *testing.T) {
 	}
 }
 
-func validationSuccess(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error {
+func validationSuccess(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error {
 	return nil
 }

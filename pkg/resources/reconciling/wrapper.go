@@ -23,16 +23,16 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	utilpointer "k8s.io/utils/pointer"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // OwnerRefWrapper is responsible for wrapping a ObjectCreator function, solely to set the OwnerReference to the cluster object
 func OwnerRefWrapper(ref metav1.OwnerReference) ObjectModifier {
 	return func(create ObjectCreator) ObjectCreator {
-		return func(existing runtime.Object) (runtime.Object, error) {
+		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 			obj, err := create(existing)
 			if err != nil {
 				return obj, err
@@ -51,7 +51,7 @@ func OwnerRefWrapper(ref metav1.OwnerReference) ObjectModifier {
 // this can be extended to whatever Object carrying a PodSpec.
 func ImagePullSecretsWrapper(secretNames ...string) ObjectModifier {
 	return func(create ObjectCreator) ObjectCreator {
-		return func(existing runtime.Object) (runtime.Object, error) {
+		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 			obj, err := create(existing)
 			if err != nil {
 				return obj, err

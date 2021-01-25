@@ -23,11 +23,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetResourcesToRemoveOnDelete() []runtime.Object {
-	var toRemove []runtime.Object
+func GetResourcesToRemoveOnDelete() []client.Object {
+	var toRemove []client.Object
 
 	// Webhook
 	toRemove = append(toRemove, &admissionregistrationv1.ValidatingWebhookConfiguration{

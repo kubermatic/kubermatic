@@ -32,7 +32,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -91,7 +90,7 @@ func Add(
 	}
 
 	// Add index on IsDefault flag
-	if err := mgr.GetFieldIndexer().IndexField(context.TODO(), &kubermaticv1.Addon{}, addonDefaultKey, func(rawObj runtime.Object) []string {
+	if err := mgr.GetFieldIndexer().IndexField(context.Background(), &kubermaticv1.Addon{}, addonDefaultKey, func(rawObj ctrlruntimeclient.Object) []string {
 		a := rawObj.(*kubermaticv1.Addon)
 		return []string{strconv.FormatBool(a.Spec.IsDefault)}
 	}); err != nil {

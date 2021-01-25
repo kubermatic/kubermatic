@@ -67,20 +67,20 @@ func TestReconcileBinding(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-
 			kubermaticFakeClient := fake.NewFakeClient(test.existingKubermaticObjects...)
 
 			// act
-			target := reconcileServiceAccountProjectBinding{ctx: context.TODO(), Client: kubermaticFakeClient}
+			ctx := context.Background()
+			target := reconcileServiceAccountProjectBinding{Client: kubermaticFakeClient}
 
-			_, err := target.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: test.saName}})
+			_, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.saName}})
 
 			// validate
 			if err != nil {
 				t.Fatal(err)
 			}
 			bindings := &kubermaticv1.UserProjectBindingList{}
-			err = kubermaticFakeClient.List(context.TODO(), bindings)
+			err = kubermaticFakeClient.List(ctx, bindings)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -100,7 +100,6 @@ func TestReconcileBinding(t *testing.T) {
 			if !equality.Semantic.DeepEqual(bindings.Items[0].Spec, test.expectedBinding.Spec) {
 				t.Fatalf("%v", diff.ObjectDiff(bindings.Items[0].Spec, test.expectedBinding.Spec))
 			}
-
 		})
 	}
 }

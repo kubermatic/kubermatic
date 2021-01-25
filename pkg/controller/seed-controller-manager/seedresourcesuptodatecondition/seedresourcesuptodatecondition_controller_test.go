@@ -55,7 +55,7 @@ type fakeClientThatErrorsOnGet struct {
 func (f *fakeClientThatErrorsOnGet) Get(
 	_ context.Context,
 	key ctrlruntimeclient.ObjectKey,
-	_ runtime.Object,
+	_ ctrlruntimeclient.Object,
 ) error {
 	return errors.New("erroring on get as requested")
 }

@@ -38,6 +38,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -98,6 +99,7 @@ func Add(
 		userSSHKeyAgent:               userSSHKeyAgent,
 		versions:                      versions,
 	}
+	ctx := context.Background()
 
 	var err error
 	if r.clusterSemVer, err = semver.NewVersion(r.version); err != nil {
@@ -107,11 +109,11 @@ func Add(
 	if r.openshift {
 		// We have to run one initial reconciliation before we can create the watches, to make sure
 		// all apiGroups exist
-		apiReadingUserClusterClient := apiReadingClient(mgr.GetAPIReader(), mgr.GetClient())
-		apiReadingSeedClusterClient := apiReadingClient(seedMgr.GetAPIReader(), seedMgr.GetClient())
+		apiReadingUserClusterClient := apiReadingClient(mgr.GetAPIReader(), mgr.GetClient(), mgr.GetScheme(), mgr.GetRESTMapper())
+		apiReadingSeedClusterClient := apiReadingClient(seedMgr.GetAPIReader(), seedMgr.GetClient(), seedMgr.GetScheme(), seedMgr.GetRESTMapper())
 		r.Client = apiReadingUserClusterClient
 		r.seedClient = apiReadingSeedClusterClient
-		if _, err := r.Reconcile(reconcile.Request{}); err != nil {
+		if _, err := r.Reconcile(ctx, reconcile.Request{}); err != nil {
 			return fmt.Errorf("initial reconciliation failed: %v", err)
 		}
 		// We must wait for this, otherwise the controller crashes when trying to establish
@@ -138,11 +140,12 @@ func Add(
 		return err
 	}
 
-	mapFn := handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
+	mapFn := handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
 		log.Debugw("Controller got triggered",
-			"type", fmt.Sprintf("%T", o.Object),
-			"name", o.Meta.GetName(),
-			"namespace", o.Meta.GetNamespace())
+			"type", fmt.Sprintf("%T", o),
+			"name", o.GetName(),
+			"namespace", o.GetNamespace())
+
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
 				// There is no "parent object" like e.G. a cluster that can be used to reconcile, we just have a random set of resources
@@ -185,18 +188,18 @@ func Add(
 	// UPDATE, do not reconcile
 	predicateIgnoreLeaderLeaseRenew := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			if e.MetaOld.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] == "" {
+			if e.ObjectOld.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] == "" {
 				return true
 			}
-			if e.MetaOld.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] ==
-				e.MetaNew.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] {
+			if e.ObjectOld.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] ==
+				e.ObjectNew.GetAnnotations()[resourcelock.LeaderElectionRecordAnnotationKey] {
 				return true
 			}
 			return false
 		},
 	}
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}, predicateIgnoreLeaderLeaseRenew); err != nil {
+		if err := c.Watch(&source.Kind{Type: t.(ctrlruntimeclient.Object)}, mapFn, predicateIgnoreLeaderLeaseRenew); err != nil {
 			return fmt.Errorf("failed to create watch for %T: %v", t, err)
 		}
 	}
@@ -206,11 +209,11 @@ func Add(
 		&corev1.ConfigMap{},
 	}
 	for _, t := range seedTypesToWatch {
-		seedWatch := &source.Kind{Type: t}
+		seedWatch := &source.Kind{Type: t.(ctrlruntimeclient.Object)}
 		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
 			return fmt.Errorf("failed to inject cache in seed cluster watch for %T: %v", t, err)
 		}
-		if err := c.Watch(seedWatch, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
+		if err := c.Watch(seedWatch, mapFn); err != nil {
 			return fmt.Errorf("failed to watch %T in seed: %v", t, err)
 		}
 	}
@@ -304,14 +307,12 @@ func (r *reconciler) cloudConfig(ctx context.Context) ([]byte, error) {
 	return []byte(value), nil
 }
 
-func apiReadingClient(apiReader ctrlruntimeclient.Reader, writer ctrlruntimeclient.Client) ctrlruntimeclient.Client {
-	return struct {
-		ctrlruntimeclient.Reader
-		ctrlruntimeclient.Writer
-		ctrlruntimeclient.StatusClient
-	}{
+func apiReadingClient(apiReader ctrlruntimeclient.Reader, writer ctrlruntimeclient.Client, scheme *runtime.Scheme, restMapper meta.RESTMapper) ctrlruntimeclient.Client {
+	return ctrlruntimeclientClient{
 		Reader:       apiReader,
 		Writer:       writer,
 		StatusClient: writer,
+		scheme:       scheme,
+		restMapper:   restMapper,
 	}
 }

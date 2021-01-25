@@ -25,7 +25,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
-	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	admissionv1 "k8s.io/api/admission/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -62,16 +62,16 @@ func (h *seedAdmissionHandler) Handle(ctx context.Context, req webhook.Admission
 	seed := &kubermaticv1.Seed{}
 
 	switch req.Operation {
-	case admissionv1beta1.Create:
+	case admissionv1.Create:
 		fallthrough
-	case admissionv1beta1.Update:
+	case admissionv1.Update:
 		err := h.decoder.Decode(req, seed)
 		if err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 	// On DELETE, the req.Object is unset
 	// Ref: https://kubernetes.io/docs/reference/access-authn-authz/extensible-admission-controllers/#webhook-request-and-response
-	case admissionv1beta1.Delete:
+	case admissionv1.Delete:
 		seed.Name = req.Name
 		seed.Namespace = req.Namespace
 	default:

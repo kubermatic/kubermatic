@@ -34,13 +34,13 @@ import (
 //go:generate go run ../../../codegen/reconcile/main.go
 
 // ObjectCreator defines an interface to create/update a runtime.Object
-type ObjectCreator = func(existing runtime.Object) (runtime.Object, error)
+type ObjectCreator = func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error)
 
 // ObjectModifier is a wrapper function which modifies the object which gets returned by the passed in ObjectCreator
 type ObjectModifier func(create ObjectCreator) ObjectCreator
 
 func createWithNamespace(rawcreate ObjectCreator, namespace string) ObjectCreator {
-	return func(existing runtime.Object) (runtime.Object, error) {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		obj, err := rawcreate(existing)
 		if err != nil {
 			return nil, err
@@ -51,7 +51,7 @@ func createWithNamespace(rawcreate ObjectCreator, namespace string) ObjectCreato
 }
 
 func createWithName(rawcreate ObjectCreator, name string) ObjectCreator {
-	return func(existing runtime.Object) (runtime.Object, error) {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		obj, err := rawcreate(existing)
 		if err != nil {
 			return nil, err
@@ -62,13 +62,13 @@ func createWithName(rawcreate ObjectCreator, name string) ObjectCreator {
 }
 
 // EnsureNamedObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
-func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName, rawcreate ObjectCreator, client ctrlruntimeclient.Client, emptyObject runtime.Object, requiresRecreate bool) error {
+func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName, rawcreate ObjectCreator, client ctrlruntimeclient.Client, emptyObject ctrlruntimeclient.Object, requiresRecreate bool) error {
 	// A wrapper to ensure we always set the Namespace and Name. This is useful as we call create twice
 	create := createWithNamespace(rawcreate, namespacedName.Namespace)
 	create = createWithName(create, namespacedName.Name)
 
 	exists := true
-	existingObject := emptyObject.DeepCopyObject()
+	existingObject := emptyObject.DeepCopyObject().(ctrlruntimeclient.Object)
 	if err := client.Get(ctx, namespacedName, existingObject); err != nil {
 		if !kubeerrors.IsNotFound(err) {
 			return fmt.Errorf("failed to get Object(%T): %v", existingObject, err)
@@ -98,7 +98,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 
 	// Create a copy to make sure we don't compare the object onto itself
 	// in case the creator returns the same pointer it got passed in
-	obj, err := create(existingObject.DeepCopyObject())
+	obj, err := create(existingObject.DeepCopyObject().(ctrlruntimeclient.Object))
 	if err != nil {
 		return fmt.Errorf("failed to build Object(%T) '%s': %v", existingObject, namespacedName.String(), err)
 	}
@@ -121,7 +121,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 			return fmt.Errorf("failed to update object %T '%s': %v", obj, namespacedName.String(), err)
 		}
 	} else {
-		if err := client.Delete(ctx, obj.DeepCopyObject()); err != nil {
+		if err := client.Delete(ctx, obj.DeepCopyObject().(ctrlruntimeclient.Object)); err != nil {
 			return fmt.Errorf("failed to delete object %T %q: %v", obj, namespacedName.String(), err)
 		}
 		if err := client.Create(ctx, obj); err != nil {
@@ -149,7 +149,7 @@ func waitUntilUpdateIsInCacheConditionFunc(
 ) wait.ConditionFunc {
 	return func() (bool, error) {
 		// Create a copy to have something which we can pass into the client
-		currentObj := oldObj.DeepCopyObject()
+		currentObj := oldObj.DeepCopyObject().(ctrlruntimeclient.Object)
 
 		if err := client.Get(ctx, namespacedName, currentObj); err != nil {
 			klog.Errorf("failed retrieving object %T %s while waiting for the cache to contain our latest changes: %v", currentObj, namespacedName, err)
@@ -170,7 +170,7 @@ func waitUntilObjectExistsInCacheConditionFunc(
 	obj runtime.Object,
 ) wait.ConditionFunc {
 	return func() (bool, error) {
-		newObj := obj.DeepCopyObject()
+		newObj := obj.DeepCopyObject().(ctrlruntimeclient.Object)
 		if err := client.Get(ctx, namespacedName, newObj); err != nil {
 			if kubeerrors.IsNotFound(err) {
 				return false, nil

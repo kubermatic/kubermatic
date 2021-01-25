@@ -78,22 +78,22 @@ func TestEnsureProjectIsInActivePhase(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
 			objs := []runtime.Object{}
 			objs = append(objs, test.expectedProject)
 			masterClient := fakeruntime.NewFakeClient(objs...)
 
 			// act
 			target := projectController{
-				ctx:        context.Background(),
 				client:     masterClient,
 				restMapper: getFakeRestMapper(t),
 			}
-			err := target.ensureProjectIsInActivePhase(test.projectToSync)
+			err := target.ensureProjectIsInActivePhase(ctx, test.projectToSync)
 			assert.Nil(t, err)
 
 			// validate
 			var projectList kubermaticv1.ProjectList
-			err = masterClient.List(context.Background(), &projectList)
+			err = masterClient.List(ctx, &projectList)
 			assert.NoError(t, err)
 
 			projectList.Items[0].ObjectMeta.ResourceVersion = ""
@@ -125,22 +125,22 @@ func TestEnsureProjectInitialized(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
 			objs := []runtime.Object{}
 			objs = append(objs, test.expectedProject)
 			masterClient := fakeruntime.NewFakeClient(objs...)
 
 			// act
 			target := projectController{
-				ctx:        context.Background(),
 				client:     masterClient,
 				restMapper: getFakeRestMapper(t),
 			}
-			err := target.ensureCleanupFinalizerExists(test.projectToSync)
+			err := target.ensureCleanupFinalizerExists(ctx, test.projectToSync)
 			assert.NoError(t, err)
 
 			// validate
 			var projectList kubermaticv1.ProjectList
-			err = masterClient.List(context.Background(), &projectList)
+			err = masterClient.List(ctx, &projectList)
 			assert.NoError(t, err)
 
 			projectList.Items[0].ObjectMeta.ResourceVersion = ""
@@ -545,6 +545,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
 			objs := []runtime.Object{}
 			roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForMaster {
@@ -575,19 +576,18 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:              context.Background(),
 				client:           fakeMasterClient,
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClientMap,
 				projectResources: test.projectResourcesToSync,
 			}
-			err := target.ensureClusterRBACRoleBindingForResources(test.projectToSync)
+			err := target.ensureClusterRBACRoleBindingForResources(ctx, test.projectToSync)
 			assert.NoError(t, err)
 
 			// validate master cluster
 			{
 				var clusterRoleBindingList rbacv1.ClusterRoleBindingList
-				err := fakeMasterClient.List(context.Background(), &clusterRoleBindingList)
+				err := fakeMasterClient.List(ctx, &clusterRoleBindingList)
 				assert.NoError(t, err)
 
 			expectedBindingLoop:
@@ -611,7 +611,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			// validate seed clusters
 			for _, seedClient := range seedClientMap {
 				var clusterRoleBindingList rbacv1.ClusterRoleBindingList
-				err := seedClient.List(context.Background(), &clusterRoleBindingList)
+				err := seedClient.List(ctx, &clusterRoleBindingList)
 				assert.NoError(t, err)
 
 			expectedBindingLoopSeed:
@@ -767,8 +767,9 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
 			// prepare test data
+			ctx := context.Background()
+
 			seedClientMap := make(map[string]client.Client, len(test.existingClustersOn))
 			{
 				index := 0
@@ -786,12 +787,11 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:           context.Background(),
 				client:        fakeMasterClusterClient,
 				restMapper:    getFakeRestMapper(t),
 				seedClientMap: seedClientMap,
 			}
-			if err := target.ensureProjectCleanup(test.projectToSync); err != nil {
+			if err := target.ensureProjectCleanup(ctx, test.projectToSync); err != nil {
 				t.Fatal(err)
 			}
 
@@ -800,7 +800,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 				cli := seedClientMap[providerName]
 
 				var clusterList kubermaticv1.ClusterList
-				err := cli.List(context.Background(), &clusterList)
+				err := cli.List(ctx, &clusterList)
 				assert.NoError(t, err)
 
 				remainingClusters := []string{}
@@ -1003,6 +1003,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
 			objs := []runtime.Object{}
 			kubermaticObjs := []runtime.Object{}
 			allObjs := []runtime.Object{}
@@ -1045,19 +1046,18 @@ func TestEnsureProjectCleanup(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:              context.Background(),
 				projectResources: test.projectResourcesToSync,
 				client:           fakeMasterClusterClient,
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClusterClientMap,
 			}
-			err := target.ensureProjectCleanup(test.projectToSync)
+			err := target.ensureProjectCleanup(ctx, test.projectToSync)
 			assert.NoError(t, err)
 
 			// validate master cluster
 			{
 				var clusterRoleBindingList rbacv1.ClusterRoleBindingList
-				err := fakeMasterClusterClient.List(context.Background(), &clusterRoleBindingList)
+				err := fakeMasterClusterClient.List(ctx, &clusterRoleBindingList)
 				assert.NoError(t, err)
 
 			expectedBindingLoop:
@@ -1081,7 +1081,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			// validate seed clusters
 			for _, seedClient := range seedClusterClientMap {
 				var clusterRoleBindingList rbacv1.ClusterRoleBindingList
-				err := seedClient.List(context.Background(), &clusterRoleBindingList)
+				err := seedClient.List(ctx, &clusterRoleBindingList)
 				assert.NoError(t, err)
 
 			expectedBindingLoopSeed:
@@ -1290,6 +1290,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
 			objs := []runtime.Object{}
 			fakeMasterClient := fakeruntime.NewFakeClient(objs...)
 
@@ -1300,19 +1301,18 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:              context.Background(),
 				projectResources: test.projectResourcesToSync,
 				client:           fakeMasterClient,
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClients,
 			}
-			err := target.ensureClusterRBACRoleForResources()
+			err := target.ensureClusterRBACRoleForResources(ctx)
 			assert.Nil(t, err)
 
 			// validate master cluster
 			{
 				var clusterRoleList rbacv1.ClusterRoleList
-				err = fakeMasterClient.List(context.Background(), &clusterRoleList)
+				err = fakeMasterClient.List(ctx, &clusterRoleList)
 				assert.NoError(t, err)
 
 			expectedClusterRoleLoop:
@@ -1336,7 +1336,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			// validate seed clusters
 			for _, fakeSeedClient := range seedClients {
 				var clusterRoleList rbacv1.ClusterRoleList
-				err = fakeSeedClient.List(context.Background(), &clusterRoleList)
+				err = fakeSeedClient.List(ctx, &clusterRoleList)
 				assert.NoError(t, err)
 
 			expectedSeecClusterRoleLoop:
@@ -1393,6 +1393,7 @@ func TestEnsureProjectOwner(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
 			objs := []runtime.Object{}
 			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			if test.existingUser != nil {
@@ -1414,11 +1415,10 @@ func TestEnsureProjectOwner(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:        context.Background(),
 				client:     masterClient,
 				restMapper: getFakeRestMapper(t),
 			}
-			err := target.ensureProjectOwner(test.projectToSync)
+			err := target.ensureProjectOwner(ctx, test.projectToSync)
 			assert.NoError(t, err)
 
 			// validate
@@ -1427,7 +1427,7 @@ func TestEnsureProjectOwner(t *testing.T) {
 			}
 
 			var userProjectBindingList kubermaticv1.UserProjectBindingList
-			err = masterClient.List(context.Background(), &userProjectBindingList)
+			err = masterClient.List(ctx, &userProjectBindingList)
 			assert.NoError(t, err)
 
 			assert.Len(t, userProjectBindingList.Items, 1)
@@ -1592,6 +1592,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
 			objs := []runtime.Object{}
 			fakeKubeClient := fake.NewSimpleClientset(objs...)
 			roleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
@@ -1619,19 +1620,18 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:              context.Background(),
 				client:           fakeMasterClient,
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClientMap,
 				projectResources: test.projectResourcesToSync,
 			}
-			err := target.ensureRBACRoleForResources()
+			err := target.ensureRBACRoleForResources(ctx)
 			assert.Nil(t, err)
 
 			// validate master cluster
 			{
 				var roleList rbacv1.RoleList
-				err = fakeMasterClient.List(context.Background(), &roleList)
+				err = fakeMasterClient.List(ctx, &roleList)
 				assert.NoError(t, err)
 
 			expectedRoleLoop:
@@ -1655,7 +1655,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 			// validate seed clusters
 			for _, fakeSeedClient := range seedClientMap {
 				var roleList rbacv1.RoleList
-				err = fakeSeedClient.List(context.Background(), &roleList)
+				err = fakeSeedClient.List(ctx, &roleList)
 				assert.NoError(t, err)
 
 			expectedSeecClusterRoleLoop:
@@ -1899,6 +1899,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
 			objs := []runtime.Object{}
 			roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, existingRoleBinding := range test.existingRoleBindingsForMaster {
@@ -1932,19 +1933,18 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:              context.Background(),
 				client:           fakeMasterClient,
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClusterClientMap,
 				projectResources: test.projectResourcesToSync,
 			}
-			err := target.ensureRBACRoleBindingForResources(test.projectToSync)
+			err := target.ensureRBACRoleBindingForResources(ctx, test.projectToSync)
 			assert.Nil(t, err)
 
 			// validate master cluster
 			{
 				var roleBingingList rbacv1.RoleBindingList
-				err = fakeMasterClient.List(context.Background(), &roleBingingList)
+				err = fakeMasterClient.List(ctx, &roleBingingList)
 				assert.NoError(t, err)
 
 			expectedRoleLoop:
@@ -1968,7 +1968,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 			// validate seed clusters
 			for _, fakeSeedClient := range seedClusterClientMap {
 				var roleBingingList rbacv1.RoleBindingList
-				err = fakeSeedClient.List(context.Background(), &roleBingingList)
+				err = fakeSeedClient.List(ctx, &roleBingingList)
 				assert.NoError(t, err)
 
 			expectedSeecClusterRoleLoop:
@@ -2118,6 +2118,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
 			objs := []runtime.Object{}
 			kubermaticObjs := []runtime.Object{}
 			allObjs := []runtime.Object{}
@@ -2156,19 +2157,18 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 
 			// act
 			target := projectController{
-				ctx:              context.Background(),
 				client:           fakeMasterClusterClient,
 				restMapper:       getFakeRestMapper(t),
 				seedClientMap:    seedClusterClientMap,
 				projectResources: test.projectResourcesToSync,
 			}
-			err = target.ensureProjectCleanup(test.projectToSync)
+			err = target.ensureProjectCleanup(ctx, test.projectToSync)
 			assert.NoError(t, err)
 
 			// validate master cluster
 			{
 				var roleBindingList rbacv1.RoleBindingList
-				err := fakeMasterClusterClient.List(context.Background(), &roleBindingList)
+				err := fakeMasterClusterClient.List(ctx, &roleBindingList)
 				assert.NoError(t, err)
 
 			expectedBindingLoop:
@@ -2192,7 +2192,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			// validate seed clusters
 			for _, seedClient := range seedClusterClientMap {
 				var roleBindingList rbacv1.RoleBindingList
-				err := seedClient.List(context.Background(), &roleBindingList)
+				err := seedClient.List(ctx, &roleBindingList)
 				assert.NoError(t, err)
 
 			expectedBindingLoopSeed:

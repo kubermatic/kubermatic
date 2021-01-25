@@ -91,7 +91,7 @@ func StringifyFeatureGates(cfg *operatorv1alpha1.KubermaticConfiguration) string
 // and takes care of applying the ownership and other labels for all managed objects.
 func OwnershipModifierFactory(owner metav1.Object, scheme *runtime.Scheme) reconciling.ObjectModifier {
 	return func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
-		return func(existing runtime.Object) (runtime.Object, error) {
+		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 			obj, err := create(existing)
 			if err != nil {
 				return obj, err
@@ -129,7 +129,7 @@ func OwnershipModifierFactory(owner metav1.Object, scheme *runtime.Scheme) recon
 // restarts when the volumes changed.
 func VolumeRevisionLabelsModifierFactory(ctx context.Context, client ctrlruntimeclient.Client) reconciling.ObjectModifier {
 	return func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
-		return func(existing runtime.Object) (runtime.Object, error) {
+		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 			obj, err := create(existing)
 			if err != nil {
 				return obj, err
@@ -173,7 +173,7 @@ func createSecretData(s *corev1.Secret, data map[string]string) *corev1.Secret {
 // CleanupClusterResource attempts to find a cluster-wide resource and
 // deletes it if it was found. If no resource with the given name exists,
 // nil is returned.
-func CleanupClusterResource(client ctrlruntimeclient.Client, obj runtime.Object, name string) error {
+func CleanupClusterResource(client ctrlruntimeclient.Client, obj client.Object, name string) error {
 	key := types.NamespacedName{Name: name}
 	ctx := context.Background()
 

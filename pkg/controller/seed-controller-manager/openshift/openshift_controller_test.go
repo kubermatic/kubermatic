@@ -39,6 +39,7 @@ import (
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	ctrlruntimezaplog "sigs.k8s.io/controller-runtime/pkg/log/zap"
@@ -114,7 +115,7 @@ func TestResources(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			ctrlruntimelog.SetLogger(ctrlruntimezaplog.Logger(false))
+			ctrlruntimelog.SetLogger(ctrlruntimezaplog.New(ctrlruntimezaplog.UseDevMode(false)))
 			if err := autoscalingv1beta2.AddToScheme(scheme.Scheme); err != nil {
 				t.Fatalf("failed to add the autoscaling.k8s.io scheme to mgr: %v", err)
 			}
@@ -182,15 +183,15 @@ func TestResources(t *testing.T) {
 			}
 
 			object := tc.object.DeepCopyObject()
-			metav1object, ok := object.(metav1.Object)
+			clientObject, ok := object.(client.Object)
 			if !ok {
 				t.Fatal("testcase object can not be asserted as metav1.Object")
 			}
 
 			if err := tc.reconciler.Get(ctx,
-				types.NamespacedName{Namespace: "test-cluster-ns", Name: metav1object.GetName()},
-				object); err != nil {
-				t.Fatalf("failed to get object %q: %v", metav1object.GetName(), err)
+				types.NamespacedName{Namespace: "test-cluster-ns", Name: clientObject.GetName()},
+				clientObject); err != nil {
+				t.Fatalf("failed to get object %q: %v", clientObject.GetName(), err)
 			}
 
 			if err := tc.validateFunc(object); err != nil {
@@ -199,12 +200,12 @@ func TestResources(t *testing.T) {
 
 			serializedObject, err := yaml.Marshal(object)
 			if err != nil {
-				t.Fatalf("failed to serialize object %q: %v", metav1object.GetName(), err)
+				t.Fatalf("failed to serialize object %q: %v", clientObject.GetName(), err)
 			}
 
 			serializedObject = append([]byte("# This file has been generated, DO NOT EDIT.\n"), serializedObject...)
 
-			testhelper.CompareOutput(t, fmt.Sprintf("%s-%s", strings.Replace(tc.name, " ", "_", -1), metav1object.GetName()), string(serializedObject), *update, ".yaml")
+			testhelper.CompareOutput(t, fmt.Sprintf("%s-%s", strings.Replace(tc.name, " ", "_", -1), clientObject.GetName()), string(serializedObject), *update, ".yaml")
 		})
 	}
 

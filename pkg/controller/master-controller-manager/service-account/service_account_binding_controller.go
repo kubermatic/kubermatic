@@ -127,7 +127,7 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 				return err
 			}
 		}
-	} else if err := r.createBinding(sa, projectName); err != nil {
+	} else if err := r.createBinding(ctx, sa, projectName); err != nil {
 		return err
 	}
 
@@ -142,7 +142,7 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 	return nil
 }
 
-func (r *reconcileServiceAccountProjectBinding) createBinding(sa *kubermaticv1.User, projectName string) error {
+func (r *reconcileServiceAccountProjectBinding) createBinding(ctx context.Context, sa *kubermaticv1.User, projectName string) error {
 	group, ok := sa.Labels[serviceaccount.ServiceAccountLabelGroup]
 	if !ok {
 		return fmt.Errorf("label %s not found for sa %s", serviceaccount.ServiceAccountLabelGroup, sa.Name)
@@ -168,5 +168,5 @@ func (r *reconcileServiceAccountProjectBinding) createBinding(sa *kubermaticv1.U
 		},
 	}
 
-	return r.Create(r.ctx, binding)
+	return r.Create(ctx, binding)
 }

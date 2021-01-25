@@ -121,15 +121,12 @@ func (r *Reconciler) cleanupDeletedSeed(ctx context.Context, seedInMaster *kuber
 
 	logger.Debug("Seed was deleted, removing copy in seed cluster")
 
-	key, err := ctrlruntimeclient.ObjectKeyFromObject(seedInMaster)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create object key for Seed CR: %v", err)
-	}
+	key := ctrlruntimeclient.ObjectKeyFromObject(seedInMaster)
 
 	// when master==seed cluster, this is the same as seedInMaster
 	seedInSeed := &kubermaticv1.Seed{}
 
-	err = seedClient.Get(ctx, key, seedInSeed)
+	err := seedClient.Get(ctx, key, seedInSeed)
 	if err != nil && !kerrors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to probe for %s: %v", key, err)
 	}

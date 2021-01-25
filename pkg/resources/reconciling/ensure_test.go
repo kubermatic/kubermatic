@@ -24,9 +24,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -39,8 +38,8 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 	tests := []struct {
 		name           string
 		creator        ObjectCreator
-		existingObject runtime.Object
-		expectedObject runtime.Object
+		existingObject ctrlruntimeclient.Object
+		expectedObject ctrlruntimeclient.Object
 	}{
 		{
 			name: "Object gets created",
@@ -58,7 +57,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 					"foo": "bar",
 				},
 			},
-			creator: func(existing runtime.Object) (runtime.Object, error) {
+			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 				var sa *corev1.ConfigMap
 				if existing == nil {
 					sa = &corev1.ConfigMap{}
@@ -84,7 +83,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 					"foo": "hopefully-gets-overwritten",
 				},
 			},
-			creator: func(existing runtime.Object) (runtime.Object, error) {
+			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 				var sa *corev1.ConfigMap
 				if existing == nil {
 					sa = &corev1.ConfigMap{}
@@ -124,7 +123,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 					"foo": "bar",
 				},
 			},
-			creator: func(existing runtime.Object) (runtime.Object, error) {
+			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 				var sa *corev1.ConfigMap
 				if existing == nil {
 					sa = &corev1.ConfigMap{}
@@ -156,7 +155,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var client controllerruntimeclient.Client
+			var client ctrlruntimeclient.Client
 			if test.existingObject != nil {
 				client = controllerruntimefake.NewFakeClient(test.existingObject)
 			} else {
@@ -169,10 +168,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 			}
 
-			key, err := controllerruntimeclient.ObjectKeyFromObject(test.expectedObject)
-			if err != nil {
-				t.Fatalf("Failed to generate a ObjectKey for the expected object: %v", err)
-			}
+			key := ctrlruntimeclient.ObjectKeyFromObject(test.expectedObject)
 
 			gotConfigMap := &corev1.ConfigMap{}
 			if err := client.Get(ctx, key, gotConfigMap); err != nil {

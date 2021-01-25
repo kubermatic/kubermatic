@@ -22,10 +22,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	fakeruntime "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -33,6 +32,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	fakeruntime "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestSyncProjectResourcesClusterWide(t *testing.T) {
@@ -698,6 +699,8 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
+
 			objs := []runtime.Object{test.dependantToSync}
 			for _, existingClusterRole := range test.existingClusterRoles {
 				objs = append(objs, existingClusterRole)
@@ -717,7 +720,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
 			key := client.ObjectKey{Name: objmeta.GetName(), Namespace: objmeta.GetNamespace()}
-			err = target.syncProjectResource(key)
+			err = target.syncProjectResource(ctx, key)
 
 			// validate
 			if err != nil && !test.expectError {
@@ -870,6 +873,8 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
+			ctx := context.Background()
+
 			objs := []runtime.Object{test.dependantToSync}
 			for _, existingRole := range test.existingRoles {
 				objs = append(objs, existingRole)
@@ -889,7 +894,7 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
 			key := client.ObjectKey{Name: objmeta.GetName(), Namespace: objmeta.GetNamespace()}
-			err = target.syncProjectResource(key)
+			err = target.syncProjectResource(ctx, key)
 
 			// validate
 			if !test.expectError {

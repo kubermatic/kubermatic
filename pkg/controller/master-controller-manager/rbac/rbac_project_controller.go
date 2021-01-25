@@ -23,7 +23,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/util/workqueue"
-
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -66,7 +65,6 @@ func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager
 		client:           mgr.GetClient(),
 		restMapper:       mgr.GetRESTMapper(),
 		seedClientMap:    seedClientMap,
-		ctx:              ctx,
 	}
 
 	// Create a new controller

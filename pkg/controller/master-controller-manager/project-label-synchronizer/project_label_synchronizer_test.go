@@ -120,6 +120,8 @@ func TestReconciliation(t *testing.T) {
 			if tc.seedClient == nil {
 				tc.seedClient = fakectrlruntimeclient.NewFakeClient()
 			}
+
+			ctx := context.Background()
 			r := &reconciler{
 				log:                     kubermaticlog.Logger,
 				masterClient:            tc.masterClient,
@@ -128,13 +130,13 @@ func TestReconciliation(t *testing.T) {
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: projectName}}
-			_, err := r.Reconcile(request)
+			_, err := r.Reconcile(ctx, request)
 			if err != nil {
 				t.Fatalf("Error when reconciling: %v", err)
 			}
 
 			clusters := &kubermaticv1.ClusterList{}
-			if err := tc.seedClient.List(context.Background(), clusters); err != nil {
+			if err := tc.seedClient.List(ctx, clusters); err != nil {
 				t.Fatalf("Error listing clusters: %v", err)
 			}
 

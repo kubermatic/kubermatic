@@ -159,8 +159,8 @@ func Add(
 
 	// Cleanup cleanup jobs...
 	if err := mgr.Add(&runnableWrapper{
-		f: func(stopCh <-chan struct{}) {
-			wait.Until(reconciler.cleanupJobs, 30*time.Second, stopCh)
+		f: func(ctx context.Context) {
+			wait.UntilWithContext(ctx, reconciler.cleanupJobs, 30*time.Second)
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add cleanup jobs runnable to mgr: %v", err)
@@ -170,17 +170,15 @@ func Add(
 }
 
 type runnableWrapper struct {
-	f func(<-chan struct{})
+	f func(context.Context)
 }
 
-func (w *runnableWrapper) Start(stopChan <-chan struct{}) error {
-	w.f(stopChan)
+func (w *runnableWrapper) Start(ctx context.Context) error {
+	w.f(ctx)
 	return nil
 }
 
-func (r *Reconciler) cleanupJobs() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (r *Reconciler) cleanupJobs(ctx context.Context) {
 	log := r.log.Named("job_cleanup")
 
 	selector, err := labels.Parse(fmt.Sprintf("%s=%s", resources.AppLabelKey, backupCleanupJobLabel))

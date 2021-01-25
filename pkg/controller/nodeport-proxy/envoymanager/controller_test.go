@@ -45,7 +45,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/test"
@@ -584,7 +583,8 @@ func TestEndpointToService(t *testing.T) {
 				Options: Options{ExposeAnnotationKey: nodeportproxy.DefaultExposeAnnotationKey},
 				Client:  client,
 				log:     log,
-			}).endpointsToService(handler.MapObject{Meta: tt.eps, Object: tt.eps})
+			}).endpointsToService(tt.eps)
+
 			if diff := deep.Equal(res, tt.expectResults); diff != nil {
 				t.Errorf("Got unexpected results. Diff to expected: %v", diff)
 			}
@@ -648,16 +648,16 @@ func TestExposeAnnotationPredicate(t *testing.T) {
 				tt.annotationKey = nodeportproxy.DefaultExposeAnnotationKey
 			}
 			p := exposeAnnotationPredicate{annotation: tt.annotationKey, log: zaptest.NewLogger(t).Sugar()}
-			if got, exp := p.Create(event.CreateEvent{Meta: tt.obj, Object: tt.obj}), tt.expectAccept; got != exp {
+			if got, exp := p.Create(event.CreateEvent{Object: tt.obj}), tt.expectAccept; got != exp {
 				t.Errorf("expect create accepted %t, but got %t for object: %+v", exp, got, *tt.obj)
 			}
-			if got, exp := p.Delete(event.DeleteEvent{Meta: tt.obj, Object: tt.obj}), tt.expectAccept; got != exp {
+			if got, exp := p.Delete(event.DeleteEvent{Object: tt.obj}), tt.expectAccept; got != exp {
 				t.Errorf("expect delete accepted %t, but got %t for object: %+v", exp, got, *tt.obj)
 			}
-			if got, exp := p.Update(event.UpdateEvent{MetaNew: tt.obj, ObjectNew: tt.obj}), tt.expectAccept; got != exp {
+			if got, exp := p.Update(event.UpdateEvent{ObjectNew: tt.obj}), tt.expectAccept; got != exp {
 				t.Errorf("expect update accepted %t, but got %t for object: %+v", exp, got, *tt.obj)
 			}
-			if got, exp := p.Generic(event.GenericEvent{Meta: tt.obj, Object: tt.obj}), tt.expectAccept; got != exp {
+			if got, exp := p.Generic(event.GenericEvent{Object: tt.obj}), tt.expectAccept; got != exp {
 				t.Errorf("expect generic accepted %t, but got %t for object: %+v", exp, got, *tt.obj)
 			}
 		})
