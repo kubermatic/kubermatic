@@ -27,6 +27,7 @@ import (
 	k8scorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -67,7 +68,7 @@ type projectResource struct {
 	namespace   string
 
 	// predicate is used by the controller-runtime to filter watched objects
-	predicate func(m metav1.Object, r runtime.Object) bool
+	predicate func(o client.Object) bool
 }
 
 // New creates a new controller aggregator for managing RBAC for resources
@@ -109,9 +110,9 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 				},
 			},
 			namespace: "kubermatic",
-			predicate: func(m metav1.Object, r runtime.Object) bool {
+			predicate: func(o client.Object) bool {
 				// do not reconcile secrets without "sa-token", "credential" and "kubeconfig-external-cluster" prefix
-				return shouldEnqueueSecret(m.GetName())
+				return shouldEnqueueSecret(o.GetName())
 			},
 		},
 		{
@@ -121,9 +122,9 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 					Kind:       kubermaticv1.UserKindName,
 				},
 			},
-			predicate: func(m metav1.Object, r runtime.Object) bool {
+			predicate: func(o client.Object) bool {
 				// do not reconcile resources without "serviceaccount" prefix
-				return strings.HasPrefix(m.GetName(), "serviceaccount")
+				return strings.HasPrefix(o.GetName(), "serviceaccount")
 			},
 		},
 

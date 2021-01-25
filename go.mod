@@ -106,6 +106,4 @@ replace (
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.19.4
 	k8s.io/kubelet => k8s.io/kubelet v0.19.4
 	k8s.io/metrics => k8s.io/metrics v0.19.4
-	// stick to an older version until we have time to update
-	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.6.5
 )

@@ -28,10 +28,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -78,8 +78,8 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 		&source.Kind{Type: &corev1.Service{}},
 		&handler.EnqueueRequestForObject{},
 		predicate.Factory(
-			func(m metav1.Object, _ runtime.Object) bool {
-				if _, exists := m.GetAnnotations()["nodeport-proxy.k8s.io/expose"]; exists {
+			func(o client.Object) bool {
+				if _, exists := o.GetAnnotations()["nodeport-proxy.k8s.io/expose"]; exists {
 					return true
 				}
 				return false
@@ -93,8 +93,8 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 	if err := outerServiceWatch.InjectCache(outer.GetCache()); err != nil {
 		return fmt.Errorf("failed to inject cache into outer service watch: %v", err)
 	}
-	outererServiceMapper := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
-		val, exists := a.Meta.GetAnnotations()[serviceIdentifyerAnnotationKey]
+	outererServiceMapper := handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+		val, exists := a.GetAnnotations()[serviceIdentifyerAnnotationKey]
 		if !exists {
 			return nil
 		}
@@ -107,10 +107,9 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 		return []reconcile.Request{{
 			NamespacedName: types.NamespacedName{Namespace: split[0], Name: split[1]},
 		}}
-	},
-	)}
-	outerServicePredicate := predicate.Factory(func(m metav1.Object, _ runtime.Object) bool {
-		return m.GetLabels()[labelKey] == jobID
+	})
+	outerServicePredicate := predicate.Factory(func(o client.Object) bool {
+		return o.GetLabels()[labelKey] == jobID
 	})
 	if err := c.Watch(outerServiceWatch, outererServiceMapper, outerServicePredicate); err != nil {
 		return fmt.Errorf("failed to create watch for services in outer cluster: %v", err)

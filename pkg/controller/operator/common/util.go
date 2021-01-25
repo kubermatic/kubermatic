@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -52,8 +53,8 @@ const (
 var (
 	// ManagedByOperatorPredicate is a predicate that matches all resources created by
 	// the Kubermatic Operator, based on the ManagedBy label.
-	ManagedByOperatorPredicate = predicate.Factory(func(m metav1.Object, _ runtime.Object) bool {
-		for _, ref := range m.GetOwnerReferences() {
+	ManagedByOperatorPredicate = predicate.Factory(func(o client.Object) bool {
+		for _, ref := range o.GetOwnerReferences() {
 			if isKubermaticConfiguration(ref) || isSeed(ref) {
 				return true
 			}
