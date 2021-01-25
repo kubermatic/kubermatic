@@ -81,6 +81,7 @@ func TestReconcile(t *testing.T) {
 			} else {
 				client = fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme)
 			}
+			ctx := context.Background()
 			r := &reconciler{
 				log:      kubermaticlog.Logger,
 				client:   client,
@@ -88,7 +89,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
-			if _, err := r.Reconcile(request); err != nil {
+			if _, err := r.Reconcile(ctx, request); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
@@ -97,7 +98,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			clusterRole := &rbacv1.ClusterRole{}
-			if err := client.Get(context.Background(), request.NamespacedName, clusterRole); err != nil {
+			if err := client.Get(ctx, request.NamespacedName, clusterRole); err != nil {
 				t.Fatalf("failed to get cluster role: %v", err)
 			}
 

@@ -56,7 +56,6 @@ type UserClusterClientProvider interface {
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	ctx                           context.Context
 	workerName                    string
 	recorder                      record.EventRecorder
 	seedGetter                    provider.SeedGetter
@@ -70,7 +69,6 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 	reconciler := &Reconciler{
 		Client: mgr.GetClient(),
 
-		ctx:                           ctx,
 		workerName:                    workerName,
 		recorder:                      mgr.GetEventRecorderFor(ControllerName),
 		seedGetter:                    seedGetter,
@@ -94,9 +92,9 @@ func Add(ctx context.Context, mgr manager.Manager, numWorkers int, workerName st
 	return nil
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	cluster := &kubermaticv1.Cluster{}
-	if err := r.Get(r.ctx, request.NamespacedName, cluster); err != nil {
+	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -105,14 +103,14 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
-		r.ctx,
+		ctx,
 		r.Client,
 		r.workerName,
 		cluster,
 		r.versions,
 		kubermaticv1.ClusterConditionMachineDeploymentControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
-			return r.reconcile(cluster)
+			return r.reconcile(ctx, cluster)
 		},
 	)
 	if err != nil {
@@ -125,7 +123,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return *result, err
 }
 
-func (r *Reconciler) reconcile(cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// If cluster is not healthy yet there is nothing to do.
 	// If it gets healthy we'll get notified by the event. No need to requeue.
 	if !cluster.Status.ExtendedHealth.AllHealthy() {
@@ -135,7 +133,7 @@ func (r *Reconciler) reconcile(cluster *kubermaticv1.Cluster) (*reconcile.Result
 
 	nodeDeployment, err := r.parseNodeDeployment(cluster)
 	if err != nil {
-		if removeErr := r.removeAnnotation(cluster); removeErr != nil {
+		if removeErr := r.removeAnnotation(ctx, cluster); removeErr != nil {
 			return nil, fmt.Errorf("failed to remove invalid (%v) initial MachineDeployment annotation: %v", err, removeErr)
 		}
 
@@ -146,16 +144,16 @@ func (r *Reconciler) reconcile(cluster *kubermaticv1.Cluster) (*reconcile.Result
 		return nil, nil
 	}
 
-	userClusterClient, err := r.userClusterConnectionProvider.GetClient(r.ctx, cluster)
+	userClusterClient, err := r.userClusterConnectionProvider.GetClient(ctx, cluster)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user cluster client: %v", err)
 	}
 
-	if err := r.createInitialMachineDeployment(nodeDeployment, cluster, userClusterClient); err != nil {
+	if err := r.createInitialMachineDeployment(ctx, nodeDeployment, cluster, userClusterClient); err != nil {
 		return nil, fmt.Errorf("failed to create initial MachineDeployment: %v", err)
 	}
 
-	if err := r.removeAnnotation(cluster); err != nil {
+	if err := r.removeAnnotation(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to remove initial MachineDeployment annotation: %v", err)
 	}
 
@@ -181,19 +179,19 @@ func (r *Reconciler) parseNodeDeployment(cluster *kubermaticv1.Cluster) (*v1.Nod
 	return nodeDeployment, nil
 }
 
-func (r *Reconciler) createInitialMachineDeployment(nodeDeployment *v1.NodeDeployment, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
+func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, nodeDeployment *v1.NodeDeployment, cluster *kubermaticv1.Cluster, client ctrlruntimeclient.Client) error {
 	datacenter, err := r.getTargetDatacenter(cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get target datacenter: %v", err)
 	}
 
-	sshKeys, err := r.getSSHKeys(cluster)
+	sshKeys, err := r.getSSHKeys(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get SSH keys: %v", err)
 	}
 
 	data := common.CredentialsData{
-		Ctx:               r.ctx,
+		Ctx:               ctx,
 		KubermaticCluster: cluster,
 		Client:            r,
 	}
@@ -203,7 +201,7 @@ func (r *Reconciler) createInitialMachineDeployment(nodeDeployment *v1.NodeDeplo
 		return fmt.Errorf("failed to assemble MachineDeployment: %v", err)
 	}
 
-	err = client.Create(r.ctx, machineDeployment)
+	err = client.Create(ctx, machineDeployment)
 	if err != nil {
 		// in case we created the MD before but then failed to cleanup the Cluster resource's
 		// annotations, we can silently ignore AlreadyExists errors here and then re-try removing
@@ -235,7 +233,7 @@ func (r *Reconciler) getTargetDatacenter(cluster *kubermaticv1.Cluster) (*kuberm
 	return nil, fmt.Errorf("there is no datacenter named %q in Seed %q", cluster.Spec.Cloud.DatacenterName, seed.Name)
 }
 
-func (r *Reconciler) getSSHKeys(cluster *kubermaticv1.Cluster) ([]*kubermaticv1.UserSSHKey, error) {
+func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.UserSSHKey, error) {
 	var keys []*kubermaticv1.UserSSHKey
 
 	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
@@ -244,7 +242,7 @@ func (r *Reconciler) getSSHKeys(cluster *kubermaticv1.Cluster) ([]*kubermaticv1.
 	}
 
 	project := &kubermaticv1.Project{}
-	if err := r.Get(r.ctx, ctrlruntimeclient.ObjectKey{Name: projectID}, project); err != nil {
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: projectID}, project); err != nil {
 		return nil, fmt.Errorf("failed to get owning project %q: %v", projectID, err)
 	}
 
@@ -257,8 +255,8 @@ func (r *Reconciler) getSSHKeys(cluster *kubermaticv1.Cluster) ([]*kubermaticv1.
 	return keys, nil
 }
 
-func (r *Reconciler) removeAnnotation(cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	oldCluster := cluster.DeepCopy()
 	delete(cluster.Annotations, v1.InitialMachineDeploymentRequestAnnotation)
-	return r.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }

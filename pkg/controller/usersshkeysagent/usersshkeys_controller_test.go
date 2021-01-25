@@ -17,6 +17,7 @@ limitations under the License.
 package usersshkeysagent
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -117,7 +118,7 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 				}
 			}
 
-			if _, err := tc.reconciler.Reconcile(reconcile.Request{
+			if _, err := tc.reconciler.Reconcile(context.Background(), reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: resources.UserSSHKeys, Namespace: metav1.NamespaceSystem}}); err != nil {
 				t.Fatalf("failed to run reconcile: %v", err)
 			}

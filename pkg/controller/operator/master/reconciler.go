@@ -49,17 +49,16 @@ type Reconciler struct {
 	recorder   record.EventRecorder
 	scheme     *runtime.Scheme
 	workerName string
-	ctx        context.Context
 	versions   kubermaticversion.Versions
 }
 
 // Reconcile acts upon requests and will restore the state of resources
 // for the given namespace. Will return an error if any API operation
 // failed, otherwise will return an empty dummy Result struct.
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	// find the requested configuration
 	config := &operatorv1alpha1.KubermaticConfiguration{}
-	if err := r.Get(r.ctx, request.NamespacedName, config); err != nil {
+	if err := r.Get(ctx, request.NamespacedName, config); err != nil {
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -80,7 +79,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, fmt.Errorf("failed to apply defaults: %v", err)
 	}
 
-	err = r.reconcile(defaulted, logger)
+	err = r.reconcile(ctx, defaulted, logger)
 	if err != nil {
 		r.recorder.Event(config, corev1.EventTypeWarning, "ReconcilingError", err.Error())
 	}
@@ -88,65 +87,65 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcile(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Kubermatic configuration")
 
 	// config was deleted, let's clean up
 	if config.DeletionTimestamp != nil {
-		return r.cleanupDeletedConfiguration(config, logger)
+		return r.cleanupDeletedConfiguration(ctx, config, logger)
 	}
 
 	// ensure we always have a cleanup finalizer
 	oldConfig := config.DeepCopy()
 	kubernetes.AddFinalizer(config, common.CleanupFinalizer)
-	if err := r.Patch(r.ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
+	if err := r.Patch(ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
 		return fmt.Errorf("failed to add finalizer: %v", err)
 	}
 
-	if err := r.reconcileNamespaces(config, logger); err != nil {
+	if err := r.reconcileNamespaces(ctx, config, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileServiceAccounts(config, logger); err != nil {
+	if err := r.reconcileServiceAccounts(ctx, config, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileClusterRoleBindings(config, logger); err != nil {
+	if err := r.reconcileClusterRoleBindings(ctx, config, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileSecrets(config, logger); err != nil {
+	if err := r.reconcileSecrets(ctx, config, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileConfigMaps(config, logger); err != nil {
+	if err := r.reconcileConfigMaps(ctx, config, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileDeployments(config, logger); err != nil {
+	if err := r.reconcileDeployments(ctx, config, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcilePodDisruptionBudgets(config, logger); err != nil {
+	if err := r.reconcilePodDisruptionBudgets(ctx, config, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileServices(config, logger); err != nil {
+	if err := r.reconcileServices(ctx, config, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileIngresses(config, logger); err != nil {
+	if err := r.reconcileIngresses(ctx, config, logger); err != nil {
 		return err
 	}
 
-	if err := r.reconcileAdmissionWebhooks(config, logger); err != nil {
+	if err := r.reconcileAdmissionWebhooks(ctx, config, logger); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *Reconciler) cleanupDeletedConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) cleanupDeletedConfiguration(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	if !kubernetes.HasAnyFinalizer(config, common.CleanupFinalizer) {
 		return nil
 	}
@@ -164,42 +163,42 @@ func (r *Reconciler) cleanupDeletedConfiguration(config *operatorv1alpha1.Kuberm
 	oldConfig := config.DeepCopy()
 	kubernetes.RemoveFinalizer(config, common.CleanupFinalizer)
 
-	if err := r.Patch(r.ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
+	if err := r.Patch(ctx, config, ctrlruntimeclient.MergeFrom(oldConfig)); err != nil {
 		return fmt.Errorf("failed to remove finalizer: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileNamespaces(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileNamespaces(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Namespaces")
 
 	creators := []reconciling.NamedNamespaceCreatorGetter{
 		common.NamespaceCreator(config),
 	}
 
-	if err := reconciling.ReconcileNamespaces(r.ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Namespaces: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileConfigMaps(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileConfigMaps(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ConfigMaps")
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
 		kubermatic.UIConfigConfigMapCreator(config),
 	}
 
-	if err := reconciling.ReconcileConfigMaps(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileSecrets(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileSecrets(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Secrets")
 
 	creators := []reconciling.NamedSecretCreatorGetter{
@@ -216,42 +215,42 @@ func (r *Reconciler) reconcileSecrets(config *operatorv1alpha1.KubermaticConfigu
 		creators = append(creators, common.DexCASecretCreator(config))
 	}
 
-	if err := reconciling.ReconcileSecrets(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileSecrets(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileServiceAccounts(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileServiceAccounts(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ServiceAccounts")
 
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		kubermatic.ServiceAccountCreator(config),
 	}
 
-	if err := reconciling.ReconcileServiceAccounts(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileServiceAccounts(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileClusterRoleBindings(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling ClusterRoleBindings")
 
 	creators := []reconciling.NamedClusterRoleBindingCreatorGetter{
 		kubermatic.ClusterRoleBindingCreator(config),
 	}
 
-	if err := reconciling.ReconcileClusterRoleBindings(r.ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileDeployments(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileDeployments(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Deployments")
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{
@@ -262,7 +261,7 @@ func (r *Reconciler) reconcileDeployments(config *operatorv1alpha1.KubermaticCon
 
 	modifiers := []reconciling.ObjectModifier{
 		common.OwnershipModifierFactory(config, r.scheme),
-		common.VolumeRevisionLabelsModifierFactory(r.ctx, r.Client),
+		common.VolumeRevisionLabelsModifierFactory(ctx, r.Client),
 	}
 	// add the image pull secret wrapper only when an image pull secret is
 	// provided
@@ -270,14 +269,14 @@ func (r *Reconciler) reconcileDeployments(config *operatorv1alpha1.KubermaticCon
 		modifiers = append(modifiers, reconciling.ImagePullSecretsWrapper(common.DockercfgSecretName))
 	}
 
-	if err := reconciling.ReconcileDeployments(r.ctx, creators, config.Namespace, r.Client, modifiers...); err != nil {
+	if err := reconciling.ReconcileDeployments(ctx, creators, config.Namespace, r.Client, modifiers...); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcilePodDisruptionBudgets(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcilePodDisruptionBudgets(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling PodDisruptionBudgets")
 
 	creators := []reconciling.NamedPodDisruptionBudgetCreatorGetter{
@@ -286,14 +285,14 @@ func (r *Reconciler) reconcilePodDisruptionBudgets(config *operatorv1alpha1.Kube
 		kubermatic.MasterControllerManagerPDBCreator(config),
 	}
 
-	if err := reconciling.ReconcilePodDisruptionBudgets(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcilePodDisruptionBudgets(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile PodDisruptionBudgets: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileServices(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileServices(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling Services")
 
 	creators := []reconciling.NamedServiceCreatorGetter{
@@ -302,14 +301,14 @@ func (r *Reconciler) reconcileServices(config *operatorv1alpha1.KubermaticConfig
 		common.SeedAdmissionServiceCreator(config, r.Client),
 	}
 
-	if err := reconciling.ReconcileServices(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileServices(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Services: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileIngresses(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileIngresses(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	if config.Spec.Ingress.Disable {
 		logger.Debug("Skipping Ingress creation because it was explicitly disabled")
 		return nil
@@ -321,21 +320,21 @@ func (r *Reconciler) reconcileIngresses(config *operatorv1alpha1.KubermaticConfi
 		kubermatic.IngressCreator(config),
 	}
 
-	if err := reconciling.ReconcileIngresses(r.ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
+	if err := reconciling.ReconcileIngresses(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Ingresses: %v", err)
 	}
 
 	return nil
 }
 
-func (r *Reconciler) reconcileAdmissionWebhooks(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileAdmissionWebhooks(ctx context.Context, config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) error {
 	logger.Debug("Reconciling AdmissionWebhooks")
 
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		common.SeedAdmissionWebhookCreator(config, r.Client),
 	}
 
-	if err := reconciling.ReconcileValidatingWebhookConfigurations(r.ctx, creators, "", r.Client); err != nil {
+	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile AdmissionWebhooks: %v", err)
 	}
 

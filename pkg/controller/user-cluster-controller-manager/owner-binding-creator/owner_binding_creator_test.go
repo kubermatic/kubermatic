@@ -112,8 +112,9 @@ func TestReconcile(t *testing.T) {
 				ownerEmail: tc.ownerEmail,
 			}
 
+			ctx := context.Background()
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
-			if _, err := r.Reconcile(request); err != nil {
+			if _, err := r.Reconcile(ctx, request); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
@@ -122,7 +123,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			clusterRoleBindingList := &rbacv1.ClusterRoleBindingList{}
-			if err := client.List(context.Background(), clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue}); err != nil {
+			if err := client.List(ctx, clusterRoleBindingList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterBindingComponentValue}); err != nil {
 				t.Fatalf("failed to list cluster role bindigs: %v", err)
 			}
 

@@ -154,9 +154,10 @@ func TestReconciliation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
 			client := fake.NewFakeClient(tc.nodes...)
 			r := &reconciler{client: client}
-			result, err := r.reconcile()
+			result, err := r.reconcile(ctx)
 			if err := tc.verify(result, err, client); err != nil {
 				t.Fatalf("verification failed: %v", err)
 			}

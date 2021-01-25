@@ -118,21 +118,20 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 	return nil
 }
 
-func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request.String())
 	log.Debug("Reconciling")
 
-	err := r.reconcile(log, request)
+	err := r.reconcile(ctx, log, request)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request) error {
-
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	innerService := &corev1.Service{}
-	if err := r.innerClient.Get(r.ctx, request.NamespacedName, innerService); err != nil {
+	if err := r.innerClient.Get(ctx, request.NamespacedName, innerService); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Info("Got request for service that doesn't exist, returning")
 			return nil
@@ -142,7 +141,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 
 	outerServices := &corev1.ServiceList{}
 	labelSelector := ctrlruntimeclient.MatchingLabels(map[string]string{labelKey: r.jobID})
-	if err := r.outerClient.List(r.ctx, outerServices, labelSelector); err != nil {
+	if err := r.outerClient.List(ctx, outerServices, labelSelector); err != nil {
 		return fmt.Errorf("failed to list service in outer cluster: %v", err)
 	}
 	outerService := getServiceFromServiceList(outerServices, request.NamespacedName)
@@ -176,7 +175,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 
 	oldInnerService := innerService.DeepCopy()
 	innerService.Spec.Ports[0].NodePort = outerService.Spec.Ports[0].NodePort
-	if err := r.innerClient.Patch(r.ctx, innerService, ctrlruntimeclient.MergeFrom(oldInnerService)); err != nil {
+	if err := r.innerClient.Patch(ctx, innerService, ctrlruntimeclient.MergeFrom(oldInnerService)); err != nil {
 		return fmt.Errorf("failed to update nodeport of service %s/%s to %d: %v", innerService.Namespace, innerService.Name, outerService.Spec.Ports[0].NodePort, err)
 	}
 

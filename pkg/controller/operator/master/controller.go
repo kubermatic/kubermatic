@@ -63,7 +63,6 @@ func Add(
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		log:        log.Named(ControllerName),
 		workerName: workerName,
-		ctx:        ctx,
 		versions:   kubermatic.NewDefaultVersions(),
 	}
 

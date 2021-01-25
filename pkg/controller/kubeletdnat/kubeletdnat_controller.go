@@ -119,10 +119,7 @@ func Add(
 	})
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	// Add a wrapping here so we can emit an event on error
 	err := r.syncDnatRules(ctx)
 	if err != nil {

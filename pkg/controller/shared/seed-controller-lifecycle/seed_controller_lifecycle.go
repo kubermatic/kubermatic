@@ -64,7 +64,6 @@ func init() {
 }
 
 type Reconciler struct {
-	ctx                  context.Context
 	masterKubeCfg        *rest.Config
 	masterClient         ctrlruntimeclient.Client
 	masterCache          cache.Cache
@@ -121,7 +120,6 @@ func Add(
 	}
 
 	reconciler := &Reconciler{
-		ctx:                  ctx,
 		masterKubeCfg:        mgr.GetConfig(),
 		masterClient:         mgr.GetClient(),
 		masterCache:          &unstartableCache{cache},
@@ -160,15 +158,15 @@ func Add(
 	return nil
 }
 
-func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
-	err := r.reconcile()
+func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
+	err := r.reconcile(ctx)
 	if err != nil {
 		r.log.Errorw("reconiliation failed", zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile() error {
+func (r *Reconciler) reconcile(ctx context.Context) error {
 	seeds, err := r.seedsGetter()
 	if err != nil {
 		return fmt.Errorf("failed to get seeds: %v", err)
@@ -223,7 +221,7 @@ func (r *Reconciler) reconcile() error {
 		return fmt.Errorf("failed to create managers for all seeds: %v", err)
 	}
 
-	ctrlCtx, cancelCtrlCtx := context.WithCancel(r.ctx)
+	ctrlCtx, cancelCtrlCtx := context.WithCancel(ctx)
 
 	for _, factory := range r.controllerFactories {
 		controllerName, err := factory(ctrlCtx, mgr, seedManagers)

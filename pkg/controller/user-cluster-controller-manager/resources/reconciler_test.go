@@ -72,7 +72,7 @@ func TestResourceReconciliationIdempotency(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {
-		if err := mgr.Start(ctx.Done()); err != nil {
+		if err := mgr.Start(ctx); err != nil {
 			t.Errorf("failed to start manager: %v", err)
 		}
 	}()

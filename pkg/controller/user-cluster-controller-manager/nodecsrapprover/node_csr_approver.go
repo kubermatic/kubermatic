@@ -65,9 +65,7 @@ func Add(mgr manager.Manager, numWorkers int, cfg *rest.Config, log *zap.Sugared
 	return c.Watch(&source.Kind{Type: &certificatesv1beta1.CertificateSigningRequest{}}, &handler.EnqueueRequestForObject{})
 }
 
-func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	err := r.reconcile(ctx, request)
 	if err != nil {
 		r.log.Errorw("Reconciliation of request failed", "request", request.NamespacedName.String(), zap.Error(err))

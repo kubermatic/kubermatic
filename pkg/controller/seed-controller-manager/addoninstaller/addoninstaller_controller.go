@@ -102,7 +102,7 @@ func Add(
 		return fmt.Errorf("failed to create watch for clusters: %v", err)
 	}
 
-	enqueueClusterForNamespacedObject := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+	enqueueClusterForNamespacedObject := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		clusterList := &kubermaticv1.ClusterList{}
 		if err := mgr.GetClient().List(context.Background(), clusterList); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %v", err))
@@ -110,12 +110,12 @@ func Add(
 			return []reconcile.Request{}
 		}
 		for _, cluster := range clusterList.Items {
-			if cluster.Status.NamespaceName == a.Meta.GetNamespace() {
+			if cluster.Status.NamespaceName == a.GetNamespace() {
 				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
 			}
 		}
 		return []reconcile.Request{}
-	})}
+	})
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Addon{}}, enqueueClusterForNamespacedObject); err != nil {
 		return fmt.Errorf("failed to create watch for Addons: %v", err)
 	}
@@ -123,9 +123,7 @@ func Add(
 	return nil
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 

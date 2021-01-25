@@ -38,11 +38,12 @@ import (
 // and make an if err := r.reconcile(); err != nil {} simplication,
 // accidentally shortcircuiting the workqeue and retrying
 func TestReconcileReturnsError(t *testing.T) {
+	ctx := context.Background()
 	r := &reconciler{
 		client: &fakeClientThatErrorsOnGet{fakectrlruntimeclient.NewFakeClient()},
 	}
 	expectedErr := `failed to get cluster "": erroring on get as requested`
-	if _, err := r.Reconcile(reconcile.Request{}); err == nil || err.Error() != expectedErr {
+	if _, err := r.Reconcile(ctx, reconcile.Request{}); err == nil || err.Error() != expectedErr {
 		t.Fatalf("Expected error %v, got error %v", expectedErr, err)
 	}
 }
@@ -151,14 +152,14 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
 	for _, testCase := range testcases {
 		t.Run(testCase.name, func(t *testing.T) {
+			ctx := context.Background()
 			client := fakectrlruntimeclient.NewFakeClient(append(testCase.resources, testCase.cluster)...)
 			r := &reconciler{
 				client: client,
 			}
-			if err := r.reconcile(testCase.cluster); err != nil {
+			if err := r.reconcile(ctx, testCase.cluster); err != nil {
 				t.Fatalf("Error calling reconcile: %v", err)
 			}
 

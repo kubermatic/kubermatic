@@ -64,20 +64,20 @@ func TestReconcile(t *testing.T) {
 			kubermaticFakeClient := fake.NewFakeClientWithScheme(scheme.Scheme, test.existingKubermaticObjects...)
 
 			// act
+			ctx := context.Background()
 			target := Reconciler{
-				ctx:    context.Background(),
 				Client: kubermaticFakeClient,
 				log:    kubermaticlog.Logger,
 			}
 
-			_, err := target.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: test.clusterName}})
+			_, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.clusterName}})
 
 			// validate
 			if err != nil {
 				t.Fatal(err)
 			}
 			cluster := &kubermaticv1.ExternalCluster{}
-			err = kubermaticFakeClient.Get(context.TODO(), client.ObjectKey{Name: test.clusterName}, cluster)
+			err = kubermaticFakeClient.Get(ctx, client.ObjectKey{Name: test.clusterName}, cluster)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -86,7 +86,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			secretKubeconfig := &corev1.Secret{}
-			err = kubermaticFakeClient.Get(context.TODO(), client.ObjectKey{Name: cluster.GetKubeconfigSecretName()}, secretKubeconfig)
+			err = kubermaticFakeClient.Get(ctx, client.ObjectKey{Name: cluster.GetKubeconfigSecretName()}, secretKubeconfig)
 			if err == nil {
 				t.Fatal("expected error")
 			}

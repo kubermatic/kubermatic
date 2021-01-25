@@ -37,7 +37,6 @@ import (
 
 type resourcesController struct {
 	projectResourcesQueue workqueue.RateLimitingInterface
-	ctx                   context.Context
 	metrics               *Metrics
 	projectResources      []projectResource
 	client                client.Client
@@ -56,7 +55,6 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 
 		mc := &resourcesController{
 			projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_resources"),
-			ctx:                   ctx,
 			metrics:               metrics,
 			projectResources:      resources,
 			client:                mgr.GetClient(),
@@ -89,7 +87,6 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 
 			c := &resourcesController{
 				projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf("rbac_generator_resources_%s", seedName)),
-				ctx:                   ctx,
 				metrics:               metrics,
 				projectResources:      resources,
 				client:                seedManager.GetClient(),
@@ -120,8 +117,8 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 	return []*resourcesController{}, nil
 }
 
-func (c *resourcesController) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	err := c.syncProjectResource(req.NamespacedName)
+func (c *resourcesController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	err := c.syncProjectResource(ctx, req.NamespacedName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

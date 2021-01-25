@@ -67,7 +67,6 @@ func Add(
 	namespacePredicate := predicateutil.ByNamespace(namespace)
 
 	reconciler := &Reconciler{
-		ctx:            ctx,
 		log:            log.Named(ControllerName),
 		scheme:         masterManager.GetScheme(),
 		namespace:      namespace,

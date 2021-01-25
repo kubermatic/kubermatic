@@ -17,6 +17,7 @@ limitations under the License.
 package rolecloner
 
 import (
+	"context"
 	"reflect"
 	"sort"
 	"testing"
@@ -316,8 +317,9 @@ func TestReconcile(t *testing.T) {
 				recorder: record.NewFakeRecorder(10),
 			}
 
+			ctx := context.Background()
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName, Namespace: tc.requestNamespace}}
-			if _, err := r.Reconcile(request); err != nil {
+			if _, err := r.Reconcile(ctx, request); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
@@ -326,7 +328,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			existingRoleList := &rbacv1.RoleList{}
-			if err := r.client.List(r.ctx, existingRoleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}); err != nil {
+			if err := r.client.List(ctx, existingRoleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}); err != nil {
 				t.Fatalf("failed to get role: %v", err)
 			}
 

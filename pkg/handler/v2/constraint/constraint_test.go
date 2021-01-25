@@ -125,6 +125,7 @@ func TestListConstraints(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints",
 				tc.ProjectID, tc.ClusterID), strings.NewReader(""))
 			res := httptest.NewRecorder()
+			ctx := context.Background()
 
 			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -132,7 +133,7 @@ func TestListConstraints(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjects {
-				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
+				err = clientsSets.FakeClient.Create(ctx, gkObject)
 				if err != nil {
 					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
 				}
@@ -232,6 +233,7 @@ func TestGetConstraints(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/constraints/%s",
 				tc.ProjectID, tc.ClusterID, tc.ConstraintName), strings.NewReader(""))
 			res := httptest.NewRecorder()
+			ctx := context.Background()
 
 			ep, clientsSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, nil, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -239,7 +241,7 @@ func TestGetConstraints(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjects {
-				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
+				err = clientsSets.FakeClient.Create(ctx, gkObject)
 				if err != nil {
 					t.Fatalf("failed to create gk object due to %v", err)
 				}

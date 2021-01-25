@@ -99,9 +99,8 @@ func TestReconcile(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
+			ctx := context.Background()
 			r := &reconciler{
-				ctx:        context.Background(),
 				log:        kubermaticlog.Logger,
 				recorder:   &record.FakeRecorder{},
 				seedClient: tc.seedClient,
@@ -109,7 +108,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			request := reconcile.Request{NamespacedName: tc.namespacedName}
-			if _, err := r.Reconcile(request); err != nil {
+			if _, err := r.Reconcile(ctx, request); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
@@ -119,7 +118,7 @@ func TestReconcile(t *testing.T) {
 				Version: constrainthandler.ConstraintsVersion,
 				Kind:    kind,
 			})
-			err := tc.userClient.Get(context.Background(), types.NamespacedName{Name: constraintName}, reqLabel)
+			err := tc.userClient.Get(ctx, types.NamespacedName{Name: constraintName}, reqLabel)
 			if tc.expectedGetErrStatus != "" {
 				if err == nil {
 					t.Fatalf("expected error status %s, instead got constraint: %v", tc.expectedGetErrStatus, reqLabel)

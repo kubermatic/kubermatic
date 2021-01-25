@@ -163,8 +163,9 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				client = controllerruntimefake.NewFakeClient()
 			}
 
+			ctx := context.Background()
 			name := types.NamespacedName{Namespace: testNamespace, Name: testResourceName}
-			if err := EnsureNamedObject(context.Background(), name, test.creator, client, &corev1.ConfigMap{}, false); err != nil {
+			if err := EnsureNamedObject(ctx, name, test.creator, client, &corev1.ConfigMap{}, false); err != nil {
 				t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 			}
 
@@ -174,7 +175,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 			}
 
 			gotConfigMap := &corev1.ConfigMap{}
-			if err := client.Get(context.Background(), key, gotConfigMap); err != nil {
+			if err := client.Get(ctx, key, gotConfigMap); err != nil {
 				t.Fatalf("Failed to get the ConfigMap from the client: %v", err)
 			}
 

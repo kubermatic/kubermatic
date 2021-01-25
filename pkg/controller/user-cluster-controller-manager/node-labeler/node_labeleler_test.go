@@ -161,8 +161,9 @@ func TestReconcile(t *testing.T) {
 				labels:   tc.reconcilerLabels,
 			}
 
+			ctx := context.Background()
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: requestName}}
-			_, err := r.Reconcile(request)
+			_, err := r.Reconcile(ctx, request)
 			var actualErr string
 			if err != nil {
 				actualErr = err.Error()
@@ -176,7 +177,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			node := &corev1.Node{}
-			if err := client.Get(context.Background(), request.NamespacedName, node); err != nil {
+			if err := client.Get(ctx, request.NamespacedName, node); err != nil {
 				t.Fatalf("failed to get node: %v", err)
 			}
 

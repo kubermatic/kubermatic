@@ -42,7 +42,7 @@ const (
 	ResourceViewerName = "system:kubermatic:viewers"
 )
 
-var mapFn = handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
+var mapFn = handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
 	return []reconcile.Request{
 		{NamespacedName: types.NamespacedName{
 			Name:      ResourceOwnerName,
@@ -62,7 +62,7 @@ var mapFn = handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request
 // Add creates a new RBAC generator controller that is responsible for creating Cluster Roles and Cluster Role Bindings
 // for groups: `owners`, `editors` and `viewers``
 func Add(mgr manager.Manager, registerReconciledCheck func(name string, check healthcheck.Check)) error {
-	reconcile := &reconcileRBAC{Client: mgr.GetClient(), ctx: context.TODO(), rLock: &sync.Mutex{}}
+	reconcile := &reconcileRBAC{Client: mgr.GetClient(), rLock: &sync.Mutex{}}
 
 	// Create a new controller
 	c, err := controller.New(controllerName, mgr, controller.Options{Reconciler: reconcile})
@@ -71,11 +71,11 @@ func Add(mgr manager.Manager, registerReconciledCheck func(name string, check he
 	}
 
 	// Watch for changes to ClusterRoles
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRole{}}, mapFn); err != nil {
 		return err
 	}
 	// Watch for changes to ClusterRoleBindings
-	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, &handler.EnqueueRequestsFromMapFunc{ToRequests: mapFn}); err != nil {
+	if err = c.Watch(&source.Kind{Type: &rbacv1.ClusterRoleBinding{}}, mapFn); err != nil {
 		return err
 	}
 
@@ -94,7 +94,6 @@ func Add(mgr manager.Manager, registerReconciledCheck func(name string, check he
 
 // reconcileRBAC reconciles Cluster Role and Cluster Role Binding objects
 type reconcileRBAC struct {
-	ctx context.Context
 	client.Client
 
 	rLock                      *sync.Mutex
@@ -102,10 +101,10 @@ type reconcileRBAC struct {
 }
 
 // Reconcile makes changes in response to Cluster Role and Cluster Role Binding related changes
-func (r *reconcileRBAC) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	rdr := reconciler{client: r.Client, ctx: r.ctx}
+func (r *reconcileRBAC) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	rdr := reconciler{client: r.Client}
 
-	if err := rdr.Reconcile(request.Name); err != nil {
+	if err := rdr.Reconcile(ctx, request.Name); err != nil {
 		klog.Errorf("RBAC reconciliation failed: %v", err)
 		return reconcile.Result{}, err
 	}

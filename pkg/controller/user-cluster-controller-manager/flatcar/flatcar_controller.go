@@ -68,10 +68,7 @@ func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv
 	return c.Watch(&source.Kind{Type: &corev1.Node{}}, controllerutil.EnqueueConst(""), predicate)
 }
 
-func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
 	if err := r.reconcileUpdateOperatorResources(ctx); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile the UpdateOperator resources: %v", err)
 	}

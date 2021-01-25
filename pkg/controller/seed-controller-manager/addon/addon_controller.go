@@ -136,8 +136,8 @@ func Add(
 		return err
 	}
 
-	enqueueClusterAddons := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
-		cluster := a.Object.(*kubermaticv1.Cluster)
+	enqueueClusterAddons := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		cluster := a.(*kubermaticv1.Cluster)
 		if cluster.Status.NamespaceName == "" {
 			return nil
 		}
@@ -154,7 +154,7 @@ func Add(
 			})
 		}
 		return requests
-	})}
+	})
 
 	// Only react cluster update events when our condition changed
 	clusterPredicate := predicate.Funcs{
@@ -173,9 +173,7 @@ func Add(
 	return c.Watch(&source.Kind{Type: &kubermaticv1.Addon{}}, &handler.EnqueueRequestForObject{})
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 

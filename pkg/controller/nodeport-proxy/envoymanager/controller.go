@@ -82,7 +82,6 @@ func (o Options) IsTunnelingEnabled() bool {
 func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlruntimeclient.Client, opts Options) (*Reconciler, envoycachev3.SnapshotCache, error) {
 	cache := envoycachev3.NewSnapshotCache(true, envoycachev3.IDHash{}, log)
 	r := Reconciler{
-		ctx:     ctx,
 		log:     log,
 		Client:  client,
 		Options: opts,
@@ -96,7 +95,6 @@ func NewReconciler(ctx context.Context, log *zap.SugaredLogger, client ctrlrunti
 }
 
 type Reconciler struct {
-	ctx context.Context
 	log *zap.SugaredLogger
 
 	ctrlruntimeclient.Client
@@ -105,18 +103,18 @@ type Reconciler struct {
 	cache envoycachev3.SnapshotCache
 }
 
-func (r *Reconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.log.Debugw("got reconcile request", "request", req)
-	err := r.sync()
+	err := r.sync(ctx)
 	if err != nil {
 		r.log.Errorf("failed to reconcile", zap.Error(err))
 	}
 	return ctrl.Result{}, err
 }
 
-func (r *Reconciler) sync() error {
+func (r *Reconciler) sync(ctx context.Context) error {
 	services := corev1.ServiceList{}
-	if err := r.List(r.ctx, &services,
+	if err := r.List(ctx, &services,
 		ctrlruntimeclient.InNamespace(r.Namespace),
 		client.MatchingFields{r.ExposeAnnotationKey: "true"},
 	); err != nil {
@@ -140,7 +138,7 @@ func (r *Reconciler) sync() error {
 
 		// Get associated endpoints
 		eps := corev1.Endpoints{}
-		if err := r.Get(context.Background(), types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, &eps); err != nil {
+		if err := r.Get(ctx, types.NamespacedName{Namespace: service.Namespace, Name: service.Name}, &eps); err != nil {
 			if apierrors.IsNotFound(err) {
 				continue
 			}
@@ -186,8 +184,8 @@ func (r *Reconciler) sync() error {
 	return nil
 }
 
-func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
-	if err := mgr.GetFieldIndexer().IndexField(r.ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
+func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw runtime.Object) []string {
 		svc := raw.(*corev1.Service)
 		if isExposed(svc, r.ExposeAnnotationKey) {
 			return []string{"true"}
@@ -201,18 +199,18 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
 		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.ExposeAnnotationKey, log: r.log})).
 		Watches(&source.Kind{Type: &corev1.Endpoints{}},
-			&handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(r.endpointsToService)}).
+			handler.EnqueueRequestsFromMapFunc(r.endpointsToService)).
 		Complete(r)
 }
 
-func (r *Reconciler) endpointsToService(obj handler.MapObject) []ctrl.Request {
+func (r *Reconciler) endpointsToService(obj ctrlruntimeclient.Object) []ctrl.Request {
 	svcName := types.NamespacedName{
-		Name:      obj.Meta.GetName(),
-		Namespace: obj.Meta.GetNamespace(),
+		Name:      obj.GetName(),
+		Namespace: obj.GetNamespace(),
 	}
 	// Get the service associated to the Endpoints
 	svc := corev1.Service{}
-	if err := r.Client.Get(r.ctx, svcName, &svc); err != nil {
+	if err := r.Client.Get(context.Background(), svcName, &svc); err != nil {
 		// Avoid enqueuing events for endpoints that do not have an associated
 		// service (e.g. leader election).
 		if !apierrors.IsNotFound(err) {

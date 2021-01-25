@@ -112,6 +112,8 @@ func TestResources(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+
 			ctrlruntimelog.SetLogger(ctrlruntimezaplog.Logger(false))
 			if err := autoscalingv1beta2.AddToScheme(scheme.Scheme); err != nil {
 				t.Fatalf("failed to add the autoscaling.k8s.io scheme to mgr: %v", err)
@@ -172,7 +174,7 @@ func TestResources(t *testing.T) {
 				t.Fatalf("error getting usercluster connection provider: %v", err)
 			}
 
-			if _, err := tc.reconciler.Reconcile(reconcile.Request{
+			if _, err := tc.reconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: "test-cluster"}}); err != nil {
 				if !strings.HasPrefix(err.Error(), "failed to check if cluster is reachable: failed to create restMapper:") {
 					t.Fatalf("failed to run reconcile: %v", err)
@@ -185,7 +187,7 @@ func TestResources(t *testing.T) {
 				t.Fatal("testcase object can not be asserted as metav1.Object")
 			}
 
-			if err := tc.reconciler.Get(context.Background(),
+			if err := tc.reconciler.Get(ctx,
 				types.NamespacedName{Namespace: "test-cluster-ns", Name: metav1object.GetName()},
 				object); err != nil {
 				t.Fatalf("failed to get object %q: %v", metav1object.GetName(), err)

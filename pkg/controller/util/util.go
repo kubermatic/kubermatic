@@ -96,18 +96,18 @@ func EnqueueClusterScopedObjectWithSeedName(seedName string) *handler.EnqueueReq
 // EnqueueConst enqueues a constant. It is meant for controllers that don't have a parent object
 // they could enc and instead reconcile everything at once.
 // The queueKey will be defaulted if empty
-func EnqueueConst(queueKey string) *handler.EnqueueRequestsFromMapFunc {
+func EnqueueConst(queueKey string) handler.EventHandler {
 	if queueKey == "" {
 		queueKey = "const"
 	}
 
-	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(o handler.MapObject) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{NamespacedName: types.NamespacedName{
 				Name:      queueKey,
 				Namespace: "",
 			}}}
-	})}
+	})
 }
 
 // ClusterAvailableForReconciling returns true if the given cluster can be reconciled. This is true if

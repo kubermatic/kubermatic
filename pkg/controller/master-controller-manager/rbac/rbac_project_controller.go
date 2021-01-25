@@ -46,7 +46,6 @@ type projectController struct {
 	client           client.Client
 	restMapper       meta.RESTMapper
 	seedClientMap    map[string]client.Client
-	ctx              context.Context
 }
 
 // newProjectRBACController creates a new controller that is responsible for
@@ -85,8 +84,8 @@ func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager
 	return nil
 }
 
-func (c *projectController) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	err := c.sync(req.NamespacedName)
+func (c *projectController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	err := c.sync(ctx, req.NamespacedName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

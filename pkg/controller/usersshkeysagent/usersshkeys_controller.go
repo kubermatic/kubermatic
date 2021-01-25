@@ -84,7 +84,7 @@ func Add(
 		return fmt.Errorf("failed to watch authorized_keys files: %v", err)
 	}
 
-	userSSHKeySecret := newEventHandler(func(a handler.MapObject) []reconcile.Request {
+	userSSHKeySecret := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
@@ -102,9 +102,7 @@ func Add(
 	return nil
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.log.Debug("Processing")
 
 	secret, err := r.fetchUserSSHKeySecret(ctx, request.NamespacedName.Namespace)
@@ -194,14 +192,6 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 	}
 
 	return nil
-}
-
-// newEventHandler takes a obj->request mapper function and wraps it into an
-// handler.EnqueueRequestsFromMapFunc.
-func newEventHandler(rf handler.ToRequestsFunc) *handler.EnqueueRequestsFromMapFunc {
-	return &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: rf,
-	}
 }
 
 func createBuffer(data map[string][]byte) (*bytes.Buffer, error) {

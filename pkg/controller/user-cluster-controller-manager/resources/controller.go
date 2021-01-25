@@ -256,8 +256,8 @@ type reconciler struct {
 }
 
 // Reconcile makes changes in response to objects in the user cluster.
-func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	if err := r.reconcile(context.TODO()); err != nil {
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	if err := r.reconcile(ctx); err != nil {
 		r.log.Errorw("Reconciling failed", zap.Error(err))
 		return reconcile.Result{}, err
 	}

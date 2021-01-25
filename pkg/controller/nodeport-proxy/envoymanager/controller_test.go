@@ -341,9 +341,10 @@ func TestSync(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			log := zaptest.NewLogger(t).Sugar()
+			ctx := context.Background()
 			client := fakectrlruntimeclient.NewFakeClient(test.resources...)
 			c, _, _ := NewReconciler(
-				context.TODO(),
+				ctx,
 				log,
 				client,
 				Options{
@@ -354,7 +355,7 @@ func TestSync(t *testing.T) {
 				},
 			)
 
-			if err := c.sync(); err != nil {
+			if err := c.sync(ctx); err != nil {
 				t.Fatalf("failed to execute controller sync func: %v", err)
 			}
 
@@ -582,7 +583,6 @@ func TestEndpointToService(t *testing.T) {
 			res := (&Reconciler{
 				Options: Options{ExposeAnnotationKey: nodeportproxy.DefaultExposeAnnotationKey},
 				Client:  client,
-				ctx:     context.TODO(),
 				log:     log,
 			}).endpointsToService(handler.MapObject{Meta: tt.eps, Object: tt.eps})
 			if diff := deep.Equal(res, tt.expectResults); diff != nil {

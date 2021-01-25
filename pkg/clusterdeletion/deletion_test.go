@@ -163,17 +163,18 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 			}
 			seedClient := fake.NewFakeClient(tc.cluster)
 
+			ctx := context.Background()
 			deletion := &Deletion{
 				seedClient:              seedClient,
 				userClusterClientGetter: userClusterClientGetter,
 			}
 
-			if err := deletion.CleanupCluster(context.Background(), kubermaticlog.Logger, tc.cluster); err != nil {
+			if err := deletion.CleanupCluster(ctx, kubermaticlog.Logger, tc.cluster); err != nil {
 				t.Fatalf("Deletion failed: %v", err)
 			}
 
 			resultingMachines := &clusterv1alpha1.MachineList{}
-			if err := userClusterClient.List(context.Background(), resultingMachines); err != nil {
+			if err := userClusterClient.List(ctx, resultingMachines); err != nil {
 				t.Fatalf("failed to list machines: %v", err)
 			}
 			if len(resultingMachines.Items) < 1 {

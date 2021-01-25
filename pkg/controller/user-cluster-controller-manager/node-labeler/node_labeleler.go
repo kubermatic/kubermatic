@@ -45,7 +45,6 @@ const (
 )
 
 type reconciler struct {
-	ctx      context.Context
 	log      *zap.SugaredLogger
 	client   ctrlruntimeclient.Client
 	recorder record.EventRecorder
@@ -56,7 +55,6 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, label
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		ctx:      ctx,
 		log:      log,
 		client:   mgr.GetClient(),
 		recorder: mgr.GetEventRecorderFor(controllerName),
@@ -72,7 +70,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, label
 	// Ignore update events that don't touch the labels
 	labelsChangedPredicate := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return !apiequality.Semantic.DeepEqual(e.MetaOld.GetLabels(), e.MetaNew.GetLabels())
+			return !apiequality.Semantic.DeepEqual(e.ObjectOld.GetLabels(), e.ObjectNew.GetLabels())
 		},
 	}
 
@@ -87,12 +85,12 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager, label
 	return nil
 }
 
-func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("Node", request.Name)
 	log.Debug("Reconciling")
 
 	node := &corev1.Node{}
-	if err := r.client.Get(r.ctx, request.NamespacedName, node); err != nil {
+	if err := r.client.Get(ctx, request.NamespacedName, node); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Debug("Node not found, returning")
 			return reconcile.Result{}, nil
@@ -100,7 +98,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, fmt.Errorf("failed to get node: %v", err)
 	}
 
-	err := r.reconcile(log, node)
+	err := r.reconcile(ctx, log, node)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(node, corev1.EventTypeWarning, "ApplyingLabelsFailed", err.Error())
@@ -108,7 +106,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(log *zap.SugaredLogger, node *corev1.Node) error {
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, node *corev1.Node) error {
 	oldNode := node.DeepCopy()
 	var labelsChanged bool
 	if node.Labels == nil {
@@ -133,7 +131,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, node *corev1.Node) error 
 		return nil
 	}
 
-	if err := r.client.Patch(r.ctx, node, ctrlruntimeclient.MergeFrom(oldNode)); err != nil {
+	if err := r.client.Patch(ctx, node, ctrlruntimeclient.MergeFrom(oldNode)); err != nil {
 		return fmt.Errorf("failed to update node: %v", err)
 	}
 
