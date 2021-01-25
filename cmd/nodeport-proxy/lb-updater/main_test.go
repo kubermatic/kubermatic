@@ -698,6 +698,7 @@ func TestReconciliation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
 			client := fake.NewFakeClient(tc.initialServices...)
 			updater := &LBUpdater{
 				lbNamespace: "lb-ns",
@@ -711,12 +712,12 @@ func TestReconciliation(t *testing.T) {
 				},
 			}
 
-			if _, err := updater.Reconcile(reconcile.Request{}); err != nil {
+			if _, err := updater.Reconcile(ctx, reconcile.Request{}); err != nil {
 				t.Fatalf("error reconciling: %v", err)
 			}
 
 			resultingServices := &corev1.ServiceList{}
-			if err := client.List(context.Background(), resultingServices); err != nil {
+			if err := client.List(ctx, resultingServices); err != nil {
 				t.Fatalf("failed to list services: %v", err)
 			}
 

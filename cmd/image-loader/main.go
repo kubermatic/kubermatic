@@ -117,13 +117,7 @@ func main() {
 		log.Fatal("-addons-path or -addons-image must not be specified at the same time.")
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	signalCh := signals.SetupSignalHandler()
-	go func() {
-		<-signalCh
-		cancel()
-	}()
+	ctx := signals.SetupSignalHandler()
 
 	if o.registry == "" {
 		log.Fatal("-registry parameter must contain a valid registry address!")

@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 
@@ -50,12 +49,7 @@ func main() {
 	flag.Parse()
 
 	// setup signal handler
-	ctx, cancel := context.WithCancel(context.Background())
-	stopCh := signals.SetupSignalHandler()
-	go func() {
-		<-stopCh
-		cancel()
-	}()
+	ctx := signals.SetupSignalHandler()
 
 	// init logging
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -82,7 +76,7 @@ func main() {
 	if err != nil {
 		log.Fatalw("failed to build reconciler", zap.Error(err))
 	}
-	if err := r.SetupWithManager(mgr); err != nil {
+	if err := r.SetupWithManager(ctx, mgr); err != nil {
 		log.Fatalw("failed to register reconciler with controller-runtime manager", zap.Error(err))
 	}
 
@@ -92,7 +86,7 @@ func main() {
 		log.Fatalw("failed to register envoy config server with controller-runtime manager", zap.Error(err))
 	}
 
-	if err := mgr.Start(stopCh); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		log.Errorw("manager ended with error", zap.Error(err))
 	}
 }

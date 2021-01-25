@@ -19,7 +19,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"net/http"
 	"net/url"
@@ -173,12 +172,10 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed getting user cluster controller config", zap.Error(err))
 	}
-	stopCh := signals.SetupSignalHandler()
-	ctx, ctxDone := context.WithCancel(context.Background())
-	defer ctxDone()
+
+	rootCtx := signals.SetupSignalHandler()
 
 	// Create Context
-	done := ctx.Done()
 	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
 	mgr, err := manager.New(cfg, manager.Options{
@@ -260,7 +257,7 @@ func main() {
 		creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
 			machinecontrolerresources.MachineCRDCreator(),
 		}
-		if err := reconciling.ReconcileCustomResourceDefinitions(context.Background(), creators, "", mgr.GetClient()); err != nil {
+		if err := reconciling.ReconcileCustomResourceDefinitions(rootCtx, creators, "", mgr.GetClient()); err != nil {
 			// The mgr.Client is uninitianlized here and hence always returns a 404, regardless of the object existing or not
 			if !strings.Contains(err.Error(), `customresourcedefinitions.apiextensions.k8s.io "machines.cluster.k8s.io" already exists`) {
 				log.Fatalw("Failed to initially create the Machine CR", zap.Error(err))
@@ -283,7 +280,7 @@ func main() {
 	log.Info("Registered nodecsrapprover controller")
 
 	if runOp.openshift {
-		if err := openshiftmasternodelabeler.Add(context.Background(), kubermaticlog.Logger, mgr); err != nil {
+		if err := openshiftmasternodelabeler.Add(rootCtx, kubermaticlog.Logger, mgr); err != nil {
 			log.Fatalw("Failed to add openshiftmasternodelabeler controller", zap.Error(err))
 		}
 		log.Info("Registered openshiftmasternodelabeler controller")
@@ -303,57 +300,34 @@ func main() {
 	}
 	log.Info("Registered Flatcar controller")
 
-	if err := nodelabeler.Add(ctx, log, mgr, nodeLabels); err != nil {
+	if err := nodelabeler.Add(rootCtx, log, mgr, nodeLabels); err != nil {
 		log.Fatalw("Failed to register nodelabel controller", zap.Error(err))
 	}
 	log.Info("Registered nodelabel controller")
 
-	if err := clusterrolelabeler.Add(ctx, log, mgr); err != nil {
+	if err := clusterrolelabeler.Add(rootCtx, log, mgr); err != nil {
 		log.Fatalw("Failed to register clusterrolelabeler controller", zap.Error(err))
 	}
 	log.Info("Registered clusterrolelabeler controller")
 
-	if err := rolecloner.Add(ctx, log, mgr); err != nil {
+	if err := rolecloner.Add(rootCtx, log, mgr); err != nil {
 		log.Fatalw("Failed to register rolecloner controller", zap.Error(err))
 	}
 	log.Info("Registered rolecloner controller")
-	if err := ownerbindingcreator.Add(ctx, log, mgr, runOp.ownerEmail); err != nil {
+	if err := ownerbindingcreator.Add(rootCtx, log, mgr, runOp.ownerEmail); err != nil {
 		log.Fatalw("Failed to register ownerbindingcreator controller", zap.Error(err))
 	}
 	log.Info("Registered ownerbindingcreator controller")
 
 	if runOp.opaIntegration {
-		if err := constraintsyncer.Add(ctx, log, seedMgr, mgr, runOp.namespace); err != nil {
+		if err := constraintsyncer.Add(rootCtx, log, seedMgr, mgr, runOp.namespace); err != nil {
 			log.Fatalw("Failed to register constraintsyncer controller", zap.Error(err))
 		}
 		log.Info("Registered constraintsyncer controller")
 	}
 
-	// This group is forever waiting in a goroutine for signals to stop
-	{
-		g.Add(func() error {
-			select {
-			case <-stopCh:
-				return errors.New("user requested to stop the application")
-			case <-done:
-				return errors.New("parent context has been closed - propagating the request")
-			}
-		}, func(err error) {
-			ctxDone()
-		})
-	}
-
-	// This group starts the controller manager
-	{
-		g.Add(func() error {
-			// Start the Cmd
-			return mgr.Start(done)
-		}, func(err error) {
-			log.Infow("stopping user cluster controller manager", zap.Error(err))
-		})
-	}
-
 	// This group starts the readiness & liveness http server
+	// TODO: make this a simple runnable in the manager
 	{
 		h := &http.Server{Addr: runOp.healthListenAddr, Handler: healthHandler}
 		g.Add(h.ListenAndServe, func(err error) {
@@ -366,8 +340,7 @@ func main() {
 		})
 	}
 
-	if err := g.Run(); err != nil {
-		log.Fatalw("Failed running user cluster controller", zap.Error(err))
+	if err := mgr.Start(rootCtx); err != nil {
+		log.Fatalw("Failed running manager", zap.Error(err))
 	}
-
 }

@@ -40,7 +40,6 @@ import (
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -207,18 +206,18 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		}
 
 		// start the manager in its own goroutine
+		appContext := context.Background()
+
 		go func() {
-			if err := mgr.Start(wait.NeverStop); err != nil {
+			if err := mgr.Start(appContext); err != nil {
 				logger.Fatalf("Failed to start Kubernetes client manager: %v", err)
 			}
 		}()
 
-		appContext := context.Background()
-
 		// wait for caches to be synced
 		mgrSyncCtx, cancel := context.WithTimeout(appContext, 30*time.Second)
 		defer cancel()
-		if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx.Done()); !synced {
+		if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx); !synced {
 			logger.Fatal("Timed out while waiting for Kubernetes client caches to synchronize.")
 		}
 

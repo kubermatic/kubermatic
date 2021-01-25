@@ -41,6 +41,7 @@ import (
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	ctrlruntimezaplog "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
@@ -125,8 +126,7 @@ func main() {
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_master_controller_manager", prometheus.DefaultRegisterer)
 
 	// prepare a context to use throughout the controller manager
-	ctx, ctxCancel := context.WithCancel(context.Background())
-	defer ctxCancel()
+	ctx := signals.SetupSignalHandler()
 	ctrlCtx.ctx = ctx
 
 	ctrlCtx.labelSelectorFunc = func(listOpts *metav1.ListOptions) {
@@ -187,8 +187,7 @@ func main() {
 	}
 
 	log.Info("starting the master-controller-manager...")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		log.Fatalw("problem running manager", zap.Error(err))
 	}
-
 }

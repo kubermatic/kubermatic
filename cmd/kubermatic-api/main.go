@@ -104,6 +104,7 @@ func main() {
 	}()
 	kubermaticlog.Logger = log
 
+	ctx := context.Background()
 	cli.Hello(log, "API", options.log.Debug, &options.versions)
 
 	if err := clusterv1alpha1.AddToScheme(scheme.Scheme); err != nil {
@@ -116,7 +117,7 @@ func main() {
 		kubermaticlog.Logger.Fatalw("failed to register scheme", zap.Stringer("api", gatekeeperconfigv1alpha1.GroupVersion), zap.Error(err))
 	}
 
-	providers, err := createInitProviders(options)
+	providers, err := createInitProviders(ctx, options)
 	if err != nil {
 		log.Fatalw("failed to create and initialize providers", "error", err)
 	}
@@ -138,7 +139,7 @@ func main() {
 	}
 
 	go func() {
-		if err := pprofOpts.Start(make(chan struct{})); err != nil {
+		if err := pprofOpts.Start(ctx); err != nil {
 			log.Fatalw("Failed to start pprof handler", zap.Error(err))
 		}
 	}()
@@ -148,7 +149,7 @@ func main() {
 	log.Fatalw("failed to start API server", "error", http.ListenAndServe(options.listenAddress, handlers.CombinedLoggingHandler(os.Stdout, apiHandler)))
 }
 
-func createInitProviders(options serverRunOptions) (providers, error) {
+func createInitProviders(ctx context.Context, options serverRunOptions) (providers, error) {
 	masterCfg, err := ctrl.GetConfig()
 	if err != nil {
 		return providers{}, fmt.Errorf("unable to build client configuration from kubeconfig due to %v", err)
@@ -167,7 +168,6 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 		return providers{}, fmt.Errorf("failed to construct manager: %v", err)
 	}
 
-	ctx := context.Background()
 	client := mgr.GetClient()
 
 	defaultImpersonationClient := kubernetesprovider.NewImpersonationClient(masterCfg, mgr.GetRESTMapper())
@@ -187,13 +187,13 @@ func createInitProviders(options serverRunOptions) (providers, error) {
 	}
 	// mgr.Start() is blocking
 	go func() {
-		if err := mgr.Start(wait.NeverStop); err != nil {
+		if err := mgr.Start(ctx); err != nil {
 			kubermaticlog.Logger.Fatalw("failed to start the mgr", zap.Error(err))
 		}
 	}()
 	mgrSyncCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
-	if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx.Done()); !synced {
+	if synced := mgr.GetCache().WaitForCacheSync(mgrSyncCtx); !synced {
 		kubermaticlog.Logger.Fatal("failed to sync mgr cache")
 	}
 

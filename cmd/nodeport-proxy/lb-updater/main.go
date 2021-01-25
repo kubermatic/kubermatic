@@ -69,13 +69,7 @@ func main() {
 	flag.Parse()
 
 	// setup signal handler
-	stopCh := signals.SetupSignalHandler()
-	_, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go func() {
-		<-stopCh
-		cancel()
-	}()
+	ctx := signals.SetupSignalHandler()
 
 	// init logging
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -119,7 +113,7 @@ func main() {
 	if err := ctrl.Watch(&source.Kind{Type: &corev1.Service{}}, controllerutil.EnqueueConst("")); err != nil {
 		log.Fatalw("Failed to add watch for Service", zap.Error(err))
 	}
-	if err := mgr.Start(stopCh); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		log.Fatalw("Manager ended", zap.Error(err))
 	}
 }
