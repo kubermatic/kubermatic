@@ -26,7 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	admissionv1 "k8s.io/api/admission/v1"
-	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/inject"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -37,7 +37,7 @@ type AdmissionHandler interface {
 	webhook.AdmissionHandler
 	inject.Logger
 	admission.DecoderInjector
-	SetupWebhookWithManager(mgr ctrl.Manager)
+	SetupWebhookWithManager(mgr ctrlruntime.Manager)
 }
 
 type seedAdmissionHandler struct {
@@ -85,6 +85,6 @@ func (h *seedAdmissionHandler) Handle(ctx context.Context, req webhook.Admission
 	return webhook.Allowed(fmt.Sprintf("seed validation request %s allowed", req.UID))
 }
 
-func (h *seedAdmissionHandler) SetupWebhookWithManager(mgr ctrl.Manager) {
+func (h *seedAdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
 	mgr.GetWebhookServer().Register("/validate-kubermatic-k8s-io-seed", &webhook.Admission{Handler: h})
 }

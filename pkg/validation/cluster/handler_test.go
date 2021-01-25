@@ -30,8 +30,8 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -50,7 +50,7 @@ func TestHandle(t *testing.T) {
 		req         webhook.AdmissionRequest
 		wantAllowed bool
 		features    features.FeatureGate
-		client      client.Client
+		client      ctrlruntimeclient.Client
 	}{
 		{
 			name: "Delete cluster success",
@@ -158,7 +158,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: false,
-			client: fake.NewFakeClient(
+			client: ctrlruntimefakeclient.NewFakeClient(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "foo",
@@ -185,7 +185,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			client: fake.NewFakeClient(
+			client: ctrlruntimefakeclient.NewFakeClient(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "foo",

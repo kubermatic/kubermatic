@@ -31,7 +31,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -78,7 +77,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	log.Debug("Processing")
 
 	icl := &kubermaticv1.ExternalCluster{}
-	if err := r.Get(ctx, client.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, icl); err != nil {
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, icl); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Debug("Could not find imported cluster")
 			return reconcile.Result{}, nil

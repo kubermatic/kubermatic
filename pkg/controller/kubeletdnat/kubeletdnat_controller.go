@@ -27,7 +27,6 @@ import (
 	"strings"
 
 	"github.com/go-test/deep"
-
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/provider"

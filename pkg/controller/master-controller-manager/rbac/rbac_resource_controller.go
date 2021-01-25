@@ -26,7 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -38,7 +38,7 @@ type resourcesController struct {
 	projectResourcesQueue workqueue.RateLimitingInterface
 	metrics               *Metrics
 	projectResources      []projectResource
-	client                client.Client
+	client                ctrlruntimeclient.Client
 	restMapper            meta.RESTMapper
 	providerName          string
 	objectType            runtime.Object
@@ -73,7 +73,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 			continue
 		}
 
-		if err = rcc.Watch(&source.Kind{Type: clonedObject.(client.Object)}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
+		if err = rcc.Watch(&source.Kind{Type: clonedObject.(ctrlruntimeclient.Object)}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
 			return nil, err
 		}
 	}
@@ -105,7 +105,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 				continue
 			}
 
-			if err = rc.Watch(&source.Kind{Type: clonedObject.(client.Object)}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
+			if err = rc.Watch(&source.Kind{Type: clonedObject.(ctrlruntimeclient.Object)}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
 				return nil, err
 			}
 		}

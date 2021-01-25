@@ -34,10 +34,10 @@ import (
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/kubectl/pkg/util/podutils"
-	ctrl "sigs.k8s.io/controller-runtime"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
-	ctrlzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
+	ctrlruntimelogzap "sigs.k8s.io/controller-runtime/pkg/log/zap"
 )
 
 const (
@@ -51,14 +51,14 @@ var (
 
 // CreateLogger creates a new Logger.
 func CreateLogger(debug bool) *zap.SugaredLogger {
-	return ctrlzap.NewRaw(ctrlzap.UseDevMode(debug), ctrlzap.WriteTo(ginkgo.GinkgoWriter)).Sugar()
+	return ctrlruntimelogzap.NewRaw(ctrlruntimelogzap.UseDevMode(debug), ctrlruntimelogzap.WriteTo(ginkgo.GinkgoWriter)).Sugar()
 }
 
 // GetClientsOrDie returns the clients used for testing.
-func GetClientsOrDie() (ctrlclient.Client, rest.Interface, *rest.Config) {
+func GetClientsOrDie() (ctrlruntimeclient.Client, rest.Interface, *rest.Config) {
 	scheme := runtime.NewScheme()
 	_ = clientgoscheme.AddToScheme(scheme)
-	config := ctrl.GetConfigOrDie()
+	config := ctrlruntime.GetConfigOrDie()
 	mapper, err := apiutil.NewDynamicRESTMapper(config)
 	if err != nil {
 		panic(errors.Wrap(err, "failed to create dynamic REST mapper"))
@@ -71,7 +71,7 @@ func GetClientsOrDie() (ctrlclient.Client, rest.Interface, *rest.Config) {
 	if err != nil {
 		panic(errors.Wrap(err, "failed to create pod rest client"))
 	}
-	c, err := ctrlclient.New(config, ctrlclient.Options{
+	c, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{
 		Mapper: mapper,
 		Scheme: scheme,
 	})
@@ -123,15 +123,15 @@ func FindExposingNodePort(svc *corev1.Service, targetPort int32) int32 {
 // WaitForPodsCreated waits for the given replicas number of pods matching the
 // given set of labels to be created, and returns the names of the matched
 // pods.
-func WaitForPodsCreated(c ctrlclient.Client, replicas int, namespace string, matchLabels map[string]string) ([]string, error) {
+func WaitForPodsCreated(c ctrlruntimeclient.Client, replicas int, namespace string, matchLabels map[string]string) ([]string, error) {
 	timeout := 2 * time.Minute
 	// List the pods, making sure we observe all the replicas.
 	logger.Debugf("Waiting up to %v for %d pods to be created", timeout, replicas)
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(2 * time.Second) {
 		pods := corev1.PodList{}
 		if err := c.List(context.TODO(), &pods,
-			ctrlclient.InNamespace(namespace),
-			ctrlclient.MatchingLabels(matchLabels)); err != nil {
+			ctrlruntimeclient.InNamespace(namespace),
+			ctrlruntimeclient.MatchingLabels(matchLabels)); err != nil {
 			return nil, err
 		}
 
@@ -154,12 +154,12 @@ func WaitForPodsCreated(c ctrlclient.Client, replicas int, namespace string, mat
 // CheckPodsRunningReady returns whether all pods whose names are listed in
 // podNames in namespace ns are running and ready, using c and waiting at most
 // timeout.
-func CheckPodsRunningReady(c ctrlclient.Client, ns string, podNames []string, timeout time.Duration) bool {
+func CheckPodsRunningReady(c ctrlruntimeclient.Client, ns string, podNames []string, timeout time.Duration) bool {
 	return checkPodsCondition(c, ns, podNames, timeout, PodRunningReady, "running and ready")
 }
 
 // WaitForPodCondition waits a pods to be matched to the given condition.
-func WaitForPodCondition(c ctrlclient.Client, ns, podName, desc string, timeout time.Duration, condition podCondition) error {
+func WaitForPodCondition(c ctrlruntimeclient.Client, ns, podName, desc string, timeout time.Duration, condition podCondition) error {
 	logger.Infof("Waiting up to %v for pod %q in namespace %q to be %q", timeout, podName, ns, desc)
 	for start := time.Now(); time.Since(start) < timeout; time.Sleep(poll) {
 		pod := corev1.Pod{}
@@ -188,7 +188,7 @@ type podCondition func(pod *corev1.Pod) (bool, error)
 
 // checkPodsCondition returns whether all pods whose names are listed in podNames
 // in namespace ns are in the condition, using c and waiting at most timeout.
-func checkPodsCondition(c ctrlclient.Client, ns string, podNames []string, timeout time.Duration, condition podCondition, desc string) bool {
+func checkPodsCondition(c ctrlruntimeclient.Client, ns string, podNames []string, timeout time.Duration, condition podCondition, desc string) bool {
 	np := len(podNames)
 	logger.Infof("Waiting up to %v for %d pods to be %s: %s", timeout, np, desc, podNames)
 	type waitPodResult struct {

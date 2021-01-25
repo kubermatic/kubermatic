@@ -22,7 +22,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestConcurrencyLimitReached(t *testing.T) {
@@ -45,7 +45,7 @@ func TestConcurrencyLimitReached(t *testing.T) {
 
 	for _, testCase := range concurrencyLimitReachedTestCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			reached, err := ConcurrencyLimitReached(context.Background(), fake.NewFakeClient(&kubermaticv1.Cluster{}), testCase.maxConcurrentLimit)
+			reached, err := ConcurrencyLimitReached(context.Background(), ctrlruntimefakeclient.NewFakeClient(&kubermaticv1.Cluster{}), testCase.maxConcurrentLimit)
 
 			if err != nil {
 				t.Fatalf("failed to run test: %v with error: %v", testCase.name, err)

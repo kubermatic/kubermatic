@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -125,7 +124,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 
 		oldConstraint := constraint.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
-		if err := r.seedClient.Patch(ctx, constraint, client.MergeFrom(oldConstraint)); err != nil {
+		if err := r.seedClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldConstraint)); err != nil {
 			return fmt.Errorf("failed to remove constraint finalizer %s: %v", constraint.Name, err)
 		}
 		return nil
@@ -134,7 +133,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 	if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer) {
 		oldConstraint := constraint.DeepCopy()
 		kuberneteshelper.AddFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
-		if err := r.seedClient.Patch(ctx, constraint, client.MergeFrom(oldConstraint)); err != nil {
+		if err := r.seedClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldConstraint)); err != nil {
 			return fmt.Errorf("failed to set constraint finalizer %s: %v", constraint.Name, err)
 		}
 	}

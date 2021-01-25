@@ -36,7 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -60,7 +60,7 @@ type Network struct {
 }
 
 type reconciler struct {
-	client.Client
+	ctrlruntimeclient.Client
 	recorder   record.EventRecorder
 	cidrRanges []Network
 	log        *zap.SugaredLogger

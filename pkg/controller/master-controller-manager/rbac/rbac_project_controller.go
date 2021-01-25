@@ -23,7 +23,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/util/workqueue"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -42,9 +42,9 @@ type projectController struct {
 	metrics      *Metrics
 
 	projectResources []projectResource
-	client           client.Client
+	client           ctrlruntimeclient.Client
 	restMapper       meta.RESTMapper
-	seedClientMap    map[string]client.Client
+	seedClientMap    map[string]ctrlruntimeclient.Client
 }
 
 // newProjectRBACController creates a new controller that is responsible for
@@ -53,7 +53,7 @@ type projectController struct {
 // The controller will also set proper ownership chain through OwnerReferences
 // so that whenever a project is deleted dependants object will be garbage collected.
 func newProjectRBACController(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManagerMap map[string]manager.Manager, resources []projectResource, workerPredicate predicate.Predicate) error {
-	seedClientMap := make(map[string]client.Client)
+	seedClientMap := make(map[string]ctrlruntimeclient.Client)
 	for k, v := range seedManagerMap {
 		seedClientMap[k] = v.GetClient()
 	}

@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
 
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestGetConfigEndpoint(t *testing.T) {
@@ -110,7 +110,7 @@ func TestGetConfigEndpoint(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
-				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(client.Object))
+				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(ctrlruntimeclient.Object))
 				if err != nil {
 					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
 				}
@@ -198,7 +198,7 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
-				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(client.Object))
+				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(ctrlruntimeclient.Object))
 				if err != nil {
 					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
 				}
@@ -293,7 +293,7 @@ func TestCreateConfigEndpoint(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
-				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(client.Object))
+				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(ctrlruntimeclient.Object))
 				if err != nil {
 					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
 				}
@@ -386,7 +386,7 @@ func TestPatchConfigEndpoint(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
-				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(client.Object))
+				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(ctrlruntimeclient.Object))
 				if err != nil {
 					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
 				}

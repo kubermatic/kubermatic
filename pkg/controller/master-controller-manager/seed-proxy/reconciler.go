@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -358,7 +357,7 @@ func (r *Reconciler) reconcileMasterGrafanaProvisioning(ctx context.Context, see
 	return nil
 }
 
-func (r *Reconciler) deleteResource(ctx context.Context, client ctrlruntimeclient.Client, name string, namespace string, obj client.Object) error {
+func (r *Reconciler) deleteResource(ctx context.Context, client ctrlruntimeclient.Client, name string, namespace string, obj ctrlruntimeclient.Object) error {
 	key := types.NamespacedName{Name: name, Namespace: namespace}
 
 	if err := client.Get(ctx, key, obj); err != nil {

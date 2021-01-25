@@ -24,7 +24,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -188,7 +188,7 @@ func TestReconcileUpdateRole(t *testing.T) {
 			}
 
 			role := &rbacv1.ClusterRole{}
-			if err := r.client.Get(ctx, controllerclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: test.roleName}, role); err != nil {
+			if err := r.client.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: test.roleName}, role); err != nil {
 				t.Fatalf("can't find cluster role %v", err)
 			}
 

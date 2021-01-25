@@ -32,21 +32,21 @@ import (
 	kubernetesresources "k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	certutil "k8s.io/client-go/util/cert"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // openshiftData implements the openshiftData interface which is
 // passed into all creator funcs and contains all data they need
 type openshiftData struct {
 	cluster                               *kubermaticv1.Cluster
-	client                                client.Client
+	client                                ctrlruntimeclient.Client
 	dc                                    *kubermaticv1.Datacenter
 	overwriteRegistry                     string
 	nodeAccessNetwork                     string

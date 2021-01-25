@@ -37,7 +37,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -48,7 +48,7 @@ const (
 type NetworkingTestConfig struct {
 	Log           *zap.SugaredLogger
 	Namespace     string
-	Client        ctrlclient.Client
+	Client        ctrlruntimeclient.Client
 	PodRestClient rest.Interface
 	Config        *rest.Config
 

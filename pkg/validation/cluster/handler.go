@@ -30,8 +30,8 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -41,11 +41,11 @@ type AdmissionHandler struct {
 	log      logr.Logger
 	decoder  *admission.Decoder
 	features features.FeatureGate
-	client   client.Client
+	client   ctrlruntimeclient.Client
 }
 
 // NewAdmissionHandler returns a new cluster.AdmissionHandler.
-func NewAdmissionHandler(client client.Client, features features.FeatureGate) *AdmissionHandler {
+func NewAdmissionHandler(client ctrlruntimeclient.Client, features features.FeatureGate) *AdmissionHandler {
 	return &AdmissionHandler{
 		features: features,
 		client:   client,
@@ -105,7 +105,7 @@ func (h *AdmissionHandler) validateCreateOrUpdate(ctx context.Context, c *kuberm
 	return nil
 }
 
-func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrl.Manager) {
+func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
 	mgr.GetWebhookServer().Register("/validate-kubermatic-k8s-io-cluster", &webhook.Admission{Handler: h})
 }
 

@@ -24,7 +24,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
@@ -50,7 +50,7 @@ func LabelSelector(workerName string) (labels.Selector, error) {
 // Once https://github.com/kubernetes-sigs/controller-runtime/issues/244 is fixed we won't
 // need this anymore
 func Predicates(workerName string) predicate.Funcs {
-	return kubermaticpred.Factory(func(o client.Object) bool {
+	return kubermaticpred.Factory(func(o ctrlruntimeclient.Object) bool {
 		return o.GetLabels()[kubermaticv1.WorkerNameLabelKey] == workerName
 	})
 }

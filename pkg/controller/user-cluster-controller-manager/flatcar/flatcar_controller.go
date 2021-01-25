@@ -29,7 +29,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -61,7 +60,7 @@ func Add(mgr manager.Manager, overwriteRegistry string, updateWindow kubermaticv
 		return err
 	}
 
-	predicate := predicateutil.Factory(func(o client.Object) bool {
+	predicate := predicateutil.Factory(func(o ctrlruntimeclient.Object) bool {
 		return o.GetLabels()[nodelabelerapi.DistributionLabelKey] == nodelabelerapi.FlatcarLabelValue
 	})
 

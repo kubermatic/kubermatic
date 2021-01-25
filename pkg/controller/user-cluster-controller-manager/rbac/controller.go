@@ -27,7 +27,7 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -42,7 +42,7 @@ const (
 	ResourceViewerName = "system:kubermatic:viewers"
 )
 
-var mapFn = handler.EnqueueRequestsFromMapFunc(func(o client.Object) []reconcile.Request {
+var mapFn = handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
 	return []reconcile.Request{
 		{NamespacedName: types.NamespacedName{
 			Name:      ResourceOwnerName,
@@ -94,7 +94,7 @@ func Add(mgr manager.Manager, registerReconciledCheck func(name string, check he
 
 // reconcileRBAC reconciles Cluster Role and Cluster Role Binding objects
 type reconcileRBAC struct {
-	client.Client
+	ctrlruntimeclient.Client
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

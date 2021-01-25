@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/selection"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -53,7 +52,7 @@ const (
 var (
 	// ManagedByOperatorPredicate is a predicate that matches all resources created by
 	// the Kubermatic Operator, based on the ManagedBy label.
-	ManagedByOperatorPredicate = predicate.Factory(func(o client.Object) bool {
+	ManagedByOperatorPredicate = predicate.Factory(func(o ctrlruntimeclient.Object) bool {
 		for _, ref := range o.GetOwnerReferences() {
 			if isKubermaticConfiguration(ref) || isSeed(ref) {
 				return true
@@ -173,7 +172,7 @@ func createSecretData(s *corev1.Secret, data map[string]string) *corev1.Secret {
 // CleanupClusterResource attempts to find a cluster-wide resource and
 // deletes it if it was found. If no resource with the given name exists,
 // nil is returned.
-func CleanupClusterResource(client ctrlruntimeclient.Client, obj client.Object, name string) error {
+func CleanupClusterResource(client ctrlruntimeclient.Client, obj ctrlruntimeclient.Object, name string) error {
 	key := types.NamespacedName{Name: name}
 	ctx := context.Background()
 

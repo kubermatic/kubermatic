@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"go.uber.org/zap"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
@@ -36,8 +35,8 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -129,7 +128,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 			return nil
 		}
 
-		err := r.syncAllSeeds(ctx, log, constraintTemplate, func(seedClusterClient client.Client, ct *kubermaticv1.ConstraintTemplate) error {
+		err := r.syncAllSeeds(ctx, log, constraintTemplate, func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error {
 			err := seedClusterClient.Delete(ctx, &kubermaticv1.ConstraintTemplate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: constraintTemplate.Name,
@@ -149,7 +148,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 
 		oldConstraintTemplate := constraintTemplate.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
-		if err := r.masterClient.Patch(ctx, constraintTemplate, client.MergeFrom(oldConstraintTemplate)); err != nil {
+		if err := r.masterClient.Patch(ctx, constraintTemplate, ctrlruntimeclient.MergeFrom(oldConstraintTemplate)); err != nil {
 			return fmt.Errorf("failed to remove constraint template finalizer %s: %v", constraintTemplate.Name, err)
 		}
 		return nil
@@ -158,7 +157,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 	if !kuberneteshelper.HasFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer) {
 		oldConstraintTemplate := constraintTemplate.DeepCopy()
 		kuberneteshelper.AddFinalizer(constraintTemplate, kubermaticapiv1.GatekeeperSeedConstraintTemplateCleanupFinalizer)
-		if err := r.masterClient.Patch(ctx, constraintTemplate, client.MergeFrom(oldConstraintTemplate)); err != nil {
+		if err := r.masterClient.Patch(ctx, constraintTemplate, ctrlruntimeclient.MergeFrom(oldConstraintTemplate)); err != nil {
 			return fmt.Errorf("failed to set constraint template finalizer %s: %v", constraintTemplate.Name, err)
 		}
 	}
@@ -167,7 +166,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cons
 		constraintTemplateCreatorGetter(constraintTemplate),
 	}
 
-	return r.syncAllSeeds(ctx, log, constraintTemplate, func(seedClusterClient client.Client, ct *kubermaticv1.ConstraintTemplate) error {
+	return r.syncAllSeeds(ctx, log, constraintTemplate, func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error {
 		return reconciling.ReconcileKubermaticV1ConstraintTemplates(ctx, ctCreatorGetters, "", seedClusterClient)
 	})
 }
@@ -176,7 +175,7 @@ func (r *reconciler) syncAllSeeds(
 	ctx context.Context,
 	log *zap.SugaredLogger,
 	constraintTemplate *kubermaticv1.ConstraintTemplate,
-	action func(seedClusterClient client.Client, ct *kubermaticv1.ConstraintTemplate) error) error {
+	action func(seedClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error) error {
 
 	seedList := &kubermaticv1.SeedList{}
 	if err := r.masterClient.List(ctx, seedList, &ctrlruntimeclient.ListOptions{Namespace: r.namespace}); err != nil {

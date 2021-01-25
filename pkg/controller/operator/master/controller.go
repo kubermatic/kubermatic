@@ -33,10 +33,8 @@ import (
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -76,7 +74,7 @@ func Add(
 	namespacePredicate := predicateutil.ByNamespace(namespace)
 
 	// put the config's identifier on the queue
-	kubermaticConfigHandler := handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+	kubermaticConfigHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
@@ -93,7 +91,7 @@ func Add(
 	}
 
 	// for each child put the parent configuration onto the queue
-	childEventHandler := handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+	childEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		configs := &operatorv1alpha1.KubermaticConfigurationList{}
 		options := &ctrlruntimeclient.ListOptions{Namespace: namespace}
 
@@ -121,7 +119,7 @@ func Add(
 		}}
 	})
 
-	namespacedTypesToWatch := []runtime.Object{
+	namespacedTypesToWatch := []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
@@ -132,18 +130,18 @@ func Add(
 	}
 
 	for _, t := range namespacedTypesToWatch {
-		if err := c.Watch(&source.Kind{Type: t.(client.Object)}, childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, namespacePredicate, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}
 
-	globalTypesToWatch := []runtime.Object{
+	globalTypesToWatch := []ctrlruntimeclient.Object{
 		&rbacv1.ClusterRoleBinding{},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 	}
 
 	for _, t := range globalTypesToWatch {
-		if err := c.Watch(&source.Kind{Type: t.(client.Object)}, childEventHandler, common.ManagedByOperatorPredicate); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, childEventHandler, common.ManagedByOperatorPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}

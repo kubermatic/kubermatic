@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
@@ -161,8 +161,8 @@ func TestReconcilingSeed(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			masterClient := ctrlruntimefake.NewFakeClient(test.input)
-			seedClient := ctrlruntimefake.NewFakeClient(test.existingSeeds...)
+			masterClient := fakectrlruntimeclient.NewFakeClient(test.input)
+			seedClient := fakectrlruntimeclient.NewFakeClient(test.existingSeeds...)
 			ctx := context.Background()
 
 			reconciler := Reconciler{

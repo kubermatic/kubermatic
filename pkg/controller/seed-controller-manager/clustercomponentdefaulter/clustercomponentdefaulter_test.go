@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const clusterName = "test-cluster"
@@ -98,7 +98,7 @@ func TestReconciliation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			cluster := tc.cluster.DeepCopy()
-			client := fake.NewFakeClient([]runtime.Object{cluster}...)
+			client := fakectrlruntimeclient.NewFakeClient([]runtime.Object{cluster}...)
 			r := &Reconciler{client: client, log: logger, defaults: *tc.override}
 			if err := r.reconcile(ctx, logger, cluster); err != nil {
 				t.Fatalf("failed to reconcile cluster: %v", err)

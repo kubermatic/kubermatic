@@ -28,12 +28,11 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func TestReconcileUserSSHKeys(t *testing.T) {
@@ -99,7 +98,7 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.reconciler.Client = fake.NewFakeClient(
+			tc.reconciler.Client = ctrlruntimefakeclient.NewFakeClient(
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						ResourceVersion: "123456",

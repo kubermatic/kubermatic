@@ -39,12 +39,12 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/validation/cluster"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	ctrl "sigs.k8s.io/controller-runtime"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -90,7 +90,7 @@ func main() {
 		electionName += "-" + options.workerName
 	}
 
-	cfg := ctrl.GetConfigOrDie()
+	cfg := ctrlruntime.GetConfigOrDie()
 	// Create a manager, disable metrics as we have our own handler that exposes
 	// the metrics of both the ctrltuntime registry and the default registry
 	mgr, err := manager.New(cfg, manager.Options{
@@ -203,7 +203,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 	}
 
 	log.Info("starting the seed-controller-manager...")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctrlruntime.SetupSignalHandler()); err != nil {
 		log.Fatalw("problem running manager", zap.Error(err))
 	}
 }

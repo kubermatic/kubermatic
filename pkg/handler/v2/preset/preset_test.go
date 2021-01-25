@@ -38,7 +38,7 @@ import (
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func boolPtr(value bool) *bool {
@@ -576,7 +576,7 @@ func TestUpdatePresetStatus(t *testing.T) {
 			}
 
 			preset := &kubermaticv1.Preset{}
-			if err := clientSets.FakeClient.Get(context.TODO(), client.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
 				t.Fatalf("failed to get preset: %+v", err)
 			}
 
@@ -767,8 +767,8 @@ func TestCreatePreset(t *testing.T) {
 					 "metadata": {
 						"name": "do-preset"
 					 },
-					 "spec": { 
-						"digitalocean": { "token": "test" }, 
+					 "spec": {
+						"digitalocean": { "token": "test" },
 						"anexia": { "token": "test" }
 					 }
 			}`,
@@ -818,7 +818,7 @@ func TestCreatePreset(t *testing.T) {
 			}
 
 			preset := &kubermaticv1.Preset{}
-			if err := clientSets.FakeClient.Get(context.TODO(), client.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
 				t.Fatalf("failed to get preset: %+v", err)
 			}
 
@@ -1055,7 +1055,7 @@ func TestUpdatePreset(t *testing.T) {
 			}
 
 			preset := &kubermaticv1.Preset{}
-			if err := clientSets.FakeClient.Get(context.TODO(), client.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
+			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
 				t.Fatalf("failed to get preset: %+v", err)
 			}
 

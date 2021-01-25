@@ -39,8 +39,8 @@ import (
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	ctrlruntimezaplog "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -121,7 +121,7 @@ func TestResources(t *testing.T) {
 			}
 
 			tc.reconciler.recorder = &record.FakeRecorder{}
-			tc.reconciler.Client = fake.NewFakeClient(
+			tc.reconciler.Client = ctrlruntimefakeclient.NewFakeClient(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-cluster",
@@ -183,7 +183,7 @@ func TestResources(t *testing.T) {
 			}
 
 			object := tc.object.DeepCopyObject()
-			clientObject, ok := object.(client.Object)
+			clientObject, ok := object.(ctrlruntimeclient.Object)
 			if !ok {
 				t.Fatal("testcase object can not be asserted as metav1.Object")
 			}

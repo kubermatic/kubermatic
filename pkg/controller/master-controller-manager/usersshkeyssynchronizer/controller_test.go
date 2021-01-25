@@ -26,9 +26,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -44,7 +43,7 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 			name: "Test cleanup cluster ids in UserSSHKey on cluster deletion",
 			reconciler: &Reconciler{
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				client: fake.NewFakeClient(
+				client: fakectrlruntimeclient.NewFakeClient(
 					&kubermaticv1.UserSSHKeyList{
 						Items: []kubermaticv1.UserSSHKey{
 							{
@@ -62,8 +61,8 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 						},
 					},
 				),
-				seedClients: map[string]client.Client{
-					"seed_test": fake.NewFakeClient(
+				seedClients: map[string]ctrlruntimeclient.Client{
+					"seed_test": fakectrlruntimeclient.NewFakeClient(
 						&kubermaticv1.Cluster{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:              "test_cluster_1",

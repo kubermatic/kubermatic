@@ -37,7 +37,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/klog"
-	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	ctrlruntimezaplog "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -137,7 +137,7 @@ func main() {
 	if runOpts.workerName != "" {
 		electionName += "-" + runOpts.workerName
 	}
-	mgr, err := manager.New(ctrl.GetConfigOrDie(), manager.Options{
+	mgr, err := manager.New(ctrlruntime.GetConfigOrDie(), manager.Options{
 		LeaderElection:          runOpts.enableLeaderElection,
 		LeaderElectionNamespace: runOpts.leaderElectionNamespace,
 		LeaderElectionID:        electionName,

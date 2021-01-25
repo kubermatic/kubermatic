@@ -32,7 +32,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -102,13 +102,13 @@ type Reconciler struct {
 	cache envoycachev3.SnapshotCache
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, req ctrlruntime.Request) (ctrlruntime.Result, error) {
 	r.log.Debugw("got reconcile request", "request", req)
 	err := r.sync(ctx)
 	if err != nil {
 		r.log.Errorf("failed to reconcile", zap.Error(err))
 	}
-	return ctrl.Result{}, err
+	return ctrlruntime.Result{}, err
 }
 
 func (r *Reconciler) sync(ctx context.Context) error {
@@ -183,7 +183,7 @@ func (r *Reconciler) sync(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
+func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrlruntime.Manager) error {
 	if err := mgr.GetFieldIndexer().IndexField(ctx, &corev1.Service{}, r.ExposeAnnotationKey, func(raw client.Object) []string {
 		svc := raw.(*corev1.Service)
 		if isExposed(svc, r.ExposeAnnotationKey) {
@@ -193,7 +193,7 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) err
 	}); err != nil {
 		return fmt.Errorf("error occurred while adding service index: %w", err)
 	}
-	return ctrl.NewControllerManagedBy(mgr).
+	return ctrlruntime.NewControllerManagedBy(mgr).
 		// Ensures that only one new Snapshot is generated at a time
 		WithOptions(controller.Options{MaxConcurrentReconciles: 1}).
 		For(&corev1.Service{}, builder.WithPredicates(exposeAnnotationPredicate{annotation: r.ExposeAnnotationKey, log: r.log})).
@@ -202,7 +202,7 @@ func (r *Reconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) err
 		Complete(r)
 }
 
-func (r *Reconciler) endpointsToService(obj ctrlruntimeclient.Object) []ctrl.Request {
+func (r *Reconciler) endpointsToService(obj ctrlruntimeclient.Object) []ctrlruntime.Request {
 	svcName := types.NamespacedName{
 		Name:      obj.GetName(),
 		Namespace: obj.GetNamespace(),
@@ -222,7 +222,7 @@ func (r *Reconciler) endpointsToService(obj ctrlruntimeclient.Object) []ctrl.Req
 	if !isExposed(&svc, r.ExposeAnnotationKey) {
 		return nil
 	}
-	return []ctrl.Request{{NamespacedName: svcName}}
+	return []ctrlruntime.Request{{NamespacedName: svcName}}
 }
 
 // exposeAnnotationPredicate is used to filter out events associated to

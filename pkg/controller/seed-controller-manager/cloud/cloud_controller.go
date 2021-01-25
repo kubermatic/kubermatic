@@ -40,7 +40,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -66,7 +66,7 @@ const (
 var _ reconcile.Reconciler = &Reconciler{}
 
 type Reconciler struct {
-	client.Client
+	ctrlruntimeclient.Client
 
 	log        *zap.SugaredLogger
 	recorder   record.EventRecorder
@@ -249,7 +249,7 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 	if reflect.DeepEqual(oldCluster, cluster) {
 		return cluster, nil
 	}
-	return cluster, r.Patch(context.Background(), cluster, client.MergeFrom(oldCluster))
+	return cluster, r.Patch(context.Background(), cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
 func (r *Reconciler) getGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {

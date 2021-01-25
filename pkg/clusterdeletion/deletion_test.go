@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -109,7 +109,7 @@ func TestCleanUpPVUsingWorkloads(t *testing.T) {
 					Name:      metav1Object.GetName(),
 				}
 
-				copy := object.DeepCopyObject().(controllerruntimeclient.Object)
+				copy := object.DeepCopyObject().(ctrlruntimeclient.Object)
 
 				err := client.Get(ctx, nn, copy)
 				if kerrors.IsNotFound(err) != tc.objDeletionExpected {
@@ -160,7 +160,7 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 			m := &clusterv1alpha1.Machine{}
 			tc.objects = append(tc.objects, m)
 			userClusterClient := fake.NewFakeClient(tc.objects...)
-			userClusterClientGetter := func() (controllerruntimeclient.Client, error) {
+			userClusterClientGetter := func() (ctrlruntimeclient.Client, error) {
 				return userClusterClient, nil
 			}
 			seedClient := fake.NewFakeClient(tc.cluster)

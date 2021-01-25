@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	certificatesv1beta1client "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -43,7 +43,7 @@ const ControllerName = "node_csr_autoapprover"
 var _ reconcile.Reconciler = &reconciler{}
 
 type reconciler struct {
-	client.Client
+	ctrlruntimeclient.Client
 	// Have to use the typed client because csr approval is a subresource
 	// the dynamic client does not approve
 	certClient certificatesv1beta1client.CertificateSigningRequestInterface

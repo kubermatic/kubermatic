@@ -30,8 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
-
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -67,7 +66,7 @@ func TestReconcileBinding(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-			kubermaticFakeClient := fake.NewFakeClient(test.existingKubermaticObjects...)
+			kubermaticFakeClient := fakectrlruntimeclient.NewFakeClient(test.existingKubermaticObjects...)
 
 			// act
 			ctx := context.Background()

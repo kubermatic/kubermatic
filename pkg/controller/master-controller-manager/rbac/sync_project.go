@@ -33,14 +33,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	CleanupFinalizerName = "kubermatic.io/controller-manager-rbac-cleanup"
 )
 
-func (c *projectController) sync(ctx context.Context, key client.ObjectKey) error {
+func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.ObjectKey) error {
 	var originalProject kubermaticv1.Project
 	if err := c.client.Get(ctx, key, &originalProject); err != nil {
 		if kerrors.IsNotFound(err) {
@@ -237,7 +237,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context
 	return nil
 }
 
-func ensureClusterRBACRoleForResource(ctx context.Context, c client.Client, groupName, resource, kind string) error {
+func ensureClusterRBACRoleForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource, kind string) error {
 	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, resource, kubermaticv1.SchemeGroupVersion.Group, kind)
 	if err != nil {
 		return err
@@ -267,7 +267,7 @@ func ensureClusterRBACRoleForResource(ctx context.Context, c client.Client, grou
 	return c.Update(ctx, existingClusterRole)
 }
 
-func ensureClusterRBACRoleBindingForResource(ctx context.Context, c client.Client, groupName, resource string) error {
+func ensureClusterRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource string) error {
 	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
 
 	var sharedExistingClusterRoleBinding rbacv1.ClusterRoleBinding
@@ -349,7 +349,7 @@ func (c *projectController) ensureRBACRoleForResources(ctx context.Context) erro
 	return nil
 }
 
-func ensureRBACRoleForResource(ctx context.Context, c client.Client, groupName string, gvr schema.GroupVersionResource, kind string, namespace string) error {
+func ensureRBACRoleForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName string, gvr schema.GroupVersionResource, kind string, namespace string) error {
 	generatedRole, err := generateRBACRoleForResource(groupName, gvr.Resource, gvr.Group, kind, namespace)
 	if err != nil {
 		return err
@@ -424,7 +424,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Contex
 	return nil
 }
 
-func ensureRBACRoleBindingForResource(ctx context.Context, c client.Client, groupName, resource, namespace string) error {
+func ensureRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource, namespace string) error {
 	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, namespace)
 
 	var sharedExistingRoleBinding rbacv1.RoleBinding
@@ -559,7 +559,7 @@ func (c *projectController) ensureProjectCleanup(ctx context.Context, project *k
 	return c.client.Update(ctx, project)
 }
 
-func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c client.Client, groupName, resource string) error {
+func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource string) error {
 	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
 	var sharedExistingClusterRoleBinding rbacv1.ClusterRoleBinding
 	key := types.NamespacedName{Name: generatedClusterRoleBinding.Name}
@@ -587,7 +587,7 @@ func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c client.Client, grou
 	return c.Update(ctx, existingClusterRoleBinding)
 }
 
-func cleanUpRBACRoleBindingFor(ctx context.Context, c client.Client, groupName, resource, namespace string) error {
+func cleanUpRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource, namespace string) error {
 	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, namespace)
 	var sharedExistingRoleBinding rbacv1.RoleBinding
 	key := types.NamespacedName{Name: generatedRoleBinding.Name, Namespace: namespace}

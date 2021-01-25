@@ -33,7 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -77,7 +77,7 @@ func TestReconcile(t *testing.T) {
 				t.Fatal(err)
 			}
 			cluster := &kubermaticv1.ExternalCluster{}
-			err = kubermaticFakeClient.Get(ctx, client.ObjectKey{Name: test.clusterName}, cluster)
+			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: test.clusterName}, cluster)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -86,7 +86,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			secretKubeconfig := &corev1.Secret{}
-			err = kubermaticFakeClient.Get(ctx, client.ObjectKey{Name: cluster.GetKubeconfigSecretName()}, secretKubeconfig)
+			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: cluster.GetKubeconfigSecretName()}, secretKubeconfig)
 			if err == nil {
 				t.Fatal("expected error")
 			}

@@ -28,8 +28,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 
-	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
@@ -113,7 +113,7 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 				objs = append(objs, test.existingProject)
 			}
 
-			kubermaticFakeClient := fake.NewFakeClient(objs...)
+			kubermaticFakeClient := fakectrlruntimeclient.NewFakeClient(objs...)
 
 			// act
 			target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
@@ -126,7 +126,7 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 			}
 			updatedProject := &kubermaticv1.Project{}
 
-			err = kubermaticFakeClient.Get(ctx, controllerclient.ObjectKey{Name: "thunderball"}, updatedProject)
+			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: "thunderball"}, updatedProject)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -201,7 +201,7 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 				objs = append(objs, test.existingProject)
 			}
 
-			kubermaticFakeClient := fake.NewFakeClient(objs...)
+			kubermaticFakeClient := fakectrlruntimeclient.NewFakeClient(objs...)
 
 			// act
 			target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
@@ -214,7 +214,7 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 
 			updatedProject := &kubermaticv1.Project{}
 
-			err = kubermaticFakeClient.Get(ctx, controllerclient.ObjectKey{Name: "thunderball"}, updatedProject)
+			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: "thunderball"}, updatedProject)
 			if err != nil {
 				t.Fatal(err)
 			}

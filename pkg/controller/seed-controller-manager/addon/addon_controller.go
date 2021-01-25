@@ -29,7 +29,6 @@ import (
 	"time"
 
 	"github.com/ghodss/yaml"
-
 	"go.uber.org/zap"
 
 	addonutils "k8c.io/kubermatic/v2/pkg/addon"

@@ -30,7 +30,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -132,7 +132,7 @@ func Add(
 	}
 
 	// watch related resources
-	eventHandler := handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+	eventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("failed to get seeds", zap.Error(err))
@@ -157,7 +157,7 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t.(client.Object)}, eventHandler, namespacePredicate, ownedPredicate); err != nil {
+		if err := c.Watch(&source.Kind{Type: t.(ctrlruntimeclient.Object)}, eventHandler, namespacePredicate, ownedPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}

@@ -21,12 +21,11 @@ import (
 	"testing"
 	"time"
 
-	"go.uber.org/zap/zaptest"
-
 	"github.com/go-test/deep"
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
+	"go.uber.org/zap/zaptest"
 
 	envoyclusterv3 "github.com/envoyproxy/go-control-plane/envoy/config/cluster/v3"
 	envoycorev3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
@@ -37,17 +36,17 @@ import (
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
+	"k8c.io/kubermatic/v2/pkg/test"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/event"
-
-	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
-	"k8c.io/kubermatic/v2/pkg/test"
 )
 
 func TestSync(t *testing.T) {
@@ -541,7 +540,7 @@ func TestEndpointToService(t *testing.T) {
 		name          string
 		eps           *corev1.Endpoints
 		resources     []runtime.Object
-		expectResults []ctrl.Request
+		expectResults []ctrlruntime.Request
 	}{
 		{
 			name:          "No results when matching service is not found",
@@ -570,7 +569,7 @@ func TestEndpointToService(t *testing.T) {
 					},
 				},
 			},
-			expectResults: []ctrl.Request{{
+			expectResults: []ctrlruntime.Request{{
 				NamespacedName: types.NamespacedName{Namespace: "foo", Name: "bar"},
 			}},
 		},

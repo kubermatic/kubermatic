@@ -23,11 +23,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func GetResourcesToRemoveOnDelete(namespace string) []client.Object {
-	var toRemove []client.Object
+func GetResourcesToRemoveOnDelete(namespace string) []ctrlruntimeclient.Object {
+	var toRemove []ctrlruntimeclient.Object
 
 	// Deployment
 	toRemove = append(toRemove, &appsv1.Deployment{

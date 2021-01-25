@@ -20,17 +20,16 @@ import (
 	"context"
 	"fmt"
 
-	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
-
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/klog"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // reconciler creates and updates ClusterRoles and ClusterRoleBinding to achieve the desired state
 type reconciler struct {
-	client controllerclient.Client
+	client ctrlruntimeclient.Client
 }
 
 // Reconcile creates and updates ClusterRoles and ClusterRoleBinding to achieve the desired state
@@ -56,7 +55,7 @@ func (r *reconciler) ensureRBACClusterRole(ctx context.Context, resourceName str
 	}
 
 	clusterRole := &rbacv1.ClusterRole{}
-	err = r.client.Get(ctx, controllerclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, clusterRole)
+	err = r.client.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, clusterRole)
 	if err != nil {
 		// create Cluster Role if not exist
 		if errors.IsNotFound(err) {
@@ -87,7 +86,7 @@ func (r *reconciler) ensureRBACClusterRoleBinding(ctx context.Context, resourceN
 	}
 
 	clusterRoleBinding := &rbacv1.ClusterRoleBinding{}
-	if err := r.client.Get(ctx, controllerclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, clusterRoleBinding); err != nil {
+	if err := r.client.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, clusterRoleBinding); err != nil {
 		if errors.IsNotFound(err) {
 			if err := r.client.Create(ctx, defaultClusterBinding); err != nil {
 				return fmt.Errorf("failed to create the RBAC ClusterRoleBinding: %v", err)

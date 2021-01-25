@@ -18,7 +18,7 @@ package predicate
 
 import (
 	"k8s.io/apimachinery/pkg/util/sets"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
@@ -26,7 +26,7 @@ import (
 // Factory returns a predicate func that applies the given filter function
 // on CREATE, UPDATE and DELETE events. For UPDATE events, the filter is applied
 // to both the old and new object and OR's the result.
-func Factory(filter func(o client.Object) bool) predicate.Funcs {
+func Factory(filter func(o ctrlruntimeclient.Object) bool) predicate.Funcs {
 	if filter == nil {
 		return predicate.Funcs{}
 	}
@@ -46,7 +46,7 @@ func Factory(filter func(o client.Object) bool) predicate.Funcs {
 
 // ByNamespace returns a predicate func that only includes objects in the given namespace
 func ByNamespace(namespace string) predicate.Funcs {
-	return Factory(func(o client.Object) bool {
+	return Factory(func(o ctrlruntimeclient.Object) bool {
 		return o.GetNamespace() == namespace
 	})
 }
@@ -54,14 +54,14 @@ func ByNamespace(namespace string) predicate.Funcs {
 // ByName returns a predicate func that only includes objects in the given names
 func ByName(names ...string) predicate.Funcs {
 	namesSet := sets.NewString(names...)
-	return Factory(func(o client.Object) bool {
+	return Factory(func(o ctrlruntimeclient.Object) bool {
 		return namesSet.Has(o.GetName())
 	})
 }
 
 // ByLabel returns a predicate func that only includes objects with the given label
 func ByLabel(key, value string) predicate.Funcs {
-	return Factory(func(o client.Object) bool {
+	return Factory(func(o ctrlruntimeclient.Object) bool {
 		labels := o.GetLabels()
 		if labels != nil {
 			if existingValue, ok := labels[key]; ok {

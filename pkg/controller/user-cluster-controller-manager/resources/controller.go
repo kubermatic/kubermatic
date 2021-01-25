@@ -46,7 +46,6 @@ import (
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -233,8 +232,8 @@ func Add(
 
 // reconcileUserCluster reconciles objects in the user cluster
 type reconciler struct {
-	client.Client
-	seedClient                    client.Client
+	ctrlruntimeclient.Client
+	seedClient                    ctrlruntimeclient.Client
 	openshift                     bool
 	version                       string
 	clusterSemVer                 *semver.Version
