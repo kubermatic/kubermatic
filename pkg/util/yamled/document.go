@@ -21,6 +21,8 @@ import (
 	"io"
 
 	yaml "gopkg.in/yaml.v2"
+
+	"k8s.io/apimachinery/pkg/api/equality"
 )
 
 type Document struct {
@@ -329,4 +331,26 @@ func (d *Document) fillMap(source yaml.MapSlice, newMap yaml.MapSlice) yaml.MapS
 	}
 
 	return source
+}
+
+// Equal checks if d is semantically equivalent to other.
+// This means memory equality is not checked, but rather the
+// actual values.
+func (d *Document) Equal(other *Document) bool {
+	return equality.Semantic.DeepEqual(d.normalize(), other.normalize())
+}
+
+// normalize is needed to convert the various different representations
+// of a YAML structure into a unified form (that is, a map of strings
+// to interfaces).
+func (d *Document) normalize() interface{} {
+	encoded, err := yaml.Marshal(d.root)
+	if err != nil {
+		return nil
+	}
+
+	var normal interface{}
+	yaml.Unmarshal(encoded, &normal)
+
+	return normal
 }

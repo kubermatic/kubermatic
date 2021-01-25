@@ -27,6 +27,8 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
+
+	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
 type cli struct {
@@ -133,6 +135,17 @@ func (c *cli) RenderChart(namespace string, releaseName string, chartDirectory s
 	command = append(command, releaseName, chartDirectory)
 
 	return c.run(namespace, command...)
+}
+
+func (c *cli) GetValues(namespace string, releaseName string) (*yamled.Document, error) {
+	command := []string{"get", "values", releaseName, "-o", "yaml"}
+
+	output, err := c.run(namespace, command...)
+	if err != nil {
+		return nil, err
+	}
+
+	return yamled.Load(bytes.NewReader(output))
 }
 
 func (c *cli) Version() (*semver.Version, error) {
