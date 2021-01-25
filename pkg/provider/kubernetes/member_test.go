@@ -146,8 +146,10 @@ func TestListBinding(t *testing.T) {
 				t.Fatalf("expected to get %d bindings, but got %d", len(tc.expectedBindings), len(result))
 			}
 			for _, returnedBinding := range result {
+				returnedBinding.ResourceVersion = ""
 				bindingFound := false
 				for _, expectedBinding := range tc.expectedBindings {
+					expectedBinding.ResourceVersion = ""
 					if diff := deep.Equal(returnedBinding, expectedBinding); diff == nil {
 						bindingFound = true
 						break

@@ -575,6 +575,8 @@ func TestUpdatePresetStatus(t *testing.T) {
 				t.Fatalf("failed to get preset: %+v", err)
 			}
 
+			tc.ExpectedPreset.ResourceVersion = preset.ResourceVersion
+
 			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
 				t.Errorf("Got different preset than expected.\nDiff: %v", diff)
 			}
@@ -816,6 +818,8 @@ func TestCreatePreset(t *testing.T) {
 			if err := clientSets.FakeClient.Get(context.TODO(), ctrlruntimeclient.ObjectKey{Namespace: "", Name: tc.PresetName}, preset); err != nil {
 				t.Fatalf("failed to get preset: %+v", err)
 			}
+
+			tc.ExpectedPreset.ResourceVersion = preset.ResourceVersion
 
 			if diff := deep.Equal(tc.ExpectedPreset, preset); diff != nil {
 				t.Errorf("Got different preset than expected.\nDiff: %v", diff)

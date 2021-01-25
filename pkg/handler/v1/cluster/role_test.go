@@ -50,6 +50,7 @@ func TestCreateClusterRole(t *testing.T) {
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
@@ -100,6 +101,7 @@ func TestCreateRole(t *testing.T) {
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
@@ -112,6 +114,7 @@ func TestCreateRole(t *testing.T) {
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
@@ -152,7 +155,7 @@ func TestListRole(t *testing.T) {
 		clusterToGet           string
 		existingAPIUser        *apiv1.User
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingKubernrtesObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -161,9 +164,10 @@ func TestListRole(t *testing.T) {
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			existingKubernrtesObjs: []ctrlruntimeclient.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
 				test.GenDefaultRole("role-2", "test"),
 				test.GenDefaultClusterRole("role-2"),
@@ -177,7 +181,7 @@ func TestListRole(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
 			var kubermaticObj []ctrlruntimeclient.Object
-			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
@@ -208,7 +212,7 @@ func TestListClusterRole(t *testing.T) {
 		clusterToGet           string
 		existingAPIUser        *apiv1.User
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingKubernrtesObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -217,9 +221,10 @@ func TestListClusterRole(t *testing.T) {
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			existingKubernrtesObjs: []ctrlruntimeclient.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
 				test.GenDefaultClusterRole("role-2"),
 				test.GenDefaultClusterRole("role-3"),
@@ -232,7 +237,7 @@ func TestListClusterRole(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object
@@ -265,7 +270,7 @@ func TestGetRole(t *testing.T) {
 		clusterToGet           string
 		existingAPIUser        *apiv1.User
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingKubernrtesObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -276,9 +281,10 @@ func TestGetRole(t *testing.T) {
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			existingKubernrtesObjs: []ctrlruntimeclient.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
 				test.GenDefaultRole("role-1", "test"),
 				test.GenDefaultClusterRole("role-1"),
@@ -292,7 +298,7 @@ func TestGetRole(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
 			var kubermaticObj []ctrlruntimeclient.Object
-			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles/%s/%s", test.ProjectName, tc.clusterToGet, tc.namespace, tc.roleName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
@@ -324,7 +330,7 @@ func TestGetClusterRole(t *testing.T) {
 		clusterToGet           string
 		existingAPIUser        *apiv1.User
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingKubernrtesObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -334,9 +340,10 @@ func TestGetClusterRole(t *testing.T) {
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			existingKubernrtesObjs: []ctrlruntimeclient.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-2", "default"),
 				test.GenDefaultClusterRole("role-2"),
 			},
@@ -349,7 +356,7 @@ func TestGetClusterRole(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
 			var kubermaticObj []ctrlruntimeclient.Object
-			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s", test.ProjectName, tc.clusterToGet, tc.roleName), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
@@ -383,7 +390,7 @@ func TestPatchRole(t *testing.T) {
 		clusterToGet           string
 		existingAPIUser        *apiv1.User
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingKubernrtesObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -395,9 +402,10 @@ func TestPatchRole(t *testing.T) {
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			existingKubernrtesObjs: []ctrlruntimeclient.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
 				test.GenDefaultRole("role-1", "test"),
 				test.GenDefaultClusterRole("role-1"),
@@ -406,7 +414,7 @@ func TestPatchRole(t *testing.T) {
 		},
 		// scenario 2
 		{
-			name:             "scenario 1: add new rule",
+			name:             "scenario 2: add new rule",
 			roleName:         "role-1",
 			namespace:        "test",
 			body:             `{"rules":[{"verbs":["get"],"apiGroups":["*"],"resources":["pod","node"]},{"verbs":["*"],"apiGroups":["*"],"resources":["*"]}]}`,
@@ -414,9 +422,10 @@ func TestPatchRole(t *testing.T) {
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			existingKubernrtesObjs: []ctrlruntimeclient.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
 				test.GenDefaultRole("role-1", "test"),
 				test.GenDefaultClusterRole("role-1"),
@@ -430,7 +439,7 @@ func TestPatchRole(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
 			var kubermaticObj []ctrlruntimeclient.Object
-			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/roles/%s/%s", test.ProjectName, tc.clusterToGet, tc.namespace, tc.roleName), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
@@ -463,7 +472,7 @@ func TestPatchClusterRole(t *testing.T) {
 		clusterToGet           string
 		existingAPIUser        *apiv1.User
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingKubernrtesObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -474,9 +483,10 @@ func TestPatchClusterRole(t *testing.T) {
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			existingKubernrtesObjs: []ctrlruntimeclient.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
 				test.GenDefaultRole("role-1", "test"),
 				test.GenDefaultClusterRole("role-1"),
@@ -492,9 +502,10 @@ func TestPatchClusterRole(t *testing.T) {
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			existingKubernrtesObjs: []ctrlruntimeclient.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
 				test.GenDefaultRole("role-1", "test"),
 				test.GenDefaultClusterRole("role-1"),
@@ -508,7 +519,7 @@ func TestPatchClusterRole(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
 			var kubermaticObj []ctrlruntimeclient.Object
-			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterroles/%s", test.ProjectName, tc.clusterToGet, tc.roleName), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
@@ -539,7 +550,7 @@ func TestListRoleNmaes(t *testing.T) {
 		clusterToGet           string
 		existingAPIUser        *apiv1.User
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingKubernrtesObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -557,9 +568,10 @@ func TestListRoleNmaes(t *testing.T) {
 			clusterToGet: test.GenDefaultCluster().Name,
 			httpStatus:   http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			existingKubernrtesObjs: []ctrlruntimeclient.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
 				test.GenDefaultRole("role-2", "default"),
 				test.GenDefaultRole("role-1", "test"),
@@ -575,7 +587,7 @@ func TestListRoleNmaes(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
 			var kubermaticObj []ctrlruntimeclient.Object
-			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/rolenames", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
@@ -612,7 +624,7 @@ func TestListClusterRoleNames(t *testing.T) {
 		clusterToGet           string
 		existingAPIUser        *apiv1.User
 		existingKubermaticObjs []ctrlruntimeclient.Object
-		existingKubernrtesObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -621,9 +633,10 @@ func TestListClusterRoleNames(t *testing.T) {
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			existingKubernrtesObjs: []ctrlruntimeclient.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
 				test.GenDefaultClusterRole("role-2"),
 				test.GenDefaultClusterRole("role-3"),
@@ -637,9 +650,10 @@ func TestListClusterRoleNames(t *testing.T) {
 			clusterToGet:     test.GenDefaultCluster().Name,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			existingKubernrtesObjs: []ctrlruntimeclient.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultRole("role-1", "default"),
 			},
 			existingAPIUser: test.GenDefaultAPIUser(),
@@ -650,7 +664,7 @@ func TestListClusterRoleNames(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			var kubernetesObj []ctrlruntimeclient.Object
 			var kubeObj []ctrlruntimeclient.Object
-			kubeObj = append(kubeObj, tc.existingKubernrtesObjs...)
+			kubeObj = append(kubeObj, tc.existingKubernetesObjs...)
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/clusterrolenames", test.ProjectName, tc.clusterToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
 			var kubermaticObj []ctrlruntimeclient.Object

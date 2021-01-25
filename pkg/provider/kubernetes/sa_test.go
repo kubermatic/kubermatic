@@ -55,7 +55,7 @@ func TestCreateServiceAccount(t *testing.T) {
 			},
 			expectedSA: func() *kubermaticv1.User {
 				sa := createSANoPrefix("test", "my-first-project-ID", "editors", "1")
-				sa.ResourceVersion = "1"
+				sa.ResourceVersion = ""
 				return sa
 			}(),
 			expectedSAName: "1",
@@ -87,6 +87,7 @@ func TestCreateServiceAccount(t *testing.T) {
 			sa.Name = tc.expectedSAName
 			sa.Spec.Email = ""
 			sa.Spec.ID = ""
+			sa.ResourceVersion = ""
 
 			if !equality.Semantic.DeepEqual(sa, tc.expectedSA) {
 				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, sa))
@@ -152,6 +153,15 @@ func TestList(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			for i := range saList {
+				saList[i].ResourceVersion = ""
+			}
+
+			for i := range tc.expectedSA {
+				tc.expectedSA[i].ResourceVersion = ""
+			}
+
 			if !equality.Semantic.DeepEqual(saList, tc.expectedSA) {
 				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, saList))
 			}
@@ -207,6 +217,9 @@ func TestGet(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			tc.expectedSA.ResourceVersion = sa.ResourceVersion
+
 			if !equality.Semantic.DeepEqual(sa, tc.expectedSA) {
 				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, sa))
 			}
@@ -271,6 +284,9 @@ func TestUpdate(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			tc.expectedSA.ResourceVersion = expectedSA.ResourceVersion
+
 			if !equality.Semantic.DeepEqual(expectedSA, tc.expectedSA) {
 				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, expectedSA))
 			}

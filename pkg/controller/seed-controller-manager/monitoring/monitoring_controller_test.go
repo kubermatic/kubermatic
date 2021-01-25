@@ -50,7 +50,8 @@ func newTestReconciler(t *testing.T, objects []ctrlruntimeclient.Object) *Reconc
 func seed() (*kubermaticv1.Seed, error) {
 	return &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "us-central1",
+			Name:      "us-central1",
+			Namespace: "kubermatic",
 		},
 		Spec: kubermaticv1.SeedSpec{
 			Datacenters: map[string]kubermaticv1.Datacenter{

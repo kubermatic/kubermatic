@@ -53,11 +53,14 @@ func TestGetAddon(t *testing.T) {
 	}{
 		// scenario 1
 		{
-			Name:                   "scenario 1: get addon that belongs to the given cluster",
-			ClusterIDToSync:        test.GenDefaultCluster().Name,
-			ProjectIDToSync:        test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			Name:            "scenario 1: get addon that belongs to the given cluster",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 			ExistingAddons: []*kubermaticv1.Addon{
 				test.GenTestAddon("addon1", nil, test.GenDefaultCluster(), creationTime),
 			},
@@ -73,11 +76,14 @@ func TestGetAddon(t *testing.T) {
 		},
 		// scenario 2
 		{
-			Name:                   "scenario 2: get addon with variables that belongs to the given cluster",
-			ClusterIDToSync:        test.GenDefaultCluster().Name,
-			ProjectIDToSync:        test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			Name:            "scenario 2: get addon with variables that belongs to the given cluster",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 			ExistingAddons: []*kubermaticv1.Addon{
 				test.GenTestAddon("addon1", test.CreateRawVariables(t, testVariables), test.GenDefaultCluster(), creationTime),
 			},
@@ -96,11 +102,14 @@ func TestGetAddon(t *testing.T) {
 		},
 		// scenario 3
 		{
-			Name:                   "scenario 3: try to get addon that belongs to the given cluster but isn't accessible",
-			ClusterIDToSync:        test.GenDefaultCluster().Name,
-			ProjectIDToSync:        test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			Name:            "scenario 3: try to get addon that belongs to the given cluster but isn't accessible",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 			ExistingAddons: []*kubermaticv1.Addon{
 				test.GenTestAddon("addon1", nil, test.GenDefaultCluster(), creationTime),
 				test.GenTestAddon("addon2", nil, test.GenDefaultCluster(), creationTime),
@@ -112,11 +121,15 @@ func TestGetAddon(t *testing.T) {
 		},
 		// scenario 4
 		{
-			Name:                   "scenario 4: the admin John can get addon with variables that belongs to the Bob's cluster",
-			ClusterIDToSync:        test.GenDefaultCluster().Name,
-			ProjectIDToSync:        test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), test.GenAdminUser("John", "john@acme.com", true)),
-			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			Name:            "scenario 4: the admin John can get addon with variables that belongs to the Bob's cluster",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenAdminUser("John", "john@acme.com", true),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			ExistingAddons: []*kubermaticv1.Addon{
 				test.GenTestAddon("addon1", test.CreateRawVariables(t, testVariables), test.GenDefaultCluster(), creationTime),
 			},
@@ -205,6 +218,7 @@ func TestListAddons(t *testing.T) {
 			},
 			ExpectedHTTPStatus: http.StatusOK,
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -239,6 +253,7 @@ func TestListAddons(t *testing.T) {
 			},
 			ExpectedHTTPStatus: http.StatusOK,
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -279,6 +294,7 @@ func TestListAddons(t *testing.T) {
 			},
 			ExpectedHTTPStatus: http.StatusOK,
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -352,6 +368,7 @@ func TestCreateAddon(t *testing.T) {
 			},
 			ExpectedHTTPStatus: http.StatusCreated,
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -374,6 +391,7 @@ func TestCreateAddon(t *testing.T) {
 			}`,
 			ExpectedHTTPStatus: http.StatusUnauthorized,
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -402,6 +420,7 @@ func TestCreateAddon(t *testing.T) {
 			},
 			ExpectedHTTPStatus: http.StatusCreated,
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -435,6 +454,7 @@ func TestCreateAddon(t *testing.T) {
 			},
 			ExpectedHTTPStatus: http.StatusCreated,
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -525,6 +545,7 @@ func TestCreatePatchGetAddon(t *testing.T) {
 				},
 			},
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -566,6 +587,7 @@ func TestCreatePatchGetAddon(t *testing.T) {
 				},
 			},
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -610,6 +632,7 @@ func TestCreatePatchGetAddon(t *testing.T) {
 				},
 			},
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/

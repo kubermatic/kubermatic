@@ -471,6 +471,10 @@ func TestListProjectMethod(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
+			ctx := context.Background()
+			testSeed := test.GenTestSeed()
+			tc.ExistingKubermaticObjects = append(tc.ExistingKubermaticObjects, testSeed)
+
 			kubermaticClient := kubermaticfakeclentset.NewSimpleClientset()
 			fakeClient := fakectrlruntimeclient.
 				NewClientBuilder().
@@ -502,17 +506,17 @@ func TestListProjectMethod(t *testing.T) {
 				false,
 				versions,
 			)
-			clusterProviders := map[string]provider.ClusterProvider{"us-central1": clusterProvider}
+			clusterProviders := map[string]provider.ClusterProvider{testSeed.Name: clusterProvider}
 			clusterProviderGetter := func(seed *kubermaticapiv1.Seed) (provider.ClusterProvider, error) {
 				if clusterProvider, exists := clusterProviders[seed.Name]; exists {
 					return clusterProvider, nil
 				}
-				return nil, fmt.Errorf("can not find clusterprovider for cluster %q", seed.Name)
+				return nil, fmt.Errorf("cannot find clusterprovider for cluster %q", seed.Name)
 			}
 
-			endpointFun := project.ListEndpoint(userInfoGetter, test.NewFakeProjectProvider(), test.NewFakePrivilegedProjectProvider(), projectMemberProvider, projectMemberProvider, userProvider, clusterProviderGetter, test.BuildSeeds())
+			endpointFun := project.ListEndpoint(userInfoGetter, test.NewFakeProjectProvider(), test.NewFakePrivilegedProjectProvider(), projectMemberProvider, projectMemberProvider, userProvider, clusterProviderGetter, test.CreateTestSeedsGetter(ctx, fakeClient))
 
-			ctx := context.WithValue(context.Background(), middleware.UserCRContextKey, tc.ExistingAPIUser)
+			ctx = context.WithValue(ctx, middleware.UserCRContextKey, tc.ExistingAPIUser)
 
 			projectsRaw, err := endpointFun(ctx, project.ListReq{})
 			resultProjectList := make([]apiv1.Project, 0)

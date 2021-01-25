@@ -52,6 +52,7 @@ func TestListConstraintTemplates(t *testing.T) {
 			},
 			HTTPStatus: http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
+				// test.GenTestSeed(),
 				test.GenConstraintTemplate("ct1"),
 				test.GenConstraintTemplate("ct2"),
 			),
@@ -220,7 +221,7 @@ func TestPatchConstraintTemplates(t *testing.T) {
 			ExpectedResponse: `{"name":"labelconstraint","spec":{"crd":{"spec":{"names":{"kind":"labelconstraint","shortNames":["lc","lcon"]}}},"targets":[{"target":"admission.k8s.gatekeeper.sh","rego":"\n\t\tpackage k8srequiredlabels\n\n        deny[{\"msg\": msg, \"details\": {\"missing_labels\": missing}}] {\n          provided := {label | input.review.object.metadata.labels[label]}\n          required := {label | label := input.parameters.labels[_]}\n          missing := required - provided\n          count(missing) \u003e 0\n          msg := sprintf(\"you must provide labels: %v\", [missing])\n        }"}],"selector":{"Providers":["aws","gcp","azure"],"LabelSelector":{"matchLabels":{"deployment":"prod","domain":"db"},"matchExpressions":[{"key":"cluster","operator":"Exists"}]}}},"status":{}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
-			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraintTemplate("labelconstraint")},
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenTestSeed(), test.GenConstraintTemplate("labelconstraint")},
 		},
 		{
 			Name:             "scenario 2: non-admin can not patch constraint template",
@@ -229,7 +230,7 @@ func TestPatchConstraintTemplates(t *testing.T) {
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
-			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraintTemplate("labelconstraint")},
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenTestSeed(), test.GenConstraintTemplate("labelconstraint")},
 		},
 		{
 			Name:             "scenario 3: cannot patch invalid constraint template",
@@ -238,7 +239,7 @@ func TestPatchConstraintTemplates(t *testing.T) {
 			ExpectedResponse: `{"error":{"code":400,"message":"patched ct validation failed: template's name labelconstraint is not equal to the lowercase of CRD's Kind: different"}}`,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
-			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraintTemplate("labelconstraint")},
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenTestSeed(), test.GenConstraintTemplate("labelconstraint")},
 		},
 		{
 			Name:             "scenario 4: cannot change constraint template name",
@@ -247,7 +248,7 @@ func TestPatchConstraintTemplates(t *testing.T) {
 			ExpectedResponse: `{"error":{"code":400,"message":"Changing ct name is not allowed: \"labelconstraint\" to \"changedname\""}}`,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
-			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraintTemplate("labelconstraint")},
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenTestSeed(), test.GenConstraintTemplate("labelconstraint")},
 		},
 		{
 			Name:             "scenario 5: cannot patch non-existing constraint template",
@@ -256,7 +257,7 @@ func TestPatchConstraintTemplates(t *testing.T) {
 			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8s.io \"doesnotexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
-			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraintTemplate("labelconstraint")},
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenTestSeed(), test.GenConstraintTemplate("labelconstraint")},
 		},
 	}
 

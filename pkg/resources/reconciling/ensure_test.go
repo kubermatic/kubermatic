@@ -175,6 +175,8 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 				t.Fatalf("Failed to get the ConfigMap from the client: %v", err)
 			}
 
+			test.expectedObject.SetResourceVersion(gotConfigMap.ResourceVersion)
+
 			if diff := deep.Equal(gotConfigMap, test.expectedObject); diff != nil {
 				t.Errorf("The ConfigMap from the client does not match the expected ConfigMap. Diff: \n%v", diff)
 			}

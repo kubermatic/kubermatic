@@ -51,6 +51,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ProjectToGet: "foo-ID",
 			ClusterToGet: "cluster-foo",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -80,6 +81,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ProjectToGet: "foo-ID",
 			ClusterToGet: "cluster-foo",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -109,6 +111,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ProjectToGet: "foo-ID",
 			ClusterToGet: "cluster-foo",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -139,6 +142,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			ProjectToGet: "foo-ID",
 			ClusterToGet: "cluster-foo",
 			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/

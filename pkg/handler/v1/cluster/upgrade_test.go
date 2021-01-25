@@ -60,7 +60,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
 				return c
 			}(),
-			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates: []*apiv1.MasterVersion{
@@ -108,7 +110,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
 				return c
 			}(),
-			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
 			existingMachineDeployments: func() []*clusterv1alpha1.MachineDeployment {
 				mds := make([]*clusterv1alpha1.MachineDeployment, 0, 1)
 				mdWithOldKubelet := test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)
@@ -163,7 +167,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
 				return c
 			}(),
-			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates:                []*apiv1.MasterVersion{},
@@ -184,7 +190,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("5.1")
 				return c
 			}(),
-			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates: []*apiv1.MasterVersion{
@@ -261,7 +269,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("3.11.0")
 				return c
 			}(),
-			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates:                []*apiv1.MasterVersion{},
@@ -313,7 +323,10 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
 				return c
 			}(),
-			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(genUser("John", "john@acme.com", true)),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genUser("John", "john@acme.com", true),
+			),
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenAPIUser("John", "john@acme.com"),
 			wantUpdates: []*apiv1.MasterVersion{
@@ -409,11 +422,14 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			ExpectedVersion: "1.11.1",
 			ClusterIDToSync: test.GenDefaultCluster().Name,
 			ProjectIDToSync: test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
-				cluster := test.GenDefaultCluster()
-				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
-				return cluster
-			}()),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenDefaultCluster()
+					cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+					return cluster
+				}(),
+			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 			ExistingMachineDeployments: []ctrlruntimeclient.Object{
 				test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
@@ -427,11 +443,15 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			ExpectedVersion: "v9.9.9",
 			ClusterIDToSync: test.GenDefaultCluster().Name,
 			ProjectIDToSync: test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
-				cluster := test.GenDefaultCluster()
-				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.1.1")
-				return cluster
-			}()), ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenDefaultCluster()
+					cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.1.1")
+					return cluster
+				}(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 			ExistingMachineDeployments: []ctrlruntimeclient.Object{
 				test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
 				test.GenTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
@@ -444,11 +464,15 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			ExpectedVersion: "1.11.1",
 			ClusterIDToSync: test.GenDefaultCluster().Name,
 			ProjectIDToSync: test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
-				cluster := test.GenDefaultCluster()
-				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
-				return cluster
-			}(), genUser("John", "john@acme.com", true)),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenDefaultCluster()
+					cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+					return cluster
+				}(),
+				genUser("John", "john@acme.com", true),
+			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			ExistingMachineDeployments: []ctrlruntimeclient.Object{
 				test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
@@ -505,10 +529,13 @@ func TestGetNodeUpgrades(t *testing.T) {
 		existingKubermaticObjs []ctrlruntimeclient.Object
 	}{
 		{
-			name:                   "only the same major version and no more than 2 minor versions behind the control plane",
-			controlPlaneVersion:    "1.6.0",
-			apiUser:                *test.GenDefaultAPIUser(),
-			existingKubermaticObjs: []ctrlruntimeclient.Object{test.GenDefaultUser()},
+			name:                "only the same major version and no more than 2 minor versions behind the control plane",
+			controlPlaneVersion: "1.6.0",
+			apiUser:             *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
+				test.GenDefaultUser(),
+			},
 			existingUpdates: []*version.Update{
 				{
 					From:      "1.6.0",
@@ -593,10 +620,13 @@ func TestGetNodeUpgrades(t *testing.T) {
 			},
 		},
 		{
-			name:                   "only 2 minor versions for OpenShift cluster",
-			controlPlaneVersion:    "4.10.0&type=openshift",
-			apiUser:                *test.GenDefaultAPIUser(),
-			existingKubermaticObjs: []ctrlruntimeclient.Object{test.GenDefaultUser()},
+			name:                "only 2 minor versions for OpenShift cluster",
+			controlPlaneVersion: "4.10.0&type=openshift",
+			apiUser:             *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
+				test.GenDefaultUser(),
+			},
 			existingUpdates: []*version.Update{
 				{
 					From:      "4.10.0",
@@ -678,11 +708,14 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 		existingKubermaticObjs []ctrlruntimeclient.Object
 	}{
 		{
-			name:                   "get all OpenShift versions",
-			clusterType:            apiv1.OpenShiftClusterType,
-			apiUser:                *test.GenDefaultAPIUser(),
-			existingKubermaticObjs: []ctrlruntimeclient.Object{test.GenDefaultUser()},
-			existingUpdates:        []*version.Update{},
+			name:        "get all OpenShift versions",
+			clusterType: apiv1.OpenShiftClusterType,
+			apiUser:     *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
+				test.GenDefaultUser(),
+			},
+			existingUpdates: []*version.Update{},
 			existingVersions: []*version.Version{
 				{
 					Version: semver.MustParse("1.13.5"),
@@ -735,11 +768,14 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			},
 		},
 		{
-			name:                   "get default only kubernetes versions",
-			clusterType:            "",
-			apiUser:                *test.GenDefaultAPIUser(),
-			existingKubermaticObjs: []ctrlruntimeclient.Object{test.GenDefaultUser()},
-			existingUpdates:        []*version.Update{},
+			name:        "get default only kubernetes versions",
+			clusterType: "",
+			apiUser:     *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
+				test.GenDefaultUser(),
+			},
+			existingUpdates: []*version.Update{},
 			existingVersions: []*version.Version{
 				{
 					Version: semver.MustParse("1.13.5"),

@@ -208,7 +208,8 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, constraintTemplatePro
 
 		patchedCT := &kubermaticv1.ConstraintTemplate{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: patched.Name,
+				Name:            patched.Name,
+				ResourceVersion: originalCT.ResourceVersion,
 			},
 			Spec: patched.Spec,
 		}

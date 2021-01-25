@@ -63,7 +63,8 @@ func TestGetAdmins(t *testing.T) {
 			var kubeObj []ctrlruntimeclient.Object
 			req := httptest.NewRequest("GET", "/api/v1/admin", strings.NewReader(""))
 			res := httptest.NewRecorder()
-			var kubermaticObj []ctrlruntimeclient.Object
+
+			kubermaticObj := []ctrlruntimeclient.Object{test.GenTestSeed()}
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -136,7 +137,8 @@ func TestSetAdmin(t *testing.T) {
 			var kubeObj []ctrlruntimeclient.Object
 			req := httptest.NewRequest("PUT", "/api/v1/admin", strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
-			var kubermaticObj []ctrlruntimeclient.Object
+
+			kubermaticObj := []ctrlruntimeclient.Object{test.GenTestSeed()}
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {

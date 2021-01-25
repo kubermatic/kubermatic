@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes_test
 
 import (
+	"context"
 	"sort"
 	"testing"
 	"time"
@@ -27,6 +28,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticfakeclentset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -118,6 +120,7 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
 			existingObj := []ctrlruntimeclient.Object{}
 			existingObj = append(existingObj, tc.existingObjs...)
 			fakeClient := fakectrlruntimeclient.
@@ -128,12 +131,18 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 
 			kubermaticClient := kubermaticfakeclentset.NewSimpleClientset()
 
-			// act
-			target := kubernetes.NewUserProvider(fakeClient, nil, kubermaticClient)
-			if err := target.AddUserTokenToBlacklist(tc.existingUser, tc.token, tc.expiry); err != nil {
+			// fetch user to get the ResourceVersion
+			user := &kubermaticv1.User{}
+			if err := fakeClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tc.existingUser), user); err != nil {
 				t.Fatal(err)
 			}
-			resultList, err := target.GetUserBlacklistTokens(tc.existingUser)
+
+			// act
+			target := kubernetes.NewUserProvider(fakeClient, nil, kubermaticClient)
+			if err := target.AddUserTokenToBlacklist(user, tc.token, tc.expiry); err != nil {
+				t.Fatal(err)
+			}
+			resultList, err := target.GetUserBlacklistTokens(user)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -141,7 +150,6 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 			sort.Strings(tc.expectedTokens)
 
 			assert.Equal(t, resultList, tc.expectedTokens)
-
 		})
 	}
 }

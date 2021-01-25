@@ -184,6 +184,15 @@ func TestListTokens(t *testing.T) {
 
 			sortTokenByName(resultList)
 			sortTokenByName(tc.expectedTokens)
+
+			for i := range resultList {
+				resultList[i].ResourceVersion = ""
+			}
+
+			for i := range tc.expectedTokens {
+				tc.expectedTokens[i].ResourceVersion = ""
+			}
+
 			if !equality.Semantic.DeepEqual(resultList, tc.expectedTokens) {
 				t.Fatalf("expected  %v got %v", tc.expectedTokens, resultList)
 			}
@@ -255,6 +264,8 @@ func TestGetToken(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			tc.expectedToken.ResourceVersion = result.ResourceVersion
 
 			if !reflect.DeepEqual(result, tc.expectedToken) {
 				t.Fatalf("expected  %v got %v", tc.expectedToken, result)
@@ -335,6 +346,8 @@ func TestUpdateToken(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			tc.expectedToken.ResourceVersion = updated.ResourceVersion
 
 			if !reflect.DeepEqual(updated, tc.expectedToken) {
 				t.Fatalf("expected  %v got %v", tc.expectedToken, updated)

@@ -28,7 +28,6 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	fakeInformerProvider "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test/fake"
-	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	k8scorev1 "k8s.io/api/core/v1"
@@ -91,11 +90,7 @@ func TestEnsureProjectIsInActivePhase(t *testing.T) {
 			ctx := context.Background()
 			objs := []ctrlruntimeclient.Object{}
 			objs = append(objs, test.expectedProject)
-			masterClient := fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(objs...).
-				Build()
+			masterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
 			target := projectController{
@@ -142,11 +137,7 @@ func TestEnsureProjectInitialized(t *testing.T) {
 			ctx := context.Background()
 			objs := []ctrlruntimeclient.Object{}
 			objs = append(objs, test.expectedProject)
-			masterClient := fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(objs...).
-				Build()
+			masterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
 			target := projectController{
@@ -580,11 +571,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 			fakeInformerFactoryForClusterRole.AddFakeClusterRoleBindingInformer(roleBindingsIndexer)
 			fakeKubeInformerProviderForMaster.kubeInformers[metav1.NamespaceAll] = fakeInformerFactoryForClusterRole
 
-			fakeMasterClient := fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(objs...).
-				Build()
+			fakeMasterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			seedClientMap := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
@@ -593,11 +580,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					objs = append(objs, existingClusterRoleBinding)
 				}
 
-				seedClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.
-					NewClientBuilder().
-					WithScheme(scheme.Scheme).
-					WithObjects(objs...).
-					Build()
+				seedClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 			}
 
 			// act
@@ -621,12 +604,15 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedBinding.ResourceVersion = ""
 
 					for _, existingBinding := range clusterRoleBindingList.Items {
+						existingBinding.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedBinding, existingBinding) {
 							continue expectedBindingLoop
 						}
 					}
+
 					t.Fatalf("expected ClusteRoleBinding %q not found in cluster", expectedBinding.Name)
 				}
 
@@ -645,8 +631,10 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedBinding.ResourceVersion = ""
 
 					for _, existingBinding := range clusterRoleBindingList.Items {
+						existingBinding.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedBinding, existingBinding) {
 							continue expectedBindingLoopSeed
 						}
@@ -805,11 +793,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 						kubermaticObjs = append(kubermaticObjs, clusterResource)
 					}
 
-					seedClientMap[providerName] = fakectrlruntimeclient.
-						NewClientBuilder().
-						WithScheme(scheme.Scheme).
-						WithObjects(kubermaticObjs...).
-						Build()
+					seedClientMap[providerName] = fakectrlruntimeclient.NewClientBuilder().WithObjects(kubermaticObjs...).Build()
 					index++
 				}
 			}
@@ -1063,11 +1047,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			allObjs = append(allObjs, objs...)
 			allObjs = append(allObjs, kubermaticObjs...)
 
-			fakeMasterClusterClient := fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(allObjs...).
-				Build()
+			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(allObjs...).Build()
 
 			seedClusterClientMap := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
@@ -1076,11 +1056,7 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					objs = append(objs, existingClusterRoleBinding)
 				}
 
-				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.
-					NewClientBuilder().
-					WithScheme(scheme.Scheme).
-					WithObjects(objs...).
-					Build()
+				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 			}
 
 			// act
@@ -1104,8 +1080,10 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedBinding.ResourceVersion = ""
 
 					for _, existingBinding := range clusterRoleBindingList.Items {
+						existingBinding.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedBinding, existingBinding) {
 							continue expectedBindingLoop
 						}
@@ -1128,8 +1106,10 @@ func TestEnsureProjectCleanup(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedBinding.ResourceVersion = ""
 
 					for _, existingBinding := range clusterRoleBindingList.Items {
+						existingBinding.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedBinding, existingBinding) {
 							continue expectedBindingLoopSeed
 						}
@@ -1331,11 +1311,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
 			objs := []ctrlruntimeclient.Object{}
-			fakeMasterClient := fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(objs...).
-				Build()
+			fakeMasterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			seedClients := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
@@ -1363,8 +1339,10 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedClusterRole.ResourceVersion = ""
 
 					for _, existingClusterRole := range clusterRoleList.Items {
+						existingClusterRole.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
 							continue expectedClusterRoleLoop
 						}
@@ -1387,8 +1365,10 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedClusterRole.ResourceVersion = ""
 
 					for _, existingClusterRole := range clusterRoleList.Items {
+						existingClusterRole.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
 							continue expectedSeecClusterRoleLoop
 						}
@@ -1454,11 +1434,7 @@ func TestEnsureProjectOwner(t *testing.T) {
 				}
 				objs = append(objs, test.existingBinding)
 			}
-			masterClient := fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(objs...).
-				Build()
+			masterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
 			target := projectController{
@@ -1480,6 +1456,7 @@ func TestEnsureProjectOwner(t *testing.T) {
 			assert.Len(t, userProjectBindingList.Items, 1)
 			// Hack around the fact that the bindings' names are random
 			userProjectBindingList.Items[0].ObjectMeta.Name = test.expectedBinding.ObjectMeta.Name
+			userProjectBindingList.Items[0].ResourceVersion = test.expectedBinding.ResourceVersion
 			assert.Equal(t, userProjectBindingList.Items[0], *test.expectedBinding)
 		})
 	}
@@ -1658,11 +1635,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 			}
 			fakeKubeInformerProviderForMaster.started = true
 
-			fakeMasterClient := fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(objs...).
-				Build()
+			fakeMasterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			seedClientMap := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
@@ -1690,8 +1663,10 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedClusterRole.ResourceVersion = ""
 
 					for _, existingClusterRole := range roleList.Items {
+						existingClusterRole.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
 							continue expectedRoleLoop
 						}
@@ -1714,8 +1689,10 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedClusterRole.ResourceVersion = ""
 
 					for _, existingClusterRole := range roleList.Items {
+						existingClusterRole.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
 							continue expectedSeecClusterRoleLoop
 						}
@@ -1970,11 +1947,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 			}
 			fakeKubeInformerProviderForMaster.started = true
 
-			fakeMasterClient := fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(objs...).
-				Build()
+			fakeMasterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			seedClusterClientMap := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
@@ -1983,11 +1956,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 					objs = append(objs, existingRoleBinding)
 				}
 
-				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.
-					NewClientBuilder().
-					WithScheme(scheme.Scheme).
-					WithObjects(objs...).
-					Build()
+				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 			}
 
 			// act
@@ -2011,8 +1980,10 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedClusterRole.ResourceVersion = ""
 
 					for _, existingClusterRole := range roleBingingList.Items {
+						existingClusterRole.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
 							continue expectedRoleLoop
 						}
@@ -2035,8 +2006,10 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedClusterRole.ResourceVersion = ""
 
 					for _, existingClusterRole := range roleBingingList.Items {
+						existingClusterRole.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
 							continue expectedSeecClusterRoleLoop
 						}
@@ -2201,11 +2174,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			allObjs = append(allObjs, objs...)
 			allObjs = append(allObjs, kubermaticObjs...)
 
-			fakeMasterClusterClient := fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(allObjs...).
-				Build()
+			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(allObjs...).Build()
 			// manually set lister as we don't want to start informers in the tests
 
 			seedClusterClientMap := make(map[string]ctrlruntimeclient.Client)
@@ -2215,11 +2184,7 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 					objs = append(objs, existingRoleBinding)
 				}
 
-				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.
-					NewClientBuilder().
-					WithScheme(scheme.Scheme).
-					WithObjects(objs...).
-					Build()
+				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 			}
 
 			// act
@@ -2243,8 +2208,10 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedBinding.ResourceVersion = ""
 
 					for _, existingBinding := range roleBindingList.Items {
+						existingBinding.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedBinding, existingBinding) {
 							continue expectedBindingLoop
 						}
@@ -2267,8 +2234,10 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedBinding.ResourceVersion = ""
 
 					for _, existingBinding := range roleBindingList.Items {
+						existingBinding.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedBinding, existingBinding) {
 							continue expectedBindingLoopSeed
 						}

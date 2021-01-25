@@ -721,6 +721,14 @@ func TestReconciliation(t *testing.T) {
 				t.Fatalf("failed to list services: %v", err)
 			}
 
+			for i := range resultingServices.Items {
+				resultingServices.Items[i].ResourceVersion = ""
+			}
+
+			for i := range tc.expectedServices.Items {
+				tc.expectedServices.Items[i].ResourceVersion = ""
+			}
+
 			if diff := deep.Equal(resultingServices.Items, tc.expectedServices.Items); diff != nil {
 				expected, _ := json.Marshal(tc.expectedServices.Items)
 				actual, _ := json.Marshal(resultingServices.Items)

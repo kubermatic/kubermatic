@@ -36,7 +36,6 @@ import (
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
-	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/test"
 
@@ -343,7 +342,6 @@ func TestSync(t *testing.T) {
 			ctx := context.Background()
 			client := fakectrlruntimeclient.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(test.resources...).
 				Build()
 			c, _, _ := NewReconciler(
@@ -584,7 +582,6 @@ func TestEndpointToService(t *testing.T) {
 			log := zaptest.NewLogger(t).Sugar()
 			client := fakectrlruntimeclient.
 				NewClientBuilder().
-				WithScheme(scheme.Scheme).
 				WithObjects(tt.resources...).
 				Build()
 

@@ -457,6 +457,9 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		// ConstraintType cannot be changed by patch
 		patchedConstraint.Spec.ConstraintType = originalConstraint.Spec.ConstraintType
 
+		// restore ResourceVersion to make patching safer and tests work more easily
+		patchedConstraint.ResourceVersion = originalConstraint.ResourceVersion
+
 		ct, err := updateConstraint(ctx, userInfoGetter, constraintProvider, privilegedConstraintProvider, req.ProjectID, patchedConstraint)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)

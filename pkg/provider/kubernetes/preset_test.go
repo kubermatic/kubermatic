@@ -200,9 +200,11 @@ func TestGetPreset(t *testing.T) {
 				if err.Error() != tc.expectedError {
 					t.Fatalf("expected: %s, got %v", tc.expectedError, err)
 				}
-
-			} else if !equality.Semantic.DeepEqual(preset, tc.expected) {
-				t.Fatalf("expected: %v, got %v", tc.expected, preset)
+			} else {
+				tc.expected.ResourceVersion = preset.ResourceVersion
+				if !equality.Semantic.DeepEqual(preset, tc.expected) {
+					t.Fatalf("expected: %v, got %v", tc.expected, preset)
+				}
 			}
 		})
 	}
