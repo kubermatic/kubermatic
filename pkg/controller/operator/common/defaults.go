@@ -55,6 +55,7 @@ const (
 	DefaultVPAAdmissionControllerDockerRepository = "gcr.io/google_containers/vpa-admission-controller"
 	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-alpine"
 	DefaultMaximumParallelReconciles              = 10
+	DefaultS3Endpoint                             = "s3.amazonaws.com"
 
 	// DefaultNoProxy is a set of domains/networks that should never be
 	// routed through a proxy. All user-supplied values are appended to
@@ -336,13 +337,30 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	}
 
 	if copy.Spec.SeedController.BackupStoreContainer == "" {
-		copy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultBackupStoreContainer)
+		if copy.Spec.SeedController.BackupRestore.Enabled {
+			copy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultNewBackupStoreContainer)
+		} else {
+			copy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultBackupStoreContainer)
+		}
 		logger.Debugw("Defaulting field", "field", "seedController.backupStoreContainer")
 	}
 
-	if copy.Spec.SeedController.BackupCleanupContainer == "" {
+	if copy.Spec.SeedController.BackupCleanupContainer == "" && !copy.Spec.SeedController.BackupRestore.Enabled {
 		copy.Spec.SeedController.BackupCleanupContainer = strings.TrimSpace(DefaultBackupCleanupContainer)
 		logger.Debugw("Defaulting field", "field", "seedController.backupCleanupContainer")
+	}
+
+	if copy.Spec.SeedController.BackupRestore.Enabled {
+		if copy.Spec.SeedController.BackupRestore.S3Endpoint == "" {
+			copy.Spec.SeedController.BackupRestore.S3Endpoint = DefaultS3Endpoint
+		}
+		if copy.Spec.SeedController.BackupRestore.S3BucketName == "" {
+			return nil, fmt.Errorf("backupRestore.enabled is set, but s3BucketName is unset")
+		}
+		if copy.Spec.SeedController.BackupDeleteContainer == "" {
+			copy.Spec.SeedController.BackupDeleteContainer = strings.TrimSpace(DefaultNewBackupDeleteContainer)
+			logger.Debugw("Defaulting field", "field", "seedController.backupDeleteContainer")
+		}
 	}
 
 	if copy.Spec.SeedController.Replicas == nil {
