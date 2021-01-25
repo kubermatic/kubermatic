@@ -27,7 +27,6 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -460,14 +459,19 @@ func TestValidate(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			var obj []runtime.Object
+			var obj []ctrlruntimeclient.Object
 			for _, c := range tc.existingClusters {
 				obj = append(obj, c)
 			}
 			for _, s := range tc.existingSeeds {
 				obj = append(obj, s)
 			}
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, obj...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(obj...).
+				Build()
+
 			sv := &validator{
 				lock:     &sync.Mutex{},
 				listOpts: &ctrlruntimeclient.ListOptions{},

@@ -21,15 +21,16 @@ import (
 	"fmt"
 	"testing"
 
+	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -39,13 +40,13 @@ func TestReconcileBinding(t *testing.T) {
 	tests := []struct {
 		name                      string
 		saName                    string
-		existingKubermaticObjects []runtime.Object
+		existingKubermaticObjects []ctrlruntimeclient.Object
 		expectedBinding           *kubermaticv1.UserProjectBinding
 	}{
 		{
 			name:   "scenario 1: this test creates binding for service account",
 			saName: "serviceaccount-abcd",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				genProject("my-first-project-ID"),
 				genServiceAccount("abcd", "test", "editors", "my-first-project-ID"),
 			},
@@ -54,7 +55,7 @@ func TestReconcileBinding(t *testing.T) {
 		{
 			name:   "scenario 2: this test update binding group from viewers to editors",
 			saName: "serviceaccount-abcd",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				genProject("my-first-project-ID"),
 				genServiceAccount("abcd", "test", "editors", "my-first-project-ID"),
 				genSABinding("my-first-project-ID", "serviceaccount-abcd", "serviceaccount-abcd@sa.kubermatic.io", "viewers"),
@@ -66,7 +67,10 @@ func TestReconcileBinding(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-			kubermaticFakeClient := fakectrlruntimeclient.NewFakeClient(test.existingKubermaticObjects...)
+			kubermaticFakeClient := fakectrlruntimeclient.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(test.existingKubermaticObjects...).
+				Build()
 
 			// act
 			ctx := context.Background()

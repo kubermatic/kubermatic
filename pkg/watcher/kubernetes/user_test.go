@@ -23,14 +23,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"code.cloudfoundry.org/go-pubsub"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestNewUserWatcher(t *testing.T) {
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset()
-	runtimeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, []runtime.Object{}...)
+	runtimeClient := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+
 	userProvider := kubernetes.NewUserProvider(runtimeClient, nil, kubermaticClient)
 	userWatcher, err := NewUserWatcher(userProvider)
 	if err != nil {

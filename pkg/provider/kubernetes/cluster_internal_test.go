@@ -29,7 +29,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -39,7 +38,7 @@ func TestRevokeAdminKubeconfig(t *testing.T) {
 	testCases := []struct {
 		name               string
 		cluster            *kubermaticv1.Cluster
-		userClusterObjects []runtime.Object
+		userClusterObjects []ctrlruntimeclient.Object
 		verify             func(seedClient, userClusterClient ctrlruntimeclient.Client) error
 	}{
 		{
@@ -48,7 +47,7 @@ func TestRevokeAdminKubeconfig(t *testing.T) {
 				Name:        "cluster",
 				Annotations: map[string]string{"kubermatic.io/openshift": "true"},
 			}},
-			userClusterObjects: []runtime.Object{
+			userClusterObjects: []ctrlruntimeclient.Object{
 				&corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{
 					Namespace: metav1.NamespaceSystem,
 					Name:      openshiftuserclusterresources.TokenOwnerServiceAccountName,
@@ -89,7 +88,11 @@ func TestRevokeAdminKubeconfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			seedClient := fakectrlruntimeclient.NewFakeClient(tc.cluster)
-			userClusterClient := fakectrlruntimeclient.NewFakeClient(tc.userClusterObjects...)
+			userClusterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(tc.userClusterObjects...).
+				Build()
+
 			p := &ClusterProvider{
 				client:                  seedClient,
 				userClusterConnProvider: &fakeUserClusterConnectionProvider{client: userClusterClient},

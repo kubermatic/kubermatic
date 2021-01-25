@@ -26,8 +26,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -37,7 +37,7 @@ func TestGetPreset(t *testing.T) {
 		name          string
 		presetName    string
 		userInfo      provider.UserInfo
-		presets       []runtime.Object
+		presets       []ctrlruntimeclient.Object
 		expected      *kubermaticv1.Preset
 		expectedError string
 	}{
@@ -45,7 +45,7 @@ func TestGetPreset(t *testing.T) {
 			name:       "test 1: get Preset for the specific email group and name",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
 			presetName: "test-3",
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-1",
@@ -95,7 +95,7 @@ func TestGetPreset(t *testing.T) {
 			name:       "test 1: get Preset for the rest of the users",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
 			presetName: "test-1",
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-1",
@@ -143,7 +143,7 @@ func TestGetPreset(t *testing.T) {
 			name:       "test 3: get Preset which doesn't belong to specific group",
 			presetName: "test-2",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-1",
@@ -182,8 +182,12 @@ func TestGetPreset(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.presets...).
+				Build()
 
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.presets...)
 			provider, err := kubernetes.NewPresetsProvider(context.Background(), fakeClient, "", true)
 			if err != nil {
 				t.Fatal(err)
@@ -209,13 +213,13 @@ func TestGetPresets(t *testing.T) {
 	testcases := []struct {
 		name     string
 		userInfo provider.UserInfo
-		presets  []runtime.Object
+		presets  []ctrlruntimeclient.Object
 		expected []kubermaticv1.Preset
 	}{
 		{
 			name:     "test 1: get Presets for the specific email group and all users",
 			userInfo: provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-1",
@@ -276,7 +280,7 @@ func TestGetPresets(t *testing.T) {
 		{
 			name:     "test 1: get Presets for the all users, not for the specific email group",
 			userInfo: provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-1",
@@ -335,7 +339,12 @@ func TestGetPresets(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.presets...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.presets...).
+				Build()
+
 			provider, err := kubernetes.NewPresetsProvider(context.Background(), fakeClient, "", true)
 			if err != nil {
 				t.Fatal(err)
@@ -366,13 +375,13 @@ func TestCredentialEndpoint(t *testing.T) {
 		cloudSpec         kubermaticv1.CloudSpec
 		expectedCloudSpec *kubermaticv1.CloudSpec
 		dc                *kubermaticv1.Datacenter
-		presets           []runtime.Object
+		presets           []ctrlruntimeclient.Object
 	}{
 		{
 			name:       "test 1: set credentials for Fake provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "fake",
@@ -403,7 +412,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 2: set credentials for GCP provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -424,7 +433,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 3: set credentials for AWS provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -445,7 +454,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 4: set credentials for Hetzner provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -465,7 +474,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 5: set credentials for Packet provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -485,7 +494,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 6: set credentials for DigitalOcean provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "fake",
@@ -516,7 +525,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 7: set credentials for OpenStack provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -537,7 +546,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 8: set credentials for Vsphere provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -557,7 +566,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 9: set credentials for Azure provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -577,7 +586,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 10: no credentials for Azure provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -594,7 +603,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 11: cloud provider spec is empty",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -614,7 +623,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 12: set credentials for Kubevirt provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -634,7 +643,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 13: credential with wrong email domain returns error",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -655,7 +664,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test 14: set credentials for Alibaba provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
-			presets: []runtime.Object{
+			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test",
@@ -676,7 +685,12 @@ func TestCredentialEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.presets...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.presets...).
+				Build()
+
 			provider, err := kubernetes.NewPresetsProvider(context.Background(), fakeClient, "", true)
 			if err != nil {
 				t.Fatal(err)

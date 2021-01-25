@@ -28,6 +28,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	fakeInformerProvider "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test/fake"
+	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	k8scorev1 "k8s.io/api/core/v1"
@@ -58,6 +59,15 @@ func getFakeRestMapper(t *testing.T) meta.RESTMapper {
 	return testrestmapper.TestOnlyStaticRESTMapper(scheme)
 }
 
+func getFakeClientset(objs ...ctrlruntimeclient.Object) *fake.Clientset {
+	runtimeObjects := []runtime.Object{}
+	for _, obj := range objs {
+		runtimeObjects = append(runtimeObjects, obj.(runtime.Object))
+	}
+
+	return fake.NewSimpleClientset(runtimeObjects...)
+}
+
 func TestEnsureProjectIsInActivePhase(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -79,9 +89,13 @@ func TestEnsureProjectIsInActivePhase(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []runtime.Object{}
+			objs := []ctrlruntimeclient.Object{}
 			objs = append(objs, test.expectedProject)
-			masterClient := fakectrlruntimeclient.NewFakeClient(objs...)
+			masterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objs...).
+				Build()
 
 			// act
 			target := projectController{
@@ -126,9 +140,13 @@ func TestEnsureProjectInitialized(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []runtime.Object{}
+			objs := []ctrlruntimeclient.Object{}
 			objs = append(objs, test.expectedProject)
-			masterClient := fakectrlruntimeclient.NewFakeClient(objs...)
+			masterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objs...).
+				Build()
 
 			// act
 			target := projectController{
@@ -546,7 +564,7 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []runtime.Object{}
+			objs := []ctrlruntimeclient.Object{}
 			roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForMaster {
 				objs = append(objs, existingClusterRoleBinding)
@@ -555,23 +573,31 @@ func TestEnsureProjectClusterRBACRoleBindingForResources(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			fakeKubeClient := fake.NewSimpleClientset(objs...)
+			fakeKubeClient := getFakeClientset(objs...)
 			// manually set lister as we don't want to start informers in the tests
 			fakeKubeInformerProviderForMaster := NewInformerProvider(fakeKubeClient, time.Minute*5)
 			fakeInformerFactoryForClusterRole := fakeInformerProvider.NewFakeSharedInformerFactory(fakeKubeClient, metav1.NamespaceAll)
 			fakeInformerFactoryForClusterRole.AddFakeClusterRoleBindingInformer(roleBindingsIndexer)
 			fakeKubeInformerProviderForMaster.kubeInformers[metav1.NamespaceAll] = fakeInformerFactoryForClusterRole
 
-			fakeMasterClient := fakectrlruntimeclient.NewFakeClient(objs...)
+			fakeMasterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objs...).
+				Build()
 
 			seedClientMap := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
-				objs := []runtime.Object{}
+				objs := []ctrlruntimeclient.Object{}
 				for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForSeeds {
 					objs = append(objs, existingClusterRoleBinding)
 				}
 
-				seedClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.NewFakeClient(objs...)
+				seedClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.
+					NewClientBuilder().
+					WithScheme(scheme.Scheme).
+					WithObjects(objs...).
+					Build()
 			}
 
 			// act
@@ -774,12 +800,16 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 			{
 				index := 0
 				for providerName, clusterResources := range test.existingClustersOn {
-					kubermaticObjs := []runtime.Object{}
+					kubermaticObjs := []ctrlruntimeclient.Object{}
 					for _, clusterResource := range clusterResources {
 						kubermaticObjs = append(kubermaticObjs, clusterResource)
 					}
 
-					seedClientMap[providerName] = fakectrlruntimeclient.NewFakeClient(kubermaticObjs...)
+					seedClientMap[providerName] = fakectrlruntimeclient.
+						NewClientBuilder().
+						WithScheme(scheme.Scheme).
+						WithObjects(kubermaticObjs...).
+						Build()
 					index++
 				}
 			}
@@ -1004,9 +1034,9 @@ func TestEnsureProjectCleanup(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []runtime.Object{}
-			kubermaticObjs := []runtime.Object{}
-			allObjs := []runtime.Object{}
+			objs := []ctrlruntimeclient.Object{}
+			kubermaticObjs := []ctrlruntimeclient.Object{}
+			allObjs := []ctrlruntimeclient.Object{}
 			projectIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			if test.projectToSync != nil {
 				err := projectIndexer.Add(test.projectToSync)
@@ -1033,15 +1063,24 @@ func TestEnsureProjectCleanup(t *testing.T) {
 			allObjs = append(allObjs, objs...)
 			allObjs = append(allObjs, kubermaticObjs...)
 
-			fakeMasterClusterClient := fakectrlruntimeclient.NewFakeClient(allObjs...)
+			fakeMasterClusterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(allObjs...).
+				Build()
+
 			seedClusterClientMap := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
-				objs := []runtime.Object{}
+				objs := []ctrlruntimeclient.Object{}
 				for _, existingClusterRoleBinding := range test.existingClusterRoleBindingsForSeeds {
 					objs = append(objs, existingClusterRoleBinding)
 				}
 
-				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.NewFakeClient(objs...)
+				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.
+					NewClientBuilder().
+					WithScheme(scheme.Scheme).
+					WithObjects(objs...).
+					Build()
 			}
 
 			// act
@@ -1291,8 +1330,12 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []runtime.Object{}
-			fakeMasterClient := fakectrlruntimeclient.NewFakeClient(objs...)
+			objs := []ctrlruntimeclient.Object{}
+			fakeMasterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objs...).
+				Build()
 
 			seedClients := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
@@ -1394,7 +1437,7 @@ func TestEnsureProjectOwner(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []runtime.Object{}
+			objs := []ctrlruntimeclient.Object{}
 			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			if test.existingUser != nil {
 				err := userIndexer.Add(test.existingUser)
@@ -1411,7 +1454,11 @@ func TestEnsureProjectOwner(t *testing.T) {
 				}
 				objs = append(objs, test.existingBinding)
 			}
-			masterClient := fakectrlruntimeclient.NewFakeClient(objs...)
+			masterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objs...).
+				Build()
 
 			// act
 			target := projectController{
@@ -1593,8 +1640,8 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []runtime.Object{}
-			fakeKubeClient := fake.NewSimpleClientset(objs...)
+			objs := []ctrlruntimeclient.Object{}
+			fakeKubeClient := getFakeClientset(objs...)
 			roleIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, res := range test.existingRoles {
 				if err := roleIndexer.Add(res); err != nil {
@@ -1611,7 +1658,11 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 			}
 			fakeKubeInformerProviderForMaster.started = true
 
-			fakeMasterClient := fakectrlruntimeclient.NewFakeClient(objs...)
+			fakeMasterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objs...).
+				Build()
 
 			seedClientMap := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
@@ -1900,7 +1951,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []runtime.Object{}
+			objs := []ctrlruntimeclient.Object{}
 			roleBindingsIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			for _, existingRoleBinding := range test.existingRoleBindingsForMaster {
 				objs = append(objs, existingRoleBinding)
@@ -1909,7 +1960,7 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			fakeKubeClient := fake.NewSimpleClientset(objs...)
+			fakeKubeClient := getFakeClientset(objs...)
 			// manually set lister as we don't want to start informers in the tests
 			fakeKubeInformerProviderForMaster := NewInformerProvider(fakeKubeClient, time.Minute*5)
 			for _, res := range test.projectResourcesToSync {
@@ -1919,16 +1970,24 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 			}
 			fakeKubeInformerProviderForMaster.started = true
 
-			fakeMasterClient := fakectrlruntimeclient.NewFakeClient(objs...)
+			fakeMasterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objs...).
+				Build()
 
 			seedClusterClientMap := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
-				objs := []runtime.Object{}
+				objs := []ctrlruntimeclient.Object{}
 				for _, existingRoleBinding := range test.existingRoleBindingsForSeeds {
 					objs = append(objs, existingRoleBinding)
 				}
 
-				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.NewFakeClient(objs...)
+				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.
+					NewClientBuilder().
+					WithScheme(scheme.Scheme).
+					WithObjects(objs...).
+					Build()
 			}
 
 			// act
@@ -2119,9 +2178,9 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []runtime.Object{}
-			kubermaticObjs := []runtime.Object{}
-			allObjs := []runtime.Object{}
+			objs := []ctrlruntimeclient.Object{}
+			kubermaticObjs := []ctrlruntimeclient.Object{}
+			allObjs := []ctrlruntimeclient.Object{}
 			projectIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			err := projectIndexer.Add(test.projectToSync)
 			if err != nil {
@@ -2142,17 +2201,25 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			allObjs = append(allObjs, objs...)
 			allObjs = append(allObjs, kubermaticObjs...)
 
-			fakeMasterClusterClient := fakectrlruntimeclient.NewFakeClient(allObjs...)
+			fakeMasterClusterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(allObjs...).
+				Build()
 			// manually set lister as we don't want to start informers in the tests
 
 			seedClusterClientMap := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
-				objs := []runtime.Object{}
+				objs := []ctrlruntimeclient.Object{}
 				for _, existingRoleBinding := range test.existingRoleBindingsForSeeds {
 					objs = append(objs, existingRoleBinding)
 				}
 
-				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.NewFakeClient(objs...)
+				seedClusterClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.
+					NewClientBuilder().
+					WithScheme(scheme.Scheme).
+					WithObjects(objs...).
+					Build()
 			}
 
 			// act

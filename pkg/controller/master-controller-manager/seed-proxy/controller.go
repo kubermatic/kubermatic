@@ -28,7 +28,6 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -149,7 +148,7 @@ func Add(
 		return requests
 	})
 
-	typesToWatch := []runtime.Object{
+	typesToWatch := []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
 		&corev1.Service{},
 		&corev1.Secret{},
@@ -157,7 +156,7 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t.(ctrlruntimeclient.Object)}, eventHandler, namespacePredicate, ownedPredicate); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, eventHandler, namespacePredicate, ownedPredicate); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}

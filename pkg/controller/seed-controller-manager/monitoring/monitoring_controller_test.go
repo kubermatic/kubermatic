@@ -22,7 +22,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -30,8 +30,12 @@ const (
 	TestDC = "regular-do1"
 )
 
-func newTestReconciler(t *testing.T, objects []runtime.Object) *Reconciler {
-	dynamicClient := ctrlruntimefakeclient.NewFakeClient(objects...)
+func newTestReconciler(t *testing.T, objects []ctrlruntimeclient.Object) *Reconciler {
+	dynamicClient := ctrlruntimefakeclient.
+		NewClientBuilder().
+		WithObjects(objects...).
+		Build()
+
 	reconciler := &Reconciler{
 		Client:               dynamicClient,
 		seedGetter:           seed,

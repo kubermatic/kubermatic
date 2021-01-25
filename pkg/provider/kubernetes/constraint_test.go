@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
@@ -43,13 +42,13 @@ func TestListConstraints(t *testing.T) {
 
 	testCases := []struct {
 		name                string
-		existingObjects     []runtime.Object
+		existingObjects     []ctrlruntimeclient.Object
 		cluster             *kubermaticv1.Cluster
 		expectedConstraints []*kubermaticv1.Constraint
 	}{
 		{
 			name: "scenario 1: list constraints",
-			existingObjects: []runtime.Object{
+			existingObjects: []ctrlruntimeclient.Object{
 				genConstraint("ct1", testNamespace),
 				genConstraint("ct2", testNamespace),
 				genConstraint("ct3", "other-ns"),
@@ -63,7 +62,12 @@ func TestListConstraints(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}
@@ -100,13 +104,13 @@ func TestGetConstraint(t *testing.T) {
 
 	testCases := []struct {
 		name               string
-		existingObjects    []runtime.Object
+		existingObjects    []ctrlruntimeclient.Object
 		cluster            *kubermaticv1.Cluster
 		expectedConstraint *kubermaticv1.Constraint
 	}{
 		{
 			name: "scenario 1: get constraint",
-			existingObjects: []runtime.Object{
+			existingObjects: []ctrlruntimeclient.Object{
 				genConstraint("ct1", testNamespace),
 				genConstraint("ct2", testNamespace),
 				genConstraint("ct3", "other-ns"),
@@ -120,7 +124,12 @@ func TestGetConstraint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}
@@ -144,14 +153,14 @@ func TestDeleteConstraint(t *testing.T) {
 
 	testCases := []struct {
 		name            string
-		existingObjects []runtime.Object
+		existingObjects []ctrlruntimeclient.Object
 		userInfo        *provider.UserInfo
 		cluster         *kubermaticv1.Cluster
 		constraintName  string
 	}{
 		{
 			name: "scenario 1: delete constraint",
-			existingObjects: []runtime.Object{
+			existingObjects: []ctrlruntimeclient.Object{
 				genConstraint("ct1", testNamespace),
 			},
 			userInfo:       &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
@@ -164,7 +173,12 @@ func TestDeleteConstraint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}
@@ -232,7 +246,7 @@ func TestUpdateConstraint(t *testing.T) {
 	testCases := []struct {
 		name             string
 		updateConstraint *kubermaticv1.Constraint
-		existingObjects  []runtime.Object
+		existingObjects  []ctrlruntimeclient.Object
 		cluster          *kubermaticv1.Cluster
 		userInfo         *provider.UserInfo
 	}{
@@ -244,7 +258,7 @@ func TestUpdateConstraint(t *testing.T) {
 				ct.Spec.Match.Scope = "*"
 				return ct
 			}(),
-			existingObjects: []runtime.Object{
+			existingObjects: []ctrlruntimeclient.Object{
 				genConstraint("ct1", testNamespace),
 			},
 			cluster:  genCluster(testClusterName, "kubernetes", "my-first-project-ID", "test-constraints", "john@acme.com"),
@@ -256,7 +270,12 @@ func TestUpdateConstraint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}

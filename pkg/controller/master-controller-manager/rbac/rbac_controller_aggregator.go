@@ -26,7 +26,6 @@ import (
 
 	k8scorev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
@@ -63,7 +62,7 @@ type ControllerAggregator struct {
 }
 
 type projectResource struct {
-	object      runtime.Object
+	object      ctrlruntimeclient.Object
 	destination string
 	namespace   string
 

@@ -37,7 +37,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -45,95 +44,91 @@ func boolPtr(value bool) *bool {
 	return &[]bool{value}[0]
 }
 
-func genPresetList() []runtime.Object {
-	return []runtime.Object{
-		&kubermaticv1.PresetList{
-			Items: []kubermaticv1.Preset{
-				{
-					ObjectMeta: v1.ObjectMeta{Name: "enabled"},
-					Spec: kubermaticv1.PresetSpec{
+func genPresets() []ctrlruntimeclient.Object {
+	return []ctrlruntimeclient.Object{
+		&kubermaticv1.Preset{
+			ObjectMeta: v1.ObjectMeta{Name: "enabled"},
+			Spec: kubermaticv1.PresetSpec{
+				Enabled: boolPtr(true),
+			},
+		},
+		&kubermaticv1.Preset{
+			ObjectMeta: v1.ObjectMeta{Name: "disabled"},
+			Spec: kubermaticv1.PresetSpec{
+				Enabled: boolPtr(false),
+			},
+		},
+		&kubermaticv1.Preset{
+			ObjectMeta: v1.ObjectMeta{Name: "enabled-do"},
+			Spec: kubermaticv1.PresetSpec{
+				Digitalocean: &kubermaticv1.Digitalocean{
+					PresetProvider: kubermaticv1.PresetProvider{
 						Enabled: boolPtr(true),
 					},
+					Token: "token",
 				},
-				{
-					ObjectMeta: v1.ObjectMeta{Name: "disabled"},
-					Spec: kubermaticv1.PresetSpec{
+			},
+		},
+		&kubermaticv1.Preset{
+			ObjectMeta: v1.ObjectMeta{Name: "disabled-do"},
+			Spec: kubermaticv1.PresetSpec{
+				Digitalocean: &kubermaticv1.Digitalocean{
+					PresetProvider: kubermaticv1.PresetProvider{
 						Enabled: boolPtr(false),
 					},
+					Token: "token",
 				},
-				{
-					ObjectMeta: v1.ObjectMeta{Name: "enabled-do"},
-					Spec: kubermaticv1.PresetSpec{
-						Digitalocean: &kubermaticv1.Digitalocean{
-							PresetProvider: kubermaticv1.PresetProvider{
-								Enabled: boolPtr(true),
-							},
-							Token: "token",
-						},
+			},
+		},
+		&kubermaticv1.Preset{
+			ObjectMeta: v1.ObjectMeta{Name: "enabled-do-with-dc"},
+			Spec: kubermaticv1.PresetSpec{
+				Digitalocean: &kubermaticv1.Digitalocean{
+					PresetProvider: kubermaticv1.PresetProvider{
+						Datacenter: "a",
 					},
+					Token: "token",
 				},
-				{
-					ObjectMeta: v1.ObjectMeta{Name: "disabled-do"},
-					Spec: kubermaticv1.PresetSpec{
-						Digitalocean: &kubermaticv1.Digitalocean{
-							PresetProvider: kubermaticv1.PresetProvider{
-								Enabled: boolPtr(false),
-							},
-							Token: "token",
-						},
+			},
+		},
+		&kubermaticv1.Preset{
+			ObjectMeta: v1.ObjectMeta{Name: "disabled-do-with-dc"},
+			Spec: kubermaticv1.PresetSpec{
+				Digitalocean: &kubermaticv1.Digitalocean{
+					PresetProvider: kubermaticv1.PresetProvider{
+						Datacenter: "a",
+						Enabled:    boolPtr(false),
 					},
+					Token: "token",
 				},
-				{
-					ObjectMeta: v1.ObjectMeta{Name: "enabled-do-with-dc"},
-					Spec: kubermaticv1.PresetSpec{
-						Digitalocean: &kubermaticv1.Digitalocean{
-							PresetProvider: kubermaticv1.PresetProvider{
-								Datacenter: "a",
-							},
-							Token: "token",
-						},
-					},
+			},
+		},
+		&kubermaticv1.Preset{
+			ObjectMeta: v1.ObjectMeta{Name: "enabled-do-with-acme-email"},
+			Spec: kubermaticv1.PresetSpec{
+				RequiredEmailDomain: test.RequiredEmailDomain,
+				Digitalocean: &kubermaticv1.Digitalocean{
+					Token: "token",
 				},
-				{
-					ObjectMeta: v1.ObjectMeta{Name: "disabled-do-with-dc"},
-					Spec: kubermaticv1.PresetSpec{
-						Digitalocean: &kubermaticv1.Digitalocean{
-							PresetProvider: kubermaticv1.PresetProvider{
-								Datacenter: "a",
-								Enabled:    boolPtr(false),
-							},
-							Token: "token",
-						},
-					},
+			},
+		},
+		&kubermaticv1.Preset{
+			ObjectMeta: v1.ObjectMeta{Name: "enabled-do-with-test-email"},
+			Spec: kubermaticv1.PresetSpec{
+				RequiredEmailDomain: "test.com",
+				Digitalocean: &kubermaticv1.Digitalocean{
+					Token: "token",
 				},
-				{
-					ObjectMeta: v1.ObjectMeta{Name: "enabled-do-with-acme-email"},
-					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: test.RequiredEmailDomain,
-						Digitalocean: &kubermaticv1.Digitalocean{
-							Token: "token",
-						},
-					},
+			},
+		},
+		&kubermaticv1.Preset{
+			ObjectMeta: v1.ObjectMeta{Name: "enabled-multi-provider"},
+			Spec: kubermaticv1.PresetSpec{
+				Digitalocean: &kubermaticv1.Digitalocean{
+					Token: "token",
 				},
-				{
-					ObjectMeta: v1.ObjectMeta{Name: "enabled-do-with-test-email"},
-					Spec: kubermaticv1.PresetSpec{
-						RequiredEmailDomain: "test.com",
-						Digitalocean: &kubermaticv1.Digitalocean{
-							Token: "token",
-						},
-					},
-				},
-				{
-					ObjectMeta: v1.ObjectMeta{Name: "enabled-multi-provider"},
-					Spec: kubermaticv1.PresetSpec{
-						Digitalocean: &kubermaticv1.Digitalocean{
-							Token: "token",
-						},
-						Anexia: &kubermaticv1.Anexia{
-							Token: "token",
-						},
-					},
+				Anexia: &kubermaticv1.Anexia{
+					Token: "token",
 				},
 			},
 		},
@@ -154,7 +149,7 @@ func TestListPresets(t *testing.T) {
 		ExpectedResponse       *v2.PresetList
 		HTTPStatus             int
 		ExistingAPIUser        *apiv1.User
-		ExistingKubermaticObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -173,7 +168,7 @@ func TestListPresets(t *testing.T) {
 			},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			ExistingKubermaticObjs: genPresetList(),
+			ExistingKubermaticObjs: genPresets(),
 		},
 
 		// scenario 2
@@ -194,7 +189,7 @@ func TestListPresets(t *testing.T) {
 			},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			ExistingKubermaticObjs: genPresetList(),
+			ExistingKubermaticObjs: genPresets(),
 		},
 	}
 
@@ -202,9 +197,9 @@ func TestListPresets(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/presets?disabled=%v", tc.Disabled), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := make([]runtime.Object, 0)
+			kubermaticObj := make([]ctrlruntimeclient.Object, 0)
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -238,7 +233,7 @@ func TestListProviderPresets(t *testing.T) {
 		ExpectedResponse       *v2.PresetList
 		HTTPStatus             int
 		ExistingAPIUser        *apiv1.User
-		ExistingKubermaticObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -255,7 +250,7 @@ func TestListProviderPresets(t *testing.T) {
 			},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			ExistingKubermaticObjs: genPresetList(),
+			ExistingKubermaticObjs: genPresets(),
 		},
 
 		// scenario 2
@@ -275,7 +270,7 @@ func TestListProviderPresets(t *testing.T) {
 			},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			ExistingKubermaticObjs: genPresetList(),
+			ExistingKubermaticObjs: genPresets(),
 		},
 
 		// scenario 3
@@ -292,7 +287,7 @@ func TestListProviderPresets(t *testing.T) {
 			}},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			ExistingKubermaticObjs: genPresetList(),
+			ExistingKubermaticObjs: genPresets(),
 		},
 
 		// scenario 4
@@ -311,7 +306,7 @@ func TestListProviderPresets(t *testing.T) {
 			}},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			ExistingKubermaticObjs: genPresetList(),
+			ExistingKubermaticObjs: genPresets(),
 		},
 
 		// scenario 5
@@ -324,7 +319,7 @@ func TestListProviderPresets(t *testing.T) {
 			}},
 			HTTPStatus:             http.StatusOK,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			ExistingKubermaticObjs: genPresetList(),
+			ExistingKubermaticObjs: genPresets(),
 		},
 
 		// scenario 6
@@ -335,7 +330,7 @@ func TestListProviderPresets(t *testing.T) {
 			ExpectedResponse:       &v2.PresetList{Items: []v2.Preset{}},
 			HTTPStatus:             http.StatusBadRequest,
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
-			ExistingKubermaticObjs: genPresetList(),
+			ExistingKubermaticObjs: genPresets(),
 		},
 	}
 
@@ -343,9 +338,9 @@ func TestListProviderPresets(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/api/v2/providers/%s/presets?disabled=%v&datacenter=%s", tc.Provider, tc.Disabled, tc.Datacenter), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := make([]runtime.Object, 0)
+			kubermaticObj := make([]ctrlruntimeclient.Object, 0)
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -558,12 +553,12 @@ func TestUpdatePresetStatus(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v2/presets/%s/status?provider=%s", tc.PresetName, tc.Provider.Name), strings.NewReader(fmt.Sprintf(`{"enabled": %v}`, tc.Enabled)))
 			res := httptest.NewRecorder()
 
-			existingKubermaticObjs := []runtime.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
+			existingKubermaticObjs := []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
 			if tc.ExistingPreset != nil {
 				existingKubermaticObjs = append(existingKubermaticObjs, tc.ExistingPreset)
 			}
 
-			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, existingKubermaticObjs, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -800,12 +795,12 @@ func TestCreatePreset(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v2/providers/%s/presets", tc.Provider.Name), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 
-			existingKubermaticObjs := []runtime.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
+			existingKubermaticObjs := []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
 			if tc.ExistingPreset != nil {
 				existingKubermaticObjs = append(existingKubermaticObjs, tc.ExistingPreset)
 			}
 
-			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, existingKubermaticObjs, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -1037,12 +1032,12 @@ func TestUpdatePreset(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPut, fmt.Sprintf("/api/v2/providers/%s/presets", tc.Provider.Name), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
 
-			existingKubermaticObjs := []runtime.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
+			existingKubermaticObjs := []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*tc.ExistingAPIUser)}
 			if tc.ExistingPreset != nil {
 				existingKubermaticObjs = append(existingKubermaticObjs, tc.ExistingPreset)
 			}
 
-			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientSets, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, existingKubermaticObjs, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

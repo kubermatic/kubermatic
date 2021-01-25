@@ -30,7 +30,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,12 +42,12 @@ func TestReconcile(t *testing.T) {
 	tests := []struct {
 		name                      string
 		clusterName               string
-		existingKubermaticObjects []runtime.Object
+		existingKubermaticObjects []ctrlruntimeclient.Object
 	}{
 		{
 			name:        "scenario 1: cleanup finalizer and kubeconfig secret",
 			clusterName: "test",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				genExternalCluster("test", metav1.Now()),
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{Name: genExternalCluster("test", metav1.Now()).GetKubeconfigSecretName(), Namespace: resources.KubermaticNamespace},
@@ -60,8 +59,11 @@ func TestReconcile(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-
-			kubermaticFakeClient := fake.NewFakeClientWithScheme(scheme.Scheme, test.existingKubermaticObjects...)
+			kubermaticFakeClient := fake.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(test.existingKubermaticObjects...).
+				Build()
 
 			// act
 			ctx := context.Background()

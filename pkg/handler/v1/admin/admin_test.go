@@ -25,7 +25,8 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
-	"k8s.io/apimachinery/pkg/runtime"
+
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestGetAdmins(t *testing.T) {
@@ -36,7 +37,7 @@ func TestGetAdmins(t *testing.T) {
 		expectedResponse       string
 		httpStatus             int
 		existingAPIUser        *apiv1.User
-		existingKubermaticObjs []runtime.Object
+		existingKubermaticObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -51,18 +52,18 @@ func TestGetAdmins(t *testing.T) {
 			name:                   "scenario 2: authorized user gets admin list",
 			expectedResponse:       `[{"email":"bob@acme.com","name":"Bob","isAdmin":true}]`,
 			httpStatus:             http.StatusOK,
-			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true)},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			var kubernetesObj []runtime.Object
-			var kubeObj []runtime.Object
+			var kubernetesObj []ctrlruntimeclient.Object
+			var kubeObj []ctrlruntimeclient.Object
 			req := httptest.NewRequest("GET", "/api/v1/admin", strings.NewReader(""))
 			res := httptest.NewRecorder()
-			var kubermaticObj []runtime.Object
+			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -89,7 +90,7 @@ func TestSetAdmin(t *testing.T) {
 		httpStatus             int
 		body                   string
 		existingAPIUser        *apiv1.User
-		existingKubermaticObjs []runtime.Object
+		existingKubermaticObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -106,7 +107,7 @@ func TestSetAdmin(t *testing.T) {
 			body:                   `{"email":"john@acme.com","isAdmin":true}`,
 			expectedResponse:       `{"email":"john@acme.com","name":"John","isAdmin":true}`,
 			httpStatus:             http.StatusOK,
-			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true), genUser("John", "john@acme.com", false)},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true), genUser("John", "john@acme.com", false)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 3
@@ -115,7 +116,7 @@ func TestSetAdmin(t *testing.T) {
 			body:                   `{"email":"patric@acme.com","isAdmin":true}`,
 			expectedResponse:       `{"error":{"code":500,"message":"the given user patric@acme.com was not found"}}`,
 			httpStatus:             http.StatusInternalServerError,
-			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true), genUser("John", "john@acme.com", false)},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true), genUser("John", "john@acme.com", false)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		// scenario 4
@@ -124,18 +125,18 @@ func TestSetAdmin(t *testing.T) {
 			body:                   `{"email":"bob@acme.com","isAdmin":true}`,
 			expectedResponse:       `{"error":{"code":400,"message":"can not change own privileges"}}`,
 			httpStatus:             http.StatusBadRequest,
-			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true), genUser("John", "john@acme.com", false)},
+			existingKubermaticObjs: []ctrlruntimeclient.Object{genUser("Bob", "bob@acme.com", true), genUser("John", "john@acme.com", false)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
 		},
 	}
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			var kubernetesObj []runtime.Object
-			var kubeObj []runtime.Object
+			var kubernetesObj []ctrlruntimeclient.Object
+			var kubeObj []ctrlruntimeclient.Object
 			req := httptest.NewRequest("PUT", "/api/v1/admin", strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
-			var kubermaticObj []runtime.Object
+			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.existingKubermaticObjs...)
 			ep, _, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, kubeObj, kubernetesObj, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {

@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -80,7 +81,7 @@ func TestMultipleCIDRAllocation(t *testing.T) {
 		{"10.0.0.2/24", "10.0.0.1", createMachine("River")},
 	}
 
-	machineObjects := []runtime.Object{}
+	machineObjects := []ctrlruntimeclient.Object{}
 	for _, m := range machines {
 		machineObjects = append(machineObjects, m.machine)
 	}
@@ -171,8 +172,12 @@ func createMachine(name string) *clusterv1alpha1.Machine {
 	}
 }
 
-func newTestReconciler(networks []Network, objects ...runtime.Object) *reconciler {
-	client := fakectrlruntimeclient.NewFakeClient(objects...)
+func newTestReconciler(networks []Network, objects ...ctrlruntimeclient.Object) *reconciler {
+	client := fakectrlruntimeclient.
+		NewClientBuilder().
+		WithObjects(objects...).
+		Build()
+
 	return &reconciler{Client: client, cidrRanges: networks}
 }
 

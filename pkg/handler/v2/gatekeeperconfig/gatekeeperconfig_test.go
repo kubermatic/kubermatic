@@ -34,7 +34,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -46,8 +45,8 @@ func TestGetConfigEndpoint(t *testing.T) {
 		ProjectID              string
 		ClusterID              string
 		HTTPStatus             int
-		ExistingKubermaticObjs []runtime.Object
-		ExistingGatekeeperObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExistingGatekeeperObjs []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		{
@@ -57,7 +56,7 @@ func TestGetConfigEndpoint(t *testing.T) {
 			ClusterID:              test.GenDefaultCluster().Name,
 			HTTPStatus:             http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -67,7 +66,7 @@ func TestGetConfigEndpoint(t *testing.T) {
 			ClusterID:              test.GenDefaultCluster().Name,
 			HTTPStatus:             http.StatusNotFound,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -80,7 +79,7 @@ func TestGetConfigEndpoint(t *testing.T) {
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 		{
@@ -93,7 +92,7 @@ func TestGetConfigEndpoint(t *testing.T) {
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 	}
@@ -110,7 +109,7 @@ func TestGetConfigEndpoint(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
-				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(ctrlruntimeclient.Object))
+				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
 					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
 				}
@@ -134,8 +133,8 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 		ProjectID              string
 		ClusterID              string
 		HTTPStatus             int
-		ExistingKubermaticObjs []runtime.Object
-		ExistingGatekeeperObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExistingGatekeeperObjs []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		{
@@ -145,7 +144,7 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 			ClusterID:              test.GenDefaultCluster().Name,
 			HTTPStatus:             http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -155,7 +154,7 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 			ClusterID:              test.GenDefaultCluster().Name,
 			HTTPStatus:             http.StatusNotFound,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -168,7 +167,7 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 		{
@@ -181,7 +180,7 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 	}
@@ -198,7 +197,7 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
-				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(ctrlruntimeclient.Object))
+				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
 					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
 				}
@@ -223,8 +222,8 @@ func TestCreateConfigEndpoint(t *testing.T) {
 		ClusterID              string
 		ToCreateConfig         *apiv2.GatekeeperConfig
 		HTTPStatus             int
-		ExistingKubermaticObjs []runtime.Object
-		ExistingGatekeeperObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExistingGatekeeperObjs []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		{
@@ -245,7 +244,7 @@ func TestCreateConfigEndpoint(t *testing.T) {
 			ToCreateConfig:         genAPIGatekeeperConfig(),
 			HTTPStatus:             http.StatusConflict,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -293,7 +292,7 @@ func TestCreateConfigEndpoint(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
-				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(ctrlruntimeclient.Object))
+				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
 					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
 				}
@@ -318,8 +317,8 @@ func TestPatchConfigEndpoint(t *testing.T) {
 		ClusterID              string
 		Patch                  string
 		HTTPStatus             int
-		ExistingKubermaticObjs []runtime.Object
-		ExistingGatekeeperObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExistingGatekeeperObjs []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		{
@@ -330,7 +329,7 @@ func TestPatchConfigEndpoint(t *testing.T) {
 			Patch:                  `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"}]}}}`,
 			HTTPStatus:             http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -341,7 +340,7 @@ func TestPatchConfigEndpoint(t *testing.T) {
 			Patch:                  `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"}]}}}`,
 			HTTPStatus:             http.StatusNotFound,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -355,7 +354,7 @@ func TestPatchConfigEndpoint(t *testing.T) {
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 		{
@@ -369,7 +368,7 @@ func TestPatchConfigEndpoint(t *testing.T) {
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 	}
@@ -386,7 +385,7 @@ func TestPatchConfigEndpoint(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjs {
-				err = clientsSets.FakeClient.Create(context.Background(), gkObject.(ctrlruntimeclient.Object))
+				err = clientsSets.FakeClient.Create(context.Background(), gkObject)
 				if err != nil {
 					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
 				}

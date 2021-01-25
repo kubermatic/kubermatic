@@ -26,7 +26,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilpointer "k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -122,13 +121,13 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 	testcases := []struct {
 		name                      string
 		cluster                   *kubermaticv1.Cluster
-		resources                 []runtime.Object
+		resources                 []ctrlruntimeclient.Object
 		expectedHasConditionValue bool
 	}{
 		{
 			name:    "statefulSet resources are not yet updated",
 			cluster: cluster(),
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				inProgressStatefulSet,
 			},
 			expectedHasConditionValue: false,
@@ -136,7 +135,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 		{
 			name:    "deployments resources are not yet updated",
 			cluster: cluster(),
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				inProgressDeployment,
 			},
 			expectedHasConditionValue: false,
@@ -144,7 +143,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 		{
 			name:    "cluster resources have finished updating successfully",
 			cluster: cluster(),
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				readyStatefulSet,
 				readyDeployment,
 			},
@@ -155,7 +154,11 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 	for _, testCase := range testcases {
 		t.Run(testCase.name, func(t *testing.T) {
 			ctx := context.Background()
-			client := fakectrlruntimeclient.NewFakeClient(append(testCase.resources, testCase.cluster)...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(append(testCase.resources, testCase.cluster)...).
+				Build()
+
 			r := &reconciler{
 				client: client,
 			}

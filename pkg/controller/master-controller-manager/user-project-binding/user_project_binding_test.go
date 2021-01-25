@@ -21,11 +21,11 @@ import (
 	"testing"
 
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
+	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -99,7 +99,7 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []runtime.Object{}
+			objs := []ctrlruntimeclient.Object{}
 
 			for _, user := range test.existingUsers {
 				objs = append(objs, user)
@@ -113,7 +113,11 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 				objs = append(objs, test.existingProject)
 			}
 
-			kubermaticFakeClient := fakectrlruntimeclient.NewFakeClient(objs...)
+			kubermaticFakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objs...).
+				Build()
 
 			// act
 			target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
@@ -189,7 +193,7 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []runtime.Object{}
+			objs := []ctrlruntimeclient.Object{}
 			for _, user := range test.existingUsers {
 				objs = append(objs, user)
 			}
@@ -201,7 +205,11 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 				objs = append(objs, test.existingProject)
 			}
 
-			kubermaticFakeClient := fakectrlruntimeclient.NewFakeClient(objs...)
+			kubermaticFakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objs...).
+				Build()
 
 			// act
 			target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}

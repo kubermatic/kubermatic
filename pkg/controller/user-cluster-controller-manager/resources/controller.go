@@ -155,7 +155,7 @@ func Add(
 			}}}
 	})
 
-	typesToWatch := []runtime.Object{
+	typesToWatch := []ctrlruntimeclient.Object{
 		&apiregistrationv1beta1.APIService{},
 		&corev1.ServiceAccount{},
 		&corev1.Service{},
@@ -198,17 +198,17 @@ func Add(
 		},
 	}
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t.(ctrlruntimeclient.Object)}, mapFn, predicateIgnoreLeaderLeaseRenew); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, mapFn, predicateIgnoreLeaderLeaseRenew); err != nil {
 			return fmt.Errorf("failed to create watch for %T: %v", t, err)
 		}
 	}
 
-	seedTypesToWatch := []runtime.Object{
+	seedTypesToWatch := []ctrlruntimeclient.Object{
 		&corev1.Secret{},
 		&corev1.ConfigMap{},
 	}
 	for _, t := range seedTypesToWatch {
-		seedWatch := &source.Kind{Type: t.(ctrlruntimeclient.Object)}
+		seedWatch := &source.Kind{Type: t}
 		if err := seedWatch.InjectCache(seedMgr.GetCache()); err != nil {
 			return fmt.Errorf("failed to inject cache in seed cluster watch for %T: %v", t, err)
 		}

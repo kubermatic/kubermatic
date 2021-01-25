@@ -34,7 +34,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -80,8 +79,8 @@ func TestResources(t *testing.T) {
 	testCases := []struct {
 		name         string
 		reconciler   Reconciler
-		object       runtime.Object
-		validateFunc func(runtime.Object) error
+		object       ctrlruntimeclient.Object
+		validateFunc func(ctrlruntimeclient.Object) error
 	}{
 		{
 			name: "Kubermatic API image is overwritten",
@@ -99,7 +98,7 @@ func TestResources(t *testing.T) {
 					Name: "usercluster-controller",
 				},
 			},
-			validateFunc: func(o runtime.Object) error {
+			validateFunc: func(o ctrlruntimeclient.Object) error {
 				deployment := o.(*appsv1.Deployment)
 				expectedImage := "docker.io/my.corp/kubermatic:"
 				if deployment.Spec.Template.Spec.Containers[0].Image != expectedImage {
@@ -194,7 +193,7 @@ func TestResources(t *testing.T) {
 				t.Fatalf("failed to get object %q: %v", clientObject.GetName(), err)
 			}
 
-			if err := tc.validateFunc(object); err != nil {
+			if err := tc.validateFunc(clientObject); err != nil {
 				t.Fatal(err.Error())
 			}
 

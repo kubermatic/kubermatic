@@ -36,7 +36,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -428,13 +427,13 @@ func TestBasicReconciling(t *testing.T) {
 }
 
 func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *operatorv1alpha1.KubermaticConfiguration, seeds []string, syncedSeeds sets.String) *Reconciler {
-	masterObjects := []runtime.Object{}
+	masterObjects := []ctrlruntimeclient.Object{}
 	if cfg != nil {
 		masterObjects = append(masterObjects, cfg)
 	}
 
 	masterSeeds := map[string]*kubermaticv1.Seed{} // makes the seedsGetter implementation easier
-	seedObjects := map[string][]runtime.Object{}
+	seedObjects := map[string][]ctrlruntimeclient.Object{}
 	seedClients := map[string]ctrlruntimeclient.Client{}
 	seedRecorders := map[string]record.EventRecorder{}
 
@@ -449,17 +448,27 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *operatorv
 			masterSeeds[seedName] = masterSeed
 		}
 
-		seedObjects[seedName] = []runtime.Object{}
+		seedObjects[seedName] = []ctrlruntimeclient.Object{}
 		if syncedSeeds.Has(seedName) {
 			// make sure to put a copy of the Seed CR into the seed "cluster"
 			seedObjects[seedName] = append(seedObjects[seedName], masterSeed.DeepCopy())
 		}
 
-		seedClients[seedName] = ctrlruntimefakeclient.NewFakeClient(seedObjects[seedName]...)
+		seedClients[seedName] = ctrlruntimefakeclient.
+			NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithObjects(seedObjects[seedName]...).
+			Build()
+
 		seedRecorders[seedName] = record.NewFakeRecorder(999)
 	}
 
-	masterClient := ctrlruntimefakeclient.NewFakeClient(masterObjects...)
+	masterClient := ctrlruntimefakeclient.
+		NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(masterObjects...).
+		Build()
+
 	masterRecorder := record.NewFakeRecorder(999)
 
 	versions := kubermatic.NewDefaultVersions()

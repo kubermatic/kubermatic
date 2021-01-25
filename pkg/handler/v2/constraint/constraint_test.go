@@ -34,7 +34,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -51,8 +50,8 @@ func TestListConstraints(t *testing.T) {
 		ClusterID                 string
 		HTTPStatus                int
 		ExistingAPIUser           *apiv1.User
-		ExistingObjects           []runtime.Object
-		ExistingGatekeeperObjects []runtime.Object
+		ExistingObjects           []ctrlruntimeclient.Object
+		ExistingGatekeeperObjects []ctrlruntimeclient.Object
 		ExpectedConstraints       []apiv2.Constraint
 	}{
 		{
@@ -71,7 +70,7 @@ func TestListConstraints(t *testing.T) {
 				test.GenConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 				test.GenConstraint("ct3", test.GenDefaultCluster().Status.NamespaceName, "UniqueLabel"),
 			),
-			ExistingGatekeeperObjects: []runtime.Object{
+			ExistingGatekeeperObjects: []ctrlruntimeclient.Object{
 				genGatekeeperConstraint("ct1", "RequiredLabel", t),
 				genGatekeeperConstraint("ct2", "RequiredLabel", t),
 				genGatekeeperConstraint("ct3", "UniqueLabel", t),
@@ -89,7 +88,7 @@ func TestListConstraints(t *testing.T) {
 				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 				test.GenConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
-			ExistingGatekeeperObjects: []runtime.Object{
+			ExistingGatekeeperObjects: []ctrlruntimeclient.Object{
 				genGatekeeperConstraint("ct1", "RequiredLabel", t),
 				genGatekeeperConstraint("ct2", "RequiredLabel", t),
 			},
@@ -112,7 +111,7 @@ func TestListConstraints(t *testing.T) {
 				test.GenConstraint("ct3", test.GenDefaultCluster().Status.NamespaceName, "UniqueLabel"),
 				genKubermaticUser("John", "john@acme.com", true),
 			),
-			ExistingGatekeeperObjects: []runtime.Object{
+			ExistingGatekeeperObjects: []ctrlruntimeclient.Object{
 				genGatekeeperConstraint("ct1", "RequiredLabel", t),
 				genGatekeeperConstraint("ct2", "RequiredLabel", t),
 				genGatekeeperConstraint("ct3", "UniqueLabel", t),
@@ -134,7 +133,7 @@ func TestListConstraints(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjects {
-				err = clientsSets.FakeClient.Create(ctx, gkObject.(ctrlruntimeclient.Object))
+				err = clientsSets.FakeClient.Create(ctx, gkObject)
 				if err != nil {
 					t.Fatalf("failed to create gk object %v due to %v", gkObject, err)
 				}
@@ -175,8 +174,8 @@ func TestGetConstraints(t *testing.T) {
 		ExpectedResponse          string
 		HTTPStatus                int
 		ExistingAPIUser           *apiv1.User
-		ExistingObjects           []runtime.Object
-		ExistingGatekeeperObjects []runtime.Object
+		ExistingObjects           []ctrlruntimeclient.Object
+		ExistingGatekeeperObjects []ctrlruntimeclient.Object
 	}{
 		{
 			Name:             "scenario 1: user can get accessible constraint",
@@ -189,7 +188,7 @@ func TestGetConstraints(t *testing.T) {
 				test.GenDefaultCluster(),
 				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
-			ExistingGatekeeperObjects: []runtime.Object{
+			ExistingGatekeeperObjects: []ctrlruntimeclient.Object{
 				genGatekeeperConstraint("ct1", "RequiredLabel", t),
 			},
 			ExistingAPIUser: test.GenDefaultAPIUser(),
@@ -205,7 +204,7 @@ func TestGetConstraints(t *testing.T) {
 				test.GenDefaultCluster(),
 				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
-			ExistingGatekeeperObjects: []runtime.Object{
+			ExistingGatekeeperObjects: []ctrlruntimeclient.Object{
 				genGatekeeperConstraint("ct1", "RequiredLabel", t),
 			},
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -222,7 +221,7 @@ func TestGetConstraints(t *testing.T) {
 				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 				genKubermaticUser("John", "john@acme.com", true),
 			),
-			ExistingGatekeeperObjects: []runtime.Object{
+			ExistingGatekeeperObjects: []ctrlruntimeclient.Object{
 				genGatekeeperConstraint("ct1", "RequiredLabel", t),
 			},
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -242,7 +241,7 @@ func TestGetConstraints(t *testing.T) {
 			}
 
 			for _, gkObject := range tc.ExistingGatekeeperObjects {
-				err = clientsSets.FakeClient.Create(ctx, gkObject.(ctrlruntimeclient.Object))
+				err = clientsSets.FakeClient.Create(ctx, gkObject)
 				if err != nil {
 					t.Fatalf("failed to create gk object due to %v", err)
 				}
@@ -353,7 +352,7 @@ func TestDeleteConstraints(t *testing.T) {
 		ExpectedResponse string
 		HTTPStatus       int
 		ExistingAPIUser  *apiv1.User
-		ExistingObjects  []runtime.Object
+		ExistingObjects  []ctrlruntimeclient.Object
 	}{
 		{
 			Name:             "scenario 1: user can delete constraint",
@@ -428,7 +427,7 @@ func TestCreateConstraints(t *testing.T) {
 		ExpectedResponse string
 		HTTPStatus       int
 		ExistingAPIUser  *apiv1.User
-		ExistingObjects  []runtime.Object
+		ExistingObjects  []ctrlruntimeclient.Object
 	}{
 		{
 			Name: "scenario 1: user can create constraint",
@@ -539,7 +538,7 @@ func TestPatchConstraints(t *testing.T) {
 		ExpectedResponse string
 		HTTPStatus       int
 		ExistingAPIUser  *apiv1.User
-		ExistingObjects  []runtime.Object
+		ExistingObjects  []ctrlruntimeclient.Object
 	}{
 		{
 			Name:             "scenario 1: user can patch constraint",

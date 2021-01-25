@@ -30,7 +30,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -67,7 +66,7 @@ func TestCreateToken(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, []runtime.Object{}...)
+			fakeClient := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 			tokenGenerator := &fakeJWTTokenGenerator{}
 			token, err := tokenGenerator.Generate(serviceaccount.Claims(tc.saEmail, tc.projectToSync, tc.tokenID))
 			if err != nil {
@@ -155,11 +154,16 @@ func TestListTokens(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			kubeObjects := []runtime.Object{}
+			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)
 			}
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubeObjects...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(kubeObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}
@@ -227,12 +231,17 @@ func TestGetToken(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			kubeObjects := []runtime.Object{}
+			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)
 			}
 
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubeObjects...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(kubeObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}
@@ -297,12 +306,17 @@ func TestUpdateToken(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			kubeObjects := []runtime.Object{}
+			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)
 			}
 
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubeObjects...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(kubeObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}
@@ -362,12 +376,17 @@ func TestDeleteToken(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			kubeObjects := []runtime.Object{}
+			kubeObjects := []ctrlruntimeclient.Object{}
 			for _, secret := range tc.secrets {
 				kubeObjects = append(kubeObjects, secret)
 			}
 
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubeObjects...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(kubeObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}

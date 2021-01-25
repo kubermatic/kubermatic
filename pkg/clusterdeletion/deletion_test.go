@@ -30,7 +30,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,24 +73,29 @@ func getPod(ownerRefKind, ownerRefName string, hasPV bool) *corev1.Pod {
 func TestCleanUpPVUsingWorkloads(t *testing.T) {
 	testCases := []struct {
 		name                string
-		objects             []runtime.Object
+		objects             []ctrlruntimeclient.Object
 		errExpected         bool
 		objDeletionExpected bool
 	}{
 		{
 			name:                "Delete Pod",
-			objects:             []runtime.Object{getPod("", "", true)},
+			objects:             []ctrlruntimeclient.Object{getPod("", "", true)},
 			objDeletionExpected: true,
 		},
 		{
 			name:    "Dont delete pod without PV",
-			objects: []runtime.Object{getPod("", "", false)},
+			objects: []ctrlruntimeclient.Object{getPod("", "", false)},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			client := fake.NewFakeClientWithScheme(scheme.Scheme, tc.objects...)
+			client := fake.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.objects...).
+				Build()
+
 			d := &Deletion{}
 			ctx := context.Background()
 
@@ -125,30 +129,30 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 	testCases := []struct {
 		name    string
 		cluster *kubermaticv1.Cluster
-		objects []runtime.Object
+		objects []ctrlruntimeclient.Object
 	}{
 		{
 			name:    "Nodes remain because LB finalizer exists",
 			cluster: getClusterWithFinalizer(clusterName, kubermaticapiv1.InClusterLBCleanupFinalizer),
-			objects: []runtime.Object{&corev1.Service{
+			objects: []ctrlruntimeclient.Object{&corev1.Service{
 				Spec: corev1.ServiceSpec{Type: corev1.ServiceTypeLoadBalancer},
 			}},
 		},
 		{
 			name:    "Nodes remain because PV finalizer exists",
 			cluster: getClusterWithFinalizer(clusterName, kubermaticapiv1.InClusterPVCleanupFinalizer),
-			objects: []runtime.Object{&corev1.PersistentVolume{}},
+			objects: []ctrlruntimeclient.Object{&corev1.PersistentVolume{}},
 		},
 		// https://github.com/kubernetes-sigs/controller-runtime/issues/702
 		//	{
 		//		name:    "Nodes remain because credentialRequests finalizer exists",
 		//		cluster: getClusterWithFinalizer(clusterName, kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer),
-		//		objects: []runtime.Object{unstructuredWithAPIVersionAndKind("cloudcredential.openshift.io/v1", "CredentialsRequest")},
+		//		objects: []ctrlruntimeclient.Object{unstructuredWithAPIVersionAndKind("cloudcredential.openshift.io/v1", "CredentialsRequest")},
 		//	},
 		//	{
 		//		name:    "Nodes remain because imageRegistryConfigs finalizer exists",
 		//		cluster: getClusterWithFinalizer(clusterName, kubermaticapiv1.InClusterImageRegistryConfigCleanupFinalizer),
-		//		objects: []runtime.Object{unstructuredWithAPIVersionAndKind("imageregistry.operator.openshift.io/v1", "Config")},
+		//		objects: []ctrlruntimeclient.Object{unstructuredWithAPIVersionAndKind("imageregistry.operator.openshift.io/v1", "Config")},
 		//	},
 	}
 
@@ -159,7 +163,13 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 
 			m := &clusterv1alpha1.Machine{}
 			tc.objects = append(tc.objects, m)
-			userClusterClient := fake.NewFakeClient(tc.objects...)
+
+			userClusterClient := fake.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.objects...).
+				Build()
+
 			userClusterClientGetter := func() (ctrlruntimeclient.Client, error) {
 				return userClusterClient, nil
 			}

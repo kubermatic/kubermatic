@@ -20,14 +20,13 @@ import (
 	"context"
 	"testing"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8s.io/apimachinery/pkg/types"
-
 	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8s.io/apimachinery/pkg/types"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -98,7 +97,10 @@ func TestReconciliation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			cluster := tc.cluster.DeepCopy()
-			client := fakectrlruntimeclient.NewFakeClient([]runtime.Object{cluster}...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(cluster).
+				Build()
 			r := &Reconciler{client: client, log: logger, defaults: *tc.override}
 			if err := r.reconcile(ctx, logger, cluster); err != nil {
 				t.Fatalf("failed to reconcile cluster: %v", err)

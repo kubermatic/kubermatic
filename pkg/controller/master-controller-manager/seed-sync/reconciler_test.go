@@ -26,11 +26,11 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
@@ -38,7 +38,7 @@ import (
 )
 
 func TestReconcilingSeed(t *testing.T) {
-	existingSeeds := []runtime.Object{
+	existingSeeds := []ctrlruntimeclient.Object{
 		&kubermaticv1.Seed{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-seed",
@@ -59,7 +59,7 @@ func TestReconcilingSeed(t *testing.T) {
 		name          string
 		shouldFail    bool
 		input         *kubermaticv1.Seed
-		existingSeeds []runtime.Object
+		existingSeeds []ctrlruntimeclient.Object
 		validate      func(input, result *kubermaticv1.Seed) error
 	}{
 		{
@@ -162,7 +162,12 @@ func TestReconcilingSeed(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			masterClient := fakectrlruntimeclient.NewFakeClient(test.input)
-			seedClient := fakectrlruntimeclient.NewFakeClient(test.existingSeeds...)
+			seedClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(test.existingSeeds...).
+				Build()
+
 			ctx := context.Background()
 
 			reconciler := Reconciler{

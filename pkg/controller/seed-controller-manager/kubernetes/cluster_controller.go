@@ -40,7 +40,6 @@ import (
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -180,7 +179,7 @@ func Add(
 		return err
 	}
 
-	typesToWatch := []runtime.Object{
+	typesToWatch := []ctrlruntimeclient.Object{
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
 		&corev1.ConfigMap{},
@@ -196,7 +195,7 @@ func Add(
 	}
 
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t.(ctrlruntimeclient.Object)}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
 			return fmt.Errorf("failed to create watcher for %T: %v", t, err)
 		}
 	}

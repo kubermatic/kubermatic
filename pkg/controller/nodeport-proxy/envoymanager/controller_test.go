@@ -36,15 +36,16 @@ import (
 	envoycachetype "github.com/envoyproxy/go-control-plane/pkg/cache/types"
 	envoywellknown "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 
+	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/test"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 )
@@ -54,7 +55,7 @@ func TestSync(t *testing.T) {
 	timeRef := time.Date(2020, time.December, 0, 0, 0, 0, 0, time.UTC)
 	tests := []struct {
 		name                  string
-		resources             []runtime.Object
+		resources             []ctrlruntimeclient.Object
 		sniListenerPort       int
 		tunnelingListenerPort int
 		expectedClusters      map[string]*envoyclusterv3.Cluster
@@ -62,7 +63,7 @@ func TestSync(t *testing.T) {
 	}{
 		{
 			name: "2-ports-2-pods-named-and-non-named-ports",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
 					WithServiceType(corev1.ServiceTypeNodePort).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "true").
@@ -88,7 +89,7 @@ func TestSync(t *testing.T) {
 		},
 		{
 			name: "1-port-2-pods-one-unhealthy",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "NodePort").
 					WithServiceType(corev1.ServiceTypeNodePort).
@@ -110,7 +111,7 @@ func TestSync(t *testing.T) {
 		},
 		{
 			name: "1-port-service-without-annotation",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
 					WithServiceType(corev1.ServiceTypeNodePort).
 					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
@@ -123,7 +124,7 @@ func TestSync(t *testing.T) {
 		},
 		{
 			name: "1-port-service-without-pods",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "NodePort").
 					WithServiceType(corev1.ServiceTypeNodePort).
@@ -137,7 +138,7 @@ func TestSync(t *testing.T) {
 		},
 		{
 			name: "1-sni-service-with-1-exposed-port",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
 					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com"}`).
@@ -162,7 +163,7 @@ func TestSync(t *testing.T) {
 		},
 		{
 			name: "1-sni-service-with-2-exposed-ports",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
 					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com", "admin": "admin.host.com"}`).
@@ -192,7 +193,7 @@ func TestSync(t *testing.T) {
 		},
 		{
 			name: "sni-listener-not-enabled",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
 					WithAnnotation(nodeportproxy.PortHostMappingAnnotationKey, `{"https": "host.com"}`).
@@ -211,7 +212,7 @@ func TestSync(t *testing.T) {
 		},
 		{
 			name: "sni-hostname-conflict",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "newer-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
@@ -246,7 +247,7 @@ func TestSync(t *testing.T) {
 		},
 		{
 			name: "sni-udp-port",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "udp-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
@@ -265,7 +266,7 @@ func TestSync(t *testing.T) {
 		},
 		{
 			name: "tunneling",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "Tunneling").
@@ -287,7 +288,7 @@ func TestSync(t *testing.T) {
 		},
 		{
 			name: "both-sni-and-tunneling",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI,Tunneling").
@@ -312,7 +313,7 @@ func TestSync(t *testing.T) {
 		},
 		{
 			name: "both-sni-and-http2-connect-invalid-sni-mapping",
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				test.NewServiceBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef.Add(1*time.Hour)).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI,Tunneling").
@@ -340,7 +341,11 @@ func TestSync(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			log := zaptest.NewLogger(t).Sugar()
 			ctx := context.Background()
-			client := fakectrlruntimeclient.NewFakeClient(test.resources...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(test.resources...).
+				Build()
 			c, _, _ := NewReconciler(
 				ctx,
 				log,
@@ -539,7 +544,7 @@ func TestEndpointToService(t *testing.T) {
 	tests := []struct {
 		name          string
 		eps           *corev1.Endpoints
-		resources     []runtime.Object
+		resources     []ctrlruntimeclient.Object
 		expectResults []ctrlruntime.Request
 	}{
 		{
@@ -550,7 +555,7 @@ func TestEndpointToService(t *testing.T) {
 		{
 			name: "No result when matching service found but not exposed",
 			eps:  &corev1.Endpoints{ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "foo"}},
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "foo"},
 				},
@@ -560,7 +565,7 @@ func TestEndpointToService(t *testing.T) {
 		{
 			name: "Result expected when exposed matching service is found",
 			eps:  &corev1.Endpoints{ObjectMeta: metav1.ObjectMeta{Namespace: "foo", Name: "bar"}},
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace:   "foo",
@@ -577,7 +582,12 @@ func TestEndpointToService(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			log := zaptest.NewLogger(t).Sugar()
-			client := fakectrlruntimeclient.NewFakeClient(tt.resources...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tt.resources...).
+				Build()
+
 			res := (&Reconciler{
 				Options: Options{ExposeAnnotationKey: nodeportproxy.DefaultExposeAnnotationKey},
 				Client:  client,

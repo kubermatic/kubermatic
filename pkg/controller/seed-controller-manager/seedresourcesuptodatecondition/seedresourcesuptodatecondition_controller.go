@@ -31,7 +31,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -76,12 +75,12 @@ func Add(
 		return err
 	}
 
-	typesToWatch := []runtime.Object{
+	typesToWatch := []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
 		&appsv1.StatefulSet{},
 	}
 	for _, t := range typesToWatch {
-		if err := c.Watch(&source.Kind{Type: t.(ctrlruntimeclient.Object)}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
+		if err := c.Watch(&source.Kind{Type: t}, controllerutil.EnqueueClusterForNamespacedObject(mgr.GetClient())); err != nil {
 			return fmt.Errorf("failed to create watch for %T: %v", t, err)
 		}
 	}

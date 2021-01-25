@@ -34,7 +34,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -197,10 +196,18 @@ func TestReconcile(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			seedClient := fakectrlruntimeclient.NewFakeClient(test.cluster, project)
+			seedClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(test.cluster, project).
+				Build()
 
-			userClusterObjects := []runtime.Object{}
-			userClusterClient := fakectrlruntimeclient.NewFakeClient(userClusterObjects...)
+			userClusterObjects := []ctrlruntimeclient.Object{}
+			userClusterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(userClusterObjects...).
+				Build()
 
 			ctx := context.Background()
 			r := &Reconciler{

@@ -35,9 +35,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"k8s.io/utils/pointer"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestCreateMachineDeployment(t *testing.T) {
@@ -53,7 +53,7 @@ func TestCreateMachineDeployment(t *testing.T) {
 		ExistingKubermaticUser *kubermaticv1.User
 		ExistingAPIUser        *apiv1.User
 		ExistingCluster        *kubermaticv1.Cluster
-		ExistingKubermaticObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -144,9 +144,9 @@ func TestCreateMachineDeployment(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments", tc.ProjectID, tc.ClusterID), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
+			kubermaticObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -186,7 +186,7 @@ func TestDeleteMachineDeploymentNode(t *testing.T) {
 		ExistingAPIUser         *apiv1.User
 		ExistingNodes           []*corev1.Node
 		ExistingMachines        []*clusterv1alpha1.Machine
-		ExistingKubermaticObjs  []runtime.Object
+		ExistingKubermaticObjs  []ctrlruntimeclient.Object
 		ExpectedHTTPStatusOnGet int
 		ExpectedResponseOnGet   string
 		ExpectedNodeCount       int
@@ -266,9 +266,9 @@ func TestDeleteMachineDeploymentNode(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/nodes/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.NodeIDToDelete), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
-			machineObj := []runtime.Object{}
-			kubernetesObj := []runtime.Object{}
+			kubermaticObj := []ctrlruntimeclient.Object{}
+			machineObj := []ctrlruntimeclient.Object{}
+			kubernetesObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			for _, existingNode := range tc.ExistingNodes {
 				kubernetesObj = append(kubernetesObj, existingNode)
@@ -314,7 +314,7 @@ func TestListMachineDeployments(t *testing.T) {
 		ExistingAPIUser            *apiv1.User
 		ExistingCluster            *kubermaticv1.Cluster
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
-		ExistingKubermaticObjs     []runtime.Object
+		ExistingKubermaticObjs     []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -469,9 +469,9 @@ func TestListMachineDeployments(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments",
 				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
-			machineObj := []runtime.Object{}
-			kubernetesObj := []runtime.Object{}
+			kubermaticObj := []ctrlruntimeclient.Object{}
+			machineObj := []ctrlruntimeclient.Object{}
+			kubernetesObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
 				machineObj = append(machineObj, existingMachineDeployment)
@@ -513,7 +513,7 @@ func TestGetMachineDeployment(t *testing.T) {
 		ExistingAPIUser            *apiv1.User
 		ExistingCluster            *kubermaticv1.Cluster
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
-		ExistingKubermaticObjs     []runtime.Object
+		ExistingKubermaticObjs     []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -640,9 +640,9 @@ func TestGetMachineDeployment(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/venus",
 				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
-			machineObj := []runtime.Object{}
-			kubernetesObj := []runtime.Object{}
+			kubermaticObj := []ctrlruntimeclient.Object{}
+			machineObj := []ctrlruntimeclient.Object{}
+			kubernetesObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
 				machineObj = append(machineObj, existingMachineDeployment)
@@ -683,7 +683,7 @@ func TestListMachineDeploymentNodes(t *testing.T) {
 		ExistingNodes              []*corev1.Node
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		ExistingMachines           []*clusterv1alpha1.Machine
-		ExistingKubermaticObjs     []runtime.Object
+		ExistingKubermaticObjs     []ctrlruntimeclient.Object
 		MachineDeploymentID        string
 	}{
 		// scenario 1
@@ -844,9 +844,9 @@ func TestListMachineDeploymentNodes(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineDeploymentID), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
-			machineObj := []runtime.Object{}
-			kubernetesObj := []runtime.Object{}
+			kubermaticObj := []ctrlruntimeclient.Object{}
+			machineObj := []ctrlruntimeclient.Object{}
+			kubernetesObj := []ctrlruntimeclient.Object{}
 			for _, existingNode := range tc.ExistingNodes {
 				kubernetesObj = append(kubernetesObj, existingNode)
 			}
@@ -893,7 +893,7 @@ func TestListNodesForCluster(t *testing.T) {
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingNodes          []*corev1.Node
 		ExistingMachines       []*clusterv1alpha1.Machine
-		ExistingKubermaticObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
 	}{
 		// scenario 1
 		{
@@ -1135,9 +1135,9 @@ func TestListNodesForCluster(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/nodes", tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
-			machineObj := []runtime.Object{}
-			kubernetesObj := []runtime.Object{}
+			kubermaticObj := []ctrlruntimeclient.Object{}
+			machineObj := []ctrlruntimeclient.Object{}
+			kubernetesObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			for _, existingNode := range tc.ExistingNodes {
 				kubernetesObj = append(kubernetesObj, existingNode)
@@ -1192,7 +1192,7 @@ func TestMachineDeploymentMetrics(t *testing.T) {
 		ExistingNodes              []*corev1.Node
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		ExistingMachines           []*clusterv1alpha1.Machine
-		ExistingKubermaticObjs     []runtime.Object
+		ExistingKubermaticObjs     []ctrlruntimeclient.Object
 		ExistingMetrics            []*v1beta1.NodeMetrics
 		MachineDeploymentID        string
 	}{
@@ -1286,9 +1286,9 @@ func TestMachineDeploymentMetrics(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s/nodes/metrics", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineDeploymentID), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
-			machineObj := []runtime.Object{}
-			kubernetesObj := []runtime.Object{}
+			kubermaticObj := []ctrlruntimeclient.Object{}
+			machineObj := []ctrlruntimeclient.Object{}
+			kubernetesObj := []ctrlruntimeclient.Object{}
 			for _, existingNode := range tc.ExistingNodes {
 				kubernetesObj = append(kubernetesObj, existingNode)
 			}
@@ -1335,7 +1335,7 @@ func TestPatchMachineDeployment(t *testing.T) {
 		ExistingAPIUser            *apiv1.User
 		NodeDeploymentID           string
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
-		ExistingKubermaticObjs     []runtime.Object
+		ExistingKubermaticObjs     []ctrlruntimeclient.Object
 	}{
 		// Scenario 1: Update replicas count.
 		{
@@ -1435,9 +1435,9 @@ func TestPatchMachineDeployment(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPatch, fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s",
 				test.GenDefaultProject().Name, test.GenDefaultCluster().Name, tc.NodeDeploymentID), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
-			machineDeploymentObjets := []runtime.Object{}
-			kubernetesObj := []runtime.Object{}
+			kubermaticObj := []ctrlruntimeclient.Object{}
+			machineDeploymentObjets := []ctrlruntimeclient.Object{}
+			kubernetesObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			for _, existingMachineDeployment := range tc.ExistingMachineDeployments {
 				machineDeploymentObjets = append(machineDeploymentObjets, existingMachineDeployment)
@@ -1473,7 +1473,7 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 		ExistingNodes              []*corev1.Node
 		ExistingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		ExistingMachines           []*clusterv1alpha1.Machine
-		ExistingKubermaticObjs     []runtime.Object
+		ExistingKubermaticObjs     []ctrlruntimeclient.Object
 		ExistingEvents             []*corev1.Event
 		MachineDeploymentID        string
 		QueryParams                string
@@ -1591,9 +1591,9 @@ func TestListNodeDeploymentNodesEvents(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s/nodes/events%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineDeploymentID, tc.QueryParams), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
-			machineObj := []runtime.Object{}
-			kubernetesObj := []runtime.Object{}
+			kubermaticObj := []ctrlruntimeclient.Object{}
+			machineObj := []ctrlruntimeclient.Object{}
+			kubernetesObj := []ctrlruntimeclient.Object{}
 			for _, existingNode := range tc.ExistingNodes {
 				kubernetesObj = append(kubernetesObj, existingNode)
 			}
@@ -1635,7 +1635,7 @@ func TestDeleteMachineDeployment(t *testing.T) {
 		ExistingAPIUser             *apiv1.User
 		ExistingNodes               []*corev1.Node
 		ExistingMachineDeployments  []*clusterv1alpha1.MachineDeployment
-		ExistingKubermaticObjs      []runtime.Object
+		ExistingKubermaticObjs      []ctrlruntimeclient.Object
 		ExpectedHTTPStatusOnGet     int
 		EpxectedNodeDeploymentCount int
 	}{
@@ -1712,9 +1712,9 @@ func TestDeleteMachineDeployment(t *testing.T) {
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/machinedeployments/%s",
 				tc.ProjectIDToSync, tc.ClusterIDToSync, tc.MachineIDToDelete), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{}
-			machineDeploymentObjets := []runtime.Object{}
-			kubernetesObj := []runtime.Object{}
+			kubermaticObj := []ctrlruntimeclient.Object{}
+			machineDeploymentObjets := []ctrlruntimeclient.Object{}
+			kubernetesObj := []ctrlruntimeclient.Object{}
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			for _, existingNode := range tc.ExistingNodes {
 				kubernetesObj = append(kubernetesObj, existingNode)

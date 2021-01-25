@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -35,8 +34,12 @@ import (
 
 func TestCreateBinding(t *testing.T) {
 	// test data
-	kubermaticObjects := []runtime.Object{}
-	fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubermaticObjects...)
+	kubermaticObjects := []ctrlruntimeclient.Object{}
+	fakeClient := fakectrlruntimeclient.
+		NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(kubermaticObjects...).
+		Build()
 	authenticatedUser := createAuthenitactedUser()
 	existingProject := genDefaultProject()
 	memberEmail := ""
@@ -115,14 +118,19 @@ func TestListBinding(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			kubermaticObjects := []runtime.Object{}
+			kubermaticObjects := []ctrlruntimeclient.Object{}
 			for _, binding := range tc.existingBindings {
 				kubermaticObjects = append(kubermaticObjects, binding)
 			}
 			for _, sa := range tc.existingSA {
 				kubermaticObjects = append(kubermaticObjects, sa)
 			}
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, kubermaticObjects...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(kubermaticObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}

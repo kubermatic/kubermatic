@@ -21,7 +21,6 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
@@ -35,12 +34,12 @@ import (
 func TestListConstraintTemplates(t *testing.T) {
 	testCases := []struct {
 		name            string
-		existingObjects []runtime.Object
+		existingObjects []ctrlruntimeclient.Object
 		expectedCTList  []*kubermaticv1.ConstraintTemplate
 	}{
 		{
 			name:            "test: list constraint templates",
-			existingObjects: []runtime.Object{genConstraintTemplate("ct1"), genConstraintTemplate("ct2")},
+			existingObjects: []ctrlruntimeclient.Object{genConstraintTemplate("ct1"), genConstraintTemplate("ct2")},
 			expectedCTList:  []*kubermaticv1.ConstraintTemplate{genConstraintTemplate("ct1"), genConstraintTemplate("ct2")},
 		},
 	}
@@ -50,7 +49,12 @@ func TestListConstraintTemplates(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}
@@ -85,12 +89,12 @@ func TestListConstraintTemplates(t *testing.T) {
 func TestGetConstraintTemplates(t *testing.T) {
 	testCases := []struct {
 		name            string
-		existingObjects []runtime.Object
+		existingObjects []ctrlruntimeclient.Object
 		expectedCT      *kubermaticv1.ConstraintTemplate
 	}{
 		{
 			name:            "test: get constraint template",
-			existingObjects: []runtime.Object{genConstraintTemplate("ct1")},
+			existingObjects: []ctrlruntimeclient.Object{genConstraintTemplate("ct1")},
 			expectedCT:      genConstraintTemplate("ct1"),
 		},
 	}
@@ -100,7 +104,12 @@ func TestGetConstraintTemplates(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}
@@ -164,7 +173,7 @@ func TestUpdateConstraintTemplates(t *testing.T) {
 	testCases := []struct {
 		name            string
 		ctToUpdate      *kubermaticv1.ConstraintTemplate
-		existingObjects []runtime.Object
+		existingObjects []ctrlruntimeclient.Object
 		expectedCT      *kubermaticv1.ConstraintTemplate
 	}{
 		{
@@ -174,7 +183,7 @@ func TestUpdateConstraintTemplates(t *testing.T) {
 				defaultCT.Spec.CRD.Spec.Names.ShortNames = []string{"lc", "lcon"}
 				return defaultCT
 			}(),
-			existingObjects: []runtime.Object{genConstraintTemplate("ct1")},
+			existingObjects: []ctrlruntimeclient.Object{genConstraintTemplate("ct1")},
 			expectedCT: func() *kubermaticv1.ConstraintTemplate {
 				defaultCT := genConstraintTemplate("ct1")
 				defaultCT.Spec.CRD.Spec.Names.ShortNames = []string{"lc", "lcon"}
@@ -188,7 +197,12 @@ func TestUpdateConstraintTemplates(t *testing.T) {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}
@@ -212,12 +226,12 @@ func TestUpdateConstraintTemplates(t *testing.T) {
 func TestDeleteConstraintTemplates(t *testing.T) {
 	testCases := []struct {
 		name            string
-		existingObjects []runtime.Object
+		existingObjects []ctrlruntimeclient.Object
 		CTtoDelete      *kubermaticv1.ConstraintTemplate
 	}{
 		{
 			name:            "test: delete constraint template",
-			existingObjects: []runtime.Object{genConstraintTemplate("ct1")},
+			existingObjects: []ctrlruntimeclient.Object{genConstraintTemplate("ct1")},
 			CTtoDelete:      genConstraintTemplate("ct1"),
 		},
 	}
@@ -227,7 +241,12 @@ func TestDeleteConstraintTemplates(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}

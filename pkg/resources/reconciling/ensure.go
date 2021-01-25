@@ -24,7 +24,6 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
@@ -33,7 +32,7 @@ import (
 
 //go:generate go run ../../../codegen/reconcile/main.go
 
-// ObjectCreator defines an interface to create/update a runtime.Object
+// ObjectCreator defines an interface to create/update a ctrlruntimeclient.Object
 type ObjectCreator = func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error)
 
 // ObjectModifier is a wrapper function which modifies the object which gets returned by the passed in ObjectCreator
@@ -145,7 +144,7 @@ func waitUntilUpdateIsInCacheConditionFunc(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
 	namespacedName types.NamespacedName,
-	oldObj runtime.Object,
+	oldObj ctrlruntimeclient.Object,
 ) wait.ConditionFunc {
 	return func() (bool, error) {
 		// Create a copy to have something which we can pass into the client
@@ -167,7 +166,7 @@ func waitUntilObjectExistsInCacheConditionFunc(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
 	namespacedName types.NamespacedName,
-	obj runtime.Object,
+	obj ctrlruntimeclient.Object,
 ) wait.ConditionFunc {
 	return func() (bool, error) {
 		newObj := obj.DeepCopyObject().(ctrlruntimeclient.Object)
