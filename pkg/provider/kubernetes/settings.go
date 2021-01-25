@@ -92,6 +92,13 @@ func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.Kubermat
 			UserProjectsLimit:           0,
 			RestrictProjectCreation:     false,
 			EnableExternalClusterImport: true,
+			MachineDeploymentVMResourceQuota: kubermaticv1.MachineDeploymentVMResourceQuota{
+				MinCPU:    1,
+				MaxCPU:    32,
+				MinRAM:    2,
+				MaxRAM:    128,
+				EnableGPU: false,
+			},
 		},
 	}
 	if err := s.runtimeClient.Create(context.Background(), defaultSettings); err != nil {
