@@ -20,13 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
+	"net/http"
 	"net/url"
 	"sync"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/heptiolabs/healthcheck"
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -50,6 +49,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -72,7 +72,7 @@ func Add(
 	openvpnServerPort uint32,
 	kasSecurePort uint32,
 	tunnelingAgentIP net.IP,
-	registerReconciledCheck func(name string, check healthcheck.Check),
+	registerReconciledCheck func(name string, check healthz.Checker) error,
 	cloudCredentialSecretTemplate *corev1.Secret,
 	openshiftConsoleCallbackURI string,
 	dnsClusterIP string,
@@ -218,16 +218,15 @@ func Add(
 	}
 
 	// A very simple but limited way to express the first successful reconciling to the seed cluster
-	registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func() error {
+	return registerReconciledCheck(fmt.Sprintf("%s-%s", controllerName, "reconciled_successfully_once"), func(_ *http.Request) error {
 		r.rLock.Lock()
 		defer r.rLock.Unlock()
+
 		if !r.reconciledSuccessfullyOnce {
 			return errors.New("no successful reconciliation so far")
 		}
 		return nil
 	})
-
-	return nil
 }
 
 // reconcileUserCluster reconciles objects in the user cluster

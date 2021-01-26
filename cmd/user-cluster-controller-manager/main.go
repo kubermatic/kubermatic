@@ -17,17 +17,12 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"flag"
-	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/go-logr/zapr"
-	"github.com/heptiolabs/healthcheck"
-	"github.com/oklog/run"
 	"go.uber.org/zap"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
@@ -61,6 +56,7 @@ import (
 	"k8s.io/klog"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -164,10 +160,6 @@ func main() {
 		}
 	}
 
-	var g run.Group
-
-	healthHandler := healthcheck.NewHandler()
-
 	cfg, err := config.GetConfig()
 	if err != nil {
 		log.Fatalw("Failed getting user cluster controller config", zap.Error(err))
@@ -183,6 +175,7 @@ func main() {
 		LeaderElectionNamespace: metav1.NamespaceSystem,
 		LeaderElectionID:        "user-cluster-controller-leader-lock",
 		MetricsBindAddress:      runOp.metricsListenAddr,
+		HealthProbeBindAddress:  runOp.healthListenAddr,
 	})
 	if err != nil {
 		log.Fatalw("Failed creating user cluster controller", zap.Error(err))
@@ -222,6 +215,10 @@ func main() {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiregistrationv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
 
+	addReadinessCheck := func(name string, check healthz.Checker) {
+		mgr.AddReadyzCheck(name, check)
+	}
+
 	// Setup all Controllers
 	log.Info("registering controllers")
 	if err := usercluster.Add(mgr,
@@ -234,7 +231,7 @@ func main() {
 		uint32(runOp.openvpnServerPort),
 		uint32(runOp.kasSecurePort),
 		runOp.tunnelingAgentIP.IP,
-		healthHandler.AddReadinessCheck,
+		addReadinessCheck,
 		cloudCredentialSecretTemplate,
 		runOp.openshiftConsoleCallbackURI,
 		runOp.dnsClusterIP,
@@ -269,7 +266,7 @@ func main() {
 		log.Infof("Added IPAM controller to mgr")
 	}
 
-	if err := rbacusercluster.Add(mgr, healthHandler.AddReadinessCheck); err != nil {
+	if err := rbacusercluster.Add(mgr, addReadinessCheck); err != nil {
 		log.Fatalw("Failed to add user RBAC controller to mgr", zap.Error(err))
 	}
 	log.Info("Registered user RBAC controller")
@@ -324,20 +321,6 @@ func main() {
 			log.Fatalw("Failed to register constraintsyncer controller", zap.Error(err))
 		}
 		log.Info("Registered constraintsyncer controller")
-	}
-
-	// This group starts the readiness & liveness http server
-	// TODO: make this a simple runnable in the manager
-	{
-		h := &http.Server{Addr: runOp.healthListenAddr, Handler: healthHandler}
-		g.Add(h.ListenAndServe, func(err error) {
-			shutdownCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-			defer cancel()
-
-			if err := h.Shutdown(shutdownCtx); err != nil {
-				log.Errorw("Healthcheck handler terminated with an error", zap.Error(err))
-			}
-		})
 	}
 
 	if err := mgr.Start(rootCtx); err != nil {
