@@ -152,12 +152,24 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		},
 	}
 
+	if err := mgr.GetClient().Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(testCluster), testCluster); err != nil {
+		t.Fatalf("failed to find cluster object: %v", err)
+	}
+
 	if err := r.ensureClusterNetworkDefaults(ctx, testCluster); err != nil {
 		t.Fatalf("failed to sync initial network default: %v", err)
 	}
 
+	if err := mgr.GetClient().Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(testCluster), testCluster); err != nil {
+		t.Fatalf("failed to find cluster object: %v", err)
+	}
+
 	if err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
 		t.Fatalf("Initial resource deployment failed, this indicates that some resources are invalid. Error: %v", err)
+	}
+
+	if err := mgr.GetClient().Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(testCluster), testCluster); err != nil {
+		t.Fatalf("failed to find cluster object: %v", err)
 	}
 
 	if err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
