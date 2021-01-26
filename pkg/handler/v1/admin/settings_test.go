@@ -42,7 +42,7 @@ func TestGetGlobalSettings(t *testing.T) {
 		// scenario 1
 		{
 			name:                   "scenario 1: user gets settings first time",
-			expectedResponse:       `{"customLinks":[],"cleanupOptions":{"Enabled":false,"Enforced":false},"defaultNodeCount":10,"clusterTypeOptions":1,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":false,"enableDashboard":true,"enableOIDCKubeconfig":false,"userProjectsLimit":0,"restrictProjectCreation":false,"enableExternalClusterImport":true}`,
+			expectedResponse:       `{"customLinks":[],"cleanupOptions":{"Enabled":false,"Enforced":false},"defaultNodeCount":10,"clusterTypeOptions":1,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":false,"enableDashboard":true,"enableOIDCKubeconfig":false,"userProjectsLimit":0,"restrictProjectCreation":false,"enableExternalClusterImport":true,"machineDeploymentVMResourceQuota":{"minCPU":1,"maxCPU":32,"minRAM":2,"maxRAM":128,"enableGPU":false}}`,
 			httpStatus:             http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
@@ -50,7 +50,7 @@ func TestGetGlobalSettings(t *testing.T) {
 		// scenario 2
 		{
 			name:             "scenario 2: user gets existing global settings",
-			expectedResponse: `{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":5,"clusterTypeOptions":5,"displayDemoInfo":true,"displayAPIDocs":true,"displayTermsOfService":true,"enableDashboard":false,"enableOIDCKubeconfig":false,"userProjectsLimit":0,"restrictProjectCreation":false,"enableExternalClusterImport":true}`,
+			expectedResponse: `{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":5,"clusterTypeOptions":5,"displayDemoInfo":true,"displayAPIDocs":true,"displayTermsOfService":true,"enableDashboard":false,"enableOIDCKubeconfig":false,"userProjectsLimit":0,"restrictProjectCreation":false,"enableExternalClusterImport":true,"machineDeploymentVMResourceQuota":{"minCPU":0,"maxCPU":0,"minRAM":0,"maxRAM":0,"enableGPU":false}}`,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true),
 				test.GenDefaultGlobalSettings()},
@@ -106,7 +106,7 @@ func TestUpdateGlobalSettings(t *testing.T) {
 		{
 			name:                   "scenario 2: authorized user updates default settings",
 			body:                   `{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true}`,
-			expectedResponse:       `{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true,"enableDashboard":true,"enableOIDCKubeconfig":false,"userProjectsLimit":0,"restrictProjectCreation":false,"enableExternalClusterImport":true}`,
+			expectedResponse:       `{"customLinks":[{"label":"label","url":"url:label","icon":"icon","location":"EU"}],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true,"enableDashboard":true,"enableOIDCKubeconfig":false,"userProjectsLimit":0,"restrictProjectCreation":false,"enableExternalClusterImport":true,"machineDeploymentVMResourceQuota":{"minCPU":1,"maxCPU":32,"minRAM":2,"maxRAM":128,"enableGPU":false}}`,
 			httpStatus:             http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true)},
 			existingAPIUser:        test.GenDefaultAPIUser(),
@@ -115,7 +115,7 @@ func TestUpdateGlobalSettings(t *testing.T) {
 		{
 			name:             "scenario 3: authorized user updates existing global settings",
 			body:             `{"customLinks":[],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true,"userProjectsLimit":10,"restrictProjectCreation":true}`,
-			expectedResponse: `{"customLinks":[],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true,"enableDashboard":false,"enableOIDCKubeconfig":false,"userProjectsLimit":10,"restrictProjectCreation":true,"enableExternalClusterImport":true}`,
+			expectedResponse: `{"customLinks":[],"cleanupOptions":{"Enabled":true,"Enforced":true},"defaultNodeCount":100,"clusterTypeOptions":20,"displayDemoInfo":false,"displayAPIDocs":false,"displayTermsOfService":true,"enableDashboard":false,"enableOIDCKubeconfig":false,"userProjectsLimit":10,"restrictProjectCreation":true,"enableExternalClusterImport":true,"machineDeploymentVMResourceQuota":{"minCPU":0,"maxCPU":0,"minRAM":0,"maxRAM":0,"enableGPU":false}}`,
 			httpStatus:       http.StatusOK,
 			existingKubermaticObjs: []runtime.Object{genUser("Bob", "bob@acme.com", true),
 				test.GenDefaultGlobalSettings()},

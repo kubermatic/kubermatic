@@ -51,6 +51,9 @@ type SettingSpec struct {
 
 	// custom links
 	CustomLinks CustomLinks `json:"customLinks,omitempty"`
+
+	// machine deployment VM resource quota
+	MachineDeploymentVMResourceQuota *MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota,omitempty"`
 }
 
 // Validate validates this setting spec
@@ -66,6 +69,10 @@ func (m *SettingSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateCustomLinks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMachineDeploymentVMResourceQuota(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -120,6 +127,24 @@ func (m *SettingSpec) validateCustomLinks(formats strfmt.Registry) error {
 			return ve.ValidateName("customLinks")
 		}
 		return err
+	}
+
+	return nil
+}
+
+func (m *SettingSpec) validateMachineDeploymentVMResourceQuota(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.MachineDeploymentVMResourceQuota) { // not required
+		return nil
+	}
+
+	if m.MachineDeploymentVMResourceQuota != nil {
+		if err := m.MachineDeploymentVMResourceQuota.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("machineDeploymentVMResourceQuota")
+			}
+			return err
+		}
 	}
 
 	return nil

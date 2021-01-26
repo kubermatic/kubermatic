@@ -16297,6 +16297,40 @@
       },
       "x-go-package": "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
     },
+    "MachineDeploymentVMResourceQuota": {
+      "type": "object",
+      "properties": {
+        "enableGPU": {
+          "type": "boolean",
+          "x-go-name": "EnableGPU"
+        },
+        "maxCPU": {
+          "description": "Maximal number of vCPU",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MaxCPU"
+        },
+        "maxRAM": {
+          "description": "Maximum RAM size in GB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MaxRAM"
+        },
+        "minCPU": {
+          "description": "Minimal number of vCPU",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MinCPU"
+        },
+        "minRAM": {
+          "description": "Minimal RAM size in GB",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "MinRAM"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "MachineNetworkingConfig": {
       "type": "object",
       "title": "MachineNetworkingConfig specifies the networking parameters used for IPAM.",
@@ -18259,6 +18293,9 @@
         "enableOIDCKubeconfig": {
           "type": "boolean",
           "x-go-name": "EnableOIDCKubeconfig"
+        },
+        "machineDeploymentVMResourceQuota": {
+          "$ref": "#/definitions/MachineDeploymentVMResourceQuota"
         },
         "restrictProjectCreation": {
           "type": "boolean",
