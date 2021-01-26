@@ -56,6 +56,8 @@ type SettingSpec struct {
 	RestrictProjectCreation     bool           `json:"restrictProjectCreation"`
 	EnableExternalClusterImport bool           `json:"enableExternalClusterImport"`
 
+	MachineDeploymentVMResourceQuota MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota"`
+
 	// TODO: Datacenters, presets, user management, Google Analytics and default addons.
 }
 
@@ -71,6 +73,19 @@ type CustomLink struct {
 type CleanupOptions struct {
 	Enabled  bool
 	Enforced bool
+}
+
+type MachineDeploymentVMResourceQuota struct {
+	// Minimal number of vCPU
+	MinCPU int `json:"minCPU"`
+	// Maximal number of vCPU
+	MaxCPU int `json:"maxCPU"`
+	// Minimal RAM size in GB
+	MinRAM int `json:"minRAM"`
+	// Maximum RAM size in GB
+	MaxRAM int `json:"maxRAM"`
+
+	EnableGPU bool `json:"enableGPU"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
