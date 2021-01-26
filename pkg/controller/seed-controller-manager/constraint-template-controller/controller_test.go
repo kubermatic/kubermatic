@@ -67,31 +67,38 @@ func TestReconcile(t *testing.T) {
 			name:        "scenario 1: sync ct to user cluster",
 			requestName: ctName,
 			expectedCT:  genConstraintTemplate(ctName, false),
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				genConstraintTemplate(ctName, false),
-				genCluster("cluster", true)),
-			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(sch),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, false), genCluster("cluster", true)).
+				Build(),
+			userClient: fakectrlruntimeclient.NewClientBuilder().WithScheme(sch).Build(),
 		},
 		{
 			name:                 "scenario 2: dont sync ct to user cluster which has opa-integration off",
 			requestName:          ctName,
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				genConstraintTemplate(ctName, false),
-				genCluster("cluster", false)),
-			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(sch),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, false), genCluster("cluster", false)).
+				Build(),
+			userClient: fakectrlruntimeclient.NewClientBuilder().WithScheme(sch).Build(),
 		},
 		{
 			name:                 "scenario 3: cleanup ct on user cluster when master ct is being terminated",
 			requestName:          ctName,
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				genConstraintTemplate(ctName, true),
-				genCluster("cluster", true)),
-			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(sch, genGKConstraintTemplate(ctName)),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, true), genCluster("cluster", true)).
+				Build(),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(sch).
+				WithObjects(genGKConstraintTemplate(ctName)).
+				Build(),
 		},
 	}
 

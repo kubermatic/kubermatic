@@ -68,10 +68,15 @@ func TestReconcile(t *testing.T) {
 				Name:      constraintName,
 			},
 			expectedConstraint: test.GenDefaultAPIConstraint(constraintName, kind),
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				test.GenConstraint(constraintName, "namespace", kind)),
-			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(test.GenConstraint(constraintName, "namespace", kind)).
+				Build(),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				Build(),
 		},
 		{
 			name: "scenario 2: cleanup gatekeeper constraint on user cluster when kubermatic constraint on seed cluster is being terminated",
@@ -80,20 +85,26 @@ func TestReconcile(t *testing.T) {
 				Name:      constraintName,
 			},
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				func() *v1.Constraint {
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(func() *v1.Constraint {
 					c := test.GenConstraint(constraintName, "namespace", kind)
 					deleteTime := metav1.NewTime(time.Now())
 					c.DeletionTimestamp = &deleteTime
 					c.Finalizers = []string{kubermaticapiv1.GatekeeperConstraintCleanupFinalizer}
 					return c
-				}()),
-			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, &test.RequiredLabel{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: constraintName,
-				},
-			}),
+				}()).
+				Build(),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(&test.RequiredLabel{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: constraintName,
+					},
+				}).
+				Build(),
 		},
 	}
 

@@ -99,12 +99,13 @@ func TestReconcile(t *testing.T) {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			var client ctrlruntimeclient.Client
+
+			clientBuilder := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme)
 			if tc.clusterRole != nil {
-				client = fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.clusterRole)
-			} else {
-				client = fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme)
+				clientBuilder.WithObjects(tc.clusterRole)
 			}
+
+			client := clientBuilder.Build()
 			r := &reconciler{
 				log:        kubermaticlog.Logger,
 				client:     client,

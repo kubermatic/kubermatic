@@ -221,7 +221,7 @@ func TestCreateConstraint(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme)
+			client := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}

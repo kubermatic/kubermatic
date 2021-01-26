@@ -45,7 +45,7 @@ func TestConcurrencyLimitReached(t *testing.T) {
 
 	for _, testCase := range concurrencyLimitReachedTestCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			reached, err := ConcurrencyLimitReached(context.Background(), ctrlruntimefakeclient.NewFakeClient(&kubermaticv1.Cluster{}), testCase.maxConcurrentLimit)
+			reached, err := ConcurrencyLimitReached(context.Background(), ctrlruntimefakeclient.NewClientBuilder().WithObjects(&kubermaticv1.Cluster{}).Build(), testCase.maxConcurrentLimit)
 
 			if err != nil {
 				t.Fatalf("failed to run test: %v with error: %v", testCase.name, err)

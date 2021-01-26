@@ -39,7 +39,7 @@ import (
 func TestReconcileReturnsError(t *testing.T) {
 	ctx := context.Background()
 	r := &reconciler{
-		client: &fakeClientThatErrorsOnGet{fakectrlruntimeclient.NewFakeClient()},
+		client: &fakeClientThatErrorsOnGet{fakectrlruntimeclient.NewClientBuilder().Build()},
 	}
 	expectedErr := `failed to get cluster "": erroring on get as requested`
 	if _, err := r.Reconcile(ctx, reconcile.Request{}); err == nil || err.Error() != expectedErr {

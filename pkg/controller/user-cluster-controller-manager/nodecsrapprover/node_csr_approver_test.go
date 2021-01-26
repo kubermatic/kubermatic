@@ -48,7 +48,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 			name: "test approving a created certificate",
 			reconciler: reconciler{
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client: ctrlruntimefakeclient.NewFakeClient(&certificatesv1beta1.CertificateSigningRequest{
+				Client: ctrlruntimefakeclient.NewClientBuilder().WithObjects(&certificatesv1beta1.CertificateSigningRequest{
 					ObjectMeta: metav1.ObjectMeta{
 						ResourceVersion: "123456",
 						Name:            "csr",
@@ -66,7 +66,7 @@ func TestReconciler_Reconcile(t *testing.T) {
 							"system:nodes",
 						},
 					},
-				}),
+				}).Build(),
 				certClient: &fake.FakeCertificateSigningRequests{
 					Fake: &fake.FakeCertificatesV1beta1{
 						Fake: &fakeclienttest.Fake{

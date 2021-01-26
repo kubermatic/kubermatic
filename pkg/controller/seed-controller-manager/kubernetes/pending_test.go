@@ -68,7 +68,7 @@ func TestEnsureEtcdLauncherFeatureFlag(t *testing.T) {
 				},
 			}
 			r := &Reconciler{
-				Client: ctrlruntimefakeclient.NewFakeClient(cluster),
+				Client: ctrlruntimefakeclient.NewClientBuilder().WithObjects(cluster).Build(),
 				features: Features{
 					EtcdLauncher: test.seedEtcdLauncher,
 				},

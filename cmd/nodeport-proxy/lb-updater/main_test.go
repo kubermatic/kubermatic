@@ -24,29 +24,29 @@ import (
 	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
+
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	"k8c.io/kubermatic/v2/pkg/controller/nodeport-proxy/envoymanager"
-	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 )
 
 func TestReconciliation(t *testing.T) {
 	testCases := []struct {
 		name                  string
-		initialServices       []runtime.Object
+		initialServices       []ctrlruntimeclient.Object
 		expectedServices      corev1.ServiceList
 		sniListenerPort       int
 		tunnelingListenerPort int
 	}{
 		{
 			name: "Service without annotation gets ignored",
-			initialServices: []runtime.Object{
+			initialServices: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
@@ -114,7 +114,7 @@ func TestReconciliation(t *testing.T) {
 		},
 		{
 			name: "Service without clusterIP gets ignored",
-			initialServices: []runtime.Object{
+			initialServices: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
@@ -186,7 +186,7 @@ func TestReconciliation(t *testing.T) {
 		},
 		{
 			name: "Service without NodePort gets ignored",
-			initialServices: []runtime.Object{
+			initialServices: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
@@ -254,7 +254,7 @@ func TestReconciliation(t *testing.T) {
 		},
 		{
 			name: "Reconciliation with existing port following old nameschema",
-			initialServices: []runtime.Object{
+			initialServices: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
@@ -345,7 +345,7 @@ func TestReconciliation(t *testing.T) {
 		},
 		{
 			name: "Reconciliation with exiting port following new nameschema",
-			initialServices: []runtime.Object{
+			initialServices: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
@@ -436,7 +436,7 @@ func TestReconciliation(t *testing.T) {
 		},
 		{
 			name: "Reconciliation without existing port uses new nameschema",
-			initialServices: []runtime.Object{
+			initialServices: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
@@ -519,7 +519,7 @@ func TestReconciliation(t *testing.T) {
 		{
 			name:            "Activated SNI listener",
 			sniListenerPort: 6443,
-			initialServices: []runtime.Object{
+			initialServices: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
@@ -608,7 +608,7 @@ func TestReconciliation(t *testing.T) {
 		{
 			name:                  "Activated HTTP/2 CONNECT listener",
 			tunnelingListenerPort: 8443,
-			initialServices: []runtime.Object{
+			initialServices: []ctrlruntimeclient.Object{
 				&corev1.Service{
 					TypeMeta: metav1.TypeMeta{
 						APIVersion: "v1",
@@ -699,7 +699,7 @@ func TestReconciliation(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
-			client := fake.NewFakeClient(tc.initialServices...)
+			client := fake.NewClientBuilder().WithObjects(tc.initialServices...).Build()
 			updater := &LBUpdater{
 				lbNamespace: "lb-ns",
 				lbName:      "lb",

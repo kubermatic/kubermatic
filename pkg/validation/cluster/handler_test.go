@@ -158,7 +158,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: false,
-			client: ctrlruntimefakeclient.NewFakeClient(
+			client: ctrlruntimefakeclient.NewClientBuilder().WithObjects(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "foo",
@@ -166,7 +166,8 @@ func TestHandle(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						EnableUserSSHKeyAgent: true,
 					},
-				}),
+				},
+			).Build(),
 		},
 		{
 			name: "Accept EnableUserSSHKey agent update when the value did not change",
@@ -185,7 +186,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			client: ctrlruntimefakeclient.NewFakeClient(
+			client: ctrlruntimefakeclient.NewClientBuilder().WithObjects(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "foo",
@@ -193,7 +194,8 @@ func TestHandle(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						EnableUserSSHKeyAgent: false,
 					},
-				}),
+				},
+			).Build(),
 		},
 	}
 	for _, tt := range tests {

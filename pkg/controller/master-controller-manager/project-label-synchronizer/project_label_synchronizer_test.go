@@ -115,10 +115,10 @@ func TestReconciliation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			if tc.masterClient == nil {
-				tc.masterClient = fakectrlruntimeclient.NewFakeClient()
+				tc.masterClient = fakectrlruntimeclient.NewClientBuilder().Build()
 			}
 			if tc.seedClient == nil {
-				tc.seedClient = fakectrlruntimeclient.NewFakeClient()
+				tc.seedClient = fakectrlruntimeclient.NewClientBuilder().Build()
 			}
 
 			ctx := context.Background()
@@ -154,19 +154,19 @@ func TestReconciliation(t *testing.T) {
 }
 
 func namedProjectClientWithLabels(name string, labels map[string]string) ctrlruntimeclient.Client {
-	return fakectrlruntimeclient.NewFakeClient(&kubermaticv1.Project{
+	return fakectrlruntimeclient.NewClientBuilder().WithObjects(&kubermaticv1.Project{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
 			Labels: labels,
 		},
-	})
+	}).Build()
 }
 
 func namedClusterWithLabels(name string, labels map[string]string) ctrlruntimeclient.Client {
-	return fakectrlruntimeclient.NewFakeClient(&kubermaticv1.Cluster{
+	return fakectrlruntimeclient.NewClientBuilder().WithObjects(&kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   name,
 			Labels: labels,
 		},
-	})
+	}).Build()
 }

@@ -87,7 +87,7 @@ func TestRevokeAdminKubeconfig(t *testing.T) {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			seedClient := fakectrlruntimeclient.NewFakeClient(tc.cluster)
+			seedClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(tc.cluster).Build()
 			userClusterClient := fakectrlruntimeclient.
 				NewClientBuilder().
 				WithObjects(tc.userClusterObjects...).

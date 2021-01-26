@@ -173,7 +173,7 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 			userClusterClientGetter := func() (ctrlruntimeclient.Client, error) {
 				return userClusterClient, nil
 			}
-			seedClient := fake.NewFakeClient(tc.cluster)
+			seedClient := fake.NewClientBuilder().WithObjects(tc.cluster).Build()
 
 			ctx := context.Background()
 			deletion := &Deletion{

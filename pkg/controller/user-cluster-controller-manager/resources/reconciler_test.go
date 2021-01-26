@@ -137,12 +137,12 @@ func TestResourceReconciliationIdempotency(t *testing.T) {
 		},
 		Data: map[string]string{resources.CloudConfigConfigMapKey: "some-cloud-config-content"},
 	}
-	seedClient := fakectrlruntimeclient.NewFakeClient(
+	seedClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(
 		caSecret,
 		openVPNCASecret,
 		sshKeySecret,
 		cloudConfigMap,
-	)
+	).Build()
 	r := reconciler{
 		Client:     mgr.GetClient(),
 		seedClient: seedClient,

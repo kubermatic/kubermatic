@@ -98,7 +98,7 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			tc.reconciler.Client = ctrlruntimefakeclient.NewFakeClient(
+			tc.reconciler.Client = ctrlruntimefakeclient.NewClientBuilder().WithObjects(
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						ResourceVersion: "123456",
@@ -109,7 +109,8 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 						"key-test":   []byte("ssh-rsa test_user_ssh_key"),
 						"key-test-2": []byte("ssh-rsa test_user_ssh_key_2"),
 					},
-				})
+				},
+			).Build()
 
 			if tc.modifier != nil {
 				if err := tc.modifier(sshPath, authorizedKeysPath); err != nil {

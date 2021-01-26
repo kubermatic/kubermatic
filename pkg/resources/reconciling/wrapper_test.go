@@ -417,7 +417,7 @@ func TestDefaultDeployment(t *testing.T) {
 		},
 	}
 
-	client := controllerruntimefake.NewFakeClient(existingObject)
+	client := controllerruntimefake.NewClientBuilder().WithObjects(existingObject).Build()
 	if err := ReconcileDeployments(context.Background(), creators, testNamespace, client); err != nil {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}
@@ -485,7 +485,7 @@ func TestDefaultStatefulSet(t *testing.T) {
 		},
 	}
 
-	client := controllerruntimefake.NewFakeClient(existingObject)
+	client := controllerruntimefake.NewClientBuilder().WithObjects(existingObject).Build()
 	if err := ReconcileStatefulSets(context.Background(), creators, testNamespace, client); err != nil {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}
@@ -553,7 +553,7 @@ func TestDefaultDaemonSet(t *testing.T) {
 		},
 	}
 
-	client := controllerruntimefake.NewFakeClient(existingObject)
+	client := controllerruntimefake.NewClientBuilder().WithObjects(existingObject).Build()
 	if err := ReconcileDaemonSets(context.Background(), creators, testNamespace, client); err != nil {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}
@@ -629,7 +629,7 @@ func TestDefaultCronJob(t *testing.T) {
 		},
 	}
 
-	client := controllerruntimefake.NewFakeClient(existingObject)
+	client := controllerruntimefake.NewClientBuilder().WithObjects(existingObject).Build()
 	if err := ReconcileCronJobs(context.Background(), creators, testNamespace, client); err != nil {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}

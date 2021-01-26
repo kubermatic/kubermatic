@@ -797,7 +797,7 @@ func TestEnsureClusterResourcesCleanup(t *testing.T) {
 					index++
 				}
 			}
-			fakeMasterClusterClient := fakectrlruntimeclient.NewFakeClient(test.projectToSync)
+			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(test.projectToSync).Build()
 
 			// act
 			target := projectController{
@@ -1315,7 +1315,7 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 			seedClients := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
-				seedClients[strconv.Itoa(i)] = fakectrlruntimeclient.NewFakeClient()
+				seedClients[strconv.Itoa(i)] = fakectrlruntimeclient.NewClientBuilder().Build()
 			}
 
 			// act
@@ -1639,7 +1639,7 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 
 			seedClientMap := make(map[string]ctrlruntimeclient.Client)
 			for i := 0; i < test.seedClusters; i++ {
-				seedClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.NewFakeClient()
+				seedClientMap[strconv.Itoa(i)] = fakectrlruntimeclient.NewClientBuilder().Build()
 			}
 
 			// act

@@ -88,7 +88,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		storeContainer:       testStoreContainer,
 		cleanupContainer:     testCleanupContainer,
 		backupContainerImage: DefaultBackupContainerImage,
-		Client:               ctrlruntimefakeclient.NewFakeClient(caSecret, cluster),
+		Client:               ctrlruntimefakeclient.NewClientBuilder().WithObjects(caSecret, cluster).Build(),
 	}
 
 	if _, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}}); err != nil {

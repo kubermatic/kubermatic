@@ -63,7 +63,7 @@ func TestReconcileCreate(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
-			fakeClient := fake.NewFakeClient()
+			fakeClient := fake.NewClientBuilder().Build()
 			r := reconciler{client: fakeClient}
 
 			// create scenario
@@ -175,7 +175,7 @@ func TestReconcileUpdateRole(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
-			r := reconciler{client: fake.NewFakeClient()}
+			r := reconciler{client: fake.NewClientBuilder().Build()}
 
 			if err := r.client.Create(ctx, test.updatedRole); err != nil {
 				t.Fatalf("failed to create ClusterRole: %v", err)

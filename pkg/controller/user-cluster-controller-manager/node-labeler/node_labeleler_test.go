@@ -29,7 +29,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -148,12 +147,13 @@ func TestReconcile(t *testing.T) {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			var client ctrlruntimeclient.Client
+
+			clientBuilder := fakectrlruntimeclient.NewClientBuilder()
 			if tc.node != nil {
-				client = fakectrlruntimeclient.NewFakeClient(tc.node)
-			} else {
-				client = fakectrlruntimeclient.NewFakeClient()
+				clientBuilder.WithObjects(tc.node)
 			}
+
+			client := clientBuilder.Build()
 			r := &reconciler{
 				log:      kubermaticlog.Logger,
 				client:   client,

@@ -57,21 +57,30 @@ func TestReconcile(t *testing.T) {
 			name:        "scenario 1: sync ct to seed cluster",
 			requestName: ctName,
 			expectedCT:  genConstraintTemplate(ctName, false),
-			masterClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				genConstraintTemplate(ctName, false),
-				test.GenTestSeed()),
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme),
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, false), test.GenTestSeed()).
+				Build(),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				Build(),
 		},
 		{
 			name:                 "scenario 2: cleanup ct on seed cluster when master ct is being terminated",
 			requestName:          ctName,
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			masterClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				genConstraintTemplate(ctName, true),
-				test.GenTestSeed()),
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genConstraintTemplate(ctName, false)),
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, true), test.GenTestSeed()).
+				Build(),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, false)).
+				Build(),
 		},
 	}
 

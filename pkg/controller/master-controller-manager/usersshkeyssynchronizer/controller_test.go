@@ -43,33 +43,29 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 			name: "Test cleanup cluster ids in UserSSHKey on cluster deletion",
 			reconciler: &Reconciler{
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				client: fakectrlruntimeclient.NewFakeClient(
-					&kubermaticv1.UserSSHKeyList{
-						Items: []kubermaticv1.UserSSHKey{
-							{
-								ObjectMeta: metav1.ObjectMeta{
-									Name:      "test_user_ssh_keys",
-									Namespace: "test_namespace",
-								},
-								Spec: kubermaticv1.SSHKeySpec{
-									Clusters: []string{
-										"test_cluster_1",
-										"test_cluster_2",
-									},
-								},
+				client: fakectrlruntimeclient.NewClientBuilder().WithObjects(
+					&kubermaticv1.UserSSHKey{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test_user_ssh_keys",
+							Namespace: "test_namespace",
+						},
+						Spec: kubermaticv1.SSHKeySpec{
+							Clusters: []string{
+								"test_cluster_1",
+								"test_cluster_2",
 							},
 						},
 					},
-				),
+				).Build(),
 				seedClients: map[string]ctrlruntimeclient.Client{
-					"seed_test": fakectrlruntimeclient.NewFakeClient(
+					"seed_test": fakectrlruntimeclient.NewClientBuilder().WithObjects(
 						&kubermaticv1.Cluster{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:              "test_cluster_1",
 								DeletionTimestamp: &deletionTimestamp,
 							},
 						},
-					),
+					).Build(),
 				},
 			},
 			request: reconcile.Request{

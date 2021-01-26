@@ -441,7 +441,7 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 
-	fakeDynamicClient := fake.NewFakeClient(objects...)
+	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(objects...).Build()
 
 	return resources.NewTemplateData(
 		context.Background(),

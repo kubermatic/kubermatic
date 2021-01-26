@@ -161,7 +161,7 @@ func TestReconcilingSeed(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			masterClient := fakectrlruntimeclient.NewFakeClient(test.input)
+			masterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(test.input).Build()
 			seedClient := fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).

@@ -120,7 +120,7 @@ func TestResources(t *testing.T) {
 			}
 
 			tc.reconciler.recorder = &record.FakeRecorder{}
-			tc.reconciler.Client = ctrlruntimefakeclient.NewFakeClient(
+			tc.reconciler.Client = ctrlruntimefakeclient.NewClientBuilder().WithObjects(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-cluster",
@@ -153,7 +153,7 @@ func TestResources(t *testing.T) {
 						LoadBalancerIP: "1.2.3.4",
 					},
 				},
-			)
+			).Build()
 			tc.reconciler.seedGetter = func() (*kubermaticv1.Seed, error) {
 				return &kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{

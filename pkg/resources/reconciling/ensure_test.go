@@ -26,7 +26,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestEnsureObjectByAnnotation(t *testing.T) {
@@ -155,13 +155,12 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var client ctrlruntimeclient.Client
+			clientBuilder := fakectrlruntimeclient.NewClientBuilder()
 			if test.existingObject != nil {
-				client = controllerruntimefake.NewFakeClient(test.existingObject)
-			} else {
-				client = controllerruntimefake.NewFakeClient()
+				clientBuilder.WithObjects(test.existingObject)
 			}
 
+			client := clientBuilder.Build()
 			ctx := context.Background()
 			name := types.NamespacedName{Namespace: testNamespace, Name: testResourceName}
 			if err := EnsureNamedObject(ctx, name, test.creator, client, &corev1.ConfigMap{}, false); err != nil {

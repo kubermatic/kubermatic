@@ -229,7 +229,7 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 		return fmt.Errorf("failed to create managers for all seeds: %v", err)
 	}
 
-	// create a new, indepdenent context, as the one given to reconcile() can possibly
+	// create a new, independent context, as the one given to reconcile() can possibly
 	// be cancelled once the reconciliation is done, and we want our context to live
 	// on for a long time
 	ctrlCtx, cancelCtrlCtx := context.WithCancel(context.Background())

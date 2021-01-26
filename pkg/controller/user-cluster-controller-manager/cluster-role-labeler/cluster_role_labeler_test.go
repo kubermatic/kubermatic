@@ -30,7 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -75,12 +74,13 @@ func TestReconcile(t *testing.T) {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			var client ctrlruntimeclient.Client
+
+			clientBuilder := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme)
 			if tc.clusterRole != nil {
-				client = fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.clusterRole)
-			} else {
-				client = fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme)
+				clientBuilder.WithObjects(tc.clusterRole)
 			}
+
+			client := clientBuilder.Build()
 			ctx := context.Background()
 			r := &reconciler{
 				log:      kubermaticlog.Logger,
