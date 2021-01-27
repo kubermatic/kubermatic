@@ -24,6 +24,7 @@ import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -37,7 +38,7 @@ import (
 
 const requestScheme = "https"
 
-func AlibabaInstanceTypesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID, region string) (interface{}, error) {
+func AlibabaInstanceTypesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID, region string) (interface{}, error) {
 
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
@@ -71,11 +72,16 @@ func AlibabaInstanceTypesWithClusterCredentialsEndpoint(ctx context.Context, use
 		return nil, err
 	}
 
-	return ListAlibabaInstanceTypes(ctx, accessKeyID, accessKeySecret, region)
+	settings, err := settingsProvider.GetGlobalSettings()
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return ListAlibabaInstanceTypes(accessKeyID, accessKeySecret, region, settings.Spec.MachineDeploymentVMResourceQuota)
 
 }
 
-func ListAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaInstanceTypeList, error) {
+func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region string, quota kubermaticv1.MachineDeploymentVMResourceQuota) (apiv1.AlibabaInstanceTypeList, error) {
 	// Alibaba has way too many instance types that are not all available in each region
 	// recommendedInstanceFamilies are those families that are recommended in this document:
 	// https://www.alibabacloud.com/help/doc-detail/25378.htm?spm=a2c63.p38356.b99.47.7acf342enhNVmo
@@ -124,7 +130,30 @@ func ListAlibabaInstanceTypes(ctx context.Context, accessKeyID string, accessKey
 		}
 	}
 
-	return instanceTypes, nil
+	return filterByQuota(instanceTypes, quota), nil
+}
+
+func filterByQuota(instances apiv1.AlibabaInstanceTypeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.AlibabaInstanceTypeList {
+	filteredRecords := apiv1.AlibabaInstanceTypeList{}
+
+	// Range over the records and apply all the filters to each record.
+	// If the record passes all the filters, add it to the final slice.
+	for _, r := range instances {
+		keep := true
+
+		if !handlercommon.FilterCPU(r.CPUCoreCount, quota.MinCPU, quota.MaxCPU) {
+			keep = false
+		}
+		if !handlercommon.FilterMemory(int(r.MemorySize), quota.MinRAM, quota.MaxRAM) {
+			keep = false
+		}
+
+		if keep {
+			filteredRecords = append(filteredRecords, r)
+		}
+	}
+
+	return filteredRecords
 }
 
 func AlibabaZonesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID, region string) (interface{}, error) {
