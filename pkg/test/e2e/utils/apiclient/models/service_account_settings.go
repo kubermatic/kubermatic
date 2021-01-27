@@ -20,7 +20,7 @@ type ServiceAccountSettings struct {
 	APIAudiences []string `json:"apiAudiences"`
 
 	// Issuer is the identifier of the service account token issuer
-	// If this is not specified, it will be set to the default value kubernetes.default.svc
+	// If this is not specified, it will be set to the URL of apiserver by default
 	Issuer string `json:"issuer,omitempty"`
 
 	// token volume projection enabled
