@@ -177,6 +177,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.etcdLauncherImage,
 		ctrlCtx.runOptions.dnatControllerImage,
+		ctrlCtx.runOptions.tunnelingAgentIP.String(),
 		kubernetescontroller.Features{
 			VPA:                          ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
 			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),

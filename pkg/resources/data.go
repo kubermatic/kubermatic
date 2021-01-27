@@ -292,6 +292,10 @@ func (d *TemplateData) GetPodTemplateLabels(appName string, volumes []corev1.Vol
 
 // GetApiserverExternalNodePort returns the nodeport of the external apiserver service
 func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
+	// When using tunneling expose strategy the port is fixed
+	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+		return 1194, nil
+	}
 	service := &corev1.Service{}
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: OpenVPNServerServiceName}
 	if err := d.client.Get(d.ctx, key, service); err != nil {

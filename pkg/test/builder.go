@@ -29,6 +29,11 @@ type NamespacedName types.NamespacedName
 
 type ObjectBuilder metav1.ObjectMeta
 
+func (b *ObjectBuilder) WithResourceVersion(rv string) *ObjectBuilder {
+	b.ResourceVersion = rv
+	return b
+}
+
 func (b *ObjectBuilder) WithLabel(key, value string) *ObjectBuilder {
 	if b.Labels == nil {
 		b.Labels = map[string]string{}
@@ -146,6 +151,11 @@ func NewEndpointsBuilder(nn NamespacedName) *EndpointsBuilder {
 	}
 }
 
+func (b *EndpointsBuilder) WithResourceVersion(rs string) *EndpointsBuilder {
+	_ = b.ObjectBuilder.WithResourceVersion(rs)
+	return b
+}
+
 // WithEndpointsSubset starts the creation of an Endpoints Subset, the creation
 // must me terminated with a call to DoneWithEndpointSubset, after ports and
 // addresses are added.
@@ -157,7 +167,11 @@ func (b *EndpointsBuilder) WithEndpointsSubset() *epsSubsetBuilder {
 func (b *EndpointsBuilder) Build() *corev1.Endpoints {
 	return &corev1.Endpoints{
 		ObjectMeta: metav1.ObjectMeta(b.ObjectBuilder),
-		Subsets:    b.epsSubsets,
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Endpoints",
+		},
+		Subsets: b.epsSubsets,
 	}
 }
 
@@ -210,8 +224,9 @@ func (b *epsSubsetBuilder) WithEndpointPort(
 func (b *epsSubsetBuilder) DoneWithEndpointSubset(eps ...corev1.EndpointPort) *EndpointsBuilder {
 	b.epsPorts = append(b.epsPorts, eps...)
 	b.eb.epsSubsets = append(b.eb.epsSubsets, corev1.EndpointSubset{
-		Addresses: b.epsAddresses,
-		Ports:     b.epsPorts,
+		Addresses:         b.epsAddresses,
+		NotReadyAddresses: b.epsNotReadyAddresses,
+		Ports:             b.epsPorts,
 	})
 	return b.eb
 }

@@ -521,6 +521,14 @@ const (
 )
 
 const (
+	EnvoyAgentConfigMapName                    = "envoy-agent"
+	EnvoyAgentDaemonSetName                    = "envoy-agent"
+	EnvoyAgentCreateInterfaceInitContainerName = "create-dummy-interface"
+	EnvoyAgentAssignAddressInitContainerName   = "assign-address"
+	EnvoyAgentDeviceSetupImage                 = "kubermatic/kubeletdnat-controller"
+)
+
+const (
 	NodeLocalDNSServiceAccountName = "node-local-dns"
 	NodeLocalDNSConfigMapName      = "node-local-dns"
 	NodeLocalDNSDaemonSetName      = "node-local-dns"
