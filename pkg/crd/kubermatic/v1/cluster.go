@@ -628,9 +628,12 @@ type ExtendedClusterHealth struct {
 	OpenVPN                      HealthStatus `json:"openvpn"`
 	CloudProviderInfrastructure  HealthStatus `json:"cloudProviderInfrastructure"`
 	UserClusterControllerManager HealthStatus `json:"userClusterControllerManager"`
+	GatekeeperController         HealthStatus `json:"gatekeeperController"`
+	GatekeeperAudit              HealthStatus `json:"gatekeeperAudit"`
 }
 
-// AllHealthy returns if all components are healthy
+// AllHealthy returns if all components are healthy. Gatekeeper components not included as they are optional and not
+// crucial for cluster functioning
 func (h *ExtendedClusterHealth) AllHealthy() bool {
 	return h.Etcd == HealthStatusUp &&
 		h.MachineController == HealthStatusUp &&

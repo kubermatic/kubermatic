@@ -1061,7 +1061,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 1: get existing cluster health status",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1}`,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"gatekeeperController":0,"gatekeeperAudit":0}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1080,6 +1080,8 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
+						GatekeeperAudit:              kubermaticv1.HealthStatusDown,
+						GatekeeperController:         kubermaticv1.HealthStatusDown,
 					}
 					return cluster
 				}(),
@@ -1090,7 +1092,7 @@ func TestGetClusterHealth(t *testing.T) {
 		{
 			Name:             "scenario 2: the admin Bob can get John's cluster health status",
 			Body:             ``,
-			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1}`,
+			ExpectedResponse: `{"apiserver":1,"scheduler":0,"controller":1,"machineController":0,"etcd":1,"cloudProviderInfrastructure":1,"userClusterControllerManager":1,"gatekeeperController":0,"gatekeeperAudit":0}`,
 			HTTPStatus:       http.StatusOK,
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -1111,6 +1113,8 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
+						GatekeeperAudit:              kubermaticv1.HealthStatusDown,
+						GatekeeperController:         kubermaticv1.HealthStatusDown,
 					}
 					return cluster
 				}(),
@@ -1142,6 +1146,8 @@ func TestGetClusterHealth(t *testing.T) {
 						Etcd:                         kubermaticv1.HealthStatusUp,
 						CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 						UserClusterControllerManager: kubermaticv1.HealthStatusUp,
+						GatekeeperAudit:              kubermaticv1.HealthStatusDown,
+						GatekeeperController:         kubermaticv1.HealthStatusDown,
 					}
 					return cluster
 				}(),
