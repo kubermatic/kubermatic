@@ -18202,7 +18202,7 @@
           "x-go-name": "APIAudiences"
         },
         "issuer": {
-          "description": "Issuer is the identifier of the service account token issuer\nIf this is not specified, it will be set to the default value kubernetes.default.svc",
+          "description": "Issuer is the identifier of the service account token issuer\nIf this is not specified, it will be set to the URL of apiserver by default",
           "type": "string",
           "x-go-name": "Issuer"
         },
