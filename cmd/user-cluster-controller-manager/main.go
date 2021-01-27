@@ -52,6 +52,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
+	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -76,6 +77,8 @@ type controllerRunOptions struct {
 	namespace                     string
 	clusterURL                    string
 	openvpnServerPort             int
+	kasSecurePort                 int
+	tunnelingAgentIP              flagopts.IPValue
 	overwriteRegistry             string
 	cloudProviderName             string
 	cloudCredentialSecretTemplate string
@@ -107,6 +110,8 @@ func main() {
 	flag.StringVar(&runOp.clusterURL, "cluster-url", "", "Cluster URL")
 	flag.StringVar(&runOp.dnsClusterIP, "dns-cluster-ip", "", "KubeDNS service IP for the cluster")
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
+	flag.IntVar(&runOp.kasSecurePort, "kas-secure-port", 6443, "Secure KAS port")
+	flag.Var(&runOp.tunnelingAgentIP, "tunneling-agent-ip", "If specified the tunneling agent will bind to this IP address, otherwise it will not be deployed.")
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&runOp.cloudProviderName, "cloud-provider-name", "", "Name of the cloudprovider")
 	flag.StringVar(&runOp.cloudCredentialSecretTemplate, "cloud-credential-secret-template", "", "A serialized Kubernetes secret whose Name and Data fields will be used to create a secret for the openshift cloud credentials operator.")
@@ -230,7 +235,9 @@ func main() {
 		runOp.namespace,
 		runOp.cloudProviderName,
 		clusterURL,
-		runOp.openvpnServerPort,
+		uint32(runOp.openvpnServerPort),
+		uint32(runOp.kasSecurePort),
+		runOp.tunnelingAgentIP.IP,
 		healthHandler.AddReadinessCheck,
 		cloudCredentialSecretTemplate,
 		runOp.openshiftConsoleCallbackURI,

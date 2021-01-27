@@ -33,12 +33,6 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const (
-	// TODO(irozzo) This should not be hardcoded to allow choosing
-	// different one in case of clashes.
-	tunnelingAgentIP = "192.168.30.10"
-)
-
 type lookupFunction func(host string) ([]net.IP, error)
 
 type ModifiersBuilder struct {
@@ -49,6 +43,8 @@ type ModifiersBuilder struct {
 	externalURL string
 	// used to ease unit tests
 	lookupFunction lookupFunction
+	// ip used by tunneling agents (tunneling expose strategy only)
+	tunnelingAgentIP string
 }
 
 func NewModifiersBuilder(log *zap.SugaredLogger) *ModifiersBuilder {
@@ -75,6 +71,11 @@ func (m *ModifiersBuilder) Seed(s *kubermaticv1.Seed) *ModifiersBuilder {
 
 func (m *ModifiersBuilder) ExternalURL(e string) *ModifiersBuilder {
 	m.externalURL = e
+	return m
+}
+
+func (m *ModifiersBuilder) TunnelingAgentIP(ip string) *ModifiersBuilder {
+	m.tunnelingAgentIP = ip
 	return m
 }
 
@@ -143,6 +144,9 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 
 	// IP
 	ip := ""
+	// When using the Tunneling expose strategy we disable KAS endpoints
+	// reconciliation, and we reconcile them with the agent IPs in the user
+	// controller manager.
 	switch m.cluster.Spec.ExposeStrategy {
 	case kubermaticv1.ExposeStrategyLoadBalancer:
 		ip = frontProxyLoadBalancerServiceIP
@@ -154,10 +158,7 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 			return nil, err
 		}
 	case kubermaticv1.ExposeStrategyTunneling:
-		// When using the Tunneling expose strategy the IP address advertised
-		// by the KAS corresponds to the one at which the tunneling agent binds
-		// to.
-		ip = tunnelingAgentIP
+		ip = m.tunnelingAgentIP
 	}
 	if m.cluster.Address.IP != ip {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
@@ -176,15 +177,15 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 	}
 
 	// Port
-	port := service.Spec.Ports[0].NodePort
+	var port int32 = service.Spec.Ports[0].TargetPort.IntVal
+	if m.cluster.Spec.ExposeStrategy != kubermaticv1.ExposeStrategyTunneling {
+		port = service.Spec.Ports[0].NodePort
+	}
 
 	// Use the nodeport value for KAS secure port when strategy is NodePort or
 	// LoadBalancer. This is because the same service will be accessed both
 	// locally and passing from nodeport proxy.
-	if (m.cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyNodePort ||
-		m.cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyLoadBalancer) &&
-		m.cluster.Address.Port != port {
-
+	if m.cluster.Address.Port != port {
 		modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
 			c.Address.Port = port
 		})

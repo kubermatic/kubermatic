@@ -275,14 +275,6 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 	serviceAccountKeyFile := filepath.Join("/etc/kubernetes/service-account-key", resources.ServiceAccountKeySecretKey)
 	flags := []string{
-		// The advertise address is used as endpoint address for the kubernetes
-		// service in the default namespace of the user cluster.
-		"--advertise-address", cluster.Address.IP,
-		// The secure port is used as target port for the kubernetes service in
-		// the default namespace of the user cluster, we use the NodePort value
-		// for being able to access the apiserver from the usercluster side.
-		"--secure-port", fmt.Sprint(cluster.Address.Port),
-		"--kubernetes-service-node-port", fmt.Sprint(cluster.Address.Port),
 		"--etcd-servers", strings.Join(etcdEndpoints, ","),
 		"--etcd-cafile", "/etc/etcd/pki/client/ca.crt",
 		"--etcd-certfile", filepath.Join("/etc/etcd/pki/client", resources.ApiserverEtcdClientCertificateCertSecretKey),
@@ -315,6 +307,30 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--requestheader-extra-headers-prefix", "X-Remote-Extra-",
 		"--requestheader-group-headers", "X-Remote-Group",
 		"--requestheader-username-headers", "X-Remote-User",
+	}
+
+	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+		flags = append(flags,
+			// The advertise address is used as endpoint address for the kubernetes
+			// service in the default namespace of the user cluster.
+			"--advertise-address", cluster.Address.IP,
+			// The secure port is used as target port for the kubernetes service in
+			// the default namespace of the user cluster, we use the NodePort value
+			// for being able to access the apiserver from the usercluster side.
+			"--secure-port", fmt.Sprint(cluster.Address.Port))
+	} else {
+		// pre-pend to have advertise-address as first argument and avoid
+		// triggering unneeded redeployments.
+		flags = append([]string{
+			// The advertise address is used as endpoint address for the kubernetes
+			// service in the default namespace of the user cluster.
+			"--advertise-address", cluster.Address.IP,
+			// The secure port is used as target port for the kubernetes service in
+			// the default namespace of the user cluster, we use the NodePort value
+			// for being able to access the apiserver from the usercluster side.
+			"--secure-port", fmt.Sprint(cluster.Address.Port),
+			"--kubernetes-service-node-port", fmt.Sprint(cluster.Address.Port),
+		}, flags...)
 	}
 
 	if auditLogEnabled {
