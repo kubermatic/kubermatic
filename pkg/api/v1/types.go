@@ -19,8 +19,9 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/Masterminds/semver/v3"
 	"strings"
+
+	"github.com/Masterminds/semver/v3"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
@@ -121,6 +122,7 @@ type AWSSize struct {
 	PrettyName string  `json:"pretty_name"`
 	Memory     float32 `json:"memory"`
 	VCPUs      int     `json:"vcpus"`
+	GPUs       int     `json:"gpus"`
 	Price      float64 `json:"price"`
 }
 

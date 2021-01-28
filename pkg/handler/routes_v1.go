@@ -798,7 +798,7 @@ func (r Routing) listAWSSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AWSSizeEndpoint()),
+		)(provider.AWSSizeEndpoint(r.settingsProvider)),
 		provider.DecodeAWSSizesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2703,7 +2703,7 @@ func (r Routing) listAWSSizesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.AWSSizeNoCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.AWSSizeNoCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.settingsProvider, r.userInfoGetter)),
 		common.DecodeGetClusterReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
