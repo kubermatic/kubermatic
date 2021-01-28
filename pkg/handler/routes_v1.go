@@ -1306,7 +1306,7 @@ func (r Routing) listAlibabaInstanceTypes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.AlibabaInstanceTypesEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.AlibabaInstanceTypesEndpoint(r.presetsProvider, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodeAlibabaReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3159,7 +3159,7 @@ func (r Routing) listAlibabaInstanceTypesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.AlibabaInstanceTypesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.AlibabaInstanceTypesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodeAlibabaNoCredentialReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
