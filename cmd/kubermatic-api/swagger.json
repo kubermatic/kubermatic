@@ -14313,6 +14313,12 @@
         "etcd": {
           "$ref": "#/definitions/HealthStatus"
         },
+        "gatekeeperAudit": {
+          "$ref": "#/definitions/HealthStatus"
+        },
+        "gatekeeperController": {
+          "$ref": "#/definitions/HealthStatus"
+        },
         "machineController": {
           "$ref": "#/definitions/HealthStatus"
         },
