@@ -1237,9 +1237,6 @@ func (r *testRunner) getGinkgoRuns(
 		case osSpec.Centos != nil:
 			args = append(args, "--node-os-distro=centos")
 			env = append(env, "KUBE_SSH_USER=centos")
-		case osSpec.ContainerLinux != nil:
-			args = append(args, "--node-os-distro=coreos")
-			env = append(env, "KUBE_SSH_USER=core")
 		case osSpec.Flatcar != nil:
 			args = append(args, "--node-os-distro=flatcar")
 			env = append(env, "KUBE_SSH_USER=core")

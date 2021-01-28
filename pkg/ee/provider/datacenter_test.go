@@ -76,7 +76,7 @@ datacenters:
         images:
           ubuntu: "Ubuntu 18.04 LTS - 2018-08-10"
           centos: ""
-          coreos: ""
+          flatcar: ""
         enforce_floating_ip: true`
 	expectedSeeds := map[string]*kubermaticv1.Seed{
 		"europe-west3-c": {
@@ -105,9 +105,9 @@ datacenters:
 								Region:           "au",
 								DNSServers:       []string{"8.8.8.8", "8.8.4.4"},
 								Images: kubermaticv1.ImageList{
-									providerconfig.OperatingSystemUbuntu: "Ubuntu 18.04 LTS - 2018-08-10",
-									providerconfig.OperatingSystemCentOS: "",
-									providerconfig.OperatingSystemCoreos: "",
+									providerconfig.OperatingSystemUbuntu:  "Ubuntu 18.04 LTS - 2018-08-10",
+									providerconfig.OperatingSystemCentOS:  "",
+									providerconfig.OperatingSystemFlatcar: "",
 								},
 								EnforceFloatingIP: true,
 							},

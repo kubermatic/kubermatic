@@ -35,7 +35,6 @@ import (
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
-	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
 	"github.com/kubermatic/machine-controller/pkg/userdata/sles"
@@ -55,9 +54,6 @@ func getOsName(nodeSpec apiv1.NodeSpec) (providerconfig.OperatingSystem, error) 
 	}
 	if nodeSpec.OperatingSystem.Ubuntu != nil {
 		return providerconfig.OperatingSystemUbuntu, nil
-	}
-	if nodeSpec.OperatingSystem.ContainerLinux != nil {
-		return providerconfig.OperatingSystemCoreos, nil
 	}
 	if nodeSpec.OperatingSystem.SLES != nil {
 		return providerconfig.OperatingSystemSLES, nil
@@ -433,24 +429,6 @@ func getAnexiaProviderSpec(nodeSpec apiv1.NodeSpec, dc *kubermaticv1.Datacenter)
 func getCentOSOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
 	config := centos.Config{
 		DistUpgradeOnBoot: nodeSpec.OperatingSystem.CentOS.DistUpgradeOnBoot,
-	}
-
-	ext := &runtime.RawExtension{}
-	b, err := json.Marshal(config)
-	if err != nil {
-		return nil, err
-	}
-
-	ext.Raw = b
-	return ext, nil
-}
-
-func getCoreosOperatingSystemSpec(nodeSpec apiv1.NodeSpec) (*runtime.RawExtension, error) {
-	config := coreos.Config{
-		DisableAutoUpdate: nodeSpec.OperatingSystem.ContainerLinux.DisableAutoUpdate,
-		// We manage CoreOS updates via the CoreOS update operator which requires locksmithd
-		// to be disabled: https://github.com/coreos/container-linux-update-operator#design
-		DisableLocksmithD: true,
 	}
 
 	ext := &runtime.RawExtension{}

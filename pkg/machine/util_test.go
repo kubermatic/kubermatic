@@ -44,17 +44,6 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedResult: "ubuntu",
 		},
 		{
-			name: "test SSH login name for VSphere:ContainerLinux",
-			distribution: &apiv1.OperatingSystemSpec{
-				ContainerLinux: &apiv1.ContainerLinuxSpec{},
-			},
-
-			cloudProvider: &apiv1.NodeCloudSpec{
-				VSphere: &apiv1.VSphereNodeSpec{},
-			},
-			expectedResult: "core",
-		},
-		{
 			name: "test SSH login name for Openstack:CentOS",
 			distribution: &apiv1.OperatingSystemSpec{
 				CentOS: &apiv1.CentOSSpec{},

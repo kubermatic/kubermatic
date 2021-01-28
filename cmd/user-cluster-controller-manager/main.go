@@ -35,7 +35,6 @@ import (
 
 	clusterrolelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
 	constraintsyncer "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/constraint-syncer"
-	containerlinux "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/container-linux"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ipam"
 	nodelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler"
@@ -292,11 +291,6 @@ func main() {
 		Start:  runOp.updateWindowStart,
 		Length: runOp.updateWindowLength,
 	}
-	if err := containerlinux.Add(mgr, runOp.overwriteRegistry, updateWindow); err != nil {
-		log.Fatalw("Failed to register the ContainerLinux controller", zap.Error(err))
-	}
-	log.Info("Registered ContainerLinux controller")
-
 	if err := flatcar.Add(mgr, runOp.overwriteRegistry, updateWindow); err != nil {
 		log.Fatalw("Failed to register the Flatcar controller", zap.Error(err))
 	}

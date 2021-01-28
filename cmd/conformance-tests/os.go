@@ -24,9 +24,6 @@ func getOSNameFromSpec(spec apimodels.OperatingSystemSpec) string {
 	if spec.Centos != nil {
 		return "centos"
 	}
-	if spec.ContainerLinux != nil {
-		return "coreos"
-	}
 	if spec.Ubuntu != nil {
 		return "ubuntu"
 	}
