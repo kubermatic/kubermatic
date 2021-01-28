@@ -637,6 +637,12 @@ type VSphereFolder struct {
 	Path string `json:"path"`
 }
 
+// VSphereDatastoreList is the object representing a vsphere datastores.
+// swagger:model VSphereDatastoreList
+type VSphereDatastoreList struct {
+	Datastores []string `json:"datastores"`
+}
+
 // AlibabaInstanceTypeList represents an array of Alibaba instance types.
 // swagger:model AlibabaInstanceTypeList
 type AlibabaInstanceTypeList []AlibabaInstanceType
