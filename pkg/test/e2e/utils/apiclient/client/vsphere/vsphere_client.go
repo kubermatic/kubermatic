@@ -25,6 +25,8 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	ListVSphereDatastores(params *ListVSphereDatastoresParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereDatastoresOK, error)
+
 	ListVSphereFolders(params *ListVSphereFoldersParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereFoldersOK, error)
 
 	ListVSphereFoldersNoCredentials(params *ListVSphereFoldersNoCredentialsParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereFoldersNoCredentialsOK, error)
@@ -38,6 +40,40 @@ type ClientService interface {
 	ListVSphereNetworksNoCredentialsV2(params *ListVSphereNetworksNoCredentialsV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereNetworksNoCredentialsV2OK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  ListVSphereDatastores Lists datastores from vsphere datacenter
+*/
+func (a *Client) ListVSphereDatastores(params *ListVSphereDatastoresParams, authInfo runtime.ClientAuthInfoWriter) (*ListVSphereDatastoresOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListVSphereDatastoresParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listVSphereDatastores",
+		Method:             "GET",
+		PathPattern:        "/api/v2/providers/vsphere/datastores",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListVSphereDatastoresReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListVSphereDatastoresOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListVSphereDatastoresDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*

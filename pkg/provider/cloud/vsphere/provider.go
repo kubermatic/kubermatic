@@ -290,6 +290,24 @@ func (v *Provider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSp
 	return nil
 }
 
+// GetVMFolders returns a slice of Datastore of the datacenter from the passed cloudspec.
+func GetDatastoreList(dc *kubermaticv1.DatacenterSpecVSphere, username, password string) ([]*object.Datastore, error) {
+	ctx := context.TODO()
+
+	session, err := newSession(ctx, dc, username, password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create vCenter session: %v", err)
+	}
+	defer session.Logout()
+
+	datastoreList, err := session.Finder.DatastoreList(ctx, "*")
+	if err != nil {
+		return nil, fmt.Errorf("couldn't retrieve datastore list: %v", err)
+	}
+
+	return datastoreList, nil
+}
+
 // Precedence if not infraManagementUser:
 // * User from cluster
 // * User from Secret

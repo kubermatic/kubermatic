@@ -146,3 +146,22 @@ func GetVsphereFolders(userInfo *provider.UserInfo, seedsGetter provider.SeedsGe
 
 	return apiFolders, nil
 }
+
+func GetVsphereDatastoreList(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password, datacenterName string) (*apiv1.VSphereDatastoreList, error) {
+	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+	}
+
+	datastores, err := vsphere.GetDatastoreList(datacenter.Spec.VSphere, username, password)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get datastore list: %v", err)
+	}
+
+	apiDatastores := &apiv1.VSphereDatastoreList{}
+	for _, ds := range datastores {
+		apiDatastores.Datastores = append(apiDatastores.Datastores, ds.InventoryPath)
+	}
+
+	return apiDatastores, nil
+}
