@@ -97,7 +97,7 @@ func DecodeAlibabaNoCredentialReq(c context.Context, r *http.Request) (interface
 	return req, nil
 }
 
-func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AlibabaReq)
 
@@ -118,14 +118,20 @@ func AlibabaInstanceTypesEndpoint(presetsProvider provider.PresetProvider, userI
 				accessKeySecret = credentials.AccessKeySecret
 			}
 		}
-		return providercommon.ListAlibabaInstanceTypes(ctx, accessKeyID, accessKeySecret, req.Region)
+
+		settings, err := settingsProvider.GetGlobalSettings()
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return providercommon.ListAlibabaInstanceTypes(accessKeyID, accessKeySecret, req.Region, settings.Spec.MachineDeploymentVMResourceQuota)
 	}
 }
 
-func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AlibabaInstanceTypesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AlibabaNoCredentialReq)
-		return providercommon.AlibabaInstanceTypesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID, req.Region)
+		return providercommon.AlibabaInstanceTypesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, settingsProvider, req.ProjectID, req.ClusterID, req.Region)
 	}
 }
 
