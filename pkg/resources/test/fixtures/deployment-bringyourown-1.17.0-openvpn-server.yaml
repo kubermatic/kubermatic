@@ -107,7 +107,7 @@ spec:
         resources:
           limits:
             cpu: 100m
-            memory: 20Mi
+            memory: 50Mi
           requests:
             cpu: 5m
             memory: 5Mi
@@ -162,7 +162,7 @@ spec:
         resources:
           limits:
             cpu: 100m
-            memory: 20Mi
+            memory: 50Mi
           requests:
             cpu: 5m
             memory: 5Mi
@@ -196,7 +196,7 @@ spec:
         resources:
           limits:
             cpu: 100m
-            memory: 20Mi
+            memory: 50Mi
           requests:
             cpu: 5m
             memory: 5Mi
