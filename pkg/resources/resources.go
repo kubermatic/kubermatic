@@ -529,6 +529,15 @@ const (
 )
 
 const (
+	MultusClusterRoleName         = "system:multus"
+	MultusClusterRoleBindingName  = "system:multus"
+	MultusServiceAccountName      = "multus"
+	MultusConfigMapName           = "multus"
+	MultusDeploymentName          = "multus"
+	MultusPodDisruptionBudgetName = "multus"
+)
+
+const (
 	NodeLocalDNSServiceAccountName = "node-local-dns"
 	NodeLocalDNSConfigMapName      = "node-local-dns"
 	NodeLocalDNSDaemonSetName      = "node-local-dns"
