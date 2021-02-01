@@ -19,6 +19,7 @@ import (
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
@@ -548,8 +549,14 @@ func ReconcileRoleBindings(ctx context.Context, namedGetters []NamedRoleBindingC
 // CustomResourceDefinitionCreator defines an interface to create/update CustomResourceDefinitions
 type CustomResourceDefinitionCreator = func(existing *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error)
 
+// CustomResourceDefinitionCreatorv1 defines an interface to create/update CustomResourceDefinitions
+type CustomResourceDefinitionCreatorv1 = func(existing *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error)
+
 // NamedCustomResourceDefinitionCreatorGetter returns the name of the resource and the corresponding creator function
 type NamedCustomResourceDefinitionCreatorGetter = func() (name string, create CustomResourceDefinitionCreator)
+
+// NamedCustomResourceDefinitionCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedCustomResourceDefinitionCreatorGetterv1 = func() (name string, create CustomResourceDefinitionCreatorv1)
 
 // CustomResourceDefinitionObjectWrapper adds a wrapper so the CustomResourceDefinitionCreator matches ObjectCreator.
 // This is needed as Go does not support function interface matching.

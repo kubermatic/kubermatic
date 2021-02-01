@@ -29,8 +29,8 @@ const (
 )
 
 // ConfigCRDCreator returns the multus config CRD definition
-func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
-	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+func ConfigCRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetterv1 {
+	return func() (string, reconciling.CustomResourceDefinitionCreatorv1) {
 		return resources.MultusConfigCRDName, func(crd *apiextensionsv1.CustomResourceDefinition) (*apiextensionsv1.CustomResourceDefinition, error) {
 			crd.Spec.Group = configAPIGroup
 			crd.Spec.Scope = apiextensionsv1.NamespaceScoped

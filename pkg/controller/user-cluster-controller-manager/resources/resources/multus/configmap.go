@@ -21,6 +21,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ConfigMapCreator returns a ConfigMap containing the config for Multus
@@ -32,7 +33,7 @@ func ConfigMapCreator() reconciling.NamedConfigMapCreatorGetter {
 			}
 
 			cm.Name = "multus-cni-config"
-			cm.Namespace = "kube-system"
+			cm.Namespace = metav1.NamespaceSystem
 
 			labels := map[string]string{"tier": "node"}
 			cm.Labels = resources.BaseAppLabels(resources.MultusConfigMapName, labels)

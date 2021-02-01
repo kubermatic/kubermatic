@@ -535,7 +535,7 @@ const (
 	MultusClusterRoleBindingName  = "system:multus"
 	MultusServiceAccountName      = "multus"
 	MultusConfigMapName           = "multus"
-	MultusDeploymentName          = "multus"
+	MultusDaemonSetName           = "multus"
 	MultusPodDisruptionBudgetName = "multus"
 )
 
