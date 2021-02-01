@@ -198,7 +198,7 @@ func (s RunStatus) Error(id TaskID) error {
 
 // Failed returns the IDs of the tasks that failed during the execution.
 func (s RunStatus) Failed() []TaskID {
-	ids := make([]TaskID, len(s.FailedTasks), 0)
+	ids := make([]TaskID, 0, len(s.FailedTasks))
 	for id := range s.FailedTasks {
 		ids = append(ids, id)
 	}
