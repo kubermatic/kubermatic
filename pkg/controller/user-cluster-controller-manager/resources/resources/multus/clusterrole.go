@@ -27,7 +27,7 @@ import (
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.MultusClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-			cr.Name = "multus"
+			cr.Name = resources.MultusName
 			cr.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{"k8s.cni.cncf.io"},

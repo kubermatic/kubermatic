@@ -19,7 +19,6 @@ package multus
 import (
 	"fmt"
 	"net"
-	"runtime"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -33,39 +32,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var (
-	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
-		resources.MultusDaemonSetName: {
-			Requests: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("50Mi"),
-				corev1.ResourceCPU:    resource.MustParse("100m"),
-			},
-			Limits: corev1.ResourceList{
-				corev1.ResourceMemory: resource.MustParse("50Mi"),
-				corev1.ResourceCPU:    resource.MustParse("100m"),
-			},
-		},
-	}
-)
-
 const (
 	multusImageName = "nfvpe/multus"
 	//TODO(youssefazrak) tbc
 	multusImageTag = "stable"
 )
-
-func dsName() string {
-	switch runtime.GOARCH {
-	case "amd64":
-		return "kube-multus-ds-amd64"
-	case "ppc64le":
-		return "kube-multus-ds-ppc64le"
-	case "arm64":
-		return "kube-multus-ds-arm64v8"
-	default:
-		return ""
-	}
-}
 
 // DaemonSetCreator returns the function to create and update the Envoy DaemonSet
 func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions) reconciling.NamedDaemonSetCreatorGetter {
@@ -124,6 +95,17 @@ func getContainers() []corev1.Container {
 
 			//TODO(youssefazrak) tbc
 			Args: []string{"--multus-conf-file", "auto", "--cni-version", "0.3.1"},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("50Mi"),
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse("50Mi"),
+					corev1.ResourceCPU:    resource.MustParse("100m"),
+				},
+			},
+
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "cni",

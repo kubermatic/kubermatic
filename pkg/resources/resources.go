@@ -531,12 +531,12 @@ const (
 )
 
 const (
-	MultusClusterRoleName         = "system:multus"
-	MultusClusterRoleBindingName  = "system:multus"
-	MultusServiceAccountName      = "multus"
-	MultusConfigMapName           = "multus"
-	MultusDaemonSetName           = "multus"
-	MultusPodDisruptionBudgetName = "multus"
+	MultusClusterRoleName        = "system:multus"
+	MultusClusterRoleBindingName = "system:multus"
+	MultusServiceAccountName     = "multus"
+	MultusConfigMapName          = "multus"
+	MultusDaemonSetName          = "multus"
+	MultusName                   = "multus"
 )
 
 const (
