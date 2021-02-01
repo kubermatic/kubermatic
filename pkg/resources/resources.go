@@ -369,6 +369,8 @@ const (
 	GatekeeperConfigCRDName = "configs.config.gatekeeper.sh"
 	// GatekeeperConstraintTemplateCRDName defines the CRD name for gatekeeper constraint template objects
 	GatekeeperConstraintTemplateCRDName = "constrainttemplates.templates.gatekeeper.sh"
+	// MultusConfigCRDName defines the CRD name for multus-cni config objects
+	MultusConfigCRDName = "network-attachment-definitions.k8s.cni.cncf.io"
 
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration
