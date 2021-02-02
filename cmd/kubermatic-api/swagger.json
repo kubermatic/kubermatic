@@ -13308,6 +13308,11 @@
       "type": "object",
       "title": "AWSSize represents a object of AWS size.",
       "properties": {
+        "gpus": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "GPUs"
+        },
         "memory": {
           "type": "number",
           "format": "float",
