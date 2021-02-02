@@ -187,7 +187,7 @@ presubmits:
             cpu: 0.5
 
   - name: pre-kubermatic-dependencies
-    run_if_changed: "^(cmd|codegen|hack|pkg|go.mod|go.sum)/"
+    run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
