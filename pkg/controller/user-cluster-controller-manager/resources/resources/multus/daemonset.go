@@ -18,11 +18,9 @@ package multus
 
 import (
 	"fmt"
-	"net"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -39,7 +37,7 @@ const (
 )
 
 // DaemonSetCreator returns the function to create and update the Envoy DaemonSet
-func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions) reconciling.NamedDaemonSetCreatorGetter {
+func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.MultusDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
 			// (youssefazrak) Hardcoding amd64. Other architecture like ARM

@@ -28,7 +28,7 @@ import (
 func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return resources.MultusServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Name = "multus"
+			sa.Name = resources.MultusServiceAccountName
 			sa.Namespace = metav1.NamespaceSystem
 			return sa, nil
 		}
