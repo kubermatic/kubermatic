@@ -266,7 +266,7 @@ func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDep
 		keep := true
 
 		// Filter too expensive instance types (>1$ per hour) if GPU not enabled
-		if !quota.EnableGPU && r.Price > 0 {
+		if !quota.EnableGPU && r.Price > 1 {
 			continue
 		}
 
