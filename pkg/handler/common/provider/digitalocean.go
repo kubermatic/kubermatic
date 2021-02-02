@@ -26,8 +26,10 @@ import (
 	"golang.org/x/oauth2"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	doprovider "k8c.io/kubermatic/v2/pkg/provider/cloud/digitalocean"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -37,7 +39,7 @@ import (
 var reStandard = regexp.MustCompile("(^s|S)")
 var reOptimized = regexp.MustCompile("(^c|C)")
 
-func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string) (interface{}, error) {
+func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
 
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
@@ -60,11 +62,16 @@ func DigitaloceanSizeWithClusterCredentialsEndpoint(ctx context.Context, userInf
 		return nil, err
 	}
 
-	return DigitaloceanSize(ctx, accessToken)
+	settings, err := settingsProvider.GetGlobalSettings()
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return DigitaloceanSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, accessToken)
 
 }
 
-func DigitaloceanSize(ctx context.Context, token string) (apiv1.DigitaloceanSizeList, error) {
+func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, token string) (apiv1.DigitaloceanSizeList, error) {
 	static := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	client := godo.NewClient(oauth2.NewClient(context.Background(), static))
 
@@ -102,5 +109,40 @@ func DigitaloceanSize(ctx context.Context, token string) (apiv1.DigitaloceanSize
 		}
 	}
 
-	return sizeList, nil
+	return filterDigitalOceanByQuota(sizeList, quota), nil
+}
+
+func filterDigitalOceanByQuota(instances apiv1.DigitaloceanSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.DigitaloceanSizeList {
+	filteredRecords := apiv1.DigitaloceanSizeList{}
+
+	for _, r := range instances.Optimized {
+		keep := true
+
+		if !handlercommon.FilterCPU(r.VCPUs, quota.MinCPU, quota.MaxCPU) {
+			keep = false
+		}
+		if !handlercommon.FilterMemory(r.Memory/1024, quota.MinRAM, quota.MaxRAM) {
+			keep = false
+		}
+
+		if keep {
+			filteredRecords.Optimized = append(filteredRecords.Optimized, r)
+		}
+	}
+	for _, r := range instances.Standard {
+		keep := true
+
+		if !handlercommon.FilterCPU(r.VCPUs, quota.MinCPU, quota.MaxCPU) {
+			keep = false
+		}
+		if !handlercommon.FilterMemory(r.Memory/1024, quota.MinRAM, quota.MaxRAM) {
+			keep = false
+		}
+
+		if keep {
+			filteredRecords.Standard = append(filteredRecords.Standard, r)
+		}
+	}
+
+	return filteredRecords
 }
