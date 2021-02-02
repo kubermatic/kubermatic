@@ -42,3 +42,11 @@ func FilterMemory(record, min, max int) bool {
 	}
 	return false
 }
+
+func FilterGPU(record int, enableGPU bool) bool {
+	if !enableGPU && record > 0 {
+		return false
+	}
+
+	return true
+}

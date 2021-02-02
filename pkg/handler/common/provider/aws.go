@@ -94,7 +94,7 @@ func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider
 	return SetDefaultSubnet(machineDeployments, subnetList)
 }
 
-func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
+func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
 		return nil, err
@@ -116,7 +116,12 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 		return nil, errors.NewNotFound("cloud spec (dc) for ", clusterID)
 	}
 
-	return AWSSizes(dc.Spec.AWS.Region)
+	settings, err := settingsProvider.GetGlobalSettings()
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return AWSSizes(dc.Spec.AWS.Region, settings.Spec.MachineDeploymentVMResourceQuota)
 }
 
 func ListAWSSubnets(accessKeyID, secretAccessKey, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
@@ -222,36 +227,64 @@ func SetDefaultSubnet(machineDeployments *clusterv1alpha1.MachineDeploymentList,
 	return subnets, nil
 }
 
-func AWSSizes(region string) (apiv1.AWSSizeList, error) {
+func AWSSizes(region string, quota kubermaticv1.MachineDeploymentVMResourceQuota) (apiv1.AWSSizeList, error) {
 	if data == nil {
 		return nil, fmt.Errorf("AWS instance type data not initialized")
 	}
 
 	sizes := apiv1.AWSSizeList{}
 	for _, i := range *data {
-		// TODO: Make the check below more generic, working for all the providers. It is needed as the pods
-		//  with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
-		if i.Memory >= 2 {
-			pricing, ok := i.Pricing[region]
-			if !ok {
-				continue
-			}
+		pricing, ok := i.Pricing[region]
+		if !ok {
+			continue
+		}
+		price := pricing.Linux.OnDemand
+		// not available
+		if price == 0 {
+			continue
+		}
 
-			// Filter out unavailable or too expensive instance types (>1$ per hour).
-			price := pricing.Linux.OnDemand
-			if price == 0 || price > 1 {
-				continue
-			}
+		sizes = append(sizes, apiv1.AWSSize{
+			Name:       i.InstanceType,
+			PrettyName: i.PrettyName,
+			Memory:     i.Memory,
+			VCPUs:      i.VCPU,
+			GPUs:       i.GPU,
+			Price:      price,
+		})
+	}
 
-			sizes = append(sizes, apiv1.AWSSize{
-				Name:       i.InstanceType,
-				PrettyName: i.PrettyName,
-				Memory:     i.Memory,
-				VCPUs:      i.VCPU,
-				Price:      price,
-			})
+	return filterAWSByQuota(sizes, quota), nil
+}
+
+func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.AWSSizeList {
+	filteredRecords := apiv1.AWSSizeList{}
+
+	// Range over the records and apply all the filters to each record.
+	// If the record passes all the filters, add it to the final slice.
+	for _, r := range instances {
+		keep := true
+
+		// Filter too expensive instance types (>1$ per hour) if GPU not enabled
+		if !quota.EnableGPU && r.Price > 1 {
+			continue
+		}
+
+		if !handlercommon.FilterGPU(r.GPUs, quota.EnableGPU) {
+			keep = false
+		}
+
+		if !handlercommon.FilterCPU(r.VCPUs, quota.MinCPU, quota.MaxCPU) {
+			keep = false
+		}
+		if !handlercommon.FilterMemory(int(r.Memory), quota.MinRAM, quota.MaxRAM) {
+			keep = false
+		}
+
+		if keep {
+			filteredRecords = append(filteredRecords, r)
 		}
 	}
 
-	return sizes, nil
+	return filteredRecords
 }
