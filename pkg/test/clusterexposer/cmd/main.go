@@ -113,7 +113,6 @@ func run(cmd *cobra.Command, _ []string) error {
 	innerCfg, err := clientcmd.BuildConfigFromFlags("", kubeconfigInnerFile)
 	if err != nil {
 		return fmt.Errorf("unable to set up client config for user cluster %v", err)
-
 	}
 
 	log.Info("Setting up outer manager")
@@ -122,7 +121,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		Port:               0,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to set up inner manager: %v", err)
+		return fmt.Errorf("failed to set up outer manager: %v", err)
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
@@ -132,7 +131,7 @@ func run(cmd *cobra.Command, _ []string) error {
 		Port:               0,
 	})
 	if err != nil {
-		return fmt.Errorf("unable to set up outer manager %v", err)
+		return fmt.Errorf("unable to set up inner manager %v", err)
 	}
 	if err := mgr.Add(outerManager); err != nil {
 		return fmt.Errorf("failed to add outer manager: %v", err)
