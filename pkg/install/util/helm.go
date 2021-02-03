@@ -86,8 +86,19 @@ func DeployHelmChart(ctx context.Context, log logrus.FieldLogger, helmClient hel
 		log.Info("Re-installing because --force is set…")
 
 	default:
-		log.Info("Release is up-to-date, nothing to do. Set --force to re-install anyway.")
-		return nil
+		// check if the provided Helm values differ from the ones used to install the
+		// existing release; if there are changes, perform an update
+		appliedValues, err := helmClient.GetValues(namespace, releaseName)
+		if err != nil {
+			return fmt.Errorf("failed to retrieve Helm values used for release: %v", err)
+		}
+
+		if appliedValues.Equal(values) {
+			log.Info("Release is up-to-date, nothing to do. Set --force to re-install anyway.")
+			return nil
+		}
+
+		log.Info("Re-installing because values have been changed…")
 	}
 
 	helmValues, err := dumpHelmValues(values)
