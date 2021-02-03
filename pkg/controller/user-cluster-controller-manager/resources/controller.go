@@ -25,6 +25,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/heptiolabs/healthcheck"
 	"go.uber.org/zap"
 
@@ -96,6 +97,11 @@ func Add(
 		opaIntegration:                opaIntegration,
 		userSSHKeyAgent:               userSSHKeyAgent,
 		versions:                      versions,
+	}
+
+	var err error
+	if r.clusterSemVer, err = semver.NewVersion(r.version); err != nil {
+		return err
 	}
 
 	if r.openshift {
@@ -228,6 +234,7 @@ type reconciler struct {
 	seedClient                    client.Client
 	openshift                     bool
 	version                       string
+	clusterSemVer                 *semver.Version
 	cache                         cache.Cache
 	namespace                     string
 	clusterURL                    *url.URL
