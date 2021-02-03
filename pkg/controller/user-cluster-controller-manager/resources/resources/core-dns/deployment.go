@@ -19,17 +19,19 @@ package coredns
 import (
 	"fmt"
 
+	"github.com/Masterminds/semver/v3"
+
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
-	"k8s.io/utils/pointer"
-
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/utils/pointer"
 )
 
 var (
@@ -48,7 +50,7 @@ var (
 )
 
 // DeploymentCreator returns the function to create and update the CoreDNS deployment
-func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(kubernetesVersion *semver.Version) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.CoreDNSDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.CoreDNSDeploymentName
@@ -88,7 +90,7 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes
 
-			dep.Spec.Template.Spec.Containers = getContainers()
+			dep.Spec.Template.Spec.Containers = getContainers(kubernetesVersion)
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
@@ -115,11 +117,12 @@ func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGet
 	}
 }
 
-func getContainers() []corev1.Container {
+func getContainers(clusterVersion *semver.Version) []corev1.Container {
+	coreDNSVersion := dns.GetCoreDNSVersion(clusterVersion)
 	return []corev1.Container{
 		{
 			Name:            resources.CoreDNSDeploymentName,
-			Image:           fmt.Sprintf("%s/coredns/coredns:1.3.1", resources.RegistryDocker),
+			Image:           fmt.Sprintf("%s/coredns/coredns:%s", resources.RegistryDocker, coreDNSVersion),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			Args: []string{"-conf", "/etc/coredns/Corefile"},
