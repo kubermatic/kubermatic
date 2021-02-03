@@ -303,6 +303,7 @@ type unstartableCache struct {
 }
 
 func (m *unstartableCache) Start(ctx context.Context) error {
+	<-ctx.Done()
 	return nil
 }
 
