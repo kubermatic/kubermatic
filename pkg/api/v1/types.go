@@ -723,7 +723,7 @@ type ClusterSpec struct {
 	// OIDC settings
 	OIDC kubermaticv1.OIDCSettings `json:"oidc,omitempty"`
 
-	// Configure cluster upgrade window, currently used for coreos node reboots
+	// Configure cluster upgrade window, currently used for flatcar node reboots
 	UpdateWindow *kubermaticv1.UpdateWindow `json:"updateWindow,omitempty"`
 
 	// If active the PodSecurityPolicy admission plugin is configured at the apiserver
@@ -1089,13 +1089,6 @@ type CentOSSpec struct {
 	DistUpgradeOnBoot bool `json:"distUpgradeOnBoot"`
 }
 
-// ContainerLinuxSpec ubuntu linux specific settings
-// swagger:model ContainerLinuxSpec
-type ContainerLinuxSpec struct {
-	// disable container linux auto-update feature
-	DisableAutoUpdate bool `json:"disableAutoUpdate"`
-}
-
 // FlatcarSpec contains Flatcar Linux specific settings
 // swagger:model FlatcarSpec
 type FlatcarSpec struct {
@@ -1127,12 +1120,11 @@ type RHELSpec struct {
 // OperatingSystemSpec represents the collection of os specific settings. Only one must be set at a time.
 // swagger:model OperatingSystemSpec
 type OperatingSystemSpec struct {
-	Ubuntu         *UbuntuSpec         `json:"ubuntu,omitempty"`
-	ContainerLinux *ContainerLinuxSpec `json:"containerLinux,omitempty"`
-	CentOS         *CentOSSpec         `json:"centos,omitempty"`
-	SLES           *SLESSpec           `json:"sles,omitempty"`
-	RHEL           *RHELSpec           `json:"rhel,omitempty"`
-	Flatcar        *FlatcarSpec        `json:"flatcar,omitempty"`
+	Ubuntu  *UbuntuSpec  `json:"ubuntu,omitempty"`
+	CentOS  *CentOSSpec  `json:"centos,omitempty"`
+	SLES    *SLESSpec    `json:"sles,omitempty"`
+	RHEL    *RHELSpec    `json:"rhel,omitempty"`
+	Flatcar *FlatcarSpec `json:"flatcar,omitempty"`
 }
 
 // NodeVersionInfo node version information

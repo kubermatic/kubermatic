@@ -26,9 +26,6 @@ const (
 	// UbuntuLabelValue is the value of the label for Ubuntu
 	UbuntuLabelValue = "ubuntu"
 
-	// ContainerLinuxLabelValue is the value of the label for Container Linux
-	ContainerLinuxLabelValue = "container-linux"
-
 	// SLESLabelValue is the value of the label for SLES
 	SLESLabelValue = "sles"
 
@@ -42,10 +39,9 @@ const (
 // OSLabelMatchValues is a mapping between OS labels and the strings to match on in OSImage.
 // Note that these are all lower case.
 var OSLabelMatchValues = map[string]string{
-	CentOSLabelValue:         "centos",
-	UbuntuLabelValue:         "ubuntu",
-	ContainerLinuxLabelValue: "container linux",
-	SLESLabelValue:           "sles",
-	RHELLabelValue:           "rhel",
-	FlatcarLabelValue:        "flatcar container linux",
+	CentOSLabelValue:  "centos",
+	UbuntuLabelValue:  "ubuntu",
+	SLESLabelValue:    "sles",
+	RHELLabelValue:    "rhel",
+	FlatcarLabelValue: "flatcar container linux",
 }

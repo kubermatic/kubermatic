@@ -106,20 +106,6 @@ func TestReconcile(t *testing.T) {
 			expectedLabels: map[string]string{"x-kubernetes.io/distribution": "centos"},
 		},
 		{
-			name: "container linux label gets added",
-			node: &corev1.Node{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: requestName,
-				},
-				Status: corev1.NodeStatus{
-					NodeInfo: corev1.NodeSystemInfo{
-						OSImage: "container linux",
-					},
-				},
-			},
-			expectedLabels: map[string]string{"x-kubernetes.io/distribution": "container-linux"},
-		},
-		{
 			name: "sles label gets added",
 			node: &corev1.Node{
 				ObjectMeta: metav1.ObjectMeta{
@@ -206,10 +192,6 @@ func TestMatchOSLabels(t *testing.T) {
 		osImage  string
 		expected string
 	}{
-		{
-			osImage:  "container linux",
-			expected: api.ContainerLinuxLabelValue,
-		},
 		{
 			osImage:  "flatcar container linux",
 			expected: api.FlatcarLabelValue,

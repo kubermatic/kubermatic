@@ -521,9 +521,6 @@ func getScenarios(opts Opts, log *zap.SugaredLogger) []testScenario {
 		if osspec.Ubuntu != nil && hasDistribution(providerconfig.OperatingSystemUbuntu) {
 			filteredScenarios = append(filteredScenarios, scenario)
 		}
-		if osspec.ContainerLinux != nil && hasDistribution(providerconfig.OperatingSystemCoreos) {
-			filteredScenarios = append(filteredScenarios, scenario)
-		}
 		if osspec.Flatcar != nil && hasDistribution(providerconfig.OperatingSystemFlatcar) {
 			filteredScenarios = append(filteredScenarios, scenario)
 		}

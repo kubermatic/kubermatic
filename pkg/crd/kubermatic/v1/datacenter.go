@@ -389,7 +389,7 @@ type NodeSettings struct {
 	// Optional: Translates to --pod-infra-container-image on the kubelet.
 	// If not set, the kubelet will default it.
 	PauseImage string `json:"pause_image,omitempty"`
-	// Optional: The hyperkube image to use. Currently only Container Linux
+	// Optional: The hyperkube image to use. Currently only Flatcar
 	// makes use of this option.
 	HyperkubeImage string `json:"hyperkube_image,omitempty"`
 }

@@ -33,7 +33,6 @@ import (
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/kubermatic/machine-controller/pkg/userdata/centos"
-	"github.com/kubermatic/machine-controller/pkg/userdata/coreos"
 	"github.com/kubermatic/machine-controller/pkg/userdata/flatcar"
 	"github.com/kubermatic/machine-controller/pkg/userdata/rhel"
 	"github.com/kubermatic/machine-controller/pkg/userdata/sles"
@@ -53,15 +52,6 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 	operatingSystemSpec := &apiv1.OperatingSystemSpec{}
 
 	switch decodedProviderSpec.OperatingSystem {
-	case providerconfig.OperatingSystemCoreos:
-		config := &coreos.Config{}
-		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {
-			return nil, fmt.Errorf("failed to parse coreos config: %v", err)
-		}
-		operatingSystemSpec.ContainerLinux = &apiv1.ContainerLinuxSpec{
-			DisableAutoUpdate: config.DisableAutoUpdate,
-		}
-
 	case providerconfig.OperatingSystemFlatcar:
 		config := &flatcar.Config{}
 		if err := json.Unmarshal(decodedProviderSpec.OperatingSystemSpec.Raw, &config); err != nil {

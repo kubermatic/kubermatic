@@ -189,7 +189,6 @@ func TestLoadFiles(t *testing.T) {
 				Images: kubermaticv1.ImageList{
 					providerconfig.OperatingSystemUbuntu:  "ubuntu-ami",
 					providerconfig.OperatingSystemCentOS:  "centos-ami",
-					providerconfig.OperatingSystemCoreos:  "coreos-ami",
 					providerconfig.OperatingSystemSLES:    "sles-ami",
 					providerconfig.OperatingSystemRHEL:    "rhel-ami",
 					providerconfig.OperatingSystemFlatcar: "flatcar-ami",

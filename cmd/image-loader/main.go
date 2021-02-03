@@ -35,7 +35,6 @@ import (
 	seedoperatornodeportproxy "k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
-	containerlinux "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/container-linux"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/docker"
@@ -272,7 +271,6 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 
 	deploymentCreators := kubernetescontroller.GetDeploymentCreators(templateData, false)
 	deploymentCreators = append(deploymentCreators, monitoring.GetDeploymentCreators(templateData)...)
-	deploymentCreators = append(deploymentCreators, containerlinux.GetDeploymentCreators("", kubermaticv1.UpdateWindow{})...)
 	deploymentCreators = append(deploymentCreators, masteroperator.APIDeploymentCreator(config, "", kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, masteroperator.MasterControllerManagerDeploymentCreator(config, "", kubermaticVersions))
 	deploymentCreators = append(deploymentCreators, masteroperator.UIDeploymentCreator(config, kubermaticVersions))
@@ -284,8 +282,6 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 	deploymentCreators = append(deploymentCreators, vpa.UpdaterDeploymentCreator(config, kubermaticVersions))
 
 	cronjobCreators := kubernetescontroller.GetCronJobCreators(templateData)
-
-	daemonSetCreators := containerlinux.GetDaemonSetCreators("")
 
 	for _, creatorGetter := range statefulsetCreators {
 		_, creator := creatorGetter()
@@ -312,15 +308,6 @@ func getImagesFromCreators(log *zap.SugaredLogger, templateData *resources.Templ
 			return nil, err
 		}
 		images = append(images, getImagesFromPodSpec(cronJob.Spec.JobTemplate.Spec.Template.Spec)...)
-	}
-
-	for _, createFunc := range daemonSetCreators {
-		_, creator := createFunc()
-		daemonSet, err := creator(&appsv1.DaemonSet{})
-		if err != nil {
-			return nil, err
-		}
-		images = append(images, getImagesFromPodSpec(daemonSet.Spec.Template.Spec)...)
 	}
 
 	return images, nil
