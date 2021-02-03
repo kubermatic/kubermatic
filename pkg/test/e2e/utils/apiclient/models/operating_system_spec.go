@@ -19,9 +19,6 @@ type OperatingSystemSpec struct {
 	// centos
 	Centos *CentOSSpec `json:"centos,omitempty"`
 
-	// container linux
-	ContainerLinux *ContainerLinuxSpec `json:"containerLinux,omitempty"`
-
 	// flatcar
 	Flatcar *FlatcarSpec `json:"flatcar,omitempty"`
 
@@ -40,10 +37,6 @@ func (m *OperatingSystemSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCentos(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateContainerLinux(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -79,24 +72,6 @@ func (m *OperatingSystemSpec) validateCentos(formats strfmt.Registry) error {
 		if err := m.Centos.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("centos")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *OperatingSystemSpec) validateContainerLinux(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.ContainerLinux) { // not required
-		return nil
-	}
-
-	if m.ContainerLinux != nil {
-		if err := m.ContainerLinux.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("containerLinux")
 			}
 			return err
 		}

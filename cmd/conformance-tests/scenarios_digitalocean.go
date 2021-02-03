@@ -35,16 +35,6 @@ func getDigitaloceanScenarios(versions []*semver.Semver) []testScenario {
 				Ubuntu: &apimodels.UbuntuSpec{},
 			},
 		})
-		// CoreOS
-		scenarios = append(scenarios, &digitaloceanScenario{
-			version: v,
-			nodeOsSpec: apimodels.OperatingSystemSpec{
-				ContainerLinux: &apimodels.ContainerLinuxSpec{
-					// Otherwise the nodes restart directly after creation - bad for tests
-					DisableAutoUpdate: true,
-				},
-			},
-		})
 		// CentOS
 		scenarios = append(scenarios, &digitaloceanScenario{
 			version: v,

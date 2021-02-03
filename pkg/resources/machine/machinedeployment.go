@@ -244,12 +244,6 @@ func getProviderOS(config *providerconfig.Config, nd *apiv1.NodeDeployment) erro
 
 	// OS specifics
 	switch {
-	case nd.Spec.Template.OperatingSystem.ContainerLinux != nil:
-		config.OperatingSystem = providerconfig.OperatingSystemCoreos
-		osExt, err = getCoreosOperatingSystemSpec(nd.Spec.Template)
-		if err != nil {
-			return err
-		}
 	case nd.Spec.Template.OperatingSystem.Ubuntu != nil:
 		config.OperatingSystem = providerconfig.OperatingSystemUbuntu
 		osExt, err = getUbuntuOperatingSystemSpec(nd.Spec.Template)

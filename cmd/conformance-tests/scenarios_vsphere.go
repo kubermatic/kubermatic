@@ -52,18 +52,6 @@ func getVSphereScenarios(scenarioOptions []string, versions []*semver.Semver) []
 			customFolder:     customFolder,
 			datastoreCluster: datastoreCluster,
 		})
-		// CoreOS
-		scenarios = append(scenarios, &vSphereScenario{
-			version: v,
-			nodeOsSpec: apimodels.OperatingSystemSpec{
-				ContainerLinux: &apimodels.ContainerLinuxSpec{
-					// Otherwise the nodes restart directly after creation - bad for tests
-					DisableAutoUpdate: true,
-				},
-			},
-			customFolder:     customFolder,
-			datastoreCluster: datastoreCluster,
-		})
 		// CentOS
 		scenarios = append(scenarios, &vSphereScenario{
 			version: v,

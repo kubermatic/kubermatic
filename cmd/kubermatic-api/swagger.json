@@ -14688,18 +14688,6 @@
       },
       "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
     },
-    "ContainerLinuxSpec": {
-      "description": "ContainerLinuxSpec ubuntu linux specific settings",
-      "type": "object",
-      "properties": {
-        "disableAutoUpdate": {
-          "description": "disable container linux auto-update feature",
-          "type": "boolean",
-          "x-go-name": "DisableAutoUpdate"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
     "ControlPlaneMetrics": {
       "description": "ControlPlaneMetrics defines a metric for the user cluster control plane resources",
       "type": "object",
@@ -16743,7 +16731,7 @@
           "$ref": "#/definitions/ProxyValue"
         },
         "hyperkube_image": {
-          "description": "Optional: The hyperkube image to use. Currently only Container Linux\nmakes use of this option.",
+          "description": "Optional: The hyperkube image to use. Currently only Flatcar\nmakes use of this option.",
           "type": "string",
           "x-go-name": "HyperkubeImage"
         },
@@ -17338,9 +17326,6 @@
       "properties": {
         "centos": {
           "$ref": "#/definitions/CentOSSpec"
-        },
-        "containerLinux": {
-          "$ref": "#/definitions/ContainerLinuxSpec"
         },
         "flatcar": {
           "$ref": "#/definitions/FlatcarSpec"

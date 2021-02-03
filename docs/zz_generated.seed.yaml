@@ -24,7 +24,7 @@ spec:
       node:
         # Optional: If set, this proxy will be configured for both HTTP and HTTPS.
         http_proxy: ""
-        # Optional: The hyperkube image to use. Currently only Container Linux
+        # Optional: The hyperkube image to use. Currently only Flatcar
         # makes use of this option.
         hyperkube_image: ""
         # Optional: These image registries will be configured as insecure

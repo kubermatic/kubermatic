@@ -91,7 +91,7 @@ function deploy {
   inital_revision="$(retry 5 helm list --tiller-namespace=${TILLER_NAMESPACE} ${name} --output=json|jq '.Releases[0].Revision')"
 
   echodate "Upgrading ${name}..."
-  retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
+  retry 5 helm --tiller-namespace ${TILLER_NAMESPACE} upgrade --install --force --atomic --timeout $timeout ${MASTER_FLAG} ${HELM_EXTRA_ARGS} --values ${VALUES_FILE} --namespace ${namespace} ${name} ${path}
 
   if [ "${CANARY_DEPLOYMENT:-}" = "true" ]; then
     TEST_NAME="[Helm] Rollback chart ${name}"

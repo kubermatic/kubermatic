@@ -16,7 +16,7 @@ import (
 // swagger:model NodeSettings
 type NodeSettings struct {
 
-	// Optional: The hyperkube image to use. Currently only Container Linux
+	// Optional: The hyperkube image to use. Currently only Flatcar
 	// makes use of this option.
 	HyperkubeImage string `json:"hyperkube_image,omitempty"`
 
