@@ -28,6 +28,12 @@ type ClusterHealth struct {
 	// etcd
 	Etcd HealthStatus `json:"etcd,omitempty"`
 
+	// gatekeeper audit
+	GatekeeperAudit HealthStatus `json:"gatekeeperAudit,omitempty"`
+
+	// gatekeeper controller
+	GatekeeperController HealthStatus `json:"gatekeeperController,omitempty"`
+
 	// machine controller
 	MachineController HealthStatus `json:"machineController,omitempty"`
 
@@ -55,6 +61,14 @@ func (m *ClusterHealth) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateEtcd(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGatekeeperAudit(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateGatekeeperController(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -133,6 +147,38 @@ func (m *ClusterHealth) validateEtcd(formats strfmt.Registry) error {
 	if err := m.Etcd.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("etcd")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateGatekeeperAudit(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.GatekeeperAudit) { // not required
+		return nil
+	}
+
+	if err := m.GatekeeperAudit.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("gatekeeperAudit")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *ClusterHealth) validateGatekeeperController(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.GatekeeperController) { // not required
+		return nil
+	}
+
+	if err := m.GatekeeperController.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("gatekeeperController")
 		}
 		return err
 	}
