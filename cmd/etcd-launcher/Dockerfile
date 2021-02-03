@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM busybox
+FROM busybox:1.32.1
 LABEL maintainer="support@kubermatic.com"
 
 COPY ./_build/etcd-launcher /
