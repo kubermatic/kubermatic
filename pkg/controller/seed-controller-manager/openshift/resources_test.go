@@ -136,13 +136,6 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			Type:  corev1.ServiceTypeLoadBalancer,
 			Ports: []corev1.ServicePort{{Port: 443}},
 		},
-		Status: corev1.ServiceStatus{
-			LoadBalancer: corev1.LoadBalancerStatus{
-				Ingress: []corev1.LoadBalancerIngress{{
-					IP: "1.2.3.4",
-				}},
-			},
-		},
 	}
 
 	if err := mgr.GetClient().Create(ctx, testCluster); err != nil {
@@ -151,6 +144,17 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	if err := mgr.GetClient().Create(ctx, lbService); err != nil {
 		t.Fatalf("failed to create the loadbalancer service: %v", err)
 	}
+
+	// Status must be set *after* the Service has been created, because
+	// the Create() call would reset it to nil.
+	lbService.Status = corev1.ServiceStatus{
+		LoadBalancer: corev1.LoadBalancerStatus{
+			Ingress: []corev1.LoadBalancerIngress{{
+				IP: "1.2.3.4",
+			}},
+		},
+	}
+
 	// Status is a subresource for services and we need the IP to be set, else
 	// the reconciliation returns early
 	if err := mgr.GetClient().Status().Update(ctx, lbService); err != nil {
@@ -174,24 +178,12 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		oidc: OIDCConfig{CAFile: oidcCATempfile.Name()},
 	}
 
-	if err := mgr.GetClient().Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(testCluster), testCluster); err != nil {
-		t.Fatalf("failed to find cluster object: %v", err)
-	}
-
 	if err := r.networkDefaults(ctx, testCluster); err != nil {
 		t.Fatalf("failed to sync initial network default: %v", err)
 	}
 
-	if err := mgr.GetClient().Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(testCluster), testCluster); err != nil {
-		t.Fatalf("failed to find cluster object: %v", err)
-	}
-
 	if err := r.reconcileResources(ctx, testCluster); err != nil {
 		t.Fatalf("Initial resource deployment failed, this indicates that some resources are invalid. Error: %v", err)
-	}
-
-	if err := mgr.GetClient().Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(testCluster), testCluster); err != nil {
-		t.Fatalf("failed to find cluster object: %v", err)
 	}
 
 	if err := r.reconcileResources(ctx, testCluster); err != nil {
