@@ -532,7 +532,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		creators = append(creators, openshift.ControlplaneConfigCreator(r.platform))
 	} else {
 		creators = append(creators,
-			coredns.ConfigMapCreator(),
+			coredns.ConfigMapCreator(r.clusterDNSDomain),
 			nodelocaldns.ConfigMapCreator(r.dnsClusterIP),
 		)
 	}
