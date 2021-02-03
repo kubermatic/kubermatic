@@ -344,13 +344,10 @@ func (d *Document) Equal(other *Document) bool {
 // of a YAML structure into a unified form (that is, a map of strings
 // to interfaces).
 func (d *Document) normalize() interface{} {
-	encoded, err := yaml.Marshal(d.root)
-	if err != nil {
-		return nil
-	}
+	encoded, _ := yaml.Marshal(d.root)
 
 	var normal interface{}
-	yaml.Unmarshal(encoded, &normal)
+	_ = yaml.Unmarshal(encoded, &normal)
 
 	return normal
 }

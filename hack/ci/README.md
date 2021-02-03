@@ -95,11 +95,6 @@ Kubernetes conformance.
 This script sets up a local KKP installation in kind, deploys a
 couple of test Presets and Users and then runs the etcd-launcher tests.
 
-## run-lint.sh
-
-Runs golangci-lint to validate that no issues have been introduced
-into the codebase.
-
 ## run-offline-test.sh
 
 This script was used to run KKP conformance tests inside an offline
