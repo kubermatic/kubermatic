@@ -125,7 +125,11 @@ endif
 
 .PHONY: lint
 lint:
-	./hack/ci/run-lint.sh
+	golangci-lint run \
+		--verbose \
+		--build-tags "$(KUBERMATIC_EDITION)" \
+		--print-resources-usage \
+		./pkg/... ./cmd/... ./codegen/...
 
 .PHONY: shellcheck
 shellcheck:

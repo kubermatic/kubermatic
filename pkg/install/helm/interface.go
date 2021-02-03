@@ -16,7 +16,11 @@ limitations under the License.
 
 package helm
 
-import "github.com/Masterminds/semver/v3"
+import (
+	"github.com/Masterminds/semver/v3"
+
+	"k8c.io/kubermatic/v2/pkg/util/yamled"
+)
 
 // Client describes the operations that the Helm client is providing to
 // the installer. This is the minimum set of operations required to
@@ -28,4 +32,5 @@ type Client interface {
 	ListReleases(namespace string) ([]Release, error)
 	UninstallRelease(namespace string, name string) error
 	RenderChart(namespace string, releaseName string, chartDirectory string, valuesFile string, values map[string]string) ([]byte, error)
+	GetValues(namespace string, releaseName string) (*yamled.Document, error)
 }
