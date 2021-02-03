@@ -71,8 +71,8 @@ func TestAzureSizeEndpoint(t *testing.T) {
 			location:   locationUS,
 			secret:     "secret",
 			expectedResponse: `[
-				{"name":"Standard_GS3", "maxDataDiskCount": 3, "memoryInMB": 254, "numberOfCores": 8, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024},
-				{"name":"Standard_A5", "maxDataDiskCount": 3, "memoryInMB": 254, "numberOfCores": 8, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024}
+				{"name":"Standard_GS3", "maxDataDiskCount": 3, "memoryInMB": 2048, "numberOfCores": 8, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024},
+				{"name":"Standard_A5", "maxDataDiskCount": 3, "memoryInMB": 2048, "numberOfCores": 8, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024}
 			]`,
 		},
 		{
@@ -81,7 +81,7 @@ func TestAzureSizeEndpoint(t *testing.T) {
 			location:   locationEU,
 			secret:     "secret",
 			expectedResponse: `[
-				{"name":"Standard_GS3", "maxDataDiskCount": 3, "memoryInMB": 254, "numberOfCores": 8, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024}
+				{"name":"Standard_GS3", "maxDataDiskCount": 3, "memoryInMB": 2048, "numberOfCores": 8, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024}
 			]`,
 		},
 	}
@@ -191,7 +191,7 @@ func (s *mockSizeClientImpl) ListVMSize(ctx context.Context, location string) ([
 	standardGS3 := "Standard_GS3"
 	standardA5 := "Standard_A5"
 	maxDataDiskCount := int32(3)
-	memoryInMB := int32(254)
+	memoryInMB := int32(2048)
 	numberOfCores := int32(8)
 	diskSizeInMB := int32(1024)
 

@@ -27,6 +27,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -165,7 +166,7 @@ func (s *azureClientSetImpl) ListVnets(ctx context.Context, resourceGroupName st
 
 }
 
-func AzureSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
+func AzureSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -200,7 +201,11 @@ func AzureSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter
 	if err != nil {
 		return nil, err
 	}
-	return AzureSize(ctx, creds.SubscriptionID, creds.ClientID, creds.ClientSecret, creds.TenantID, azureLocation)
+	settings, err := settingsProvider.GetGlobalSettings()
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	return AzureSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, creds.SubscriptionID, creds.ClientID, creds.ClientSecret, creds.TenantID, azureLocation)
 }
 
 func AzureAvailabilityZonesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID, skuName string) (interface{}, error) {
@@ -293,7 +298,7 @@ func isValidVM(sku compute.ResourceSku, location string) bool {
 	return true
 }
 
-func AzureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv1.AzureSizeList, error) {
+func AzureSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv1.AzureSizeList, error) {
 	sizesClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorizer for size client: %v", err)
@@ -312,13 +317,6 @@ func AzureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tena
 		}
 	}
 
-	// prepare set of valid VM size types for container purpose
-	validVMSizeList := compute.PossibleContainerServiceVMSizeTypesValues()
-	validVMContainerSet := make(map[string]struct{}, len(validVMSizeList))
-	for _, s := range validVMSizeList {
-		validVMContainerSet[string(s)] = struct{}{}
-	}
-
 	// get all available VM size types for given location
 	listVMSize, err := sizesClient.ListVMSize(ctx, location)
 	if err != nil {
@@ -329,9 +327,8 @@ func AzureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tena
 	for _, v := range listVMSize {
 		if v.Name != nil {
 			_, okSKU := validSKUSet[*v.Name]
-			_, okVMContainer := validVMContainerSet[*v.Name]
 
-			if okSKU && okVMContainer {
+			if okSKU {
 				s := apiv1.AzureSize{
 					Name:          *v.Name,
 					NumberOfCores: *v.NumberOfCores,
@@ -346,7 +343,42 @@ func AzureSize(ctx context.Context, subscriptionID, clientID, clientSecret, tena
 		}
 	}
 
-	return sizeList, nil
+	return filterAzureByQuota(sizeList, quota), nil
+}
+
+func filterAzureByQuota(instances apiv1.AzureSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.AzureSizeList {
+	filteredRecords := apiv1.AzureSizeList{}
+
+	// prepare set of valid VM size types for container purpose
+	validVMSizeList := compute.PossibleContainerServiceVMSizeTypesValues()
+	validVMContainerSet := make(map[string]struct{}, len(validVMSizeList))
+	for _, s := range validVMSizeList {
+		validVMContainerSet[string(s)] = struct{}{}
+	}
+
+	// Range over the records and apply all the filters to each record.
+	// If the record passes all the filters, add it to the final slice.
+	for _, r := range instances {
+		keep := true
+
+		_, okVMContainer := validVMContainerSet[r.Name]
+		if !okVMContainer {
+			continue
+		}
+
+		if !handlercommon.FilterCPU(int(r.NumberOfCores), quota.MinCPU, quota.MaxCPU) {
+			keep = false
+		}
+		if !handlercommon.FilterMemory(int(r.MemoryInMB/1024), quota.MinRAM, quota.MaxRAM) {
+			keep = false
+		}
+
+		if keep {
+			filteredRecords = append(filteredRecords, r)
+		}
+	}
+
+	return filteredRecords
 }
 
 func AzureSKUAvailabilityZones(ctx context.Context, subscriptionID, clientID, clientSecret, tenantID, location, skuName string) (*apiv1.AzureAvailabilityZonesList, error) {

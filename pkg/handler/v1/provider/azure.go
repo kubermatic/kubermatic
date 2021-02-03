@@ -29,14 +29,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AzureSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeNoCredentialsReq)
-		return providercommon.AzureSizeWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
+		return providercommon.AzureSizeWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, settingsProvider, req.ProjectID, req.ClusterID)
 	}
 }
 
-func AzureSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func AzureSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(AzureSizeReq)
 
@@ -62,7 +62,11 @@ func AzureSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter p
 				tenantID = credentials.TenantID
 			}
 		}
-		return providercommon.AzureSize(ctx, subscriptionID, clientID, clientSecret, tenantID, req.Location)
+		settings, err := settingsProvider.GetGlobalSettings()
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return providercommon.AzureSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, subscriptionID, clientID, clientSecret, tenantID, req.Location)
 	}
 }
 
