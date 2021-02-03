@@ -95,7 +95,7 @@ func main() {
 		LeaderElectionID:   "operator.kubermatic.io",
 	})
 	if err != nil {
-		log.Fatalw("Failed to create Controller Manager instance: %v", err)
+		log.Fatalw("Failed to create Controller Manager instance", zap.Error(err))
 	}
 
 	if err := mgr.Add(pprofOpts); err != nil {
