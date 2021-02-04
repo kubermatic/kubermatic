@@ -2117,6 +2117,8 @@ const (
 	GatekeeperSeedConstraintTemplateCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-master-constraint-templates"
 	// GatekeeperConstraintCleanupFinalizer indicates that gatkeeper constraints on the user cluster need cleanup
 	GatekeeperConstraintCleanupFinalizer = "kubermatic.io/cleanup-gatekeeper-constraints"
+	// KubermaticConstraintCleanupFinalizer indicates that Kubermatic constraints for the cluster need cleanup
+	KubermaticConstraintCleanupFinalizer = "kubermatic.io/cleanup-kubermatic-constraints"
 )
 
 func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {
