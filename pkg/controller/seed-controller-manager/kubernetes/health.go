@@ -45,8 +45,11 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		resources.MachineControllerDeploymentName:     {healthStatus: &extendedHealth.MachineController, minReady: 1},
 		resources.OpenVPNServerDeploymentName:         {healthStatus: &extendedHealth.OpenVPN, minReady: 1},
 		resources.UserClusterControllerDeploymentName: {healthStatus: &extendedHealth.UserClusterControllerManager, minReady: 1},
-		resources.GatekeeperControllerDeploymentName:  {healthStatus: &extendedHealth.GatekeeperController, minReady: 1},
-		resources.GatekeeperAuditDeploymentName:       {healthStatus: &extendedHealth.GatekeeperAudit, minReady: 1},
+	}
+
+	if cluster.Spec.OPAIntegration != nil && cluster.Spec.OPAIntegration.Enabled {
+		healthMapping[resources.GatekeeperControllerDeploymentName] = &depInfo{healthStatus: &extendedHealth.GatekeeperController, minReady: 1}
+		healthMapping[resources.GatekeeperAuditDeploymentName] = &depInfo{healthStatus: &extendedHealth.GatekeeperAudit, minReady: 1}
 	}
 
 	for name := range healthMapping {
