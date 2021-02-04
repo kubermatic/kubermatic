@@ -775,6 +775,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		AdmissionPlugins                     []string                               `json:"admissionPlugins,omitempty"`
 		PodNodeSelectorAdmissionPluginConfig map[string]string                      `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
 		ServiceAccount                       *kubermaticv1.ServiceAccountSettings   `json:"serviceAccount,omitempty"`
+		OPAIntegration                       *kubermaticv1.OPAIntegrationSettings   `json:"opaIntegration,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -803,6 +804,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		AdmissionPlugins:                     cs.AdmissionPlugins,
 		PodNodeSelectorAdmissionPluginConfig: cs.PodNodeSelectorAdmissionPluginConfig,
 		ServiceAccount:                       cs.ServiceAccount,
+		OPAIntegration:                       cs.OPAIntegration,
 	})
 
 	return ret, err
