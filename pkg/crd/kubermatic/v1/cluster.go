@@ -628,8 +628,8 @@ type ExtendedClusterHealth struct {
 	OpenVPN                      HealthStatus `json:"openvpn"`
 	CloudProviderInfrastructure  HealthStatus `json:"cloudProviderInfrastructure"`
 	UserClusterControllerManager HealthStatus `json:"userClusterControllerManager"`
-	GatekeeperController         HealthStatus `json:"gatekeeperController"`
-	GatekeeperAudit              HealthStatus `json:"gatekeeperAudit"`
+	GatekeeperController         HealthStatus `json:"gatekeeperController,omitempty"`
+	GatekeeperAudit              HealthStatus `json:"gatekeeperAudit,omitempty"`
 }
 
 // AllHealthy returns if all components are healthy. Gatekeeper components not included as they are optional and not

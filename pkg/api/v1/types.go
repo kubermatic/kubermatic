@@ -1017,8 +1017,8 @@ type ClusterHealth struct {
 	Etcd                         kubermaticv1.HealthStatus `json:"etcd"`
 	CloudProviderInfrastructure  kubermaticv1.HealthStatus `json:"cloudProviderInfrastructure"`
 	UserClusterControllerManager kubermaticv1.HealthStatus `json:"userClusterControllerManager"`
-	GatekeeperController         kubermaticv1.HealthStatus `json:"gatekeeperController"`
-	GatekeeperAudit              kubermaticv1.HealthStatus `json:"gatekeeperAudit"`
+	GatekeeperController         kubermaticv1.HealthStatus `json:"gatekeeperController,omitempty"`
+	GatekeeperAudit              kubermaticv1.HealthStatus `json:"gatekeeperAudit,omitempty"`
 }
 
 // AccessibleAddons represents an array of addons that can be configured in the user clusters.
