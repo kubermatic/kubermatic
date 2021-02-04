@@ -582,34 +582,6 @@ func ReconcileCustomResourceDefinitions(ctx context.Context, namedGetters []Name
 	return nil
 }
 
-func CustomResourceDefinitionObjectWrapperv1(create CustomResourceDefinitionCreatorv1) ObjectCreator {
-	return func(existing runtime.Object) (runtime.Object, error) {
-		if existing != nil {
-			return create(existing.(*apiextensionsv1.CustomResourceDefinition))
-		}
-		return create(&apiextensionsv1.CustomResourceDefinition{})
-	}
-}
-
-func ReconcileCustomResourceDefinitionsv1(ctx context.Context, namedGetters []NamedCustomResourceDefinitionCreatorGetterv1, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
-	for _, get := range namedGetters {
-		name, create := get()
-		createObject := CustomResourceDefinitionObjectWrapperv1(create)
-		createObject = createWithNamespace(createObject, namespace)
-		createObject = createWithName(createObject, name)
-
-		for _, objectModifier := range objectModifiers {
-			createObject = objectModifier(createObject)
-		}
-
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &apiextensionsv1.CustomResourceDefinition{}, false); err != nil {
-			return fmt.Errorf("failed to ensure CustomResourceDefinition %s/%s: %v", namespace, name, err)
-		}
-	}
-
-	return nil
-}
-
 // CronJobCreator defines an interface to create/update CronJobs
 type CronJobCreator = func(existing *batchv1beta1.CronJob) (*batchv1beta1.CronJob, error)
 

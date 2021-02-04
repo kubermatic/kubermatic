@@ -33,7 +33,6 @@ import (
 	kubernetesdashboard "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/kubernetes-dashboard"
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/multus"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openvpn"
@@ -208,7 +207,6 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		creators = []reconciling.NamedServiceAccountCreatorGetter{
 			coredns.ServiceAccountCreator(),
 			nodelocaldns.ServiceAccountCreator(),
-			multus.ServiceAccountCreator(),
 		}
 		if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metav1.NamespaceSystem, err)
@@ -368,7 +366,6 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context) error {
 			[]reconciling.NamedClusterRoleCreatorGetter{
 				kubernetesdashboard.ClusterRoleCreator(),
 				coredns.ClusterRoleCreator(),
-				multus.ClusterRoleCreator(),
 			}...)
 	}
 
@@ -403,7 +400,6 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 			[]reconciling.NamedClusterRoleBindingCreatorGetter{
 				kubernetesdashboard.ClusterRoleBindingCreator(),
 				coredns.ClusterRoleBindingCreator(),
-				multus.ClusterRoleBindingCreator(),
 			}...)
 	}
 
@@ -427,17 +423,6 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 	}
 
 	if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
-		return fmt.Errorf("failed to reconcile CustomResourceDefinitions: %v", err)
-	}
-	return nil
-}
-
-func (r *reconciler) reconcileCRDsv1(ctx context.Context) error {
-	creators := []reconciling.NamedCustomResourceDefinitionCreatorGetterv1{
-		multus.ConfigCRDCreator(),
-	}
-
-	if err := reconciling.ReconcileCustomResourceDefinitionsv1(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile CustomResourceDefinitions: %v", err)
 	}
 	return nil
@@ -547,7 +532,6 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		creators = append(creators,
 			coredns.ConfigMapCreator(),
 			nodelocaldns.ConfigMapCreator(r.dnsClusterIP),
-			multus.ConfigMapCreator(),
 		)
 	}
 
@@ -608,10 +592,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
 	}
 
 	if !r.openshift {
-		dsCreators = append(dsCreators,
-			nodelocaldns.DaemonSetCreator(),
-			multus.DaemonSetCreator(),
-		)
+		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator())
 	}
 
 	if len(r.tunnelingAgentIP) > 0 {
