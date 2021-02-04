@@ -77,6 +77,15 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 
 	}
 
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.KubermaticConstraintCleanupFinalizer) {
+		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(c, kubermaticapiv1.KubermaticConstraintCleanupFinalizer)
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &reconcile.Result{}, nil
 }
 
