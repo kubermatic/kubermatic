@@ -25,13 +25,13 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
-	"k8s.io/apimachinery/pkg/runtime"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestListConstraintTemplates(t *testing.T) {
@@ -174,8 +174,8 @@ func TestCreateConstraintTemplates(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
 			var reqBody struct {
-				Name string                         `json:"name"`
-				Spec v1beta1.ConstraintTemplateSpec `json:"spec"`
+				Name string                              `json:"name"`
+				Spec kubermaticv1.ConstraintTemplateSpec `json:"spec"`
 			}
 			reqBody.Spec = tc.CTtoCreate.Spec
 			reqBody.Name = tc.CTtoCreate.Name

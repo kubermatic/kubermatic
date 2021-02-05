@@ -288,7 +288,7 @@ func genConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 	ct.Kind = "ConstraintTemplate"
 	ct.APIVersion = kubermaticv1.SchemeGroupVersion.String()
 	ct.Name = name
-	ct.Spec = v1beta1.ConstraintTemplateSpec{
+	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
 		CRD: v1beta1.CRD{
 			Spec: v1beta1.CRDSpec{
 				Names: v1beta1.Names{
