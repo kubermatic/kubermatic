@@ -996,7 +996,7 @@ func (r Routing) listDigitaloceanSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.DigitaloceanSizeEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.DigitaloceanSizeEndpoint(r.presetsProvider, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodeDoSizesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2895,7 +2895,7 @@ func (r Routing) listDigitaloceanSizesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.DigitaloceanSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		)(provider.DigitaloceanSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodeDoSizesNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
