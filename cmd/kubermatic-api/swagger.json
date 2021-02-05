@@ -14598,7 +14598,7 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ConstraintTemplateSpec": {
-      "description": "ConstraintTemplateSpec defines the desired state of ConstraintTemplate",
+      "description": "ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec",
       "type": "object",
       "properties": {
         "crd": {
@@ -14612,7 +14612,7 @@
           "x-go-name": "Targets"
         }
       },
-      "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "ConstraintTemplateStatus": {
       "description": "ConstraintTemplateStatus defines the observed state of ConstraintTemplate",
