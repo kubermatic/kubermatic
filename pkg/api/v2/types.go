@@ -27,7 +27,7 @@ import (
 type ConstraintTemplate struct {
 	Name string `json:"name"`
 
-	Spec   v1beta1.ConstraintTemplateSpec   `json:"spec"`
+	Spec   crdapiv1.ConstraintTemplateSpec  `json:"spec"`
 	Status v1beta1.ConstraintTemplateStatus `json:"status"`
 }
 

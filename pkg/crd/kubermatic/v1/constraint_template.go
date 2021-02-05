@@ -39,7 +39,13 @@ type ConstraintTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec v1beta1.ConstraintTemplateSpec `json:"spec"`
+	Spec ConstraintTemplateSpec `json:"spec"`
+}
+
+// ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec
+type ConstraintTemplateSpec struct {
+	CRD     v1beta1.CRD      `json:"crd,omitempty"`
+	Targets []v1beta1.Target `json:"targets,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

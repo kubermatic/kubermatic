@@ -1205,7 +1205,7 @@ func GenDefaultExternalClusterNode() (*corev1.Node, error) {
 func GenDefaultConstraintTemplate(name string) apiv2.ConstraintTemplate {
 	return apiv2.ConstraintTemplate{
 		Name: name,
-		Spec: constrainttemplatev1beta1.ConstraintTemplateSpec{
+		Spec: kubermaticv1.ConstraintTemplateSpec{
 			CRD: constrainttemplatev1beta1.CRD{
 				Spec: constrainttemplatev1beta1.CRDSpec{
 					Names: constrainttemplatev1beta1.Names{
@@ -1242,7 +1242,7 @@ func GenAdminUser(name, email string, isAdmin bool) *kubermaticv1.User {
 func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name
-	ct.Spec = constrainttemplatev1beta1.ConstraintTemplateSpec{
+	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
 		CRD: constrainttemplatev1beta1.CRD{
 			Spec: constrainttemplatev1beta1.CRDSpec{
 				Names: constrainttemplatev1beta1.Names{

@@ -228,7 +228,10 @@ func constraintTemplateCreatorGetter(kubeCT *kubermaticv1.ConstraintTemplate) re
 	return func() (string, reconciling.ConstraintTemplateCreator) {
 		return kubeCT.Name, func(ct *v1beta1.ConstraintTemplate) (*v1beta1.ConstraintTemplate, error) {
 			ct.Name = kubeCT.Name
-			ct.Spec = kubeCT.Spec
+			ct.Spec = v1beta1.ConstraintTemplateSpec{
+				CRD:     kubeCT.Spec.CRD,
+				Targets: kubeCT.Spec.Targets,
+			}
 
 			return ct, nil
 		}
