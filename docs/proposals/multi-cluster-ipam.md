@@ -193,5 +193,5 @@ problem for MetalLB only.
 For the simple version (NOT including the [Possible Further Enhancements](#possible-further-enhancements)):
  - Implement the IPAM Controller which consumes `IPAMPool` CRs and creates `IPAMAllocation` CRs: _5 days_
  - Implement changes in the Addon controller - add support for `RequiredIPAMAllocations` in `AddonSpec`,
-   expose tha allocation data in `ClusterData` for templating: _5 days_
+   expose the allocation data in `ClusterData` for templating: _5 days_
  - Add `requiredIPAMAllocations` to `AddonConfig` and project it to `AddonSpec`: _2 days_
