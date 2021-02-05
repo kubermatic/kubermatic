@@ -135,8 +135,8 @@ func genConstraintTemplate(name string, delete bool) *kubermaticv1.ConstraintTem
 	return ct
 }
 
-func genCTSpec() v1beta1.ConstraintTemplateSpec {
-	return v1beta1.ConstraintTemplateSpec{
+func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
+	return kubermaticv1.ConstraintTemplateSpec{
 		CRD: v1beta1.CRD{
 			Spec: v1beta1.CRDSpec{
 				Names: v1beta1.Names{
