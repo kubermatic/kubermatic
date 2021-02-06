@@ -130,8 +130,11 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("failed to get constraint template: %v", err)
 			}
 
-			if !reflect.DeepEqual(ct.Spec, tc.expectedCT.Spec) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct, tc.expectedCT))
+			if !reflect.DeepEqual(ct.Spec.CRD, tc.expectedCT.Spec.CRD) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct.Spec.CRD, tc.expectedCT.Spec.CRD))
+			}
+			if !reflect.DeepEqual(ct.Spec.Targets, tc.expectedCT.Spec.Targets) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(ct.Spec.Targets, tc.expectedCT.Spec.Targets))
 			}
 
 			if !reflect.DeepEqual(ct.Name, tc.expectedCT.Name) {
@@ -158,13 +161,16 @@ func genConstraintTemplate(name string, delete bool) *kubermaticv1.ConstraintTem
 func genGKConstraintTemplate(name string) *v1beta1.ConstraintTemplate {
 	ct := &v1beta1.ConstraintTemplate{}
 	ct.Name = name
-	ct.Spec = genCTSpec()
+	ct.Spec = v1beta1.ConstraintTemplateSpec{
+		CRD:     genCTSpec().CRD,
+		Targets: genCTSpec().Targets,
+	}
 
 	return ct
 }
 
-func genCTSpec() v1beta1.ConstraintTemplateSpec {
-	return v1beta1.ConstraintTemplateSpec{
+func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
+	return kubermaticv1.ConstraintTemplateSpec{
 		CRD: v1beta1.CRD{
 			Spec: v1beta1.CRDSpec{
 				Names: v1beta1.Names{

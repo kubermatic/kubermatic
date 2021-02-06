@@ -13,7 +13,7 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ConstraintTemplateSpec ConstraintTemplateSpec defines the desired state of ConstraintTemplate
+// ConstraintTemplateSpec ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec
 //
 // swagger:model ConstraintTemplateSpec
 type ConstraintTemplateSpec struct {

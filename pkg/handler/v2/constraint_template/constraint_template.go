@@ -27,7 +27,6 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -148,7 +147,7 @@ type ctBody struct {
 	// Name of the constraint template
 	Name string `json:"name"`
 	// ConstraintTemplateSpec Spec of the constraint template
-	ConstraintTemplateSpec v1beta1.ConstraintTemplateSpec `json:"spec"`
+	ConstraintTemplateSpec kubermaticv1.ConstraintTemplateSpec `json:"spec"`
 }
 
 func DecodeCreateConstraintTemplateRequest(c context.Context, r *http.Request) (interface{}, error) {
