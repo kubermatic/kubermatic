@@ -36,6 +36,10 @@ type DatacenterSpecOpenstack struct {
 	// This setting defaults to true.
 	ManageSecurityGroups bool `json:"manage_security_groups,omitempty"`
 
+	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
+	// This setting defaults to true.
+	UseOctavia bool `json:"use_octavia,omitempty"`
+
 	// region
 	Region string `json:"region,omitempty"`
 

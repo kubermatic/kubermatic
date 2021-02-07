@@ -146,6 +146,8 @@ spec:
           # See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
           # This setting defaults to true.
           manage_security_groups: true
+          # Optional: Gets mapped to "use-octavia" setting in the cloud config. This setting defaults to true.
+          use_octavia: true
           node_size_requirements:
             # MinimumMemory is the minimum required amount of memory, measured in MB
             minimum_memory: 0

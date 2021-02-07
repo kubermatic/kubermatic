@@ -210,6 +210,10 @@ type DatacenterSpecOpenstack struct {
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
 	// This setting defaults to true.
 	ManageSecurityGroups *bool `json:"manage_security_groups"`
+	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
+	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
+	// This setting defaults to true.
+	UseOctavia *bool `json:"use_octavia"`
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
 	// This setting defaults to false.
