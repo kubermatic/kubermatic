@@ -15085,6 +15085,11 @@
           "type": "boolean",
           "x-go-name": "ManageSecurityGroups"
         },
+        "use_octavia": {
+          "description": "Optional: Gets mapped to the \"use-octavia\" setting in the cloud config.\nThis setting defaults to true.",
+          "type": "boolean",
+          "x-go-name": "UseOctavia"
+        },
         "node_size_requirements": {
           "$ref": "#/definitions/OpenstackNodeSizeRequirements"
         },

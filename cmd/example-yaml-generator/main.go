@@ -136,6 +136,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 						Openstack: &kubermaticv1.DatacenterSpecOpenstack{
 							Images:               imageList,
 							ManageSecurityGroups: pointer.BoolPtr(true),
+							UseOctavia:           pointer.BoolPtr(true),
 							DNSServers:           []string{},
 							TrustDevicePath:      pointer.BoolPtr(false),
 						},

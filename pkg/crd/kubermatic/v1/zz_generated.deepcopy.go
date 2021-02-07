@@ -1415,6 +1415,11 @@ func (in *DatacenterSpecOpenstack) DeepCopyInto(out *DatacenterSpecOpenstack) {
 		*out = new(bool)
 		**out = **in
 	}
+	if in.UseOctavia != nil {
+		in, out := &in.UseOctavia, &out.UseOctavia
+		*out = new(bool)
+		**out = **in
+	}
 	if in.TrustDevicePath != nil {
 		in, out := &in.TrustDevicePath, &out.TrustDevicePath
 		*out = new(bool)
