@@ -29,13 +29,17 @@ Solutions which are available e.g. MetalLB focus on a single cluster. KubeLB aim
 
 * Multi cluster load balancing
 
+* Advanced setups like BGP or similar are only required for the load balancing cluster
+
+* Central external IP Address management
+
 * Possible cost reduction as you can decide between KubeLB and IaaS LoadBalancer instances
 
 * Load balancing for internal networks
  
 * In a multi cluster environment it can be useful to have a limited amount of entrypoints (Load balancer cluster) inside the network to do some security or monitoring. 
 
-* Make the actual Ingress Controller  pluggable (easy implementation if e.g. someone wants to use nginx over envoy)
+* Make the actual Ingress Controller pluggable (easy implementation if e.g. someone wants to use nginx over envoy)
 
 * Be able to have the load balancing cluster exist separately from the seed cluster or integrated into it
 
@@ -43,7 +47,7 @@ Solutions which are available e.g. MetalLB focus on a single cluster. KubeLB aim
 
 The overall implementation contains two different parts: 
 
-**Agent**: Controller which is deployed in every tenant cluster. It watches for Services, Ingress resources and node changes. Updates or Creates a CRD inside the load balancing Cluster accordingly.
+**Agent**: Controller which is deployed in every user cluster. It watches for Services, Ingress resources and node changes. Updates or Creates a CRD inside the load balancing Cluster accordingly.
 
 **Manager**: Controller which is responsible for deploying and configuring the resources needed inside the load balancer cluster. Watcher for it's CRD which describes the load balancing endpoints and settings. 
 
@@ -57,7 +61,7 @@ The overall implementation contains two different parts:
 
 **Agent**
 
-The agent watches for Services of type LoadBalancer/NodePort in the tenant cluster. In the tenant cluster itself for each service with type LoadBalancer a NodePort is allocated by default. 
+The agent watches for Services of type LoadBalancer/NodePort in the user cluster. In the user cluster itself for each service with type LoadBalancer a NodePort is allocated by default. 
 The agent creates a TCPLoadBalancer CRD inside the LB cluster. 
  
 The agent watches for node changes like "remove", "add" and failures and will update all TCPLoadBalancer CRD accordingly. 
@@ -78,21 +82,21 @@ There are different scenarios where the agent takes action, dependent on the ser
     
 3. For non implemented type load balancers
     
-    The controller will update the Status and IP of the Service in the tenant cluster, when the LB is provisioned or changed.
-    The agent takes action by default and replaces the needs of a LoadBalancer implementation for each tenant cluster.
+    The controller will update the Status and IP of the Service in the user cluster, when the LB is provisioned or changed.
+    The agent takes action by default and replaces the needs of a LoadBalancer implementation for each user cluster.
 
 **Manager** 
 
-The Manager watches for the TCPLoadBalancer CRD and creates an Envoy deployment and Service of type LoadBalancer in the LB cluster. Envoy gets configured with the node endpoints of the tenant cluster.
+The Manager watches for the TCPLoadBalancer CRD and creates an Envoy deployment and Service of type LoadBalancer in the LB cluster. Envoy gets configured with the node endpoints of the user cluster.
 
 Envoy will serve as a LoadBalancer instance due to its Control Plane mechanism and Cluster focus. For instance if a cluster changes its node size it is required to update all endpoints which are referred to this cluster.
 This can be done in a preformat manner with envoy.
 
 **Notes**
 
-* It is possible to set `externalTrafficPolicy: Local` and reduce the amount of hops for the tenant cluster. However, it's not clear if its possible to preserve the client ip yet and its probably bound to Load Balancer used for the LB Cluster. 
+* It is possible to set `externalTrafficPolicy: Local` and reduce the amount of hops for the user cluster. However, it's not clear if its possible to preserve the client ip yet and its probably bound to Load Balancer used for the LB Cluster. 
 
-* Kube-proxy is responsible for the behaviour of kubernetes services. Since we rely on these services inside the tenant cluster, it might be interesting to take some extra configuration.
+* Kube-proxy is responsible for the behaviour of kubernetes services. Since we rely on these services inside the user cluster, it might be interesting to take some extra configuration.
 This is possible for kube-proxy which offers for example different proxy-modes (userspace, iptables or ipvs) which implement different load balancing mechanisms.
 IPVS mode offers the most options for balancing traffic to backend pods.
 
@@ -106,7 +110,7 @@ IPVS mode offers the most options for balancing traffic to backend pods.
 **Agent**
 
 The agent will watch for the Ingress resources and will ensure that the backend service, used by the ingress resource, is exposed to the LB Cluster. This is done by creating a copy of the service if it's of type ClusterIP.
-Then the agent creates a TCPLoadBalancer CRD for the Service exposed by the tenant cluster, and a HTTPLoadBalancer CRD for the Ingress resources inside the LB cluster.
+Then the agent creates a TCPLoadBalancer CRD for the Service exposed by the user cluster, and a HTTPLoadBalancer CRD for the Ingress resources inside the LB cluster.
 
 **Manager**
 
@@ -115,7 +119,7 @@ Out of the HTTPLoadBalancer CRD the manager creates an Ingress resource itself i
 
 **DNS and Domain**
 
-The LB cluster will have a domain assigned e.g. lb.example.com each cluster will have a dedicated subdomain CLUSTERNAME.lb.example.net. For an Ingress on the tenant cluster a subdomain will be created based on the pattern INGRESS.CLUSTERNAME.lb.example.net The user can reference this URL in his DNS as a CNAME for a customer URL e.g. example.com -> CNAME INGRESS.CLUSTERNAME.lb.example.net 
+The LB cluster will have a domain assigned e.g. lb.example.com each cluster will have a dedicated subdomain CLUSTERNAME.lb.example.net. For an Ingress on the user cluster a subdomain will be created based on the pattern INGRESS.CLUSTERNAME.lb.example.net The user can reference this URL in his DNS as a CNAME for a customer URL e.g. example.com -> CNAME INGRESS.CLUSTERNAME.lb.example.net 
 
 **Notes**
 
