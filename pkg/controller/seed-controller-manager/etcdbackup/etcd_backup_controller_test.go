@@ -18,10 +18,11 @@ package etcdbackup
 
 import (
 	"context"
-	"github.com/go-test/deep"
 	"sort"
 	"testing"
 	"time"
+
+	"github.com/go-test/deep"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"

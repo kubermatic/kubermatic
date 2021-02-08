@@ -20,8 +20,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/minio/minio-go"
-	"go.etcd.io/etcd/v3/clientv3/snapshot"
 	"io"
 	"net/url"
 	"os"
@@ -30,16 +28,19 @@ import (
 	"strings"
 	"time"
 
+	"github.com/minio/minio-go"
 	"github.com/pkg/errors"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources"
-
 	"go.etcd.io/etcd/v3/clientv3"
+	"go.etcd.io/etcd/v3/clientv3/snapshot"
 	"go.etcd.io/etcd/v3/etcdserver/api/v3rpc/rpctypes"
 	"go.etcd.io/etcd/v3/etcdserver/etcdserverpb"
 	"go.etcd.io/etcd/v3/pkg/transport"
 	"go.uber.org/zap"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"

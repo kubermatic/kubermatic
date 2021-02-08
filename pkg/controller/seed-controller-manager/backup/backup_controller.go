@@ -19,12 +19,11 @@ package backup
 import (
 	"context"
 	"fmt"
-	"github.com/pkg/errors"
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
 	"github.com/robfig/cron"
-
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
