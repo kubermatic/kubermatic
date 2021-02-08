@@ -1084,6 +1084,7 @@ func TestGetClusterHealth(t *testing.T) {
 			ClusterToGet:     "keen-snyder",
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				// add a cluster
 				test.GenCluster("clusterDefID", "clusterDef", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC)),
 				// add another cluster
