@@ -18562,6 +18562,10 @@
           "format": "int8",
           "x-go-name": "ItemsPerPage"
         },
+        "lastSeenChangelogVersion": {
+          "type": "string",
+          "x-go-name": "LastSeenChangelogVersion"
+        },
         "selectProjectTableView": {
           "type": "boolean",
           "x-go-name": "SelectProjectTableView"
