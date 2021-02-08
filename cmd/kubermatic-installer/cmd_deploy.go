@@ -153,11 +153,10 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		case "kubermatic-master":
 			fallthrough
 
-		default:
+		case "":
 			kubermaticStack = kubermaticmaster.NewStack()
-		}
 
-		if kubermaticStack == nil {
+		default:
 			return fmt.Errorf("unknown stack %q specified", stackName)
 		}
 
