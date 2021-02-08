@@ -45,9 +45,9 @@ const (
 	MinioReleaseName = MinioChartName
 	MinioNamespace   = MinioChartName
 
-	S3ExporterChartName   = "kube-system"
+	S3ExporterChartName   = "s3-exporter"
 	S3ExporterReleaseName = S3ExporterChartName
-	S3ExporterNamespace   = S3ExporterChartName
+	S3ExporterNamespace   = "kube-system"
 )
 
 type SeedStack struct{}
