@@ -18,6 +18,7 @@ package apiserver
 
 import (
 	"fmt"
+	"k8s.io/apimachinery/pkg/util/net"
 	"path/filepath"
 	"strings"
 
@@ -247,6 +248,13 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 
 func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled, endpointReconcilingDisabled bool) ([]string, error) {
 	nodePortRange := data.NodePortRange()
+	overrideNodePortRange := data.Cluster().Spec.ComponentsOverride.Apiserver.NodePortRange
+	if overrideNodePortRange != "" {
+		if _, err := net.ParsePortRange(overrideNodePortRange); err == nil {
+			nodePortRange = overrideNodePortRange
+		}
+	}
+
 	if nodePortRange == "" {
 		nodePortRange = defaultNodePortRange
 	}
