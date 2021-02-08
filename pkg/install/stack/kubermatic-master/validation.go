@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubermatic
+package kubermaticmaster
 
 import (
 	"crypto/rand"
@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
 )
 
-func ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error) {
+func (*MasterStack) ValidateConfiguration(config *operatorv1alpha1.KubermaticConfiguration, helmValues *yamled.Document, logger logrus.FieldLogger) (*operatorv1alpha1.KubermaticConfiguration, *yamled.Document, []error) {
 	kubermaticFailures := validateKubermaticConfiguration(config)
 	for idx, e := range kubermaticFailures {
 		kubermaticFailures[idx] = prefixError("KubermaticConfiguration: ", e)

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package kubermatic
+package common
 
 import (
 	"context"
@@ -28,10 +28,14 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type storageClassFactory func(context.Context, *logrus.Entry, ctrlruntimeclient.Client, string) (storagev1.StorageClass, error)
+const (
+	StorageClassName = "kubermatic-fast"
+)
+
+type StorageClassFactory func(context.Context, *logrus.Entry, ctrlruntimeclient.Client, string) (storagev1.StorageClass, error)
 
 var (
-	storageClassFactories = map[string]storageClassFactory{
+	storageClassFactories = map[string]StorageClassFactory{
 		"copy-default": func(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, name string) (storagev1.StorageClass, error) {
 			s := &storagev1.StorageClass{
 				Parameters: map[string]string{},
@@ -113,6 +117,15 @@ var (
 		},
 	}
 )
+
+func StorageClassCreator(provider string) (StorageClassFactory, error) {
+	factory, ok := storageClassFactories[provider]
+	if !ok {
+		return nil, fmt.Errorf("unknown StorageClass provider %q", provider)
+	}
+
+	return factory, nil
+}
 
 func SupportedStorageClassProviders() sets.String {
 	return sets.StringKeySet(storageClassFactories)

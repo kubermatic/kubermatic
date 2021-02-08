@@ -27,9 +27,13 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/install/helm"
-	"k8c.io/kubermatic/v2/pkg/install/stack/kubermatic"
+	"k8c.io/kubermatic/v2/pkg/install/stack"
+	"k8c.io/kubermatic/v2/pkg/install/stack/common"
+	kubermaticmaster "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-master"
+	kubermaticseed "k8c.io/kubermatic/v2/pkg/install/stack/kubermatic-seed"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/util/edition"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -81,15 +85,16 @@ var (
 	}
 	deployStorageClassFlag = cli.StringFlag{
 		Name:  "storageclass",
-		Usage: fmt.Sprintf("Type of StorageClass to create (one of %v)", kubermatic.SupportedStorageClassProviders().List()),
+		Usage: fmt.Sprintf("Type of StorageClass to create (one of %v)", common.SupportedStorageClassProviders().List()),
 	}
 )
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
 	return cli.Command{
-		Name:   "deploy",
-		Usage:  "Installs or upgrades the current installation to the installer's built-in version",
-		Action: DeployAction(logger, versions),
+		Name:      "deploy",
+		Usage:     "Installs or upgrades the current installation to the installer's built-in version",
+		Action:    DeployAction(logger, versions),
+		ArgsUsage: "[STACK=kubermatic-master]",
 		Flags: []cli.Flag{
 			deployForceFlag,
 			deployConfigFlag,
@@ -139,13 +144,23 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 				deployHelmBinaryFlag.EnvVar)
 		}
 
-		logger.WithFields(fields).Info("🛫 Initializing installer…")
+		var kubermaticStack stack.Stack
+		stackName := ctx.Args().First()
+		switch stackName {
+		case "kubermatic-seed":
+			kubermaticStack = kubermaticseed.NewStack()
 
-		supportedProviders := kubermatic.SupportedStorageClassProviders()
-		chosenProvider := ctx.String(deployStorageClassFlag.Name)
-		if chosenProvider != "" && !supportedProviders.Has(chosenProvider) {
-			return fmt.Errorf("invalid storage class provider %q given (--%s)", chosenProvider, deployStorageClassFlag.Name)
+		case "kubermatic-master":
+			fallthrough
+
+		case "":
+			kubermaticStack = kubermaticmaster.NewStack()
+
+		default:
+			return fmt.Errorf("unknown stack %q specified", stackName)
 		}
+
+		logger.WithFields(fields).Info("🛫 Initializing installer…")
 
 		// load config files
 		if len(kubeconfig) == 0 {
@@ -167,7 +182,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		subLogger := log.Prefix(logrus.NewEntry(logger), "   ")
 
-		kubermaticConfig, helmValues, validationErrors := kubermatic.ValidateConfiguration(kubermaticConfig, helmValues, subLogger)
+		kubermaticConfig, helmValues, validationErrors := kubermaticStack.ValidateConfiguration(kubermaticConfig, helmValues, subLogger)
 		if len(validationErrors) > 0 {
 			logger.Error("⛔ The provided configuration files are invalid:")
 
@@ -213,6 +228,10 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
 
+		if err := kubermaticv1.AddToScheme(mgr.GetScheme()); err != nil {
+			return fmt.Errorf("failed to add scheme: %v", err)
+		}
+
 		if err := operatorv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
@@ -221,17 +240,21 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("failed to add scheme: %v", err)
 		}
 
-		logger.Info("🧩 Deploying kubermatic stack…")
-		opt := kubermatic.Options{
+		opt := stack.DeployOptions{
+			HelmClient:                 helmClient,
+			KubeClient:                 kubeClient,
 			HelmValues:                 helmValues,
 			KubermaticConfiguration:    kubermaticConfig,
 			RawKubermaticConfiguration: rawKubermaticConfig,
+			Logger:                     subLogger,
+			StorageClassProvider:       ctx.String(deployStorageClassFlag.Name),
 			ForceHelmReleaseUpgrade:    ctx.Bool(deployForceFlag.Name),
 			ChartsDirectory:            ctx.GlobalString(chartsDirectoryFlag.Name),
-			StorageClassProvider:       chosenProvider,
 		}
 
-		if err := kubermatic.Deploy(appContext, subLogger, kubeClient, helmClient, opt); err != nil {
+		logger.Infof("🧩 Deploying %s…", kubermaticStack.Name())
+
+		if err := kubermaticStack.Deploy(appContext, opt); err != nil {
 			return err
 		}
 
