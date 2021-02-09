@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"net"
 
-	openshiftresources "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/openshift/resources"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
@@ -34,7 +33,6 @@ import (
 	machinecontroller "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/machine-controller"
 	metricsserver "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/metrics-server"
 	nodelocaldns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/node-local-dns"
-	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openvpn"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/prometheus"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/scheduler"
@@ -45,12 +43,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
@@ -90,10 +84,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	if err := r.reconcileServiceAcconts(ctx); err != nil {
-		return err
-	}
-
-	if err := r.reconcileUnstructured(ctx); err != nil {
 		return err
 	}
 
@@ -165,14 +155,6 @@ func (r *reconciler) ensureAPIServices(ctx context.Context, data reconcileData) 
 		metricsserver.APIServiceCreator(caCert),
 	}
 
-	if r.openshift {
-		openshiftAPIServiceCreators, err := openshift.GetAPIServicesForOpenshiftVersion(r.version, caCert)
-		if err != nil {
-			return fmt.Errorf("failed to get openshift apiservice creators: %v", err)
-		}
-		creators = append(creators, openshiftAPIServiceCreators...)
-	}
-
 	if err := reconciling.ReconcileAPIServices(ctx, creators, metav1.NamespaceNone, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile APIServices: %v", err)
 	}
@@ -184,35 +166,24 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 	creators := []reconciling.NamedServiceAccountCreatorGetter{
 		userauth.ServiceAccountCreator(),
 		usersshkeys.ServiceAccountCreator(),
+		coredns.ServiceAccountCreator(),
+		nodelocaldns.ServiceAccountCreator(),
 	}
 
 	if r.userSSHKeyAgent {
 		creators = append(creators, usersshkeys.ServiceAccountCreator())
 	}
 
-	if r.openshift {
-		creators = append(creators, openshift.TokenOwnerServiceAccount)
-	}
-
 	if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metav1.NamespaceSystem, err)
 	}
 
-	if !r.openshift {
-		// Kubernetes Dashboard and related resources
-		creators = []reconciling.NamedServiceAccountCreatorGetter{
-			kubernetesdashboard.ServiceAccountCreator(),
-		}
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", kubernetesdashboard.Namespace, err)
-		}
-		creators = []reconciling.NamedServiceAccountCreatorGetter{
-			coredns.ServiceAccountCreator(),
-			nodelocaldns.ServiceAccountCreator(),
-		}
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", metav1.NamespaceSystem, err)
-		}
+	// Kubernetes Dashboard and related resources
+	creators = []reconciling.NamedServiceAccountCreatorGetter{
+		kubernetesdashboard.ServiceAccountCreator(),
+	}
+	if err := reconciling.ReconcileServiceAccounts(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
 	return nil
@@ -253,33 +224,12 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", metav1.NamespaceDefault, err)
 	}
 
-	if !r.openshift {
-		// Kubernetes Dashboard and related resources
-		creators = []reconciling.NamedRoleCreatorGetter{
-			kubernetesdashboard.RoleCreator(),
-		}
-		if err := reconciling.ReconcileRoles(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", kubernetesdashboard.Namespace, err)
-		}
+	// Kubernetes Dashboard and related resources
+	creators = []reconciling.NamedRoleCreatorGetter{
+		kubernetesdashboard.RoleCreator(),
 	}
-
-	if r.openshift {
-		namespacedName, roleCreator := openshiftresources.MachineControllerRole()
-		if err := reconciling.EnsureNamedObject(ctx,
-			namespacedName,
-			reconciling.RoleObjectWrapper(roleCreator),
-			r.Client,
-			&rbacv1.Role{},
-			false); err != nil {
-			return fmt.Errorf("failed to reconcile Role %q: %v", namespacedName.String(), err)
-		}
-
-		// openshift-kube-scheduler
-		creators := []reconciling.NamedRoleCreatorGetter{openshift.KubeSchedulerRoleCreatorGetter}
-		if err := reconciling.ReconcileRoles(ctx, creators, "openshift-kube-scheduler", r.Client); err != nil {
-			return err
-		}
-
+	if err := reconciling.ReconcileRoles(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
 	return nil
@@ -321,33 +271,12 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile RoleBindings in default Namespace: %v", err)
 	}
 
-	if !r.openshift {
-		// Kubernetes Dashboard and related resources
-		creators = []reconciling.NamedRoleBindingCreatorGetter{
-			kubernetesdashboard.RoleBindingCreator(),
-		}
-		if err := reconciling.ReconcileRoleBindings(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile RoleBindings in the namespace: %s: %v", kubernetesdashboard.Namespace, err)
-		}
+	// Kubernetes Dashboard and related resources
+	creators = []reconciling.NamedRoleBindingCreatorGetter{
+		kubernetesdashboard.RoleBindingCreator(),
 	}
-
-	if r.openshift {
-		namespacedName, roleBindingCreator := openshiftresources.MachineControllerRoleBinding()
-		if err := reconciling.EnsureNamedObject(ctx,
-			namespacedName,
-			reconciling.RoleBindingObjectWrapper(roleBindingCreator),
-			r.Client,
-			&rbacv1.RoleBinding{},
-			false); err != nil {
-			return fmt.Errorf("failed to reconcile RoleBinding %q: %v", namespacedName.String(), err)
-		}
-
-		// openshift-kube-scheduler
-		creators := []reconciling.NamedRoleBindingCreatorGetter{openshift.KubeSchedulerRoleBindingCreatorGetter}
-		if err := reconciling.ReconcileRoleBindings(ctx, creators, "openshift-kube-scheduler", r.Client); err != nil {
-			return err
-		}
-
+	if err := reconciling.ReconcileRoleBindings(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile RoleBindings in the namespace: %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
 	return nil
@@ -361,14 +290,8 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context) error {
 		dnatcontroller.ClusterRoleCreator(),
 		metricsserver.ClusterRoleCreator(),
 		clusterautoscaler.ClusterRoleCreator(),
-	}
-
-	if !r.openshift {
-		creators = append(creators,
-			[]reconciling.NamedClusterRoleCreatorGetter{
-				kubernetesdashboard.ClusterRoleCreator(),
-				coredns.ClusterRoleCreator(),
-			}...)
+		kubernetesdashboard.ClusterRoleCreator(),
+		coredns.ClusterRoleCreator(),
 	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
@@ -393,16 +316,8 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 		clusterautoscaler.ClusterRoleBindingCreator(),
 		systembasicuser.ClusterRoleBinding,
 		cloudcontroller.ClusterRoleBindingCreator(),
-	}
-
-	if r.openshift {
-		creators = append(creators, openshift.TokenOwnerServiceAccountClusterRoleBinding)
-	} else {
-		creators = append(creators,
-			[]reconciling.NamedClusterRoleBindingCreatorGetter{
-				kubernetesdashboard.ClusterRoleBindingCreator(),
-				coredns.ClusterRoleBindingCreator(),
-			}...)
+		kubernetesdashboard.ClusterRoleBindingCreator(),
+		coredns.ClusterRoleBindingCreator(),
 	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
@@ -420,8 +335,7 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 	}
 
 	if r.opaIntegration {
-		creators = append(creators, gatekeeper.ConfigCRDCreator())
-		creators = append(creators, gatekeeper.ConstraintTemplateCRDCreator())
+		creators = append(creators, gatekeeper.ConfigCRDCreator(), gatekeeper.ConstraintTemplateCRDCreator())
 	}
 
 	if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
@@ -430,10 +344,7 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) reconcileMutatingWebhookConfigurations(
-	ctx context.Context,
-	data reconcileData,
-) error {
+func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedMutatingWebhookConfigurationCreatorGetter{
 		machinecontroller.MutatingwebhookConfigurationCreator(data.caCert.Cert, r.namespace),
 	}
@@ -444,10 +355,7 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(
 	return nil
 }
 
-func (r *reconciler) reconcileValidatingWebhookConfigurations(
-	ctx context.Context,
-	data reconcileData,
-) error {
+func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{}
 	if r.opaIntegration {
 		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace))
@@ -462,33 +370,21 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(
 func (r *reconciler) reconcileServices(ctx context.Context) error {
 	creatorsKubeSystem := []reconciling.NamedServiceCreatorGetter{
 		metricsserver.ExternalNameServiceCreator(r.namespace),
+		coredns.ServiceCreator(r.dnsClusterIP),
 	}
 
 	if err := reconciling.ReconcileServices(ctx, creatorsKubeSystem, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Services in kube-system namespace: %v", err)
 	}
 
-	if !r.openshift {
-		// Kubernetes Dashboard and related resources
-		creators := []reconciling.NamedServiceCreatorGetter{
-			kubernetesdashboard.ServiceCreator(),
-		}
-		if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Services in namespace %s: %v", kubernetesdashboard.Namespace, err)
-		}
-		creatorsKubeSystem = []reconciling.NamedServiceCreatorGetter{
-			coredns.ServiceCreator(r.dnsClusterIP),
-		}
-		if err := reconciling.ReconcileServices(ctx, creatorsKubeSystem, metav1.NamespaceSystem, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Services in kube-system namespace: %v", err)
-		}
+	// Kubernetes Dashboard and related resources
+	creators := []reconciling.NamedServiceCreatorGetter{
+		kubernetesdashboard.ServiceCreator(),
+	}
+	if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Services in namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
-	if r.openshift {
-		if err := reconciling.ReconcileServices(ctx, []reconciling.NamedServiceCreatorGetter{openshift.APIServicecreatorGetterFactory(r.namespace)}, "openshift-apiserver", r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile services in the openshift-apiserver namespace: %v", err)
-		}
-	}
 	return nil
 }
 
@@ -528,14 +424,10 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		}
 	}
 
-	if r.openshift {
-		creators = append(creators, openshift.ControlplaneConfigCreator(r.platform))
-	} else {
-		creators = append(creators,
-			coredns.ConfigMapCreator(),
-			nodelocaldns.ConfigMapCreator(r.dnsClusterIP),
-		)
-	}
+	creators = append(creators,
+		coredns.ConfigMapCreator(),
+		nodelocaldns.ConfigMapCreator(r.dnsClusterIP),
+	)
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in kube-system namespace: %v", err)
@@ -553,48 +445,30 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		creators = append(creators, usersshkeys.SecretCreator(data.userSSHKeys))
 	}
 
-	if r.openshift {
-		creators = append(creators, openshift.OAuthBootstrapPasswordCreatorGetter(r.seedClient, r.namespace))
-		if r.cloudCredentialSecretTemplate != nil {
-			creators = append(creators, openshift.CloudCredentialSecretCreator(*r.cloudCredentialSecretTemplate))
-		}
-	}
-
 	if err := reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets in kube-system Namespace: %v", err)
 	}
 
-	if !r.openshift {
-		// Kubernetes Dashboard and related resources
-		creators = []reconciling.NamedSecretCreatorGetter{
-			kubernetesdashboard.KeyHolderSecretCreator(),
-			kubernetesdashboard.CsrfTokenSecretCreator(),
-		}
-
-		if err := reconciling.ReconcileSecrets(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", kubernetesdashboard.Namespace, err)
-		}
+	// Kubernetes Dashboard and related resources
+	creators = []reconciling.NamedSecretCreatorGetter{
+		kubernetesdashboard.KeyHolderSecretCreator(),
+		kubernetesdashboard.CsrfTokenSecretCreator(),
 	}
 
-	if r.openshift {
-		creators = []reconciling.NamedSecretCreatorGetter{openshift.RegistryServingCert(data.caCert)}
-		if err := reconciling.ReconcileSecrets(ctx, creators, openshiftresources.RegistryNamespaceName, r.Client); err != nil {
-			return fmt.Errorf("failed to create secrets in %q namespace: %v", openshiftresources.RegistryNamespaceName, err)
-		}
+	if err := reconciling.ReconcileSecrets(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
 	return nil
 }
 
 func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
-	var dsCreators []reconciling.NamedDaemonSetCreatorGetter
+	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
+		nodelocaldns.DaemonSetCreator(),
+	}
 
 	if r.userSSHKeyAgent {
 		dsCreators = append(dsCreators, usersshkeys.DaemonSetCreator(r.versions))
-	}
-
-	if !r.openshift {
-		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator())
 	}
 
 	if len(r.tunnelingAgentIP) > 0 {
@@ -610,91 +484,19 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
 
 func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 
-	if !r.openshift {
-		creators := []reconciling.NamedNamespaceCreatorGetter{
-			kubernetesdashboard.NamespaceCreator,
-		}
-		if r.opaIntegration {
-			creators = append(creators, gatekeeper.NamespaceCreator)
-		}
-		if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile namespaces: %v", err)
-		}
-		return nil
-	}
-
 	creators := []reconciling.NamedNamespaceCreatorGetter{
-		openshift.APIServerNSCreatorGetter,
-		openshift.ControllerManagerNSCreatorGetter,
-		openshift.KubeSchedulerNSCreatorGetter,
-		openshift.NetworkOperatorNSGetter,
-		openshift.RegistryNSGetter,
-		openshift.CloudCredentialOperatorNSGetter,
+		kubernetesdashboard.NamespaceCreator,
+	}
+	if r.opaIntegration {
+		creators = append(creators, gatekeeper.NamespaceCreator)
 	}
 	if err := reconciling.ReconcileNamespaces(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile namespaces: %v", err)
 	}
-
 	return nil
-}
-
-func (r *reconciler) reconcileUnstructured(ctx context.Context) error {
-	if !r.openshift {
-		return nil
-	}
-
-	// On the very first reconciliation we don't have a cache yet
-	if r.cache == nil {
-		return nil
-	}
-
-	creators := []reconciling.NamedUnstructuredCreatorGetter{
-		openshift.InfrastructureCreatorGetter(r.platform),
-		openshift.ClusterVersionCreatorGetter(r.namespace),
-		openshift.ConsoleOAuthClientCreator(r.openshiftConsoleCallbackURI),
-	}
-	r.log.Debug("Reconciling unstructured")
-	// The delegatingReader from the `mgr` always redirects request for unstructured.Unstructured
-	// to the API even though the cache-backed reader is perfectly capable of creating watches
-	// for unstructured.Unstructured: https://github.com/kubernetes-sigs/controller-runtime/issues/615
-	// Since using the API is very expensive as we get triggered by almost anything, we construct our
-	// own client that uses the cache as reader.
-	client := ctrlruntimeclientClient{
-		Reader:       r.cache,
-		Writer:       r.Client,
-		StatusClient: r.Client,
-		scheme:       r.Scheme(),
-		restMapper:   r.RESTMapper(),
-	}
-	if err := reconciling.ReconcileUnstructureds(ctx, creators, "", client); err != nil {
-		return fmt.Errorf("failed to reconcile unstructureds: %v", err)
-	}
-	r.log.Debug("Finished reconciling unstructured")
-
-	return nil
-}
-
-type ctrlruntimeclientClient struct {
-	ctrlruntimeclient.Reader
-	ctrlruntimeclient.Writer
-	ctrlruntimeclient.StatusClient
-
-	scheme     *runtime.Scheme
-	restMapper meta.RESTMapper
-}
-
-func (c ctrlruntimeclientClient) Scheme() *runtime.Scheme {
-	return c.scheme
-}
-
-func (c ctrlruntimeclientClient) RESTMapper() meta.RESTMapper {
-	return c.restMapper
 }
 
 func (r *reconciler) reconcileDeployments(ctx context.Context) error {
-	if r.openshift {
-		return nil
-	}
 	// Kubernetes Dashboard and related resources
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		kubernetesdashboard.DeploymentCreator(),

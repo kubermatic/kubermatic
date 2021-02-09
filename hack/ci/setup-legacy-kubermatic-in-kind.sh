@@ -110,14 +110,6 @@ beforeDockerBuild=$(nowms)
   time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
 )
 (
-  echodate "Building openshift addons image"
-  TEST_NAME="Build openshift Docker image"
-  cd openshift_addons
-  IMAGE_NAME="quay.io/kubermatic/openshift-addons:$KUBERMATIC_VERSION"
-  time retry 5 docker build -t "${IMAGE_NAME}" .
-  time retry 5 kind load docker-image "$IMAGE_NAME" --name "$KIND_CLUSTER_NAME"
-)
-(
   echodate "Building kubeletdnat-controller image"
   TEST_NAME="Build kubeletdnat-controller Docker image"
   cd cmd/kubeletdnat-controller
@@ -174,7 +166,6 @@ retry 3 helm3 --namespace kubermatic install --atomic --timeout 5m \
   --set-string=kubermatic.ui.image.repository="quay.io/kubermatic/dashboard$REPOSUFFIX" \
   --set-string=kubermatic.controller.addons.kubernetes.image.tag="$KUBERMATIC_VERSION" \
   --set-string=kubermatic.controller.image.tag="$KUBERMATIC_VERSION" \
-  --set-string=kubermatic.controller.addons.openshift.image.tag="$KUBERMATIC_VERSION" \
   --set-string=kubermatic.api.image.tag="$KUBERMATIC_VERSION" \
   --set=kubermatic.controller.datacenterName="$SEED_NAME" \
   --set=kubermatic.api.replicas=1 \

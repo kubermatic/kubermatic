@@ -274,11 +274,6 @@ func genCluster(name, clusterType, projectID, workerName, userEmail string) *kub
 		UserClusterControllerManager: kubermaticv1.HealthStatusProvisioning,
 	}
 
-	if clusterType == "openshift" {
-		cluster.Annotations = map[string]string{
-			"kubermatic.io/openshift": "true",
-		}
-	}
 	cluster.Spec = *genClusterSpec(name)
 	return cluster
 }

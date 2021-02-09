@@ -47,7 +47,6 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter
 		UsePodNodeSelectorAdmissionPlugin:    apiCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
 		EnableUserSSHKeyAgent:                userSSHKeysAgentEnabled,
 		AuditLogging:                         apiCluster.Spec.AuditLogging,
-		Openshift:                            apiCluster.Spec.Openshift,
 		AdmissionPlugins:                     apiCluster.Spec.AdmissionPlugins,
 		OPAIntegration:                       apiCluster.Spec.OPAIntegration,
 		PodNodeSelectorAdmissionPluginConfig: apiCluster.Spec.PodNodeSelectorAdmissionPluginConfig,

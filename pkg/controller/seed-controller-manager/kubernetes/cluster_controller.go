@@ -223,11 +223,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	}
 	log = log.With("cluster", cluster.Name)
 
-	if !cluster.IsKubernetes() {
-		log.Debug("Skipping because the cluster is not a Kubernetes cluster")
-		return reconcile.Result{}, nil
-	}
-
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,

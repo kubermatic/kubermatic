@@ -47,16 +47,12 @@ const (
 	VersionLabel = "app.kubernetes.io/version"
 
 	// VersionsFileName is the name of the YAML file containing the enabled and
-	// default Kubernetes and Openshift versions.
+	// default Kubernetes versions.
 	VersionsFileName = "versions.yaml"
 
 	// UpdatesFileName is the name of the YAML file containing the configured
 	// cluster upgrade rules.
 	UpdatesFileName = "updates.yaml"
-
-	// OpenshiftAddonsFileName is the name of the openshift addons manifest file
-	// in the master files.
-	OpenshiftAddonsFileName = "openshift-addons.yaml"
 
 	// KubernetesAddonsFileName is the name of the kubernetes addons manifest file
 	// in the master files.
@@ -138,7 +134,6 @@ func ExtraFilesSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reco
 			}
 
 			data := map[string]string{
-				OpenshiftAddonsFileName:  cfg.Spec.UserCluster.Addons.Openshift.DefaultManifests,
 				KubernetesAddonsFileName: cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests,
 				VersionsFileName:         versions,
 				UpdatesFileName:          updates,

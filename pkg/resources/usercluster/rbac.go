@@ -20,7 +20,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
-	openshiftresources "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/openshift/resources"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
@@ -64,8 +63,6 @@ func RoleCreator() (string, reconciling.RoleCreator) {
 				Resources: []string{"secrets"},
 				ResourceNames: []string{
 					resources.AdminKubeconfigSecretName,
-					openshiftresources.ConsoleOAuthSecretName,
-					openshiftresources.ConsoleAdminPasswordSecretName,
 				},
 				Verbs: []string{"update"},
 			},

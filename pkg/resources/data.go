@@ -504,11 +504,6 @@ func (d *TemplateData) GetKubernetesCloudProviderName() string {
 		d.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider])
 }
 
-func (d *TemplateData) CloudCredentialSecretTemplate() ([]byte, error) {
-	// This is needed for Openshift only
-	return nil, nil
-}
-
 func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
 	return GetCSIMigrationFeatureGates(d.Cluster())
 }

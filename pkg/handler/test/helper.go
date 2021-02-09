@@ -1057,11 +1057,6 @@ func GenDefaultVersions() []*version.Version {
 			Default: false,
 			Type:    apiv1.KubernetesClusterType,
 		},
-		{
-			Version: ver.MustParse("4.1.0"),
-			Default: false,
-			Type:    apiv1.OpenShiftClusterType,
-		},
 	}
 }
 

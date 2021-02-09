@@ -319,62 +319,6 @@ spec:
         # If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
         # suffix it becomes "v2.15.0-SUFFIX".
         dockerTagSuffix: ""
-      # Openshift controls the addons for Openshift-based clusters.
-      openshift:
-        # Default is the list of addons to be installed by default into each cluster.
-        # Mutually exclusive with "defaultManifests".
-        default: null
-        # DefaultManifests is a list of addon manifests to install into all clusters.
-        # Mutually exclusive with "default".
-        defaultManifests: |-
-          apiVersion: v1
-          kind: List
-          items:
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: crd
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: default-storage-class
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: logrotate
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: network
-            spec:
-              requiredResourceTypes:
-              - Group: config.openshift.io
-                Kind: Network
-                Version: v1
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: openvpn
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: rbac
-          - apiVersion: kubermatic.k8s.io/v1
-            kind: Addon
-            metadata:
-              name: registry
-            spec:
-              requiredResourceTypes:
-              - Group: cloudcredential.openshift.io
-                Kind: CredentialsRequest
-                Version: v1
-        # DockerRepository is the repository containing the Docker image containing
-        # the possible addon manifests.
-        dockerRepository: quay.io/kubermatic/openshift-addons
-        # DockerTagSuffix is appended to the tag used for referring to the addons image.
-        # If left empty, the tag will be the KKP version (e.g. "v2.15.0"), with a
-        # suffix it becomes "v2.15.0-SUFFIX".
-        dockerTagSuffix: ""
     # APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
     apiserverReplicas: 2
     # DisableAPIServerEndpointReconciling can be used to toggle the `--endpoint-reconciler-type` flag for
@@ -414,7 +358,7 @@ spec:
     # used inside user clusters (user cluster control plane + addons). This also applies to
     # the KubermaticDockerRepository and DNATControllerDockerRepository fields.
     overwriteRegistry: ""
-  # Versions configures the available and default Kubernetes/Openshift versions and updates.
+  # Versions configures the available and default Kubernetes versions and updates.
   versions:
     # Kubernetes configures the Kubernetes versions and updates.
     kubernetes:
@@ -482,36 +426,6 @@ spec:
         - 1.19.2
         - 1.19.3
         - 1.20.2
-    # Openshift configures the Openshift versions and updates.
-    openshift:
-      # Default is the default version to offer users.
-      default: 4.1.18
-      # Updates is a list of available and automatic upgrades.
-      # All 'to' versions must be configured in the version list for this orchestrator.
-      # Each update may optionally be configured to be 'automatic: true', in which case the
-      # controlplane of all clusters whose version matches the 'from' directive will get
-      # updated to the 'to' version. If automatic is enabled, the 'to' version must be a
-      # version and not a version range.
-      # Also, updates may set 'automaticNodeUpdate: true', in which case Nodes will get
-      # updates as well. 'automaticNodeUpdate: true' implies 'automatic: true' as well,
-      # because Nodes may not have a newer version than the controlplane.
-      updates:
-        - # Automatic controls whether this update is executed automatically
-          # for the control plane of all matching user clusters.
-          automatic: false
-          # Automatic controls whether this update is executed automatically
-          # for the worker nodes of all matching user clusters.
-          automaticNodeUpdate: false
-          # From is the version from which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-          from: 4.1.*
-          # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
-          to: 4.1.*
-        - from: 4.1.*
-          to: 2.2.*
-      # Versions lists the available versions.
-      versions:
-        - 4.1.9
-        - 4.1.18
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:

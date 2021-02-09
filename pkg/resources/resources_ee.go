@@ -33,7 +33,4 @@ const (
 
 	// DefaultKubernetesAddonImage defines the default Docker repository containing the Kubernetes addons.
 	DefaultKubernetesAddonImage = "quay.io/kubermatic/addons"
-
-	// DefaultOpenshiftAddonImage defines the default Docker repository containing the Openshift addons.
-	DefaultOpenshiftAddonImage = "quay.io/kubermatic/openshift-addons"
 )

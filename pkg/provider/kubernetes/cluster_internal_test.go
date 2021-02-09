@@ -23,11 +23,8 @@ import (
 	"testing"
 
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
-	openshiftuserclusterresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
-	corev1 "k8s.io/api/core/v1"
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,26 +38,6 @@ func TestRevokeAdminKubeconfig(t *testing.T) {
 		userClusterObjects []ctrlruntimeclient.Object
 		verify             func(seedClient, userClusterClient ctrlruntimeclient.Client) error
 	}{
-		{
-			name: "Openshift: ServiceAccount gets deleted",
-			cluster: &kubermaticv1.Cluster{ObjectMeta: metav1.ObjectMeta{
-				Name:        "cluster",
-				Annotations: map[string]string{"kubermatic.io/openshift": "true"},
-			}},
-			userClusterObjects: []ctrlruntimeclient.Object{
-				&corev1.ServiceAccount{ObjectMeta: metav1.ObjectMeta{
-					Namespace: metav1.NamespaceSystem,
-					Name:      openshiftuserclusterresources.TokenOwnerServiceAccountName,
-				}},
-			},
-			verify: func(_, userClusterClient ctrlruntimeclient.Client) error {
-				name := types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: openshiftuserclusterresources.TokenOwnerServiceAccountName}
-				if err := userClusterClient.Get(context.Background(), name, &corev1.ServiceAccount{}); !kerrors.IsNotFound(err) {
-					return errors.New("expected serviceAccount to be gone but still existed")
-				}
-				return nil
-			},
-		},
 		{
 			name: "Kubernetes: Token gets updated",
 			cluster: &kubermaticv1.Cluster{

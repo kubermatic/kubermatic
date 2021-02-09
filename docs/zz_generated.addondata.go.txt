@@ -10,7 +10,7 @@ type TemplateData struct {
 // ClusterData contains data related to the user cluster
 // the addon is rendered for.
 type ClusterData struct {
-	// Type is either "kubernetes" or "openshift".
+	// Type is only "kubernetes"
 	Type string
 	// Name is the auto-generated, internal cluster name, e.g. "bbc8sc24wb".
 	Name string

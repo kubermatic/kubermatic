@@ -54,7 +54,6 @@ type Reconciler struct {
 
 	log              *zap.SugaredLogger
 	kubernetesAddons kubermaticv1.AddonList
-	openshiftAddons  kubermaticv1.AddonList
 	workerName       string
 	recorder         record.EventRecorder
 	versions         kubermatic.Versions
@@ -66,7 +65,6 @@ func Add(
 	numWorkers int,
 	workerName string,
 	kubernetesAddons kubermaticv1.AddonList,
-	openshiftAddons kubermaticv1.AddonList,
 	versions kubermatic.Versions,
 ) error {
 	log = log.Named(ControllerName)
@@ -76,7 +74,6 @@ func Add(
 		log:              log,
 		workerName:       workerName,
 		kubernetesAddons: kubernetesAddons,
-		openshiftAddons:  openshiftAddons,
 		recorder:         mgr.GetEventRecorderFor(ControllerName),
 		versions:         versions,
 	}
@@ -158,16 +155,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	// This controller handles Kubernetes & OpenShift cluster.
-	// Based on the type we install different default addons
-	var addonsToInstall *kubermaticv1.AddonList
-	if cluster.IsOpenshift() {
-		log = log.With("clustertype", "openshift")
-		addonsToInstall = r.openshiftAddons.DeepCopy()
-	} else {
-		log = log.With("clustertype", "kubernetes")
-		addonsToInstall = r.kubernetesAddons.DeepCopy()
-	}
 
 	// Wait until the Apiserver is running to ensure the namespace exists at least.
 	// Just checking for cluster.status.namespaceName is not enough as it gets set before the namespace exists
@@ -176,7 +163,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		return &reconcile.Result{RequeueAfter: 1 * time.Second}, nil
 	}
 
-	return nil, r.ensureAddons(ctx, log, cluster, *addonsToInstall)
+	return nil, r.ensureAddons(ctx, log, cluster, *r.kubernetesAddons.DeepCopy())
 }
 
 func (r *Reconciler) ensureAddons(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, addons kubermaticv1.AddonList) error {

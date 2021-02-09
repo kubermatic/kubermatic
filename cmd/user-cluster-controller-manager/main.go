@@ -33,8 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ipam"
 	nodelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/node-labeler"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/nodecsrapprover"
-	openshiftmasternodelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/openshift-master-node-labeler"
-	openshiftseedsyncer "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/openshift-seed-syncer"
 	ownerbindingcreator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/owner-binding-creator"
 	rbacusercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/rbac"
 	usercluster "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources"
@@ -48,7 +46,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
@@ -62,28 +59,25 @@ import (
 )
 
 type controllerRunOptions struct {
-	metricsListenAddr             string
-	healthListenAddr              string
-	openshift                     bool
-	version                       string
-	networks                      networkFlags
-	namespace                     string
-	clusterURL                    string
-	openvpnServerPort             int
-	kasSecurePort                 int
-	tunnelingAgentIP              flagopts.IPValue
-	overwriteRegistry             string
-	cloudProviderName             string
-	cloudCredentialSecretTemplate string
-	nodelabels                    string
-	seedKubeconfig                string
-	openshiftConsoleCallbackURI   string
-	ownerEmail                    string
-	updateWindowStart             string
-	updateWindowLength            string
-	dnsClusterIP                  string
-	opaIntegration                bool
-	useSSHKeyAgent                bool
+	metricsListenAddr  string
+	healthListenAddr   string
+	version            string
+	networks           networkFlags
+	namespace          string
+	clusterURL         string
+	openvpnServerPort  int
+	kasSecurePort      int
+	tunnelingAgentIP   flagopts.IPValue
+	overwriteRegistry  string
+	cloudProviderName  string
+	nodelabels         string
+	seedKubeconfig     string
+	ownerEmail         string
+	updateWindowStart  string
+	updateWindowLength string
+	dnsClusterIP       string
+	opaIntegration     bool
+	useSSHKeyAgent     bool
 }
 
 func main() {
@@ -96,7 +90,6 @@ func main() {
 
 	flag.StringVar(&runOp.metricsListenAddr, "metrics-listen-address", "127.0.0.1:8085", "The address on which the internal HTTP /metrics server is running on")
 	flag.StringVar(&runOp.healthListenAddr, "health-listen-address", "127.0.0.1:8086", "The address on which the internal HTTP /ready & /live server is running on")
-	flag.BoolVar(&runOp.openshift, "openshift", false, "Whether the managed cluster is an openshift cluster")
 	flag.StringVar(&runOp.version, "version", "", "The version of the cluster")
 	flag.Var(&runOp.networks, "ipam-controller-network", "The networks from which the ipam controller should allocate IPs for machines (e.g.: .--ipam-controller-network=10.0.0.0/16,10.0.0.1,8.8.8.8 --ipam-controller-network=192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4)")
 	flag.StringVar(&runOp.namespace, "namespace", "", "Namespace in which the cluster is running in")
@@ -107,10 +100,8 @@ func main() {
 	flag.Var(&runOp.tunnelingAgentIP, "tunneling-agent-ip", "If specified the tunneling agent will bind to this IP address, otherwise it will not be deployed.")
 	flag.StringVar(&runOp.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&runOp.cloudProviderName, "cloud-provider-name", "", "Name of the cloudprovider")
-	flag.StringVar(&runOp.cloudCredentialSecretTemplate, "cloud-credential-secret-template", "", "A serialized Kubernetes secret whose Name and Data fields will be used to create a secret for the openshift cloud credentials operator.")
 	flag.StringVar(&runOp.nodelabels, "node-labels", "", "A json-encoded map of node labels. If set, those labels will be enforced on all nodes.")
 	flag.StringVar(&runOp.seedKubeconfig, "seed-kubeconfig", "", "Path to the seed kubeconfig. In-Cluster config will be used if unset")
-	flag.StringVar(&runOp.openshiftConsoleCallbackURI, "openshift-console-callback-uri", "", "The callback uri for the openshift console")
 	flag.StringVar(&runOp.ownerEmail, "owner-email", "", "An email address of the user who created the cluster. Used as default subject for the admin cluster role binding")
 	flag.StringVar(&runOp.updateWindowStart, "update-window-start", "", "The start time of the update window, e.g. 02:00")
 	flag.StringVar(&runOp.updateWindowLength, "update-window-length", "", "The length of the update window, e.g. 1h")
@@ -142,14 +133,6 @@ func main() {
 	}
 	if runOp.openvpnServerPort == 0 {
 		log.Fatal("-openvpn-server-port must be set")
-	}
-
-	var cloudCredentialSecretTemplate *corev1.Secret
-	if runOp.cloudCredentialSecretTemplate != "" {
-		cloudCredentialSecretTemplate = &corev1.Secret{}
-		if err := json.Unmarshal([]byte(runOp.cloudCredentialSecretTemplate), cloudCredentialSecretTemplate); err != nil {
-			log.Fatalw("Failed to unmarshal value of --cloud-credential-secret-template flag into secret", zap.Error(err))
-		}
 	}
 
 	nodeLabels := map[string]string{}
@@ -217,7 +200,6 @@ func main() {
 	log.Info("registering controllers")
 	if err := usercluster.Add(mgr,
 		seedMgr,
-		runOp.openshift,
 		runOp.version,
 		runOp.namespace,
 		runOp.cloudProviderName,
@@ -226,8 +208,6 @@ func main() {
 		uint32(runOp.kasSecurePort),
 		runOp.tunnelingAgentIP.IP,
 		mgr.AddReadyzCheck,
-		cloudCredentialSecretTemplate,
-		runOp.openshiftConsoleCallbackURI,
 		runOp.dnsClusterIP,
 		runOp.opaIntegration,
 		versions,
@@ -269,18 +249,6 @@ func main() {
 		log.Fatalw("Failed to add nodecsrapprover controller", zap.Error(err))
 	}
 	log.Info("Registered nodecsrapprover controller")
-
-	if runOp.openshift {
-		if err := openshiftmasternodelabeler.Add(rootCtx, kubermaticlog.Logger, mgr); err != nil {
-			log.Fatalw("Failed to add openshiftmasternodelabeler controller", zap.Error(err))
-		}
-		log.Info("Registered openshiftmasternodelabeler controller")
-
-		if err := openshiftseedsyncer.Add(log, mgr, seedMgr, runOp.clusterURL, runOp.namespace); err != nil {
-			log.Fatalw("Failed to register the openshiftseedsyncer", zap.Error(err))
-		}
-		log.Info("Registered openshiftseedsyncer controller")
-	}
 
 	updateWindow := kubermaticv1.UpdateWindow{
 		Start:  runOp.updateWindowStart,

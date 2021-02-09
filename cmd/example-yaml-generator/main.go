@@ -216,8 +216,6 @@ func createExampleKubermaticConfiguration() *operatorv1alpha1.KubermaticConfigur
 	}
 
 	setUpdateDefaults(&defaulted.Spec.Versions.Kubernetes)
-	setUpdateDefaults(&defaulted.Spec.Versions.Openshift)
-
 	return defaulted
 }
 

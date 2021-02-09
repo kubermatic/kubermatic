@@ -60,13 +60,8 @@ kubectl config view  --flatten --minify -ojson \
 CLUSTER_VERSION="$(echo $CLUSTER_RAW|jq -r '.spec.version')"
 CLUSTER_URL="$(echo $CLUSTER_RAW | jq -r .address.url)"
 OPENVPN_SERVER_NODEPORT="$(echo ${OPENVPN_SERVER_SERVICE_RAW} | jq -r .spec.ports[0].nodePort)"
-CONSOLE_CALLBACK_URI="$(echo $CLUSTER_RAW | jq -r '.address.openshiftConsoleCallback')"
 
 ARGS=""
-if echo $CLUSTER_RAW | grep openshift -q; then
-  ARGS="-openshift=true"
-fi
-
 if echo $CLUSTER_RAW | grep -i aws -q; then
   ARGS="$ARGS -cloud-provider-name=aws"
 fi
@@ -81,7 +76,6 @@ set -x
   -openvpn-server-port=${OPENVPN_SERVER_NODEPORT} \
   -cluster-url=${CLUSTER_URL} \
   -version=${CLUSTER_VERSION} \
-  -openshift-console-callback-uri="${CONSOLE_CALLBACK_URI}" \
   -log-debug=$KUBERMATIC_DEBUG \
   -log-format=Console \
   -logtostderr \

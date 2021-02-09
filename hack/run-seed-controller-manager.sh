@@ -68,8 +68,6 @@ set -x
   -updates=charts/kubermatic/static/master/updates.yaml \
   -kubernetes-addons-path=addons \
   -kubernetes-addons-file=charts/kubermatic/static/master/kubernetes-addons.yaml \
-  -openshift-addons-path=openshift_addons \
-  -openshift-addons-file=charts/kubermatic/static/master/openshift-addons.yaml \
   -feature-gates=OpenIDAuthPlugin=true \
   -worker-name="$(worker_name)" \
   -external-url=dev.kubermatic.io \

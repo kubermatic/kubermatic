@@ -139,11 +139,6 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		pause = "true"
 	}
 
-	clusterType := "kubernetes"
-	if cluster.IsOpenshift() {
-		clusterType = "openshift"
-	}
-
 	return []string{
 		cluster.Name,
 		cluster.Spec.HumanReadableName,
@@ -152,6 +147,6 @@ func (cc *ClusterCollector) clusterLabels(cluster *kubermaticv1.Cluster) ([]stri
 		provider,
 		cluster.Spec.Cloud.DatacenterName,
 		pause,
-		clusterType,
+		"kubernetes",
 	}, nil
 }

@@ -105,7 +105,6 @@ type kubermaticValues struct {
 		PProfEndpoint  string      `yaml:"pprofEndpoint"`
 		Addons         struct {
 			Kubernetes addonValues `yaml:"kubernetes"`
-			Openshift  addonValues `yaml:"openshift"`
 		} `yaml:"addons"`
 		OverwriteRegistry string                      `yaml:"overwriteRegistry"`
 		WorkerCount       int                         `yaml:"workerCount"`
@@ -452,11 +451,6 @@ func convertUserCluster(values *kubermaticValues) (*operatorv1alpha1.KubermaticU
 		return nil, fmt.Errorf("invalid kubernetes addons: %v", err)
 	}
 
-	openshiftAddonCfg, err := convertAddonConfig(&values.Controller.Addons.Openshift, common.OpenshiftAddonsFileName, resources.DefaultOpenshiftAddonImage)
-	if err != nil {
-		return nil, fmt.Errorf("invalid openshift addons: %v", err)
-	}
-
 	customRules := ""
 	if values.ClusterNamespacePrometheus.Rules != nil {
 		encoded, err := yaml.Marshal(values.ClusterNamespacePrometheus.Rules)
@@ -490,7 +484,6 @@ func convertUserCluster(values *kubermaticValues) (*operatorv1alpha1.KubermaticU
 		OverwriteRegistry:              values.Controller.OverwriteRegistry,
 		Addons: operatorv1alpha1.KubermaticAddonsConfiguration{
 			Kubernetes: *kubernetesAddonCfg,
-			Openshift:  *openshiftAddonCfg,
 		},
 		Monitoring: operatorv1alpha1.KubermaticUserClusterMonitoringConfiguration{
 			ScrapeAnnotationPrefix:        values.MonitoringScrapeAnnotationPrefix,
