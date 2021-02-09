@@ -19,21 +19,27 @@ package resources
 import (
 	"context"
 	"crypto/x509"
+	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
 	"time"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	appsv1 "k8s.io/api/apps/v1"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -360,7 +366,8 @@ func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig
 }
 
 func (d *TemplateData) GetKubernetesCloudProviderName() string {
-	return GetKubernetesCloudProviderName(d.Cluster())
+	return GetKubernetesCloudProviderName(d.Cluster(),
+		d.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider])
 }
 
 func (d *TemplateData) CloudCredentialSecretTemplate() ([]byte, error) {
@@ -368,7 +375,83 @@ func (d *TemplateData) CloudCredentialSecretTemplate() ([]byte, error) {
 	return nil, nil
 }
 
-func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
+func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
+	return GetCSIMigrationFeatureGates(d.Cluster())
+}
+
+// KCMCloudControllersDeactivated return true if the KCM is ready and the
+// cloud-controllers are disabled.
+// * There is no 'cloud-provider' flag.
+// * The cloud controllers are disabled.
+// This is used to avoid deploing the CCM before the in-tree cloud controllers
+// have been deactivated.
+func (d *TemplateData) KCMCloudControllersDeactivated() bool {
+	kcm := appsv1.Deployment{}
+	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ControllerManagerDeploymentName, Namespace: d.cluster.Status.NamespaceName}, &kcm); err != nil {
+		klog.Errorf("could not get kcm deployment: %v", err)
+		return false
+	}
+	ready, _ := kubernetes.IsDeploymentRolloutComplete(&kcm, 0)
+	klog.Infof("controller-manager deployment rollout complete: %t", ready)
+	if c := getContainer(&kcm, ControllerManagerDeploymentName); c != nil {
+		if ok, cmd := UnwrapCommand(*c); ok {
+			klog.Infof("controller-manager command %v %d", cmd.Args, len(cmd.Args))
+			// If no --cloud-provider flag is provided in-tree cloud provider
+			// is disabled.
+			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == "external" {
+				klog.Info("in-tree cloud provider disabled in controller-manager deployment")
+				return ready
+			}
+
+			// Otherwise cloud countrollers could have been explicitly disabled
+			if ok, val := getArgValue(cmd.Args, "--controllers"); ok {
+				controllers := strings.Split(val, ",")
+				klog.Infof("cloud controllers disabled in controller-manager deployment %s", controllers)
+				return ready && sets.NewString(controllers...).HasAll("-cloud-node-lifecycle", "-route", "-service")
+			}
+		}
+	}
+
+	return false
+}
+
+func UnwrapCommand(container corev1.Container) (found bool, command httpproberapi.Command) {
+	for i, arg := range container.Args {
+		klog.Infof("unwrap command processing arg: %s", arg)
+		if arg == "-command" && i < len(container.Args)-1 {
+			if err := json.Unmarshal([]byte(container.Args[i+1]), &command); err != nil {
+				return
+			}
+			return true, command
+		}
+	}
+	return
+}
+
+func getArgValue(args []string, argName string) (bool, string) {
+	for i, arg := range args {
+		klog.Infof("processing arg %s", arg)
+		if arg == argName {
+			klog.Infof("found argument %s", argName)
+			if i >= len(args)-1 {
+				return false, ""
+			}
+			return true, args[i+1]
+		}
+	}
+	return false, ""
+}
+
+func getContainer(d *appsv1.Deployment, containerName string) *corev1.Container {
+	for _, c := range d.Spec.Template.Spec.Containers {
+		if c.Name == containerName {
+			return &c
+		}
+	}
+	return nil
+}
+
+func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloudProvider bool) string {
 	switch {
 	case cluster.Spec.Cloud.AWS != nil:
 		return "aws"
@@ -379,13 +462,39 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
 	case cluster.Spec.Cloud.GCP != nil:
 		return "gce"
 	case cluster.Spec.Cloud.Openstack != nil:
-		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+		if externalCloudProvider {
 			return "external"
 		}
 		return "openstack"
 	default:
 		return ""
 	}
+}
+
+func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
+	// If we are migrating from in-tree cloud provider to CSI driver, we
+	// should not disable the in-tree cloud provider until all kubelets are
+	// migrated, otherwise we won't be able to use the volume API.
+	return cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
+		(kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) ||
+			!metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation))
+}
+
+func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
+	var featureFlags []string
+	if metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) {
+		// The following feature gates are always enabled when the
+		// 'externalCloudProvider' feature is activated.
+		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+			featureFlags = append(featureFlags, "CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true")
+		}
+		// The CSIMigrationNeededAnnotation is removed when all kubelets have
+		// been migrated.
+		if kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+			featureFlags = append(featureFlags, "CSIMigrationComplete=true", "CSIMigrationOpenStackComplete=true")
+		}
+	}
+	return featureFlags
 }
 
 func (d *TemplateData) Seed() *kubermaticv1.Seed {

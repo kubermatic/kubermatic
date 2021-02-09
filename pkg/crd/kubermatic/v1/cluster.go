@@ -47,6 +47,11 @@ const (
 )
 
 const (
+	CCMMigrationNeededAnnotation = "ccm-migration.k8c.io/migration-needed"
+	CSIMigrationNeededAnnotation = "csi-migration.k8c.io/migration-needed"
+)
+
+const (
 	WorkerNameLabelKey   = "worker-name"
 	ProjectIDLabelKey    = "project-id"
 	UpdatedByVPALabelKey = "updated-by-vpa"
@@ -205,9 +210,15 @@ const (
 
 	// ClusterConditionNone is a special value indicating that no cluster condition should be set
 	ClusterConditionNone ClusterConditionType = ""
+	// This condition is met when a CSI migration is ongoing and the CSI
+	// migration feature gates are activated on the Kubelets of all the nodes.
+	// CSIMigration{provider}Complete can be enabled at this point.
+	ClusterConditionCSIKubeletMigrationCompleted ClusterConditionType = "CSIKubeletMigrationCompleted"
 
-	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
-	ReasonClusterUpdateInProgress = "ClusterUpdateInProgress"
+	ReasonClusterUpdateSuccessful             = "ClusterUpdateSuccessful"
+	ReasonClusterUpdateInProgress             = "ClusterUpdateInProgress"
+	ReasonClusterCSIKubeletMigrationCompleted = "CSIKubeletMigrationSuccess"
+	ReasonClusterCCMMigrationInProgress       = "CSIKubeletMigrationInProgress"
 )
 
 var AllClusterConditionTypes = []ClusterConditionType{

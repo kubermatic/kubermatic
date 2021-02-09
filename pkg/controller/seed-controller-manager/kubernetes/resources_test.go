@@ -1,5 +1,3 @@
-// +build integration
-
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 
@@ -20,160 +18,315 @@ package kubernetes
 
 import (
 	"context"
+	"fmt"
 	"testing"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/envtest"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
+	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
+	"k8c.io/kubermatic/v2/pkg/test"
 )
 
-func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
-	kubermaticlog.Logger = kubermaticlog.New(true, kubermaticlog.FormatJSON).Sugar()
-	env := &envtest.Environment{
-		// Uncomment this to get the logs from etcd+apiserver
-		// AttachControlPlaneOutput: true,
-		KubeAPIServerFlags: []string{
-			"--etcd-servers={{ if .EtcdURL }}{{ .EtcdURL.String }}{{ end }}",
-			"--cert-dir={{ .CertDir }}",
-			"--insecure-port={{ if .URL }}{{ .URL.Port }}{{ end }}",
-			"--insecure-bind-address={{ if .URL }}{{ .URL.Hostname }}{{ end }}",
-			"--secure-port={{ if .SecurePort }}{{ .SecurePort }}{{ end }}",
-			"--admission-control=AlwaysAdmit",
-			// Upstream does not have `--allow-privileged`,
-			"--allow-privileged",
-		},
+func init() {
+	if err := kubermaticv1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
+		panic(fmt.Sprintf("failed to add clusterv1alpha1 to scheme: %v", err))
 	}
-	cfg, err := env.Start()
-	if err != nil {
-		t.Fatalf("failed to start testenv: %v", err)
-	}
-	defer func() {
-		if err := env.Stop(); err != nil {
-			t.Fatalf("failed to stop testenv: %v", err)
-		}
-	}()
+}
 
-	mgr, err := manager.New(cfg, manager.Options{})
-	if err != nil {
-		t.Fatalf("failed to construct manager: %v", err)
-	}
-	if err := autoscalingv1beta2.AddToScheme(mgr.GetScheme()); err != nil {
-		t.Fatalf("failed to register vertical pod autoscaler resources to scheme: %v", err)
-	}
-	crdInstallOpts := envtest.CRDInstallOptions{
-		Paths:              []string{"../../../../charts/kubermatic/crd"},
-		ErrorIfPathMissing: true,
-	}
-	if _, err := envtest.InstallCRDs(cfg, crdInstallOpts); err != nil {
-		t.Fatalf("failed install crds: %v", err)
-	}
-
-	ctx := context.Background()
-
-	go func() {
-		if err := mgr.Start(ctx); err != nil {
-			t.Errorf("failed to start manager: %v", err)
-		}
-	}()
-
-	testCluster := &kubermaticv1.Cluster{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: "test-cluster",
-		},
-		Spec: kubermaticv1.ClusterSpec{
-			ExposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,
-			Cloud: kubermaticv1.CloudSpec{
-				DatacenterName: "my-dc",
-			},
-			Version: *semver.NewSemverOrDie("1.18.9"),
-		},
-		Status: kubermaticv1.ClusterStatus{
-			NamespaceName: "cluster-test-cluster",
-			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-				CloudProviderInfrastructure: kubermaticv1.HealthStatusUp,
-			},
-		},
-	}
-
-	// This is used as basis to sync the clusters address which we in turn do
-	// before creating any deployments.
-	lbService := &corev1.Service{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: testCluster.Status.NamespaceName,
-			Name:      resources.FrontLoadBalancerServiceName,
-		},
-		Spec: corev1.ServiceSpec{
-			Type:  corev1.ServiceTypeLoadBalancer,
-			Ports: []corev1.ServicePort{{Port: 443}},
-		},
-	}
-
-	if err := mgr.GetClient().Create(ctx, testCluster); err != nil {
-		t.Fatalf("failed to create testcluster: %v", err)
-	}
-	if err := mgr.GetClient().Create(ctx, lbService); err != nil {
-		t.Fatalf("failed to create the loadbalancer service: %v", err)
-	}
-
-	// Status must be set *after* the Service has been created, because
-	// the Create() call would reset it to nil.
-	lbService.Status = corev1.ServiceStatus{
-		LoadBalancer: corev1.LoadBalancerStatus{
-			Ingress: []corev1.LoadBalancerIngress{{
-				IP: "1.2.3.4",
-			}},
-		},
-	}
-
-	// Status is a subresource for services and we need the IP to be set, else
-	// the reconciliation returns early
-	if err := mgr.GetClient().Status().Update(ctx, lbService); err != nil {
-		t.Fatalf("failed to set lb service status: %v", err)
-	}
-
-	r := &Reconciler{
-		log:                  kubermaticlog.Logger,
-		Client:               mgr.GetClient(),
-		dockerPullConfigJSON: []byte("{}"),
-		nodeAccessNetwork:    kubermaticv1.DefaultNodeAccessNetwork,
-		seedGetter: func() (*kubermaticv1.Seed, error) {
-			return &kubermaticv1.Seed{
-				Spec: kubermaticv1.SeedSpec{
-					Datacenters: map[string]kubermaticv1.Datacenter{
-						testCluster.Spec.Cloud.DatacenterName: {},
+func TestCloudControllerManagerDeployment(t *testing.T) {
+	testCases := []struct {
+		name                string
+		cluster             *kubermaticv1.Cluster
+		kcmDeploymentConfig KCMDeploymentConfig
+		wantCCMCreator      bool
+	}{
+		{
+			name: "KCM ready and cloud-provider disabled",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-a",
+					Annotations: map[string]string{
+						kubermaticv1.CCMMigrationNeededAnnotation: "",
+						kubermaticv1.CSIMigrationNeededAnnotation: "",
 					},
 				},
-			}, nil
+				Spec: kubermaticv1.ClusterSpec{
+					Features: map[string]bool{
+						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "test",
+				},
+			},
+			kcmDeploymentConfig: KCMDeploymentConfig{
+				Flags: []string{},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 1,
+					Replicas:           1,
+					AvailableReplicas:  1,
+					UpdatedReplicas:    1,
+				},
+				Generation: 1,
+				Replicas:   1,
+				Namespace:  "test",
+			},
+			wantCCMCreator: true,
+		},
+		{
+			name: "KCM ready and cloud controllers disabled",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-a",
+					Annotations: map[string]string{
+						kubermaticv1.CCMMigrationNeededAnnotation: "",
+						kubermaticv1.CSIMigrationNeededAnnotation: "",
+					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Features: map[string]bool{
+						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "test",
+				},
+			},
+			kcmDeploymentConfig: KCMDeploymentConfig{
+				Flags: []string{"--cloud-provider", "openstack", "--controllers", "-cloud-node-lifecycle,-route,-service"},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 1,
+					Replicas:           1,
+					AvailableReplicas:  1,
+					UpdatedReplicas:    1,
+				},
+				Generation: 1,
+				Replicas:   1,
+				Namespace:  "test",
+			},
+			wantCCMCreator: true,
+		},
+		{
+			name: "KCM ready and service controller not disabled",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-a",
+					Annotations: map[string]string{
+						kubermaticv1.CCMMigrationNeededAnnotation: "",
+						kubermaticv1.CSIMigrationNeededAnnotation: "",
+					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Features: map[string]bool{
+						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "test",
+				},
+			},
+			kcmDeploymentConfig: KCMDeploymentConfig{
+				Flags: []string{"--cloud-provider", "openstack", "--controllers", "-cloud-node-lifecycle,-route"},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 1,
+					Replicas:           1,
+					AvailableReplicas:  1,
+					UpdatedReplicas:    1,
+				},
+				Generation: 1,
+				Replicas:   1,
+				Namespace:  "test",
+			},
+			wantCCMCreator: false,
+		},
+		{
+			// If the KCM deployment rollout is not completed we do not deploy the
+			// CCM as there could be old KCM pods with cloud controllers
+			// running.
+			name: "KCM not ready and cloud-provider disabled",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-a",
+					Annotations: map[string]string{
+						kubermaticv1.CCMMigrationNeededAnnotation: "",
+						kubermaticv1.CSIMigrationNeededAnnotation: "",
+					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Features: map[string]bool{
+						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "test",
+				},
+			},
+			kcmDeploymentConfig: KCMDeploymentConfig{
+				Flags: []string{},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 1,
+					Replicas:           2,
+					AvailableReplicas:  1,
+					UpdatedReplicas:    1,
+				},
+				Generation: 1,
+				Replicas:   2,
+				Namespace:  "test",
+			},
+			wantCCMCreator: false,
+		},
+		{
+			name: "KCM ready and cloud-provider enabled",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-a",
+					Annotations: map[string]string{
+						kubermaticv1.CCMMigrationNeededAnnotation: "",
+						kubermaticv1.CSIMigrationNeededAnnotation: "",
+					},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Features: map[string]bool{
+						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "test",
+				},
+			},
+			kcmDeploymentConfig: KCMDeploymentConfig{
+				Flags: []string{"--cloud-provider", "openstack"},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 1,
+					Replicas:           1,
+					AvailableReplicas:  1,
+					UpdatedReplicas:    1,
+				},
+				Generation: 1,
+				Replicas:   1,
+				Namespace:  "test",
+			},
+			wantCCMCreator: false,
+		},
+		{
+			name: "No CCM migration ongoing",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-a",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Features: map[string]bool{
+						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "test",
+				},
+			},
+			kcmDeploymentConfig: KCMDeploymentConfig{
+				Flags: []string{},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 1,
+					Replicas:           2,
+					AvailableReplicas:  1,
+					UpdatedReplicas:    1,
+				},
+				Generation: 1,
+				Replicas:   2,
+				Namespace:  "test",
+			},
+			wantCCMCreator: true,
+		},
+		{
+			name: "No external cloud-provider",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-a",
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "test",
+				},
+			},
+			kcmDeploymentConfig: KCMDeploymentConfig{
+				Flags: []string{},
+				Status: appsv1.DeploymentStatus{
+					ObservedGeneration: 1,
+					Replicas:           1,
+					AvailableReplicas:  1,
+					UpdatedReplicas:    1,
+				},
+				Generation: 1,
+				Replicas:   1,
+				Namespace:  "test",
+			},
+			wantCCMCreator: false,
 		},
 	}
 
-	if err := r.ensureClusterNetworkDefaults(ctx, testCluster); err != nil {
-		t.Fatalf("failed to sync initial network default: %v", err)
-	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
 
-	if err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
-		t.Fatalf("Initial resource deployment failed, this indicates that some resources are invalid. Error: %v", err)
+			fc := fake.NewClientBuilder().Build()
+			td := test.NewTemplateData(ctx, fc, tc.cluster)
+			// Add the KCM deployment
+			fc.Create(ctx, tc.kcmDeploymentConfig.Create(td))
+			creators := GetDeploymentCreators(td, false)
+			var ccmDeploymentFound bool
+			for _, c := range creators {
+				name, _ := c()
+				if name == cloudcontroller.OpenstackCCMDeploymentName {
+					ccmDeploymentFound = true
+				}
+			}
+			if a, e := tc.wantCCMCreator, ccmDeploymentFound; a != e {
+				t.Errorf("want CCM creator: %t got: %t", a, e)
+			}
+		})
 	}
+}
 
-	if err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {
-		t.Fatalf("The second resource reconciliation failed, indicating we don't properly default some fields. Check the `Object differs from generated one` error for the object for which we timed out. Original error: %v", err)
-	}
+type KCMDeploymentConfig struct {
+	Flags      []string
+	Generation int64
+	Namespace  string
+	Replicas   int32
+	Status     appsv1.DeploymentStatus
+}
 
-	// A very basic sanity check that we actually deployed something
-	deploymentList := &appsv1.DeploymentList{}
-	if err := mgr.GetAPIReader().List(ctx, deploymentList, ctrlruntimeclient.InNamespace(testCluster.Status.NamespaceName)); err != nil {
-		t.Fatalf("failed to list deployments: %v", err)
+func (k KCMDeploymentConfig) Create(td *resources.TemplateData) *appsv1.Deployment {
+	d := appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       resources.ControllerManagerDeploymentName,
+			Namespace:  k.Namespace,
+			Generation: k.Generation,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &k.Replicas,
+			Template: corev1.PodTemplateSpec{
+				Spec: corev1.PodSpec{
+					Containers: []corev1.Container{
+						{
+							Name:    resources.ControllerManagerDeploymentName,
+							Image:   "my-registy.io/kube-controller-manager:v1.18",
+							Command: []string{"/usr/local/bin/kube-controller-manager"},
+							Args:    k.Flags,
+						},
+					},
+				},
+			},
+		},
+		Status: k.Status,
 	}
-	if len(deploymentList.Items) == 0 {
-		t.Error("expected to find at least one deployment, got zero")
-	}
+	wrappedPodSpec, _ := apiserver.IsRunningWrapper(td, d.Spec.Template.Spec, sets.NewString(resources.ControllerManagerDeploymentName))
+	d.Spec.Template.Spec = *wrappedPodSpec
+	return &d
 }

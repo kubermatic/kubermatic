@@ -53,4 +53,5 @@ type openshiftData interface {
 	GetOauthExternalNodePort() (int32, error)
 	ExternalURL() string
 	Seed() *kubermaticv1.Seed
+	GetCSIMigrationFeatureGates() []string
 }
