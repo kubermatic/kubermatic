@@ -141,11 +141,7 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 				return nil, fmt.Errorf("failed to get dnat-controller sidecar: %v", err)
 			}
 			auditLogEnabled := data.Cluster().Spec.AuditLogging != nil && data.Cluster().Spec.AuditLogging.Enabled
-			endpointReconcilingDisabled := false
-			if data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled != nil {
-				endpointReconcilingDisabled = *data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled
-			}
-			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled, endpointReconcilingDisabled)
+			flags, err := getApiserverFlags(data, etcdEndpoints, enableOIDCAuthentication, auditLogEnabled)
 			if err != nil {
 				return nil, err
 			}
@@ -246,18 +242,8 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 	}
 }
 
-func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled, endpointReconcilingDisabled bool) ([]string, error) {
-	nodePortRange := data.NodePortRange()
-	overrideNodePortRange := data.Cluster().Spec.ComponentsOverride.Apiserver.NodePortRange
-	if overrideNodePortRange != "" {
-		if _, err := net.ParsePortRange(overrideNodePortRange); err == nil {
-			nodePortRange = overrideNodePortRange
-		}
-	}
-
-	if nodePortRange == "" {
-		nodePortRange = defaultNodePortRange
-	}
+func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled bool) ([]string, error) {
+	overrideFlags := getApiserverOverrideFlags(data)
 
 	cluster := data.Cluster()
 
@@ -297,7 +283,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		"--service-account-key-file", serviceAccountKeyFile,
 		// There are efforts upstream adding support for multiple cidr's. Until that has landed, we'll take the first entry
 		"--service-cluster-ip-range", cluster.Spec.ClusterNetwork.Services.CIDRBlocks[0],
-		"--service-node-port-range", nodePortRange,
+		"--service-node-port-range", overrideFlags.NodePortRange,
 		"--allow-privileged",
 		"--audit-log-maxage", "30",
 		"--audit-log-maxbackup", "3",
@@ -345,7 +331,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, "--audit-policy-file", "/etc/kubernetes/audit/policy.yaml")
 	}
 
-	if endpointReconcilingDisabled {
+	if *overrideFlags.EndpointReconcilingDisabled {
 		flags = append(flags, "--endpoint-reconciler-type=none")
 	}
 
@@ -416,6 +402,30 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 	}
 
 	return flags, nil
+}
+
+// getApiserverOverrideFlags creates all settings that may be overridden by cluster specific componentsOverrideSettings
+// otherwise global overrides or defaults will be set
+func getApiserverOverrideFlags(data *resources.TemplateData) (settings kubermaticv1.APIServerSettings) {
+	// nodePortRange section
+	settings.NodePortRange = data.NodePortRange()
+	overrideNodePortRange := data.Cluster().Spec.ComponentsOverride.Apiserver.NodePortRange
+	if overrideNodePortRange != "" {
+		if _, err := net.ParsePortRange(overrideNodePortRange); err == nil {
+			settings.NodePortRange = overrideNodePortRange
+		}
+	}
+	if settings.NodePortRange == "" {
+		settings.NodePortRange = defaultNodePortRange
+	}
+
+	// endpointReconcilingDisabled section
+	settings.EndpointReconcilingDisabled = new(bool)
+	if data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled != nil {
+		settings.EndpointReconcilingDisabled = data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled
+	}
+
+	return
 }
 
 func getVolumeMounts() []corev1.VolumeMount {
