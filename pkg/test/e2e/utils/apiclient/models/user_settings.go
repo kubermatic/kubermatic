@@ -24,6 +24,9 @@ type UserSettings struct {
 	// items per page
 	ItemsPerPage int8 `json:"itemsPerPage,omitempty"`
 
+	// last seen changelog version
+	LastSeenChangelogVersion string `json:"lastSeenChangelogVersion,omitempty"`
+
 	// select project table view
 	SelectProjectTableView bool `json:"selectProjectTableView,omitempty"`
 

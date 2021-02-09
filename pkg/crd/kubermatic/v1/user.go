@@ -61,6 +61,7 @@ type UserSettings struct {
 	SelectProjectTableView     bool   `json:"selectProjectTableView,omitempty"`
 	CollapseSidenav            bool   `json:"collapseSidenav,omitempty"`
 	DisplayAllProjectsForAdmin bool   `json:"displayAllProjectsForAdmin,omitempty"`
+	LastSeenChangelogVersion   string `json:"lastSeenChangelogVersion,omitempty"`
 }
 
 // UserList is a list of users
