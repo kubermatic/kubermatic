@@ -25,6 +25,7 @@ import (
 	compute "google.golang.org/api/compute/v1"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -35,7 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID, zone string) (interface{}, error) {
+func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID, zone string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
@@ -55,7 +56,13 @@ func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter p
 	if err != nil {
 		return nil, err
 	}
-	return ListGCPSizes(ctx, sa, zone)
+
+	settings, err := settingsProvider.GetGlobalSettings()
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return ListGCPSizes(ctx, settings.Spec.MachineDeploymentVMResourceQuota, sa, zone)
 }
 
 func GCPZoneWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
@@ -297,7 +304,7 @@ func ListGCPZones(ctx context.Context, userInfo *provider.UserInfo, sa, datacent
 	return zones, err
 }
 
-func ListGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachineSizeList, error) {
+func ListGCPSizes(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, sa, zone string) (apiv1.GCPMachineSizeList, error) {
 	sizes := apiv1.GCPMachineSizeList{}
 
 	computeService, project, err := gcp.ConnectToComputeService(sa)
@@ -308,21 +315,39 @@ func ListGCPSizes(ctx context.Context, sa string, zone string) (apiv1.GCPMachine
 	req := computeService.MachineTypes.List(project, zone)
 	err = req.Pages(ctx, func(page *compute.MachineTypeList) error {
 		for _, machineType := range page.Items {
-			// TODO: Make the check below more generic, working for all the providers. It is needed as the pods
-			//  with memory under 2 GB will be full with required pods like kube-proxy, CNI etc.
-			if machineType.MemoryMb >= 2048 {
-				mt := apiv1.GCPMachineSize{
-					Name:        machineType.Name,
-					Description: machineType.Description,
-					Memory:      machineType.MemoryMb,
-					VCPUs:       machineType.GuestCpus,
-				}
-
-				sizes = append(sizes, mt)
+			mt := apiv1.GCPMachineSize{
+				Name:        machineType.Name,
+				Description: machineType.Description,
+				Memory:      machineType.MemoryMb,
+				VCPUs:       machineType.GuestCpus,
 			}
+			sizes = append(sizes, mt)
 		}
 		return nil
 	})
 
-	return sizes, err
+	return filterGCPByQuota(sizes, quota), err
+}
+
+func filterGCPByQuota(instances apiv1.GCPMachineSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.GCPMachineSizeList {
+	filteredRecords := apiv1.GCPMachineSizeList{}
+
+	// Range over the records and apply all the filters to each record.
+	// If the record passes all the filters, add it to the final slice.
+	for _, r := range instances {
+		keep := true
+
+		if !handlercommon.FilterCPU(int(r.VCPUs), quota.MinCPU, quota.MaxCPU) {
+			keep = false
+		}
+		if !handlercommon.FilterMemory(int(r.Memory/1024), quota.MinRAM, quota.MaxRAM) {
+			keep = false
+		}
+
+		if keep {
+			filteredRecords = append(filteredRecords, r)
+		}
+	}
+
+	return filteredRecords
 }
