@@ -1229,6 +1229,21 @@ func GenDefaultConstraintTemplate(name string) apiv2.ConstraintTemplate {
         }`,
 				},
 			},
+			Selector: kubermaticv1.ConstraintTemplateSelector{
+				Providers: []string{"aws", "gcp"},
+				LabelSelector: metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "cluster",
+							Operator: metav1.LabelSelectorOpExists,
+						},
+					},
+					MatchLabels: map[string]string{
+						"deployment": "prod",
+						"domain":     "sales",
+					},
+				},
+			},
 		},
 	}
 }
@@ -1264,6 +1279,21 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
           count(missing) > 0
           msg := sprintf("you must provide labels: %v", [missing])
         }`,
+			},
+		},
+		Selector: kubermaticv1.ConstraintTemplateSelector{
+			Providers: []string{"aws", "gcp"},
+			LabelSelector: metav1.LabelSelector{
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      "cluster",
+						Operator: metav1.LabelSelectorOpExists,
+					},
+				},
+				MatchLabels: map[string]string{
+					"deployment": "prod",
+					"domain":     "sales",
+				},
 			},
 		},
 	}
