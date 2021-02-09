@@ -25,8 +25,10 @@ import (
 	"github.com/hetznercloud/hcloud-go/hcloud"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/hetzner"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -36,7 +38,7 @@ import (
 var reStandardSize = regexp.MustCompile("(^cx)")
 var reDedicatedSize = regexp.MustCompile("(^ccx)")
 
-func HetznerSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string) (interface{}, error) {
+func HetznerSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -59,11 +61,16 @@ func HetznerSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGett
 		return nil, err
 	}
 
-	return HetznerSize(ctx, hetznerToken)
+	settings, err := settingsProvider.GetGlobalSettings()
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return HetznerSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, hetznerToken)
 
 }
 
-func HetznerSize(ctx context.Context, token string) (apiv1.HetznerSizeList, error) {
+func HetznerSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, token string) (apiv1.HetznerSizeList, error) {
 	client := hcloud.NewClient(hcloud.WithToken(token))
 
 	listOptions := hcloud.ServerTypeListOpts{
@@ -97,5 +104,42 @@ func HetznerSize(ctx context.Context, token string) (apiv1.HetznerSizeList, erro
 		}
 	}
 
-	return sizeList, nil
+	return filterHetznerByQuota(sizeList, quota), nil
+}
+
+func filterHetznerByQuota(instances apiv1.HetznerSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.HetznerSizeList {
+	filteredRecords := apiv1.HetznerSizeList{}
+
+	// Range over the records and apply all the filters to each record.
+	// If the record passes all the filters, add it to the final slice.
+	for _, r := range instances.Standard {
+		keep := true
+
+		if !handlercommon.FilterCPU(r.Cores, quota.MinCPU, quota.MaxCPU) {
+			keep = false
+		}
+		if !handlercommon.FilterMemory(int(r.Memory), quota.MinRAM, quota.MaxRAM) {
+			keep = false
+		}
+
+		if keep {
+			filteredRecords.Standard = append(filteredRecords.Standard, r)
+		}
+	}
+	for _, r := range instances.Dedicated {
+		keep := true
+
+		if !handlercommon.FilterCPU(r.Cores, quota.MinCPU, quota.MaxCPU) {
+			keep = false
+		}
+		if !handlercommon.FilterMemory(int(r.Memory), quota.MinRAM, quota.MaxRAM) {
+			keep = false
+		}
+
+		if keep {
+			filteredRecords.Dedicated = append(filteredRecords.Dedicated, r)
+		}
+	}
+
+	return filteredRecords
 }
