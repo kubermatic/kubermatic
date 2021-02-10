@@ -166,7 +166,6 @@ func main() {
 
 	rootCtx := signals.SetupSignalHandler()
 
-	// Create Context
 	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
 	mgr, err := manager.New(cfg, manager.Options{

@@ -52,7 +52,6 @@ func TestListConstraintTemplates(t *testing.T) {
 			},
 			HTTPStatus: http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
-				// test.GenTestSeed(),
 				test.GenConstraintTemplate("ct1"),
 				test.GenConstraintTemplate("ct2"),
 			),
