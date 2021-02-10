@@ -44,8 +44,17 @@ type ConstraintTemplate struct {
 
 // ConstraintTemplateSpec is the object representing the gatekeeper constraint template spec and kubermatic related spec
 type ConstraintTemplateSpec struct {
-	CRD     v1beta1.CRD      `json:"crd,omitempty"`
-	Targets []v1beta1.Target `json:"targets,omitempty"`
+	CRD      v1beta1.CRD                `json:"crd,omitempty"`
+	Targets  []v1beta1.Target           `json:"targets,omitempty"`
+	Selector ConstraintTemplateSelector `json:"selector,omitempty"`
+}
+
+// ConstraintTemplateSelector is the object holding the cluster selection filters
+type ConstraintTemplateSelector struct {
+	// Providers is a list of cloud providers to which the Constraint Template applies to. Empty means all providers are selected.
+	Providers []string
+	// LabelSelector selects the Clusters to which the Constraint Template applies based on their labels
+	LabelSelector metav1.LabelSelector
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
