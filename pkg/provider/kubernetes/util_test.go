@@ -312,6 +312,21 @@ func genConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
         }`,
 			},
 		},
+		Selector: kubermaticv1.ConstraintTemplateSelector{
+			Providers: []string{"aws", "gcp"},
+			LabelSelector: metav1.LabelSelector{
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      "cluster",
+						Operator: metav1.LabelSelectorOpExists,
+					},
+				},
+				MatchLabels: map[string]string{
+					"deployment": "prod",
+					"domain":     "sales",
+				},
+			},
+		},
 	}
 
 	return ct
