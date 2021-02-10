@@ -23,6 +23,9 @@ type ConstraintTemplateSpec struct {
 
 	// crd
 	Crd *CRD `json:"crd,omitempty"`
+
+	// selector
+	Selector *ConstraintTemplateSelector `json:"selector,omitempty"`
 }
 
 // Validate validates this constraint template spec
@@ -34,6 +37,10 @@ func (m *ConstraintTemplateSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateCrd(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSelector(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -78,6 +85,24 @@ func (m *ConstraintTemplateSpec) validateCrd(formats strfmt.Registry) error {
 		if err := m.Crd.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("crd")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ConstraintTemplateSpec) validateSelector(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Selector) { // not required
+		return nil
+	}
+
+	if m.Selector != nil {
+		if err := m.Selector.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("selector")
 			}
 			return err
 		}
