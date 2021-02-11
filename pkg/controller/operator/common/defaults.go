@@ -67,6 +67,7 @@ var (
 		"cluster-autoscaler",
 		"node-exporter",
 		"gatekeeper",
+		"kubevirt",
 	}
 
 	DefaultUIResources = corev1.ResourceRequirements{

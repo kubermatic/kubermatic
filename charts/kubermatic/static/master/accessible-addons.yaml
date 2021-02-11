@@ -4,3 +4,4 @@ addons:
 - cluster-autoscaler
 - node-exporter
 - gatekeeper
+- kubevirt

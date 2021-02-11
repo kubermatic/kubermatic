@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,16 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-name: kubermatic
-version: 1.1.30
-appVersion: '__KUBERMATIC_TAG__'
-description: Kubermatic chart for master and/or seed clusters.
-keywords:
-- kubermatic
-home: https://www.kubermatic.io/
-sources:
-- https://github.com/kubermatic/kubermatic
-maintainers:
-- name: Loodse GmbH
-  email: support@kubermatic.com
+---
+apiVersion: kubevirt.io/v1alpha3
+kind: KubeVirt
+metadata:
+  name: kubevirt
+  namespace: kubevirt
+spec:
+{{ if .Variables.Configuration }}
+{{- .Variables.Configuration | indent 2 }}
+{{ else }}
+  certificateRotateStrategy: {}
+  configuration:
+    developerConfiguration:
+      featureGates:
+      - "DataVolumes"
+  customizeComponents: {}
+  imagePullPolicy: IfNotPresent
+{{ end }}

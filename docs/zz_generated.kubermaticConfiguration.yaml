@@ -11,6 +11,7 @@ spec:
       - cluster-autoscaler
       - node-exporter
       - gatekeeper
+      - kubevirt
     # DebugLog enables more verbose logging.
     debugLog: false
     # DockerRepository is the repository containing the Kubermatic REST API image.
