@@ -31,7 +31,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -64,7 +63,6 @@ func init() {
 }
 
 type Reconciler struct {
-	ctx                  context.Context
 	masterKubeCfg        *rest.Config
 	masterClient         ctrlruntimeclient.Client
 	masterCache          cache.Cache
@@ -81,7 +79,6 @@ type managerInstance struct {
 	config    map[string]rest.Config
 	mgr       manager.Manager
 	running   bool
-	stopChan  chan struct{}
 	cancelCtx context.CancelFunc
 }
 
@@ -111,17 +108,16 @@ func Add(
 	}
 
 	go func() {
-		if err := cache.Start(ctx.Done()); err != nil {
+		if err := cache.Start(ctx); err != nil {
 			log.Fatalw("failed to start cache", zap.Error(err))
 		}
 	}()
 
-	if !cache.WaitForCacheSync(ctx.Done()) {
+	if !cache.WaitForCacheSync(ctx) {
 		log.Fatal("failed to wait for caches to synchronize")
 	}
 
 	reconciler := &Reconciler{
-		ctx:                  ctx,
 		masterKubeCfg:        mgr.GetConfig(),
 		masterClient:         mgr.GetClient(),
 		masterCache:          &unstartableCache{cache},
@@ -136,7 +132,7 @@ func Add(
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
 
-	for _, t := range []runtime.Object{&kubermaticv1.Seed{}, &corev1.Secret{}} {
+	for _, t := range []ctrlruntimeclient.Object{&kubermaticv1.Seed{}, &corev1.Secret{}} {
 		if err := c.Watch(
 			&source.Kind{Type: t},
 			controllerutil.EnqueueConst(queueKey),
@@ -160,15 +156,27 @@ func Add(
 	return nil
 }
 
-func (r *Reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
-	err := r.reconcile()
+func (r *Reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
+	err := r.reconcile(ctx)
 	if err != nil {
 		r.log.Errorw("reconiliation failed", zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile() error {
+type dummyClientBuilder struct {
+	client ctrlruntimeclient.Client
+}
+
+func (d *dummyClientBuilder) WithUncached(objs ...ctrlruntimeclient.Object) manager.ClientBuilder {
+	return d
+}
+
+func (d *dummyClientBuilder) Build(cache cache.Cache, config *rest.Config, options ctrlruntimeclient.Options) (ctrlruntimeclient.Client, error) {
+	return d.client, nil
+}
+
+func (r *Reconciler) reconcile(ctx context.Context) error {
 	seeds, err := r.seedsGetter()
 	if err != nil {
 		return fmt.Errorf("failed to get seeds: %v", err)
@@ -209,9 +217,7 @@ func (r *Reconciler) reconcile() error {
 		NewCache: func(_ *rest.Config, _ cache.Options) (cache.Cache, error) {
 			return r.masterCache, nil
 		},
-		NewClient: func(_ cache.Cache, _ *rest.Config, _ ctrlruntimeclient.Options) (ctrlruntimeclient.Client, error) {
-			return r.masterClient, nil
-		},
+		ClientBuilder: &dummyClientBuilder{r.masterClient},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create master controller manager: %v", err)
@@ -223,7 +229,10 @@ func (r *Reconciler) reconcile() error {
 		return fmt.Errorf("failed to create managers for all seeds: %v", err)
 	}
 
-	ctrlCtx, cancelCtrlCtx := context.WithCancel(r.ctx)
+	// create a new, independent context, as the one given to reconcile() can possibly
+	// be cancelled once the reconciliation is done, and we want our context to live
+	// on for a long time
+	ctrlCtx, cancelCtrlCtx := context.WithCancel(context.Background())
 
 	for _, factory := range r.controllerFactories {
 		controllerName, err := factory(ctrlCtx, mgr, seedManagers)
@@ -235,21 +244,19 @@ func (r *Reconciler) reconcile() error {
 
 	if r.activeManager != nil {
 		r.log.Info("Stopping old instance of controller manager")
-		r.activeManager.cancelCtx() // Just in case any controller ever actually makes use of their context
-		close(r.activeManager.stopChan)
+		r.activeManager.cancelCtx()
 	}
 
 	mi := &managerInstance{
 		config:    seedKubeconfigMap,
 		mgr:       mgr,
-		stopChan:  make(chan struct{}),
 		cancelCtx: cancelCtrlCtx,
 	}
 
 	go func() {
 		r.log.Info("Starting controller manager")
 		mi.running = true
-		if err := mi.mgr.Start(mi.stopChan); err != nil {
+		if err := mi.mgr.Start(ctrlCtx); err != nil {
 			r.log.Errorw("Controller manager stopped with error", zap.Error(err))
 		}
 		mi.running = false
@@ -295,10 +302,11 @@ type unstartableCache struct {
 	cache.Cache
 }
 
-func (m *unstartableCache) Start(_ <-chan struct{}) error {
+func (m *unstartableCache) Start(ctx context.Context) error {
+	<-ctx.Done()
 	return nil
 }
 
-func (m *unstartableCache) WaitForCacheSync(_ <-chan struct{}) bool {
+func (m *unstartableCache) WaitForCacheSync(ctx context.Context) bool {
 	return true
 }

@@ -26,14 +26,14 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	deletedLBAnnotationName = "kubermatic.io/cleaned-up-loadbalancers"
 )
 
-func New(seedClient controllerruntimeclient.Client, userClusterClientGetter func() (controllerruntimeclient.Client, error)) *Deletion {
+func New(seedClient ctrlruntimeclient.Client, userClusterClientGetter func() (ctrlruntimeclient.Client, error)) *Deletion {
 	return &Deletion{
 		seedClient:              seedClient,
 		userClusterClientGetter: userClusterClientGetter,
@@ -41,8 +41,8 @@ func New(seedClient controllerruntimeclient.Client, userClusterClientGetter func
 }
 
 type Deletion struct {
-	seedClient              controllerruntimeclient.Client
-	userClusterClientGetter func() (controllerruntimeclient.Client, error)
+	seedClient              ctrlruntimeclient.Client
+	userClusterClientGetter func() (ctrlruntimeclient.Client, error)
 }
 
 // CleanupCluster is responsible for cleaning up a cluster.
@@ -170,5 +170,5 @@ func (d *Deletion) cleanupInClusterResources(ctx context.Context, log *zap.Sugar
 	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.InClusterPVCleanupFinalizer)
 	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer)
 	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.InClusterImageRegistryConfigCleanupFinalizer)
-	return d.seedClient.Patch(ctx, cluster, controllerruntimeclient.MergeFrom(oldCluster))
+	return d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }

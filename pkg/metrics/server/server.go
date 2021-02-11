@@ -17,6 +17,7 @@ limitations under the License.
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -61,7 +62,7 @@ type MetricsServer struct {
 }
 
 // Start implements sigs.k8s.io/controller-runtime/pkg/manager.Runnable
-func (m *MetricsServer) Start(stop <-chan struct{}) error {
+func (m *MetricsServer) Start(ctx context.Context) error {
 	if len(m.gatherers) < 1 {
 		return errors.New("no gatherers defined")
 	}

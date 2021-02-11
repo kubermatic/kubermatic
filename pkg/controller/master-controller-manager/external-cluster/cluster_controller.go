@@ -31,7 +31,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -46,7 +45,6 @@ const (
 
 // Reconciler is a controller which is responsible for managing clusters
 type Reconciler struct {
-	ctx context.Context
 	ctrlruntimeclient.Client
 	log *zap.SugaredLogger
 }
@@ -59,7 +57,6 @@ func Add(
 	reconciler := &Reconciler{
 		log:    log.Named(ControllerName),
 		Client: mgr.GetClient(),
-		ctx:    ctx,
 	}
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler})
 	if err != nil {
@@ -74,13 +71,13 @@ func Add(
 
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	resourceName := request.Name
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
 	icl := &kubermaticv1.ExternalCluster{}
-	if err := r.Get(r.ctx, client.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, icl); err != nil {
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: resourceName}, icl); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Debug("Could not find imported cluster")
 			return reconcile.Result{}, nil
@@ -90,7 +87,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 
 	if icl.DeletionTimestamp != nil {
 		if kuberneteshelper.HasOnlyFinalizer(icl, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer) {
-			if err := r.cleanUpKubeconfigSecret(icl); err != nil {
+			if err := r.cleanUpKubeconfigSecret(ctx, icl); err != nil {
 				log.Errorf("Could not delete kubeconfig secret, %v", err)
 				return reconcile.Result{}, err
 			}
@@ -100,17 +97,17 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, nil
 }
 
-func (r *Reconciler) cleanUpKubeconfigSecret(cluster *kubermaticv1.ExternalCluster) error {
-	if err := r.deleteSecret(cluster); err != nil {
+func (r *Reconciler) cleanUpKubeconfigSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
+	if err := r.deleteSecret(ctx, cluster); err != nil {
 		return err
 	}
 
 	oldCluster := cluster.DeepCopy()
 	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.ExternalClusterKubeconfigCleanupFinalizer)
-	return r.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
-func (r *Reconciler) deleteSecret(cluster *kubermaticv1.ExternalCluster) error {
+func (r *Reconciler) deleteSecret(ctx context.Context, cluster *kubermaticv1.ExternalCluster) error {
 	secretName := cluster.GetKubeconfigSecretName()
 	if secretName == "" {
 		return nil
@@ -118,7 +115,7 @@ func (r *Reconciler) deleteSecret(cluster *kubermaticv1.ExternalCluster) error {
 
 	secret := &corev1.Secret{}
 	name := types.NamespacedName{Name: secretName, Namespace: resources.KubermaticNamespace}
-	err := r.Get(r.ctx, name, secret)
+	err := r.Get(ctx, name, secret)
 	// Its already gone
 	if kerrors.IsNotFound(err) {
 		return nil
@@ -129,7 +126,7 @@ func (r *Reconciler) deleteSecret(cluster *kubermaticv1.ExternalCluster) error {
 		return fmt.Errorf("failed to get Secret %q: %v", name.String(), err)
 	}
 
-	if err := r.Delete(r.ctx, secret); err != nil {
+	if err := r.Delete(ctx, secret); err != nil {
 		return fmt.Errorf("failed to delete Secret %q: %v", name.String(), err)
 	}
 

@@ -56,7 +56,6 @@ func Add(
 ) error {
 	reconciler := &Reconciler{
 		Client:           mgr.GetClient(),
-		ctx:              ctx,
 		recorder:         mgr.GetEventRecorderFor(ControllerName),
 		log:              log.Named(ControllerName),
 		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),

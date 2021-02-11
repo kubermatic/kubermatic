@@ -61,7 +61,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -88,7 +88,7 @@ type Features struct {
 }
 
 type Reconciler struct {
-	client.Client
+	ctrlruntimeclient.Client
 
 	log                      *zap.SugaredLogger
 	scheme                   *runtime.Scheme
@@ -157,7 +157,7 @@ func Add(
 		return err
 	}
 
-	typesToWatch := []runtime.Object{
+	typesToWatch := []ctrlruntimeclient.Object{
 		&corev1.Service{},
 		&corev1.ServiceAccount{},
 		&corev1.ConfigMap{},
@@ -181,9 +181,7 @@ func Add(
 	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
@@ -236,7 +234,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		log.Debug("Cleaning up cluster")
 
 		// Defer getting the client to make sure we only request it if we actually need it
-		userClusterClientGetter := func() (client.Client, error) {
+		userClusterClientGetter := func() (ctrlruntimeclient.Client, error) {
 			userClusterClient, err := r.userClusterConnProvider.GetClient(ctx, cluster)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get user cluster client: %v", err)
@@ -376,7 +374,7 @@ func (r *Reconciler) syncHeath(ctx context.Context, cluster *kubermaticv1.Cluste
 func (r *Reconciler) updateCluster(ctx context.Context, c *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
 	oldCluster := c.DeepCopy()
 	modify(c)
-	return r.Patch(ctx, c, client.MergeFrom(oldCluster))
+	return r.Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
 func (r *Reconciler) getAllSecretCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedSecretCreatorGetter {

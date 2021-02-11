@@ -48,7 +48,6 @@ const (
 )
 
 type reconciler struct {
-	ctx      context.Context
 	log      *zap.SugaredLogger
 	client   ctrlruntimeclient.Client
 	recorder record.EventRecorder
@@ -58,7 +57,6 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		ctx:      ctx,
 		log:      log,
 		client:   mgr.GetClient(),
 		recorder: mgr.GetEventRecorderFor(controllerName),
@@ -81,12 +79,12 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error
 	return nil
 }
 
-func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("Role", request.Name)
 	log.Debug("Reconciling")
 
 	role := &rbacv1.Role{}
-	if err := r.client.Get(r.ctx, request.NamespacedName, role); err != nil {
+	if err := r.client.Get(ctx, request.NamespacedName, role); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Debug("role not found, returning")
 			return reconcile.Result{}, nil
@@ -94,7 +92,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, fmt.Errorf("failed to get role: %v", err)
 	}
 
-	err := r.reconcile(log, role)
+	err := r.reconcile(ctx, log, role)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(role, corev1.EventTypeWarning, "CloningRoleFailed", err.Error())
@@ -102,11 +100,10 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(log *zap.SugaredLogger, role *rbacv1.Role) error {
-
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, role *rbacv1.Role) error {
 	namespaces := []string{}
 	namespaceList := &corev1.NamespaceList{}
-	if err := r.client.List(r.ctx, namespaceList); err != nil {
+	if err := r.client.List(ctx, namespaceList); err != nil {
 		return fmt.Errorf("failed to get namespaces: %v", err)
 	}
 
@@ -123,16 +120,16 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, role *rbacv1.Role) error 
 		namespaces = append(namespaces, n.Name)
 	}
 
-	return r.reconcileRoles(log, role, namespaces)
+	return r.reconcileRoles(ctx, log, role, namespaces)
 }
 
-func (r *reconciler) reconcileRoles(log *zap.SugaredLogger, oldRole *rbacv1.Role, namespaces []string) error {
+func (r *reconciler) reconcileRoles(ctx context.Context, log *zap.SugaredLogger, oldRole *rbacv1.Role, namespaces []string) error {
 	if oldRole.DeletionTimestamp != nil {
 		if !kuberneteshelper.HasFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer) {
 			return nil
 		}
 		for _, namespace := range namespaces {
-			if err := r.client.Delete(r.ctx, &rbacv1.Role{
+			if err := r.client.Delete(ctx, &rbacv1.Role{
 				ObjectMeta: v1.ObjectMeta{
 					Name:      oldRole.Name,
 					Namespace: namespace,
@@ -146,7 +143,7 @@ func (r *reconciler) reconcileRoles(log *zap.SugaredLogger, oldRole *rbacv1.Role
 		}
 
 		kuberneteshelper.RemoveFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer)
-		if err := r.client.Update(r.ctx, oldRole); err != nil {
+		if err := r.client.Update(ctx, oldRole); err != nil {
 			return fmt.Errorf("failed to update role: %v", err)
 		}
 		return nil
@@ -154,7 +151,7 @@ func (r *reconciler) reconcileRoles(log *zap.SugaredLogger, oldRole *rbacv1.Role
 
 	if !kuberneteshelper.HasFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer) {
 		kuberneteshelper.AddFinalizer(oldRole, kubermaticapiv1.UserClusterRoleCleanupFinalizer)
-		if err := r.client.Update(r.ctx, oldRole); err != nil {
+		if err := r.client.Update(ctx, oldRole); err != nil {
 			return fmt.Errorf("failed to update role: %v", err)
 		}
 	}
@@ -163,7 +160,7 @@ func (r *reconciler) reconcileRoles(log *zap.SugaredLogger, oldRole *rbacv1.Role
 		log := log.With("namespace", namespace)
 		wasCreated := false
 		role := &rbacv1.Role{}
-		if err := r.client.Get(r.ctx, ctrlruntimeclient.ObjectKey{
+		if err := r.client.Get(ctx, ctrlruntimeclient.ObjectKey{
 			Namespace: namespace,
 			Name:      oldRole.Name,
 		}, role); err != nil {
@@ -177,7 +174,7 @@ func (r *reconciler) reconcileRoles(log *zap.SugaredLogger, oldRole *rbacv1.Role
 					},
 					Rules: oldRole.Rules,
 				}
-				if err := r.client.Create(r.ctx, newRole); err != nil {
+				if err := r.client.Create(ctx, newRole); err != nil {
 					return fmt.Errorf("failed to create role: %v", err)
 				}
 				wasCreated = true
@@ -191,7 +188,7 @@ func (r *reconciler) reconcileRoles(log *zap.SugaredLogger, oldRole *rbacv1.Role
 			if !reflect.DeepEqual(role.Rules, oldRole.Rules) {
 				log.Debug("Role was changed, updating")
 				role.Rules = oldRole.Rules
-				if err := r.client.Update(r.ctx, role); err != nil {
+				if err := r.client.Update(ctx, role); err != nil {
 					return fmt.Errorf("failed to update role: %v", err)
 				}
 			}
@@ -203,8 +200,8 @@ func (r *reconciler) reconcileRoles(log *zap.SugaredLogger, oldRole *rbacv1.Role
 }
 
 // enqueueTemplateRoles enqueues the roles from kube-system namespace and special label component=userClusterRole
-func enqueueTemplateRoles(client ctrlruntimeclient.Client) *handler.EnqueueRequestsFromMapFunc {
-	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+func enqueueTemplateRoles(client ctrlruntimeclient.Client) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		roleList := &rbacv1.RoleList{}
 		if err := client.List(context.Background(), roleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}, ctrlruntimeclient.InNamespace(v1.NamespaceSystem)); err != nil {
 			utilruntime.HandleError(fmt.Errorf("failed to list Roles: %v", err))
@@ -216,5 +213,5 @@ func enqueueTemplateRoles(client ctrlruntimeclient.Client) *handler.EnqueueReque
 			request = append(request, reconcile.Request{NamespacedName: types.NamespacedName{Name: role.Name, Namespace: role.Namespace}})
 		}
 		return request
-	})}
+	})
 }

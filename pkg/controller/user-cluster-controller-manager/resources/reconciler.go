@@ -47,7 +47,9 @@ import (
 
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -661,6 +663,8 @@ func (r *reconciler) reconcileUnstructured(ctx context.Context) error {
 		Reader:       r.cache,
 		Writer:       r.Client,
 		StatusClient: r.Client,
+		scheme:       r.Scheme(),
+		restMapper:   r.RESTMapper(),
 	}
 	if err := reconciling.ReconcileUnstructureds(ctx, creators, "", client); err != nil {
 		return fmt.Errorf("failed to reconcile unstructureds: %v", err)
@@ -674,6 +678,17 @@ type ctrlruntimeclientClient struct {
 	ctrlruntimeclient.Reader
 	ctrlruntimeclient.Writer
 	ctrlruntimeclient.StatusClient
+
+	scheme     *runtime.Scheme
+	restMapper meta.RESTMapper
+}
+
+func (c ctrlruntimeclientClient) Scheme() *runtime.Scheme {
+	return c.scheme
+}
+
+func (c ctrlruntimeclientClient) RESTMapper() meta.RESTMapper {
+	return c.restMapper
 }
 
 func (r *reconciler) reconcileDeployments(ctx context.Context) error {

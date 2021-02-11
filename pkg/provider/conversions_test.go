@@ -70,7 +70,7 @@ func TestReconcileBinding(t *testing.T) {
 			},
 			datacenterName: "fake-dc",
 			expectedDatacenter: &kubermaticv1.Datacenter{
-				Location: "Henriks basement",
+				Location: "Henrik's basement",
 				Country:  "Germany",
 				Spec: kubermaticv1.DatacenterSpec{
 					Fake: &kubermaticv1.DatacenterSpecFake{},
@@ -183,7 +183,7 @@ func genTestEuropeWestSeed() *kubermaticv1.Seed {
 			Country:  "US",
 			Datacenters: map[string]kubermaticv1.Datacenter{
 				"fake-dc": {
-					Location: "Henriks basement",
+					Location: "Henrik's basement",
 					Country:  "Germany",
 					Spec: kubermaticv1.DatacenterSpec{
 						Fake: &kubermaticv1.DatacenterSpecFake{},

@@ -24,7 +24,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -94,13 +93,12 @@ func TestSecretKeySelectorValueFuncFactory(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			var client ctrlruntimeclient.Client
+			clientBuilder := fakectrlruntimeclient.NewClientBuilder()
 			if tc.secret != nil {
-				client = fakectrlruntimeclient.NewFakeClient(tc.secret)
-			} else {
-				client = fakectrlruntimeclient.NewFakeClient()
+				clientBuilder.WithObjects(tc.secret)
 			}
 
+			client := clientBuilder.Build()
 			valueFunc := SecretKeySelectorValueFuncFactory(context.Background(), client)
 
 			result, err := valueFunc(tc.configVar, tc.key)

@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -74,7 +73,7 @@ func getVPACreatorForPodTemplate(name string, pod corev1.PodSpec, controllerRef 
 // If creator functions for VPA's for Deployments should be returned, a deployment store must be passed in. Otherwise a StatefulSet store.
 // All resources must exist in the specified namespace.
 // The VPA resource will have the same selector as the Deployment/StatefulSet. The pod container limits will be set as VPA limits.
-func getVerticalPodAutoscalersForResource(ctx context.Context, client ctrlruntimeclient.Client, names []string, namespace string, obj runtime.Object, enabled bool) ([]reconciling.NamedVerticalPodAutoscalerCreatorGetter, error) {
+func getVerticalPodAutoscalersForResource(ctx context.Context, client ctrlruntimeclient.Client, names []string, namespace string, obj ctrlruntimeclient.Object, enabled bool) ([]reconciling.NamedVerticalPodAutoscalerCreatorGetter, error) {
 	var creators []reconciling.NamedVerticalPodAutoscalerCreatorGetter
 	for _, name := range names {
 		name := name

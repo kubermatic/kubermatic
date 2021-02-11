@@ -19,17 +19,15 @@ package kubernetes_test
 import (
 	"testing"
 
-	restclient "k8s.io/client-go/rest"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/api/equality"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
+	restclient "k8s.io/client-go/rest"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -37,7 +35,7 @@ func TestCreateServiceAccount(t *testing.T) {
 	// test data
 	testcases := []struct {
 		name                      string
-		existingKubermaticObjects []runtime.Object
+		existingKubermaticObjects []ctrlruntimeclient.Object
 		project                   *kubermaticv1.Project
 		userInfo                  *provider.UserInfo
 		saName                    string
@@ -51,13 +49,13 @@ func TestCreateServiceAccount(t *testing.T) {
 			project:  genDefaultProject(),
 			saName:   "test",
 			saGroup:  "editors-my-first-project-ID",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				createAuthenitactedUser(),
 				genDefaultProject(),
 			},
 			expectedSA: func() *kubermaticv1.User {
 				sa := createSANoPrefix("test", "my-first-project-ID", "editors", "1")
-				sa.ResourceVersion = "1"
+				sa.ResourceVersion = ""
 				return sa
 			}(),
 			expectedSAName: "1",
@@ -66,7 +64,12 @@ func TestCreateServiceAccount(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingKubermaticObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}
@@ -84,6 +87,7 @@ func TestCreateServiceAccount(t *testing.T) {
 			sa.Name = tc.expectedSAName
 			sa.Spec.Email = ""
 			sa.Spec.ID = ""
+			sa.ResourceVersion = ""
 
 			if !equality.Semantic.DeepEqual(sa, tc.expectedSA) {
 				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, sa))
@@ -96,7 +100,7 @@ func TestList(t *testing.T) {
 	// test data
 	testcases := []struct {
 		name                      string
-		existingKubermaticObjects []runtime.Object
+		existingKubermaticObjects []ctrlruntimeclient.Object
 		project                   *kubermaticv1.Project
 		saName                    string
 		userInfo                  *provider.UserInfo
@@ -107,7 +111,7 @@ func TestList(t *testing.T) {
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			project:  genDefaultProject(),
 			saName:   "test-1",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				createAuthenitactedUser(),
 				createSA("test-1", "my-first-project-ID", "editors", "1"),
 				createSA("test-2", "abcd", "viewers", "2"),
@@ -122,7 +126,7 @@ func TestList(t *testing.T) {
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			project:  genDefaultProject(),
 			saName:   "test",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				createAuthenitactedUser(),
 				createSA("test", "bbbb", "editors", "1"),
 				createSA("fake", "abcd", "editors", "2"),
@@ -132,7 +136,12 @@ func TestList(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingKubermaticObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}
@@ -144,6 +153,15 @@ func TestList(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			for i := range saList {
+				saList[i].ResourceVersion = ""
+			}
+
+			for i := range tc.expectedSA {
+				tc.expectedSA[i].ResourceVersion = ""
+			}
+
 			if !equality.Semantic.DeepEqual(saList, tc.expectedSA) {
 				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, saList))
 			}
@@ -155,7 +173,7 @@ func TestGet(t *testing.T) {
 	// test data
 	testcases := []struct {
 		name                      string
-		existingKubermaticObjects []runtime.Object
+		existingKubermaticObjects []ctrlruntimeclient.Object
 		project                   *kubermaticv1.Project
 		saName                    string
 		userInfo                  *provider.UserInfo
@@ -166,7 +184,7 @@ func TestGet(t *testing.T) {
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			project:  genDefaultProject(),
 			saName:   "1",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				createAuthenitactedUser(),
 				createSA("test-1", "my-first-project-ID", "editors", "1"),
 				createSA("test-2", "abcd", "viewers", "2"),
@@ -182,7 +200,12 @@ func TestGet(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingKubermaticObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}
@@ -194,6 +217,9 @@ func TestGet(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			tc.expectedSA.ResourceVersion = sa.ResourceVersion
+
 			if !equality.Semantic.DeepEqual(sa, tc.expectedSA) {
 				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, sa))
 			}
@@ -205,7 +231,7 @@ func TestUpdate(t *testing.T) {
 	// test data
 	testcases := []struct {
 		name                      string
-		existingKubermaticObjects []runtime.Object
+		existingKubermaticObjects []ctrlruntimeclient.Object
 		project                   *kubermaticv1.Project
 		saName                    string
 		newName                   string
@@ -217,7 +243,7 @@ func TestUpdate(t *testing.T) {
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			project:  genDefaultProject(),
 			saName:   "1",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				createAuthenitactedUser(),
 				createSA("test-1", "my-first-project-ID", "viewers", "1"),
 				createSA("test-2", "abcd", "viewers", "2"),
@@ -235,7 +261,12 @@ func TestUpdate(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingKubermaticObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}
@@ -253,6 +284,9 @@ func TestUpdate(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+
+			tc.expectedSA.ResourceVersion = expectedSA.ResourceVersion
+
 			if !equality.Semantic.DeepEqual(expectedSA, tc.expectedSA) {
 				t.Fatalf("%v", diff.ObjectGoPrintSideBySide(tc.expectedSA, expectedSA))
 			}
@@ -264,7 +298,7 @@ func TestDelete(t *testing.T) {
 	// test data
 	testcases := []struct {
 		name                      string
-		existingKubermaticObjects []runtime.Object
+		existingKubermaticObjects []ctrlruntimeclient.Object
 		saName                    string
 		userInfo                  *provider.UserInfo
 	}{
@@ -272,7 +306,7 @@ func TestDelete(t *testing.T) {
 			name:     "scenario 1, delete service account",
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			saName:   "1",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				createAuthenitactedUser(),
 				createSA("test-1", "my-first-project-ID", "viewers", "1"),
 				createSA("test-2", "abcd", "viewers", "2"),
@@ -282,8 +316,12 @@ func TestDelete(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingKubermaticObjects...).
+				Build()
 
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}

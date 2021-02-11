@@ -27,11 +27,11 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 
-	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	admissionv1 "k8s.io/api/admission/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -41,11 +41,11 @@ type AdmissionHandler struct {
 	log      logr.Logger
 	decoder  *admission.Decoder
 	features features.FeatureGate
-	client   client.Client
+	client   ctrlruntimeclient.Client
 }
 
 // NewAdmissionHandler returns a new cluster.AdmissionHandler.
-func NewAdmissionHandler(client client.Client, features features.FeatureGate) *AdmissionHandler {
+func NewAdmissionHandler(client ctrlruntimeclient.Client, features features.FeatureGate) *AdmissionHandler {
 	return &AdmissionHandler{
 		features: features,
 		client:   client,
@@ -66,9 +66,9 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	cluster := &kubermaticv1.Cluster{}
 
 	switch req.Operation {
-	case admissionv1beta1.Create:
+	case admissionv1.Create:
 		fallthrough
-	case admissionv1beta1.Update:
+	case admissionv1.Update:
 		err := h.decoder.Decode(req, cluster)
 		if err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
@@ -80,7 +80,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return webhook.Denied(fmt.Sprintf("cluster validation request %s rejected: %v", req.UID, validationErr))
 		}
 
-	case admissionv1beta1.Delete:
+	case admissionv1.Delete:
 		// NOP we always allow delete operarions at the moment
 	default:
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on cluster resources", req.Operation))
@@ -105,7 +105,7 @@ func (h *AdmissionHandler) validateCreateOrUpdate(ctx context.Context, c *kuberm
 	return nil
 }
 
-func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrl.Manager) {
+func (h *AdmissionHandler) SetupWebhookWithManager(mgr ctrlruntime.Manager) {
 	mgr.GetWebhookServer().Register("/validate-kubermatic-k8s-io-cluster", &webhook.Admission{Handler: h})
 }
 

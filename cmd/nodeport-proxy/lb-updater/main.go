@@ -69,13 +69,7 @@ func main() {
 	flag.Parse()
 
 	// setup signal handler
-	stopCh := signals.SetupSignalHandler()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	go func() {
-		<-stopCh
-		cancel()
-	}()
+	ctx := signals.SetupSignalHandler()
 
 	// init logging
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -103,7 +97,6 @@ func main() {
 	}
 
 	r := &LBUpdater{
-		ctx:         ctx,
 		client:      mgr.GetClient(),
 		lbNamespace: lbNamespace,
 		lbName:      lbName,
@@ -120,14 +113,13 @@ func main() {
 	if err := ctrl.Watch(&source.Kind{Type: &corev1.Service{}}, controllerutil.EnqueueConst("")); err != nil {
 		log.Fatalw("Failed to add watch for Service", zap.Error(err))
 	}
-	if err := mgr.Start(stopCh); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		log.Fatalw("Manager ended", zap.Error(err))
 	}
 }
 
 // LBUpdater has all APIs to synchronize and updateLB the services and nodeports.
 type LBUpdater struct {
-	ctx    context.Context
 	client ctrlruntimeclient.Client
 
 	lbNamespace string
@@ -137,20 +129,20 @@ type LBUpdater struct {
 	opts        envoymanager.Options
 }
 
-func (u *LBUpdater) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	err := u.syncLB(request.NamespacedName.String())
+func (u *LBUpdater) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+	err := u.syncLB(ctx, request.NamespacedName.String())
 	if err != nil {
 		u.log.Errorw("Error syncing LoadBalancer", zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
 
-func (u *LBUpdater) syncLB(s string) error {
+func (u *LBUpdater) syncLB(ctx context.Context, s string) error {
 	u.log.Debugw("Syncing LB because Service got modified", "service", s)
 
 	services := &corev1.ServiceList{}
 	opts := &ctrlruntimeclient.ListOptions{Namespace: u.namespace}
-	if err := u.client.List(u.ctx, services, opts); err != nil {
+	if err := u.client.List(ctx, services, opts); err != nil {
 		return fmt.Errorf("failed to list services: %v", err)
 	}
 
@@ -210,7 +202,7 @@ func (u *LBUpdater) syncLB(s string) error {
 	}
 
 	lb := &corev1.Service{}
-	if err := u.client.Get(u.ctx, types.NamespacedName{Namespace: u.lbNamespace, Name: u.lbName}, lb); err != nil {
+	if err := u.client.Get(ctx, types.NamespacedName{Namespace: u.lbNamespace, Name: u.lbName}, lb); err != nil {
 		return fmt.Errorf("failed to get service %s/%s from lister: %v", u.lbNamespace, u.lbName, err)
 	}
 
@@ -233,7 +225,7 @@ func (u *LBUpdater) syncLB(s string) error {
 	diff := deep.Equal(wantLBPorts, lb.Spec.Ports)
 	u.log.Debugw("Updating LB ports", "diff", diff)
 	lb.Spec.Ports = wantLBPorts
-	if err := u.client.Update(u.ctx, lb); err != nil {
+	if err := u.client.Update(ctx, lb); err != nil {
 		return fmt.Errorf("failed to update LB service %s/%s: %v", u.lbNamespace, u.lbName, err)
 	}
 

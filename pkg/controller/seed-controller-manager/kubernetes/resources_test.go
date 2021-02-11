@@ -22,11 +22,10 @@ import (
 	"context"
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/semver"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -78,10 +77,10 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		t.Fatalf("failed install crds: %v", err)
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
+
 	go func() {
-		if err := mgr.Start(ctx.Done()); err != nil {
+		if err := mgr.Start(ctx); err != nil {
 			t.Errorf("failed to start manager: %v", err)
 		}
 	}()
@@ -116,13 +115,6 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			Type:  corev1.ServiceTypeLoadBalancer,
 			Ports: []corev1.ServicePort{{Port: 443}},
 		},
-		Status: corev1.ServiceStatus{
-			LoadBalancer: corev1.LoadBalancerStatus{
-				Ingress: []corev1.LoadBalancerIngress{{
-					IP: "1.2.3.4",
-				}},
-			},
-		},
 	}
 
 	if err := mgr.GetClient().Create(ctx, testCluster); err != nil {
@@ -131,6 +123,17 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 	if err := mgr.GetClient().Create(ctx, lbService); err != nil {
 		t.Fatalf("failed to create the loadbalancer service: %v", err)
 	}
+
+	// Status must be set *after* the Service has been created, because
+	// the Create() call would reset it to nil.
+	lbService.Status = corev1.ServiceStatus{
+		LoadBalancer: corev1.LoadBalancerStatus{
+			Ingress: []corev1.LoadBalancerIngress{{
+				IP: "1.2.3.4",
+			}},
+		},
+	}
+
 	// Status is a subresource for services and we need the IP to be set, else
 	// the reconciliation returns early
 	if err := mgr.GetClient().Status().Update(ctx, lbService); err != nil {

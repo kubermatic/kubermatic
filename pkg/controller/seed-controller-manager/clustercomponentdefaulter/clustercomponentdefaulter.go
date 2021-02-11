@@ -41,7 +41,6 @@ import (
 const ControllerName = "clustercomponent_defaulter"
 
 type Reconciler struct {
-	ctx        context.Context
 	log        *zap.SugaredLogger
 	client     ctrlruntimeclient.Client
 	recorder   record.EventRecorder
@@ -60,7 +59,6 @@ func Add(
 	versions kubermatic.Versions) error {
 
 	reconciler := &Reconciler{
-		ctx:        ctx,
 		log:        log.Named(ControllerName),
 		client:     mgr.GetClient(),
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
@@ -77,12 +75,12 @@ func Add(
 	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
 	cluster := &kubermaticv1.Cluster{}
-	if err := r.client.Get(r.ctx, request.NamespacedName, cluster); err != nil {
+	if err := r.client.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -99,7 +97,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		r.versions,
 		kubermaticv1.ClusterConditionComponentDefaulterReconcilingSuccess,
 		func() (*reconcile.Result, error) {
-			return nil, r.reconcile(log, cluster)
+			return nil, r.reconcile(ctx, log, cluster)
 		},
 	)
 	if err != nil {
@@ -109,7 +107,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile(log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) error {
 	log.Debug("Syncing cluster")
 
 	targetComponentsOverride := cluster.Spec.ComponentsOverride.DeepCopy()
@@ -147,7 +145,7 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, cluster *kubermaticv1.Clu
 
 	oldCluster := cluster.DeepCopy()
 	targetComponentsOverride.DeepCopyInto(&cluster.Spec.ComponentsOverride)
-	if err := r.client.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+	if err := r.client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 		return fmt.Errorf("failed to update componentsOverride: %v", err)
 	}
 	log.Info("Successfully defaulted componentsOverride")

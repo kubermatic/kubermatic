@@ -26,9 +26,9 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -47,14 +47,14 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 	testcases := []struct {
 		name           string
 		fromVersion    string
-		plugins        []runtime.Object
+		plugins        []ctrlruntimeclient.Object
 		expectedError  string
 		expectedResult sets.String
 	}{
 		{
 			name:        "test 1: get plugins for version 1.12",
 			fromVersion: "1.12",
-			plugins: []runtime.Object{
+			plugins: []ctrlruntimeclient.Object{
 				&kubermaticv1.AdmissionPlugin{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
@@ -95,7 +95,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 		{
 			name:        "test 1: get plugins for version 1.14.3",
 			fromVersion: "1.14.3",
-			plugins: []runtime.Object{
+			plugins: []ctrlruntimeclient.Object{
 				&kubermaticv1.AdmissionPlugin{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
@@ -136,7 +136,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 		{
 			name:        "test 1: get plugins for version 1.16.0",
 			fromVersion: "1.16.0",
-			plugins: []runtime.Object{
+			plugins: []ctrlruntimeclient.Object{
 				&kubermaticv1.AdmissionPlugin{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
@@ -177,7 +177,7 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 		{
 			name:        "test 1: get plugins for version 1.17.0",
 			fromVersion: "1.17.0",
-			plugins: []runtime.Object{
+			plugins: []ctrlruntimeclient.Object{
 				&kubermaticv1.AdmissionPlugin{
 					ObjectMeta: v1.ObjectMeta{
 						Name: "defaultTolerationSeconds",
@@ -219,7 +219,12 @@ func TestListAdmissionPluginsFromVersion(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.plugins...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.plugins...).
+				Build()
+
 			provider := kubernetes.NewAdmissionPluginsProvider(context.Background(), fakeClient)
 
 			result, err := provider.ListPluginNamesFromVersion(tc.fromVersion)

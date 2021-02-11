@@ -24,10 +24,9 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestEnsureObjectByAnnotation(t *testing.T) {
@@ -39,8 +38,8 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 	tests := []struct {
 		name           string
 		creator        ObjectCreator
-		existingObject runtime.Object
-		expectedObject runtime.Object
+		existingObject ctrlruntimeclient.Object
+		expectedObject ctrlruntimeclient.Object
 	}{
 		{
 			name: "Object gets created",
@@ -58,7 +57,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 					"foo": "bar",
 				},
 			},
-			creator: func(existing runtime.Object) (runtime.Object, error) {
+			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 				var sa *corev1.ConfigMap
 				if existing == nil {
 					sa = &corev1.ConfigMap{}
@@ -84,7 +83,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 					"foo": "hopefully-gets-overwritten",
 				},
 			},
-			creator: func(existing runtime.Object) (runtime.Object, error) {
+			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 				var sa *corev1.ConfigMap
 				if existing == nil {
 					sa = &corev1.ConfigMap{}
@@ -124,7 +123,7 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 					"foo": "bar",
 				},
 			},
-			creator: func(existing runtime.Object) (runtime.Object, error) {
+			creator: func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 				var sa *corev1.ConfigMap
 				if existing == nil {
 					sa = &corev1.ConfigMap{}
@@ -156,27 +155,26 @@ func TestEnsureObjectByAnnotation(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var client controllerruntimeclient.Client
+			clientBuilder := fakectrlruntimeclient.NewClientBuilder()
 			if test.existingObject != nil {
-				client = controllerruntimefake.NewFakeClient(test.existingObject)
-			} else {
-				client = controllerruntimefake.NewFakeClient()
+				clientBuilder.WithObjects(test.existingObject)
 			}
 
+			client := clientBuilder.Build()
+			ctx := context.Background()
 			name := types.NamespacedName{Namespace: testNamespace, Name: testResourceName}
-			if err := EnsureNamedObject(context.Background(), name, test.creator, client, &corev1.ConfigMap{}, false); err != nil {
+			if err := EnsureNamedObject(ctx, name, test.creator, client, &corev1.ConfigMap{}, false); err != nil {
 				t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 			}
 
-			key, err := controllerruntimeclient.ObjectKeyFromObject(test.expectedObject)
-			if err != nil {
-				t.Fatalf("Failed to generate a ObjectKey for the expected object: %v", err)
-			}
+			key := ctrlruntimeclient.ObjectKeyFromObject(test.expectedObject)
 
 			gotConfigMap := &corev1.ConfigMap{}
-			if err := client.Get(context.Background(), key, gotConfigMap); err != nil {
+			if err := client.Get(ctx, key, gotConfigMap); err != nil {
 				t.Fatalf("Failed to get the ConfigMap from the client: %v", err)
 			}
+
+			test.expectedObject.SetResourceVersion(gotConfigMap.ResourceVersion)
 
 			if diff := deep.Equal(gotConfigMap, test.expectedObject); diff != nil {
 				t.Errorf("The ConfigMap from the client does not match the expected ConfigMap. Diff: \n%v", diff)

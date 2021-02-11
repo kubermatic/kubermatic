@@ -30,8 +30,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestListNodesEndpoint(t *testing.T) {
@@ -46,8 +46,8 @@ func TestListNodesEndpoint(t *testing.T) {
 		HTTPStatus             int
 		ProjectToSync          string
 		ClusterToSync          string
-		ExistingKubermaticObjs []runtime.Object
-		ExistingKubeObjs       []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExistingKubeObjs       []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		{
@@ -57,7 +57,7 @@ func TestListNodesEndpoint(t *testing.T) {
 			ProjectToSync:    test.GenDefaultProject().Name,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID")),
-			ExistingKubeObjs: []runtime.Object{defaultNodes},
+			ExistingKubeObjs: defaultNodes,
 			ClusterToSync:    "clusterAbcID",
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
 		},
@@ -71,7 +71,7 @@ func TestListNodesEndpoint(t *testing.T) {
 				genUser("John", "john@acme.com", true),
 				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
 			),
-			ExistingKubeObjs: []runtime.Object{defaultNodes},
+			ExistingKubeObjs: defaultNodes,
 			ClusterToSync:    "clusterAbcID",
 			ExistingAPIUser:  test.GenAPIUser("John", "john@acme.com"),
 		},
@@ -96,7 +96,7 @@ func TestListNodesEndpoint(t *testing.T) {
 			// validate if deletion was successful
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodes", tc.ProjectToSync, tc.ClusterToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			var kubermaticObj []runtime.Object
+			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, tc.ExistingKubeObjs, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -126,8 +126,8 @@ func TestGetNodeEndpoint(t *testing.T) {
 		ProjectToSync          string
 		ClusterToSync          string
 		NodeToSync             string
-		ExistingKubermaticObjs []runtime.Object
-		ExistingKubeObjs       []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExistingKubeObjs       []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		{
@@ -138,7 +138,7 @@ func TestGetNodeEndpoint(t *testing.T) {
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(genExternalCluster(
 				test.GenDefaultProject().Name, "clusterAbcID"),
 			),
-			ExistingKubeObjs: []runtime.Object{defaultNode},
+			ExistingKubeObjs: []ctrlruntimeclient.Object{defaultNode},
 			ClusterToSync:    "clusterAbcID",
 			NodeToSync:       defaultNode.Name,
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
@@ -153,7 +153,7 @@ func TestGetNodeEndpoint(t *testing.T) {
 				genUser("John", "john@acme.com", true),
 				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
 			),
-			ExistingKubeObjs: []runtime.Object{defaultNode},
+			ExistingKubeObjs: []ctrlruntimeclient.Object{defaultNode},
 			ClusterToSync:    "clusterAbcID",
 			NodeToSync:       defaultNode.Name,
 			ExistingAPIUser:  test.GenAPIUser("John", "john@acme.com"),
@@ -168,7 +168,7 @@ func TestGetNodeEndpoint(t *testing.T) {
 				genUser("John", "john@acme.com", false),
 				genExternalCluster(test.GenDefaultProject().Name, "clusterAbcID"),
 			),
-			ExistingKubeObjs: []runtime.Object{defaultNode},
+			ExistingKubeObjs: []ctrlruntimeclient.Object{defaultNode},
 			ClusterToSync:    "clusterAbcID",
 			NodeToSync:       defaultNode.Name,
 			ExistingAPIUser:  test.GenAPIUser("John", "john@acme.com"),
@@ -181,7 +181,7 @@ func TestGetNodeEndpoint(t *testing.T) {
 			// validate if deletion was successful
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/kubernetes/clusters/%s/nodes/%s", tc.ProjectToSync, tc.ClusterToSync, tc.NodeToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			var kubermaticObj []runtime.Object
+			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, tc.ExistingKubeObjs, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
@@ -215,7 +215,7 @@ func TestGetClusterNodesMetrics(t *testing.T) {
 		HTTPStatus             int
 		ClusterToGet           string
 		ExistingAPIUser        *apiv1.User
-		ExistingKubermaticObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
 		ExistingNodes          []*corev1.Node
 		ExistingNodeMetrics    []*v1beta1.NodeMetrics
 	}{
@@ -300,9 +300,9 @@ func TestGetClusterNodesMetrics(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {
-			var kubernetesObj []runtime.Object
-			var kubeObj []runtime.Object
-			var kubermaticObj []runtime.Object
+			var kubernetesObj []ctrlruntimeclient.Object
+			var kubeObj []ctrlruntimeclient.Object
+			var kubermaticObj []ctrlruntimeclient.Object
 			for _, existingMetric := range tc.ExistingNodeMetrics {
 				kubernetesObj = append(kubernetesObj, existingMetric)
 			}

@@ -27,6 +27,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -35,7 +36,7 @@ import (
 	k8csemver "k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version"
 
-	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestGetClusterUpgrades(t *testing.T) {
@@ -44,7 +45,7 @@ func TestGetClusterUpgrades(t *testing.T) {
 	tests := []struct {
 		name                       string
 		cluster                    *kubermaticv1.Cluster
-		existingKubermaticObjs     []runtime.Object
+		existingKubermaticObjs     []ctrlruntimeclient.Object
 		existingMachineDeployments []*clusterv1alpha1.MachineDeployment
 		apiUser                    apiv1.User
 		versions                   []*version.Version
@@ -59,7 +60,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
 				return c
 			}(),
-			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates: []*apiv1.MasterVersion{
@@ -107,7 +110,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
 				return c
 			}(),
-			existingKubermaticObjs: test.GenDefaultKubermaticObjects(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
 			existingMachineDeployments: func() []*clusterv1alpha1.MachineDeployment {
 				mds := make([]*clusterv1alpha1.MachineDeployment, 0, 1)
 				mdWithOldKubelet := test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false)
@@ -162,7 +167,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
 				return c
 			}(),
-			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates:                []*apiv1.MasterVersion{},
@@ -183,7 +190,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("5.1")
 				return c
 			}(),
-			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates: []*apiv1.MasterVersion{
@@ -260,7 +269,9 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("3.11.0")
 				return c
 			}(),
-			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+			),
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenDefaultAPIUser(),
 			wantUpdates:                []*apiv1.MasterVersion{},
@@ -312,7 +323,10 @@ func TestGetClusterUpgrades(t *testing.T) {
 				c.Spec.Version = *k8csemver.NewSemverOrDie("1.6.0")
 				return c
 			}(),
-			existingKubermaticObjs:     test.GenDefaultKubermaticObjects(genUser("John", "john@acme.com", true)),
+			existingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				genUser("John", "john@acme.com", true),
+			),
 			existingMachineDeployments: []*clusterv1alpha1.MachineDeployment{},
 			apiUser:                    *test.GenAPIUser("John", "john@acme.com"),
 			wantUpdates: []*apiv1.MasterVersion{
@@ -357,14 +371,14 @@ func TestGetClusterUpgrades(t *testing.T) {
 		t.Run(testStruct.name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/foo/upgrades", test.ProjectName), nil)
 			res := httptest.NewRecorder()
-			kubermaticObj := []runtime.Object{testStruct.cluster}
+			kubermaticObj := []ctrlruntimeclient.Object{testStruct.cluster}
 			kubermaticObj = append(kubermaticObj, testStruct.existingKubermaticObjs...)
-			var machineObj []runtime.Object
+			var machineObj []ctrlruntimeclient.Object
 			for _, existingMachineDeployment := range testStruct.existingMachineDeployments {
 				machineObj = append(machineObj, existingMachineDeployment)
 			}
 
-			ep, _, err := test.CreateTestEndpointAndGetClients(testStruct.apiUser, nil, []runtime.Object{}, machineObj, kubermaticObj, testStruct.versions, testStruct.updates, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(testStruct.apiUser, nil, []ctrlruntimeclient.Object{}, machineObj, kubermaticObj, testStruct.versions, testStruct.updates, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create testStruct endpoint due to %v", err)
 			}
@@ -398,8 +412,8 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 		ExistingKubermaticUser     *kubermaticv1.User
 		ExistingAPIUser            *apiv1.User
 		ExistingCluster            *kubermaticv1.Cluster
-		ExistingMachineDeployments []runtime.Object
-		ExistingKubermaticObjs     []runtime.Object
+		ExistingMachineDeployments []ctrlruntimeclient.Object
+		ExistingKubermaticObjs     []ctrlruntimeclient.Object
 	}{
 		{
 			Name:            "scenario 1: upgrade node deployments",
@@ -408,13 +422,16 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			ExpectedVersion: "1.11.1",
 			ClusterIDToSync: test.GenDefaultCluster().Name,
 			ProjectIDToSync: test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
-				cluster := test.GenDefaultCluster()
-				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
-				return cluster
-			}()),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenDefaultCluster()
+					cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+					return cluster
+				}(),
+			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
-			ExistingMachineDeployments: []runtime.Object{
+			ExistingMachineDeployments: []ctrlruntimeclient.Object{
 				test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
 				test.GenTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
 			},
@@ -426,12 +443,16 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			ExpectedVersion: "v9.9.9",
 			ClusterIDToSync: test.GenDefaultCluster().Name,
 			ProjectIDToSync: test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
-				cluster := test.GenDefaultCluster()
-				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.1.1")
-				return cluster
-			}()), ExistingAPIUser: test.GenDefaultAPIUser(),
-			ExistingMachineDeployments: []runtime.Object{
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenDefaultCluster()
+					cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.1.1")
+					return cluster
+				}(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+			ExistingMachineDeployments: []ctrlruntimeclient.Object{
 				test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
 				test.GenTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
 			},
@@ -443,13 +464,17 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			ExpectedVersion: "1.11.1",
 			ClusterIDToSync: test.GenDefaultCluster().Name,
 			ProjectIDToSync: test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(func() *kubermaticv1.Cluster {
-				cluster := test.GenDefaultCluster()
-				cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
-				return cluster
-			}(), genUser("John", "john@acme.com", true)),
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				func() *kubermaticv1.Cluster {
+					cluster := test.GenDefaultCluster()
+					cluster.Spec.Version = *k8csemver.NewSemverOrDie("1.12.1")
+					return cluster
+				}(),
+				genUser("John", "john@acme.com", true),
+			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
-			ExistingMachineDeployments: []runtime.Object{
+			ExistingMachineDeployments: []ctrlruntimeclient.Object{
 				test.GenTestMachineDeployment("venus", `{"cloudProvider":"digitalocean","cloudProviderSpec":{"token":"dummy-token","region":"fra1","size":"2GB"}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":true}}`, nil, false),
 				test.GenTestMachineDeployment("mars", `{"cloudProvider":"aws","cloudProviderSpec":{"token":"dummy-token","region":"eu-central-1","availabilityZone":"eu-central-1a","vpcId":"vpc-819f62e9","subnetId":"subnet-2bff4f43","instanceType":"t2.micro","diskSize":50}, "operatingSystem":"ubuntu", "operatingSystemSpec":{"distUpgradeOnBoot":false}}`, nil, false),
 			},
@@ -462,9 +487,9 @@ func TestUpgradeClusterNodeDeployments(t *testing.T) {
 			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/nodes/upgrades",
 				tc.ProjectIDToSync, tc.ClusterIDToSync), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			var kubermaticObj []runtime.Object
-			var machineObj []runtime.Object
-			var kubernetesObj []runtime.Object
+			var kubermaticObj []ctrlruntimeclient.Object
+			var machineObj []ctrlruntimeclient.Object
+			var kubernetesObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			machineObj = append(machineObj, tc.ExistingMachineDeployments...)
 			ep, cs, err := test.CreateTestEndpointAndGetClients(*tc.ExistingAPIUser, nil, kubernetesObj, machineObj, kubermaticObj, nil, nil, hack.NewTestRouting)
@@ -501,13 +526,16 @@ func TestGetNodeUpgrades(t *testing.T) {
 		existingUpdates        []*version.Update
 		existingVersions       []*version.Version
 		expectedOutput         []*apiv1.MasterVersion
-		existingKubermaticObjs []runtime.Object
+		existingKubermaticObjs []ctrlruntimeclient.Object
 	}{
 		{
-			name:                   "only the same major version and no more than 2 minor versions behind the control plane",
-			controlPlaneVersion:    "1.6.0",
-			apiUser:                *test.GenDefaultAPIUser(),
-			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
+			name:                "only the same major version and no more than 2 minor versions behind the control plane",
+			controlPlaneVersion: "1.6.0",
+			apiUser:             *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
+				test.GenDefaultUser(),
+			},
 			existingUpdates: []*version.Update{
 				{
 					From:      "1.6.0",
@@ -592,10 +620,13 @@ func TestGetNodeUpgrades(t *testing.T) {
 			},
 		},
 		{
-			name:                   "only 2 minor versions for OpenShift cluster",
-			controlPlaneVersion:    "4.10.0&type=openshift",
-			apiUser:                *test.GenDefaultAPIUser(),
-			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
+			name:                "only 2 minor versions for OpenShift cluster",
+			controlPlaneVersion: "4.10.0&type=openshift",
+			apiUser:             *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
+				test.GenDefaultUser(),
+			},
 			existingUpdates: []*version.Update{
 				{
 					From:      "4.10.0",
@@ -674,14 +705,17 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 		existingUpdates        []*version.Update
 		existingVersions       []*version.Version
 		expectedOutput         []*apiv1.MasterVersion
-		existingKubermaticObjs []runtime.Object
+		existingKubermaticObjs []ctrlruntimeclient.Object
 	}{
 		{
-			name:                   "get all OpenShift versions",
-			clusterType:            apiv1.OpenShiftClusterType,
-			apiUser:                *test.GenDefaultAPIUser(),
-			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
-			existingUpdates:        []*version.Update{},
+			name:        "get all OpenShift versions",
+			clusterType: apiv1.OpenShiftClusterType,
+			apiUser:     *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
+				test.GenDefaultUser(),
+			},
+			existingUpdates: []*version.Update{},
 			existingVersions: []*version.Version{
 				{
 					Version: semver.MustParse("1.13.5"),
@@ -734,11 +768,14 @@ func TestGetMasterVersionsEndpoint(t *testing.T) {
 			},
 		},
 		{
-			name:                   "get default only kubernetes versions",
-			clusterType:            "",
-			apiUser:                *test.GenDefaultAPIUser(),
-			existingKubermaticObjs: []runtime.Object{test.GenDefaultUser()},
-			existingUpdates:        []*version.Update{},
+			name:        "get default only kubernetes versions",
+			clusterType: "",
+			apiUser:     *test.GenDefaultAPIUser(),
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
+				test.GenDefaultUser(),
+			},
+			existingUpdates: []*version.Update{},
 			existingVersions: []*version.Version{
 				{
 					Version: semver.MustParse("1.13.5"),

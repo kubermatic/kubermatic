@@ -138,17 +138,17 @@ func Add(
 		return fmt.Errorf("failed to create controller: %v", err)
 	}
 
-	cronJobMapFn := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+	cronJobMapFn := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		// We only care about CronJobs that are in the kube-system namespace
-		if a.Meta.GetNamespace() != metav1.NamespaceSystem {
+		if a.GetNamespace() != metav1.NamespaceSystem {
 			return nil
 		}
 
-		if ownerRef := metav1.GetControllerOf(a.Meta); ownerRef != nil && ownerRef.Kind == kubermaticv1.ClusterKindName {
+		if ownerRef := metav1.GetControllerOf(a); ownerRef != nil && ownerRef.Kind == kubermaticv1.ClusterKindName {
 			return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: ownerRef.Name}}}
 		}
 		return nil
-	})}
+	})
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Clusters: %v", err)
@@ -159,8 +159,8 @@ func Add(
 
 	// Cleanup cleanup jobs...
 	if err := mgr.Add(&runnableWrapper{
-		f: func(stopCh <-chan struct{}) {
-			wait.Until(reconciler.cleanupJobs, 30*time.Second, stopCh)
+		f: func(ctx context.Context) {
+			wait.UntilWithContext(ctx, reconciler.cleanupJobs, 30*time.Second)
 		},
 	}); err != nil {
 		return fmt.Errorf("failed to add cleanup jobs runnable to mgr: %v", err)
@@ -170,17 +170,15 @@ func Add(
 }
 
 type runnableWrapper struct {
-	f func(<-chan struct{})
+	f func(context.Context)
 }
 
-func (w *runnableWrapper) Start(stopChan <-chan struct{}) error {
-	w.f(stopChan)
+func (w *runnableWrapper) Start(ctx context.Context) error {
+	w.f(ctx)
 	return nil
 }
 
-func (r *Reconciler) cleanupJobs() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (r *Reconciler) cleanupJobs(ctx context.Context) {
 	log := r.log.Named("job_cleanup")
 
 	selector, err := labels.Parse(fmt.Sprintf("%s=%s", resources.AppLabelKey, backupCleanupJobLabel))
@@ -218,9 +216,7 @@ func (r *Reconciler) cleanupJobs() {
 	}
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 

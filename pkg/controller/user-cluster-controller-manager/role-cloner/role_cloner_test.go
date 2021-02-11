@@ -17,6 +17,7 @@ limitations under the License.
 package rolecloner
 
 import (
+	"context"
 	"reflect"
 	"sort"
 	"testing"
@@ -28,7 +29,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -45,7 +45,7 @@ func TestReconcile(t *testing.T) {
 	nowTime = metav1.Now()
 	testCases := []struct {
 		name             string
-		objects          []runtime.Object
+		objects          []ctrlruntimeclient.Object
 		expectedRoles    []rbacv1.Role
 		requestName      string
 		requestNamespace string
@@ -64,7 +64,7 @@ func TestReconcile(t *testing.T) {
 					},
 				},
 			},
-			objects: []runtime.Object{
+			objects: []ctrlruntimeclient.Object{
 				&rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "view",
@@ -127,7 +127,7 @@ func TestReconcile(t *testing.T) {
 					},
 				},
 			},
-			objects: []runtime.Object{
+			objects: []ctrlruntimeclient.Object{
 				&rbacv1.Role{ObjectMeta: metav1.ObjectMeta{
 					Name:      "view",
 					Namespace: "kube-system",
@@ -193,7 +193,7 @@ func TestReconcile(t *testing.T) {
 					},
 				},
 			},
-			objects: []runtime.Object{
+			objects: []ctrlruntimeclient.Object{
 				&rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:       "view",
@@ -269,7 +269,7 @@ func TestReconcile(t *testing.T) {
 					},
 				},
 			},
-			objects: []runtime.Object{
+			objects: []ctrlruntimeclient.Object{
 				&rbacv1.Role{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:       "view",
@@ -304,20 +304,21 @@ func TestReconcile(t *testing.T) {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			var client ctrlruntimeclient.Client
+
+			clientBuilder := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme)
 			if tc.expectedRoles != nil {
-				client = fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.objects...)
-			} else {
-				client = fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme)
+				clientBuilder.WithObjects(tc.objects...)
 			}
+
 			r := &reconciler{
 				log:      kubermaticlog.Logger,
-				client:   client,
+				client:   clientBuilder.Build(),
 				recorder: record.NewFakeRecorder(10),
 			}
 
+			ctx := context.Background()
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName, Namespace: tc.requestNamespace}}
-			if _, err := r.Reconcile(request); err != nil {
+			if _, err := r.Reconcile(ctx, request); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
@@ -326,7 +327,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			existingRoleList := &rbacv1.RoleList{}
-			if err := r.client.List(r.ctx, existingRoleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}); err != nil {
+			if err := r.client.List(ctx, existingRoleList, ctrlruntimeclient.MatchingLabels{handlercommon.UserClusterComponentKey: handlercommon.UserClusterRoleComponentValue}); err != nil {
 				t.Fatalf("failed to get role: %v", err)
 			}
 

@@ -23,7 +23,7 @@ import (
 
 	logrtesting "github.com/go-logr/logr/testing"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -50,8 +50,8 @@ func TestHandle(t *testing.T) {
 		{
 			name: "Delete seed succeess",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Delete,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Delete,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -68,8 +68,8 @@ func TestHandle(t *testing.T) {
 		{
 			name: "Create seed succeess",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Create,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -92,8 +92,8 @@ func TestHandle(t *testing.T) {
 		{
 			name: "Update seed succeess",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Update,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -116,8 +116,8 @@ func TestHandle(t *testing.T) {
 		{
 			name: "Unsupported operation",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Connect,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Connect,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -133,8 +133,8 @@ func TestHandle(t *testing.T) {
 		{
 			name: "Malformed payload",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Create,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -153,8 +153,8 @@ func TestHandle(t *testing.T) {
 		{
 			name: "Validation function failed",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Delete,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Delete,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -177,7 +177,7 @@ func TestHandle(t *testing.T) {
 		handler := seedAdmissionHandler{
 			log:     &logrtesting.NullLogger{},
 			decoder: d,
-			validateFunc: func(_ context.Context, s *kubermaticv1.Seed, op admissionv1beta1.Operation) error {
+			validateFunc: func(_ context.Context, s *kubermaticv1.Seed, op admissionv1.Operation) error {
 				if !equality.Semantic.DeepEqual(*s, tt.wantSeed) {
 					t.Errorf("expected seed %+v but got %+v", s, tt.wantSeed)
 				}

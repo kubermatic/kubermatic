@@ -21,15 +21,15 @@ import (
 	"testing"
 
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
+	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 
-	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
@@ -98,7 +98,8 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-			objs := []runtime.Object{}
+			ctx := context.Background()
+			objs := []ctrlruntimeclient.Object{}
 
 			for _, user := range test.existingUsers {
 				objs = append(objs, user)
@@ -112,12 +113,16 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 				objs = append(objs, test.existingProject)
 			}
 
-			kubermaticFakeClient := fake.NewFakeClient(objs...)
+			kubermaticFakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objs...).
+				Build()
 
 			// act
-			target := reconcileSyncProjectBinding{ctx: context.TODO(), Client: kubermaticFakeClient}
+			target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
 
-			err := target.ensureNotProjectOwnerForBinding(test.bindingToSync)
+			err := target.ensureNotProjectOwnerForBinding(ctx, test.bindingToSync)
 
 			// validate
 			if err != nil {
@@ -125,7 +130,7 @@ func TestEnsureNotProjectOwnerForBinding(t *testing.T) {
 			}
 			updatedProject := &kubermaticv1.Project{}
 
-			err = kubermaticFakeClient.Get(target.ctx, controllerclient.ObjectKey{Name: "thunderball"}, updatedProject)
+			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: "thunderball"}, updatedProject)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -187,7 +192,8 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-			objs := []runtime.Object{}
+			ctx := context.Background()
+			objs := []ctrlruntimeclient.Object{}
 			for _, user := range test.existingUsers {
 				objs = append(objs, user)
 			}
@@ -199,11 +205,15 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 				objs = append(objs, test.existingProject)
 			}
 
-			kubermaticFakeClient := fake.NewFakeClient(objs...)
+			kubermaticFakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(objs...).
+				Build()
 
 			// act
-			target := reconcileSyncProjectBinding{ctx: context.TODO(), Client: kubermaticFakeClient}
-			err := target.ensureProjectOwnerForBinding(test.bindingToSync)
+			target := reconcileSyncProjectBinding{Client: kubermaticFakeClient}
+			err := target.ensureProjectOwnerForBinding(ctx, test.bindingToSync)
 
 			// validate
 			if err != nil {
@@ -212,7 +222,7 @@ func TestEnsureProjectOwnerForBinding(t *testing.T) {
 
 			updatedProject := &kubermaticv1.Project{}
 
-			err = kubermaticFakeClient.Get(target.ctx, controllerclient.ObjectKey{Name: "thunderball"}, updatedProject)
+			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: "thunderball"}, updatedProject)
 			if err != nil {
 				t.Fatal(err)
 			}

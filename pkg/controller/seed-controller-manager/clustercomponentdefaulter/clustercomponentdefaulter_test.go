@@ -17,18 +17,18 @@ limitations under the License.
 package clustercomponentdefaulter
 
 import (
+	"context"
 	"testing"
-
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8s.io/apimachinery/pkg/types"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	utilpointer "k8s.io/utils/pointer"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 const clusterName = "test-cluster"
@@ -95,14 +95,18 @@ func TestReconciliation(t *testing.T) {
 	logger := zap.NewExample().Sugar()
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
 			cluster := tc.cluster.DeepCopy()
-			client := fake.NewFakeClient([]runtime.Object{cluster}...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(cluster).
+				Build()
 			r := &Reconciler{client: client, log: logger, defaults: *tc.override}
-			if err := r.reconcile(logger, cluster); err != nil {
+			if err := r.reconcile(ctx, logger, cluster); err != nil {
 				t.Fatalf("failed to reconcile cluster: %v", err)
 			}
 			reconciledCluster := &kubermaticv1.Cluster{}
-			if err := r.client.Get(r.ctx, types.NamespacedName{Name: clusterName}, reconciledCluster); err != nil {
+			if err := r.client.Get(ctx, types.NamespacedName{Name: clusterName}, reconciledCluster); err != nil {
 				t.Fatalf("failed to get reconciledCluster: %v", err)
 			}
 			if diff := tc.verify(&tc.cluster.Spec.ComponentsOverride, tc.override, &reconciledCluster.Spec.ComponentsOverride); diff != nil {

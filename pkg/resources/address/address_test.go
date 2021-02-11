@@ -194,7 +194,7 @@ func TestSyncClusterAddress(t *testing.T) {
 			lbService := &tc.frontproxyService
 			lbService.Name = resources.FrontLoadBalancerServiceName
 			lbService.Namespace = fakeClusterNamespaceName
-			client := fakectrlruntimeclient.NewFakeClient(apiserverService, lbService)
+			client := fakectrlruntimeclient.NewClientBuilder().WithObjects(apiserverService, lbService).Build()
 
 			seed := &kubermaticv1.Seed{
 				ObjectMeta: metav1.ObjectMeta{

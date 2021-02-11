@@ -29,13 +29,13 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestKubermaticVersion(t *testing.T) {
 	req := httptest.NewRequest("GET", "/api/v1/version", nil)
 	res := httptest.NewRecorder()
-	ep, err := test.CreateTestEndpoint(*test.GenDefaultAPIUser(), []runtime.Object{}, nil, nil, nil, hack.NewTestRouting)
+	ep, err := test.CreateTestEndpoint(*test.GenDefaultAPIUser(), []ctrlruntimeclient.Object{}, nil, nil, nil, hack.NewTestRouting)
 	if err != nil {
 		t.Fatalf("failed to create testStruct endpoint due to %v", err)
 	}

@@ -67,39 +67,45 @@ func TestReconcile(t *testing.T) {
 			name:        "scenario 1: sync ct to user cluster",
 			requestName: ctName,
 			expectedCT:  genConstraintTemplate(ctName, false),
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				genConstraintTemplate(ctName, false),
-				genCluster("cluster", true)),
-			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(sch),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, false), genCluster("cluster", true)).
+				Build(),
+			userClient: fakectrlruntimeclient.NewClientBuilder().WithScheme(sch).Build(),
 		},
 		{
 			name:                 "scenario 2: dont sync ct to user cluster which has opa-integration off",
 			requestName:          ctName,
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				genConstraintTemplate(ctName, false),
-				genCluster("cluster", false)),
-			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(sch),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, false), genCluster("cluster", false)).
+				Build(),
+			userClient: fakectrlruntimeclient.NewClientBuilder().WithScheme(sch).Build(),
 		},
 		{
 			name:                 "scenario 3: cleanup ct on user cluster when master ct is being terminated",
 			requestName:          ctName,
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				genConstraintTemplate(ctName, true),
-				genCluster("cluster", true)),
-			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(sch, genGKConstraintTemplate(ctName)),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, true), genCluster("cluster", true)).
+				Build(),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(sch).
+				WithObjects(genGKConstraintTemplate(ctName)).
+				Build(),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
+			ctx := context.Background()
 			r := &reconciler{
-				ctx:                       context.Background(),
 				log:                       kubermaticlog.Logger,
 				workerNameLabelSelector:   workerSelector,
 				recorder:                  &record.FakeRecorder{},
@@ -109,12 +115,12 @@ func TestReconcile(t *testing.T) {
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
-			if _, err := r.Reconcile(request); err != nil {
+			if _, err := r.Reconcile(ctx, request); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
 			ct := &v1beta1.ConstraintTemplate{}
-			err := tc.userClient.Get(context.Background(), request.NamespacedName, ct)
+			err := tc.userClient.Get(ctx, request.NamespacedName, ct)
 			if tc.expectedGetErrStatus != "" {
 				if err == nil {
 					t.Fatalf("expected error status %s, instead got ct: %v", tc.expectedGetErrStatus, ct)

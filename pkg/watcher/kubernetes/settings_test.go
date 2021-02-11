@@ -25,14 +25,13 @@ import (
 	kubermaticfakeclentset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestNewSettingsWatcher(t *testing.T) {
 	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset()
-	runtimeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, []runtime.Object{}...)
+	runtimeClient := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 	settingsProvider := kubernetes.NewSettingsProvider(context.Background(), kubermaticClient, runtimeClient)
 	settingsWatcher, err := NewSettingsWatcher(settingsProvider)
 	if err != nil {

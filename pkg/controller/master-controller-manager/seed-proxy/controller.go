@@ -28,8 +28,8 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -107,7 +107,6 @@ func Add(
 
 	reconciler := &Reconciler{
 		Client:               mgr.GetClient(),
-		ctx:                  ctx,
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		log:                  log,
 		namespace:            namespace,
@@ -132,7 +131,7 @@ func Add(
 	}
 
 	// watch related resources
-	eventHandler := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+	eventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("failed to get seeds", zap.Error(err))
@@ -147,9 +146,9 @@ func Add(
 		}
 
 		return requests
-	})}
+	})
 
-	typesToWatch := []runtime.Object{
+	typesToWatch := []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
 		&corev1.Service{},
 		&corev1.Secret{},

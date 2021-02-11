@@ -22,28 +22,25 @@ import (
 
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/apimachinery/pkg/api/meta"
+	"k8s.io/client-go/util/workqueue"
+	"k8s.io/klog"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/util/workqueue"
-	"k8s.io/klog"
 )
 
 type resourcesController struct {
 	projectResourcesQueue workqueue.RateLimitingInterface
-	ctx                   context.Context
 	metrics               *Metrics
 	projectResources      []projectResource
-	client                client.Client
+	client                ctrlruntimeclient.Client
 	restMapper            meta.RESTMapper
 	providerName          string
-	objectType            runtime.Object
+	objectType            ctrlruntimeclient.Object
 }
 
 // newResourcesController creates a new controller for managing RBAC for named resources that belong to project
@@ -56,13 +53,12 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 
 		mc := &resourcesController{
 			projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), "rbac_generator_resources"),
-			ctx:                   ctx,
 			metrics:               metrics,
 			projectResources:      resources,
 			client:                mgr.GetClient(),
 			restMapper:            mgr.GetRESTMapper(),
 			providerName:          "master",
-			objectType:            clonedObject,
+			objectType:            clonedObject.(ctrlruntimeclient.Object),
 		}
 
 		// Create a new controller
@@ -76,26 +72,24 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 			continue
 		}
 
-		if err = rcc.Watch(&source.Kind{Type: clonedObject}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
+		if err = rcc.Watch(&source.Kind{Type: clonedObject.(ctrlruntimeclient.Object)}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
 			return nil, err
 		}
 	}
 
 	for seedName, seedManager := range seedManagerMap {
-
 		klog.V(4).Infof("considering %s provider for resources", seedName)
 		for _, resource := range resources {
 			clonedObject := resource.object.DeepCopyObject()
 
 			c := &resourcesController{
 				projectResourcesQueue: workqueue.NewNamedRateLimitingQueue(workqueue.DefaultControllerRateLimiter(), fmt.Sprintf("rbac_generator_resources_%s", seedName)),
-				ctx:                   ctx,
 				metrics:               metrics,
 				projectResources:      resources,
 				client:                seedManager.GetClient(),
 				restMapper:            seedManager.GetRESTMapper(),
 				providerName:          seedName,
-				objectType:            clonedObject,
+				objectType:            clonedObject.(ctrlruntimeclient.Object),
 			}
 
 			// Create a new controller
@@ -109,7 +103,7 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 				continue
 			}
 
-			if err = rc.Watch(&source.Kind{Type: clonedObject}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
+			if err = rc.Watch(&source.Kind{Type: clonedObject.(ctrlruntimeclient.Object)}, &handler.EnqueueRequestForObject{}, predicateutil.Factory(resource.predicate)); err != nil {
 				return nil, err
 			}
 		}
@@ -120,8 +114,8 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 	return []*resourcesController{}, nil
 }
 
-func (c *resourcesController) Reconcile(req reconcile.Request) (reconcile.Result, error) {
-	err := c.syncProjectResource(req.NamespacedName)
+func (c *resourcesController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	err := c.syncProjectResource(ctx, req.NamespacedName)
 	if err != nil {
 		return reconcile.Result{}, err
 	}

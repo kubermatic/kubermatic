@@ -23,10 +23,10 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 )
 
@@ -88,7 +88,8 @@ func TestCreateConfigMap(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			objects := []runtime.Object{
+			ctx := context.Background()
+			objects := []ctrlruntimeclient.Object{
 				&corev1.Service{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resources.ApiserverServiceName,
@@ -106,19 +107,19 @@ func TestCreateConfigMap(t *testing.T) {
 			}
 			controller := newTestReconciler(t, objects)
 
-			data, err := controller.getClusterTemplateData(context.Background(), controller.Client, test.cluster)
+			data, err := controller.getClusterTemplateData(ctx, controller.Client, test.cluster)
 			if err != nil {
 				t.Fatal(err)
 				return
 			}
 
-			if err := controller.ensureConfigMaps(context.Background(), test.cluster, data); err != nil {
+			if err := controller.ensureConfigMaps(ctx, test.cluster, data); err != nil {
 				t.Errorf("failed to ensure ConfigMap: %v", err)
 			}
 
 			keyName := types.NamespacedName{Namespace: test.cluster.Status.NamespaceName, Name: resources.PrometheusConfigConfigMapName}
 			gotConfigMap := &corev1.ConfigMap{}
-			if err := controller.Client.Get(context.Background(), keyName, gotConfigMap); err != nil {
+			if err := controller.Client.Get(ctx, keyName, gotConfigMap); err != nil {
 				t.Fatalf("failed to get the ConfigMap from the dynamic client: %v", err)
 			}
 

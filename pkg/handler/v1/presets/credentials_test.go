@@ -26,14 +26,15 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/api/equality"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/util/diff"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+
+	"k8s.io/apimachinery/pkg/api/equality"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/diff"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestCredentialEndpoint(t *testing.T) {
@@ -42,14 +43,14 @@ func TestCredentialEndpoint(t *testing.T) {
 		name             string
 		provider         string
 		datacenter       string
-		credentials      []runtime.Object
+		credentials      []ctrlruntimeclient.Object
 		httpStatus       int
 		expectedResponse string
 	}{
 		{
 			name:     "test no credentials for AWS",
 			provider: "aws",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "second",
@@ -66,7 +67,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for AWS",
 			provider: "aws",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 
 					ObjectMeta: metav1.ObjectMeta{
@@ -98,7 +99,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test list of credential names for AWS for the specific datacenter",
 			provider:   "aws",
 			datacenter: "a",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 
 					ObjectMeta: metav1.ObjectMeta{
@@ -132,7 +133,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			name:       "test list of credential names for AWS for all and specific datacenter",
 			provider:   "aws",
 			datacenter: "a",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 
 					ObjectMeta: metav1.ObjectMeta{
@@ -182,7 +183,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for Azure",
 			provider: "azure",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
@@ -208,7 +209,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for DigitalOcean",
 			provider: "digitalocean",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "digitalocean-first",
@@ -233,7 +234,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for GCP",
 			provider: "gcp",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "first",
@@ -258,7 +259,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for Hetzner",
 			provider: "hetzner",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "first",
@@ -283,7 +284,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for OpenStack",
 			provider: "openstack",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "first",
@@ -308,7 +309,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for Packet",
 			provider: "packet",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "first",
@@ -333,7 +334,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for Vsphere",
 			provider: "vsphere",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "first",
@@ -362,7 +363,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:     "test list of credential names for Anexia",
 			provider: "anexia",
-			credentials: []runtime.Object{
+			credentials: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "anexia-first",

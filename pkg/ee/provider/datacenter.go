@@ -38,7 +38,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation"
 	"k8s.io/client-go/rest"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
+	ctrlruntimeconfig "sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/yaml"
 )
 
@@ -215,7 +215,7 @@ var _ EESeedKubeconfigGetter = SeedKubeconfigGetter
 
 // SeedKubeconfigGetter implements provider.SeedKubeconfigGetter.
 func SeedKubeconfigGetter(seed *kubermaticv1.Seed) (*rest.Config, error) {
-	cfg, err := ctrlconfig.GetConfigWithContext(seed.Name)
+	cfg, err := ctrlruntimeconfig.GetConfigWithContext(seed.Name)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get restConfig for seed %q: %v", seed.Name, err)
 	}

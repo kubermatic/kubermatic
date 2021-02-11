@@ -30,10 +30,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -43,12 +42,12 @@ func TestReconcile(t *testing.T) {
 	tests := []struct {
 		name                      string
 		clusterName               string
-		existingKubermaticObjects []runtime.Object
+		existingKubermaticObjects []ctrlruntimeclient.Object
 	}{
 		{
 			name:        "scenario 1: cleanup finalizer and kubeconfig secret",
 			clusterName: "test",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				genExternalCluster("test", metav1.Now()),
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{Name: genExternalCluster("test", metav1.Now()).GetKubeconfigSecretName(), Namespace: resources.KubermaticNamespace},
@@ -60,24 +59,27 @@ func TestReconcile(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-
-			kubermaticFakeClient := fake.NewFakeClientWithScheme(scheme.Scheme, test.existingKubermaticObjects...)
+			kubermaticFakeClient := fake.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(test.existingKubermaticObjects...).
+				Build()
 
 			// act
+			ctx := context.Background()
 			target := Reconciler{
-				ctx:    context.Background(),
 				Client: kubermaticFakeClient,
 				log:    kubermaticlog.Logger,
 			}
 
-			_, err := target.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Name: test.clusterName}})
+			_, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.clusterName}})
 
 			// validate
 			if err != nil {
 				t.Fatal(err)
 			}
 			cluster := &kubermaticv1.ExternalCluster{}
-			err = kubermaticFakeClient.Get(context.TODO(), client.ObjectKey{Name: test.clusterName}, cluster)
+			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: test.clusterName}, cluster)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -86,7 +88,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			secretKubeconfig := &corev1.Secret{}
-			err = kubermaticFakeClient.Get(context.TODO(), client.ObjectKey{Name: cluster.GetKubeconfigSecretName()}, secretKubeconfig)
+			err = kubermaticFakeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: cluster.GetKubeconfigSecretName()}, secretKubeconfig)
 			if err == nil {
 				t.Fatal("expected error")
 			}

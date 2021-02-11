@@ -32,7 +32,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,8 +41,8 @@ func TestCreateTokenProject(t *testing.T) {
 	testcases := []struct {
 		name                   string
 		body                   string
-		existingKubermaticObjs []runtime.Object
-		existingKubernetesObjs []runtime.Object
+		existingKubermaticObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 		expectedErrorResponse  string
 		expectedName           string
 		projectToSync          string
@@ -55,7 +54,7 @@ func TestCreateTokenProject(t *testing.T) {
 			name:       "scenario 1: create service account token with name 'test' for serviceaccount-1",
 			body:       `{"name":"test"}`,
 			httpStatus: http.StatusCreated,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -68,7 +67,7 @@ func TestCreateTokenProject(t *testing.T) {
 				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
 				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{},
+			existingKubernetesObjs: []ctrlruntimeclient.Object{},
 			existingAPIUser:        *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:          "plan9-ID",
 			saToSync:               "1",
@@ -78,7 +77,7 @@ func TestCreateTokenProject(t *testing.T) {
 			name:       "scenario 2: create service account token with existing name",
 			body:       `{"name":"test"}`,
 			httpStatus: http.StatusConflict,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -91,7 +90,7 @@ func TestCreateTokenProject(t *testing.T) {
 				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
 				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test", "1"),
 			},
 			existingAPIUser:       *test.GenAPIUser("john", "john@acme.com"),
@@ -103,7 +102,7 @@ func TestCreateTokenProject(t *testing.T) {
 			name:       "scenario 3: the admin can create token for any SA",
 			body:       `{"name":"test"}`,
 			httpStatus: http.StatusCreated,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -117,7 +116,7 @@ func TestCreateTokenProject(t *testing.T) {
 				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
 				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{},
+			existingKubernetesObjs: []ctrlruntimeclient.Object{},
 			existingAPIUser:        *test.GenAPIUser("bob", "bob@acme.com"),
 			projectToSync:          "plan9-ID",
 			saToSync:               "1",
@@ -130,7 +129,7 @@ func TestCreateTokenProject(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens", tc.projectToSync, tc.saToSync), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
-			ep, fakeClients, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, fakeClients, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -180,8 +179,8 @@ func TestListTokens(t *testing.T) {
 	}
 	testcases := []struct {
 		name                   string
-		existingKubermaticObjs []runtime.Object
-		existingKubernetesObjs []runtime.Object
+		existingKubermaticObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 		expectedTokens         []apiv1.PublicServiceAccountToken
 		projectToSync          string
 		saToSync               string
@@ -191,7 +190,7 @@ func TestListTokens(t *testing.T) {
 		{
 			name:       "scenario 1: list tokens",
 			httpStatus: http.StatusOK,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -201,7 +200,7 @@ func TestListTokens(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 				test.GenDefaultSaToken("plan10-ID", "serviceaccount-2", "test-2", "2"),
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-3", "3"),
@@ -218,7 +217,7 @@ func TestListTokens(t *testing.T) {
 		{
 			name:       "scenario 2: the admin can list tokens for any service account",
 			httpStatus: http.StatusOK,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -230,7 +229,7 @@ func TestListTokens(t *testing.T) {
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 				test.GenServiceAccount("5", "test-2", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 				test.GenDefaultSaToken("plan10-ID", "serviceaccount-2", "test-2", "2"),
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-3", "3"),
@@ -252,7 +251,7 @@ func TestListTokens(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens", tc.projectToSync, tc.saToSync), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
-			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -279,7 +278,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		name                   string
-		existingKubermaticObjs []runtime.Object
+		existingKubermaticObjs []ctrlruntimeclient.Object
 		existingSa             *kubermaticapiv1.User
 		expectedResponse       string
 		projectToSync          string
@@ -289,7 +288,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 		{
 			name:       "scenario 1: use a valid service account token (static) to get a project",
 			httpStatus: http.StatusOK,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -315,7 +314,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 				res := httptest.NewRecorder()
 
 				tc.existingKubermaticObjs = append(tc.existingKubermaticObjs, tc.existingSa)
-				lep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, []runtime.Object{}, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+				lep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
 				if err != nil {
 					t.Fatalf("failed to create test endpoint due to %v", err)
 				}
@@ -362,8 +361,8 @@ func TestPatchToken(t *testing.T) {
 	testcases := []struct {
 		name                   string
 		body                   string
-		existingKubermaticObjs []runtime.Object
-		existingKubernetesObjs []runtime.Object
+		existingKubermaticObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 		expectedToken          apiv1.PublicServiceAccountToken
 		expectedErrorMsg       string
 		projectToSync          string
@@ -376,7 +375,7 @@ func TestPatchToken(t *testing.T) {
 			name:       "scenario 1: change token name successfully",
 			httpStatus: http.StatusOK,
 			body:       `{"name":"test-new-name"}`,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -386,7 +385,7 @@ func TestPatchToken(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 			},
 			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
@@ -399,7 +398,7 @@ func TestPatchToken(t *testing.T) {
 			name:       "scenario 2: changed name is empty",
 			httpStatus: http.StatusBadRequest,
 			body:       `{"name":""}`,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -409,7 +408,7 @@ func TestPatchToken(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 			},
 			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
@@ -422,7 +421,7 @@ func TestPatchToken(t *testing.T) {
 			name:       "scenario 3: new name exists for other token",
 			httpStatus: http.StatusConflict,
 			body:       `{"name":"test-2"}`,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -432,7 +431,7 @@ func TestPatchToken(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-2", "2"),
 			},
@@ -446,7 +445,7 @@ func TestPatchToken(t *testing.T) {
 			name:       "scenario 4: the admin can change any token name successfully",
 			httpStatus: http.StatusOK,
 			body:       `{"name":"test-new-name"}`,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -457,7 +456,7 @@ func TestPatchToken(t *testing.T) {
 				genUser("bob", "bob@acme.com", true),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 			},
 			existingAPIUser: *test.GenAPIUser("bob", "bob@acme.com"),
@@ -473,7 +472,7 @@ func TestPatchToken(t *testing.T) {
 			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens/%s", tc.projectToSync, tc.saToSync, tc.tokenToSync), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
-			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -516,8 +515,8 @@ func TestUpdateToken(t *testing.T) {
 	testcases := []struct {
 		name                   string
 		body                   string
-		existingKubermaticObjs []runtime.Object
-		existingKubernetesObjs []runtime.Object
+		existingKubermaticObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 		expectedToken          apiv1.PublicServiceAccountToken
 		expectedErrorMsg       string
 		projectToSync          string
@@ -530,7 +529,7 @@ func TestUpdateToken(t *testing.T) {
 			name:       "scenario 1: change token name successfully and regenerate token",
 			httpStatus: http.StatusOK,
 			body:       `{"name":"test-new-name", "id":"1"}`,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -540,7 +539,7 @@ func TestUpdateToken(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 			},
 			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
@@ -553,7 +552,7 @@ func TestUpdateToken(t *testing.T) {
 			name:       "scenario 2: changed name is empty",
 			httpStatus: http.StatusBadRequest,
 			body:       `{"name":"","id":"sa-token-1"}`,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -563,7 +562,7 @@ func TestUpdateToken(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 			},
 			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
@@ -576,7 +575,7 @@ func TestUpdateToken(t *testing.T) {
 			name:       "scenario 3: new name exists for other token",
 			httpStatus: http.StatusConflict,
 			body:       `{"name":"test-2","id":"sa-token-1"}`,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -586,7 +585,7 @@ func TestUpdateToken(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-2", "2"),
 			},
@@ -600,7 +599,7 @@ func TestUpdateToken(t *testing.T) {
 			name:       "scenario 4: the admin can change any token name successfully and regenerate token",
 			httpStatus: http.StatusOK,
 			body:       `{"name":"test-new-name", "id":"1"}`,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -611,7 +610,7 @@ func TestUpdateToken(t *testing.T) {
 				genUser("bob", "bob@acme.com", true),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 			},
 			existingAPIUser: *test.GenAPIUser("bob", "bob@acme.com"),
@@ -624,7 +623,7 @@ func TestUpdateToken(t *testing.T) {
 			name:       "scenario 5: the user Bob can change John's token name and regenerate token",
 			httpStatus: http.StatusForbidden,
 			body:       `{"name":"test-new-name", "id":"1"}`,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -635,7 +634,7 @@ func TestUpdateToken(t *testing.T) {
 				genUser("bob", "bob@acme.com", false),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 			},
 			existingAPIUser:  *test.GenAPIUser("bob", "bob@acme.com"),
@@ -651,7 +650,7 @@ func TestUpdateToken(t *testing.T) {
 			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens/%s", tc.projectToSync, tc.saToSync, tc.tokenToSync), strings.NewReader(tc.body))
 			res := httptest.NewRecorder()
 
-			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -693,8 +692,8 @@ func TestDeleteToken(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
 		name                   string
-		existingKubermaticObjs []runtime.Object
-		existingKubernetesObjs []runtime.Object
+		existingKubermaticObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
 		projectToSync          string
 		saToSync               string
 		tokenToDelete          string
@@ -706,7 +705,7 @@ func TestDeleteToken(t *testing.T) {
 		{
 			name:       "scenario 1: delete token",
 			httpStatus: http.StatusOK,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -716,7 +715,7 @@ func TestDeleteToken(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 				test.GenDefaultSaToken("plan10-ID", "serviceaccount-2", "test-2", "2"),
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-3", "3"),
@@ -731,7 +730,7 @@ func TestDeleteToken(t *testing.T) {
 		{
 			name:       "scenario 2: the admin can delete any token",
 			httpStatus: http.StatusOK,
-			existingKubermaticObjs: []runtime.Object{
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				/*add projects*/
 				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -742,7 +741,7 @@ func TestDeleteToken(t *testing.T) {
 				genUser("bob", "bob@acme.com", true),
 				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingKubernetesObjs: []runtime.Object{
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
 				test.GenDefaultSaToken("plan10-ID", "serviceaccount-2", "test-2", "2"),
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-3", "3"),
@@ -764,7 +763,7 @@ func TestDeleteToken(t *testing.T) {
 			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v1/projects/%s/serviceaccounts/%s/tokens/%s", tc.projectToSync, tc.saToSync, tc.tokenToDelete), strings.NewReader(""))
 			res := httptest.NewRecorder()
 
-			ep, clientset, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []runtime.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, clientset, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

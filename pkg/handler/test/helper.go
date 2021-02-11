@@ -40,7 +40,7 @@ import (
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-	kubermaticfakeclentset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
+	kubermaticfakeclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
@@ -69,7 +69,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
-
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -79,18 +78,16 @@ func init() {
 	// scheme multiple times it is an unprotected concurrent map access and these tests
 	// are very good at making that panic
 	if err := clusterv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to add clusterv1alpha1 scheme to scheme.Scheme", "error", err)
+		kubermaticlog.Logger.Fatalw("failed to add cluster/v1alpha1 scheme to scheme.Scheme", "error", err)
 	}
 	if err := v1beta1.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to register scheme v1beta1", "error", err)
+		kubermaticlog.Logger.Fatalw("failed to register scheme metrics/v1beta1", "error", err)
 	}
-
 	if err := apiextensionv1beta1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to register scheme apiextension", "error", err)
+		kubermaticlog.Logger.Fatalw("failed to register scheme apiextension/v1beta1", "error", err)
 	}
-
 	if err := gatekeeperconfigv1alpha1.SchemeBuilder.AddToScheme(scheme.Scheme); err != nil {
-		kubermaticlog.Logger.Fatalw("failed to register scheme apiextension", "error", err)
+		kubermaticlog.Logger.Fatalw("failed to register scheme gatekeeperconfig/v1alpha1", "error", err)
 	}
 }
 
@@ -191,16 +188,28 @@ type newRoutingFunc func(
 	kubermaticVersions kubermatic.Versions,
 ) http.Handler
 
-func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
-	if seedsGetter == nil {
-		seedsGetter = BuildSeeds()
+func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
+	runtimeObjects := []runtime.Object{}
+	for _, obj := range objs {
+		runtimeObjects = append(runtimeObjects, obj.(runtime.Object))
 	}
+
+	return runtimeObjects
+}
+
+func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+	ctx := context.Background()
+
 	allObjects := kubeObjects
 	allObjects = append(allObjects, machineObjects...)
 	allObjects = append(allObjects, kubermaticObjects...)
-	fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, allObjects...)
-	kubermaticClient := kubermaticfakeclentset.NewSimpleClientset(kubermaticObjects...)
-	kubernetesClient := fakerestclient.NewSimpleClientset(kubeObjects...)
+	fakeClient := fakectrlruntimeclient.
+		NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(allObjects...).
+		Build()
+	kubermaticClient := kubermaticfakeclientset.NewSimpleClientset(getRuntimeObjects(kubermaticObjects...)...)
+	kubernetesClient := fakerestclient.NewSimpleClientset(getRuntimeObjects(kubeObjects...)...)
 	fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 		return fakeClient, nil
 	}
@@ -212,7 +221,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	}
 	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount, kubermaticClient)
 	adminProvider := kubernetes.NewAdminProvider(fakeClient)
-	settingsProvider := kubernetes.NewSettingsProvider(context.Background(), kubermaticClient, fakeClient)
+	settingsProvider := kubernetes.NewSettingsProvider(ctx, kubermaticClient, fakeClient)
 	addonConfigProvider := kubernetes.NewAddonConfigProvider(fakeClient)
 	tokenGenerator, err := serviceaccount.JWTTokenGenerator([]byte(TestServiceAccountHashKey))
 	if err != nil {
@@ -299,11 +308,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find addonprovider for cluster %q", seed.Name)
 	}
 
-	credentialsManager, err := kubernetes.NewPresetsProvider(context.Background(), fakeClient, "", true)
+	credentialsManager, err := kubernetes.NewPresetsProvider(ctx, fakeClient, "", true)
 	if err != nil {
 		return nil, nil, err
 	}
-	admissionPluginProvider := kubernetes.NewAdmissionPluginsProvider(context.Background(), fakeClient)
+	admissionPluginProvider := kubernetes.NewAdmissionPluginsProvider(ctx, fakeClient)
+
+	if seedsGetter == nil {
+		seedsGetter = CreateTestSeedsGetter(ctx, fakeClient)
+	}
 
 	seedClientGetter := func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 		return fakeClient, nil
@@ -396,13 +409,13 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
 }
 
-// CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes  for the tests
-func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
+// CreateTestEndpointAndGetClients is a convenience function that instantiates fake providers and sets up routes for the tests
+func CreateTestEndpointAndGetClients(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObjects, machineObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, *ClientsSets, error) {
 	return initTestEndpoint(user, seedsGetter, kubeObjects, machineObjects, kubermaticObjects, versions, updates, routingFunc)
 }
 
 // CreateTestEndpoint does exactly the same as CreateTestEndpointAndGetClients except it omits ClientsSets when returning
-func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtime.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, error) {
+func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []ctrlruntimeclient.Object, versions []*version.Version, updates []*version.Update, routingFunc newRoutingFunc) (http.Handler, error) {
 	router, _, err := CreateTestEndpointAndGetClients(user, nil, kubeObjects, nil, kubermaticObjects, versions, updates, routingFunc)
 	return router, err
 }
@@ -410,7 +423,8 @@ func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []runtim
 func GenTestSeed() *kubermaticv1.Seed {
 	return &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "us-central1",
+			Name:      "us-central1",
+			Namespace: "kubermatic",
 		},
 		Spec: kubermaticv1.SeedSpec{
 			Location: "us-central",
@@ -455,7 +469,7 @@ func GenTestSeed() *kubermaticv1.Seed {
 					},
 				},
 				"fake-dc": {
-					Location: "Henriks basement",
+					Location: "Henrik's basement",
 					Country:  "Germany",
 					Spec: kubermaticv1.DatacenterSpec{
 						Fake: &kubermaticv1.DatacenterSpecFake{},
@@ -496,11 +510,21 @@ func GenTestSeed() *kubermaticv1.Seed {
 		}}
 }
 
-func BuildSeeds() provider.SeedsGetter {
+// CreateTestSeedsGetter creates a SeedsGetter only useful for generic tests,
+// as it does not follow the CE/EE conventions and always returns all Seeds.
+func CreateTestSeedsGetter(ctx context.Context, client ctrlruntimeclient.Client) provider.SeedsGetter {
+	listOpts := &ctrlruntimeclient.ListOptions{Namespace: "kubermatic"}
+
 	return func() (map[string]*kubermaticv1.Seed, error) {
-		seeds := make(map[string]*kubermaticv1.Seed)
-		seeds["us-central1"] = GenTestSeed()
-		return seeds, nil
+		seeds := &kubermaticv1.SeedList{}
+		if err := client.List(ctx, seeds, listOpts); err != nil {
+			return nil, fmt.Errorf("failed to list the seeds: %v", err)
+		}
+		seedMap := map[string]*kubermaticv1.Seed{}
+		for idx, seed := range seeds.Items {
+			seedMap[seed.Name] = &seeds.Items[idx]
+		}
+		return seedMap, nil
 	}
 }
 
@@ -514,7 +538,7 @@ func (f *fakeUserClusterConnection) GetClient(_ context.Context, _ *kubermaticv1
 
 // ClientsSets a simple wrapper that holds fake client sets
 type ClientsSets struct {
-	FakeKubermaticClient *kubermaticfakeclentset.Clientset
+	FakeKubermaticClient *kubermaticfakeclientset.Clientset
 	FakeClient           ctrlruntimeclient.Client
 	// this client is used for unprivileged methods where impersonated client is used
 	FakeKubernetesCoreClient kubernetesclientset.Interface
@@ -733,8 +757,8 @@ func GenDefaultOwnerBinding() *kubermaticv1.UserProjectBinding {
 }
 
 // GenDefaultKubermaticObjects generates default kubermatic object
-func GenDefaultKubermaticObjects(objs ...runtime.Object) []runtime.Object {
-	defaultsObjs := []runtime.Object{
+func GenDefaultKubermaticObjects(objs ...ctrlruntimeclient.Object) []ctrlruntimeclient.Object {
+	defaultsObjs := []ctrlruntimeclient.Object{
 		// add a project
 		GenDefaultProject(),
 		// add a user
@@ -1100,7 +1124,7 @@ func GenClusterWithOpenstack(cluster *kubermaticv1.Cluster) *kubermaticv1.Cluste
 	return cluster
 }
 
-func GenDefaultExternalClusterNodes() (*corev1.NodeList, error) {
+func GenDefaultExternalClusterNodes() ([]ctrlruntimeclient.Object, error) {
 	cpuQuantity, err := resource.ParseQuantity("290")
 	if err != nil {
 		return nil, err
@@ -1109,8 +1133,8 @@ func GenDefaultExternalClusterNodes() (*corev1.NodeList, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &corev1.NodeList{Items: []corev1.Node{
-		{
+	return []ctrlruntimeclient.Object{
+		&corev1.Node{
 			ObjectMeta: metav1.ObjectMeta{Name: "node1"},
 			Spec: corev1.NodeSpec{
 				PodCIDR:       "abc",
@@ -1136,7 +1160,7 @@ func GenDefaultExternalClusterNodes() (*corev1.NodeList, error) {
 				},
 			},
 		},
-		{
+		&corev1.Node{
 			ObjectMeta: metav1.ObjectMeta{Name: "node2"},
 			Spec: corev1.NodeSpec{
 				PodCIDR:       "def",
@@ -1162,7 +1186,7 @@ func GenDefaultExternalClusterNodes() (*corev1.NodeList, error) {
 				},
 			},
 		},
-	}}, nil
+	}, nil
 }
 
 func GenDefaultExternalClusterNode() (*corev1.Node, error) {

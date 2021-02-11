@@ -27,7 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
-	admissionv1beta1 "k8s.io/api/admission/v1beta1"
+	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -35,7 +35,7 @@ import (
 // ValidateFunc validates a Seed resource
 // On DELETE, the only set fields of seed are Name and Namespace as
 // admissionReview.Request.Object is unset
-type validateFunc func(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error
+type validateFunc func(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error
 
 func newSeedValidator(
 	workerName string,
@@ -70,7 +70,7 @@ type validator struct {
 }
 
 // Validate returns an error if the given seed does not pass all validation steps.
-func (v *validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error {
+func (v *validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error {
 	// We need locking to make the validation concurrency-safe
 	// (irozzo): this is acceptable as request rate is low, but is it
 	// required?
@@ -86,11 +86,11 @@ func (v *validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op ad
 	for i, s := range seeds.Items {
 		seedsMap[s.Name] = &seeds.Items[i]
 	}
-	if op == admissionv1beta1.Delete {
+	if op == admissionv1.Delete {
 		// when a namespace is deleted, a DELETE call for all seeds in the namespace
 		// is issued; this request has no .Request.Name set, so this check will make
 		// sure that we exit cleanly and allow deleting namespaces without seeds
-		if _, exists := seedsMap[seed.Name]; !exists && op == admissionv1beta1.Delete {
+		if _, exists := seedsMap[seed.Name]; !exists && op == admissionv1.Delete {
 			return nil
 		}
 		// in case of delete request the seed is empty
@@ -102,7 +102,7 @@ func (v *validator) Validate(ctx context.Context, seed *kubermaticv1.Seed, op ad
 		return fmt.Errorf("failed to get client for seed %q: %v", seed.Name, err)
 	}
 
-	return v.validate(ctx, seed, client, seedsMap, op == admissionv1beta1.Delete)
+	return v.validate(ctx, seed, client, seedsMap, op == admissionv1.Delete)
 }
 
 func (v *validator) validate(ctx context.Context, subject *kubermaticv1.Seed, seedClient ctrlruntimeclient.Client, existingSeeds map[string]*kubermaticv1.Seed, isDelete bool) error {
@@ -193,9 +193,9 @@ type ensureSingleSeedValidatorWrapper struct {
 // Ensure that SeedValidator.Validate implements ValidateFunc
 var _ validateFunc = ensureSingleSeedValidatorWrapper{}.Validate
 
-func (e ensureSingleSeedValidatorWrapper) Validate(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1beta1.Operation) error {
+func (e ensureSingleSeedValidatorWrapper) Validate(ctx context.Context, seed *kubermaticv1.Seed, op admissionv1.Operation) error {
 	switch op {
-	case admissionv1beta1.Create:
+	case admissionv1.Create:
 		if seed.Name != e.Name || seed.Namespace != e.Namespace {
 			return fmt.Errorf("cannot create Seed %s/%s. It must be named %s and installed in the %s namespace", seed.Name, seed.Namespace, e.Name, e.Namespace)
 		}

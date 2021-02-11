@@ -27,13 +27,14 @@ import (
 	"time"
 
 	"github.com/gorilla/websocket"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestUserWatchEndpoint(t *testing.T) {
@@ -74,12 +75,12 @@ func TestUserWatchEndpoint(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			var runtimeObjectUsers []runtime.Object
+			var runtimeObjectUsers []ctrlruntimeclient.Object
 			for _, user := range tc.existingUsers {
 				runtimeObjectUsers = append(runtimeObjectUsers, test.APIUserToKubermaticUser(*user))
 			}
 
-			ep, cli, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, []runtime.Object{}, nil,
+			ep, cli, err := test.CreateTestEndpointAndGetClients(*tc.existingAPIUser, nil, []ctrlruntimeclient.Object{}, nil,
 				runtimeObjectUsers, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)

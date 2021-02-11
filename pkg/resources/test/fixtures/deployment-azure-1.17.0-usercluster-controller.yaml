@@ -53,7 +53,7 @@ spec:
         readinessProbe:
           failureThreshold: 5
           httpGet:
-            path: /ready
+            path: /readyz
             port: 8086
             scheme: HTTP
           periodSeconds: 5

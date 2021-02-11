@@ -57,29 +57,37 @@ func TestReconcile(t *testing.T) {
 			name:        "scenario 1: sync ct to seed cluster",
 			requestName: ctName,
 			expectedCT:  genConstraintTemplate(ctName, false),
-			masterClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				genConstraintTemplate(ctName, false),
-				test.GenTestSeed()),
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme),
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, false), test.GenTestSeed()).
+				Build(),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				Build(),
 		},
 		{
 			name:                 "scenario 2: cleanup ct on seed cluster when master ct is being terminated",
 			requestName:          ctName,
 			expectedGetErrStatus: metav1.StatusReasonNotFound,
-			masterClient: fakectrlruntimeclient.NewFakeClientWithScheme(
-				scheme.Scheme,
-				genConstraintTemplate(ctName, true),
-				test.GenTestSeed()),
-			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, genConstraintTemplate(ctName, false)),
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, true), test.GenTestSeed()).
+				Build(),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraintTemplate(ctName, false)).
+				Build(),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-
+			ctx := context.Background()
 			r := &reconciler{
-				ctx:          context.Background(),
 				log:          kubermaticlog.Logger,
 				recorder:     &record.FakeRecorder{},
 				masterClient: tc.masterClient,
@@ -89,12 +97,12 @@ func TestReconcile(t *testing.T) {
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
-			if _, err := r.Reconcile(request); err != nil {
+			if _, err := r.Reconcile(ctx, request); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
 			ct := &kubermaticv1.ConstraintTemplate{}
-			err := tc.seedClient.Get(context.Background(), request.NamespacedName, ct)
+			err := tc.seedClient.Get(ctx, request.NamespacedName, ct)
 			if tc.expectedGetErrStatus != "" {
 				if err == nil {
 					t.Fatalf("expected error status %s, instead got ct: %v", tc.expectedGetErrStatus, ct)

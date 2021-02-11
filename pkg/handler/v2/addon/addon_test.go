@@ -29,7 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
-	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestGetAddon(t *testing.T) {
@@ -47,17 +47,20 @@ func TestGetAddon(t *testing.T) {
 		ExistingCluster        *kubermaticv1.Cluster
 		ExistingAddons         []*kubermaticv1.Addon
 		AddonToGet             string
-		ExistingKubermaticObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
 		ExpectedHTTPStatus     int
 		ExpectedResponse       apiv1.Addon
 	}{
 		// scenario 1
 		{
-			Name:                   "scenario 1: get addon that belongs to the given cluster",
-			ClusterIDToSync:        test.GenDefaultCluster().Name,
-			ProjectIDToSync:        test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			Name:            "scenario 1: get addon that belongs to the given cluster",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 			ExistingAddons: []*kubermaticv1.Addon{
 				test.GenTestAddon("addon1", nil, test.GenDefaultCluster(), creationTime),
 			},
@@ -73,11 +76,14 @@ func TestGetAddon(t *testing.T) {
 		},
 		// scenario 2
 		{
-			Name:                   "scenario 2: get addon with variables that belongs to the given cluster",
-			ClusterIDToSync:        test.GenDefaultCluster().Name,
-			ProjectIDToSync:        test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			Name:            "scenario 2: get addon with variables that belongs to the given cluster",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 			ExistingAddons: []*kubermaticv1.Addon{
 				test.GenTestAddon("addon1", test.CreateRawVariables(t, testVariables), test.GenDefaultCluster(), creationTime),
 			},
@@ -96,11 +102,14 @@ func TestGetAddon(t *testing.T) {
 		},
 		// scenario 3
 		{
-			Name:                   "scenario 3: try to get addon that belongs to the given cluster but isn't accessible",
-			ClusterIDToSync:        test.GenDefaultCluster().Name,
-			ProjectIDToSync:        test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			Name:            "scenario 3: try to get addon that belongs to the given cluster but isn't accessible",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 			ExistingAddons: []*kubermaticv1.Addon{
 				test.GenTestAddon("addon1", nil, test.GenDefaultCluster(), creationTime),
 				test.GenTestAddon("addon2", nil, test.GenDefaultCluster(), creationTime),
@@ -112,11 +121,15 @@ func TestGetAddon(t *testing.T) {
 		},
 		// scenario 4
 		{
-			Name:                   "scenario 4: the admin John can get addon with variables that belongs to the Bob's cluster",
-			ClusterIDToSync:        test.GenDefaultCluster().Name,
-			ProjectIDToSync:        test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster(), test.GenAdminUser("John", "john@acme.com", true)),
-			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			Name:            "scenario 4: the admin John can get addon with variables that belongs to the Bob's cluster",
+			ClusterIDToSync: test.GenDefaultCluster().Name,
+			ProjectIDToSync: test.GenDefaultProject().Name,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenAdminUser("John", "john@acme.com", true),
+			),
+			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
 			ExistingAddons: []*kubermaticv1.Addon{
 				test.GenTestAddon("addon1", test.CreateRawVariables(t, testVariables), test.GenDefaultCluster(), creationTime),
 			},
@@ -139,12 +152,12 @@ func TestGetAddon(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/addons/%s", tc.ProjectIDToSync, tc.ClusterIDToSync, tc.AddonToGet), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			var kubermaticObj []runtime.Object
+			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
 			for _, existingAddon := range tc.ExistingAddons {
 				kubermaticObj = append(kubermaticObj, existingAddon)
 			}
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -178,7 +191,7 @@ func TestListAddons(t *testing.T) {
 		Name                   string
 		ExpectedResponse       []apiv1.Addon
 		ExpectedHTTPStatus     int
-		ExistingKubermaticObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		// scenario 1
@@ -204,7 +217,8 @@ func TestListAddons(t *testing.T) {
 				},
 			},
 			ExpectedHTTPStatus: http.StatusOK,
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -238,7 +252,8 @@ func TestListAddons(t *testing.T) {
 				},
 			},
 			ExpectedHTTPStatus: http.StatusOK,
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -278,7 +293,8 @@ func TestListAddons(t *testing.T) {
 				},
 			},
 			ExpectedHTTPStatus: http.StatusOK,
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -299,9 +315,9 @@ func TestListAddons(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/addons", "my-first-project-ID", cluster.Name), strings.NewReader(""))
 			res := httptest.NewRecorder()
-			var kubermaticObj []runtime.Object
+			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -332,7 +348,7 @@ func TestCreateAddon(t *testing.T) {
 		Body                   string
 		ExpectedResponse       apiv1.Addon
 		ExpectedHTTPStatus     int
-		ExistingKubermaticObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		// scenario 1
@@ -351,7 +367,8 @@ func TestCreateAddon(t *testing.T) {
 				},
 			},
 			ExpectedHTTPStatus: http.StatusCreated,
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -373,7 +390,8 @@ func TestCreateAddon(t *testing.T) {
 				}
 			}`,
 			ExpectedHTTPStatus: http.StatusUnauthorized,
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -401,7 +419,8 @@ func TestCreateAddon(t *testing.T) {
 				},
 			},
 			ExpectedHTTPStatus: http.StatusCreated,
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -434,7 +453,8 @@ func TestCreateAddon(t *testing.T) {
 				},
 			},
 			ExpectedHTTPStatus: http.StatusCreated,
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -452,9 +472,9 @@ func TestCreateAddon(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/addons", "my-first-project-ID", cluster.Name), strings.NewReader(tc.Body))
 			res := httptest.NewRecorder()
-			var kubermaticObj []runtime.Object
+			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -492,7 +512,7 @@ func TestCreatePatchGetAddon(t *testing.T) {
 		ExpectedPatchHTTPStatus  int
 		AddonToGet               string
 		ExpectedGetHTTPStatus    int
-		ExistingKubermaticObjs   []runtime.Object
+		ExistingKubermaticObjs   []ctrlruntimeclient.Object
 		ExistingAPIUser          *apiv1.User
 	}{
 		// scenario 1
@@ -524,7 +544,8 @@ func TestCreatePatchGetAddon(t *testing.T) {
 					Variables: map[string]interface{}{"foo": "bar"},
 				},
 			},
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -565,7 +586,8 @@ func TestCreatePatchGetAddon(t *testing.T) {
 					Variables: map[string]interface{}{"foo": "bar"},
 				},
 			},
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -609,7 +631,8 @@ func TestCreatePatchGetAddon(t *testing.T) {
 					ContinuouslyReconcile: true,
 				},
 			},
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("my-first-project", kubermaticv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -627,9 +650,9 @@ func TestCreatePatchGetAddon(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("POST", fmt.Sprintf("/api/v2/projects/%s/clusters/%s/addons", "my-first-project-ID", cluster.Name), strings.NewReader(tc.CreateBody))
 			res := httptest.NewRecorder()
-			var kubermaticObj []runtime.Object
+			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}

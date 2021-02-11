@@ -31,7 +31,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -44,7 +43,6 @@ import (
 const ControllerName = "seed_resources_up_to_date_condition_controller"
 
 type reconciler struct {
-	ctx        context.Context
 	log        *zap.SugaredLogger
 	client     ctrlruntimeclient.Client
 	recorder   record.EventRecorder
@@ -61,7 +59,6 @@ func Add(
 	versions kubermatic.Versions,
 ) error {
 	r := &reconciler{
-		ctx:        ctx,
 		log:        log.Named(ControllerName),
 		client:     mgr.GetClient(),
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
@@ -78,7 +75,7 @@ func Add(
 		return err
 	}
 
-	typesToWatch := []runtime.Object{
+	typesToWatch := []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
 		&appsv1.StatefulSet{},
 	}
@@ -91,9 +88,9 @@ func Add(
 	return c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{})
 }
 
-func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	cluster := &kubermaticv1.Cluster{}
-	if err := r.client.Get(r.ctx, request.NamespacedName, cluster); err != nil {
+	if err := r.client.Get(ctx, request.NamespacedName, cluster); err != nil {
 		if kerrors.IsNotFound(err) {
 			return reconcile.Result{}, nil
 		}
@@ -101,7 +98,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	}
 
 	// Add a wrapping here so we can emit an event on error
-	err := r.reconcile(cluster)
+	err := r.reconcile(ctx, cluster)
 	if err != nil {
 		r.log.With("cluster", request.Name).Errorw("Failed to reconcile cluster", zap.Error(err))
 		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
@@ -109,7 +106,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(cluster *kubermaticv1.Cluster) error {
+func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	if r.workerName != cluster.Labels[kubermaticv1.WorkerNameLabelKey] {
 		return nil
 	}
@@ -118,7 +115,7 @@ func (r *reconciler) reconcile(cluster *kubermaticv1.Cluster) error {
 		return nil
 	}
 
-	upToDate, err := r.seedResourcesUpToDate(cluster)
+	upToDate, err := r.seedResourcesUpToDate(ctx, cluster)
 	if err != nil {
 		return err
 	}
@@ -147,15 +144,15 @@ func (r *reconciler) reconcile(cluster *kubermaticv1.Cluster) error {
 		return nil
 	}
 
-	return r.client.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	return r.client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
-func (r *reconciler) seedResourcesUpToDate(cluster *kubermaticv1.Cluster) (bool, error) {
+func (r *reconciler) seedResourcesUpToDate(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
 
 	listOpts := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
 
 	statefulSets := &appsv1.StatefulSetList{}
-	if err := r.client.List(r.ctx, statefulSets, listOpts); err != nil {
+	if err := r.client.List(ctx, statefulSets, listOpts); err != nil {
 		return false, fmt.Errorf("failed to list statefulSets: %v", err)
 	}
 	for _, statefulSet := range statefulSets.Items {
@@ -170,7 +167,7 @@ func (r *reconciler) seedResourcesUpToDate(cluster *kubermaticv1.Cluster) (bool,
 	}
 
 	deployments := &appsv1.DeploymentList{}
-	if err := r.client.List(r.ctx, deployments, listOpts); err != nil {
+	if err := r.client.List(ctx, deployments, listOpts); err != nil {
 		return false, fmt.Errorf("failed to list deployments: %v", err)
 	}
 

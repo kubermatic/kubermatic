@@ -24,7 +24,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	controllerclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -62,20 +62,20 @@ func TestReconcileCreate(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-
-			fakeClient := fake.NewFakeClient()
-			r := reconciler{client: fakeClient, ctx: context.TODO()}
+			ctx := context.Background()
+			fakeClient := fake.NewClientBuilder().Build()
+			r := reconciler{client: fakeClient}
 
 			// create scenario
 			for _, name := range test.resourceNames {
-				err := r.Reconcile(name)
+				err := r.Reconcile(ctx, name)
 				if err != nil {
 					t.Fatalf("Reconcile method error: %v", err)
 				}
 			}
 
 			roles := &rbacv1.ClusterRoleList{}
-			if err := r.client.List(r.ctx, roles); err != nil {
+			if err := r.client.List(ctx, roles); err != nil {
 				t.Fatalf("getting cluster roles error: %v", err)
 			}
 
@@ -91,7 +91,7 @@ func TestReconcileCreate(t *testing.T) {
 			}
 
 			rolesBindings := &rbacv1.ClusterRoleBindingList{}
-			if err := r.client.List(r.ctx, rolesBindings); err != nil {
+			if err := r.client.List(ctx, rolesBindings); err != nil {
 				t.Fatalf("getting cluster role bindings error: %v", err)
 			}
 
@@ -174,20 +174,21 @@ func TestReconcileUpdateRole(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			r := reconciler{client: fake.NewFakeClient(), ctx: context.TODO()}
+			ctx := context.Background()
+			r := reconciler{client: fake.NewClientBuilder().Build()}
 
-			if err := r.client.Create(r.ctx, test.updatedRole); err != nil {
+			if err := r.client.Create(ctx, test.updatedRole); err != nil {
 				t.Fatalf("failed to create ClusterRole: %v", err)
 			}
 
 			// check for updates
-			err := r.Reconcile(test.roleName)
+			err := r.Reconcile(ctx, test.roleName)
 			if err != nil {
 				t.Fatalf("Reconcile method error: %v", err)
 			}
 
 			role := &rbacv1.ClusterRole{}
-			if err := r.client.Get(r.ctx, controllerclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: test.roleName}, role); err != nil {
+			if err := r.client.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: test.roleName}, role); err != nil {
 				t.Fatalf("can't find cluster role %v", err)
 			}
 

@@ -26,13 +26,16 @@ import (
 	"strings"
 	"syscall"
 
-	"gopkg.in/fsnotify.v1"
-
 	"go.uber.org/zap"
+	"gopkg.in/fsnotify.v1"
 
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
+	corev1 "k8s.io/api/core/v1"
+	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -40,11 +43,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	corev1 "k8s.io/api/core/v1"
-	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -84,7 +82,7 @@ func Add(
 		return fmt.Errorf("failed to watch authorized_keys files: %v", err)
 	}
 
-	userSSHKeySecret := newEventHandler(func(a handler.MapObject) []reconcile.Request {
+	userSSHKeySecret := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
@@ -102,9 +100,7 @@ func Add(
 	return nil
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	r.log.Debug("Processing")
 
 	secret, err := r.fetchUserSSHKeySecret(ctx, request.NamespacedName.Namespace)
@@ -194,14 +190,6 @@ func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
 	}
 
 	return nil
-}
-
-// newEventHandler takes a obj->request mapper function and wraps it into an
-// handler.EnqueueRequestsFromMapFunc.
-func newEventHandler(rf handler.ToRequestsFunc) *handler.EnqueueRequestsFromMapFunc {
-	return &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: rf,
-	}
 }
 
 func createBuffer(data map[string][]byte) (*bytes.Buffer, error) {

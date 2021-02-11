@@ -36,7 +36,6 @@ import (
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -67,7 +66,6 @@ func Add(
 	namespacePredicate := predicateutil.ByNamespace(namespace)
 
 	reconciler := &Reconciler{
-		ctx:            ctx,
 		log:            log.Named(ControllerName),
 		scheme:         masterManager.GetScheme(),
 		namespace:      namespace,
@@ -90,7 +88,7 @@ func Add(
 	}
 
 	// watch for changes to KubermaticConfigurations in the master cluster and reconcile all seeds
-	configEventHandler := newEventHandler(func(_ handler.MapObject) []reconcile.Request {
+	configEventHandler := handler.EnqueueRequestsFromMapFunc(func(_ ctrlruntimeclient.Object) []reconcile.Request {
 		seeds, err := seedsGetter()
 		if err != nil {
 			log.Errorw("Failed to handle request", zap.Error(err))
@@ -138,7 +136,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	cache := seedManager.GetCache()
 	eventHandler := util.EnqueueConst(seedName)
 
-	watch := func(t runtime.Object, preds ...predicate.Predicate) error {
+	watch := func(t ctrlruntimeclient.Object, preds ...predicate.Predicate) error {
 		seedTypeWatch := &source.Kind{Type: t}
 
 		if err := seedTypeWatch.InjectCache(cache); err != nil {
@@ -152,7 +150,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		return nil
 	}
 
-	namespacedTypesToWatch := []runtime.Object{
+	namespacedTypesToWatch := []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
@@ -167,7 +165,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		}
 	}
 
-	globalTypesToWatch := []runtime.Object{
+	globalTypesToWatch := []ctrlruntimeclient.Object{
 		&rbacv1.ClusterRoleBinding{},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 	}
@@ -191,7 +189,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	}
 
 	// The VPA gets resources deployed into the kube-system namespace.
-	namespacedVPATypes := []runtime.Object{
+	namespacedVPATypes := []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
 		&corev1.Secret{},
 		&corev1.Service{},
@@ -204,7 +202,7 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 		}
 	}
 
-	globalVPATypes := []runtime.Object{
+	globalVPATypes := []ctrlruntimeclient.Object{
 		&rbacv1.ClusterRole{},
 		&rbacv1.ClusterRoleBinding{},
 	}
@@ -216,12 +214,4 @@ func createSeedWatches(controller controller.Controller, seedName string, seedMa
 	}
 
 	return nil
-}
-
-// newEventHandler takes a obj->request mapper function and wraps it into an
-// handler.EnqueueRequestsFromMapFunc.
-func newEventHandler(rf handler.ToRequestsFunc) *handler.EnqueueRequestsFromMapFunc {
-	return &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: rf,
-	}
 }

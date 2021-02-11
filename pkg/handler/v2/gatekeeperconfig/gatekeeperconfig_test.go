@@ -34,7 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/gatekeeperconfig"
 
-	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestGetConfigEndpoint(t *testing.T) {
@@ -45,28 +45,34 @@ func TestGetConfigEndpoint(t *testing.T) {
 		ProjectID              string
 		ClusterID              string
 		HTTPStatus             int
-		ExistingKubermaticObjs []runtime.Object
-		ExistingGatekeeperObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExistingGatekeeperObjs []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		{
-			Name:                   "scenario 1: get gatekeeper config",
-			ExpectedResponse:       `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"},{"version":"v1","kind":"Pod"}]},"validation":{"traces":[{"user":"bob","kind":{"version":"v1","kind":"Pod"}}]},"match":[{"excludedNamespaces":["default","kube-system"],"processes":["audit"]}],"readiness":{"statsEnabled":true}}}`,
-			ProjectID:              test.GenDefaultProject().Name,
-			ClusterID:              test.GenDefaultCluster().Name,
-			HTTPStatus:             http.StatusOK,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			Name:             "scenario 1: get gatekeeper config",
+			ExpectedResponse: `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"},{"version":"v1","kind":"Pod"}]},"validation":{"traces":[{"user":"bob","kind":{"version":"v1","kind":"Pod"}}]},"match":[{"excludedNamespaces":["default","kube-system"],"processes":["audit"]}],"readiness":{"statsEnabled":true}}}`,
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
-			Name:                   "scenario 2: fail getting non-existing gatekeeper config",
-			ExpectedResponse:       `{"error":{"code":404,"message":"configs.config.gatekeeper.sh \"config\" not found"}}`,
-			ProjectID:              test.GenDefaultProject().Name,
-			ClusterID:              test.GenDefaultCluster().Name,
-			HTTPStatus:             http.StatusNotFound,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{},
+			Name:             "scenario 2: fail getting non-existing gatekeeper config",
+			ExpectedResponse: `{"error":{"code":404,"message":"configs.config.gatekeeper.sh \"config\" not found"}}`,
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			HTTPStatus:       http.StatusNotFound,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -76,10 +82,11 @@ func TestGetConfigEndpoint(t *testing.T) {
 			ClusterID:        test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 		{
@@ -89,10 +96,11 @@ func TestGetConfigEndpoint(t *testing.T) {
 			ClusterID:        test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 	}
@@ -133,28 +141,34 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 		ProjectID              string
 		ClusterID              string
 		HTTPStatus             int
-		ExistingKubermaticObjs []runtime.Object
-		ExistingGatekeeperObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExistingGatekeeperObjs []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		{
-			Name:                   "scenario 1: delete gatekeeper config",
-			ExpectedResponse:       `{}`,
-			ProjectID:              test.GenDefaultProject().Name,
-			ClusterID:              test.GenDefaultCluster().Name,
-			HTTPStatus:             http.StatusOK,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			Name:             "scenario 1: delete gatekeeper config",
+			ExpectedResponse: `{}`,
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
-			Name:                   "scenario 2: fail deleting non-existing gatekeeper config",
-			ExpectedResponse:       `{"error":{"code":404,"message":"configs.config.gatekeeper.sh \"config\" not found"}}`,
-			ProjectID:              test.GenDefaultProject().Name,
-			ClusterID:              test.GenDefaultCluster().Name,
-			HTTPStatus:             http.StatusNotFound,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{},
+			Name:             "scenario 2: fail deleting non-existing gatekeeper config",
+			ExpectedResponse: `{"error":{"code":404,"message":"configs.config.gatekeeper.sh \"config\" not found"}}`,
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			HTTPStatus:       http.StatusNotFound,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -164,10 +178,11 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 			ClusterID:        test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 		{
@@ -177,10 +192,11 @@ func TestDeleteConfigEndpoint(t *testing.T) {
 			ClusterID:        test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 	}
@@ -222,29 +238,35 @@ func TestCreateConfigEndpoint(t *testing.T) {
 		ClusterID              string
 		ToCreateConfig         *apiv2.GatekeeperConfig
 		HTTPStatus             int
-		ExistingKubermaticObjs []runtime.Object
-		ExistingGatekeeperObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExistingGatekeeperObjs []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		{
-			Name:                   "scenario 1: create gatekeeper config",
-			ExpectedResponse:       `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"},{"version":"v1","kind":"Pod"}]},"validation":{"traces":[{"user":"bob","kind":{"version":"v1","kind":"Pod"}}]},"match":[{"excludedNamespaces":["default","kube-system"],"processes":["audit"]}],"readiness":{"statsEnabled":true}}}`,
-			ProjectID:              test.GenDefaultProject().Name,
-			ClusterID:              test.GenDefaultCluster().Name,
-			ToCreateConfig:         genAPIGatekeeperConfig(),
-			HTTPStatus:             http.StatusOK,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			Name:             "scenario 1: create gatekeeper config",
+			ExpectedResponse: `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"},{"version":"v1","kind":"Pod"}]},"validation":{"traces":[{"user":"bob","kind":{"version":"v1","kind":"Pod"}}]},"match":[{"excludedNamespaces":["default","kube-system"],"processes":["audit"]}],"readiness":{"statsEnabled":true}}}`,
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ToCreateConfig:   genAPIGatekeeperConfig(),
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
 		{
-			Name:                   "scenario 2: fail creating already existing gatekeeper config",
-			ExpectedResponse:       `{"error":{"code":409,"message":"configs.config.gatekeeper.sh \"config\" already exists"}}`,
-			ProjectID:              test.GenDefaultProject().Name,
-			ClusterID:              test.GenDefaultCluster().Name,
-			ToCreateConfig:         genAPIGatekeeperConfig(),
-			HTTPStatus:             http.StatusConflict,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			Name:             "scenario 2: fail creating already existing gatekeeper config",
+			ExpectedResponse: `{"error":{"code":409,"message":"configs.config.gatekeeper.sh \"config\" already exists"}}`,
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ToCreateConfig:   genAPIGatekeeperConfig(),
+			HTTPStatus:       http.StatusConflict,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -255,6 +277,7 @@ func TestCreateConfigEndpoint(t *testing.T) {
 			ToCreateConfig:   genAPIGatekeeperConfig(),
 			HTTPStatus:       http.StatusForbidden,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
 			),
@@ -268,6 +291,7 @@ func TestCreateConfigEndpoint(t *testing.T) {
 			ToCreateConfig:   genAPIGatekeeperConfig(),
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
@@ -317,30 +341,36 @@ func TestPatchConfigEndpoint(t *testing.T) {
 		ClusterID              string
 		Patch                  string
 		HTTPStatus             int
-		ExistingKubermaticObjs []runtime.Object
-		ExistingGatekeeperObjs []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExistingGatekeeperObjs []ctrlruntimeclient.Object
 		ExistingAPIUser        *apiv1.User
 	}{
 		{
-			Name:                   "scenario 1: patch gatekeeper config",
-			ExpectedResponse:       `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"}]},"validation":{"traces":[{"user":"bob","kind":{"version":"v1","kind":"Pod"}}]},"match":[{"excludedNamespaces":["default","kube-system"],"processes":["audit"]}],"readiness":{"statsEnabled":true}}}`,
-			ProjectID:              test.GenDefaultProject().Name,
-			ClusterID:              test.GenDefaultCluster().Name,
-			Patch:                  `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"}]}}}`,
-			HTTPStatus:             http.StatusOK,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			Name:             "scenario 1: patch gatekeeper config",
+			ExpectedResponse: `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"}]},"validation":{"traces":[{"user":"bob","kind":{"version":"v1","kind":"Pod"}}]},"match":[{"excludedNamespaces":["default","kube-system"],"processes":["audit"]}],"readiness":{"statsEnabled":true}}}`,
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			Patch:            `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"}]}}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
-			Name:                   "scenario 2: fail patching non-existing gatekeeper config",
-			ExpectedResponse:       `{"error":{"code":404,"message":"configs.config.gatekeeper.sh \"config\" not found"}}`,
-			ProjectID:              test.GenDefaultProject().Name,
-			ClusterID:              test.GenDefaultCluster().Name,
-			Patch:                  `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"}]}}}`,
-			HTTPStatus:             http.StatusNotFound,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(test.GenDefaultCluster()),
-			ExistingGatekeeperObjs: []runtime.Object{},
+			Name:             "scenario 2: fail patching non-existing gatekeeper config",
+			ExpectedResponse: `{"error":{"code":404,"message":"configs.config.gatekeeper.sh \"config\" not found"}}`,
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			Patch:            `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"}]}}}`,
+			HTTPStatus:       http.StatusNotFound,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{},
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 		},
 		{
@@ -351,10 +381,11 @@ func TestPatchConfigEndpoint(t *testing.T) {
 			HTTPStatus:       http.StatusForbidden,
 			Patch:            `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"}]}}}`,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 		{
@@ -365,10 +396,11 @@ func TestPatchConfigEndpoint(t *testing.T) {
 			Patch:            `{"spec":{"sync":{"syncOnly":[{"version":"v1","kind":"Namespace"}]}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", true),
 			),
-			ExistingGatekeeperObjs: []runtime.Object{genGatekeeperConfig()},
+			ExistingGatekeeperObjs: []ctrlruntimeclient.Object{genGatekeeperConfig()},
 			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
 		},
 	}

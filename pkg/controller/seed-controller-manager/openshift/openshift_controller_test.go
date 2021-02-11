@@ -34,12 +34,12 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	ctrlruntimezaplog "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -79,8 +79,8 @@ func TestResources(t *testing.T) {
 	testCases := []struct {
 		name         string
 		reconciler   Reconciler
-		object       runtime.Object
-		validateFunc func(runtime.Object) error
+		object       ctrlruntimeclient.Object
+		validateFunc func(ctrlruntimeclient.Object) error
 	}{
 		{
 			name: "Kubermatic API image is overwritten",
@@ -98,7 +98,7 @@ func TestResources(t *testing.T) {
 					Name: "usercluster-controller",
 				},
 			},
-			validateFunc: func(o runtime.Object) error {
+			validateFunc: func(o ctrlruntimeclient.Object) error {
 				deployment := o.(*appsv1.Deployment)
 				expectedImage := "docker.io/my.corp/kubermatic:"
 				if deployment.Spec.Template.Spec.Containers[0].Image != expectedImage {
@@ -112,13 +112,15 @@ func TestResources(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctrlruntimelog.SetLogger(ctrlruntimezaplog.Logger(false))
+			ctx := context.Background()
+
+			ctrlruntimelog.SetLogger(ctrlruntimezaplog.New(ctrlruntimezaplog.UseDevMode(false)))
 			if err := autoscalingv1beta2.AddToScheme(scheme.Scheme); err != nil {
 				t.Fatalf("failed to add the autoscaling.k8s.io scheme to mgr: %v", err)
 			}
 
 			tc.reconciler.recorder = &record.FakeRecorder{}
-			tc.reconciler.Client = fake.NewFakeClient(
+			tc.reconciler.Client = ctrlruntimefakeclient.NewClientBuilder().WithObjects(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-cluster",
@@ -151,7 +153,7 @@ func TestResources(t *testing.T) {
 						LoadBalancerIP: "1.2.3.4",
 					},
 				},
-			)
+			).Build()
 			tc.reconciler.seedGetter = func() (*kubermaticv1.Seed, error) {
 				return &kubermaticv1.Seed{
 					ObjectMeta: metav1.ObjectMeta{
@@ -172,7 +174,7 @@ func TestResources(t *testing.T) {
 				t.Fatalf("error getting usercluster connection provider: %v", err)
 			}
 
-			if _, err := tc.reconciler.Reconcile(reconcile.Request{
+			if _, err := tc.reconciler.Reconcile(ctx, reconcile.Request{
 				NamespacedName: types.NamespacedName{Name: "test-cluster"}}); err != nil {
 				if !strings.HasPrefix(err.Error(), "failed to check if cluster is reachable: failed to create restMapper:") {
 					t.Fatalf("failed to run reconcile: %v", err)
@@ -180,29 +182,29 @@ func TestResources(t *testing.T) {
 			}
 
 			object := tc.object.DeepCopyObject()
-			metav1object, ok := object.(metav1.Object)
+			clientObject, ok := object.(ctrlruntimeclient.Object)
 			if !ok {
 				t.Fatal("testcase object can not be asserted as metav1.Object")
 			}
 
-			if err := tc.reconciler.Get(context.Background(),
-				types.NamespacedName{Namespace: "test-cluster-ns", Name: metav1object.GetName()},
-				object); err != nil {
-				t.Fatalf("failed to get object %q: %v", metav1object.GetName(), err)
+			if err := tc.reconciler.Get(ctx,
+				types.NamespacedName{Namespace: "test-cluster-ns", Name: clientObject.GetName()},
+				clientObject); err != nil {
+				t.Fatalf("failed to get object %q: %v", clientObject.GetName(), err)
 			}
 
-			if err := tc.validateFunc(object); err != nil {
+			if err := tc.validateFunc(clientObject); err != nil {
 				t.Fatal(err.Error())
 			}
 
 			serializedObject, err := yaml.Marshal(object)
 			if err != nil {
-				t.Fatalf("failed to serialize object %q: %v", metav1object.GetName(), err)
+				t.Fatalf("failed to serialize object %q: %v", clientObject.GetName(), err)
 			}
 
 			serializedObject = append([]byte("# This file has been generated, DO NOT EDIT.\n"), serializedObject...)
 
-			testhelper.CompareOutput(t, fmt.Sprintf("%s-%s", strings.Replace(tc.name, " ", "_", -1), metav1object.GetName()), string(serializedObject), *update, ".yaml")
+			testhelper.CompareOutput(t, fmt.Sprintf("%s-%s", strings.Replace(tc.name, " ", "_", -1), clientObject.GetName()), string(serializedObject), *update, ".yaml")
 		})
 	}
 

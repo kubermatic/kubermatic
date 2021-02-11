@@ -35,8 +35,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 var (
@@ -183,7 +183,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		URL               string
 		QueryParams       map[string]string
 		Credential        string
-		Credentials       []runtime.Object
+		Credentials       []ctrlruntimeclient.Object
 		OpenstackURL      string
 		OpenstackResponse string
 		ExpectedResponse  string
@@ -206,7 +206,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		{
 			Name:       "test tenants endpoint with predefined credentials",
 			Credential: test.TestFakeCredential,
-			Credentials: []runtime.Object{
+			Credentials: []ctrlruntimeclient.Object{
 				test.GenDefaultPreset(),
 			},
 			URL: "/api/v1/providers/openstack/tenants",
@@ -229,7 +229,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 			Credential:  test.TestFakeCredential,
 			URL:         "/api/v1/providers/openstack/subnets",
 			QueryParams: map[string]string{"network_id": "foo"},
-			Credentials: []runtime.Object{
+			Credentials: []ctrlruntimeclient.Object{
 				test.GenDefaultPreset(),
 			},
 			ExpectedResponse: `[
@@ -248,7 +248,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 			Name:       "test networks endpoint with predefined credentials",
 			Credential: test.TestFakeCredential,
 			URL:        "/api/v1/providers/openstack/networks",
-			Credentials: []runtime.Object{
+			Credentials: []ctrlruntimeclient.Object{
 				test.GenDefaultPreset(),
 			},
 			ExpectedResponse: `[
@@ -273,7 +273,7 @@ func TestOpenstackEndpoints(t *testing.T) {
 		{
 			Name:       "test sizes endpoint with predefined credentials",
 			Credential: test.TestFakeCredential,
-			Credentials: []runtime.Object{
+			Credentials: []ctrlruntimeclient.Object{
 				test.GenDefaultPreset(),
 			},
 			URL: "/api/v1/providers/openstack/sizes",
@@ -318,11 +318,11 @@ func TestOpenstackEndpoints(t *testing.T) {
 			apiUser := test.GenDefaultAPIUser()
 
 			res := httptest.NewRecorder()
-			credentials := []runtime.Object{}
+			credentials := []ctrlruntimeclient.Object{}
 			if tc.Credentials != nil {
 				credentials = tc.Credentials
 			}
-			router, _, err := test.CreateTestEndpointAndGetClients(*apiUser, buildOpenstackDatacenter(), []runtime.Object{}, credentials, []runtime.Object{test.APIUserToKubermaticUser(*apiUser)}, nil, nil, hack.NewTestRouting)
+			router, _, err := test.CreateTestEndpointAndGetClients(*apiUser, buildOpenstackDatacenter(), []ctrlruntimeclient.Object{}, credentials, []ctrlruntimeclient.Object{test.APIUserToKubermaticUser(*apiUser)}, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v\n", err)
 			}

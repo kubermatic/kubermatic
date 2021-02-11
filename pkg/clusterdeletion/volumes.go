@@ -25,7 +25,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -83,7 +83,7 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 	return deletedSomeResource, nil
 }
 
-func (d *Deletion) disablePVCreation(ctx context.Context, userClusterClient controllerruntimeclient.Client) error {
+func (d *Deletion) disablePVCreation(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
 	// Prevent re-creation of PVs and PVCs by using an intentionally defunct admissionWebhook
 	creatorGetters := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{
 		creationPreventingWebhook("", []string{"persistentvolumes", "persistentvolumeclaims"}),
@@ -95,7 +95,7 @@ func (d *Deletion) disablePVCreation(ctx context.Context, userClusterClient cont
 	return nil
 }
 
-func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, userClusterClient controllerruntimeclient.Client) error {
+func (d *Deletion) cleanupPVCUsingPods(ctx context.Context, userClusterClient ctrlruntimeclient.Client) error {
 	podList := &corev1.PodList{}
 	if err := userClusterClient.List(ctx, podList); err != nil {
 		return fmt.Errorf("failed to list Pods from user cluster: %v", err)

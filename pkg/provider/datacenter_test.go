@@ -42,7 +42,12 @@ func TestSeedGetterFactorySetsDefaults(t *testing.T) {
 			Datacenters: map[string]kubermaticv1.Datacenter{"a": {}},
 		},
 	}
-	client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, initSeed)
+
+	client := fakectrlruntimeclient.
+		NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(initSeed).
+		Build()
 
 	seedGetter, err := SeedGetterFactory(context.Background(), client, DefaultSeedName, "my-ns")
 	if err != nil {
@@ -77,7 +82,11 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 			Datacenters: map[string]kubermaticv1.Datacenter{"a": {}},
 		},
 	}
-	client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, initSeed)
+	client := fakectrlruntimeclient.
+		NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(initSeed).
+		Build()
 
 	seedsGetter, err := SeedsGetterFactory(context.Background(), client, "my-ns")
 	if err != nil {
@@ -105,7 +114,7 @@ func TestSeedsGetterFactorySetsDefaults(t *testing.T) {
 func TestSeedsGetterFactoryNoSeed(t *testing.T) {
 	t.Parallel()
 	// No seed is returned by the fake client
-	client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme)
+	client := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).Build()
 	seedsGetter, err := SeedsGetterFactory(context.Background(), client, "my-ns")
 	if err != nil {
 		t.Fatalf("failed getting seedsGetter: %v", err)

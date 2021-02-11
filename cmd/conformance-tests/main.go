@@ -48,7 +48,6 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	kubermativsemver "k8c.io/kubermatic/v2/pkg/semver"
-	kubermaticsignals "k8c.io/kubermatic/v2/pkg/signals"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
@@ -64,6 +63,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 // Opts represent combination of flags and ENV options
@@ -306,8 +306,7 @@ func main() {
 	opts.kubermaticClient = kubermaticClient
 	opts.secrets.kubermaticClient = opts.kubermaticClient
 
-	rootCtx, rootCancel := context.WithCancel(context.Background())
-	defer rootCancel()
+	rootCtx := signals.SetupSignalHandler()
 
 	// collect runtime metrics if there is a pushgateway URL configured
 	// and these variables are set
@@ -401,18 +400,6 @@ func main() {
 	if err := createSSHKeys(rootCtx, opts.kubermaticClient, opts.kubermaticAuthenticator, &opts, log); err != nil {
 		log.Fatalw("Failed to create SSH keys", zap.Error(err))
 	}
-
-	stopCh := kubermaticsignals.SetupSignalHandler()
-
-	go func() {
-		select {
-		case <-stopCh:
-			rootCancel()
-			log.Info("User requested to stop the application")
-		case <-rootCtx.Done():
-			log.Info("Context has been closed")
-		}
-	}()
 
 	config, err := clientcmd.BuildConfigFromFlags("", opts.kubeconfigPath)
 	if err != nil {
