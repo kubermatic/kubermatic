@@ -72,7 +72,7 @@ func TestResourceReconciliationIdempotency(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	go func() {
-		if err := mgr.Start(ctx.Done()); err != nil {
+		if err := mgr.Start(ctx); err != nil {
 			t.Errorf("failed to start manager: %v", err)
 		}
 	}()
@@ -137,12 +137,12 @@ func TestResourceReconciliationIdempotency(t *testing.T) {
 		},
 		Data: map[string]string{resources.CloudConfigConfigMapKey: "some-cloud-config-content"},
 	}
-	seedClient := fakectrlruntimeclient.NewFakeClient(
+	seedClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(
 		caSecret,
 		openVPNCASecret,
 		sshKeySecret,
 		cloudConfigMap,
-	)
+	).Build()
 	r := reconciler{
 		Client:     mgr.GetClient(),
 		seedClient: seedClient,

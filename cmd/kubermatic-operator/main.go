@@ -31,13 +31,13 @@ import (
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8c.io/kubermatic/v2/pkg/signals"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/klog"
-	ctrl "sigs.k8s.io/controller-runtime"
-	ctrllog "sigs.k8s.io/controller-runtime/pkg/log"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 type controllerRunOptions struct {
@@ -80,7 +80,7 @@ func main() {
 	kubermaticlog.Logger = log
 
 	// set the logger used by sigs.k8s.io/controller-runtime
-	ctrllog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
+	ctrlruntimelog.SetLogger(zapr.NewLogger(rawLog.WithOptions(zap.AddCallerSkip(1))))
 
 	if len(opt.namespace) == 0 {
 		log.Fatal("-namespace is a mandatory flag")
@@ -89,13 +89,13 @@ func main() {
 	v := kubermatic.NewDefaultVersions()
 	log.With("kubermatic", v.Kubermatic, "ui", v.UI).Infof("Moin, moin, I'm the Kubermatic %s Operator and these are the versions I work with.", v.KubermaticEdition)
 
-	mgr, err := manager.New(ctrl.GetConfigOrDie(), manager.Options{
+	mgr, err := manager.New(ctrlruntime.GetConfigOrDie(), manager.Options{
 		MetricsBindAddress: opt.internalAddr,
 		LeaderElection:     opt.enableLeaderElection,
 		LeaderElectionID:   "operator.kubermatic.io",
 	})
 	if err != nil {
-		log.Fatalw("Failed to create Controller Manager instance: %v", err)
+		log.Fatalw("Failed to create Controller Manager instance", zap.Error(err))
 	}
 
 	if err := mgr.Add(pprofOpts); err != nil {

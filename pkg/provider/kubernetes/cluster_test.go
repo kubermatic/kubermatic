@@ -25,7 +25,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
@@ -38,7 +37,7 @@ func TestCreateCluster(t *testing.T) {
 	testcases := []struct {
 		name                      string
 		workerName                string
-		existingKubermaticObjects []runtime.Object
+		existingKubermaticObjects []ctrlruntimeclient.Object
 		project                   *kubermaticv1.Project
 		userInfo                  *provider.UserInfo
 		spec                      *kubermaticv1.ClusterSpec
@@ -55,7 +54,7 @@ func TestCreateCluster(t *testing.T) {
 			project:         genDefaultProject(),
 			spec:            genClusterSpec("test-k8s"),
 			clusterType:     "kubernetes",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				createAuthenitactedUser(),
 				genDefaultProject(),
 			},
@@ -73,7 +72,7 @@ func TestCreateCluster(t *testing.T) {
 			project:         genDefaultProject(),
 			spec:            genClusterSpec("test-openshift"),
 			clusterType:     "openshift",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				createAuthenitactedUser(),
 				genDefaultProject(),
 			},
@@ -98,7 +97,7 @@ func TestCreateCluster(t *testing.T) {
 				return spec
 			}(),
 			clusterType: "kubernetes",
-			existingKubermaticObjects: []runtime.Object{
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
 				createAuthenitactedUser(),
 				genDefaultProject(),
 			},
@@ -110,7 +109,12 @@ func TestCreateCluster(t *testing.T) {
 
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingKubermaticObjects...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingKubermaticObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}

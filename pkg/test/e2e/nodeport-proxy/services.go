@@ -29,7 +29,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Based on:
@@ -37,7 +37,7 @@ import (
 // ServiceJig is a jig to help service testing.
 type ServiceJig struct {
 	Log       *zap.SugaredLogger
-	Client    ctrlclient.Client
+	Client    ctrlruntimeclient.Client
 	Namespace string
 
 	Services    []*corev1.Service

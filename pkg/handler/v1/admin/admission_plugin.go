@@ -30,8 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ListAdmissionPluginEndpoint returns admission plugin list
@@ -109,13 +107,16 @@ func UpdateAdmissionPluginEndpoint(userInfoGetter provider.UserInfoGetter, admis
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		editedAdmissionPlugin, err := admissionPluginProvider.Update(userInfo, &kubermaticv1.AdmissionPlugin{
-			ObjectMeta: v1.ObjectMeta{Name: req.Name},
-			Spec: kubermaticv1.AdmissionPluginSpec{
-				PluginName:  req.Body.Plugin,
-				FromVersion: req.Body.FromVersion,
-			},
-		})
+
+		currentPlugin, err := admissionPluginProvider.Get(userInfo, req.Name)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		currentPlugin.Spec.PluginName = req.Body.Plugin
+		currentPlugin.Spec.FromVersion = req.Body.FromVersion
+
+		editedAdmissionPlugin, err := admissionPluginProvider.Update(userInfo, currentPlugin)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

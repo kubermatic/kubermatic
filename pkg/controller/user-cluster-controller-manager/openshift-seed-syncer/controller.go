@@ -61,7 +61,6 @@ func Add(
 	clusterNamespace string,
 ) error {
 	r := &reconciler{
-		ctx:                    context.Background(),
 		log:                    log.Named(controllerName),
 		userClusterClient:      mgr.GetClient(),
 		seedClient:             seedMgr.GetClient(),
@@ -96,7 +95,6 @@ func Add(
 }
 
 type reconciler struct {
-	ctx                    context.Context
 	log                    *zap.SugaredLogger
 	userClusterClient      ctrlruntimeclient.Client
 	seedClient             ctrlruntimeclient.Client
@@ -105,16 +103,16 @@ type reconciler struct {
 	clusterNamespace       string
 }
 
-func (r *reconciler) getCACert() (*x509.Certificate, error) {
-	pair, err := resources.GetClusterRootCA(r.ctx, r.clusterNamespace, r.seedClient)
+func (r *reconciler) getCACert(ctx context.Context) (*x509.Certificate, error) {
+	pair, err := resources.GetClusterRootCA(ctx, r.clusterNamespace, r.seedClient)
 	if err != nil {
 		return nil, err
 	}
 	return pair.Cert, nil
 }
 
-func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
-	result, err := r.reconcile()
+func (r *reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
+	result, err := r.reconcile(ctx)
 	if err != nil {
 		r.log.Errorw("Reconciliation failed", zap.Error(err))
 	}
@@ -124,9 +122,9 @@ func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 	return *result, err
 }
 
-func (r *reconciler) reconcile() (*reconcile.Result, error) {
+func (r *reconciler) reconcile(ctx context.Context) (*reconcile.Result, error) {
 	serviceAccount := &corev1.ServiceAccount{}
-	if err := r.userClusterClient.Get(r.ctx, types.NamespacedName{Namespace: "kube-system", Name: userclusteropenshiftresources.TokenOwnerServiceAccountName}, serviceAccount); err != nil {
+	if err := r.userClusterClient.Get(ctx, types.NamespacedName{Namespace: "kube-system", Name: userclusteropenshiftresources.TokenOwnerServiceAccountName}, serviceAccount); err != nil {
 		if !kerrors.IsNotFound(err) {
 			return nil, fmt.Errorf("error trying to get ServiceAccount: %v", err)
 		}
@@ -145,7 +143,7 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 		Namespace: metav1.NamespaceSystem,
 		Name:      serviceAccount.Secrets[0].Name,
 	}
-	if err := r.userClusterClient.Get(r.ctx, tokenSecretName, tokenSecret); err != nil {
+	if err := r.userClusterClient.Get(ctx, tokenSecretName, tokenSecret); err != nil {
 		return nil, fmt.Errorf("failed to get token secret from user cluster: %v", err)
 	}
 	if len(tokenSecret.Data["token"]) == 0 {
@@ -154,7 +152,7 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 	}
 	token := string(tokenSecret.Data["token"])
 
-	caCert, err := r.getCACert()
+	caCert, err := r.getCACert(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get caCert: %v", err)
 	}
@@ -165,7 +163,7 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 		consoleOAuthSecretCreatorGetter(r.userClusterClient),
 	}
 	if err := reconciling.ReconcileSecrets(
-		r.ctx,
+		ctx,
 		secretCreators,
 		r.clusterNamespace,
 		r.seedClient,

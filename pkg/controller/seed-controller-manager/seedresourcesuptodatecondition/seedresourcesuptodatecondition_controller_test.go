@@ -26,7 +26,6 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilpointer "k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -38,11 +37,12 @@ import (
 // and make an if err := r.reconcile(); err != nil {} simplication,
 // accidentally shortcircuiting the workqeue and retrying
 func TestReconcileReturnsError(t *testing.T) {
+	ctx := context.Background()
 	r := &reconciler{
-		client: &fakeClientThatErrorsOnGet{fakectrlruntimeclient.NewFakeClient()},
+		client: &fakeClientThatErrorsOnGet{fakectrlruntimeclient.NewClientBuilder().Build()},
 	}
 	expectedErr := `failed to get cluster "": erroring on get as requested`
-	if _, err := r.Reconcile(reconcile.Request{}); err == nil || err.Error() != expectedErr {
+	if _, err := r.Reconcile(ctx, reconcile.Request{}); err == nil || err.Error() != expectedErr {
 		t.Fatalf("Expected error %v, got error %v", expectedErr, err)
 	}
 }
@@ -54,7 +54,7 @@ type fakeClientThatErrorsOnGet struct {
 func (f *fakeClientThatErrorsOnGet) Get(
 	_ context.Context,
 	key ctrlruntimeclient.ObjectKey,
-	_ runtime.Object,
+	_ ctrlruntimeclient.Object,
 ) error {
 	return errors.New("erroring on get as requested")
 }
@@ -121,13 +121,13 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 	testcases := []struct {
 		name                      string
 		cluster                   *kubermaticv1.Cluster
-		resources                 []runtime.Object
+		resources                 []ctrlruntimeclient.Object
 		expectedHasConditionValue bool
 	}{
 		{
 			name:    "statefulSet resources are not yet updated",
 			cluster: cluster(),
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				inProgressStatefulSet,
 			},
 			expectedHasConditionValue: false,
@@ -135,7 +135,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 		{
 			name:    "deployments resources are not yet updated",
 			cluster: cluster(),
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				inProgressDeployment,
 			},
 			expectedHasConditionValue: false,
@@ -143,7 +143,7 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 		{
 			name:    "cluster resources have finished updating successfully",
 			cluster: cluster(),
-			resources: []runtime.Object{
+			resources: []ctrlruntimeclient.Object{
 				readyStatefulSet,
 				readyDeployment,
 			},
@@ -151,14 +151,18 @@ func TestSetSeedResourcesUpToDateCondition(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
 	for _, testCase := range testcases {
 		t.Run(testCase.name, func(t *testing.T) {
-			client := fakectrlruntimeclient.NewFakeClient(append(testCase.resources, testCase.cluster)...)
+			ctx := context.Background()
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithObjects(append(testCase.resources, testCase.cluster)...).
+				Build()
+
 			r := &reconciler{
 				client: client,
 			}
-			if err := r.reconcile(testCase.cluster); err != nil {
+			if err := r.reconcile(ctx, testCase.cluster); err != nil {
 				t.Fatalf("Error calling reconcile: %v", err)
 			}
 

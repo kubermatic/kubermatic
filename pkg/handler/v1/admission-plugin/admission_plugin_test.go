@@ -34,8 +34,8 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func TestCredentialEndpoint(t *testing.T) {
@@ -49,14 +49,14 @@ func TestCredentialEndpoint(t *testing.T) {
 	testcases := []struct {
 		name             string
 		version          string
-		plugins          []runtime.Object
+		plugins          []ctrlruntimeclient.Object
 		httpStatus       int
 		expectedResponse string
 	}{
 		{
 			name:    "test get default plugins",
 			version: "1.13",
-			plugins: []runtime.Object{
+			plugins: []ctrlruntimeclient.Object{
 				&kubermaticv1.AdmissionPlugin{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "first",
@@ -73,7 +73,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:    "test get plugins for version 1.14",
 			version: "1.14.5",
-			plugins: []runtime.Object{
+			plugins: []ctrlruntimeclient.Object{
 				&kubermaticv1.AdmissionPlugin{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "first",
@@ -90,7 +90,7 @@ func TestCredentialEndpoint(t *testing.T) {
 		{
 			name:    "test get plugins for all versions",
 			version: "1.13.5",
-			plugins: []runtime.Object{
+			plugins: []ctrlruntimeclient.Object{
 				&kubermaticv1.AdmissionPlugin{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "first",

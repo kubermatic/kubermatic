@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -35,7 +34,7 @@ type NamedUnstructuredCreatorGetter = func() (name, kind, apiVersion string, cre
 // UnstructuredObjectWrapper adds a wrapper so the UnstructuredCreator matches ObjectCreator.
 // This is needed as Go does not support function interface matching.
 func UnstructuredObjectWrapper(create UnstructuredCreator, emptyObject *unstructured.Unstructured) ObjectCreator {
-	return func(existing runtime.Object) (runtime.Object, error) {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
 			return create(existing.(*unstructured.Unstructured))
 		}

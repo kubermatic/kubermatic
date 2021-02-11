@@ -35,7 +35,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -53,7 +52,6 @@ const (
 )
 
 type reconciler struct {
-	ctx        context.Context
 	log        *zap.SugaredLogger
 	seedClient ctrlruntimeclient.Client
 	userClient ctrlruntimeclient.Client
@@ -64,7 +62,6 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		ctx:        ctx,
 		log:        log,
 		seedClient: seedMgr.GetClient(),
 		userClient: userMgr.GetClient(),
@@ -86,12 +83,12 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 	return nil
 }
 
-func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("resource", request)
 	log.Debug("Reconciling")
 
 	constraint := &kubermaticv1.Constraint{}
-	if err := r.seedClient.Get(r.ctx, request.NamespacedName, constraint); err != nil {
+	if err := r.seedClient.Get(ctx, request.NamespacedName, constraint); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Debug("constraint not found, returning")
 			return reconcile.Result{}, nil
@@ -99,7 +96,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 		return reconcile.Result{}, fmt.Errorf("failed to get constraint: %v", err)
 	}
 
-	err := r.reconcile(constraint)
+	err := r.reconcile(ctx, constraint)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(constraint, corev1.EventTypeWarning, "ConstraintReconcileFailed", err.Error())
@@ -107,8 +104,7 @@ func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(constraint *kubermaticv1.Constraint) error {
-
+func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Constraint) error {
 	if constraint.DeletionTimestamp != nil {
 		if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer) {
 			return nil
@@ -122,13 +118,13 @@ func (r *reconciler) reconcile(constraint *kubermaticv1.Constraint) error {
 		})
 		toDelete.SetName(constraint.Name)
 
-		if err := r.userClient.Delete(r.ctx, toDelete); err != nil {
+		if err := r.userClient.Delete(ctx, toDelete); err != nil {
 			return fmt.Errorf("failed to delete constraint: %v", err)
 		}
 
 		oldConstraint := constraint.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
-		if err := r.seedClient.Patch(r.ctx, constraint, client.MergeFrom(oldConstraint)); err != nil {
+		if err := r.seedClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldConstraint)); err != nil {
 			return fmt.Errorf("failed to remove constraint finalizer %s: %v", constraint.Name, err)
 		}
 		return nil
@@ -137,7 +133,7 @@ func (r *reconciler) reconcile(constraint *kubermaticv1.Constraint) error {
 	if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer) {
 		oldConstraint := constraint.DeepCopy()
 		kuberneteshelper.AddFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
-		if err := r.seedClient.Patch(r.ctx, constraint, client.MergeFrom(oldConstraint)); err != nil {
+		if err := r.seedClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldConstraint)); err != nil {
 			return fmt.Errorf("failed to set constraint finalizer %s: %v", constraint.Name, err)
 		}
 	}
@@ -146,7 +142,7 @@ func (r *reconciler) reconcile(constraint *kubermaticv1.Constraint) error {
 		constraintCreatorGetter(constraint),
 	}
 
-	if err := reconciling.ReconcileUnstructureds(r.ctx, constraintCreatorGetters, "", r.userClient); err != nil {
+	if err := reconciling.ReconcileUnstructureds(ctx, constraintCreatorGetters, "", r.userClient); err != nil {
 		return fmt.Errorf("failed to reconcile constraint: %v", err)
 	}
 
@@ -186,7 +182,6 @@ func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 }
 
 func unmarshallToJSONMap(object interface{}) (map[string]interface{}, error) {
-
 	raw, err := json.Marshal(object)
 	if err != nil {
 		return nil, fmt.Errorf("error marshalling: %v", err)

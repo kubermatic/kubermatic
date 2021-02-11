@@ -31,7 +31,6 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	utilpointer "k8s.io/utils/pointer"
@@ -418,15 +417,12 @@ func TestDefaultDeployment(t *testing.T) {
 		},
 	}
 
-	client := controllerruntimefake.NewFakeClient(existingObject)
+	client := controllerruntimefake.NewClientBuilder().WithObjects(existingObject).Build()
 	if err := ReconcileDeployments(context.Background(), creators, testNamespace, client); err != nil {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}
 
-	key, err := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
-	if err != nil {
-		t.Fatalf("Failed to generate a ObjectKey for the expected object: %v", err)
-	}
+	key := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
 
 	actualDeployment := &appsv1.Deployment{}
 	if err := client.Get(context.Background(), key, actualDeployment); err != nil {
@@ -489,15 +485,12 @@ func TestDefaultStatefulSet(t *testing.T) {
 		},
 	}
 
-	client := controllerruntimefake.NewFakeClient(existingObject)
+	client := controllerruntimefake.NewClientBuilder().WithObjects(existingObject).Build()
 	if err := ReconcileStatefulSets(context.Background(), creators, testNamespace, client); err != nil {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}
 
-	key, err := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
-	if err != nil {
-		t.Fatalf("Failed to generate a ObjectKey for the expected object: %v", err)
-	}
+	key := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
 
 	actualStatefulSet := &appsv1.StatefulSet{}
 	if err := client.Get(context.Background(), key, actualStatefulSet); err != nil {
@@ -560,15 +553,12 @@ func TestDefaultDaemonSet(t *testing.T) {
 		},
 	}
 
-	client := controllerruntimefake.NewFakeClient(existingObject)
+	client := controllerruntimefake.NewClientBuilder().WithObjects(existingObject).Build()
 	if err := ReconcileDaemonSets(context.Background(), creators, testNamespace, client); err != nil {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}
 
-	key, err := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
-	if err != nil {
-		t.Fatalf("Failed to generate a ObjectKey for the expected object: %v", err)
-	}
+	key := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
 
 	actualDaemonSet := &appsv1.DaemonSet{}
 	if err := client.Get(context.Background(), key, actualDaemonSet); err != nil {
@@ -639,15 +629,12 @@ func TestDefaultCronJob(t *testing.T) {
 		},
 	}
 
-	client := controllerruntimefake.NewFakeClient(existingObject)
+	client := controllerruntimefake.NewClientBuilder().WithObjects(existingObject).Build()
 	if err := ReconcileCronJobs(context.Background(), creators, testNamespace, client); err != nil {
 		t.Errorf("EnsureObject returned an error while none was expected: %v", err)
 	}
 
-	key, err := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
-	if err != nil {
-		t.Fatalf("Failed to generate a ObjectKey for the expected object: %v", err)
-	}
+	key := controllerruntimeclient.ObjectKeyFromObject(expectedObject)
 
 	actualCronJob := &batchv1beta1.CronJob{}
 	if err := client.Get(context.Background(), key, actualCronJob); err != nil {
@@ -776,7 +763,7 @@ func TestImagePullSecretsWrapper(t *testing.T) {
 	tests := []struct {
 		name            string
 		secretNames     []string
-		inputObj        runtime.Object
+		inputObj        controllerruntimeclient.Object
 		wantSecretNames []string
 		wantErr         bool
 	}{
@@ -850,6 +837,6 @@ func TestImagePullSecretsWrapper(t *testing.T) {
 // identityCreator is an ObjectModifier that returns the input object
 // untouched.
 // TODO(irozzo) May be useful to move this in a test package?
-func identityCreator(obj runtime.Object) (runtime.Object, error) {
+func identityCreator(obj controllerruntimeclient.Object) (controllerruntimeclient.Object, error) {
 	return obj, nil
 }

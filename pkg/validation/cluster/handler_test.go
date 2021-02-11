@@ -23,16 +23,17 @@ import (
 	"text/template"
 
 	logrtesting "github.com/go-logr/logr/testing"
-	admissionv1beta1 "k8s.io/api/admission/v1beta1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"sigs.k8s.io/controller-runtime/pkg/webhook"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+
 	"k8c.io/kubermatic/v2/pkg/features"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	admissionv1 "k8s.io/api/admission/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var (
@@ -49,13 +50,13 @@ func TestHandle(t *testing.T) {
 		req         webhook.AdmissionRequest
 		wantAllowed bool
 		features    features.FeatureGate
-		client      client.Client
+		client      ctrlruntimeclient.Client
 	}{
 		{
 			name: "Delete cluster success",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Delete,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Delete,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -69,8 +70,8 @@ func TestHandle(t *testing.T) {
 		{
 			name: "Create cluster with Tunneling expose strategy succeeds when the FeatureGate is enabled",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Create,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -88,8 +89,8 @@ func TestHandle(t *testing.T) {
 		{
 			name: "Create cluster with Tunneling expose strategy fails when the FeatureGate is not enabled",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Create,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -107,8 +108,8 @@ func TestHandle(t *testing.T) {
 		{
 			name: "Create cluster expose strategy different from Tunneling should succeed",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Create,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -125,8 +126,8 @@ func TestHandle(t *testing.T) {
 		{
 			name: "Unknown expose strategy",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Create,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -143,8 +144,8 @@ func TestHandle(t *testing.T) {
 		{
 			name: "Reject EnableUserSSHKey agent update",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Update,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -157,7 +158,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: false,
-			client: fake.NewFakeClient(
+			client: ctrlruntimefakeclient.NewClientBuilder().WithObjects(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "foo",
@@ -165,13 +166,14 @@ func TestHandle(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						EnableUserSSHKeyAgent: true,
 					},
-				}),
+				},
+			).Build(),
 		},
 		{
 			name: "Accept EnableUserSSHKey agent update when the value did not change",
 			req: webhook.AdmissionRequest{
-				AdmissionRequest: admissionv1beta1.AdmissionRequest{
-					Operation: admissionv1beta1.Update,
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
 					RequestKind: &metav1.GroupVersionKind{
 						Group:   kubermaticv1.GroupName,
 						Version: kubermaticv1.GroupVersion,
@@ -184,7 +186,7 @@ func TestHandle(t *testing.T) {
 				},
 			},
 			wantAllowed: true,
-			client: fake.NewFakeClient(
+			client: ctrlruntimefakeclient.NewClientBuilder().WithObjects(
 				&kubermaticv1.Cluster{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "foo",
@@ -192,7 +194,8 @@ func TestHandle(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						EnableUserSSHKeyAgent: false,
 					},
-				}),
+				},
+			).Build(),
 		},
 	}
 	for _, tt := range tests {

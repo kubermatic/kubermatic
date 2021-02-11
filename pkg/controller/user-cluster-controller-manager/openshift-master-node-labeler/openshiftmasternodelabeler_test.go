@@ -25,7 +25,6 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
@@ -34,12 +33,12 @@ import (
 func TestReconciliation(t *testing.T) {
 	testCases := []struct {
 		name   string
-		nodes  []runtime.Object
+		nodes  []ctrlruntimeclient.Object
 		verify func(*reconcile.Result, error, ctrlruntimeclient.Client) error
 	}{
 		{
 			name: "Labeled nodes already exist, nothing to do",
-			nodes: []runtime.Object{
+			nodes: []ctrlruntimeclient.Object{
 				&corev1.Node{ObjectMeta: metav1.ObjectMeta{
 					Name:   "one",
 					Labels: map[string]string{"node-role.kubernetes.io/master": ""},
@@ -69,7 +68,7 @@ func TestReconciliation(t *testing.T) {
 		},
 		{
 			name: "Labeling one node",
-			nodes: []runtime.Object{
+			nodes: []ctrlruntimeclient.Object{
 				&corev1.Node{ObjectMeta: metav1.ObjectMeta{
 					Name: "one",
 				}},
@@ -108,7 +107,7 @@ func TestReconciliation(t *testing.T) {
 		},
 		{
 			name: "Labeling one node",
-			nodes: []runtime.Object{
+			nodes: []ctrlruntimeclient.Object{
 				&corev1.Node{ObjectMeta: metav1.ObjectMeta{
 					Name: "three",
 				}},
@@ -154,9 +153,11 @@ func TestReconciliation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			client := fake.NewFakeClient(tc.nodes...)
+			ctx := context.Background()
+			client := fake.NewClientBuilder().WithObjects(tc.nodes...).Build()
+
 			r := &reconciler{client: client}
-			result, err := r.reconcile()
+			result, err := r.reconcile(ctx)
 			if err := tc.verify(result, err, client); err != nil {
 				t.Fatalf("verification failed: %v", err)
 			}

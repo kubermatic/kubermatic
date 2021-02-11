@@ -17,6 +17,7 @@ limitations under the License.
 package kubernetes_test
 
 import (
+	"context"
 	"sort"
 	"testing"
 	"time"
@@ -27,13 +28,14 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticfakeclentset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -42,14 +44,14 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 	testcases := []struct {
 		name           string
 		existingUser   *kubermaticapiv1.User
-		existingObjs   []runtime.Object
+		existingObjs   []ctrlruntimeclient.Object
 		token          string
 		expiry         apiv1.Time
 		expectedTokens []string
 	}{
 		{
 			name: "scenario 1: add token to not existing list",
-			existingObjs: []runtime.Object{
+			existingObjs: []ctrlruntimeclient.Object{
 				genUser("", "john", "john@acme.com"),
 			},
 			existingUser:   genUser("", "john", "john@acme.com"),
@@ -59,7 +61,7 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 		},
 		{
 			name: "scenario 2: add expired token to not existing list",
-			existingObjs: []runtime.Object{
+			existingObjs: []ctrlruntimeclient.Object{
 				genUser("", "john", "john@acme.com"),
 			},
 			existingUser:   genUser("", "john", "john@acme.com"),
@@ -69,7 +71,7 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 		},
 		{
 			name: "scenario 3: add token to existing list",
-			existingObjs: []runtime.Object{
+			existingObjs: []ctrlruntimeclient.Object{
 				func() *corev1.Secret {
 					user := genUser("", "john", "john@acme.com")
 					return test.GenBlacklistTokenSecret(user.GetTokenBlackListSecretName(), []byte(`[{"token":"fakeTokenId-1","expiry":"2222-06-20T12:04:00Z"},{"token":"fakeTokenId-2","expiry":"2000-06-20T12:04:00Z"}]`))
@@ -93,7 +95,7 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 		},
 		{
 			name: "scenario 4: add expired token to existing list",
-			existingObjs: []runtime.Object{
+			existingObjs: []ctrlruntimeclient.Object{
 				func() *corev1.Secret {
 					user := genUser("", "john", "john@acme.com")
 					return test.GenBlacklistTokenSecret(user.GetTokenBlackListSecretName(), []byte(`[{"token":"fakeTokenId-1","expiry":"2222-06-20T12:04:00Z"},{"token":"fakeTokenId-2","expiry":"2000-06-20T12:04:00Z"}]`))
@@ -118,17 +120,29 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			existingObj := []runtime.Object{}
+			ctx := context.Background()
+			existingObj := []ctrlruntimeclient.Object{}
 			existingObj = append(existingObj, tc.existingObjs...)
-			fakeClient := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, existingObj...)
+			fakeClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(existingObj...).
+				Build()
+
 			kubermaticClient := kubermaticfakeclentset.NewSimpleClientset()
+
+			// fetch user to get the ResourceVersion
+			user := &kubermaticv1.User{}
+			if err := fakeClient.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tc.existingUser), user); err != nil {
+				t.Fatal(err)
+			}
 
 			// act
 			target := kubernetes.NewUserProvider(fakeClient, nil, kubermaticClient)
-			if err := target.AddUserTokenToBlacklist(tc.existingUser, tc.token, tc.expiry); err != nil {
+			if err := target.AddUserTokenToBlacklist(user, tc.token, tc.expiry); err != nil {
 				t.Fatal(err)
 			}
-			resultList, err := target.GetUserBlacklistTokens(tc.existingUser)
+			resultList, err := target.GetUserBlacklistTokens(user)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -136,7 +150,6 @@ func TestAddUserTokenToBlacklist(t *testing.T) {
 			sort.Strings(tc.expectedTokens)
 
 			assert.Equal(t, resultList, tc.expectedTokens)
-
 		})
 	}
 }

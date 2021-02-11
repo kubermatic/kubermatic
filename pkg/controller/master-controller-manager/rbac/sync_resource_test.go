@@ -22,23 +22,23 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	fakeruntime "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	k8scorev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestSyncProjectResourcesClusterWide(t *testing.T) {
 	tests := []struct {
 		name                        string
-		dependantToSync             runtime.Object
+		dependantToSync             ctrlruntimeclient.Object
 		expectedClusterRoles        []*rbacv1.ClusterRole
 		existingClusterRoles        []*rbacv1.ClusterRole
 		expectedClusterRoleBindings []*rbacv1.ClusterRoleBinding
@@ -698,7 +698,9 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-			objs := []runtime.Object{test.dependantToSync}
+			ctx := context.Background()
+
+			objs := []ctrlruntimeclient.Object{test.dependantToSync}
 			for _, existingClusterRole := range test.existingClusterRoles {
 				objs = append(objs, existingClusterRole)
 			}
@@ -707,17 +709,18 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 				objs = append(objs, existingClusterRoleBinding)
 			}
 
-			fakeMasterClusterClient := fakeruntime.NewFakeClient(objs...)
+			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
+
 			// act
 			target := resourcesController{
 				client:     fakeMasterClusterClient,
 				restMapper: getFakeRestMapper(t),
-				objectType: test.dependantToSync.DeepCopyObject(),
+				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
-			key := client.ObjectKey{Name: objmeta.GetName(), Namespace: objmeta.GetNamespace()}
-			err = target.syncProjectResource(key)
+			key := ctrlruntimeclient.ObjectKey{Name: objmeta.GetName(), Namespace: objmeta.GetNamespace()}
+			err = target.syncProjectResource(ctx, key)
 
 			// validate
 			if err != nil && !test.expectError {
@@ -781,7 +784,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 func TestSyncProjectResourcesNamespaced(t *testing.T) {
 	tests := []struct {
 		name                 string
-		dependantToSync      runtime.Object
+		dependantToSync      ctrlruntimeclient.Object
 		expectedRoles        []*rbacv1.Role
 		existingRoles        []*rbacv1.Role
 		expectedRoleBindings []*rbacv1.RoleBinding
@@ -870,7 +873,9 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-			objs := []runtime.Object{test.dependantToSync}
+			ctx := context.Background()
+
+			objs := []ctrlruntimeclient.Object{test.dependantToSync}
 			for _, existingRole := range test.existingRoles {
 				objs = append(objs, existingRole)
 			}
@@ -879,17 +884,17 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 				objs = append(objs, existingRoleBinding)
 			}
 
-			fakeMasterClusterClient := fakeruntime.NewFakeClient(objs...)
+			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 			// act
 			target := resourcesController{
 				client:     fakeMasterClusterClient,
 				restMapper: getFakeRestMapper(t),
-				objectType: test.dependantToSync.DeepCopyObject(),
+				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
-			key := client.ObjectKey{Name: objmeta.GetName(), Namespace: objmeta.GetNamespace()}
-			err = target.syncProjectResource(key)
+			key := ctrlruntimeclient.ObjectKey{Name: objmeta.GetName(), Namespace: objmeta.GetNamespace()}
+			err = target.syncProjectResource(ctx, key)
 
 			// validate
 			if !test.expectError {
@@ -1404,11 +1409,11 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-			objs := []runtime.Object{}
+			objs := []ctrlruntimeclient.Object{}
 			for _, existingClusterRoleBinding := range test.existingClusterRoleBindings {
 				objs = append(objs, existingClusterRoleBinding)
 			}
-			fakeMasterClusterClient := fakeruntime.NewFakeClient(objs...)
+			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
 			err := ensureClusterRBACRoleBindingForNamedResource(context.Background(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
@@ -1834,11 +1839,11 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
-			objs := []runtime.Object{}
+			objs := []ctrlruntimeclient.Object{}
 			for _, existingClusterRole := range test.existingClusterRoles {
 				objs = append(objs, existingClusterRole)
 			}
-			fakeMasterClusterClient := fakeruntime.NewFakeClient(objs...)
+			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			// act
 			err := ensureClusterRBACRoleForNamedResource(context.Background(), fakeMasterClusterClient, test.projectToSync.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, test.projectToSync.GetObjectMeta())
@@ -1857,8 +1862,10 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 					// double-iterating over both slices might not be the most efficient way
 					// but it spares the trouble of converting pointers to values
 					// and then sorting everything for the comparison.
+					expectedClusterRole.ResourceVersion = ""
 
 					for _, existingClusterRole := range clusterRoles.Items {
+						existingClusterRole.ResourceVersion = ""
 						if reflect.DeepEqual(*expectedClusterRole, existingClusterRole) {
 							continue expectedClusterRolesLoop
 						}

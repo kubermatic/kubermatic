@@ -33,16 +33,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
 	CleanupFinalizerName = "kubermatic.io/controller-manager-rbac-cleanup"
 )
 
-func (c *projectController) sync(key client.ObjectKey) error {
+func (c *projectController) sync(ctx context.Context, key ctrlruntimeclient.ObjectKey) error {
 	var originalProject kubermaticv1.Project
-	if err := c.client.Get(c.ctx, key, &originalProject); err != nil {
+	if err := c.client.Get(ctx, key, &originalProject); err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil
 		}
@@ -53,67 +53,67 @@ func (c *projectController) sync(key client.ObjectKey) error {
 	project := originalProject.DeepCopy()
 
 	if c.shouldDeleteProject(project) {
-		if err := c.ensureProjectCleanup(project); err != nil {
+		if err := c.ensureProjectCleanup(ctx, project); err != nil {
 			return fmt.Errorf("failed to cleanup project: %v", err)
 		}
 		return nil
 	}
 
-	if err := c.ensureCleanupFinalizerExists(project); err != nil {
+	if err := c.ensureCleanupFinalizerExists(ctx, project); err != nil {
 		return fmt.Errorf("failed to ensure that the cleanup finalizer exists on the project: %v", err)
 	}
-	if err := c.ensureProjectOwner(project); err != nil {
+	if err := c.ensureProjectOwner(ctx, project); err != nil {
 		return fmt.Errorf("failed to ensure that the project owner exists in the owners group: %v", err)
 	}
-	if err := ensureClusterRBACRoleForNamedResource(c.ctx, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
+	if err := ensureClusterRBACRoleForNamedResource(ctx, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Role for the project exists: %v", err)
 	}
-	if err := ensureClusterRBACRoleBindingForNamedResource(c.ctx, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
+	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, c.client, project.Name, kubermaticv1.ProjectResourceName, kubermaticv1.ProjectKindName, project.GetObjectMeta()); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RoleBinding for the project exists: %v", err)
 	}
-	if err := c.ensureClusterRBACRoleForResources(); err != nil {
+	if err := c.ensureClusterRBACRoleForResources(ctx); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC ClusterRoles for the project's resources exists: %v", err)
 	}
-	if err := c.ensureClusterRBACRoleBindingForResources(project.Name); err != nil {
+	if err := c.ensureClusterRBACRoleBindingForResources(ctx, project.Name); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC ClusterRoleBindings for the project's resources exists: %v", err)
 	}
-	if err := c.ensureRBACRoleForResources(); err != nil {
+	if err := c.ensureRBACRoleForResources(ctx); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC Roles for the project's resources exists: %v", err)
 	}
-	if err := c.ensureRBACRoleBindingForResources(project.Name); err != nil {
+	if err := c.ensureRBACRoleBindingForResources(ctx, project.Name); err != nil {
 		return fmt.Errorf("failed to ensure that the RBAC RolesBindings for the project's resources exists: %v", err)
 	}
-	if err := c.ensureProjectIsInActivePhase(project); err != nil {
+	if err := c.ensureProjectIsInActivePhase(ctx, project); err != nil {
 		return fmt.Errorf("failed to ensure that the project is set to active: %v", err)
 	}
 
 	return nil
 }
 
-func (c *projectController) ensureCleanupFinalizerExists(project *kubermaticv1.Project) error {
+func (c *projectController) ensureCleanupFinalizerExists(ctx context.Context, project *kubermaticv1.Project) error {
 	if !kuberneteshelper.HasFinalizer(project, CleanupFinalizerName) {
 		kuberneteshelper.AddFinalizer(project, CleanupFinalizerName)
-		return c.client.Update(c.ctx, project)
+		return c.client.Update(ctx, project)
 	}
 	return nil
 }
 
-func (c *projectController) ensureProjectIsInActivePhase(project *kubermaticv1.Project) error {
+func (c *projectController) ensureProjectIsInActivePhase(ctx context.Context, project *kubermaticv1.Project) error {
 	if project.Status.Phase == kubermaticv1.ProjectInactive {
 		project.Status.Phase = kubermaticv1.ProjectActive
-		return c.client.Update(c.ctx, project)
+		return c.client.Update(ctx, project)
 	}
 	return nil
 }
 
 // ensureProjectOwner makes sure that the owner of the project is assign to "owners" group
-func (c *projectController) ensureProjectOwner(project *kubermaticv1.Project) error {
+func (c *projectController) ensureProjectOwner(ctx context.Context, project *kubermaticv1.Project) error {
 	var sharedOwnerPtr *kubermaticv1.User
 	for _, ref := range project.OwnerReferences {
 		if ref.Kind == kubermaticv1.UserKindName {
 			var sharedOwner kubermaticv1.User
 			key := types.NamespacedName{Name: ref.Name}
-			if err := c.client.Get(c.ctx, key, &sharedOwner); err != nil {
+			if err := c.client.Get(ctx, key, &sharedOwner); err != nil {
 				return err
 			}
 			sharedOwnerPtr = &sharedOwner
@@ -125,7 +125,7 @@ func (c *projectController) ensureProjectOwner(project *kubermaticv1.Project) er
 	owner := sharedOwnerPtr.DeepCopy()
 
 	var bindings kubermaticv1.UserProjectBindingList
-	if err := c.client.List(c.ctx, &bindings); err != nil {
+	if err := c.client.List(ctx, &bindings); err != nil {
 		return err
 	}
 
@@ -155,10 +155,10 @@ func (c *projectController) ensureProjectOwner(project *kubermaticv1.Project) er
 		},
 	}
 
-	return c.client.Create(c.ctx, ownerBinding)
+	return c.client.Create(ctx, ownerBinding)
 }
 
-func (c *projectController) ensureClusterRBACRoleForResources() error {
+func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Context) error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) > 0 {
 			continue
@@ -174,13 +174,13 @@ func (c *projectController) ensureClusterRBACRoleForResources() error {
 
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
-					err := ensureClusterRBACRoleForResource(c.ctx, seedClusterRESTClient, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
+					err := ensureClusterRBACRoleForResource(ctx, seedClusterRESTClient, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := ensureClusterRBACRoleForResource(c.ctx, c.client, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
+				err := ensureClusterRBACRoleForResource(ctx, c.client, groupPrefix, rmapping.Resource.Resource, gvk.Kind)
 				if err != nil {
 					return err
 				}
@@ -190,7 +190,7 @@ func (c *projectController) ensureClusterRBACRoleForResources() error {
 	return nil
 }
 
-func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName string) error {
+func (c *projectController) ensureClusterRBACRoleBindingForResources(ctx context.Context, projectName string) error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) > 0 {
 			continue
@@ -214,7 +214,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
 					err := ensureClusterRBACRoleBindingForResource(
-						c.ctx,
+						ctx,
 						seedClusterRESTClient,
 						groupName,
 						rmapping.Resource.Resource)
@@ -224,7 +224,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName
 				}
 			} else {
 				err := ensureClusterRBACRoleBindingForResource(
-					c.ctx,
+					ctx,
 					c.client,
 					groupName,
 					rmapping.Resource.Resource)
@@ -237,7 +237,7 @@ func (c *projectController) ensureClusterRBACRoleBindingForResources(projectName
 	return nil
 }
 
-func ensureClusterRBACRoleForResource(ctx context.Context, c client.Client, groupName, resource, kind string) error {
+func ensureClusterRBACRoleForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource, kind string) error {
 	generatedClusterRole, err := generateClusterRBACRoleForResource(groupName, resource, kubermaticv1.SchemeGroupVersion.Group, kind)
 	if err != nil {
 		return err
@@ -246,6 +246,7 @@ func ensureClusterRBACRoleForResource(ctx context.Context, c client.Client, grou
 		klog.V(4).Infof("skipping ClusterRole generation because the resource for group %q and resource %q will not be created", groupName, resource)
 		return nil
 	}
+
 	var sharedExistingClusterRole rbacv1.ClusterRole
 	key := types.NamespacedName{Name: generatedClusterRole.Name}
 	if err := c.Get(ctx, key, &sharedExistingClusterRole); err != nil {
@@ -260,12 +261,13 @@ func ensureClusterRBACRoleForResource(ctx context.Context, c client.Client, grou
 	if equality.Semantic.DeepEqual(sharedExistingClusterRole.Rules, generatedClusterRole.Rules) {
 		return nil
 	}
+
 	existingClusterRole := sharedExistingClusterRole.DeepCopy()
 	existingClusterRole.Rules = generatedClusterRole.Rules
 	return c.Update(ctx, existingClusterRole)
 }
 
-func ensureClusterRBACRoleBindingForResource(ctx context.Context, c client.Client, groupName, resource string) error {
+func ensureClusterRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource string) error {
 	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
 
 	var sharedExistingClusterRoleBinding rbacv1.ClusterRoleBinding
@@ -303,7 +305,7 @@ func ensureClusterRBACRoleBindingForResource(ctx context.Context, c client.Clien
 	return c.Update(ctx, existingClusterRoleBinding)
 }
 
-func (c *projectController) ensureRBACRoleForResources() error {
+func (c *projectController) ensureRBACRoleForResources(ctx context.Context) error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) == 0 {
 			continue
@@ -320,7 +322,7 @@ func (c *projectController) ensureRBACRoleForResources() error {
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
 					err := ensureRBACRoleForResource(
-						c.ctx,
+						ctx,
 						seedClusterRESTClient,
 						groupPrefix,
 						rmapping.Resource,
@@ -332,7 +334,7 @@ func (c *projectController) ensureRBACRoleForResources() error {
 				}
 			} else {
 				err := ensureRBACRoleForResource(
-					c.ctx,
+					ctx,
 					c.client,
 					groupPrefix,
 					rmapping.Resource,
@@ -347,7 +349,7 @@ func (c *projectController) ensureRBACRoleForResources() error {
 	return nil
 }
 
-func ensureRBACRoleForResource(ctx context.Context, c client.Client, groupName string, gvr schema.GroupVersionResource, kind string, namespace string) error {
+func ensureRBACRoleForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName string, gvr schema.GroupVersionResource, kind string, namespace string) error {
 	generatedRole, err := generateRBACRoleForResource(groupName, gvr.Resource, gvr.Group, kind, namespace)
 	if err != nil {
 		return err
@@ -373,7 +375,7 @@ func ensureRBACRoleForResource(ctx context.Context, c client.Client, groupName s
 	return c.Update(ctx, existingRole)
 }
 
-func (c *projectController) ensureRBACRoleBindingForResources(projectName string) error {
+func (c *projectController) ensureRBACRoleBindingForResources(ctx context.Context, projectName string) error {
 	for _, projectResource := range c.projectResources {
 		if len(projectResource.namespace) == 0 {
 			continue
@@ -397,7 +399,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(projectName string
 			if projectResource.destination == destinationSeed {
 				for _, seedClusterRESTClient := range c.seedClientMap {
 					err := ensureRBACRoleBindingForResource(
-						c.ctx,
+						ctx,
 						seedClusterRESTClient,
 						groupName,
 						rmapping.Resource.Resource,
@@ -408,7 +410,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(projectName string
 				}
 			} else {
 				err := ensureRBACRoleBindingForResource(
-					c.ctx,
+					ctx,
 					c.client,
 					groupName,
 					rmapping.Resource.Resource,
@@ -422,7 +424,7 @@ func (c *projectController) ensureRBACRoleBindingForResources(projectName string
 	return nil
 }
 
-func ensureRBACRoleBindingForResource(ctx context.Context, c client.Client, groupName, resource, namespace string) error {
+func ensureRBACRoleBindingForResource(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource, namespace string) error {
 	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, namespace)
 
 	var sharedExistingRoleBinding rbacv1.RoleBinding
@@ -464,17 +466,17 @@ func ensureRBACRoleBindingForResource(ctx context.Context, c client.Client, grou
 // - removes no longer needed Subject from RBAC Binding for project's resources
 // - removes cluster resources on master and seed because for them we use Labels not OwnerReferences
 // - removes cleanupFinalizer
-func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) error {
+func (c *projectController) ensureProjectCleanup(ctx context.Context, project *kubermaticv1.Project) error {
 	// cluster resources don't have OwnerReferences set thus we need to manually remove them
 	for _, seedClient := range c.seedClientMap {
 		var listObj kubermaticv1.ClusterList
-		if err := seedClient.List(c.ctx, &listObj); err != nil {
+		if err := seedClient.List(ctx, &listObj); err != nil {
 			return err
 		}
 
 		for _, cluster := range listObj.Items {
 			if clusterProject := cluster.Labels[kubermaticv1.ProjectIDLabelKey]; clusterProject == project.Name {
-				if err := seedClient.Delete(c.ctx, &cluster); err != nil {
+				if err := seedClient.Delete(ctx, &cluster); err != nil {
 					return err
 				}
 			}
@@ -503,13 +505,13 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 
 			if projectResource.destination == destinationSeed {
 				for _, seedClient := range c.seedClientMap {
-					err := cleanUpClusterRBACRoleBindingFor(c.ctx, seedClient, groupName, rmapping.Resource.Resource)
+					err := cleanUpClusterRBACRoleBindingFor(ctx, seedClient, groupName, rmapping.Resource.Resource)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := cleanUpClusterRBACRoleBindingFor(c.ctx, c.client, groupName, rmapping.Resource.Resource)
+				err := cleanUpClusterRBACRoleBindingFor(ctx, c.client, groupName, rmapping.Resource.Resource)
 				if err != nil {
 					return err
 				}
@@ -539,13 +541,13 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 
 			if projectResource.destination == destinationSeed {
 				for _, seedClient := range c.seedClientMap {
-					err := cleanUpRBACRoleBindingFor(c.ctx, seedClient, groupName, rmapping.Resource.Resource, projectResource.namespace)
+					err := cleanUpRBACRoleBindingFor(ctx, seedClient, groupName, rmapping.Resource.Resource, projectResource.namespace)
 					if err != nil {
 						return err
 					}
 				}
 			} else {
-				err := cleanUpRBACRoleBindingFor(c.ctx, c.client, groupName, rmapping.Resource.Resource, projectResource.namespace)
+				err := cleanUpRBACRoleBindingFor(ctx, c.client, groupName, rmapping.Resource.Resource, projectResource.namespace)
 				if err != nil {
 					return err
 				}
@@ -554,10 +556,10 @@ func (c *projectController) ensureProjectCleanup(project *kubermaticv1.Project) 
 	}
 
 	kuberneteshelper.RemoveFinalizer(project, CleanupFinalizerName)
-	return c.client.Update(c.ctx, project)
+	return c.client.Update(ctx, project)
 }
 
-func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c client.Client, groupName, resource string) error {
+func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource string) error {
 	generatedClusterRoleBinding := generateClusterRBACRoleBindingForResource(resource, groupName)
 	var sharedExistingClusterRoleBinding rbacv1.ClusterRoleBinding
 	key := types.NamespacedName{Name: generatedClusterRoleBinding.Name}
@@ -585,7 +587,7 @@ func cleanUpClusterRBACRoleBindingFor(ctx context.Context, c client.Client, grou
 	return c.Update(ctx, existingClusterRoleBinding)
 }
 
-func cleanUpRBACRoleBindingFor(ctx context.Context, c client.Client, groupName, resource, namespace string) error {
+func cleanUpRBACRoleBindingFor(ctx context.Context, c ctrlruntimeclient.Client, groupName, resource, namespace string) error {
 	generatedRoleBinding := generateRBACRoleBindingForResource(resource, groupName, namespace)
 	var sharedExistingRoleBinding rbacv1.RoleBinding
 	key := types.NamespacedName{Name: generatedRoleBinding.Name, Namespace: namespace}

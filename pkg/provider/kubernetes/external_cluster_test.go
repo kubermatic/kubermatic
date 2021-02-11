@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
@@ -41,12 +40,12 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 		name            string
 		externalCluster *kubermaticapiv1.ExternalCluster
 		kubeconfig      string
-		existingObjects []runtime.Object
+		existingObjects []ctrlruntimeclient.Object
 		expectedSecret  *corev1.Secret
 	}{
 		{
 			name:            "test: create a new secret",
-			existingObjects: []runtime.Object{},
+			existingObjects: []ctrlruntimeclient.Object{},
 			externalCluster: genExternalCluster("test"),
 			kubeconfig:      defaultKubeconfig,
 			expectedSecret: &corev1.Secret{
@@ -65,7 +64,7 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 		},
 		{
 			name: "test: update existing secret",
-			existingObjects: []runtime.Object{
+			existingObjects: []ctrlruntimeclient.Object{
 				&corev1.Secret{
 					TypeMeta: metav1.TypeMeta{
 						Kind:       "Secret",
@@ -102,7 +101,12 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			client := fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme, tc.existingObjects...)
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}

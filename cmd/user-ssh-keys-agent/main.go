@@ -17,7 +17,6 @@ limitations under the License.
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -35,6 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 )
 
 func main() {
@@ -52,11 +52,7 @@ func main() {
 		log.Fatalw("Failed getting user cluster controller config", zap.Error(err))
 	}
 
-	ctx, ctxDone := context.WithCancel(context.Background())
-	defer ctxDone()
-
-	// Create Context
-	done := ctx.Done()
+	ctx := signals.SetupSignalHandler()
 	ctrlruntimelog.Log = ctrlruntimelog.NewDelegatingLogger(zapr.NewLogger(rawLog).WithName("controller_runtime"))
 
 	mgr, err := manager.New(cfg, manager.Options{Namespace: metav1.NamespaceSystem})
@@ -72,7 +68,7 @@ func main() {
 		log.Fatalw("Failed registering user ssh key controller", zap.Error(err))
 	}
 
-	if err := mgr.Start(done); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		log.Fatalw("error occurred while running the controller manager", zap.Error(err))
 	}
 }

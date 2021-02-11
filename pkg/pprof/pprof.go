@@ -17,6 +17,7 @@ limitations under the License.
 package pprof
 
 import (
+	"context"
 	"flag"
 	"net/http"
 	"net/http/pprof"
@@ -35,9 +36,9 @@ func (opts *Opts) AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&opts.ListenAddress, "pprof-listen-address", ":6600", "The listen address for pprof. Set to `0` to disable it.")
 }
 
-func (opts *Opts) Start(stop <-chan struct{}) error {
+func (opts *Opts) Start(ctx context.Context) error {
 	if opts.ListenAddress == "" || opts.ListenAddress == "0" {
-		<-stop
+		<-ctx.Done()
 		return nil
 	}
 	mux := http.NewServeMux()

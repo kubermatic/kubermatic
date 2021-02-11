@@ -33,7 +33,6 @@ import (
 	networkingv1beta1 "k8s.io/api/networking/v1beta1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -63,7 +62,6 @@ func Add(
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		log:        log.Named(ControllerName),
 		workerName: workerName,
-		ctx:        ctx,
 		versions:   kubermatic.NewDefaultVersions(),
 	}
 
@@ -76,12 +74,12 @@ func Add(
 	namespacePredicate := predicateutil.ByNamespace(namespace)
 
 	// put the config's identifier on the queue
-	kubermaticConfigHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
+	kubermaticConfigHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		return []reconcile.Request{
 			{
 				NamespacedName: types.NamespacedName{
-					Namespace: a.Meta.GetNamespace(),
-					Name:      a.Meta.GetName(),
+					Namespace: a.GetNamespace(),
+					Name:      a.GetName(),
 				},
 			},
 		}
@@ -93,7 +91,7 @@ func Add(
 	}
 
 	// for each child put the parent configuration onto the queue
-	childEventHandler := newEventHandler(func(a handler.MapObject) []reconcile.Request {
+	childEventHandler := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		configs := &operatorv1alpha1.KubermaticConfigurationList{}
 		options := &ctrlruntimeclient.ListOptions{Namespace: namespace}
 
@@ -121,7 +119,7 @@ func Add(
 		}}
 	})
 
-	namespacedTypesToWatch := []runtime.Object{
+	namespacedTypesToWatch := []ctrlruntimeclient.Object{
 		&appsv1.Deployment{},
 		&corev1.ConfigMap{},
 		&corev1.Secret{},
@@ -137,7 +135,7 @@ func Add(
 		}
 	}
 
-	globalTypesToWatch := []runtime.Object{
+	globalTypesToWatch := []ctrlruntimeclient.Object{
 		&rbacv1.ClusterRoleBinding{},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 	}
@@ -156,12 +154,4 @@ func Add(
 	}
 
 	return nil
-}
-
-// newEventHandler takes a obj->request mapper function and wraps it into an
-// handler.EnqueueRequestsFromMapFunc.
-func newEventHandler(rf handler.ToRequestsFunc) *handler.EnqueueRequestsFromMapFunc {
-	return &handler.EnqueueRequestsFromMapFunc{
-		ToRequests: rf,
-	}
 }

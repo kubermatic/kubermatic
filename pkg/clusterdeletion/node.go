@@ -29,7 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Cluster) error {
@@ -58,13 +58,13 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 			node.Annotations = map[string]string{}
 		}
 		node.Annotations[eviction.SkipEvictionAnnotationKey] = "true"
-		if err := userClusterClient.Patch(ctx, &node, controllerruntimeclient.MergeFrom(oldNode)); err != nil {
+		if err := userClusterClient.Patch(ctx, &node, ctrlruntimeclient.MergeFrom(oldNode)); err != nil {
 			return fmt.Errorf("failed to add the annotation '%s=true' to node '%s': %v", eviction.SkipEvictionAnnotationKey, node.Name, err)
 		}
 	}
 
 	machineDeploymentList := &clusterv1alpha1.MachineDeploymentList{}
-	listOpts := &controllerruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}
+	listOpts := &ctrlruntimeclient.ListOptions{Namespace: metav1.NamespaceSystem}
 	if err := userClusterClient.List(ctx, machineDeploymentList, listOpts); err != nil && !meta.IsNoMatchError(err) {
 		return fmt.Errorf("failed to list MachineDeployments: %v", err)
 	}
@@ -111,5 +111,5 @@ func (d *Deletion) cleanupNodes(ctx context.Context, cluster *kubermaticv1.Clust
 
 	oldCluster := cluster.DeepCopy()
 	kuberneteshelper.RemoveFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer)
-	return d.seedClient.Patch(ctx, cluster, controllerruntimeclient.MergeFrom(oldCluster))
+	return d.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }

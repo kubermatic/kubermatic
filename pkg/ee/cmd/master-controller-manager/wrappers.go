@@ -27,6 +27,7 @@ package mastercontrollermanager
 import (
 	"context"
 	"flag"
+
 	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
 	"k8c.io/kubermatic/v2/pkg/provider"
 

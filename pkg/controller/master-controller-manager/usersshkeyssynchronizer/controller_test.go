@@ -26,9 +26,8 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/client/fake"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -43,35 +42,30 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 		{
 			name: "Test cleanup cluster ids in UserSSHKey on cluster deletion",
 			reconciler: &Reconciler{
-				ctx: context.Background(),
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				client: fake.NewFakeClient(
-					&kubermaticv1.UserSSHKeyList{
-						Items: []kubermaticv1.UserSSHKey{
-							{
-								ObjectMeta: metav1.ObjectMeta{
-									Name:      "test_user_ssh_keys",
-									Namespace: "test_namespace",
-								},
-								Spec: kubermaticv1.SSHKeySpec{
-									Clusters: []string{
-										"test_cluster_1",
-										"test_cluster_2",
-									},
-								},
+				client: fakectrlruntimeclient.NewClientBuilder().WithObjects(
+					&kubermaticv1.UserSSHKey{
+						ObjectMeta: metav1.ObjectMeta{
+							Name:      "test_user_ssh_keys",
+							Namespace: "test_namespace",
+						},
+						Spec: kubermaticv1.SSHKeySpec{
+							Clusters: []string{
+								"test_cluster_1",
+								"test_cluster_2",
 							},
 						},
 					},
-				),
-				seedClients: map[string]client.Client{
-					"seed_test": fake.NewFakeClient(
+				).Build(),
+				seedClients: map[string]ctrlruntimeclient.Client{
+					"seed_test": fakectrlruntimeclient.NewClientBuilder().WithObjects(
 						&kubermaticv1.Cluster{
 							ObjectMeta: metav1.ObjectMeta{
 								Name:              "test_cluster_1",
 								DeletionTimestamp: &deletionTimestamp,
 							},
 						},
-					),
+					).Build(),
 				},
 			},
 			request: reconcile.Request{
@@ -95,13 +89,15 @@ func TestUserSSHKeysClusterRemove(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := tc.reconciler.Reconcile(tc.request); err != nil {
+			ctx := context.Background()
+
+			if _, err := tc.reconciler.Reconcile(ctx, tc.request); err != nil {
 				t.Fatalf("failed reconciling test: %v", err)
 			}
 
 			userSSHKey := &kubermaticv1.UserSSHKey{}
 			identifier := types.NamespacedName{Namespace: "test_namespace", Name: "test_user_ssh_keys"}
-			if err := tc.reconciler.client.Get(context.Background(), identifier, userSSHKey); err != nil {
+			if err := tc.reconciler.client.Get(ctx, identifier, userSSHKey); err != nil {
 				t.Fatalf("failed to get usersshkey: %v", err)
 			}
 

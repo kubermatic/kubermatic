@@ -36,7 +36,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/record"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -60,7 +60,7 @@ type Network struct {
 }
 
 type reconciler struct {
-	client.Client
+	ctrlruntimeclient.Client
 	recorder   record.EventRecorder
 	cidrRanges []Network
 	log        *zap.SugaredLogger
@@ -80,10 +80,7 @@ func Add(mgr manager.Manager, cidrRanges []Network, log *zap.SugaredLogger) erro
 	return c.Watch(&source.Kind{Type: &clusterv1alpha1.Machine{}}, &handler.EnqueueRequestForObject{})
 }
 
-func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	machine := &clusterv1alpha1.Machine{}
 	if err := r.Get(ctx, request.NamespacedName, machine); err != nil {
 		if kerrors.IsNotFound(err) {

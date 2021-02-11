@@ -37,7 +37,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
-
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -54,7 +53,6 @@ const (
 
 // Reconciler is a controller which is responsible for managing clusters
 type Reconciler struct {
-	ctx         context.Context
 	client      ctrlruntimeclient.Client
 	log         *zap.SugaredLogger
 	workerName  string
@@ -76,7 +74,6 @@ func Add(
 	}
 
 	reconciler := &Reconciler{
-		ctx:         ctx,
 		log:         log.Named(ControllerName),
 		workerName:  workerName,
 		client:      mgr.GetClient(),
@@ -127,11 +124,11 @@ func Add(
 	return nil
 }
 
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
-	err := r.reconcile(log, request)
+	err := r.reconcile(ctx, log, request)
 	if controllerutil.IsCacheNotStarted(err) {
 		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
 	}
@@ -141,7 +138,7 @@ func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, err
 	return reconcile.Result{}, err
 }
 
-func (r *Reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request) error {
+func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	seedClient, ok := r.seedClients[request.Namespace]
 	if !ok {
 		log.Errorw("Got request for seed we don't have a client for", "seed", request.Namespace)
@@ -151,7 +148,7 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 
 	// find all clusters in this seed
 	cluster := &kubermaticv1.Cluster{}
-	if err := seedClient.Get(r.ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: request.Name}, cluster); err != nil {
 		if controllerutil.IsCacheNotStarted(err) {
 			return err
 		}
@@ -178,19 +175,19 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 	}
 
 	userSSHKeys := &kubermaticv1.UserSSHKeyList{}
-	if err := r.client.List(r.ctx, userSSHKeys); err != nil {
+	if err := r.client.List(ctx, userSSHKeys); err != nil {
 		return fmt.Errorf("failed to list userSSHKeys: %v", err)
 	}
 
 	if cluster.DeletionTimestamp != nil {
-		if err := r.cleanupUserSSHKeys(userSSHKeys.Items, cluster.Name); err != nil {
+		if err := r.cleanupUserSSHKeys(ctx, userSSHKeys.Items, cluster.Name); err != nil {
 			return fmt.Errorf("failed reconciling usersshkey: %v", err)
 		}
 
 		if kubernetes.HasFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer) {
 			oldCluster := cluster.DeepCopy()
 			kubernetes.RemoveFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer)
-			if err := seedClient.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 				return fmt.Errorf("failed removing %s finalizer: %v", UserSSHKeysClusterIDsCleanupFinalizer, err)
 			}
 		}
@@ -200,7 +197,7 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 	keys := buildUserSSHKeysForCluster(cluster.Name, userSSHKeys)
 
 	if err := reconciling.ReconcileSecrets(
-		r.ctx,
+		ctx,
 		[]reconciling.NamedSecretCreatorGetter{updateUserSSHKeysSecrets(keys)},
 		cluster.Status.NamespaceName,
 		seedClient,
@@ -211,7 +208,7 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 	oldCluster := cluster.DeepCopy()
 	if !kubernetes.HasFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer) {
 		kubernetes.AddFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer)
-		if err := seedClient.Patch(r.ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
 			return fmt.Errorf("failed adding %s finalizer: %v", UserSSHKeysClusterIDsCleanupFinalizer, err)
 		}
 	}
@@ -219,10 +216,10 @@ func (r *Reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 	return nil
 }
 
-func (r *Reconciler) cleanupUserSSHKeys(keys []kubermaticv1.UserSSHKey, clusterName string) error {
+func (r *Reconciler) cleanupUserSSHKeys(ctx context.Context, keys []kubermaticv1.UserSSHKey, clusterName string) error {
 	for _, userSSHKey := range keys {
 		userSSHKey.RemoveFromCluster(clusterName)
-		if err := r.client.Update(r.ctx, &userSSHKey); err != nil {
+		if err := r.client.Update(ctx, &userSSHKey); err != nil {
 			return fmt.Errorf("failed updating usersshkeys object: %v", err)
 		}
 	}
@@ -244,8 +241,8 @@ func buildUserSSHKeysForCluster(clusterName string, list *kubermaticv1.UserSSHKe
 }
 
 // enqueueAllClusters enqueues all clusters
-func enqueueAllClusters(clients map[string]ctrlruntimeclient.Client, workerSelector labels.Selector) *handler.EnqueueRequestsFromMapFunc {
-	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
+func enqueueAllClusters(clients map[string]ctrlruntimeclient.Client, workerSelector labels.Selector) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
 		listOpts := &ctrlruntimeclient.ListOptions{
@@ -267,7 +264,7 @@ func enqueueAllClusters(clients map[string]ctrlruntimeclient.Client, workerSelec
 		}
 
 		return requests
-	})}
+	})
 }
 
 // updateUserSSHKeysSecrets creates a secret in the seed cluster from the user ssh keys.

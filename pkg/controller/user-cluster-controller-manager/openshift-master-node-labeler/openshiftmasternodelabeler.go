@@ -47,14 +47,12 @@ const (
 )
 
 type reconciler struct {
-	ctx    context.Context
 	log    *zap.SugaredLogger
 	client ctrlruntimeclient.Client
 }
 
 func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error {
 	r := &reconciler{
-		ctx:    ctx,
 		log:    log.Named(controllerName),
 		client: mgr.GetClient(),
 	}
@@ -69,10 +67,10 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error
 		return fmt.Errorf("failed to create controller: %v", err)
 	}
 
-	// Ignore update events that don't touch the metadata
+	// Ignore update events that don't touch the labels
 	metadataChangedPredicate := predicate.Funcs{
 		UpdateFunc: func(e event.UpdateEvent) bool {
-			return !apiequality.Semantic.DeepEqual(e.MetaOld, e.MetaNew)
+			return !apiequality.Semantic.DeepEqual(e.ObjectOld.GetLabels(), e.ObjectNew.GetLabels())
 		},
 	}
 	if err := c.Watch(
@@ -86,9 +84,9 @@ func Add(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) error
 	return nil
 }
 
-func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(ctx context.Context, _ reconcile.Request) (reconcile.Result, error) {
 	r.log.Debug("Reconciling")
-	result, err := r.reconcile()
+	result, err := r.reconcile(ctx)
 	if err != nil {
 		r.log.Errorw("Failed to reconcile", zap.Error(err))
 	}
@@ -98,10 +96,10 @@ func (r *reconciler) Reconcile(_ reconcile.Request) (reconcile.Result, error) {
 	return *result, err
 }
 
-func (r *reconciler) reconcile() (*reconcile.Result, error) {
+func (r *reconciler) reconcile(ctx context.Context) (*reconcile.Result, error) {
 
 	nodes := &corev1.NodeList{}
-	if err := r.client.List(r.ctx, nodes); err != nil {
+	if err := r.client.List(ctx, nodes); err != nil {
 		return nil, fmt.Errorf("failed to list nodes: %v", err)
 	}
 
@@ -125,7 +123,7 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 		if !hasNode {
 			return &reconcile.Result{RequeueAfter: time.Minute}, nil
 		}
-		if err := r.updateNode(nodeToLabel, func(n *corev1.Node) {
+		if err := r.updateNode(ctx, nodeToLabel, func(n *corev1.Node) {
 			if n.Labels == nil {
 				n.Labels = map[string]string{}
 			}
@@ -138,12 +136,12 @@ func (r *reconciler) reconcile() (*reconcile.Result, error) {
 	return nil, nil
 }
 
-func (r *reconciler) updateNode(name string, modify func(*corev1.Node)) error {
+func (r *reconciler) updateNode(ctx context.Context, name string, modify func(*corev1.Node)) error {
 	node := &corev1.Node{}
-	if err := r.client.Get(r.ctx, types.NamespacedName{Name: name}, node); err != nil {
+	if err := r.client.Get(ctx, types.NamespacedName{Name: name}, node); err != nil {
 		return err
 	}
 	oldNode := node.DeepCopy()
 	modify(node)
-	return r.client.Patch(r.ctx, node, ctrlruntimeclient.MergeFrom(oldNode))
+	return r.client.Patch(ctx, node, ctrlruntimeclient.MergeFrom(oldNode))
 }

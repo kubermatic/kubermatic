@@ -28,10 +28,10 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes/scheme"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -78,8 +78,8 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 		&source.Kind{Type: &corev1.Service{}},
 		&handler.EnqueueRequestForObject{},
 		predicate.Factory(
-			func(m metav1.Object, _ runtime.Object) bool {
-				if _, exists := m.GetAnnotations()["nodeport-proxy.k8s.io/expose"]; exists {
+			func(o client.Object) bool {
+				if _, exists := o.GetAnnotations()["nodeport-proxy.k8s.io/expose"]; exists {
 					return true
 				}
 				return false
@@ -93,8 +93,8 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 	if err := outerServiceWatch.InjectCache(outer.GetCache()); err != nil {
 		return fmt.Errorf("failed to inject cache into outer service watch: %v", err)
 	}
-	outererServiceMapper := &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
-		val, exists := a.Meta.GetAnnotations()[serviceIdentifyerAnnotationKey]
+	outererServiceMapper := handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+		val, exists := a.GetAnnotations()[serviceIdentifyerAnnotationKey]
 		if !exists {
 			return nil
 		}
@@ -107,10 +107,9 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 		return []reconcile.Request{{
 			NamespacedName: types.NamespacedName{Namespace: split[0], Name: split[1]},
 		}}
-	},
-	)}
-	outerServicePredicate := predicate.Factory(func(m metav1.Object, _ runtime.Object) bool {
-		return m.GetLabels()[labelKey] == jobID
+	})
+	outerServicePredicate := predicate.Factory(func(o client.Object) bool {
+		return o.GetLabels()[labelKey] == jobID
 	})
 	if err := c.Watch(outerServiceWatch, outererServiceMapper, outerServicePredicate); err != nil {
 		return fmt.Errorf("failed to create watch for services in outer cluster: %v", err)
@@ -119,21 +118,20 @@ func Add(log *zap.SugaredLogger, outer, inner manager.Manager, jobID string) err
 	return nil
 }
 
-func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request.String())
 	log.Debug("Reconciling")
 
-	err := r.reconcile(log, request)
+	err := r.reconcile(ctx, log, request)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 	}
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request) error {
-
+func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	innerService := &corev1.Service{}
-	if err := r.innerClient.Get(r.ctx, request.NamespacedName, innerService); err != nil {
+	if err := r.innerClient.Get(ctx, request.NamespacedName, innerService); err != nil {
 		if kerrors.IsNotFound(err) {
 			log.Info("Got request for service that doesn't exist, returning")
 			return nil
@@ -143,7 +141,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 
 	outerServices := &corev1.ServiceList{}
 	labelSelector := ctrlruntimeclient.MatchingLabels(map[string]string{labelKey: r.jobID})
-	if err := r.outerClient.List(r.ctx, outerServices, labelSelector); err != nil {
+	if err := r.outerClient.List(ctx, outerServices, labelSelector); err != nil {
 		return fmt.Errorf("failed to list service in outer cluster: %v", err)
 	}
 	outerService := getServiceFromServiceList(outerServices, request.NamespacedName)
@@ -177,7 +175,7 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, request reconcile.Request
 
 	oldInnerService := innerService.DeepCopy()
 	innerService.Spec.Ports[0].NodePort = outerService.Spec.Ports[0].NodePort
-	if err := r.innerClient.Patch(r.ctx, innerService, ctrlruntimeclient.MergeFrom(oldInnerService)); err != nil {
+	if err := r.innerClient.Patch(ctx, innerService, ctrlruntimeclient.MergeFrom(oldInnerService)); err != nil {
 		return fmt.Errorf("failed to update nodeport of service %s/%s to %d: %v", innerService.Namespace, innerService.Name, outerService.Spec.Ports[0].NodePort, err)
 	}
 

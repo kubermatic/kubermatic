@@ -26,19 +26,19 @@ import (
 
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
 func TestReconcilingSeed(t *testing.T) {
-	existingSeeds := []runtime.Object{
+	existingSeeds := []ctrlruntimeclient.Object{
 		&kubermaticv1.Seed{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      "my-seed",
@@ -59,7 +59,7 @@ func TestReconcilingSeed(t *testing.T) {
 		name          string
 		shouldFail    bool
 		input         *kubermaticv1.Seed
-		existingSeeds []runtime.Object
+		existingSeeds []ctrlruntimeclient.Object
 		validate      func(input, result *kubermaticv1.Seed) error
 	}{
 		{
@@ -161,21 +161,25 @@ func TestReconcilingSeed(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			masterClient := ctrlruntimefake.NewFakeClient(test.input)
-			seedClient := ctrlruntimefake.NewFakeClient(test.existingSeeds...)
+			masterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(test.input).Build()
+			seedClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(test.existingSeeds...).
+				Build()
+
 			ctx := context.Background()
 
 			reconciler := Reconciler{
 				Client:   masterClient,
 				recorder: record.NewFakeRecorder(10),
 				log:      log,
-				ctx:      ctx,
 				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
 					return seedClient, nil
 				},
 			}
 
-			err := reconciler.reconcile(test.input, seedClient, log)
+			err := reconciler.reconcile(ctx, test.input, seedClient, log)
 			if test.shouldFail && err == nil {
 				t.Fatalf("check for %s failed", test.name)
 			}
@@ -183,10 +187,7 @@ func TestReconcilingSeed(t *testing.T) {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
-			key, err := ctrlruntimeclient.ObjectKeyFromObject(test.input)
-			if err != nil {
-				t.Fatalf("could not create object key for seed: %v", err)
-			}
+			key := ctrlruntimeclient.ObjectKeyFromObject(test.input)
 
 			result := &kubermaticv1.Seed{}
 			if err := seedClient.Get(ctx, key, result); err != nil && kerrors.IsNotFound(err) {

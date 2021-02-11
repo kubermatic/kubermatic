@@ -37,7 +37,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -113,8 +113,8 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 		Datacenter                string
 		Nonce                     string
 		HTTPStatusInitPhase       int
-		ExistingKubermaticObjects []runtime.Object
-		ExistingObjects           []runtime.Object
+		ExistingKubermaticObjects []ctrlruntimeclient.Object
+		ExistingObjects           []ctrlruntimeclient.Object
 		ExistingAPIUser           *apiv1.User
 		ExpectedRedirectURI       string
 		ExpectedExchangeCodePhase ExpectedKubeconfigResp
@@ -159,7 +159,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			Datacenter:                test.TestSeedDatacenter,
 			HTTPStatusInitPhase:       http.StatusSeeOther,
 			ExistingKubermaticObjects: genTestKubeconfigKubermaticObjects(),
-			ExistingObjects: []runtime.Object{
+			ExistingObjects: []ctrlruntimeclient.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "cluster-" + test.ClusterID,
@@ -185,7 +185,7 @@ func TestCreateOIDCKubeconfig(t *testing.T) {
 			Datacenter:                test.TestSeedDatacenter,
 			HTTPStatusInitPhase:       http.StatusSeeOther,
 			ExistingKubermaticObjects: genTestKubeconfigKubermaticObjects(),
-			ExistingObjects: []runtime.Object{
+			ExistingObjects: []ctrlruntimeclient.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "cluster-" + test.ClusterID,
@@ -306,15 +306,16 @@ func TestGetMasterKubeconfig(t *testing.T) {
 		ClusterToGet           string
 		HTTPStatus             int
 		ExistingAPIUser        apiv1.User
-		ExistingKubermaticObjs []runtime.Object
-		ExistingObjects        []runtime.Object
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+		ExistingObjects        []ctrlruntimeclient.Object
 	}{
 		{
 			Name:         "scenario 1: owner gets master kubeconfig",
 			HTTPStatus:   http.StatusOK,
 			ProjectToGet: "foo-ID",
 			ClusterToGet: "cluster-foo",
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -324,7 +325,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				test.GenCluster("cluster-foo", "cluster-foo", "foo-ID", test.DefaultCreationTimestamp()),
 			},
-			ExistingObjects: []runtime.Object{
+			ExistingObjects: []ctrlruntimeclient.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "cluster-cluster-foo",
@@ -343,7 +344,8 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			HTTPStatus:   http.StatusOK,
 			ProjectToGet: "foo-ID",
 			ClusterToGet: "cluster-foo",
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -353,7 +355,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				test.GenCluster("cluster-foo", "cluster-foo", "foo-ID", test.DefaultCreationTimestamp()),
 			},
-			ExistingObjects: []runtime.Object{
+			ExistingObjects: []ctrlruntimeclient.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "cluster-cluster-foo",
@@ -372,7 +374,8 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			HTTPStatus:   http.StatusOK,
 			ProjectToGet: "foo-ID",
 			ClusterToGet: "cluster-foo",
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -383,7 +386,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 				genUser("bob", "bob@acme.com", true),
 				test.GenCluster("cluster-foo", "cluster-foo", "foo-ID", test.DefaultCreationTimestamp()),
 			},
-			ExistingObjects: []runtime.Object{
+			ExistingObjects: []ctrlruntimeclient.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "cluster-cluster-foo",
@@ -402,7 +405,8 @@ func TestGetMasterKubeconfig(t *testing.T) {
 			HTTPStatus:   http.StatusForbidden,
 			ProjectToGet: "foo-ID",
 			ClusterToGet: "cluster-foo",
-			ExistingKubermaticObjs: []runtime.Object{
+			ExistingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.GenTestSeed(),
 				/*add projects*/
 				test.GenProject("foo", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
 				/*add bindings*/
@@ -413,7 +417,7 @@ func TestGetMasterKubeconfig(t *testing.T) {
 				genUser("bob", "bob@acme.com", false),
 				test.GenCluster("cluster-foo", "cluster-foo", "foo-ID", test.DefaultCreationTimestamp()),
 			},
-			ExistingObjects: []runtime.Object{
+			ExistingObjects: []ctrlruntimeclient.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Namespace: "cluster-cluster-foo",
@@ -433,9 +437,9 @@ func TestGetMasterKubeconfig(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v1/projects/%s/dc/us-central1/clusters/%s/kubeconfig", tc.ProjectToGet, tc.ClusterToGet), nil)
 			res := httptest.NewRecorder()
-			var kubermaticObj []runtime.Object
+			var kubermaticObj []ctrlruntimeclient.Object
 			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
-			ep, _, err := test.CreateTestEndpointAndGetClients(tc.ExistingAPIUser, nil, tc.ExistingObjects, []runtime.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			ep, _, err := test.CreateTestEndpointAndGetClients(tc.ExistingAPIUser, nil, tc.ExistingObjects, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -452,8 +456,9 @@ func TestGetMasterKubeconfig(t *testing.T) {
 
 }
 
-func genTestKubeconfigKubermaticObjects() []runtime.Object {
-	return []runtime.Object{
+func genTestKubeconfigKubermaticObjects() []ctrlruntimeclient.Object {
+	return []ctrlruntimeclient.Object{
+		test.GenTestSeed(),
 		// add some project
 		test.GenDefaultProject(),
 		// add a user

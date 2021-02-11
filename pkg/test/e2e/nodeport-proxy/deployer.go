@@ -35,10 +35,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -53,9 +52,9 @@ type Deployer struct {
 	Log       *zap.SugaredLogger
 	Namespace string
 	Versions  kubermatic.Versions
-	Client    ctrlclient.Client
+	Client    ctrlruntimeclient.Client
 
-	resources []runtime.Object
+	resources []ctrlruntimeclient.Object
 }
 
 func (d *Deployer) SetUp() error {
@@ -85,7 +84,7 @@ func (d *Deployer) SetUp() error {
 	}
 
 	recorderFunc := func(create reconciling.ObjectCreator) reconciling.ObjectCreator {
-		return func(existing runtime.Object) (runtime.Object, error) {
+		return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 			obj, err := create(existing)
 			if err != nil {
 				return nil, err

@@ -38,7 +38,7 @@ func TestBuilder(t *testing.T) {
 		},
 		{
 			name:    "Client provided",
-			client:  fakectrlruntimeclient.NewFakeClient(),
+			client:  fakectrlruntimeclient.NewClientBuilder().Build(),
 			wantErr: false,
 		},
 	}

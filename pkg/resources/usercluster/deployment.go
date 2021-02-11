@@ -185,7 +185,7 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/ready",
+								Path:   "/readyz",
 								Port:   intstr.FromInt(8086),
 								Scheme: corev1.URISchemeHTTP,
 							},

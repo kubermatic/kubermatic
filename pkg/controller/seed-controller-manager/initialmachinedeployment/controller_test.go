@@ -34,7 +34,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/tools/record"
@@ -92,7 +91,6 @@ func genCluster(annotation string) *kubermaticv1.Cluster {
 }
 
 func TestReconcile(t *testing.T) {
-	ctx := context.Background()
 	log := zap.NewNop().Sugar()
 
 	testCases := []struct {
@@ -161,7 +159,7 @@ func TestReconcile(t *testing.T) {
 				}
 
 				machineDeployments := clusterv1alpha1.MachineDeploymentList{}
-				if err := userClusterClient.List(ctx, &machineDeployments); err != nil {
+				if err := userClusterClient.List(context.Background(), &machineDeployments); err != nil {
 					return fmt.Errorf("failed to list MachineDeployments in user cluster: %v", err)
 				}
 
@@ -198,14 +196,22 @@ func TestReconcile(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.name, func(t *testing.T) {
-			seedClient := fakectrlruntimeclient.NewFakeClient(test.cluster, project)
+			seedClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(test.cluster, project).
+				Build()
 
-			userClusterObjects := []runtime.Object{}
-			userClusterClient := fakectrlruntimeclient.NewFakeClient(userClusterObjects...)
+			userClusterObjects := []ctrlruntimeclient.Object{}
+			userClusterClient := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(userClusterObjects...).
+				Build()
 
+			ctx := context.Background()
 			r := &Reconciler{
 				Client:   seedClient,
-				ctx:      ctx,
 				recorder: &record.FakeRecorder{},
 				log:      log,
 				versions: kubermatic.NewFakeVersions(),
@@ -233,7 +239,7 @@ func TestReconcile(t *testing.T) {
 			nName := types.NamespacedName{Name: test.cluster.Name}
 
 			// let the magic happen
-			_, reconcileErr := r.Reconcile(reconcile.Request{NamespacedName: nName})
+			_, reconcileErr := r.Reconcile(ctx, reconcile.Request{NamespacedName: nName})
 
 			// fetch potentially updated cluster object
 			newCluster := &kubermaticv1.Cluster{}

@@ -41,7 +41,6 @@ require (
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.4.2
 	github.com/hashicorp/go-multierror v1.1.0
-	github.com/heptiolabs/healthcheck v0.0.0-20180807145615-6ff867650f40
 	github.com/hetznercloud/hcloud-go v1.23.1
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/iancoleman/strcase v0.1.2
@@ -51,7 +50,6 @@ require (
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/nelsam/hel v0.0.0-20200611165952-2d829bae0c66 // indirect
-	github.com/oklog/run v1.1.0
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.3
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20201118071520-0d37681951a4
@@ -79,9 +77,9 @@ require (
 	gopkg.in/square/go-jose.v2 v2.5.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
-	k8s.io/api v0.19.4
-	k8s.io/apiextensions-apiserver v0.19.4
-	k8s.io/apimachinery v0.19.4
+	k8s.io/api v0.20.2
+	k8s.io/apiextensions-apiserver v0.20.1
+	k8s.io/apimachinery v0.20.2
 	k8s.io/autoscaler v0.0.0-20190218140445-7f77136aeea4 // git digest for VPA v0.4.0
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/code-generator v0.19.4
@@ -90,8 +88,8 @@ require (
 	k8s.io/kubectl v0.19.4
 	k8s.io/metrics v0.19.4
 	k8s.io/test-infra v0.0.0-20200220102703-18fae0a00a2c
-	k8s.io/utils v0.0.0-20201110183641-67b214c5f920
-	sigs.k8s.io/controller-runtime v0.7.0
+	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
+	sigs.k8s.io/controller-runtime v0.8.1
 	sigs.k8s.io/yaml v1.2.0
 )
 
@@ -106,6 +104,4 @@ replace (
 	k8s.io/kube-aggregator => k8s.io/kube-aggregator v0.19.4
 	k8s.io/kubelet => k8s.io/kubelet v0.19.4
 	k8s.io/metrics => k8s.io/metrics v0.19.4
-	// stick to an older version until we have time to update
-	sigs.k8s.io/controller-runtime => sigs.k8s.io/controller-runtime v0.6.5
 )

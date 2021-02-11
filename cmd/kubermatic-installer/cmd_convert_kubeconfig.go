@@ -236,29 +236,26 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 		return "", fmt.Errorf("failed to create Kubernetes client: %v", err)
 	}
 
-	mgrCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
 	cache := mgr.GetCache()
 	go func() {
-		_ = mgr.Start(mgrCtx.Done())
+		_ = mgr.Start(ctx)
 	}()
 
-	if !cache.WaitForCacheSync(mgrCtx.Done()) {
+	if !cache.WaitForCacheSync(ctx) {
 		return "", errors.New("failed to start cache")
 	}
 
 	client := mgr.GetClient()
 
 	log.Info("Reconciling ServiceAccount...")
-	if err := reconciling.ReconcileServiceAccounts(mgrCtx, []reconciling.NamedServiceAccountCreatorGetter{
+	if err := reconciling.ReconcileServiceAccounts(ctx, []reconciling.NamedServiceAccountCreatorGetter{
 		serviceAccountCreatorGetter,
 	}, namespace, client); err != nil {
 		return "", fmt.Errorf("failed to create ServiceAccount: %v", err)
 	}
 
 	log.Info("Reconciling ClusterRoleBinding...")
-	if err := reconciling.ReconcileClusterRoleBindings(mgrCtx, []reconciling.NamedClusterRoleBindingCreatorGetter{
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, []reconciling.NamedClusterRoleBindingCreatorGetter{
 		clusterRoleCreatorGetterFactory(namespace),
 	}, "", client); err != nil {
 		return "", fmt.Errorf("failed to create ClusterRoleBinding: %v", err)
@@ -266,7 +263,7 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 
 	log.Info("Retrieving ServiceAccount token...")
 	sa := corev1.ServiceAccount{}
-	if err := client.Get(mgrCtx, types.NamespacedName{Name: serviceAccountName, Namespace: namespace}, &sa); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: serviceAccountName, Namespace: namespace}, &sa); err != nil {
 		return "", fmt.Errorf("failed to get ServiceAccount: %v", err)
 	}
 
@@ -276,7 +273,7 @@ func reconcileCluster(ctx context.Context, config *rest.Config, namespace string
 
 	secretName := sa.Secrets[0].Name
 	secret := corev1.Secret{}
-	if err := client.Get(mgrCtx, types.NamespacedName{Name: secretName, Namespace: namespace}, &secret); err != nil {
+	if err := client.Get(ctx, types.NamespacedName{Name: secretName, Namespace: namespace}, &secret); err != nil {
 		return "", fmt.Errorf("failed to get ServiceAccount token Secret: %v", err)
 	}
 

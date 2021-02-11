@@ -28,7 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	certificatesv1beta1client "k8s.io/client-go/kubernetes/typed/certificates/v1beta1"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -43,7 +43,7 @@ const ControllerName = "node_csr_autoapprover"
 var _ reconcile.Reconciler = &reconciler{}
 
 type reconciler struct {
-	client.Client
+	ctrlruntimeclient.Client
 	// Have to use the typed client because csr approval is a subresource
 	// the dynamic client does not approve
 	certClient certificatesv1beta1client.CertificateSigningRequestInterface
@@ -65,9 +65,7 @@ func Add(mgr manager.Manager, numWorkers int, cfg *rest.Config, log *zap.Sugared
 	return c.Watch(&source.Kind{Type: &certificatesv1beta1.CertificateSigningRequest{}}, &handler.EnqueueRequestForObject{})
 }
 
-func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	err := r.reconcile(ctx, request)
 	if err != nil {
 		r.log.Errorw("Reconciliation of request failed", "request", request.NamespacedName.String(), zap.Error(err))

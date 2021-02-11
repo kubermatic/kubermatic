@@ -37,10 +37,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/klog"
-	ctrl "sigs.k8s.io/controller-runtime"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimelog "sigs.k8s.io/controller-runtime/pkg/log"
 	ctrlruntimezaplog "sigs.k8s.io/controller-runtime/pkg/log/zap"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
@@ -93,7 +94,7 @@ func main() {
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrlruntimelog.SetLogger(ctrlruntimezaplog.Logger(false))
+	ctrlruntimelog.SetLogger(ctrlruntimezaplog.New(ctrlruntimezaplog.UseDevMode(false)))
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
 	log := rawLog.Sugar()
 	defer func() {
@@ -125,8 +126,7 @@ func main() {
 	metrics.RegisterRuntimErrorMetricCounter("kubermatic_master_controller_manager", prometheus.DefaultRegisterer)
 
 	// prepare a context to use throughout the controller manager
-	ctx, ctxCancel := context.WithCancel(context.Background())
-	defer ctxCancel()
+	ctx := signals.SetupSignalHandler()
 	ctrlCtx.ctx = ctx
 
 	ctrlCtx.labelSelectorFunc = func(listOpts *metav1.ListOptions) {
@@ -137,7 +137,7 @@ func main() {
 	if runOpts.workerName != "" {
 		electionName += "-" + runOpts.workerName
 	}
-	mgr, err := manager.New(ctrl.GetConfigOrDie(), manager.Options{
+	mgr, err := manager.New(ctrlruntime.GetConfigOrDie(), manager.Options{
 		LeaderElection:          runOpts.enableLeaderElection,
 		LeaderElectionNamespace: runOpts.leaderElectionNamespace,
 		LeaderElectionID:        electionName,
@@ -187,8 +187,7 @@ func main() {
 	}
 
 	log.Info("starting the master-controller-manager...")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		log.Fatalw("problem running manager", zap.Error(err))
 	}
-
 }

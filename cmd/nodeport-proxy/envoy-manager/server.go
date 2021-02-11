@@ -57,8 +57,7 @@ type Server struct {
 }
 
 // Start the Envoy control plane server.
-func (s *Server) Start(stopChan <-chan struct{}) error {
-	ctx := context.Background()
+func (s *Server) Start(ctx context.Context) error {
 	// Create a cache
 	srv3 := serverv3.NewServer(ctx, s.Cache, nil)
 
@@ -81,6 +80,6 @@ func (s *Server) Start(stopChan <-chan struct{}) error {
 	if err = grpcServer.Serve(lis); err != nil {
 		return errors.Wrap(err, "envoy control plane server failed while start serving incoming connections")
 	}
-	<-stopChan
+	<-ctx.Done()
 	return nil
 }

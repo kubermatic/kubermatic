@@ -22,13 +22,14 @@ import (
 
 	"github.com/go-test/deep"
 
+	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -135,9 +136,11 @@ func TestCreateAddon(t *testing.T) {
 	for _, test := range tests {
 
 		t.Run(test.name, func(t *testing.T) {
-			objs := []runtime.Object{test.cluster}
-
-			client := ctrlruntimefakeclient.NewFakeClient(objs...)
+			client := ctrlruntimefakeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(test.cluster).
+				Build()
 
 			reconciler := Reconciler{
 				log:              kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
@@ -395,12 +398,12 @@ func TestUpdateAddon(t *testing.T) {
 	for _, test := range tests {
 
 		t.Run(test.name, func(t *testing.T) {
-			objs := []runtime.Object{test.cluster}
+			objs := []ctrlruntimeclient.Object{test.cluster}
 			for _, a := range test.existingClusterAddons {
 				objs = append(objs, a)
 			}
 
-			client := ctrlruntimefakeclient.NewFakeClient(objs...)
+			client := ctrlruntimefakeclient.NewClientBuilder().WithObjects(objs...).Build()
 
 			reconciler := Reconciler{
 				log:              kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),

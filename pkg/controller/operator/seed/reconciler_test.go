@@ -36,7 +36,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -133,12 +132,14 @@ func TestBasicReconciling(t *testing.T) {
 			seedsOnMaster: []string{"europe"},
 			syncedSeeds:   sets.NewString("europe"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
-				if err := reconciler.reconcile(reconciler.log, test.seedToReconcile); err != nil {
+				ctx := context.Background()
+
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
 					return fmt.Errorf("reconciliation failed: %v", err)
 				}
 
 				seed := kubermaticv1.Seed{}
-				if err := reconciler.seedClients["europe"].Get(reconciler.ctx, types.NamespacedName{
+				if err := reconciler.seedClients["europe"].Get(ctx, types.NamespacedName{
 					Namespace: "kubermatic",
 					Name:      "europe",
 				}, &seed); err != nil {
@@ -170,12 +171,14 @@ func TestBasicReconciling(t *testing.T) {
 			seedsOnMaster: []string{"goner"},
 			syncedSeeds:   sets.NewString("goner"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
-				if err := reconciler.reconcile(reconciler.log, test.seedToReconcile); err != nil {
+				ctx := context.Background()
+
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
 					return fmt.Errorf("reconciliation failed: %v", err)
 				}
 
 				seed := kubermaticv1.Seed{}
-				if err := reconciler.seedClients["goner"].Get(reconciler.ctx, types.NamespacedName{
+				if err := reconciler.seedClients["goner"].Get(ctx, types.NamespacedName{
 					Namespace: "kubermatic",
 					Name:      "goner",
 				}, &seed); err != nil {
@@ -207,7 +210,9 @@ func TestBasicReconciling(t *testing.T) {
 			seedsOnMaster: []string{"europe"},
 			syncedSeeds:   sets.NewString("europe"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
-				if err := reconciler.reconcile(reconciler.log, test.seedToReconcile); err != nil {
+				ctx := context.Background()
+
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
 					return fmt.Errorf("reconciliation failed: %v", err)
 				}
 
@@ -215,13 +220,13 @@ func TestBasicReconciling(t *testing.T) {
 
 				// assert that cluster-wide resources exist
 				crbs := rbacv1.ClusterRoleBindingList{}
-				must(t, seedClient.List(reconciler.ctx, &crbs))
+				must(t, seedClient.List(ctx, &crbs))
 				if len(crbs.Items) == 0 {
 					return errors.New("Seed should have ClusterRoleBindings, but has none")
 				}
 
 				hooks := admissionregistrationv1.ValidatingWebhookConfigurationList{}
-				must(t, seedClient.List(reconciler.ctx, &hooks))
+				must(t, seedClient.List(ctx, &hooks))
 				if len(hooks.Items) == 0 {
 					return errors.New("Seed should have ValidatingWebhookConfigurations, but has none")
 				}
@@ -230,24 +235,24 @@ func TestBasicReconciling(t *testing.T) {
 				seedName := types.NamespacedName{Namespace: "kubermatic", Name: "europe"}
 
 				seed := &kubermaticv1.Seed{}
-				must(t, seedClient.Get(reconciler.ctx, seedName, seed))
+				must(t, seedClient.Get(ctx, seedName, seed))
 				seed.DeletionTimestamp = &now
-				must(t, seedClient.Update(reconciler.ctx, seed))
+				must(t, seedClient.Update(ctx, seed))
 
 				// let the controller clean up
-				if err := reconciler.reconcile(reconciler.log, test.seedToReconcile); err != nil {
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
 					return fmt.Errorf("reconciliation failed: %v", err)
 				}
 
 				// all global resources should be gone
 				crbs = rbacv1.ClusterRoleBindingList{}
-				must(t, seedClient.List(reconciler.ctx, &crbs))
+				must(t, seedClient.List(ctx, &crbs))
 				if length := len(crbs.Items); length > 0 {
 					return fmt.Errorf("Seed should have no ClusterRoleBindings left over, but has %d", length)
 				}
 
 				hooks = admissionregistrationv1.ValidatingWebhookConfigurationList{}
-				must(t, seedClient.List(reconciler.ctx, &hooks))
+				must(t, seedClient.List(ctx, &hooks))
 				if length := len(hooks.Items); length > 0 {
 					return fmt.Errorf("Seed should have no ValidatingWebhookConfigurations left over, but has %d", length)
 				}
@@ -277,7 +282,7 @@ func TestBasicReconciling(t *testing.T) {
 				// seed client should not hurt it.
 				reconciler.seedClients = map[string]ctrlruntimeclient.Client{}
 
-				if err := reconciler.reconcile(reconciler.log, test.seedToReconcile); err != nil {
+				if err := reconciler.reconcile(context.Background(), reconciler.log, test.seedToReconcile); err != nil {
 					return fmt.Errorf("reconciliation failed: %v", err)
 				}
 
@@ -292,7 +297,7 @@ func TestBasicReconciling(t *testing.T) {
 			seedsOnMaster:   []string{"europe"},
 			syncedSeeds:     sets.NewString("europe"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
-				if err := reconciler.reconcile(reconciler.log, test.seedToReconcile); err != nil {
+				if err := reconciler.reconcile(context.Background(), reconciler.log, test.seedToReconcile); err != nil {
 					return fmt.Errorf("reconciliation failed: %v", err)
 				}
 
@@ -317,14 +322,16 @@ func TestBasicReconciling(t *testing.T) {
 			seedsOnMaster: []string{"seed-with-nodeport-proxy-annotations"},
 			syncedSeeds:   sets.NewString("seed-with-nodeport-proxy-annotations"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
-				if err := reconciler.reconcile(reconciler.log, test.seedToReconcile); err != nil {
+				ctx := context.Background()
+
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
 					return fmt.Errorf("reconciliation failed: %v", err)
 				}
 
 				seedClient := reconciler.seedClients["seed-with-nodeport-proxy-annotations"]
 
 				svc := corev1.Service{}
-				if err := seedClient.Get(reconciler.ctx, types.NamespacedName{
+				if err := seedClient.Get(ctx, types.NamespacedName{
 					Namespace: "kubermatic",
 					Name:      "nodeport-proxy",
 				}, &svc); err != nil {
@@ -360,7 +367,9 @@ func TestBasicReconciling(t *testing.T) {
 			seedsOnMaster: []string{"europe"},
 			syncedSeeds:   sets.NewString("europe"),
 			assertion: func(test *testcase, reconciler *Reconciler) error {
-				if err := reconciler.reconcile(reconciler.log, test.seedToReconcile); err != nil {
+				ctx := context.Background()
+
+				if err := reconciler.reconcile(ctx, reconciler.log, test.seedToReconcile); err != nil {
 					return fmt.Errorf("reconciliation failed: %v", err)
 				}
 
@@ -368,7 +377,7 @@ func TestBasicReconciling(t *testing.T) {
 
 				// check that secret with image pull secret has been created
 				secret := corev1.Secret{}
-				if err := seedClient.Get(reconciler.ctx, types.NamespacedName{
+				if err := seedClient.Get(ctx, types.NamespacedName{
 					Namespace: "kubermatic",
 					Name:      common.DockercfgSecretName,
 				}, &secret); err != nil {
@@ -383,7 +392,7 @@ func TestBasicReconciling(t *testing.T) {
 				// check that image pull secret has been inserted in the pod
 				// spec of seed controller manager
 				scm := appsv1.Deployment{}
-				if err := seedClient.Get(reconciler.ctx, types.NamespacedName{
+				if err := seedClient.Get(ctx, types.NamespacedName{
 					Namespace: "kubermatic",
 					Name:      common.SeedControllerManagerDeploymentName,
 				}, &scm); err != nil {
@@ -418,13 +427,13 @@ func TestBasicReconciling(t *testing.T) {
 }
 
 func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *operatorv1alpha1.KubermaticConfiguration, seeds []string, syncedSeeds sets.String) *Reconciler {
-	masterObjects := []runtime.Object{}
+	masterObjects := []ctrlruntimeclient.Object{}
 	if cfg != nil {
 		masterObjects = append(masterObjects, cfg)
 	}
 
 	masterSeeds := map[string]*kubermaticv1.Seed{} // makes the seedsGetter implementation easier
-	seedObjects := map[string][]runtime.Object{}
+	seedObjects := map[string][]ctrlruntimeclient.Object{}
 	seedClients := map[string]ctrlruntimeclient.Client{}
 	seedRecorders := map[string]record.EventRecorder{}
 
@@ -439,17 +448,27 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *operatorv
 			masterSeeds[seedName] = masterSeed
 		}
 
-		seedObjects[seedName] = []runtime.Object{}
+		seedObjects[seedName] = []ctrlruntimeclient.Object{}
 		if syncedSeeds.Has(seedName) {
 			// make sure to put a copy of the Seed CR into the seed "cluster"
 			seedObjects[seedName] = append(seedObjects[seedName], masterSeed.DeepCopy())
 		}
 
-		seedClients[seedName] = ctrlruntimefakeclient.NewFakeClient(seedObjects[seedName]...)
+		seedClients[seedName] = ctrlruntimefakeclient.
+			NewClientBuilder().
+			WithScheme(scheme.Scheme).
+			WithObjects(seedObjects[seedName]...).
+			Build()
+
 		seedRecorders[seedName] = record.NewFakeRecorder(999)
 	}
 
-	masterClient := ctrlruntimefakeclient.NewFakeClient(masterObjects...)
+	masterClient := ctrlruntimefakeclient.
+		NewClientBuilder().
+		WithScheme(scheme.Scheme).
+		WithObjects(masterObjects...).
+		Build()
+
 	masterRecorder := record.NewFakeRecorder(999)
 
 	versions := kubermatic.NewDefaultVersions()
@@ -461,7 +480,6 @@ func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *operatorv
 	}
 
 	return &Reconciler{
-		ctx:            context.Background(),
 		log:            kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 		scheme:         scheme.Scheme,
 		namespace:      "kubermatic",
