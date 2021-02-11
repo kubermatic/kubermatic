@@ -28,9 +28,8 @@ GIT_HEAD_TAG="$(git tag -l "$PULL_BASE_REF")"
 GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 TAGS="$GIT_HEAD_HASH $GIT_HEAD_TAG"
 
-# we only want to create the "latest" tag if we're building
-# the master branch and it's not a canary deployment
-if [ -z "${CANARY_DEPLOYMENT:-}" ] && [ "$GIT_BRANCH" == "master" ]; then
+# we only want to create the "latest" tag if we're building the master branch
+if [ "$GIT_BRANCH" == "master" ]; then
   TAGS="$TAGS latest"
 fi
 
