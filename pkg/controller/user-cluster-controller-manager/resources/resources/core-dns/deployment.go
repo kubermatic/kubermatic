@@ -109,7 +109,7 @@ func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGet
 			iptr := intstr.FromInt(1)
 			pdb.Spec.MinAvailable = &iptr
 			pdb.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(resources.CoreDNSServiceName, nil),
+				MatchLabels: resources.BaseAppLabels(resources.CoreDNSDeploymentName, nil),
 			}
 
 			return pdb, nil
