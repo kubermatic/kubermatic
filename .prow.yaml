@@ -1302,43 +1302,6 @@ presubmits:
             memory: 4Gi
             cpu: 2
 
-  - name: pre-kubermatic-canary-deployment-ci-kubermatic-io
-    max_concurrency: 1
-    decorate: true
-    # * hack: Contains all the deployment scripting
-    # * charts/kubermatic: Contains the chart
-    # * pkg/crd/kubermatic/v1: Contains the Seed and Datacenter types, if
-    #   this gets out of sync with what's in the secrets repo, we fail because we use
-    #   yaml.UnmarshalStrict
-    run_if_changed: "(hack|charts/kubermatic|pkg/crd/kubermatic/v1)"
-    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
-    branches:
-    - ^master$
-    labels:
-      preset-docker-push: "true"
-      preset-vault: "true"
-      preset-repo-ssh: "true"
-      preset-goproxy: "true"
-    spec:
-      containers:
-      - image: quay.io/kubermatic/go-docker:15.1-1903-1
-        command:
-        - ./hack/ci/deploy-ci-kubermatic-io.sh
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: CANARY_DEPLOYMENT
-          value: "true"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            cpu: 1
-            memory: 1Gi
-          limits:
-            memory: 3Gi
-
   - name: pre-kubermatic-test-integration
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
     decorate: true
