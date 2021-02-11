@@ -44,6 +44,20 @@ const (
 
 	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
 	CredentialPrefix = "credential"
+
+	AlibabaProvider      = "alibaba"
+	AnexiaProvider       = "anexia"
+	AwsProvider          = "aws"
+	AzureProvider        = "azure"
+	BringYourOwnProvider = "bringyourown"
+	DigitalOceanProvider = "digitalocean"
+	HetznerProvider      = "hetzner"
+	GCPProvider          = "gcp"
+	KubevirtProvider     = "kubevirt"
+	PacketProvider       = "packet"
+	OpenstackProvider    = "openstack"
+	FakeProvier          = "fake"
+	VSphereProvider      = "vsphere"
 )
 
 const (
@@ -745,4 +759,37 @@ func (cluster *Cluster) IsOpenshift() bool {
 
 func (cluster *Cluster) IsKubernetes() bool {
 	return !cluster.IsOpenshift()
+}
+
+func (cluster *Cluster) GetProviderName() string {
+	provider := "unknown"
+	if cluster.Spec.Cloud.Alibaba != nil {
+		provider = AlibabaProvider
+	} else if cluster.Spec.Cloud.Anexia != nil {
+		provider = AnexiaProvider
+	} else if cluster.Spec.Cloud.AWS != nil {
+		provider = AwsProvider
+	} else if cluster.Spec.Cloud.Azure != nil {
+		provider = AzureProvider
+	} else if cluster.Spec.Cloud.BringYourOwn != nil {
+		provider = BringYourOwnProvider
+	} else if cluster.Spec.Cloud.Digitalocean != nil {
+		provider = DigitalOceanProvider
+	} else if cluster.Spec.Cloud.Fake != nil {
+		provider = FakeProvier
+	} else if cluster.Spec.Cloud.GCP != nil {
+		provider = GCPProvider
+	} else if cluster.Spec.Cloud.Hetzner != nil {
+		provider = HetznerProvider
+	} else if cluster.Spec.Cloud.Kubevirt != nil {
+		provider = KubevirtProvider
+	} else if cluster.Spec.Cloud.Openstack != nil {
+		provider = OpenstackProvider
+	} else if cluster.Spec.Cloud.Packet != nil {
+		provider = PacketProvider
+	} else if cluster.Spec.Cloud.VSphere != nil {
+		provider = VSphereProvider
+	}
+
+	return provider
 }

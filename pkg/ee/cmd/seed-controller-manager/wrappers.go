@@ -28,9 +28,12 @@ import (
 	"context"
 	"flag"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	eectcontroller "k8c.io/kubermatic/v2/pkg/ee/constraint-template-controller"
 	eeprovider "k8c.io/kubermatic/v2/pkg/ee/provider"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
+	"k8s.io/apimachinery/pkg/labels"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -50,4 +53,11 @@ func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, see
 	}
 
 	return eeprovider.SeedGetterFactory(ctx, client, datacentersFile, seedName)
+}
+
+// GetClustersForConstraintTemplate gets clusters for the CT by using the CT selector to filter out unselected clusters
+func GetClustersForConstraintTemplate(ctx context.Context, client ctrlruntimeclient.Client,
+	ct *kubermaticv1.ConstraintTemplate, workerNamesLabelSelector labels.Selector) (*kubermaticv1.ClusterList, error) {
+
+	return eectcontroller.GetClustersForConstraintTemplate(ctx, client, ct, workerNamesLabelSelector)
 }

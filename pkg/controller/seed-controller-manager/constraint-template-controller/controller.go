@@ -191,7 +191,8 @@ func (r *reconciler) syncAllClusters(
 	action func(userClusterClient ctrlruntimeclient.Client, ct *kubermaticv1.ConstraintTemplate) error) error {
 
 	clusterList := &kubermaticv1.ClusterList{}
-	if err := r.seedClient.List(ctx, clusterList, &ctrlruntimeclient.ListOptions{LabelSelector: r.workerNameLabelSelector}); err != nil {
+	clusterList, err := r.getClustersForConstraintTemplate(ctx, constraintTemplate)
+	if err != nil {
 		return fmt.Errorf("failed listing clusters: %w", err)
 	}
 
