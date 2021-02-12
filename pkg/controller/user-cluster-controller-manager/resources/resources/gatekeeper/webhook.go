@@ -25,6 +25,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/pointer"
 )
@@ -42,7 +43,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 			validatingWebhookConfigurationWebhookConfiguration.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "validation.gatekeeper.sh",
-					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version},
+					AdmissionReviewVersions: []string{admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					FailurePolicy:           &failurePolicyIgnore,
 					SideEffects:             &sideEffectsNone,
 					TimeoutSeconds:          pointer.Int32Ptr(2),
@@ -82,7 +83,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 				},
 				{
 					Name:                    "check-ignore-label.gatekeeper.sh",
-					AdmissionReviewVersions: []string{admissionregistrationv1.SchemeGroupVersion.Version},
+					AdmissionReviewVersions: []string{admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					FailurePolicy:           &failurePolicyIgnore,
 					SideEffects:             &sideEffectsNone,
 					TimeoutSeconds:          pointer.Int32Ptr(2),
