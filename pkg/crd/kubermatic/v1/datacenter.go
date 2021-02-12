@@ -211,8 +211,8 @@ type DatacenterSpecOpenstack struct {
 	// This setting defaults to true.
 	ManageSecurityGroups *bool `json:"manage_security_groups"`
 	// Optional: Gets mapped to the "use-octavia" setting in the cloud config.
-	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer
-	// This setting defaults to true.
+	// use-octavia is enabled by default in CCM since v1.17.0, and disabled by
+	// default with the in-tree cloud provider. This setting defaults to true.
 	UseOctavia *bool `json:"use_octavia"`
 	// Optional: Gets mapped to the "trust-device-path" setting in the cloud config.
 	// See https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage
