@@ -29,14 +29,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func HetznerSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func HetznerSizeWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(HetznerSizesNoCredentialsReq)
-		return providercommon.HetznerSizeWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID)
+		return providercommon.HetznerSizeWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, settingsProvider, req.ProjectID, req.ClusterID)
 	}
 }
 
-func HetznerSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func HetznerSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(HetznerSizesReq)
 		token := req.HetznerToken
@@ -54,7 +54,11 @@ func HetznerSizeEndpoint(presetsProvider provider.PresetProvider, userInfoGetter
 				token = credentials.Token
 			}
 		}
-		return providercommon.HetznerSize(ctx, token)
+		settings, err := settingsProvider.GetGlobalSettings()
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return providercommon.HetznerSize(ctx, settings.Spec.MachineDeploymentVMResourceQuota, token)
 	}
 }
 
