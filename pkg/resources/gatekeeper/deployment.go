@@ -98,7 +98,10 @@ func ControllerDeploymentCreator(data gatekeeperData) reconciling.NamedDeploymen
 			dep.Name = controllerName
 			dep.Labels = resources.BaseAppLabels(controllerName, gatekeeperControllerLabels)
 
-			dep.Annotations = map[string]string{"container.seccomp.security.alpha.kubernetes.io/manager": "runtime/default"}
+			if dep.Annotations == nil {
+				dep.Annotations = make(map[string]string)
+			}
+			dep.Annotations["container.seccomp.security.alpha.kubernetes.io/manager"] = "runtime/default"
 
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
@@ -146,7 +149,10 @@ func AuditDeploymentCreator(data gatekeeperData) reconciling.NamedDeploymentCrea
 			dep.Name = auditName
 			dep.Labels = resources.BaseAppLabels(auditName, gatekeeperAuditLabels)
 
-			dep.Annotations = map[string]string{"container.seccomp.security.alpha.kubernetes.io/manager": "runtime/default"}
+			if dep.Annotations == nil {
+				dep.Annotations = make(map[string]string)
+			}
+			dep.Annotations["container.seccomp.security.alpha.kubernetes.io/manager"] = "runtime/default"
 
 			dep.Spec.Replicas = resources.Int32(1)
 			dep.Spec.Selector = &metav1.LabelSelector{
