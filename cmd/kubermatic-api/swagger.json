@@ -15085,11 +15085,6 @@
           "type": "boolean",
           "x-go-name": "ManageSecurityGroups"
         },
-        "use_octavia": {
-          "description": "Optional: Gets mapped to the \"use-octavia\" setting in the cloud config.\nThis setting defaults to true.",
-          "type": "boolean",
-          "x-go-name": "UseOctavia"
-        },
         "node_size_requirements": {
           "$ref": "#/definitions/OpenstackNodeSizeRequirements"
         },
@@ -15101,6 +15096,11 @@
           "description": "Optional: Gets mapped to the \"trust-device-path\" setting in the cloud config.\nSee https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage\nThis setting defaults to false.",
           "type": "boolean",
           "x-go-name": "TrustDevicePath"
+        },
+        "use_octavia": {
+          "description": "Optional: Gets mapped to the \"use-octavia\" setting in the cloud config.\nSee https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#load-balancer\nThis setting defaults to true.",
+          "type": "boolean",
+          "x-go-name": "UseOctavia"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
