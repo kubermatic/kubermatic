@@ -46,7 +46,7 @@ spec:
         image: docker.io/nfvpe/multus:v3.6
         command: ["/entrypoint.sh"]
         args:
-        - "--multus-conf-file=auto"
+        - "--multus-conf-file=/tmp/multus-conf/00-multus.conflist"
         - "--cni-version=0.3.1"
         resources:
           requests:
@@ -77,4 +77,4 @@ spec:
             name: multus-cni-config
             items:
             - key: cni-conf.json
-              p
+              path: 00-multus.conflist
