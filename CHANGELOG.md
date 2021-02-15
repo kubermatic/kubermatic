@@ -1,6 +1,15 @@
 # Kubermatic 2.16
 
-## [v2.16.0-beta.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.0-beta.1)
+## [v2.16.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.1)
+
+### Misc
+
+- Fix issue with gatekeeper not recognizing the AdmissionReview v1 version by changing the webhook to use v1beta1 ([#6550](https://github.com/kubermatic/kubermatic/issues/6550))
+
+
+
+
+## [v2.16.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.0)
 
 Before upgrading, make sure to read the [general upgrade guidelines](https://docs.kubermatic.com/kubermatic/v2.16/upgrading/guidelines/)
 as well as the [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16/upgrading/2.15_to_2.16/).
@@ -156,6 +165,11 @@ as well as the [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16
 - Thanos 0.17.2 ([#6290](https://github.com/kubermatic/kubermatic/issues/6290))
 - Velero 1.5.2 ([#6145](https://github.com/kubermatic/kubermatic/issues/6145))
 - machine-controller v1.23.1 ([#6387](https://github.com/kubermatic/kubermatic/issues/6387))
+
+
+### Changes since v2.16.0-beta.1
+
+- Add option to disable User SSH Key Agent from the cluster wizard ([#3025](https://github.com/kubermatic/dashboard/issues/3025))
 
 
 
