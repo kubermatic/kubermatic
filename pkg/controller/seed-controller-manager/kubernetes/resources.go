@@ -162,32 +162,32 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, err
 	}
 
-	return resources.NewTemplateData(
-		ctx,
-		r,
-		cluster,
-		&datacenter,
-		seed.DeepCopy(),
-		r.overwriteRegistry,
-		r.nodePortRange,
-		r.nodeAccessNetwork,
-		r.etcdDiskSize,
-		r.monitoringScrapeAnnotationPrefix,
-		r.inClusterPrometheusRulesFile,
-		r.inClusterPrometheusDisableDefaultRules,
-		r.inClusterPrometheusDisableDefaultScrapingConfigs,
-		r.inClusterPrometheusScrapingConfigsFile,
-		r.oidcCAFile,
-		r.oidcIssuerURL,
-		r.oidcIssuerClientID,
-		r.nodeLocalDNSCacheEnabled,
-		r.kubermaticImage,
-		r.etcdLauncherImage,
-		r.dnatControllerImage,
-		r.backupSchedule,
-		supportsFailureDomainZoneAntiAffinity,
-		r.versions,
-	), nil
+	return resources.NewTemplateDataBuilder().
+		WithContext(ctx).
+		WithClient(r).
+		WithCluster(cluster).
+		WithDatacenter(&datacenter).
+		WithSeed(seed.DeepCopy()).
+		WithOverwriteRegistry(r.overwriteRegistry).
+		WithNodePortRange(r.nodePortRange).
+		WithNodeAccessNetwork(r.nodeAccessNetwork).
+		WithEtcdDiskSize(r.etcdDiskSize).
+		WithMonitoringScrapeAnnotationPrefix(r.monitoringScrapeAnnotationPrefix).
+		WithInClusterPrometheusRulesFile(r.inClusterPrometheusRulesFile).
+		WithInClusterPrometheusDefaultRulesDisabled(r.inClusterPrometheusDisableDefaultRules).
+		WithInClusterPrometheusDefaultScrapingConfigsDisabled(r.inClusterPrometheusDisableDefaultScrapingConfigs).
+		WithInClusterPrometheusScrapingConfigsFile(r.inClusterPrometheusScrapingConfigsFile).
+		WithOIDCCAFile(r.oidcCAFile).
+		WithOIDCIssuerURL(r.oidcIssuerURL).
+		WithOIDCIssuerClientID(r.oidcIssuerClientID).
+		WithNodeLocalDNSCacheEnabled(r.nodeLocalDNSCacheEnabled).
+		WithKubermaticImage(r.kubermaticImage).
+		WithEtcdLauncherImage(r.etcdLauncherImage).
+		WithDnatControllerImage(r.dnatControllerImage).
+		WithBackupPeriod(r.backupSchedule).
+		WithFailureDomainZoneAntiaffinity(supportsFailureDomainZoneAntiAffinity).
+		WithVersions(r.versions).
+		Build(), nil
 }
 
 // ensureNamespaceExists will create the cluster namespace

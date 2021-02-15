@@ -212,7 +212,8 @@ const (
 	ClusterConditionNone ClusterConditionType = ""
 	// This condition is met when a CSI migration is ongoing and the CSI
 	// migration feature gates are activated on the Kubelets of all the nodes.
-	// CSIMigration{provider}Complete can be enabled at this point.
+	// When this condition is `true` CSIMigration{provider}Complete can be
+	// enabled.
 	ClusterConditionCSIKubeletMigrationCompleted ClusterConditionType = "CSIKubeletMigrationCompleted"
 
 	ReasonClusterUpdateSuccessful             = "ClusterUpdateSuccessful"

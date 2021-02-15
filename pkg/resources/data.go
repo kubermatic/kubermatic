@@ -74,7 +74,141 @@ type TemplateData struct {
 	inClusterPrometheusScrapingConfigsFile           string
 }
 
+type TemplateDataBuilder struct {
+	data TemplateData
+}
+
+func NewTemplateDataBuilder() *TemplateDataBuilder {
+	return &TemplateDataBuilder{}
+}
+
+func (td *TemplateDataBuilder) WithContext(ctx context.Context) *TemplateDataBuilder {
+	td.data.ctx = ctx
+	return td
+}
+
+func (td *TemplateDataBuilder) WithClient(client ctrlruntimeclient.Client) *TemplateDataBuilder {
+	td.data.client = client
+	return td
+}
+
+func (td *TemplateDataBuilder) WithCluster(cluster *kubermaticv1.Cluster) *TemplateDataBuilder {
+	td.data.cluster = cluster
+	return td
+}
+
+func (td *TemplateDataBuilder) WithDatacenter(dc *kubermaticv1.Datacenter) *TemplateDataBuilder {
+	td.data.dc = dc
+	return td
+}
+
+func (td *TemplateDataBuilder) WithSeed(s *kubermaticv1.Seed) *TemplateDataBuilder {
+	td.data.seed = s
+	return td
+}
+
+func (td *TemplateDataBuilder) WithOverwriteRegistry(overwriteRegistry string) *TemplateDataBuilder {
+	td.data.OverwriteRegistry = overwriteRegistry
+	return td
+}
+
+func (td *TemplateDataBuilder) WithNodePortRange(npRange string) *TemplateDataBuilder {
+	td.data.nodePortRange = npRange
+	return td
+}
+
+func (td *TemplateDataBuilder) WithNodeAccessNetwork(nodeAccessNetwork string) *TemplateDataBuilder {
+	td.data.nodeAccessNetwork = nodeAccessNetwork
+	return td
+}
+
+func (td *TemplateDataBuilder) WithEtcdDiskSize(etcdDiskSize resource.Quantity) *TemplateDataBuilder {
+	td.data.etcdDiskSize = etcdDiskSize
+	return td
+}
+
+func (td *TemplateDataBuilder) WithMonitoringScrapeAnnotationPrefix(prefix string) *TemplateDataBuilder {
+	td.data.monitoringScrapeAnnotationPrefix = prefix
+	return td
+}
+
+func (td *TemplateDataBuilder) WithInClusterPrometheusRulesFile(file string) *TemplateDataBuilder {
+	td.data.inClusterPrometheusRulesFile = file
+	return td
+}
+
+func (td *TemplateDataBuilder) WithInClusterPrometheusDefaultRulesDisabled(disabled bool) *TemplateDataBuilder {
+	td.data.inClusterPrometheusDisableDefaultRules = disabled
+	return td
+}
+
+func (td *TemplateDataBuilder) WithInClusterPrometheusDefaultScrapingConfigsDisabled(disabled bool) *TemplateDataBuilder {
+	td.data.inClusterPrometheusDisableDefaultScrapingConfigs = disabled
+	return td
+}
+
+func (td *TemplateDataBuilder) WithInClusterPrometheusScrapingConfigsFile(file string) *TemplateDataBuilder {
+	td.data.inClusterPrometheusScrapingConfigsFile = file
+	return td
+}
+
+func (td *TemplateDataBuilder) WithOIDCCAFile(file string) *TemplateDataBuilder {
+	td.data.oidcCAFile = file
+	return td
+}
+
+func (td *TemplateDataBuilder) WithOIDCIssuerURL(url string) *TemplateDataBuilder {
+	td.data.oidcIssuerURL = url
+	return td
+}
+
+func (td *TemplateDataBuilder) WithOIDCIssuerClientID(clientID string) *TemplateDataBuilder {
+	td.data.oidcIssuerClientID = clientID
+	return td
+}
+
+func (td *TemplateDataBuilder) WithNodeLocalDNSCacheEnabled(enabled bool) *TemplateDataBuilder {
+	td.data.nodeLocalDNSCacheEnabled = enabled
+	return td
+}
+
+func (td *TemplateDataBuilder) WithKubermaticImage(image string) *TemplateDataBuilder {
+	td.data.kubermaticImage = image
+	return td
+}
+
+func (td *TemplateDataBuilder) WithEtcdLauncherImage(image string) *TemplateDataBuilder {
+	td.data.etcdLauncherImage = image
+	return td
+}
+
+func (td *TemplateDataBuilder) WithDnatControllerImage(image string) *TemplateDataBuilder {
+	td.data.dnatControllerImage = image
+	return td
+}
+
+func (td *TemplateDataBuilder) WithVersions(v kubermatic.Versions) *TemplateDataBuilder {
+	td.data.versions = v
+	return td
+}
+
+func (td *TemplateDataBuilder) WithFailureDomainZoneAntiaffinity(enabled bool) *TemplateDataBuilder {
+	td.data.supportsFailureDomainZoneAntiAffinity = enabled
+	return td
+}
+
+func (td *TemplateDataBuilder) WithBackupPeriod(backupPeriod time.Duration) *TemplateDataBuilder {
+	td.data.backupSchedule = backupPeriod
+	return td
+}
+
+func (td TemplateDataBuilder) Build() *TemplateData {
+	//TODO(irozzo): Add validation
+	return &td.data
+}
+
 // NewTemplateData returns an instance of TemplateData
+// Deprecated: Use NewTemplateDataBuilder instead.
 func NewTemplateData(
 	ctx context.Context,
 	client ctrlruntimeclient.Client,
@@ -491,7 +625,7 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
 		if kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
-			featureFlags = append(featureFlags, "CSIMigrationComplete=true", "CSIMigrationOpenStackComplete=true")
+			featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
 		}
 	}
 	return featureFlags

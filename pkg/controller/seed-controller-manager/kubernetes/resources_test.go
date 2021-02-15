@@ -32,7 +32,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
-	"k8c.io/kubermatic/v2/pkg/test"
 )
 
 func init() {
@@ -276,9 +275,15 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 			ctx := context.Background()
 
 			fc := fake.NewClientBuilder().Build()
-			td := test.NewTemplateData(ctx, fc, tc.cluster)
+			td := resources.NewTemplateDataBuilder().
+				WithContext(ctx).
+				WithClient(fc).
+				WithCluster(tc.cluster).
+				Build()
 			// Add the KCM deployment
-			fc.Create(ctx, tc.kcmDeploymentConfig.Create(td))
+			if err := fc.Create(ctx, tc.kcmDeploymentConfig.Create(td)); err != nil {
+				t.Fatalf("error occurred while creating KCM deployment: %v", err)
+			}
 			creators := GetDeploymentCreators(td, false)
 			var ccmDeploymentFound bool
 			for _, c := range creators {

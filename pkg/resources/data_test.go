@@ -94,13 +94,16 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					},
 				},
 			},
-			wantFeatureGates: sets.NewString("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true", "CSIMigrationComplete=true", "CSIMigrationOpenStackComplete=true"),
+			wantFeatureGates: sets.NewString("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true", "CSIMigrationOpenStackComplete=true"),
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			if a, e := sets.NewString(GetCSIMigrationFeatureGates(tc.cluster)...), tc.wantFeatureGates; !a.Equal(e) {
+			td := NewTemplateDataBuilder().
+				WithCluster(tc.cluster).
+				Build()
+			if a, e := sets.NewString(td.GetCSIMigrationFeatureGates()...), tc.wantFeatureGates; !a.Equal(e) {
 				t.Errorf("Want feature gates %v, but got %v", e, a)
 			}
 		})

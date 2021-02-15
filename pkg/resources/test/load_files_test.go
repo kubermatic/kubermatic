@@ -572,39 +572,33 @@ func TestLoadFiles(t *testing.T) {
 				})()
 
 				ctx := context.Background()
-				data := resources.NewTemplateData(
-					ctx,
-					dynamicClient,
-					cluster,
-					dc,
-					&kubermaticv1.Seed{
+				data := resources.NewTemplateDataBuilder().
+					WithContext(ctx).
+					WithClient(dynamicClient).
+					WithCluster(cluster).
+					WithDatacenter(dc).
+					WithSeed(&kubermaticv1.Seed{
 						ObjectMeta: metav1.ObjectMeta{Name: "testdc"},
 						Spec: kubermaticv1.SeedSpec{
 							ProxySettings: &kubermaticv1.ProxySettings{
 								HTTPProxy: kubermaticv1.NewProxyValue("http://my-corp"),
 							},
 						},
-					},
-					"",
-					"",
-					"192.0.2.0/24",
-					resource.MustParse("5Gi"),
-					"kubermatic_io_monitoring",
-					"",
-					false,
-					false,
-					tmpFilePath,
-					"test",
-					"https://dev.kubermatic.io/dex",
-					"kubermaticIssuer",
-					true,
-					"quay.io/kubermatic/kubermatic",
-					"quay.io/kubermatic/etcd-launcher",
-					"quay.io/kubermatic/kubeletdnat-controller",
-					20*time.Minute,
-					false,
-					kubermaticVersions,
-				)
+					}).
+					WithNodeAccessNetwork("192.0.2.0/24").
+					WithEtcdDiskSize(resource.MustParse("5Gi")).
+					WithBackupPeriod(20 * time.Minute).
+					WithMonitoringScrapeAnnotationPrefix("kubermatic_io_monitoring").
+					WithInClusterPrometheusScrapingConfigsFile(tmpFilePath).
+					WithOIDCCAFile("test").
+					WithOIDCIssuerURL("https://dev.kubermatic.io/dex").
+					WithOIDCIssuerClientID("kubermaticIssuer").
+					WithNodeLocalDNSCacheEnabled(true).
+					WithKubermaticImage("quay.io/kubermatic/kubermatic").
+					WithEtcdLauncherImage("quay.io/kubermatic/etcd-launcher").
+					WithDnatControllerImage("quay.io/kubermatic/kubeletdnat-controller").
+					WithVersions(kubermaticVersions).
+					Build()
 
 				var deploymentCreators []reconciling.NamedDeploymentCreatorGetter
 				deploymentCreators = append(deploymentCreators, kubernetescontroller.GetDeploymentCreators(data, true)...)
