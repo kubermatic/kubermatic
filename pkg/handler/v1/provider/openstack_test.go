@@ -264,9 +264,6 @@ func TestOpenstackEndpoints(t *testing.T) {
 				},
 				{
 					"disk":80, "isPublic":true, "memory":8192, "region":"RegionOne", "slug":"m1.large", "swap":0, "vcpus":4
-				},
-				{
-					"disk":1, "isPublic":true, "memory":512, "region":"RegionOne", "slug":"m1.tiny.specs", "swap":0, "vcpus":1
 				}
 			]`,
 		},
@@ -283,9 +280,6 @@ func TestOpenstackEndpoints(t *testing.T) {
 				},
 				{
 					"disk":80, "isPublic":true, "memory":8192, "region":"RegionOne", "slug":"m1.large", "swap":0, "vcpus":4
-				},
-				{
-					"disk":1, "isPublic":true, "memory":512, "region":"RegionOne", "slug":"m1.tiny.specs", "swap":0, "vcpus":1
 				}
 			]`,
 		},
