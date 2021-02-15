@@ -33,7 +33,6 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -133,7 +132,7 @@ func genBackupJob(backupName string, jobName string) *batchv1.Job {
 	}
 	reconciler := Reconciler{
 		log:            kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-		Client:         ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme, cluster, backupConfig),
+		Client:         ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
 		storeContainer: genStoreContainer(),
 		recorder:       record.NewFakeRecorder(10),
 		clock:          clock.RealClock{},
@@ -156,7 +155,7 @@ func genBackupDeleteJob(backupName string, jobName string) *batchv1.Job {
 	}
 	reconciler := Reconciler{
 		log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-		Client:          ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme, cluster, backupConfig),
+		Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
 		deleteContainer: genDeleteContainer(),
 		recorder:        record.NewFakeRecorder(10),
 		clock:           clock.RealClock{},
@@ -175,7 +174,7 @@ func genCleanupJob(jobName string) *batchv1.Job {
 	backupConfig := genBackupConfig(cluster, "testbackup")
 	reconciler := Reconciler{
 		log:              kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-		Client:           ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme, cluster, backupConfig),
+		Client:           ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
 		cleanupContainer: genCleanupContainer(),
 		recorder:         record.NewFakeRecorder(10),
 		clock:            clock.RealClock{},
@@ -404,7 +403,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 
 			reconciler := Reconciler{
 				log:                 kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:              ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme, cluster, backupConfig),
+				Client:              ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
 				recorder:            record.NewFakeRecorder(10),
 				clock:               clock,
 				randStringGenerator: constRandStringGenerator("xxxx"),
@@ -589,7 +588,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 
-			initObjs := []runtime.Object{
+			initObjs := []client.Object{
 				cluster,
 				backupConfig,
 			}
@@ -598,7 +597,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			}
 			reconciler := Reconciler{
 				log:            kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:         ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme, initObjs...),
+				Client:         ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
 				storeContainer: genStoreContainer(),
 				recorder:       record.NewFakeRecorder(10),
 				clock:          clock,
@@ -862,7 +861,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			backupConfig.Spec.Keep = intPtr(tc.keep)
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 
-			initObjs := []runtime.Object{
+			initObjs := []client.Object{
 				cluster,
 				backupConfig,
 			}
@@ -871,7 +870,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			}
 			reconciler := Reconciler{
 				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:          ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme, initObjs...),
+				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),
 				clock:           clock,
@@ -1083,7 +1082,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 
-			initObjs := []runtime.Object{
+			initObjs := []client.Object{
 				cluster,
 				backupConfig,
 			}
@@ -1092,7 +1091,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			}
 			reconciler := Reconciler{
 				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:          ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme, initObjs...),
+				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),
 				clock:           clock,
@@ -1375,7 +1374,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			backupConfig.SetCreationTimestamp(metav1.Time{Time: clock.Now()})
 			backupConfig.Status.CurrentBackups = tc.existingBackups
 
-			initObjs := []runtime.Object{
+			initObjs := []client.Object{
 				cluster,
 				backupConfig,
 			}
@@ -1384,7 +1383,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			}
 			reconciler := Reconciler{
 				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:          ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme, initObjs...),
+				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),
 				clock:           clock,
@@ -1679,7 +1678,7 @@ func TestFinalization(t *testing.T) {
 			backupConfig.Status.CleanupRunning = tc.existingCleanupRunningFlag
 			kuberneteshelper.AddFinalizer(backupConfig, DeleteAllBackupsFinalizer)
 
-			initObjs := []runtime.Object{
+			initObjs := []client.Object{
 				cluster,
 				backupConfig,
 				genClusterRootCaSecret(),
@@ -1689,7 +1688,7 @@ func TestFinalization(t *testing.T) {
 			}
 			reconciler := Reconciler{
 				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				Client:          ctrlruntimefakeclient.NewFakeClientWithScheme(scheme.Scheme, initObjs...),
+				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
 				storeContainer:  genStoreContainer(),
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),
@@ -1700,7 +1699,8 @@ func TestFinalization(t *testing.T) {
 				reconciler.deleteContainer = nil
 			}
 
-			reconcileAfter, err := reconciler.Reconcile(reconcile.Request{NamespacedName: types.NamespacedName{Namespace: backupConfig.Namespace, Name: backupConfig.Name}})
+			ctx := context.Background()
+			reconcileAfter, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Namespace: backupConfig.Namespace, Name: backupConfig.Name}})
 			if err != nil {
 				t.Fatalf("ensurePendingBackupIsScheduled returned an error: %v", err)
 			}

@@ -424,7 +424,7 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *operatorv1alp
 		kubeSystemCreators = append(kubeSystemCreators, creator)
 	}
 
-	if err := reconciling.ReconcileConfigMaps(r.ctx, kubeSystemCreators, metav1.NamespaceSystem, client); err != nil {
+	if err := reconciling.ReconcileConfigMaps(ctx, kubeSystemCreators, metav1.NamespaceSystem, client); err != nil {
 		return fmt.Errorf("failed to reconcile kube-system ConfigMaps: %v", err)
 	}
 

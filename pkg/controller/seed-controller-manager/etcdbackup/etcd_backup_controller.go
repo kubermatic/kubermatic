@@ -161,9 +161,7 @@ func Add(
 }
 
 // Reconcile handle etcd backups reconciliation.
-func (r *Reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
