@@ -850,7 +850,7 @@ type NamedEtcdBackupConfigCreatorGetter = func() (name string, create EtcdBackup
 // EtcdBackupConfigObjectWrapper adds a wrapper so the EtcdBackupConfigCreator matches ObjectCreator.
 // This is needed as Go does not support function interface matching.
 func EtcdBackupConfigObjectWrapper(create EtcdBackupConfigCreator) ObjectCreator {
-	return func(existing runtime.Object) (runtime.Object, error) {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
 		if existing != nil {
 			return create(existing.(*kubermaticv1.EtcdBackupConfig))
 		}
