@@ -15116,6 +15116,11 @@
           "description": "Optional: Gets mapped to the \"trust-device-path\" setting in the cloud config.\nSee https://kubernetes.io/docs/concepts/cluster-administration/cloud-providers/#block-storage\nThis setting defaults to false.",
           "type": "boolean",
           "x-go-name": "TrustDevicePath"
+        },
+        "use_octavia": {
+          "description": "Optional: Gets mapped to the \"use-octavia\" setting in the cloud config.\nuse-octavia is enabled by default in CCM since v1.17.0, and disabled by\ndefault with the in-tree cloud provider.",
+          "type": "boolean",
+          "x-go-name": "UseOctavia"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
