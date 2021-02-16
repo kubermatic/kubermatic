@@ -21,12 +21,28 @@ data:
 {{- if .Values.kubermatic.storeContainer }}
 {{ .Values.kubermatic.storeContainer | indent 4 }}
 {{- else }}
+{{- if .Values.kubermatic.etcdBackupsRestores.enabled }}
+{{ .Files.Get "static/store-container-new.yaml" | indent 4 }}
+{{- else }}
 {{ .Files.Get "static/store-container.yaml" | indent 4 }}
 {{- end }}
+{{- end }}
 
-  cleanup-container.yaml: |
 {{- if .Values.kubermatic.cleanupContainer }}
+  cleanup-container.yaml: |
 {{ .Values.kubermatic.cleanupContainer | indent 4 }}
 {{- else }}
+{{- if not .Values.kubermatic.etcdBackupsRestores.enabled }}
+  cleanup-container.yaml: |
 {{ .Files.Get "static/cleanup-container.yaml" | indent 4 }}
+{{- end }}
+{{- end }}
+
+{{- if .Values.kubermatic.etcdBackupsRestores.enabled }}
+  delete-container.yaml: |
+{{- if .Values.kubermatic.deleteContainer }}
+{{ .Values.kubermatic.deleteContainer | indent 4 }}
+{{- else }}
+{{ .Files.Get "static/delete-container.yaml" | indent 4 }}
+{{- end }}
 {{- end }}

@@ -43,6 +43,14 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		return nil, err
 	}
 
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer) {
+		if err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+			kuberneteshelper.AddFinalizer(c, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer)
+		}); err != nil {
+			return nil, err
+		}
+	}
+
 	// Apply etcdLauncher flag
 	if err := r.ensureEtcdLauncherFeatureFlag(ctx, cluster); err != nil {
 		return nil, err

@@ -55,6 +55,7 @@ const (
 	DefaultVPAAdmissionControllerDockerRepository = "gcr.io/google_containers/vpa-admission-controller"
 	DefaultEnvoyDockerRepository                  = "docker.io/envoyproxy/envoy-alpine"
 	DefaultMaximumParallelReconciles              = 10
+	DefaultS3Endpoint                             = "s3.amazonaws.com"
 
 	// DefaultNoProxy is a set of domains/networks that should never be
 	// routed through a proxy. All user-supplied values are appended to
@@ -336,13 +337,30 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	}
 
 	if copy.Spec.SeedController.BackupStoreContainer == "" {
-		copy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultBackupStoreContainer)
+		if copy.Spec.SeedController.BackupRestore.Enabled {
+			copy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultNewBackupStoreContainer)
+		} else {
+			copy.Spec.SeedController.BackupStoreContainer = strings.TrimSpace(DefaultBackupStoreContainer)
+		}
 		logger.Debugw("Defaulting field", "field", "seedController.backupStoreContainer")
 	}
 
-	if copy.Spec.SeedController.BackupCleanupContainer == "" {
+	if copy.Spec.SeedController.BackupCleanupContainer == "" && !copy.Spec.SeedController.BackupRestore.Enabled {
 		copy.Spec.SeedController.BackupCleanupContainer = strings.TrimSpace(DefaultBackupCleanupContainer)
 		logger.Debugw("Defaulting field", "field", "seedController.backupCleanupContainer")
+	}
+
+	if copy.Spec.SeedController.BackupRestore.Enabled {
+		if copy.Spec.SeedController.BackupRestore.S3Endpoint == "" {
+			copy.Spec.SeedController.BackupRestore.S3Endpoint = DefaultS3Endpoint
+		}
+		if copy.Spec.SeedController.BackupRestore.S3BucketName == "" {
+			return nil, fmt.Errorf("backupRestore.enabled is set, but s3BucketName is unset")
+		}
+		if copy.Spec.SeedController.BackupDeleteContainer == "" {
+			copy.Spec.SeedController.BackupDeleteContainer = strings.TrimSpace(DefaultNewBackupDeleteContainer)
+			logger.Debugw("Defaulting field", "field", "seedController.backupDeleteContainer")
+		}
 	}
 
 	if copy.Spec.SeedController.Replicas == nil {
@@ -678,6 +696,84 @@ env:
 volumeMounts:
 - name: etcd-backup
   mountPath: /backup
+`
+
+const DefaultNewBackupStoreContainer = `
+name: store-container
+image: d3fk/s3cmd@sha256:2061883abbf0ebcf0ea3d5d218558c9c229f212e9c08af4acdaa3758980eb67a
+command:
+- /bin/sh
+- -c
+- |
+  set -e
+  s3cmd --no-check-certificate --access_key=$ACCESS_KEY_ID --secret_key=$SECRET_ACCESS_KEY --host=$ENDPOINT --host-bucket='%(bucket).'$ENDPOINT put /backup/snapshot.db s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_CREATE
+env:
+- name: ACCESS_KEY_ID
+  valueFrom:
+    secretKeyRef:
+      name: s3-credentials
+      key: ACCESS_KEY_ID
+- name: SECRET_ACCESS_KEY
+  valueFrom:
+    secretKeyRef:
+      name: s3-credentials
+      key: SECRET_ACCESS_KEY
+- name: BUCKET_NAME
+  valueFrom:
+    configMapKeyRef:
+      name: s3-settings
+      key: BUCKET_NAME
+- name: ENDPOINT
+  valueFrom:
+    configMapKeyRef:
+      name: s3-settings
+      key: ENDPOINT
+volumeMounts:
+- name: etcd-backup
+  mountPath: /backup
+`
+
+const DefaultNewBackupDeleteContainer = `
+name: delete-container
+image: d3fk/s3cmd@sha256:2061883abbf0ebcf0ea3d5d218558c9c229f212e9c08af4acdaa3758980eb67a
+command:
+- /bin/sh
+- -c
+- |
+  s3cmd --no-check-certificate --access_key=$ACCESS_KEY_ID --secret_key=$SECRET_ACCESS_KEY --host=$ENDPOINT --host-bucket='%(bucket).'$ENDPOINT del s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_DELETE
+  case $? in
+  12)
+    # backup no longer exists, which is fine
+    exit 0
+    ;;
+  0)
+    exit 0
+    ;;
+  *)
+    exit $?
+    ;;
+  esac
+env:
+- name: ACCESS_KEY_ID
+  valueFrom:
+    secretKeyRef:
+      name: s3-credentials
+      key: ACCESS_KEY_ID
+- name: SECRET_ACCESS_KEY
+  valueFrom:
+    secretKeyRef:
+      name: s3-credentials
+      key: SECRET_ACCESS_KEY
+- name: BUCKET_NAME
+  valueFrom:
+    configMapKeyRef:
+      name: s3-settings
+      key: BUCKET_NAME
+- name: ENDPOINT
+  valueFrom:
+    configMapKeyRef:
+      name: s3-settings
+      key: ENDPOINT
 `
 
 const DefaultBackupCleanupContainer = `

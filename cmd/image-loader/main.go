@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
@@ -466,6 +467,7 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		resources.DefaultKubermaticImage,
 		resources.DefaultEtcdLauncherImage,
 		resources.DefaultDNATControllerImage,
+		20*time.Minute,
 		false,
 		kubermaticVersions,
 	), nil

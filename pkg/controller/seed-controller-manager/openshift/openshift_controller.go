@@ -90,24 +90,26 @@ type Features struct {
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	log                      *zap.SugaredLogger
-	scheme                   *runtime.Scheme
-	recorder                 record.EventRecorder
-	seedGetter               provider.SeedGetter
-	userClusterConnProvider  *clusterclient.Provider
-	overwriteRegistry        string
-	nodeAccessNetwork        string
-	etcdDiskSize             resource.Quantity
-	dockerPullConfigJSON     []byte
-	workerName               string
-	externalURL              string
-	oidc                     OIDCConfig
-	kubermaticImage          string
-	etcdLauncherImage        string
-	dnatControllerImage      string
-	features                 Features
-	concurrentClusterUpdates int
-	versions                 kubermatic.Versions
+	log                         *zap.SugaredLogger
+	scheme                      *runtime.Scheme
+	recorder                    record.EventRecorder
+	seedGetter                  provider.SeedGetter
+	userClusterConnProvider     *clusterclient.Provider
+	overwriteRegistry           string
+	nodeAccessNetwork           string
+	etcdDiskSize                resource.Quantity
+	dockerPullConfigJSON        []byte
+	workerName                  string
+	externalURL                 string
+	oidc                        OIDCConfig
+	kubermaticImage             string
+	etcdLauncherImage           string
+	dnatControllerImage         string
+	features                    Features
+	concurrentClusterUpdates    int
+	etcdBackupRestoreController bool
+	backupSchedule              time.Duration
+	versions                    kubermatic.Versions
 }
 
 func Add(
@@ -125,30 +127,33 @@ func Add(
 	kubermaticImage string,
 	etcdLauncherImage string,
 	dnatControllerImage string,
+	etcdBackupRestoreController bool,
+	backupSchedule time.Duration,
 	features Features,
 	concurrentClusterUpdates int,
 	versions kubermatic.Versions,
 ) error {
 	reconciler := &Reconciler{
-		Client: mgr.GetClient(),
-
-		log:                      log.Named(ControllerName),
-		scheme:                   mgr.GetScheme(),
-		recorder:                 mgr.GetEventRecorderFor(ControllerName),
-		seedGetter:               seedGetter,
-		userClusterConnProvider:  userClusterConnProvider,
-		overwriteRegistry:        overwriteRegistry,
-		nodeAccessNetwork:        nodeAccessNetwork,
-		etcdDiskSize:             etcdDiskSize,
-		dockerPullConfigJSON:     dockerPullConfigJSON,
-		workerName:               workerName,
-		externalURL:              externalURL,
-		kubermaticImage:          kubermaticImage,
-		etcdLauncherImage:        etcdLauncherImage,
-		dnatControllerImage:      dnatControllerImage,
-		features:                 features,
-		concurrentClusterUpdates: concurrentClusterUpdates,
-		versions:                 versions,
+		Client:                      mgr.GetClient(),
+		log:                         log.Named(ControllerName),
+		scheme:                      mgr.GetScheme(),
+		recorder:                    mgr.GetEventRecorderFor(ControllerName),
+		seedGetter:                  seedGetter,
+		userClusterConnProvider:     userClusterConnProvider,
+		overwriteRegistry:           overwriteRegistry,
+		nodeAccessNetwork:           nodeAccessNetwork,
+		etcdDiskSize:                etcdDiskSize,
+		dockerPullConfigJSON:        dockerPullConfigJSON,
+		workerName:                  workerName,
+		externalURL:                 externalURL,
+		kubermaticImage:             kubermaticImage,
+		etcdLauncherImage:           etcdLauncherImage,
+		dnatControllerImage:         dnatControllerImage,
+		features:                    features,
+		concurrentClusterUpdates:    concurrentClusterUpdates,
+		etcdBackupRestoreController: etcdBackupRestoreController,
+		backupSchedule:              backupSchedule,
+		versions:                    versions,
 	}
 
 	c, err := controller.New(ControllerName, mgr,
@@ -245,7 +250,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 
 		// Always requeue a cluster after we executed the cleanup.
-		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClientGetter).CleanupCluster(ctx, log, cluster)
+		return &reconcile.Result{RequeueAfter: 10 * time.Second}, clusterdeletion.New(r.Client, userClusterClientGetter, r.etcdBackupRestoreController).CleanupCluster(ctx, log, cluster)
 	}
 
 	if cluster.Spec.Openshift == nil {
@@ -443,6 +448,19 @@ func GetStatefulSetCreators(osData *openshiftData, enableDataCorruptionChecks bo
 func (r *Reconciler) statefulSets(ctx context.Context, osData *openshiftData) error {
 	creators := GetStatefulSetCreators(osData, r.features.EtcdDataCorruptionChecks)
 	return reconciling.ReconcileStatefulSets(ctx, creators, osData.Cluster().Status.NamespaceName, r.Client)
+}
+
+func GetEtcdBackupConfigCreators(osData *openshiftData) []reconciling.NamedEtcdBackupConfigCreatorGetter {
+	creators := []reconciling.NamedEtcdBackupConfigCreatorGetter{
+		etcd.BackupConfigCreator(osData),
+	}
+	return creators
+}
+
+func (r *Reconciler) etcdBackupConfigs(ctx context.Context, c *kubermaticv1.Cluster, osData *openshiftData) error {
+	creators := GetEtcdBackupConfigCreators(osData)
+
+	return reconciling.ReconcileEtcdBackupConfigs(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
 func (r *Reconciler) getAllConfigmapCreators(ctx context.Context, osData *openshiftData) []reconciling.NamedConfigMapCreatorGetter {

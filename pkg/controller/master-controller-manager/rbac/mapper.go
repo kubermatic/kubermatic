@@ -86,6 +86,10 @@ func generateRBACRoleNameForClusterNamespaceResource(kind, groupName string) str
 	return fmt.Sprintf("%s:%s:%s", RBACResourcesNamePrefix, strings.ToLower(kind), ExtractGroupPrefix(groupName))
 }
 
+func generateRBACRoleNameForClusterNamespaceResourceAndServiceAccount(kind, serviceAccountName string) string {
+	return fmt.Sprintf("%s:%s:sa-%s", RBACResourcesNamePrefix, strings.ToLower(kind), serviceAccountName)
+}
+
 // generateClusterRBACRoleNamedResource generates ClusterRole for a named resource.
 // named resources have its rules set to a resource with the given name for example:
 // the following rule allows reading a ConfigMap named “my-config”
@@ -351,7 +355,6 @@ func generateRBACRoleForClusterNamespaceResource(cluster *kubermaticv1.Cluster, 
 }
 
 // generateRBACRoleBindingForClusterNamespaceResource generates per-cluster RoleBinding for the given cluster in the cluster namespace
-// Note that for some groups we don't want to generate RoleBinding in that case a nil will be returned
 func generateRBACRoleBindingForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, kind string) *rbacv1.RoleBinding {
 	binding := &rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
@@ -369,6 +372,48 @@ func generateRBACRoleBindingForClusterNamespaceResource(cluster *kubermaticv1.Cl
 			APIGroup: rbacv1.GroupName,
 			Kind:     "Role",
 			Name:     generateRBACRoleNameForClusterNamespaceResource(kind, groupName),
+		},
+	}
+	return binding
+}
+
+// generateRBACRoleForClusterNamespaceResourceAndServiceAccount generates per-cluster Role for the given cluster and service account in the cluster namespace
+func generateRBACRoleForClusterNamespaceResourceAndServiceAccount(cluster *kubermaticv1.Cluster, verbs []string, serviceAccountName, policyResource, policyAPIGroups, kind string) (*rbacv1.Role, error) {
+	role := &rbacv1.Role{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      generateRBACRoleNameForClusterNamespaceResourceAndServiceAccount(kind, serviceAccountName),
+			Namespace: cluster.Status.NamespaceName,
+		},
+		Rules: []rbacv1.PolicyRule{
+			{
+				APIGroups: []string{policyAPIGroups},
+				Resources: []string{policyResource},
+				Verbs:     verbs,
+			},
+		},
+	}
+	return role, nil
+}
+
+// generateRBACRoleBindingForClusterNamespaceResourceAndServiceAccount generates per-cluster RoleBinding for the given cluster and service account in the cluster namespace
+func generateRBACRoleBindingForClusterNamespaceResourceAndServiceAccount(cluster *kubermaticv1.Cluster, serviceAccountName, kind string) *rbacv1.RoleBinding {
+	binding := &rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      generateRBACRoleNameForClusterNamespaceResourceAndServiceAccount(kind, serviceAccountName),
+			Namespace: cluster.Status.NamespaceName,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup:  "",
+				Kind:      rbacv1.ServiceAccountKind,
+				Name:      serviceAccountName,
+				Namespace: cluster.Status.NamespaceName,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: rbacv1.GroupName,
+			Kind:     "Role",
+			Name:     generateRBACRoleNameForClusterNamespaceResourceAndServiceAccount(kind, serviceAccountName),
 		},
 	}
 	return binding

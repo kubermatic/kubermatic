@@ -32,6 +32,14 @@ func (c *FakeKubermaticV1) ConstraintTemplates() v1.ConstraintTemplateInterface 
 	return &FakeConstraintTemplates{c}
 }
 
+func (c *FakeKubermaticV1) EtcdBackupConfigs(namespace string) v1.EtcdBackupConfigInterface {
+	return &FakeEtcdBackupConfigs{c, namespace}
+}
+
+func (c *FakeKubermaticV1) EtcdRestores(namespace string) v1.EtcdRestoreInterface {
+	return &FakeEtcdRestores{c, namespace}
+}
+
 func (c *FakeKubermaticV1) ExternalClusters() v1.ExternalClusterInterface {
 	return &FakeExternalClusters{c}
 }

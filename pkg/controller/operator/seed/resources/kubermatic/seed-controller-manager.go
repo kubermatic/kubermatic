@@ -65,8 +65,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				"-openshift-addons-path=/opt/addons/openshift",
 				"-worker-count=4",
 				"-admissionwebhook-cert-dir=/opt/webhook-serving-cert/",
-				fmt.Sprintf("-backup-container=/opt/backup/%s", storeContainerKey),
-				fmt.Sprintf("-cleanup-container=/opt/backup/%s", cleanupContainerKey),
 				fmt.Sprintf("-admissionwebhook-cert-name=%s", resources.ServingCertSecretKey),
 				fmt.Sprintf("-admissionwebhook-key-name=%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
@@ -88,6 +86,16 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				fmt.Sprintf("-pprof-listen-address=%s", *cfg.Spec.SeedController.PProfEndpoint),
 				fmt.Sprintf("-in-cluster-prometheus-disable-default-rules=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultRules),
 				fmt.Sprintf("-in-cluster-prometheus-disable-default-scraping-configs=%v", cfg.Spec.UserCluster.Monitoring.DisableDefaultScrapingConfigs),
+				fmt.Sprintf("-backup-container=/opt/backup/%s", storeContainerKey),
+			}
+
+			if !cfg.Spec.SeedController.BackupRestore.Enabled || cfg.Spec.SeedController.BackupCleanupContainer != "" {
+				args = append(args, fmt.Sprintf("-cleanup-container=/opt/backup/%s", cleanupContainerKey))
+			}
+
+			if cfg.Spec.SeedController.BackupRestore.Enabled {
+				args = append(args, "-enable-etcd-backups-restores")
+				args = append(args, fmt.Sprintf("-backup-delete-container=/opt/backup/%s", deleteContainerKey))
 			}
 
 			// Only EE does support dynamic-datacenters

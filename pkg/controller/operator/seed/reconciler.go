@@ -418,6 +418,16 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *operatorv1alp
 		return fmt.Errorf("failed to reconcile ConfigMaps: %v", err)
 	}
 
+	var kubeSystemCreators []reconciling.NamedConfigMapCreatorGetter
+
+	if creator := kubermaticseed.RestoreS3SettingsConfigMapCreator(cfg); creator != nil {
+		kubeSystemCreators = append(kubeSystemCreators, creator)
+	}
+
+	if err := reconciling.ReconcileConfigMaps(ctx, kubeSystemCreators, metav1.NamespaceSystem, client); err != nil {
+		return fmt.Errorf("failed to reconcile kube-system ConfigMaps: %v", err)
+	}
+
 	return nil
 }
 

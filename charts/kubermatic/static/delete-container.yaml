@@ -1,0 +1,42 @@
+# This file has been generated using hack/update-kubermatic-chart.sh, do not edit.
+
+name: delete-container
+image: d3fk/s3cmd@sha256:2061883abbf0ebcf0ea3d5d218558c9c229f212e9c08af4acdaa3758980eb67a
+command:
+- /bin/sh
+- -c
+- |
+  s3cmd --no-check-certificate --access_key=$ACCESS_KEY_ID --secret_key=$SECRET_ACCESS_KEY --host=$ENDPOINT --host-bucket='%(bucket).'$ENDPOINT del s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_DELETE
+  case $? in
+  12)
+    # backup no longer exists, which is fine
+    exit 0
+    ;;
+  0)
+    exit 0
+    ;;
+  *)
+    exit $?
+    ;;
+  esac
+env:
+- name: ACCESS_KEY_ID
+  valueFrom:
+    secretKeyRef:
+      name: s3-credentials
+      key: ACCESS_KEY_ID
+- name: SECRET_ACCESS_KEY
+  valueFrom:
+    secretKeyRef:
+      name: s3-credentials
+      key: SECRET_ACCESS_KEY
+- name: BUCKET_NAME
+  valueFrom:
+    configMapKeyRef:
+      name: s3-settings
+      key: BUCKET_NAME
+- name: ENDPOINT
+  valueFrom:
+    configMapKeyRef:
+      name: s3-settings
+      key: ENDPOINT

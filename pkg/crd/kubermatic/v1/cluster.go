@@ -22,10 +22,10 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
@@ -203,6 +203,9 @@ const (
 
 	ClusterConditionEtcdClusterInitialized ClusterConditionType = "EtcdClusterInitialized"
 
+	// ClusterConditionNone is a special value indicating that no cluster condition should be set
+	ClusterConditionNone ClusterConditionType = ""
+
 	ReasonClusterUpdateSuccessful = "ClusterUpdateSuccessful"
 	ReasonClusterUpdateInProgress = "ClusterUpdateInProgress"
 )
@@ -351,8 +354,9 @@ type APIServerSettings struct {
 }
 
 type DeploymentSettings struct {
-	Replicas  *int32                       `json:"replicas,omitempty"`
-	Resources *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Replicas    *int32                       `json:"replicas,omitempty"`
+	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Tolerations []corev1.Toleration          `json:"tolerations,omitempty"`
 }
 
 type StatefulSetSettings struct {
@@ -360,8 +364,11 @@ type StatefulSetSettings struct {
 }
 
 type EtcdStatefulSetSettings struct {
-	ClusterSize int                          `json:"clusterSize,omitempty"`
-	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
+	ClusterSize  int                          `json:"clusterSize,omitempty"`
+	StorageClass string                       `json:"storageClass,omitempty"`
+	DiskSize     *resource.Quantity           `json:"diskSize,omitempty"`
+	Resources    *corev1.ResourceRequirements `json:"resources,omitempty"`
+	Tolerations  []corev1.Toleration          `json:"tolerations,omitempty"`
 }
 
 // ClusterNetworkingConfig specifies the different networking
