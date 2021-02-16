@@ -28,6 +28,8 @@ import (
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/clustercomponentdefaulter"
 	constrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-template-controller"
+	etcdbackupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdbackup"
+	etcdrestorecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdrestore"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initialmachinedeployment"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
@@ -53,7 +55,9 @@ var AllControllers = map[string]controllerCreator{
 	updatecontroller.ControllerName:               createUpdateController,
 	addon.ControllerName:                          createAddonController,
 	addoninstaller.ControllerName:                 createAddonInstallerController,
+	etcdbackupcontroller.ControllerName:           createEtcdBackupController,
 	backupcontroller.ControllerName:               createBackupController,
+	etcdrestorecontroller.ControllerName:          createEtcdRestoreController,
 	monitoring.ControllerName:                     createMonitoringController,
 	cloudcontroller.ControllerName:                createCloudController,
 	openshiftcontroller.ControllerName:            createOpenshiftController,
@@ -124,6 +128,11 @@ func createCloudController(ctrlCtx *controllerContext) error {
 }
 
 func createOpenshiftController(ctrlCtx *controllerContext) error {
+	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
+	}
+
 	if err := openshiftcontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -139,6 +148,8 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.etcdLauncherImage,
 		ctrlCtx.runOptions.dnatControllerImage,
+		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
+		backupInterval,
 		openshiftcontroller.Features{
 			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
 			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
@@ -151,6 +162,11 @@ func createOpenshiftController(ctrlCtx *controllerContext) error {
 }
 
 func createKubernetesController(ctrlCtx *controllerContext) error {
+	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
+	if err != nil {
+		return fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
+	}
+
 	return kubernetescontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
@@ -171,6 +187,8 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
 		ctrlCtx.runOptions.concurrentClusterUpdate,
+		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
+		backupInterval,
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
@@ -188,12 +206,54 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 	)
 }
 
+func createEtcdBackupController(ctrlCtx *controllerContext) error {
+	if !ctrlCtx.runOptions.enableEtcdBackupRestoreController {
+		return nil
+	}
+	storeContainer, err := getContainerFromFile(ctrlCtx.runOptions.backupContainerFile)
+	if err != nil {
+		return err
+	}
+	var deleteContainer *corev1.Container
+	if ctrlCtx.runOptions.backupDeleteContainerFile != "" {
+		deleteContainer, err = getContainerFromFile(ctrlCtx.runOptions.backupDeleteContainerFile)
+		if err != nil {
+			return err
+		}
+	}
+	var cleanupContainer *corev1.Container
+	if ctrlCtx.runOptions.cleanupContainerFile != "" {
+		cleanupContainer, err = getContainerFromFile(ctrlCtx.runOptions.cleanupContainerFile)
+		if err != nil {
+			return err
+		}
+	}
+	return etcdbackupcontroller.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		storeContainer,
+		deleteContainer,
+		cleanupContainer,
+		ctrlCtx.runOptions.backupContainerImage,
+		ctrlCtx.versions,
+	)
+}
+
 func createBackupController(ctrlCtx *controllerContext) error {
 	storeContainer, err := getContainerFromFile(ctrlCtx.runOptions.backupContainerFile)
 	if err != nil {
 		return err
 	}
-	cleanupContainer, err := getContainerFromFile(ctrlCtx.runOptions.cleanupContainerFile)
+	var cleanupContainer *corev1.Container
+	if !ctrlCtx.runOptions.enableEtcdBackupRestoreController {
+		cleanupContainer, err = getContainerFromFile(ctrlCtx.runOptions.cleanupContainerFile)
+	} else {
+		// new backup controller is enabled, this one will only be run to delete any existing backup cronjob.
+		// cleanupContainer not needed, just pass an empty dummy
+		cleanupContainer = &corev1.Container{}
+	}
 	if err != nil {
 		return err
 	}
@@ -210,6 +270,20 @@ func createBackupController(ctrlCtx *controllerContext) error {
 		*cleanupContainer,
 		backupInterval,
 		ctrlCtx.runOptions.backupContainerImage,
+		ctrlCtx.versions,
+		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
+	)
+}
+
+func createEtcdRestoreController(ctrlCtx *controllerContext) error {
+	if !ctrlCtx.runOptions.enableEtcdBackupRestoreController {
+		return nil
+	}
+	return etcdrestorecontroller.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
 		ctrlCtx.versions,
 	)
 }

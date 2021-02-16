@@ -98,6 +98,18 @@ func (c *resourcesController) syncProjectResource(ctx context.Context, key ctrlr
 			if err := ensureClusterRBACRoleBindingForEtcdLauncher(ctx, c.client, projectName, metaObject); err != nil {
 				return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
 			}
+			if err := c.ensureRBACRoleForEtcdRestores(ctx, metaObject, kubermaticv1.EtcdRestoreResourceName, kubermaticv1.GroupName, kubermaticv1.EtcdRestoreKindName); err != nil {
+				return fmt.Errorf("failed to sync etcd restore RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+			}
+			if err := c.ensureRBACRoleBindingForEtcdRestores(ctx, metaObject, kubermaticv1.EtcdRestoreKindName); err != nil {
+				return fmt.Errorf("failed to sync etcd restore RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
+			}
+			if err := c.ensureRBACRoleForEtcdRestores(ctx, metaObject, "secrets", "", "Secret"); err != nil {
+				return fmt.Errorf("failed to sync etcd restore RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+			}
+			if err := c.ensureRBACRoleBindingForEtcdRestores(ctx, metaObject, "Secret"); err != nil {
+				return fmt.Errorf("failed to sync etcd restore RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
+			}
 		}
 
 		return nil
@@ -453,6 +465,90 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAddons(ctx context.
 			return err
 		}
 	}
+	return nil
+}
+
+func (c *resourcesController) ensureRBACRoleForEtcdRestores(ctx context.Context, object metav1.Object, resourceName string, groupName string, kindName string) error {
+	cluster, ok := object.(*kubermaticv1.Cluster)
+	if !ok {
+		return fmt.Errorf("ensureRBACRoleForEtcdRestores called with non-cluster: %+v", object)
+	}
+
+	var roleList rbacv1.RoleList
+	opts := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
+	if err := c.client.List(ctx, &roleList, opts); err != nil {
+		return err
+	}
+
+	generatedRole, err := generateRBACRoleForClusterNamespaceResourceAndServiceAccount(
+		cluster,
+		[]string{"get", "list"},
+		EtcdLauncherServiceAccountName,
+		resourceName,
+		groupName,
+		kindName)
+	if err != nil {
+		return err
+	}
+
+	var sharedExistingRole rbacv1.Role
+	key := ctrlruntimeclient.ObjectKey{Name: generatedRole.Name, Namespace: cluster.Status.NamespaceName}
+	if err := c.client.Get(ctx, key, &sharedExistingRole); err != nil {
+		if kerrors.IsNotFound(err) {
+			if err := c.client.Create(ctx, generatedRole); err != nil {
+				return err
+			}
+			return nil
+		}
+		return err
+	}
+
+	// make sure that existing rbac role has appropriate rules/policies
+	if equality.Semantic.DeepEqual(sharedExistingRole.Rules, generatedRole.Rules) {
+		return nil
+	}
+	existingRole := sharedExistingRole.DeepCopy()
+	existingRole.Rules = generatedRole.Rules
+	if err := c.client.Update(ctx, existingRole); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *resourcesController) ensureRBACRoleBindingForEtcdRestores(ctx context.Context, object metav1.Object, kindName string) error {
+	cluster, ok := object.(*kubermaticv1.Cluster)
+	if !ok {
+		return fmt.Errorf("ensureRBACRoleBindingForClusterAddons called with non-cluster: %+v", object)
+	}
+
+	generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResourceAndServiceAccount(
+		cluster,
+		EtcdLauncherServiceAccountName,
+		kindName,
+	)
+
+	var sharedExistingRoleBinding rbacv1.RoleBinding
+	key := ctrlruntimeclient.ObjectKey{Name: generatedRoleBinding.Name, Namespace: cluster.Status.NamespaceName}
+	if err := c.client.Get(ctx, key, &sharedExistingRoleBinding); err != nil {
+		if kerrors.IsNotFound(err) {
+			if err := c.client.Create(ctx, generatedRoleBinding); err != nil {
+				return err
+			}
+			return nil
+		}
+		return err
+	}
+
+	// sharedExistingRoleBinding found
+	if equality.Semantic.DeepEqual(sharedExistingRoleBinding.Subjects, generatedRoleBinding.Subjects) {
+		return nil
+	}
+	existingRoleBinding := sharedExistingRoleBinding.DeepCopy()
+	existingRoleBinding.Subjects = generatedRoleBinding.Subjects
+	if err := c.client.Update(ctx, existingRoleBinding); err != nil {
+		return err
+	}
+
 	return nil
 }
 

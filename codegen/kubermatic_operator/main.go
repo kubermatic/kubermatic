@@ -33,6 +33,8 @@ import (
 func main() {
 	writeYAML(common.DefaultBackupStoreContainer, "charts/kubermatic/static/store-container.yaml")
 	writeYAML(common.DefaultBackupCleanupContainer, "charts/kubermatic/static/cleanup-container.yaml")
+	writeYAML(common.DefaultNewBackupStoreContainer, "charts/kubermatic/static/store-container-new.yaml")
+	writeYAML(common.DefaultNewBackupDeleteContainer, "charts/kubermatic/static/delete-container.yaml")
 	writeYAML(common.DefaultKubernetesAddons, "charts/kubermatic/static/master/kubernetes-addons.yaml")
 	writeYAML(common.DefaultOpenshiftAddons, "charts/kubermatic/static/master/openshift-addons.yaml")
 	writeJSON(common.DefaultUIConfig, "charts/kubermatic/static/master/ui-config.json")

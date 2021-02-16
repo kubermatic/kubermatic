@@ -67,6 +67,7 @@ type controllerRunOptions struct {
 	kubernetesAddons                                 kubermaticv1.AddonList
 	openshiftAddons                                  kubermaticv1.AddonList
 	backupContainerFile                              string
+	backupDeleteContainerFile                        string
 	cleanupContainerFile                             string
 	backupContainerImage                             string
 	backupInterval                                   string
@@ -79,6 +80,7 @@ type controllerRunOptions struct {
 	dockerPullConfigJSONFile                         string
 	kubermaticImage                                  string
 	etcdLauncherImage                                string
+	enableEtcdBackupRestoreController                bool
 	dnatControllerImage                              string
 	namespace                                        string
 	apiServerDefaultReplicas                         int
@@ -133,7 +135,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&defaultOpenshiftAddonList, "openshift-addons-list", "", "Comma separated list of addons to install into every openshift user cluster. Mutually exclusive with `--openshift-addons-file`")
 	flag.StringVar(&defaultOpenshiftAddonsFile, "openshift-addons-file", "", "File that contains a list of default openshift addons. Mutually exclusive with `--openshift-addons-list`")
 	flag.StringVar(&c.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backup container yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
-	flag.StringVar(&c.cleanupContainerFile, "cleanup-container", "", "[Required] Filepath of a cleanup container yaml. The container will be used to cleanup the backup directory for a cluster after it got deleted.")
+	flag.StringVar(&c.backupDeleteContainerFile, "backup-delete-container", "", "Filepath of a backup deletion container yaml. It receives the name of the backup to delete in an env variable ($BACKUP_TO_DELETE). If not specified, the backup container must handle deletion.")
+	flag.StringVar(&c.cleanupContainerFile, "cleanup-container", "", "(Only required for the old backup controller) Filepath of a cleanup container yaml. The container will be used to cleanup the backup directory for a cluster after it got deleted.")
 	flag.StringVar(&c.backupContainerImage, "backup-container-init-image", backupcontroller.DefaultBackupContainerImage, "Docker image to use for the init container in the backup job, must be an etcd v3 image. Only set this if your cluster can not use the public quay.io registry")
 	flag.StringVar(&c.backupInterval, "backup-interval", backupcontroller.DefaultBackupInterval, "Interval in which the etcd gets backed up")
 	flag.StringVar(&rawEtcdDiskSize, "etcd-disk-size", "5Gi", "Size for the etcd PV's. Only applies to new clusters.")
@@ -150,6 +153,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
 	flag.StringVar(&c.kubermaticImage, "kubermatic-image", resources.DefaultKubermaticImage, "The location from which to pull the Kubermatic image")
 	flag.StringVar(&c.etcdLauncherImage, "etcd-launcher-image", resources.DefaultEtcdLauncherImage, "The location from which to pull the etcd launcher image")
+	flag.BoolVar(&c.enableEtcdBackupRestoreController, "enable-etcd-backups-restores", false, "Whether to enable the new etcd backup and restore controllers")
 	flag.StringVar(&c.dnatControllerImage, "dnatcontroller-image", resources.DefaultDNATControllerImage, "The location of the dnatcontroller-image")
 	flag.StringVar(&c.namespace, "namespace", "kubermatic", "The namespace kubermatic runs in, uses to determine where to look for datacenter custom resources")
 	flag.IntVar(&c.apiServerDefaultReplicas, "apiserver-default-replicas", 2, "The default number of replicas for usercluster api servers")

@@ -19,6 +19,7 @@ package monitoring
 import (
 	"context"
 	"fmt"
+	"time"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -64,6 +65,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		"",
 		"",
 		"",
+		20*time.Minute,
 		false,
 		r.versions,
 	), nil

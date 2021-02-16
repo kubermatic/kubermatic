@@ -28,16 +28,19 @@ import (
 	"net"
 	"time"
 
-	"k8c.io/kubermatic/v2/pkg/semver"
+	"github.com/minio/minio-go"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	corev1lister "k8s.io/client-go/listers/core/v1"
 	certutil "k8s.io/client-go/util/cert"
@@ -102,6 +105,8 @@ const (
 	PrometheusStatefulSetName = "prometheus"
 	//EtcdStatefulSetName is the name for the etcd StatefulSet
 	EtcdStatefulSetName = "etcd"
+	// EtcdDefaultBackupConfigName is the name for the default (preinstalled) EtcdBackupConfig of a cluster
+	EtcdDefaultBackupConfigName = "default-backups"
 
 	//ApiserverServiceName is the name for the apiserver service
 	ApiserverServiceName = "apiserver-external"
@@ -435,6 +440,17 @@ const (
 	// EtcdTLSKeySecretKey etcd-tls.key
 	EtcdTLSKeySecretKey = "etcd-tls.key"
 
+	// EtcdRestoreS3CredentialsSecret names the secret expected in seed kube-system that must contain S3 credentials for etcd backup restores
+	EtcdRestoreS3CredentialsSecret     = "s3-credentials"
+	EtcdRestoreS3AccessKeyIDKey        = "ACCESS_KEY_ID"
+	EtcdRestoreS3SecretKeyAccessKeyKey = "SECRET_ACCESS_KEY"
+
+	// EtcdRestoreS3SettingsConfigMap names the configmap expected in seed kube-system that must contain S3 bucket and endpoint names.
+	EtcdRestoreS3SettingsConfigMap = "s3-settings"
+	EtcdRestoreS3BucketNameKey     = "BUCKET_NAME"
+	EtcdRestoreS3EndpointKey       = "ENDPOINT"
+	EtcdRestoreDefaultS3SEndpoint  = "s3.amazonaws.com"
+
 	// KubeconfigDefaultContextKey is the context key used for all kubeconfigs
 	KubeconfigDefaultContextKey = "default"
 
@@ -585,6 +601,12 @@ func GetClusterExternalIP(cluster *kubermaticv1.Cluster) (*net.IP, error) {
 func GetClusterRef(cluster *kubermaticv1.Cluster) metav1.OwnerReference {
 	gv := kubermaticv1.SchemeGroupVersion
 	return *metav1.NewControllerRef(cluster, gv.WithKind("Cluster"))
+}
+
+// GetEtcdRestoreRef returns a metav1.OwnerReference for the given EtcdRestore
+func GetEtcdRestoreRef(restore *kubermaticv1.EtcdRestore) metav1.OwnerReference {
+	gv := kubermaticv1.SchemeGroupVersion
+	return *metav1.NewControllerRef(restore, gv.WithKind(kubermaticv1.EtcdRestoreKindName))
 }
 
 // Int32 returns a pointer to the int32 value passed in.
@@ -1112,4 +1134,93 @@ func GetHostCACertVolumeMounts() []corev1.VolumeMount {
 			ReadOnly:  true,
 		},
 	}
+}
+
+// GetEtcdRestoreS3Client returns an S3 client for downloading the backup for a given EtcdRestore.
+// If the EtcdRestore doesn't reference a secret containing the credentials and endpoint and bucket name data,
+// one can optionally be created from a well-known secret and configmap in kube-system.
+func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdRestore, createSecretIfMissing bool, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) (*minio.Client, string, error) {
+	secretData := make(map[string]string)
+
+	if restore.Spec.BackupDownloadCredentialsSecret != "" {
+		secret := &corev1.Secret{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: restore.Spec.BackupDownloadCredentialsSecret}, secret); err != nil {
+			return nil, "", fmt.Errorf("failed to get BackupDownloadCredentialsSecret credentials secret %v: %v", restore.Spec.BackupDownloadCredentialsSecret, err)
+		}
+
+		for k, v := range secret.Data {
+			secretData[k] = string(v)
+		}
+
+	} else {
+		if !createSecretIfMissing {
+			return nil, "", fmt.Errorf("BackupDownloadCredentialsSecret not set")
+		}
+
+		// create BackupDownloadCredentialsSecret containing values from kube-system/s3-credentials / kube-system/s3-settings
+
+		credsSecret := &corev1.Secret{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: EtcdRestoreS3CredentialsSecret}, credsSecret); err != nil {
+			return nil, "", fmt.Errorf("failed to get s3 credentials secret %v/%v: %w", metav1.NamespaceSystem, EtcdRestoreS3CredentialsSecret, err)
+		}
+		settingsConfigMap := &corev1.ConfigMap{}
+		if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: EtcdRestoreS3SettingsConfigMap}, settingsConfigMap); err != nil {
+			return nil, "", fmt.Errorf("failed to get s3 settings configmap %v/%v: %w", metav1.NamespaceSystem, EtcdRestoreS3SettingsConfigMap, err)
+		}
+
+		for k, v := range credsSecret.Data {
+			secretData[k] = string(v)
+		}
+		for k, v := range settingsConfigMap.Data {
+			secretData[k] = v
+		}
+
+		creator := func(se *corev1.Secret) (*corev1.Secret, error) {
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
+			}
+			for k, v := range secretData {
+				se.Data[k] = []byte(v)
+			}
+			return se, nil
+		}
+
+		wrappedCreator := reconciling.SecretObjectWrapper(creator)
+		wrappedCreator = reconciling.OwnerRefWrapper(GetEtcdRestoreRef(restore))(wrappedCreator)
+
+		secretName := fmt.Sprintf("%s-backupdownload-%s", restore.Name, rand.String(10))
+
+		if err := reconciling.EnsureNamedObject(
+			ctx,
+			types.NamespacedName{Namespace: cluster.Status.NamespaceName, Name: secretName},
+			wrappedCreator, client, &corev1.Secret{}, false); err != nil {
+			return nil, "", fmt.Errorf("failed to ensure Secret %s: %w", secretName, err)
+		}
+
+		oldRestore := restore.DeepCopy()
+		restore.Spec.BackupDownloadCredentialsSecret = secretName
+		if err := client.Patch(ctx, restore, ctrlruntimeclient.MergeFrom(oldRestore)); err != nil {
+			return nil, "", fmt.Errorf("failed to write etcdrestore.backupDownloadCredentialsSecret: %w", err)
+		}
+	}
+
+	accessKeyID := secretData[EtcdRestoreS3AccessKeyIDKey]
+	secretAccessKey := secretData[EtcdRestoreS3SecretKeyAccessKeyKey]
+	bucketName := secretData[EtcdRestoreS3BucketNameKey]
+	endpoint := secretData[EtcdRestoreS3EndpointKey]
+
+	if bucketName == "" {
+		return nil, "", fmt.Errorf("s3 bucket name not set")
+	}
+	if endpoint == "" {
+		endpoint = EtcdRestoreDefaultS3SEndpoint
+	}
+
+	s3Client, err := minio.New(endpoint, accessKeyID, secretAccessKey, true)
+	if err != nil {
+		return nil, "", fmt.Errorf("error creating s3 client: %w", err)
+	}
+	s3Client.SetAppInfo("kubermatic", "v0.1")
+
+	return s3Client, bucketName, nil
 }

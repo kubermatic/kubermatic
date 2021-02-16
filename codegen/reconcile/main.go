@@ -152,6 +152,11 @@ func main() {
 				ResourceImportPath: "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2",
 			},
 			{
+				ResourceName:       "EtcdBackupConfig",
+				ImportAlias:        "kubermaticv1",
+				ResourceImportPath: "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1",
+			},
+			{
 				ResourceName:       "ConstraintTemplate",
 				ImportAlias:        "gatekeeperv1beta1",
 				ResourceImportPath: "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1",

@@ -54,6 +54,7 @@ func (r *Reconciler) getOSData(ctx context.Context, cluster *kubermaticv1.Cluste
 		etcdLauncherImage:   r.etcdLauncherImage,
 		dnatControllerImage: r.dnatControllerImage,
 		externalURL:         r.externalURL,
+		backupSchedule:      r.backupSchedule,
 		seed:                seed.DeepCopy(),
 		versions:            versions,
 
@@ -93,6 +94,10 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cluster *kubermatic
 
 	if err := r.statefulSets(ctx, osData); err != nil {
 		return fmt.Errorf("failed to reconcile StatefulSets: %v", err)
+	}
+
+	if err := r.etcdBackupConfigs(ctx, osData.Cluster(), osData); err != nil {
+		return err
 	}
 
 	// Wait until the cloud provider infra is ready before attempting

@@ -24,6 +24,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/openshift/resources"
@@ -57,6 +58,7 @@ type openshiftData struct {
 	dnatControllerImage                   string
 	supportsFailureDomainZoneAntiAffinity bool
 	externalURL                           string
+	backupSchedule                        time.Duration
 	seed                                  *kubermaticv1.Seed
 	versions                              kubermatic.Versions
 }
@@ -322,6 +324,10 @@ func (od *openshiftData) GetOauthExternalNodePort() (int32, error) {
 
 func (od *openshiftData) ExternalURL() string {
 	return od.externalURL
+}
+
+func (od *openshiftData) BackupSchedule() time.Duration {
+	return od.backupSchedule
 }
 
 func (od *openshiftData) GetKubernetesCloudProviderName() string {

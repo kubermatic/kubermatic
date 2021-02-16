@@ -157,6 +157,16 @@ spec:
           secretKeyRef:
             name: s3-credentials
             key: SECRET_ACCESS_KEY
+    # BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
+    backupDeleteContainer: ""
+    # BackupRestore contains the setup of the new backup and restore controllers.
+    backupRestore:
+      # Enabled enables the new etcd backup and restore controllers.
+      enabled: false
+      # S3BucketName is the S3 bucket name to use for backup and restore.
+      s3BucketName: ""
+      # S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.
+      s3Endpoint: ""
     # BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
     backupStoreContainer: |-
       name: store-container

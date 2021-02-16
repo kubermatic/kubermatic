@@ -123,8 +123,12 @@ type KubermaticSeedControllerConfiguration struct {
 	DockerRepository string `json:"dockerRepository,omitempty"`
 	// BackupStoreContainer is the container used for shipping etcd snapshots to a backup location.
 	BackupStoreContainer string `json:"backupStoreContainer,omitempty"`
+	// BackupDeleteContainer is the container used for deleting etcd snapshots from a backup location.
+	BackupDeleteContainer string `json:"backupDeleteContainer,omitempty"`
 	// BackupCleanupContainer is the container used for removing expired backups from the storage location.
 	BackupCleanupContainer string `json:"backupCleanupContainer,omitempty"`
+	// BackupRestore contains the setup of the new backup and restore controllers.
+	BackupRestore KubermaticBackupRestoreConfiguration `json:"backupRestore,omitempty"`
 	// MaximumParallelReconciles limits the number of cluster reconciliations
 	// that are active at any given time.
 	MaximumParallelReconciles int `json:"maximumParallelReconciles,omitempty"`
@@ -137,6 +141,15 @@ type KubermaticSeedControllerConfiguration struct {
 	DebugLog bool `json:"debugLog,omitempty"`
 	// Replicas sets the number of pod replicas for the seed-controller-manager.
 	Replicas *int32 `json:"replicas,omitempty"`
+}
+
+type KubermaticBackupRestoreConfiguration struct {
+	// Enabled enables the new etcd backup and restore controllers.
+	Enabled bool `json:"enabled,omitempty"`
+	// S3Endpoint is the S3 API endpoint to use for backup and restore. Defaults to s3.amazonaws.com.
+	S3Endpoint string `json:"s3Endpoint,omitempty"`
+	// S3BucketName is the S3 bucket name to use for backup and restore.
+	S3BucketName string `json:"s3BucketName,omitempty"`
 }
 
 // KubermaticUserClusterConfiguration controls various aspects of the user-created clusters.

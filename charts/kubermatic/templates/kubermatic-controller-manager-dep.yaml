@@ -97,8 +97,16 @@ spec:
         - -openshift-addons-list={{ join "," .Values.kubermatic.controller.addons.openshift.defaultAddons }}
         {{- end }}
         - -overwrite-registry={{ .Values.kubermatic.controller.overwriteRegistry }}
+        {{- if .Values.kubermatic.etcdBackupsRestores.enabled }}
+        - -enable-etcd-backups-restores
+        {{- end }}
         - -backup-container=/opt/backup/store-container.yaml
+        {{- if or .Values.kubermatic.cleanupContainer (not .Values.kubermatic.etcdBackupsRestores.enabled) }}
         - -cleanup-container=/opt/backup/cleanup-container.yaml
+        {{- end }}
+        {{- if .Values.kubermatic.etcdBackupsRestores.enabled }}
+        - -backup-delete-container=/opt/backup/delete-container.yaml
+        {{- end }}
         - -nodeport-range={{ .Values.kubermatic.controller.nodeportRange }}
         - -docker-pull-config-json-file=/opt/docker/.dockerconfigjson
         {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}

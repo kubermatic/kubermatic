@@ -33,16 +33,18 @@ const (
 	deletedLBAnnotationName = "kubermatic.io/cleaned-up-loadbalancers"
 )
 
-func New(seedClient ctrlruntimeclient.Client, userClusterClientGetter func() (ctrlruntimeclient.Client, error)) *Deletion {
+func New(seedClient ctrlruntimeclient.Client, userClusterClientGetter func() (ctrlruntimeclient.Client, error), etcdBackupRestoreController bool) *Deletion {
 	return &Deletion{
-		seedClient:              seedClient,
-		userClusterClientGetter: userClusterClientGetter,
+		seedClient:                  seedClient,
+		userClusterClientGetter:     userClusterClientGetter,
+		etcdBackupRestoreController: etcdBackupRestoreController,
 	}
 }
 
 type Deletion struct {
-	seedClient              ctrlruntimeclient.Client
-	userClusterClientGetter func() (ctrlruntimeclient.Client, error)
+	seedClient                  ctrlruntimeclient.Client
+	userClusterClientGetter     func() (ctrlruntimeclient.Client, error)
+	etcdBackupRestoreController bool
 }
 
 // CleanupCluster is responsible for cleaning up a cluster.
@@ -67,6 +69,10 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 		kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer,
 		kubermaticapiv1.InClusterImageRegistryConfigCleanupFinalizer) {
 		return nil
+	}
+
+	if err := d.cleanupEtcdBackupConfigs(ctx, cluster, d.etcdBackupRestoreController); err != nil {
+		return err
 	}
 
 	if err := d.cleanupNodes(ctx, cluster); err != nil {

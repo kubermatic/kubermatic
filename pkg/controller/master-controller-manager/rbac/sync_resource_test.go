@@ -49,7 +49,7 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 		// scenario 1
 		{
 			name:            "scenario 1: a proper set of RBAC Role/Binding is generated for a cluster",
-			expectedActions: []string{"create", "create", "create", "create", "create", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "create"},
+			expectedActions: []string{"create", "create", "create", "create", "create", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "get", "create", "create", "get", "create", "get", "create", "get", "create", "get", "create"},
 
 			dependantToSync: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
