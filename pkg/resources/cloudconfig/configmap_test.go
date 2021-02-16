@@ -17,23 +17,28 @@ limitations under the License.
 package cloudconfig
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/go-test/deep"
+	"gopkg.in/gcfg.v1"
+	"k8s.io/utils/pointer"
+
+	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/semver"
 )
 
-func TestGetVsphereCloudConfig(t *testing.T) {
+func TestCloudConfig(t *testing.T) {
 	testCases := []struct {
-		name    string
-		cluster *kubermaticv1.Cluster
-		dc      *kubermaticv1.Datacenter
-		verify  func(*vsphere.CloudConfig) error
+		name       string
+		cluster    *kubermaticv1.Cluster
+		dc         *kubermaticv1.Datacenter
+		wantConfig interface{}
 	}{
 		{
-			name: "Vsphere port gets defaulted to 443",
+			name: "vSphere port gets defaulted to 443",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
@@ -48,15 +53,21 @@ func TestGetVsphereCloudConfig(t *testing.T) {
 					},
 				},
 			},
-			verify: func(cc *vsphere.CloudConfig) error {
-				if cc.Global.VCenterPort != "443" {
-					return fmt.Errorf("Expected port to be 443, was %q", cc.Global.VCenterPort)
-				}
-				return nil
+			wantConfig: &vsphere.CloudConfig{
+				Global: vsphere.GlobalOpts{
+					VCenterPort: "443",
+					VCenterIP:   "vsphere.com",
+				},
+				Disk: vsphere.DiskOpts{
+					SCSIControllerType: "pvscsi",
+				},
+				Workspace: vsphere.WorkspaceOpts{
+					VCenterIP: "vsphere.com",
+				},
 			},
 		},
 		{
-			name: "Vsphere port from url gets used",
+			name: "vSphere port from url gets used",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
@@ -71,15 +82,21 @@ func TestGetVsphereCloudConfig(t *testing.T) {
 					},
 				},
 			},
-			verify: func(cc *vsphere.CloudConfig) error {
-				if cc.Global.VCenterPort != "9443" {
-					return fmt.Errorf("Expected port to be 9443, was %q", cc.Global.VCenterPort)
-				}
-				return nil
+			wantConfig: &vsphere.CloudConfig{
+				Global: vsphere.GlobalOpts{
+					VCenterPort: "9443",
+					VCenterIP:   "vsphere.com",
+				},
+				Disk: vsphere.DiskOpts{
+					SCSIControllerType: "pvscsi",
+				},
+				Workspace: vsphere.WorkspaceOpts{
+					VCenterIP: "vsphere.com",
+				},
 			},
 		},
 		{
-			name: "Datastore overridden at cluster level",
+			name: "vSphere Datastore overridden at cluster level",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
@@ -97,12 +114,130 @@ func TestGetVsphereCloudConfig(t *testing.T) {
 					},
 				},
 			},
-			verify: func(cc *vsphere.CloudConfig) error {
-				if cc.Workspace.DefaultDatastore != "super-cool-datastore" {
-					return fmt.Errorf("Expected default-datastore to be %q, was %q", "super-cool-datastore",
-						cc.Workspace.DefaultDatastore)
-				}
-				return nil
+			wantConfig: &vsphere.CloudConfig{
+				Global: vsphere.GlobalOpts{
+					VCenterPort:      "9443",
+					VCenterIP:        "vsphere.com",
+					DefaultDatastore: "super-cool-datastore",
+				},
+				Disk: vsphere.DiskOpts{
+					SCSIControllerType: "pvscsi",
+				},
+				Workspace: vsphere.WorkspaceOpts{
+					VCenterIP:        "vsphere.com",
+					DefaultDatastore: "super-cool-datastore",
+				},
+			},
+		},
+		{
+			name: "OpenStack use-octavia enabled at cluster level",
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					Version: *semver.NewSemverOrDie("v1.1.1"),
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{
+							UseOctavia: pointer.BoolPtr(true),
+						},
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
+				},
+			},
+			wantConfig: &openstack.CloudConfig{
+				LoadBalancer: openstack.LoadBalancerOpts{
+					LBVersion:  "v2",
+					LBMethod:   "ROUND_ROBIN",
+					UseOctavia: pointer.BoolPtr(true),
+				},
+				BlockStorage: openstack.BlockStorageOpts{
+					BSVersion: "auto",
+				},
+			},
+		},
+		{
+			name: "OpenStack use-octavia enabled at seed level",
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					Version: *semver.NewSemverOrDie("v1.1.1"),
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+						UseOctavia: pointer.BoolPtr(false),
+					},
+				},
+			},
+			wantConfig: &openstack.CloudConfig{
+				LoadBalancer: openstack.LoadBalancerOpts{
+					LBVersion:  "v2",
+					LBMethod:   "ROUND_ROBIN",
+					UseOctavia: pointer.BoolPtr(false),
+				},
+				BlockStorage: openstack.BlockStorageOpts{
+					BSVersion: "auto",
+				},
+			},
+		},
+		{
+			name: "OpenStack use-octavia not set",
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					Version: *semver.NewSemverOrDie("v1.1.1"),
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{
+							UseOctavia: pointer.BoolPtr(false),
+						},
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+						UseOctavia: pointer.BoolPtr(true),
+					},
+				},
+			},
+			wantConfig: &openstack.CloudConfig{
+				LoadBalancer: openstack.LoadBalancerOpts{
+					LBVersion:  "v2",
+					LBMethod:   "ROUND_ROBIN",
+					UseOctavia: pointer.BoolPtr(false),
+				},
+				BlockStorage: openstack.BlockStorageOpts{
+					BSVersion: "auto",
+				},
+			},
+		},
+		{
+			name: "OpenStack use-octavia not set",
+			cluster: &kubermaticv1.Cluster{
+				Spec: kubermaticv1.ClusterSpec{
+					Version: *semver.NewSemverOrDie("v1.1.1"),
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
+				},
+			},
+			dc: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{
+					Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
+				},
+			},
+			wantConfig: &openstack.CloudConfig{
+				LoadBalancer: openstack.LoadBalancerOpts{
+					LBVersion: "v2",
+					LBMethod:  "ROUND_ROBIN",
+				},
+				BlockStorage: openstack.BlockStorageOpts{
+					BSVersion: "auto",
+				},
 			},
 		},
 	}
@@ -110,13 +245,29 @@ func TestGetVsphereCloudConfig(t *testing.T) {
 	for idx := range testCases {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
-			cloudConfig, err := getVsphereCloudConfig(tc.cluster, tc.dc, resources.Credentials{})
+			cloudConfig, err := CloudConfig(tc.cluster, tc.dc, resources.Credentials{})
 			if err != nil {
 				t.Fatalf("Error trying to get cloudconfig: %v", err)
 			}
-			if err := tc.verify(cloudConfig); err != nil {
-				t.Error(err)
+			t.Logf("config: %v", cloudConfig)
+			var actual interface{}
+			switch {
+			case tc.cluster.Spec.Cloud.Openstack != nil:
+				actual = unmarshalINICloudConfig(t, &openstack.CloudConfig{}, cloudConfig)
+			case tc.cluster.Spec.Cloud.VSphere != nil:
+				actual = unmarshalINICloudConfig(t, &vsphere.CloudConfig{}, cloudConfig)
+			}
+
+			if diff := deep.Equal(actual, tc.wantConfig); len(diff) > 0 {
+				t.Errorf("cloud-config differs from the expected one: %s", diff)
 			}
 		})
 	}
+}
+
+func unmarshalINICloudConfig(t *testing.T, config interface{}, rawConfig string) interface{} {
+	if err := gcfg.ReadStringInto(config, rawConfig); err != nil {
+		t.Fatalf("error occurred while marshaling wanted config: %v", err)
+	}
+	return config
 }
