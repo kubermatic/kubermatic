@@ -39,8 +39,8 @@ cd $TARGET_DIR
 mkdir -p data/kubermatic/master
 mkdir -p content/kubermatic/master/data
 
-cp ../docs/zz_generated.seed.yaml data/kubermatic/master/seed.yaml
-cp ../docs/zz_generated.kubermaticConfiguration.yaml data/kubermatic/master/kubermaticConfiguration.yaml
+cp ../docs/zz_generated.seed.yaml content/kubermatic/master/data/seed.yaml
+cp ../docs/zz_generated.kubermaticConfiguration.yaml content/kubermatic/master/data/kubermaticConfiguration.yaml
 cp ../docs/zz_generated.addondata.go.txt content/kubermatic/master/data/addondata.go
 
 # re-create Prometheus runbook
