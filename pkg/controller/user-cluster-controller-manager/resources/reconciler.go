@@ -515,7 +515,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 					{
 						BindAddress: r.tunnelingAgentIP.String(),
 						BindPort:    r.kasSecurePort,
-						Authority:   net.JoinHostPort(fmt.Sprintf("apiserver-external.%s.svc.cluster.local", r.namespace), "6443"),
+						Authority:   net.JoinHostPort(fmt.Sprintf("apiserver-external.%s.svc.cluster.local", r.namespace), "443"),
 					},
 				},
 			}),
