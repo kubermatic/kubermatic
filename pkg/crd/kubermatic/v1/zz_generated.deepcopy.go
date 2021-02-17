@@ -2511,6 +2511,11 @@ func (in *OpenstackCloudSpec) DeepCopyInto(out *OpenstackCloudSpec) {
 		*out = new(types.GlobalSecretKeySelector)
 		**out = **in
 	}
+	if in.UseOctavia != nil {
+		in, out := &in.UseOctavia, &out.UseOctavia
+		*out = new(bool)
+		**out = **in
+	}
 	return
 }
 

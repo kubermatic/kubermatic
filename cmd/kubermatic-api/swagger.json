@@ -17152,6 +17152,11 @@
           "type": "string",
           "x-go-name": "TenantID"
         },
+        "useOctavia": {
+          "description": "Whether or not to use Octavia for LoadBalancer type of Service\nimplementation instead of using Neutron-LBaaS.\nAttention:Openstack CCM use Octavia as default load balancer\nimplementation since v1.17.0\n\nTakes precedence over the 'use_octavia' flag provided at datacenter\nlevel if both are specified.\n+optional",
+          "type": "boolean",
+          "x-go-name": "UseOctavia"
+        },
         "username": {
           "type": "string",
           "x-go-name": "Username"
