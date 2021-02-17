@@ -182,11 +182,21 @@ func TestHttpClientWithRetries(t *testing.T) {
 }
 
 func iterateHandlerFuncs(funcs ...http.HandlerFunc) http.HandlerFunc {
-	var i int = -1
+	// use a buffered channel for thread safety
+	handlersChan := make(chan http.HandlerFunc, len(funcs))
+	// fill the buffered channel with the given functions, this won't block as
+	// the size of the buffered channel corresponds to the number of
+	// functions
+	for _, f := range funcs {
+		handlersChan <- f
+	}
 	return func(w http.ResponseWriter, r *http.Request) {
-		if i < len(funcs)-1 {
-			i++
+		select {
+		case h := <-handlersChan:
+			h(w, r)
+		default:
+			// once exhausted the channel just run the latest func
+			funcs[len(funcs)-1](w, r)
 		}
-		funcs[i](w, r)
 	}
 }
