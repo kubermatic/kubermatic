@@ -30,15 +30,15 @@ import (
 	"k8c.io/kubermatic/v2/pkg/semver"
 )
 
-func TestCloudConfig(t *testing.T) {
+func TestVSphereCloudConfig(t *testing.T) {
 	testCases := []struct {
 		name       string
 		cluster    *kubermaticv1.Cluster
 		dc         *kubermaticv1.Datacenter
-		wantConfig interface{}
+		wantConfig *vsphere.CloudConfig
 	}{
 		{
-			name: "vSphere port gets defaulted to 443",
+			name: "port gets defaulted to 443",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
@@ -67,7 +67,7 @@ func TestCloudConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "vSphere port from url gets used",
+			name: "port from url gets used",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
@@ -96,7 +96,7 @@ func TestCloudConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "vSphere Datastore overridden at cluster level",
+			name: "Datastore overridden at cluster level",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
@@ -129,8 +129,35 @@ func TestCloudConfig(t *testing.T) {
 				},
 			},
 		},
+	}
+
+	for idx := range testCases {
+		tc := testCases[idx]
+		t.Run(tc.name, func(t *testing.T) {
+			cloudConfig, err := CloudConfig(tc.cluster, tc.dc, resources.Credentials{})
+			if err != nil {
+				t.Fatalf("Error trying to get cloud-config: %v", err)
+			}
+			t.Logf("config: %v", cloudConfig)
+			actual := vsphere.CloudConfig{}
+			unmarshalINICloudConfig(t, &actual, cloudConfig)
+
+			if diff := deep.Equal(&actual, tc.wantConfig); len(diff) > 0 {
+				t.Errorf("cloud-config differs from the expected one: %s", diff)
+			}
+		})
+	}
+}
+
+func TestOpenStackCloudConfig(t *testing.T) {
+	testCases := []struct {
+		name       string
+		cluster    *kubermaticv1.Cluster
+		dc         *kubermaticv1.Datacenter
+		wantConfig *openstack.CloudConfig
+	}{
 		{
-			name: "OpenStack use-octavia enabled at cluster level",
+			name: "use-octavia enabled at cluster level",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Version: *semver.NewSemverOrDie("v1.1.1"),
@@ -158,7 +185,7 @@ func TestCloudConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "OpenStack use-octavia enabled at seed level",
+			name: "use-octavia enabled at seed level",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Version: *semver.NewSemverOrDie("v1.1.1"),
@@ -186,7 +213,7 @@ func TestCloudConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "OpenStack use-octavia not set",
+			name: "use-octavia not set",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Version: *semver.NewSemverOrDie("v1.1.1"),
@@ -216,7 +243,7 @@ func TestCloudConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "OpenStack use-octavia not set",
+			name: "use-octavia not set",
 			cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Version: *semver.NewSemverOrDie("v1.1.1"),
@@ -247,27 +274,21 @@ func TestCloudConfig(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			cloudConfig, err := CloudConfig(tc.cluster, tc.dc, resources.Credentials{})
 			if err != nil {
-				t.Fatalf("Error trying to get cloudconfig: %v", err)
+				t.Fatalf("Error trying to get cloud-config: %v", err)
 			}
 			t.Logf("config: %v", cloudConfig)
-			var actual interface{}
-			switch {
-			case tc.cluster.Spec.Cloud.Openstack != nil:
-				actual = unmarshalINICloudConfig(t, &openstack.CloudConfig{}, cloudConfig)
-			case tc.cluster.Spec.Cloud.VSphere != nil:
-				actual = unmarshalINICloudConfig(t, &vsphere.CloudConfig{}, cloudConfig)
-			}
+			actual := openstack.CloudConfig{}
+			unmarshalINICloudConfig(t, &actual, cloudConfig)
 
-			if diff := deep.Equal(actual, tc.wantConfig); len(diff) > 0 {
+			if diff := deep.Equal(&actual, tc.wantConfig); len(diff) > 0 {
 				t.Errorf("cloud-config differs from the expected one: %s", diff)
 			}
 		})
 	}
 }
 
-func unmarshalINICloudConfig(t *testing.T, config interface{}, rawConfig string) interface{} {
+func unmarshalINICloudConfig(t *testing.T, config interface{}, rawConfig string) {
 	if err := gcfg.ReadStringInto(config, rawConfig); err != nil {
-		t.Fatalf("error occurred while marshaling wanted config: %v", err)
+		t.Fatalf("error occurred while marshaling config: %v", err)
 	}
-	return config
 }
