@@ -575,6 +575,15 @@ type OpenstackCloudSpec struct {
 	FloatingIPPool string `json:"floatingIpPool"`
 	RouterID       string `json:"routerID"`
 	SubnetID       string `json:"subnetID"`
+	// Whether or not to use Octavia for LoadBalancer type of Service
+	// implementation instead of using Neutron-LBaaS.
+	// Attention:Openstack CCM use Octavia as default load balancer
+	// implementation since v1.17.0
+	//
+	// Takes precedence over the 'use_octavia' flag provided at datacenter
+	// level if both are specified.
+	// +optional
+	UseOctavia *bool `json:"useOctavia,omitempty"`
 }
 
 // PacketCloudSpec specifies access data to a Packet cloud.
