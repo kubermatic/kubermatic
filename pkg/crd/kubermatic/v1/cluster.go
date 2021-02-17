@@ -582,7 +582,8 @@ type OpenstackCloudSpec struct {
 	//
 	// Takes precedence over the 'use_octavia' flag provided at datacenter
 	// level if both are specified.
-	UseOctavia *bool `json:"useOctavia"`
+	// +optional
+	UseOctavia *bool `json:"useOctavia,omitempty"`
 }
 
 // PacketCloudSpec specifies access data to a Packet cloud.
