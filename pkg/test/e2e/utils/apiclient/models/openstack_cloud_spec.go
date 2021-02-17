@@ -59,6 +59,7 @@ type OpenstackCloudSpec struct {
 	//
 	// Takes precedence over the 'use_octavia' flag provided at datacenter
 	// level if both are specified.
+	// +optional
 	UseOctavia bool `json:"useOctavia,omitempty"`
 
 	// username
