@@ -33,7 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func OpenstackSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
+func OpenstackSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
 	cluster, err := getClusterForOpenstack(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,12 @@ func OpenstackSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGe
 		return nil, err
 	}
 
-	return GetOpenstackSizes(creds.Username, creds.Password, creds.Tenant, creds.TenantID, creds.Domain, datacenterName, datacenter)
+	settings, err := settingsProvider.GetGlobalSettings()
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return GetOpenstackSizes(creds.Username, creds.Password, creds.Tenant, creds.TenantID, creds.Domain, datacenterName, datacenter, settings.Spec.MachineDeploymentVMResourceQuota)
 }
 
 func OpenstackTenantWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
@@ -254,7 +259,7 @@ func GetOpenstackTenants(userInfo *provider.UserInfo, seedsGetter provider.Seeds
 	return apiTenants, nil
 }
 
-func GetOpenstackSizes(username, password, tenant, tenantID, domain, datacenterName string, datacenter *kubermaticv1.Datacenter) ([]apiv1.OpenstackSize, error) {
+func GetOpenstackSizes(username, password, tenant, tenantID, domain, datacenterName string, datacenter *kubermaticv1.Datacenter, quota kubermaticv1.MachineDeploymentVMResourceQuota) ([]apiv1.OpenstackSize, error) {
 	flavors, err := openstack.GetFlavors(username, password, domain, tenant, tenantID, datacenter.Spec.Openstack.AuthURL, datacenter.Spec.Openstack.Region)
 	if err != nil {
 		return nil, err
@@ -276,7 +281,30 @@ func GetOpenstackSizes(username, password, tenant, tenantID, domain, datacenterN
 		}
 	}
 
-	return apiSizes, nil
+	return filterOpenStackByQuota(apiSizes, quota), nil
+}
+
+func filterOpenStackByQuota(instances []apiv1.OpenstackSize, quota kubermaticv1.MachineDeploymentVMResourceQuota) []apiv1.OpenstackSize {
+	var filteredRecords []apiv1.OpenstackSize
+
+	// Range over the records and apply all the filters to each record.
+	// If the record passes all the filters, add it to the final slice.
+	for _, r := range instances {
+		keep := true
+
+		if !handlercommon.FilterCPU(r.VCPUs, quota.MinCPU, quota.MaxCPU) {
+			keep = false
+		}
+		if !handlercommon.FilterMemory(r.Memory/1024, quota.MinRAM, quota.MaxRAM) {
+			keep = false
+		}
+
+		if keep {
+			filteredRecords = append(filteredRecords, r)
+		}
+	}
+
+	return filteredRecords
 }
 
 func MeetsOpenstackNodeSizeRequirement(apiSize apiv1.OpenstackSize, requirements kubermaticv1.OpenstackNodeSizeRequirements) bool {
