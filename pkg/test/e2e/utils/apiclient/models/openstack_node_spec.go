@@ -28,10 +28,10 @@ type OpenstackNodeSpec struct {
 	// Required: true
 	Image *string `json:"image"`
 
-	// Period of time to check for instance ready status
+	// Period of time to check for instance ready status, i.e. 10s/1m
 	InstanceReadyCheckPeriod string `json:"instanceReadyCheckPeriod,omitempty"`
 
-	// Max time to wait for the instance to be ready
+	// Max time to wait for the instance to be ready, i.e. 10s/1m
 	InstanceReadyCheckTimeout string `json:"instanceReadyCheckTimeout,omitempty"`
 
 	// if set, the rootDisk will be a volume. If not, the rootDisk will be on ephemeral storage and its size will be derived from the flavor
