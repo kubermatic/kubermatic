@@ -1362,10 +1362,10 @@ type OpenstackNodeSpec struct {
 	// if not set, the default AZ from the Datacenter spec will be used
 	// required: false
 	AvailabilityZone string `json:"availabilityZone"`
-	// Period of time to check for instance ready status
+	// Period of time to check for instance ready status, i.e. 10s/1m
 	// required: false
 	InstanceReadyCheckPeriod string `json:"instanceReadyCheckPeriod"`
-	// Max time to wait for the instance to be ready
+	// Max time to wait for the instance to be ready, i.e. 10s/1m
 	// required: false
 	InstanceReadyCheckTimeout string `json:"instanceReadyCheckTimeout"`
 }
