@@ -1,6 +1,17 @@
 # Kubermatic 2.16
 
+## [v2.16.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.2)
+
+### Misc
+
+- Fix KAS service port in Tunneling agent configuration ([#6569](https://github.com/kubermatic/kubermatic/issues/6569))
+
+
+
+
 ## [v2.16.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.1)
+
+**Note:** No Docker images have been published for this release. Please use 2.16.2 instead.
 
 ### Misc
 
