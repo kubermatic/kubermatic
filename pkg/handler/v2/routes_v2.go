@@ -2515,7 +2515,7 @@ func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.OpenstackSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.OpenstackSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
