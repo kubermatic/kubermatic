@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -156,6 +157,11 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 		}
 	}
 
+	minReplicas, maxReplicas, err := getMinAndMaxReplicas(md)
+	if err != nil {
+		return nil, err
+	}
+
 	hasDynamicConfig := md.Spec.Template.Spec.ConfigSource != nil
 
 	return &apiv1.NodeDeployment{
@@ -167,6 +173,8 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 		},
 		Spec: apiv1.NodeDeploymentSpec{
 			Replicas: *md.Spec.Replicas,
+			MinReplicas: minReplicas,
+			MaxReplicas: maxReplicas,
 			Template: apiv1.NodeSpec{
 				Labels: label.FilterLabels(label.NodeDeploymentResourceType, md.Spec.Template.Spec.Labels),
 				Taints: taints,
@@ -181,6 +189,26 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 		},
 		Status: md.Status,
 	}, nil
+}
+
+func getMinAndMaxReplicas(md *clusterv1alpha1.MachineDeployment) (int32, int32, error) {
+	var minReplicas int32
+	if min, ok := md.Annotations[apiv1.AutoscalerMinSizeAnnotation]; ok && min != "" {
+		minInt, err := strconv.ParseInt(min, 10, 32)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to read autoscaler min size annotation: %v", err)
+		}
+		minReplicas = int32(minInt)
+	}
+	var maxReplicas int32
+	if max, ok := md.Annotations[apiv1.AutoscalerMaxSizeAnnotation]; ok && max != "" {
+		maxInt, err := strconv.ParseInt(max, 10, 32)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to read autoscaler max size annotation: %v", err)
+		}
+		maxReplicas = int32(maxInt)
+	}
+	return minReplicas, maxReplicas, nil
 }
 
 func DeleteMachineNode(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID, machineID string) (interface{}, error) {

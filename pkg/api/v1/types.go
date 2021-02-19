@@ -1882,6 +1882,10 @@ type NodeDeploymentSpec struct {
 	Paused *bool `json:"paused,omitempty"`
 	// required: false
 	DynamicConfig *bool `json:"dynamicConfig,omitempty"`
+	// required: false
+	MinReplicas   int32 `json:"minReplicas,omitempty"`
+	// required: false
+	MaxReplicas   int32 `json:"maxReplicas,omitempty"`
 }
 
 // Event is a report of an event somewhere in the cluster.
@@ -2124,4 +2128,6 @@ func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType 
 
 const (
 	InitialMachineDeploymentRequestAnnotation = "kubermatic.io/initial-machinedeployment-request"
+	AutoscalerMinSizeAnnotation = "cluster.x-k8s.io/cluster-api-autoscaler-node-group-min-size"
+	AutoscalerMaxSizeAnnotation = "cluster.x-k8s.io/cluster-api-autoscaler-node-group-max-size"
 )
