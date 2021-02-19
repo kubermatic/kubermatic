@@ -148,11 +148,15 @@ func (r *reconciler) reconcile(log *zap.SugaredLogger, constraintTemplate *kuber
 		}
 
 		err := r.syncAllClusters(log, constraintTemplate, func(userClusterClient client.Client, ct *kubermaticv1.ConstraintTemplate) error {
-			return userClusterClient.Delete(r.ctx, &v1beta1.ConstraintTemplate{
+			err := userClusterClient.Delete(r.ctx, &v1beta1.ConstraintTemplate{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: constraintTemplate.Name,
 				},
 			})
+			if kerrors.IsNotFound(err) {
+				return nil
+			}
+			return err
 		})
 		if err != nil {
 			return err
@@ -249,7 +253,7 @@ func enqueueAllConstraintTemplates(client ctrlruntimeclient.Client, log *zap.Sug
 			utilruntime.HandleError(err)
 			return nil
 		}
-		if cluster.Spec.OPAIntegration == nil || cluster.Spec.OPAIntegration.Enabled {
+		if cluster.Spec.OPAIntegration == nil || !cluster.Spec.OPAIntegration.Enabled {
 			return nil
 		}
 

@@ -144,6 +144,47 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
+func TestDeleteWhenCTOnUserClusterIsMissing(t *testing.T) {
+	sch, err := v1beta1.SchemeBuilder.Build()
+	if err != nil {
+		t.Fatalf("building gatekeeper scheme failed: %v", err)
+	}
+
+	workerSelector, err := workerlabel.LabelSelector("")
+	if err != nil {
+		t.Fatalf("failed to build worker-name selector: %v", err)
+	}
+
+	seedClient := fakectrlruntimeclient.NewFakeClientWithScheme(
+		scheme.Scheme,
+		genConstraintTemplate(ctName, true),
+		genCluster("cluster", true))
+	userClient := fakectrlruntimeclient.NewFakeClientWithScheme(sch)
+
+	ctx := context.Background()
+	r := &reconciler{
+		log:                       kubermaticlog.Logger,
+		workerNameLabelSelector:   workerSelector,
+		recorder:                  &record.FakeRecorder{},
+		seedClient:                seedClient,
+		userClusterClientProvider: newFakeClientProvider(userClient),
+		userClusterClients:        map[string]ctrlruntimeclient.Client{},
+	}
+
+	request := reconcile.Request{NamespacedName: types.NamespacedName{Name: ctName}}
+	if _, err := r.Reconcile(request); err != nil {
+		t.Fatalf("reconciling failed: %v", err)
+	}
+
+	err = userClient.Get(ctx, request.NamespacedName, &v1beta1.ConstraintTemplate{})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if errors.ReasonForError(err) != metav1.StatusReasonNotFound {
+		t.Fatalf("expected err: %v, got %v", metav1.StatusReasonNotFound, errors.ReasonForError(err))
+	}
+}
+
 func genConstraintTemplate(name string, delete bool) *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 	ct.Name = name
