@@ -654,6 +654,7 @@ type AlibabaInstanceTypeList []AlibabaInstanceType
 type AlibabaInstanceType struct {
 	ID           string  `json:"id"`
 	CPUCoreCount int     `json:"cpuCoreCount"`
+	GPUCoreCount int     `json:"gpuCoreCount"`
 	MemorySize   float64 `json:"memorySize"`
 }
 

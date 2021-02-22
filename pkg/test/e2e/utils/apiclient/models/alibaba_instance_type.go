@@ -18,6 +18,9 @@ type AlibabaInstanceType struct {
 	// CPU core count
 	CPUCoreCount int64 `json:"cpuCoreCount,omitempty"`
 
+	// g p u core count
+	GPUCoreCount int64 `json:"gpuCoreCount,omitempty"`
+
 	// ID
 	ID string `json:"id,omitempty"`
 

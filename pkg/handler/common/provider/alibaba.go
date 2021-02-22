@@ -86,6 +86,7 @@ func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region
 	// recommendedInstanceFamilies are those families that are recommended in this document:
 	// https://www.alibabacloud.com/help/doc-detail/25378.htm?spm=a2c63.p38356.b99.47.7acf342enhNVmo
 	recommendedInstanceFamilies := sets.NewString("ecs.g6", "ecs.g5", "ecs.g5se", "ecs.g5ne", "ecs.ic5", "ecs.c6", "ecs.c5", "ecs.r6", "ecs.r5", "ecs.d1ne", "ecs.i2", "ecs.i2g", "ecs.hfc6", "ecs.hfg6", "ecs.hfr6")
+	gpuInstanceFamilies := sets.NewString("ecs.gn3", "ecs.ga1", "ecs.gn4", "ecs.gn6i", "ecs.vgn6i", "ecs.gn6e", "ecs.gn6v", "ecs.vgn5i", "ecs.gn5", "ecs.gn5i")
 	availableInstanceFamilies := sets.String{}
 	instanceTypes := apiv1.AlibabaInstanceTypeList{}
 
@@ -102,6 +103,10 @@ func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region
 	instTypeFamilies, err := client.DescribeInstanceTypeFamilies(requestFamilies)
 	if err != nil {
 		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list instance type families: %v", err))
+	}
+
+	if quota.EnableGPU {
+		recommendedInstanceFamilies.Insert(gpuInstanceFamilies.List()...)
 	}
 
 	for _, instanceFamily := range instTypeFamilies.InstanceTypeFamilies.InstanceTypeFamily {
@@ -124,6 +129,7 @@ func ListAlibabaInstanceTypes(accessKeyID string, accessKeySecret string, region
 			it := apiv1.AlibabaInstanceType{
 				ID:           instType.InstanceTypeId,
 				CPUCoreCount: instType.CpuCoreCount,
+				GPUCoreCount: instType.GPUAmount,
 				MemorySize:   instType.MemorySize,
 			}
 			instanceTypes = append(instanceTypes, it)

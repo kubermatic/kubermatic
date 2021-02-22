@@ -13796,6 +13796,11 @@
           "format": "int64",
           "x-go-name": "CPUCoreCount"
         },
+        "gpuCoreCount": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "GPUCoreCount"
+        },
         "id": {
           "type": "string",
           "x-go-name": "ID"
