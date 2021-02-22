@@ -22,6 +22,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -44,20 +45,6 @@ const (
 
 	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
 	CredentialPrefix = "credential"
-
-	AlibabaProvider      = "alibaba"
-	AnexiaProvider       = "anexia"
-	AwsProvider          = "aws"
-	AzureProvider        = "azure"
-	BringYourOwnProvider = "bringyourown"
-	DigitalOceanProvider = "digitalocean"
-	HetznerProvider      = "hetzner"
-	GCPProvider          = "gcp"
-	KubevirtProvider     = "kubevirt"
-	PacketProvider       = "packet"
-	OpenstackProvider    = "openstack"
-	FakeProvier          = "fake"
-	VSphereProvider      = "vsphere"
 )
 
 const (
@@ -762,37 +749,37 @@ func (cluster *Cluster) IsKubernetes() bool {
 }
 
 func (cluster *Cluster) GetProviderName() string {
-	var provider string
+	var providerName string
 	switch {
 	case cluster.Spec.Cloud.Alibaba != nil:
-		provider = AlibabaProvider
+		providerName = provider.AlibabaCloudProvider
 	case cluster.Spec.Cloud.Anexia != nil:
-		provider = AnexiaProvider
+		providerName = provider.AnexiaCloudProvider
 	case cluster.Spec.Cloud.AWS != nil:
-		provider = AwsProvider
+		providerName = provider.AWSCloudProvider
 	case cluster.Spec.Cloud.Azure != nil:
-		provider = AzureProvider
+		providerName = provider.AzureCloudProvider
 	case cluster.Spec.Cloud.BringYourOwn != nil:
-		provider = BringYourOwnProvider
+		providerName = provider.BringYourOwnCloudProvider
 	case cluster.Spec.Cloud.Digitalocean != nil:
-		provider = DigitalOceanProvider
+		providerName = provider.DigitaloceanCloudProvider
 	case cluster.Spec.Cloud.Fake != nil:
-		provider = FakeProvier
+		providerName = provider.FakeCloudProvider
 	case cluster.Spec.Cloud.GCP != nil:
-		provider = GCPProvider
+		providerName = provider.GCPCloudProvider
 	case cluster.Spec.Cloud.Hetzner != nil:
-		provider = HetznerProvider
+		providerName = provider.HetznerCloudProvider
 	case cluster.Spec.Cloud.Kubevirt != nil:
-		provider = KubevirtProvider
+		providerName = provider.KubevirtCloudProvider
 	case cluster.Spec.Cloud.Openstack != nil:
-		provider = OpenstackProvider
+		providerName = provider.OpenstackCloudProvider
 	case cluster.Spec.Cloud.Packet != nil:
-		provider = PacketProvider
+		providerName = provider.PacketCloudProvider
 	case cluster.Spec.Cloud.VSphere != nil:
-		provider = VSphereProvider
+		providerName = provider.VSphereCloudProvider
 	default:
-		provider = "unknown"
+		providerName = "unknown"
 	}
 
-	return provider
+	return providerName
 }

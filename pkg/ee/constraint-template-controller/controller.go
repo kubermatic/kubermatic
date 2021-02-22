@@ -3,7 +3,7 @@
 /*
                   Kubermatic Enterprise Read-Only License
                          Version 1.0 ("KERO-1.0”)
-                     Copyright © 2020 Loodse GmbH
+                     Copyright © 2021 Kubermatic GmbH
 
    1.	You may only view, read and display for studying purposes the source
       code of the software licensed under this license, and, to the extent
@@ -28,12 +28,11 @@ import (
 	"context"
 	"fmt"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -43,7 +42,7 @@ func GetClustersForConstraintTemplate(ctx context.Context, client ctrlruntimecli
 
 	ctLabelSelector, err := v1.LabelSelectorAsSelector(&ct.Spec.Selector.LabelSelector)
 	if err != nil {
-		return nil, fmt.Errorf("Error converting CT label selector to selector: %v", err)
+		return nil, fmt.Errorf("error converting Constraint Template label selector (%v) to a kubernetes selector: %v", ct.Spec.Selector.LabelSelector, err)
 	}
 
 	var selector labels.Selector
