@@ -29,6 +29,7 @@ import (
 	"fmt"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/provider"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -67,7 +68,8 @@ func filterProvider(ct *kubermaticv1.ConstraintTemplate, ctList []kubermaticv1.C
 	providersSet := sets.NewString(ct.Spec.Selector.Providers...)
 
 	for _, cluster := range ctList {
-		if providersSet.Has(cluster.GetProviderName()) {
+		name, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
+		if err == nil && providersSet.Has(name) {
 			filteredList = append(filteredList, cluster)
 		}
 	}

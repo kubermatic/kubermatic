@@ -22,9 +22,9 @@ import (
 	"context"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	eeseedctrlmgr "k8c.io/kubermatic/v2/pkg/ee/cmd/seed-controller-manager"
+	eeutil "k8c.io/kubermatic/v2/pkg/ee/constraint-template-controller"
 )
 
 func (r *reconciler) getClustersForConstraintTemplate(ctx context.Context, ct *kubermaticv1.ConstraintTemplate) (*kubermaticv1.ClusterList, error) {
-	return eeseedctrlmgr.GetClustersForConstraintTemplate(ctx, r.seedClient, ct, r.workerNameLabelSelector)
+	return eeutil.GetClustersForConstraintTemplate(ctx, r.seedClient, ct, r.workerNameLabelSelector)
 }

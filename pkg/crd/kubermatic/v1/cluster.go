@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
-	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	corev1 "k8s.io/api/core/v1"
@@ -746,40 +745,4 @@ func (cluster *Cluster) IsOpenshift() bool {
 
 func (cluster *Cluster) IsKubernetes() bool {
 	return !cluster.IsOpenshift()
-}
-
-func (cluster *Cluster) GetProviderName() string {
-	var providerName string
-	switch {
-	case cluster.Spec.Cloud.Alibaba != nil:
-		providerName = provider.AlibabaCloudProvider
-	case cluster.Spec.Cloud.Anexia != nil:
-		providerName = provider.AnexiaCloudProvider
-	case cluster.Spec.Cloud.AWS != nil:
-		providerName = provider.AWSCloudProvider
-	case cluster.Spec.Cloud.Azure != nil:
-		providerName = provider.AzureCloudProvider
-	case cluster.Spec.Cloud.BringYourOwn != nil:
-		providerName = provider.BringYourOwnCloudProvider
-	case cluster.Spec.Cloud.Digitalocean != nil:
-		providerName = provider.DigitaloceanCloudProvider
-	case cluster.Spec.Cloud.Fake != nil:
-		providerName = provider.FakeCloudProvider
-	case cluster.Spec.Cloud.GCP != nil:
-		providerName = provider.GCPCloudProvider
-	case cluster.Spec.Cloud.Hetzner != nil:
-		providerName = provider.HetznerCloudProvider
-	case cluster.Spec.Cloud.Kubevirt != nil:
-		providerName = provider.KubevirtCloudProvider
-	case cluster.Spec.Cloud.Openstack != nil:
-		providerName = provider.OpenstackCloudProvider
-	case cluster.Spec.Cloud.Packet != nil:
-		providerName = provider.PacketCloudProvider
-	case cluster.Spec.Cloud.VSphere != nil:
-		providerName = provider.VSphereCloudProvider
-	default:
-		providerName = "unknown"
-	}
-
-	return providerName
 }
