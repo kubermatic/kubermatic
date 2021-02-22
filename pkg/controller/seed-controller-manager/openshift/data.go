@@ -332,7 +332,8 @@ func (od *openshiftData) BackupSchedule() time.Duration {
 
 func (od *openshiftData) GetKubernetesCloudProviderName() string {
 	return kubernetesresources.GetKubernetesCloudProviderName(od.Cluster(),
-		od.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider])
+		od.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
+		false)
 }
 
 func (od *openshiftData) CloudCredentialSecretTemplate() ([]byte, error) {

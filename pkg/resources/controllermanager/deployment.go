@@ -210,7 +210,7 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	// the external CCM (newly-created OpenStack clusters).
 	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
 		!kubermaticv1helper.ClusterConditionHasStatus(data.Cluster(), kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) &&
-		!data.KCMCloudControllersDeactivated(true) {
+		!data.KCMInTreeCloudProviderDisabled() {
 		controllers = append(controllers, "-cloud-node-lifecycle", "-route", "-service")
 	}
 	flags := []string{
@@ -233,7 +233,8 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	flags = append(flags, strings.Join(featureGates, ","))
 
 	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(),
-		resources.ExternalCloudProviderEnabled(data.Cluster()))
+		resources.ExternalCloudProviderEnabled(data.Cluster()),
+		data.KCMInTreeCloudProviderDisabled())
 	if cloudProviderName != "" && cloudProviderName != "external" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")

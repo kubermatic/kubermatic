@@ -501,7 +501,8 @@ func (d *TemplateData) GetGlobalSecretKeySelectorValue(configVar *providerconfig
 
 func (d *TemplateData) GetKubernetesCloudProviderName() string {
 	return GetKubernetesCloudProviderName(d.Cluster(),
-		d.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider])
+		d.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
+		d.KCMInTreeCloudProviderDisabled())
 }
 
 func (d *TemplateData) CloudCredentialSecretTemplate() ([]byte, error) {
@@ -519,7 +520,7 @@ func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
 // * The cloud controllers are disabled.
 // This is used to avoid deploing the CCM before the in-tree cloud controllers
 // have been deactivated.
-func (d *TemplateData) KCMCloudControllersDeactivated(requireCloudProviderDeactivated bool) bool {
+func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 	kcm := appsv1.Deployment{}
 	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ControllerManagerDeploymentName, Namespace: d.cluster.Status.NamespaceName}, &kcm); err != nil {
 		klog.Errorf("could not get kcm deployment: %v", err)
@@ -536,16 +537,35 @@ func (d *TemplateData) KCMCloudControllersDeactivated(requireCloudProviderDeacti
 				klog.Info("in-tree cloud provider disabled in controller-manager deployment")
 				return ready
 			}
-			if requireCloudProviderDeactivated {
-				klog.Errorf("in-tree cloud provider is not disabled")
-				return false
-			}
 
 			// Otherwise cloud countrollers could have been explicitly disabled
 			if ok, val := getArgValue(cmd.Args, "--controllers"); ok {
 				controllers := strings.Split(val, ",")
 				klog.Infof("cloud controllers disabled in controller-manager deployment %s", controllers)
 				return ready && sets.NewString(controllers...).HasAll("-cloud-node-lifecycle", "-route", "-service")
+			}
+		}
+	}
+
+	return false
+}
+
+// KCMInTreeCloudProviderDisabled checks is the in-tree cloud provider disabled
+// on the KCM deployment. We don't care is the roll-out complete in this case.
+func (d *TemplateData) KCMInTreeCloudProviderDisabled() bool {
+	kcm := appsv1.Deployment{}
+	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ControllerManagerDeploymentName, Namespace: d.cluster.Status.NamespaceName}, &kcm); err != nil {
+		klog.Errorf("could not get kcm deployment: %v", err)
+		return false
+	}
+	if c := getContainer(&kcm, ControllerManagerDeploymentName); c != nil {
+		if ok, cmd := UnwrapCommand(*c); ok {
+			klog.Infof("controller-manager command %v %d", cmd.Args, len(cmd.Args))
+			// If no --cloud-provider flag is provided in-tree cloud provider
+			// is disabled.
+			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == "external" {
+				klog.Info("in-tree cloud provider disabled in controller-manager deployment")
+				return true
 			}
 		}
 	}
@@ -589,7 +609,7 @@ func getContainer(d *appsv1.Deployment, containerName string) *corev1.Container 
 	return nil
 }
 
-func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloudProvider bool) string {
+func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloudProvider, disabledInTreeProvider bool) string {
 	switch {
 	case cluster.Spec.Cloud.AWS != nil:
 		return "aws"
@@ -600,7 +620,7 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 	case cluster.Spec.Cloud.GCP != nil:
 		return "gce"
 	case cluster.Spec.Cloud.Openstack != nil:
-		if externalCloudProvider {
+		if externalCloudProvider || disabledInTreeProvider {
 			return "external"
 		}
 		return "openstack"

@@ -269,7 +269,7 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 	// moment in which cloud controllers or the full in-tree cloud provider
 	// have been deactivated.
 	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
-		data.KCMCloudControllersDeactivated(false) {
+		data.KCMCloudControllersDeactivated() {
 		deployments = append(deployments, cloudcontroller.DeploymentCreator(data))
 	}
 	if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled {
