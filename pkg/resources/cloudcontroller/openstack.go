@@ -59,8 +59,6 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				MatchLabels: resources.BaseAppLabels(OpenstackCCMDeploymentName, nil),
 			}
 
-			dep.Spec.Template.Spec.Volumes = getOSVolumes()
-
 			podLabels, err := data.GetPodTemplateLabels(OpenstackCCMDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
 			if err != nil {
 				return nil, err
@@ -84,35 +82,37 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 			}
 
-			osCloudProviderMounts := []corev1.VolumeMount{
-				{
-					Name:      resources.CloudControllerManagerKubeconfigSecretName,
-					MountPath: "/etc/kubernetes/kubeconfig",
-					ReadOnly:  true,
-				},
-				{
-					Name:      resources.CloudConfigConfigMapName,
-					MountPath: "/etc/kubernetes/cloud",
-					ReadOnly:  true,
-				},
-			}
-
 			version, err := getOSVersion(data.Cluster().Spec.Version)
 			if err != nil {
 				return nil, err
 			}
-			flags := getOSFlags(data)
+
+			dep.Spec.Template.Spec.Volumes = append(getVolumes(), corev1.Volume{
+				Name: resources.CloudConfigConfigMapName,
+				VolumeSource: corev1.VolumeSource{
+					ConfigMap: &corev1.ConfigMapVolumeSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: resources.CloudConfigConfigMapName,
+						},
+					},
+				},
+			})
 
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:         OpenstackCCMDeploymentName,
-					Image:        data.ImageRegistry(resources.RegistryDocker) + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version,
-					Command:      []string{"/bin/openstack-cloud-controller-manager"},
-					Args:         flags,
-					VolumeMounts: osCloudProviderMounts,
+					Name:    OpenstackCCMDeploymentName,
+					Image:   data.ImageRegistry(resources.RegistryDocker) + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version,
+					Command: []string{"/bin/openstack-cloud-controller-manager"},
+					Args:    getOSFlags(data),
+					VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
+						Name:      resources.CloudConfigConfigMapName,
+						MountPath: "/etc/kubernetes/cloud",
+						ReadOnly:  true,
+					}),
 				},
 			}
+
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
 				OpenstackCCMDeploymentName: osResourceRequirements.DeepCopy(),
 				openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
@@ -124,37 +124,6 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 
 			return dep, nil
 		}
-	}
-}
-
-func getOSVolumes() []corev1.Volume {
-	return []corev1.Volume{
-		{
-			Name: resources.CloudConfigConfigMapName,
-			VolumeSource: corev1.VolumeSource{
-				ConfigMap: &corev1.ConfigMapVolumeSource{
-					LocalObjectReference: corev1.LocalObjectReference{
-						Name: resources.CloudConfigConfigMapName,
-					},
-				},
-			},
-		},
-		{
-			Name: resources.OpenVPNClientCertificatesSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.OpenVPNClientCertificatesSecretName,
-				},
-			},
-		},
-		{
-			Name: resources.CloudControllerManagerKubeconfigSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.CloudControllerManagerKubeconfigSecretName,
-				},
-			},
-		},
 	}
 }
 

@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	hetznerName = "hcloud-cloud-controller-manager"
+	HetznerCCMDeploymentName = "hcloud-cloud-controller-manager"
 )
 
 var (
@@ -44,16 +44,16 @@ var (
 
 func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return hetznerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Labels = resources.BaseAppLabels(hetznerName, nil)
+		return HetznerCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Labels = resources.BaseAppLabels(HetznerCCMDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(1)
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(hetznerName, nil),
+				MatchLabels: resources.BaseAppLabels(HetznerCCMDeploymentName, nil),
 			}
 
-			podLabels, err := data.GetPodTemplateLabels(hetznerName, dep.Spec.Template.Spec.Volumes, nil)
+			podLabels, err := data.GetPodTemplateLabels(HetznerCCMDeploymentName, dep.Spec.Template.Spec.Volumes, nil)
 			if err != nil {
 				return nil, err
 			}
@@ -86,10 +86,12 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				network = data.DC().Spec.Hetzner.Network
 			}
 
+			dep.Spec.Template.Spec.Volumes = getVolumes()
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:  hetznerName,
+					Name:  HetznerCCMDeploymentName,
 					Image: data.ImageRegistry(resources.RegistryDocker) + "/hetznercloud/hcloud-cloud-controller-manager:v1.8.1",
 					Command: []string{
 						"/bin/hcloud-cloud-controller-manager",
@@ -118,12 +120,13 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 							Value: network,
 						},
 					},
+					VolumeMounts: getVolumeMounts(),
 				},
 			}
 
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				hetznerName:         hetznerResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
+				HetznerCCMDeploymentName: hetznerResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name:      openvpnSidecar.Resources.DeepCopy(),
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {

@@ -20,6 +20,9 @@ import (
 	"net/url"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // ExternalCloudControllerFeatureSupported checks if the
@@ -55,4 +58,35 @@ func isOTC(dc *kubermaticv1.DatacenterSpecOpenstack) bool {
 		return false
 	}
 	return u.Host == "iam.eu-de.otc.t-systems.com"
+}
+
+func getVolumes() []corev1.Volume {
+	return []corev1.Volume{
+		{
+			Name: resources.OpenVPNClientCertificatesSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.OpenVPNClientCertificatesSecretName,
+				},
+			},
+		},
+		{
+			Name: resources.CloudControllerManagerKubeconfigSecretName,
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					SecretName: resources.CloudControllerManagerKubeconfigSecretName,
+				},
+			},
+		},
+	}
+}
+
+func getVolumeMounts() []corev1.VolumeMount {
+	return []corev1.VolumeMount{
+		{
+			Name:      resources.CloudControllerManagerKubeconfigSecretName,
+			MountPath: "/etc/kubernetes/kubeconfig",
+			ReadOnly:  true,
+		},
+	}
 }
