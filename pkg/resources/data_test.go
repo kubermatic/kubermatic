@@ -40,8 +40,33 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 					Annotations: map[string]string{},
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "test",
+				},
+			},
+			wantFeatureGates: sets.String{},
+		},
+		{
+			name: "CSI migration feature disabled",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:        "cluster-a",
+					Annotations: map[string]string{},
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
+					Features: map[string]bool{
+						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						kubermaticv1.ClusterFeatureCSIMigration:          false,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -55,13 +80,14 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cluster-a",
-					Annotations: map[string]string{
-						kubermaticv1.CSIMigrationNeededAnnotation: "",
-					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						kubermaticv1.ClusterFeatureCSIMigration:          true,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -75,13 +101,14 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cluster-a",
-					Annotations: map[string]string{
-						kubermaticv1.CSIMigrationNeededAnnotation: "",
-					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						kubermaticv1.ClusterFeatureCSIMigration:          true,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -95,6 +122,27 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 				},
 			},
 			wantFeatureGates: sets.NewString("CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true", "CSIMigrationOpenStackComplete=true"),
+		},
+		{
+			name: "CSI migration on non-OpenStack provider",
+			cluster: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "cluster-a",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						AWS: &kubermaticv1.AWSCloudSpec{},
+					},
+					Features: map[string]bool{
+						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						kubermaticv1.ClusterFeatureCSIMigration:          true,
+					},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "test",
+				},
+			},
+			wantFeatureGates: sets.String{},
 		},
 	}
 

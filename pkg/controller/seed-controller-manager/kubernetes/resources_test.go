@@ -52,14 +52,11 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cluster-a",
-					Annotations: map[string]string{
-						kubermaticv1.CCMMigrationNeededAnnotation: "",
-						kubermaticv1.CSIMigrationNeededAnnotation: "",
-					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						kubermaticv1.ClusterFeatureCSIMigration:          true,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -85,14 +82,11 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cluster-a",
-					Annotations: map[string]string{
-						kubermaticv1.CCMMigrationNeededAnnotation: "",
-						kubermaticv1.CSIMigrationNeededAnnotation: "",
-					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						kubermaticv1.ClusterFeatureCSIMigration:          true,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -118,14 +112,11 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cluster-a",
-					Annotations: map[string]string{
-						kubermaticv1.CCMMigrationNeededAnnotation: "",
-						kubermaticv1.CSIMigrationNeededAnnotation: "",
-					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						kubermaticv1.ClusterFeatureCSIMigration:          true,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -154,14 +145,11 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cluster-a",
-					Annotations: map[string]string{
-						kubermaticv1.CCMMigrationNeededAnnotation: "",
-						kubermaticv1.CSIMigrationNeededAnnotation: "",
-					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						kubermaticv1.ClusterFeatureCSIMigration:          true,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -187,14 +175,11 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "cluster-a",
-					Annotations: map[string]string{
-						kubermaticv1.CCMMigrationNeededAnnotation: "",
-						kubermaticv1.CSIMigrationNeededAnnotation: "",
-					},
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						kubermaticv1.ClusterFeatureCSIMigration:          true,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{

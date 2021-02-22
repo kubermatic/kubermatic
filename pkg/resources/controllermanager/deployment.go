@@ -205,8 +205,12 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	controllers := []string{"*", "bootstrapsigner", "tokencleaner"}
 	// If CCM migration is enabled and all kubeletes have not been migrated yet
 	// disable the cloud controllers.
-	if metav1.HasAnnotation(data.Cluster().ObjectMeta, kubermaticv1.CCMMigrationNeededAnnotation) &&
-		!kubermaticv1helper.ClusterConditionHasStatus(data.Cluster(), kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+	// If in-tree cloud providers are deactivated (KCMCloudControllersDeactivated is true),
+	// we don't want to disable any controllers, because those clusters are already using
+	// the external CCM (newly-created OpenStack clusters).
+	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
+		!kubermaticv1helper.ClusterConditionHasStatus(data.Cluster(), kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) &&
+		!data.KCMCloudControllersDeactivated(true) {
 		controllers = append(controllers, "-cloud-node-lifecycle", "-route", "-service")
 	}
 	flags := []string{

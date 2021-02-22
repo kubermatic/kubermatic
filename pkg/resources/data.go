@@ -519,7 +519,7 @@ func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
 // * The cloud controllers are disabled.
 // This is used to avoid deploing the CCM before the in-tree cloud controllers
 // have been deactivated.
-func (d *TemplateData) KCMCloudControllersDeactivated() bool {
+func (d *TemplateData) KCMCloudControllersDeactivated(requireCloudProviderDeactivated bool) bool {
 	kcm := appsv1.Deployment{}
 	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ControllerManagerDeploymentName, Namespace: d.cluster.Status.NamespaceName}, &kcm); err != nil {
 		klog.Errorf("could not get kcm deployment: %v", err)
@@ -535,6 +535,10 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == "external" {
 				klog.Info("in-tree cloud provider disabled in controller-manager deployment")
 				return ready
+			}
+			if requireCloudProviderDeactivated {
+				klog.Errorf("in-tree cloud provider is not disabled")
+				return false
 			}
 
 			// Otherwise cloud countrollers could have been explicitly disabled
@@ -609,19 +613,17 @@ func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
 	// If we are migrating from in-tree cloud provider to CSI driver, we
 	// should not disable the in-tree cloud provider until all kubelets are
 	// migrated, otherwise we won't be able to use the volume API.
+	// TODO: Properly handle existing clusters.
 	return cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
-		(kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) ||
-			!metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation))
+		cluster.Spec.Features[kubermaticv1.ClusterFeatureCSIMigration] &&
+		kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue)
 }
 
 func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 	var featureFlags []string
-	if metav1.HasAnnotation(cluster.ObjectMeta, kubermaticv1.CSIMigrationNeededAnnotation) {
-		// The following feature gates are always enabled when the
-		// 'externalCloudProvider' feature is activated.
-		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-			featureFlags = append(featureFlags, "CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true")
-		}
+	// Currently, CSIMigration is supported only for OpenStack
+	if cluster.Spec.Cloud.Openstack != nil && cluster.Spec.Features[kubermaticv1.ClusterFeatureCSIMigration] {
+		featureFlags = append(featureFlags, "CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true")
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
 		if kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {

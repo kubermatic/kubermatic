@@ -47,11 +47,6 @@ const (
 )
 
 const (
-	CCMMigrationNeededAnnotation = "ccm-migration.k8c.io/migration-needed"
-	CSIMigrationNeededAnnotation = "csi-migration.k8c.io/migration-needed"
-)
-
-const (
 	WorkerNameLabelKey   = "worker-name"
 	ProjectIDLabelKey    = "project-id"
 	UpdatedByVPALabelKey = "updated-by-vpa"
@@ -165,6 +160,13 @@ const (
 	// only supported on a limited set of providers for a specific set of Kube versions. It must
 	// not be set if its not supported.
 	ClusterFeatureExternalCloudProvider = "externalCloudProvider"
+
+	// ClusterFeatureCSIMigration describes the CSIMigration feature. This feature enables
+	// the CSIMigration feature gates on API server, controller-manager, and kubelets, which are
+	// responsible for translating and redirecting calls from the in-tree volumes APIs to the
+	// CSI plugins. This feautre is only supported on a limited set of providers for a specific
+	// set of Kube versions. It must not be set if its not supported.
+	ClusterFeatureCSIMigration = "csiMigration"
 
 	// ClusterFeatureRancherIntegration enables the rancher server integration feature.
 	// It will deploy a Rancher Server Managegment plane on the seed cluster and import the user cluster into it.
