@@ -135,7 +135,8 @@ func TestReconcile(t *testing.T) {
 							},
 							Cloud: v1.NodeCloudSpec{
 								Hetzner: &v1.HetznerNodeSpec{
-									Type: "big",
+									Type:    "big",
+									Network: "test",
 								},
 							},
 						},
@@ -227,6 +228,7 @@ func TestReconcile(t *testing.T) {
 									Spec: kubermaticv1.DatacenterSpec{
 										Hetzner: &kubermaticv1.DatacenterSpecHetzner{
 											Datacenter: "hel1",
+											Network:    "default",
 										},
 									},
 								},

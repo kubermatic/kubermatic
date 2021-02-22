@@ -81,6 +81,11 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 				return nil, fmt.Errorf("failed to get credentials: %v", err)
 			}
 
+			network := data.Cluster().Spec.Cloud.Hetzner.Network
+			if network == "" {
+				network = data.DC().Spec.Hetzner.Network
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
@@ -110,7 +115,7 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 						},
 						{
 							Name:  "HCLOUD_NETWORK",
-							Value: "TODO",
+							Value: network,
 						},
 					},
 				},

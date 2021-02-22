@@ -464,13 +464,14 @@ func TestCredentialEndpoint(t *testing.T) {
 					Spec: kubermaticv1.PresetSpec{
 						RequiredEmailDomain: "example.com",
 						Hetzner: &kubermaticv1.Hetzner{
-							Token: "secret",
+							Token:   "secret",
+							Network: "test",
 						},
 					},
 				},
 			},
 			cloudSpec:         kubermaticv1.CloudSpec{Hetzner: &kubermaticv1.HetznerCloudSpec{}},
-			expectedCloudSpec: &kubermaticv1.CloudSpec{Hetzner: &kubermaticv1.HetznerCloudSpec{Token: "secret"}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{Hetzner: &kubermaticv1.HetznerCloudSpec{Token: "secret", Network: "test"}},
 		},
 		{
 			name:       "test 5: set credentials for Packet provider",

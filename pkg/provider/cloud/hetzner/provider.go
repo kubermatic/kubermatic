@@ -50,7 +50,15 @@ func (h *hetzner) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 	}
 
 	client := hcloud.NewClient(hcloud.WithToken(hetznerToken))
-	_, _, err = client.ServerType.List(context.Background(), hcloud.ServerTypeListOpts{})
+
+	if spec.Hetzner.Network == "" {
+		// this validates the token
+		_, _, err = client.ServerType.List(context.TODO(), hcloud.ServerTypeListOpts{})
+	} else {
+		// this validates network and implicitly the token
+		_, _, err = client.Network.GetByName(context.TODO(), spec.Hetzner.Network)
+	}
+
 	return err
 }
 

@@ -1210,6 +1210,9 @@ type HetznerNodeSpec struct {
 	// server type
 	// required: true
 	Type string `json:"type"`
+	// network name
+	// required: false
+	Network string `json:"network"`
 }
 
 func (spec *HetznerNodeSpec) MarshalJSON() ([]byte, error) {
@@ -1224,9 +1227,11 @@ func (spec *HetznerNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	res := struct {
-		Type string `json:"type"`
+		Network string `json:"network,omitempty"`
+		Type    string `json:"type"`
 	}{
-		Type: spec.Type,
+		Network: spec.Network,
+		Type:    spec.Type,
 	}
 
 	return json.Marshal(&res)
