@@ -595,6 +595,11 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 			return "external"
 		}
 		return "openstack"
+	case cluster.Spec.Cloud.Hetzner != nil:
+		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+			return "external"
+		}
+		return ""
 	default:
 		return ""
 	}
