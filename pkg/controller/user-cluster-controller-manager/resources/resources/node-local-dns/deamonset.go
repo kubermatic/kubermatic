@@ -24,9 +24,16 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+)
+
+const (
+	extraConfigVolume     = "extra-configs-volume"
+	extraConficMountPath  = "/etc/coredns/extra-configs"
+	extraConfigImportPath = extraConficMountPath + "/*Corefile"
 )
 
 func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
@@ -69,6 +76,15 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 			hostPathType := corev1.HostPathFileOrCreate
 			ds.Spec.Template.Spec.Containers = []corev1.Container{
 				{
+					Resources: corev1.ResourceRequirements{
+						Limits: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("100Mi"),
+						},
+						Requests: corev1.ResourceList{
+							corev1.ResourceMemory: resource.MustParse("20Mi"),
+							corev1.ResourceCPU:    resource.MustParse("50m"),
+						},
+					},
 					Name:            "node-cache",
 					ImagePullPolicy: corev1.PullAlways,
 					Image:           fmt.Sprintf("%s/k8s-dns-node-cache:1.15.7", resources.RegistryK8SGCR),
@@ -87,6 +103,10 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 						{
 							Name:      "config-volume",
 							MountPath: "/etc/coredns",
+						},
+						{
+							Name:      extraConfigVolume,
+							MountPath: extraConficMountPath,
 						},
 					},
 
@@ -156,6 +176,17 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 									Path: "Corefile",
 								},
 							},
+						},
+					},
+				},
+				{
+					Name: extraConfigVolume,
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.NodeLocalDNSExtraConfigMapName,
+							},
+							Optional: pointer.BoolPtr(true),
 						},
 					},
 				},

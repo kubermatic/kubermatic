@@ -34,6 +34,16 @@ import (
 	"k8s.io/utils/pointer"
 )
 
+const (
+	// extraConfigsMountPath is a directory used to mount extra configuration.
+	extraConfigsMountPath = "/etc/coredns/extra-configs"
+
+	// ExtraConfigImportPath is a path to import extra configuration.
+	ExtraConfigImportPath = extraConfigsMountPath + "/*Corefile"
+
+	extraConfigVolume = "extra-configs-volume"
+)
+
 var (
 	defaultResourceRequirements = map[string]*corev1.ResourceRequirements{
 		resources.CoreDNSDeploymentName: {
@@ -90,6 +100,12 @@ func DeploymentCreator(kubernetesVersion *semver.Version) reconciling.NamedDeplo
 			volumes := getVolumes()
 			dep.Spec.Template.Spec.Volumes = volumes
 
+			tolerations := getTolerations()
+			dep.Spec.Template.Spec.Tolerations = tolerations
+
+			affinity := getAffinity()
+			dep.Spec.Template.Spec.Affinity = affinity
+
 			dep.Spec.Template.Spec.Containers = getContainers(kubernetesVersion)
 			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
@@ -131,6 +147,10 @@ func getContainers(clusterVersion *semver.Version) []corev1.Container {
 					Name:      "config-volume",
 					MountPath: "/etc/coredns",
 					ReadOnly:  true,
+				},
+				{
+					Name:      extraConfigVolume,
+					MountPath: extraConfigsMountPath,
 				},
 				{
 					Name:      "tmp",
@@ -218,6 +238,50 @@ func getVolumes() []corev1.Volume {
 						{
 							Key:  "Corefile",
 							Path: "Corefile",
+						},
+					},
+				},
+			},
+		},
+		{
+			Name: extraConfigVolume,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resources.CoreDNSExtraConfigMapName,
+					},
+					Optional: pointer.BoolPtr(true),
+				},
+			},
+		},
+	}
+}
+
+func getTolerations() []corev1.Toleration {
+	return []corev1.Toleration{
+		{
+			Key:      "CriticalAddonsOnly",
+			Operator: corev1.TolerationOpExists,
+		},
+	}
+}
+
+func getAffinity() *corev1.Affinity {
+	return &corev1.Affinity{
+		PodAntiAffinity: &corev1.PodAntiAffinity{
+			PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
+				{
+					Weight: 100,
+					PodAffinityTerm: corev1.PodAffinityTerm{
+						TopologyKey: "kubernetes.io/hostname",
+						LabelSelector: &metav1.LabelSelector{
+							MatchExpressions: []metav1.LabelSelectorRequirement{
+								{
+									Key:      resources.AppLabelKey,
+									Operator: metav1.LabelSelectorOpIn,
+									Values:   []string{resources.CoreDNSDeploymentName},
+								},
+							},
 						},
 					},
 				},

@@ -73,6 +73,7 @@ func Add(
 	openvpnServerPort uint32,
 	kasSecurePort uint32,
 	tunnelingAgentIP net.IP,
+	clusterDNSDomain string,
 	registerReconciledCheck func(name string, check healthz.Checker) error,
 	cloudCredentialSecretTemplate *corev1.Secret,
 	openshiftConsoleCallbackURI string,
@@ -87,6 +88,7 @@ func Add(
 		rLock:                         &sync.Mutex{},
 		namespace:                     namespace,
 		clusterURL:                    clusterURL,
+		clusterDNSDomain:              clusterDNSDomain,
 		openvpnServerPort:             openvpnServerPort,
 		kasSecurePort:                 kasSecurePort,
 		tunnelingAgentIP:              tunnelingAgentIP,
@@ -243,6 +245,7 @@ type reconciler struct {
 	openvpnServerPort             uint32
 	kasSecurePort                 uint32
 	tunnelingAgentIP              net.IP
+	clusterDNSDomain              string
 	platform                      string
 	cloudCredentialSecretTemplate *corev1.Secret
 	openshiftConsoleCallbackURI   string

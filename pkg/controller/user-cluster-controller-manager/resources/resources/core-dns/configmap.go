@@ -17,6 +17,7 @@ limitations under the License.
 package coredns
 
 import (
+	"fmt"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -24,18 +25,19 @@ import (
 )
 
 // ConfigMapCreator returns a ConfigMap containing the config for the CoreDNS
-func ConfigMapCreator() reconciling.NamedConfigMapCreatorGetter {
+func ConfigMapCreator(clusterDNSDomain string) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.CoreDNSConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
 			cm.Labels = resources.BaseAppLabels(resources.CoreDNSServiceName, nil)
-			cm.Data["Corefile"] = `
+			cm.Data["Corefile"] = fmt.Sprintf(`
+      import %s
       .:53 {
           errors
           health
-          kubernetes cluster.local in-addr.arpa ip6.arpa {
+          kubernetes %s in-addr.arpa ip6.arpa {
              pods insecure
              fallthrough in-addr.arpa ip6.arpa
           }
@@ -46,7 +48,7 @@ func ConfigMapCreator() reconciling.NamedConfigMapCreatorGetter {
           reload
           loadbalance
       }
-      `
+      `, ExtraConfigImportPath, clusterDNSDomain)
 
 			return cm, nil
 		}
