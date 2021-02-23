@@ -759,59 +759,6 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			},
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
-		// scenario 5
-		{
-			Name:             "scenario 5: openShift cluster is created",
-			Body:             `{"cluster":{"name":"keen-snyder","type":"openshift","spec":{"version":"4.1.0","openshift":{"imagePullSecret": "some-secret"},"cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"openshift","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"4.1.0","oidc":{},"enableUserSSHKeyAgent":true},"status":{"version":"4.1.0","url":""}}`,
-			RewriteClusterID: true,
-			HTTPStatus:       http.StatusCreated,
-			ProjectToSync:    test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				test.GenDefaultSettings(),
-			),
-			ExistingAPIUser: test.GenDefaultAPIUser(),
-		},
-		// scenario 6
-		{
-			Name:             "scenario 6: openShift cluster is created with existing custom credential",
-			Body:             `{"cluster":{"name":"keen-snyder","type":"openshift","credential":"fake","spec":{"version":"4.1.0","openshift":{"imagePullSecret": "some-secret"},"cloud":{"fake":{},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"id":"%s","name":"keen-snyder","creationTimestamp":"0001-01-01T00:00:00Z","type":"openshift","spec":{"cloud":{"dc":"fake-dc","fake":{}},"version":"4.1.0","oidc":{},"enableUserSSHKeyAgent":true},"status":{"version":"4.1.0","url":""}}`,
-			RewriteClusterID: true,
-			HTTPStatus:       http.StatusCreated,
-			ProjectToSync:    test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				test.GenDefaultSettings(),
-			),
-			ExistingAPIUser: test.GenDefaultAPIUser(),
-		},
-		// scenario 7
-		{
-			Name:             "scenario 7: custom credential doesn't exist for Fake cloud provider",
-			Body:             `{"cluster":{"name":"keen-snyder","type":"openshift","credential":"default","spec":{"version":"4.1.0","cloud":{"fake":{},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"error":{"code":400,"message":"invalid credentials: preset.kubermatic.k8s.io \"default\" not found"}}`,
-			HTTPStatus:       http.StatusBadRequest,
-			ProjectToSync:    test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				test.GenDefaultSettings(),
-			),
-			ExistingAPIUser: test.GenDefaultAPIUser(),
-		},
-		{
-			Name:             "scenario 8: openShift cluster creation fails without imagePullSecret",
-			Body:             `{"cluster":{"name":"keen-snyder","type":"openshift","credential":"fake","spec":{"version":"4.1.0","cloud":{"fake":{},"dc":"fake-dc"}}}}`,
-			ExpectedResponse: `{"error":{"code":400,"message":"openshift clusters must be configured with an imagePullSecret"}}`,
-			HTTPStatus:       http.StatusBadRequest,
-			ProjectToSync:    test.GenDefaultProject().Name,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-				test.GenDefaultSettings(),
-			),
-			ExistingAPIUser: test.GenDefaultAPIUser(),
-		},
 		{
 			Name:             "scenario 9a: rejected an attempt to create a cluster in email-restricted datacenter - legacy single domain restriction with requiredEmailDomains",
 			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.15.0","cloud":{"fake":{"token":"dummy_token"},"dc":"restricted-fake-dc"}}}}`,

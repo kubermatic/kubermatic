@@ -201,16 +201,6 @@ func (m *ModifiersBuilder) Build(ctx context.Context) ([]func(*kubermaticv1.Clus
 		m.log.Debugw("Set URL for cluster", "url", url)
 	}
 
-	if m.cluster.IsOpenshift() {
-		openshiftConsoleCallBackURL := fmt.Sprintf("https://%s/api/v1/projects/%s/dc/%s/clusters/%s/openshift/console/proxy/auth/callback",
-			m.externalURL, m.cluster.Labels[kubermaticv1.ProjectIDLabelKey], m.seed.Name, m.cluster.Name)
-		if m.cluster.Address.OpenshiftConsoleCallBack != openshiftConsoleCallBackURL {
-			modifiers = append(modifiers, func(c *kubermaticv1.Cluster) {
-				c.Address.OpenshiftConsoleCallBack = openshiftConsoleCallBackURL
-			})
-		}
-	}
-
 	return modifiers, nil
 }
 

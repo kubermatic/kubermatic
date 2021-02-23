@@ -36,7 +36,6 @@ func main() {
 	writeYAML(common.DefaultNewBackupStoreContainer, "charts/kubermatic/static/store-container-new.yaml")
 	writeYAML(common.DefaultNewBackupDeleteContainer, "charts/kubermatic/static/delete-container.yaml")
 	writeYAML(common.DefaultKubernetesAddons, "charts/kubermatic/static/master/kubernetes-addons.yaml")
-	writeYAML(common.DefaultOpenshiftAddons, "charts/kubermatic/static/master/openshift-addons.yaml")
 	writeJSON(common.DefaultUIConfig, "charts/kubermatic/static/master/ui-config.json")
 
 	markup, err := yaml.Marshal(map[string]interface{}{
@@ -50,7 +49,6 @@ func main() {
 
 	versionCfg := &operatorv1alpha1.KubermaticVersionsConfiguration{
 		Kubernetes: common.DefaultKubernetesVersioning,
-		Openshift:  common.DefaultOpenshiftVersioning,
 	}
 
 	versionsYAML, err := common.CreateVersionsYAML(versionCfg)

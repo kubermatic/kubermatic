@@ -125,13 +125,8 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return nil, nil
 	}
 
-	clusterType := v1.KubernetesClusterType
-	if cluster.IsOpenshift() {
-		clusterType = v1.OpenShiftClusterType
-	}
-
 	// NodeUpdate may need the controlplane to be updated first
-	updated, err := r.controlPlaneUpgrade(ctx, cluster, clusterType)
+	updated, err := r.controlPlaneUpgrade(ctx, cluster, v1.KubernetesClusterType)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update the controlplane: %v", err)
 	}
@@ -143,7 +138,7 @@ func (r *Reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 		return &reconcile.Result{RequeueAfter: time.Minute}, nil
 	}
 
-	if err := r.nodeUpdate(ctx, cluster, clusterType); err != nil {
+	if err := r.nodeUpdate(ctx, cluster, v1.KubernetesClusterType); err != nil {
 		return nil, fmt.Errorf("failed to update machineDeployments: %v", err)
 	}
 

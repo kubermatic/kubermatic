@@ -63,11 +63,10 @@ type userclusterControllerData interface {
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
 	GetKubernetesCloudProviderName() string
-	CloudCredentialSecretTemplate() ([]byte, error)
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
-func DeploymentCreator(data userclusterControllerData, openshift bool) reconciling.NamedDeploymentCreatorGetter {
+func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterControllerDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = resources.UserClusterControllerDeploymentName
@@ -127,7 +126,6 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				"-dns-cluster-ip", dnsClusterIP,
 				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
 				"-overwrite-registry", data.ImageRegistry(""),
-				fmt.Sprintf("-openshift=%t", openshift),
 				"-version", data.Cluster().Spec.Version.String(),
 				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
 				"-owner-email", data.Cluster().Status.UserEmail,
@@ -140,10 +138,6 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 				args = append(args, "-kas-secure-port", fmt.Sprint(data.Cluster().Address.Port))
 			}
 
-			if openshiftConsoleCallbackURI := data.Cluster().Address.OpenshiftConsoleCallBack; openshiftConsoleCallbackURI != "" {
-				args = append(args, "-openshift-console-callback-uri", openshiftConsoleCallbackURI)
-			}
-
 			if data.Cluster().Spec.UpdateWindow != nil && data.Cluster().Spec.UpdateWindow.Length != "" && data.Cluster().Spec.UpdateWindow.Start != "" {
 				args = append(args, "-update-window-start", data.Cluster().Spec.UpdateWindow.Start, "-update-window-length", data.Cluster().Spec.UpdateWindow.Length)
 			}
@@ -154,14 +148,6 @@ func DeploymentCreator(data userclusterControllerData, openshift bool) reconcili
 			}
 			if labelArgsValue != "" {
 				args = append(args, "-node-labels", labelArgsValue)
-			}
-
-			cloudCredentialSecretTemplate, err := data.CloudCredentialSecretTemplate()
-			if err != nil {
-				return nil, fmt.Errorf("failed to get cloud-credential-secret-template: %v", err)
-			}
-			if cloudCredentialSecretTemplate != nil {
-				args = append(args, "-cloud-credential-secret-template", string(cloudCredentialSecretTemplate))
 			}
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}

@@ -37,7 +37,6 @@ import (
 // properly given a variety of cluster configurations.
 func TestRenderAddons(t *testing.T) {
 	testRenderAddonsForOrchestrator(t, "kubernetes")
-	testRenderAddonsForOrchestrator(t, "openshift")
 }
 
 func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
@@ -60,9 +59,6 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 	}
 
 	addonBasePath := "../../addons"
-	if orchestrator == "openshift" {
-		addonBasePath = "../../openshift_addons"
-	}
 
 	addonPaths, _ := filepath.Glob(filepath.Join(addonBasePath, "*"))
 	if len(addonPaths) == 0 {

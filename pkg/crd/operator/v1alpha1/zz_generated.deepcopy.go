@@ -67,7 +67,6 @@ func (in *KubermaticAddonConfiguration) DeepCopy() *KubermaticAddonConfiguration
 func (in *KubermaticAddonsConfiguration) DeepCopyInto(out *KubermaticAddonsConfiguration) {
 	*out = *in
 	in.Kubernetes.DeepCopyInto(&out.Kubernetes)
-	in.Openshift.DeepCopyInto(&out.Openshift)
 	return
 }
 
@@ -451,7 +450,6 @@ func (in *KubermaticVersioningConfiguration) DeepCopy() *KubermaticVersioningCon
 func (in *KubermaticVersionsConfiguration) DeepCopyInto(out *KubermaticVersionsConfiguration) {
 	*out = *in
 	in.Kubernetes.DeepCopyInto(&out.Kubernetes)
-	in.Openshift.DeepCopyInto(&out.Openshift)
 	return
 }
 

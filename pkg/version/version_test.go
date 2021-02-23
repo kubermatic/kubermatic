@@ -17,7 +17,6 @@ limitations under the License.
 package version
 
 import (
-	"sort"
 	"testing"
 
 	"github.com/Masterminds/semver/v3"
@@ -86,31 +85,6 @@ func TestAutomaticUpdate(t *testing.T) {
 				},
 			}),
 		},
-		{
-			name:          "test required update for kubernetes cluster type doesn't exist",
-			versionFrom:   "1.10.0",
-			expectedError: "failed to get Version for 1.10.1: version not found",
-			clusterType:   apiv1.KubernetesClusterType,
-			manager: New([]*Version{
-				{
-					Version: semver.MustParse("1.10.0"),
-					Default: false,
-					Type:    apiv1.KubernetesClusterType,
-				},
-				{
-					Version: semver.MustParse("1.10.1"),
-					Default: true,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-			}, []*Update{
-				{
-					From:      "1.10.0",
-					To:        "1.10.1",
-					Automatic: true,
-					Type:      apiv1.KubernetesClusterType,
-				},
-			}),
-		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -135,159 +109,5 @@ func TestAutomaticUpdate(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func TestGetVersions(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name             string
-		manager          *Manager
-		expectedVersions []*Version
-	}{
-		{
-			name: "test OpenShift versions without automatic updates",
-			manager: New([]*Version{
-				{
-					Version: semver.MustParse("1.13.5"),
-					Default: true,
-					Type:    apiv1.KubernetesClusterType,
-				},
-				{
-					Version: semver.MustParse("3.11.5"),
-					Default: true,
-					Type:    apiv1.KubernetesClusterType,
-				},
-				{
-					Version: semver.MustParse("3.11"),
-					Default: false,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-				{
-					Version: semver.MustParse("4.1"),
-					Default: true,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-				{
-					Version: semver.MustParse("4.2"),
-					Default: true,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-				{
-					Version: semver.MustParse("4.3"),
-					Default: true,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-			}, []*Update{},
-			),
-			expectedVersions: []*Version{
-				{
-					Version: semver.MustParse("3.11"),
-					Default: false,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-				{
-					Version: semver.MustParse("4.1"),
-					Default: true,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-				{
-					Version: semver.MustParse("4.2"),
-					Default: true,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-				{
-					Version: semver.MustParse("4.3"),
-					Default: true,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-			},
-		},
-		{
-			name: "test OpenShift versions with automatic updates",
-			manager: New([]*Version{
-				{
-					Version: semver.MustParse("1.13.5"),
-					Default: true,
-					Type:    apiv1.KubernetesClusterType,
-				},
-				{
-					Version: semver.MustParse("3.11.5"),
-					Default: true,
-					Type:    apiv1.KubernetesClusterType,
-				},
-				{
-					Version: semver.MustParse("3.11"),
-					Default: false,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-				{
-					Version: semver.MustParse("4.1"),
-					Default: true,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-				{
-					Version: semver.MustParse("4.2"),
-					Default: true,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-				{
-					Version: semver.MustParse("4.3"),
-					Default: true,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-			}, []*Update{
-				{
-					From:      "4.*",
-					To:        "4.1",
-					Automatic: true,
-					Type:      apiv1.OpenShiftClusterType,
-				},
-			}),
-			expectedVersions: []*Version{
-				{
-					Version: semver.MustParse("3.11"),
-					Default: false,
-					Type:    apiv1.OpenShiftClusterType,
-				},
-			},
-		},
-	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-
-			versions, err := tc.manager.GetVersions(apiv1.OpenShiftClusterType)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
-
-			compareVersions(t, versions, tc.expectedVersions)
-		})
-	}
-}
-
-func sortVersion(versions []*Version) {
-	sort.SliceStable(versions, func(i, j int) bool {
-		mi, mj := versions[i], versions[j]
-		return mi.Version.LessThan(mj.Version)
-	})
-}
-
-func compareVersions(t *testing.T, versions, expected []*Version) {
-	if len(versions) != len(expected) {
-		t.Fatalf("got different lengths, got %d expected %d", len(versions), len(expected))
-	}
-
-	sortVersion(versions)
-	sortVersion(expected)
-
-	for i, version := range versions {
-		if !version.Version.Equal(expected[i].Version) {
-			t.Fatalf("expected version %v got %v", expected[i].Version, version.Version)
-		}
-		if version.Default != expected[i].Default {
-			t.Fatalf("expected flag %v got %v", expected[i].Default, version.Default)
-		}
 	}
 }

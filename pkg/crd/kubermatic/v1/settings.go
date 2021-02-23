@@ -27,7 +27,6 @@ const GlobalSettingsName = "globalsettings"
 const (
 	ClusterTypeAll ClusterType = iota
 	ClusterTypeKubernetes
-	ClusterTypeOpenShift
 )
 
 //+genclient

@@ -136,13 +136,6 @@ func SetClusterCondition(
 // required for it to be healthy. ignoreKubermaticVersion should only be set in tests.
 func ClusterReconciliationSuccessful(cluster *kubermaticv1.Cluster, versions kubermatic.Versions, ignoreKubermaticVersion bool) (missingConditions []kubermaticv1.ClusterConditionType, success bool) {
 	conditionsToExclude := []kubermaticv1.ClusterConditionType{kubermaticv1.ClusterConditionSeedResourcesUpToDate}
-	if cluster.IsOpenshift() {
-		conditionsToExclude = append(conditionsToExclude, kubermaticv1.ClusterConditionClusterControllerReconcilingSuccess)
-	}
-	if cluster.IsKubernetes() {
-		conditionsToExclude = append(conditionsToExclude, kubermaticv1.ClusterConditionOpenshiftControllerReconcilingSuccess)
-	}
-
 	for _, conditionType := range kubermaticv1.AllClusterConditionTypes {
 		if conditionTypeListHasConditionType(conditionsToExclude, conditionType) {
 			continue

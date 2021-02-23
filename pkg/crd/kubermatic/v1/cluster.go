@@ -125,9 +125,6 @@ type ClusterSpec struct {
 
 	UpdateWindow *UpdateWindow `json:"updateWindow,omitempty"`
 
-	// Openshift holds all openshift-specific settings
-	Openshift *Openshift `json:"openshift,omitempty"`
-
 	UsePodSecurityPolicyAdmissionPlugin bool `json:"usePodSecurityPolicyAdmissionPlugin,omitempty"`
 	UsePodNodeSelectorAdmissionPlugin   bool `json:"usePodNodeSelectorAdmissionPlugin,omitempty"`
 
@@ -199,7 +196,6 @@ const (
 	ClusterConditionComponentDefaulterReconcilingSuccess          ClusterConditionType = "ComponentDefaulterReconciledSuccessfully"
 	ClusterConditionUpdateControllerReconcilingSuccess            ClusterConditionType = "UpdateControllerReconciledSuccessfully"
 	ClusterConditionMonitoringControllerReconcilingSuccess        ClusterConditionType = "MonitoringControllerReconciledSuccessfully"
-	ClusterConditionOpenshiftControllerReconcilingSuccess         ClusterConditionType = "OpenshiftControllerReconciledSuccessfully"
 	ClusterConditionMachineDeploymentControllerReconcilingSuccess ClusterConditionType = "MachineDeploymentReconciledSuccessfully"
 	ClusterConditionClusterInitialized                            ClusterConditionType = "ClusterInitialized"
 
@@ -231,7 +227,6 @@ var AllClusterConditionTypes = []ClusterConditionType{
 	ClusterConditionComponentDefaulterReconcilingSuccess,
 	ClusterConditionUpdateControllerReconcilingSuccess,
 	ClusterConditionMonitoringControllerReconcilingSuccess,
-	ClusterConditionOpenshiftControllerReconcilingSuccess,
 }
 
 type ClusterCondition struct {
@@ -318,10 +313,6 @@ const (
 	UnsupportedChangeClusterError    ClusterStatusError = "UnsupportedChange"
 	ReconcileClusterError            ClusterStatusError = "ReconcileError"
 )
-
-type Openshift struct {
-	ImagePullSecret string `json:"imagePullSecret,omitempty"`
-}
 
 type OIDCSettings struct {
 	IssuerURL     string `json:"issuerUrl,omitempty"`
@@ -427,8 +418,6 @@ type ClusterAddress struct {
 	AdminToken string `json:"adminToken"`
 	// IP is the external IP under which the apiserver is available
 	IP string `json:"ip"`
-	// OpenshiftConsoleCallBack is the callback address for the Openshift console
-	OpenshiftConsoleCallBack string `json:"openshiftConsoleCallback,omitempty"`
 }
 
 // CloudSpec mutually stores access data to a cloud provider.
@@ -750,12 +739,4 @@ func (cluster *Cluster) GetSecretName() string {
 		return fmt.Sprintf("%s-anexia-%s", CredentialPrefix, cluster.Name)
 	}
 	return ""
-}
-
-func (cluster *Cluster) IsOpenshift() bool {
-	return cluster.Annotations["kubermatic.io/openshift"] != ""
-}
-
-func (cluster *Cluster) IsKubernetes() bool {
-	return !cluster.IsOpenshift()
 }

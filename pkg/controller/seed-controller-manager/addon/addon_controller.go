@@ -83,7 +83,6 @@ type Reconciler struct {
 	addonEnforceInterval     int
 	addonVariables           map[string]interface{}
 	kubernetesAddonDir       string
-	openshiftAddonDir        string
 	overwriteRegistry        string
 	recorder                 record.EventRecorder
 	KubeconfigProvider       KubeconfigProvider
@@ -101,7 +100,6 @@ func Add(
 	addonEnforceInterval int,
 	addonCtxVariables map[string]interface{},
 	kubernetesAddonDir,
-	openshiftAddonDir,
 	overwriteRegistey string,
 	nodeLocalDNSCacheEnabled bool,
 	kubeconfigProvider KubeconfigProvider,
@@ -117,7 +115,6 @@ func Add(
 		addonVariables:           addonCtxVariables,
 		addonEnforceInterval:     addonEnforceInterval,
 		kubernetesAddonDir:       kubernetesAddonDir,
-		openshiftAddonDir:        openshiftAddonDir,
 		KubeconfigProvider:       kubeconfigProvider,
 		workerName:               workerName,
 		recorder:                 mgr.GetEventRecorderFor(ControllerName),
@@ -246,16 +243,6 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 		return reqeueAfter, nil
 	}
 
-	// Openshift needs some time to create this, so avoid getting into the backoff
-	// while the admin-kubeconfig secret doesn't exist yet
-	if _, err := r.KubeconfigProvider.GetAdminKubeconfig(ctx, cluster); err != nil {
-		if kerrors.IsNotFound(err) {
-			log.Debug("Kubeconfig wasn't found, trying again in 10 seconds")
-			return &reconcile.Result{RequeueAfter: 10 * time.Second}, nil
-		}
-		return nil, err
-	}
-
 	if addon.DeletionTimestamp != nil {
 		if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
 			return nil, fmt.Errorf("failed to delete manifests from cluster: %v", err)
@@ -299,9 +286,6 @@ func (r *Reconciler) removeCleanupFinalizer(ctx context.Context, log *zap.Sugare
 
 func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogger, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) ([]runtime.RawExtension, error) {
 	addonDir := r.kubernetesAddonDir
-	if cluster.IsOpenshift() {
-		addonDir = r.openshiftAddonDir
-	}
 	clusterIP, err := resources.UserClusterDNSResolverIP(cluster)
 	if err != nil {
 		return nil, err
@@ -480,7 +464,7 @@ func (r *Reconciler) setupManifestInteraction(ctx context.Context, log *zap.Suga
 	return kubeconfigFilename, manifestFilename, done, nil
 }
 
-func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer, openshift bool) *exec.Cmd {
+func (r *Reconciler) getApplyCommand(ctx context.Context, kubeconfigFilename, manifestFilename string, selector fmt.Stringer) *exec.Cmd {
 	// kubectl apply --prune -f manifest.yaml -l app=nginx
 	cmd := exec.CommandContext(ctx, "kubectl", "--kubeconfig", kubeconfigFilename, "apply", "--prune", "-f", manifestFilename, "-l", selector.String())
 	return cmd
@@ -505,7 +489,7 @@ func (r *Reconciler) ensureIsInstalled(ctx context.Context, log *zap.SugaredLogg
 
 	// We delete all resources with this label which are not in the combined manifest
 	selector := labels.SelectorFromSet(r.getAddonLabel(addon))
-	cmd := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector, cluster.IsOpenshift())
+	cmd := r.getApplyCommand(ctx, kubeconfigFilename, manifestFilename, selector)
 	cmdLog := log.With("cmd", strings.Join(cmd.Args, " "))
 
 	cmdLog.Debug("Applying manifest...")

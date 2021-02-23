@@ -24,7 +24,6 @@ import (
 	"net/http"
 	"net/url"
 	"sync"
-	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
@@ -38,11 +37,7 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/meta"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
@@ -65,7 +60,6 @@ const (
 func Add(
 	mgr manager.Manager,
 	seedMgr manager.Manager,
-	openshift bool,
 	version string,
 	namespace string,
 	cloudProviderName string,
@@ -74,63 +68,31 @@ func Add(
 	kasSecurePort uint32,
 	tunnelingAgentIP net.IP,
 	registerReconciledCheck func(name string, check healthz.Checker) error,
-	cloudCredentialSecretTemplate *corev1.Secret,
-	openshiftConsoleCallbackURI string,
 	dnsClusterIP string,
 	opaIntegration bool,
 	versions kubermatic.Versions,
 	userSSHKeyAgent bool,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
-		openshift:                     openshift,
-		version:                       version,
-		rLock:                         &sync.Mutex{},
-		namespace:                     namespace,
-		clusterURL:                    clusterURL,
-		openvpnServerPort:             openvpnServerPort,
-		kasSecurePort:                 kasSecurePort,
-		tunnelingAgentIP:              tunnelingAgentIP,
-		cloudCredentialSecretTemplate: cloudCredentialSecretTemplate,
-		log:                           log,
-		platform:                      cloudProviderName,
-		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
-		dnsClusterIP:                  dnsClusterIP,
-		opaIntegration:                opaIntegration,
-		userSSHKeyAgent:               userSSHKeyAgent,
-		versions:                      versions,
+		version:           version,
+		rLock:             &sync.Mutex{},
+		namespace:         namespace,
+		clusterURL:        clusterURL,
+		openvpnServerPort: openvpnServerPort,
+		kasSecurePort:     kasSecurePort,
+		tunnelingAgentIP:  tunnelingAgentIP,
+		log:               log,
+		platform:          cloudProviderName,
+		dnsClusterIP:      dnsClusterIP,
+		opaIntegration:    opaIntegration,
+		userSSHKeyAgent:   userSSHKeyAgent,
+		versions:          versions,
 	}
-	ctx := context.Background()
 
 	var err error
 	if r.clusterSemVer, err = semver.NewVersion(r.version); err != nil {
 		return err
 	}
-
-	if r.openshift {
-		// We have to run one initial reconciliation before we can create the watches, to make sure
-		// all apiGroups exist
-		apiReadingUserClusterClient := apiReadingClient(mgr.GetAPIReader(), mgr.GetClient(), mgr.GetScheme(), mgr.GetRESTMapper())
-		apiReadingSeedClusterClient := apiReadingClient(seedMgr.GetAPIReader(), seedMgr.GetClient(), seedMgr.GetScheme(), seedMgr.GetRESTMapper())
-		r.Client = apiReadingUserClusterClient
-		r.seedClient = apiReadingSeedClusterClient
-		if _, err := r.Reconcile(ctx, reconcile.Request{}); err != nil {
-			return fmt.Errorf("initial reconciliation failed: %v", err)
-		}
-		// We must wait for this, otherwise the controller crashes when trying to establish
-		// an informer
-		oauthClientList := &unstructured.UnstructuredList{}
-		oauthClientList.SetAPIVersion("oauth.openshift.io/v1")
-		oauthClientList.SetKind("OAuthClient")
-		if err := wait.PollImmediate(5*time.Second, time.Minute, func() (bool, error) {
-			if err := mgr.GetAPIReader().List(context.Background(), oauthClientList); err != nil {
-				return false, nil
-			}
-			return true, nil
-		}); err != nil {
-			return errors.New("timed out waiting for OAuthClient api to become ready")
-		}
-	}
-
 	r.Client = mgr.GetClient()
 	r.seedClient = seedMgr.GetClient()
 	r.cache = mgr.GetCache()
@@ -169,19 +131,6 @@ func Add(
 		&admissionregistrationv1.MutatingWebhookConfiguration{},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 		&apiextensionsv1beta1.CustomResourceDefinition{},
-	}
-
-	if openshift {
-		infrastructureConfigKind := &unstructured.Unstructured{}
-		infrastructureConfigKind.SetKind("Infrastructure")
-		infrastructureConfigKind.SetAPIVersion("config.openshift.io/v1")
-		clusterVersionConfigKind := &unstructured.Unstructured{}
-		clusterVersionConfigKind.SetKind("ClusterVersion")
-		clusterVersionConfigKind.SetAPIVersion("config.openshift.io/v1")
-		oauthClientConfigKind := &unstructured.Unstructured{}
-		oauthClientConfigKind.SetAPIVersion("oauth.openshift.io/v1")
-		oauthClientConfigKind.SetKind("OAuthClient")
-		typesToWatch = append(typesToWatch, infrastructureConfigKind, clusterVersionConfigKind, oauthClientConfigKind)
 	}
 
 	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on
@@ -233,23 +182,20 @@ func Add(
 // reconcileUserCluster reconciles objects in the user cluster
 type reconciler struct {
 	ctrlruntimeclient.Client
-	seedClient                    ctrlruntimeclient.Client
-	openshift                     bool
-	version                       string
-	clusterSemVer                 *semver.Version
-	cache                         cache.Cache
-	namespace                     string
-	clusterURL                    *url.URL
-	openvpnServerPort             uint32
-	kasSecurePort                 uint32
-	tunnelingAgentIP              net.IP
-	platform                      string
-	cloudCredentialSecretTemplate *corev1.Secret
-	openshiftConsoleCallbackURI   string
-	dnsClusterIP                  string
-	opaIntegration                bool
-	userSSHKeyAgent               bool
-	versions                      kubermatic.Versions
+	seedClient        ctrlruntimeclient.Client
+	version           string
+	clusterSemVer     *semver.Version
+	cache             cache.Cache
+	namespace         string
+	clusterURL        *url.URL
+	openvpnServerPort uint32
+	kasSecurePort     uint32
+	tunnelingAgentIP  net.IP
+	platform          string
+	dnsClusterIP      string
+	opaIntegration    bool
+	userSSHKeyAgent   bool
+	versions          kubermatic.Versions
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
@@ -304,14 +250,4 @@ func (r *reconciler) cloudConfig(ctx context.Context) ([]byte, error) {
 		return nil, fmt.Errorf("cloud-config configmap contains no data for key %s", resources.CloudConfigConfigMapKey)
 	}
 	return []byte(value), nil
-}
-
-func apiReadingClient(apiReader ctrlruntimeclient.Reader, writer ctrlruntimeclient.Client, scheme *runtime.Scheme, restMapper meta.RESTMapper) ctrlruntimeclient.Client {
-	return ctrlruntimeclientClient{
-		Reader:       apiReader,
-		Writer:       writer,
-		StatusClient: writer,
-		scheme:       scheme,
-		restMapper:   restMapper,
-	}
 }

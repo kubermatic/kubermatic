@@ -62,7 +62,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				"-logtostderr",
 				"-internal-address=0.0.0.0:8085",
 				"-kubernetes-addons-path=/opt/addons/kubernetes",
-				"-openshift-addons-path=/opt/addons/openshift",
 				"-worker-count=4",
 				"-admissionwebhook-cert-dir=/opt/webhook-serving-cert/",
 				fmt.Sprintf("-admissionwebhook-cert-name=%s", resources.ServingCertSecretKey),
@@ -185,12 +184,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				"-updates=/opt/extra-files/updates.yaml",
 			)
 
-			if cfg.Spec.UserCluster.Addons.Openshift.DefaultManifests != "" {
-				args = append(args, "-openshift-addons-file=/opt/extra-files/"+common.OpenshiftAddonsFileName)
-			} else {
-				args = append(args, fmt.Sprintf("-openshift-addons-list=%s", strings.Join(cfg.Spec.UserCluster.Addons.Openshift.Default, ",")))
-			}
-
 			if cfg.Spec.UserCluster.Addons.Kubernetes.DefaultManifests != "" {
 				args = append(args, "-kubernetes-addons-file=/opt/extra-files/"+common.KubernetesAddonsFileName)
 			} else {
@@ -286,7 +279,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 			d.Spec.Template.Spec.Volumes = volumes
 			d.Spec.Template.Spec.InitContainers = []corev1.Container{
 				createKubernetesAddonsInitContainer(cfg.Spec.UserCluster.Addons.Kubernetes, sharedAddonVolume, versions.Kubermatic),
-				createOpenshiftAddonsInitContainer(cfg.Spec.UserCluster.Addons.Openshift, sharedAddonVolume, versions.Kubermatic),
 			}
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
@@ -320,24 +312,6 @@ func createKubernetesAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonCon
 		Args: []string{
 			"-c",
 			"mkdir -p /opt/addons/kubernetes && cp -r /addons/* /opt/addons/kubernetes",
-		},
-		VolumeMounts: []corev1.VolumeMount{
-			{
-				Name:      addonVolume,
-				MountPath: "/opt/addons/",
-			},
-		},
-	}
-}
-
-func createOpenshiftAddonsInitContainer(cfg operatorv1alpha1.KubermaticAddonConfiguration, addonVolume string, version string) corev1.Container {
-	return corev1.Container{
-		Name:    "copy-addons-openshift",
-		Image:   cfg.DockerRepository + ":" + getAddonDockerTag(cfg, version),
-		Command: []string{"/bin/sh"},
-		Args: []string{
-			"-c",
-			"mkdir -p /opt/addons/openshift && cp -r /addons/* /opt/addons/openshift",
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{

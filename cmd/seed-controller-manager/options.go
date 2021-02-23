@@ -63,9 +63,7 @@ type controllerRunOptions struct {
 	nodePortRange                                    string
 	nodeAccessNetwork                                string
 	kubernetesAddonsPath                             string
-	openshiftAddonsPath                              string
 	kubernetesAddons                                 kubermaticv1.AddonList
-	openshiftAddons                                  kubermaticv1.AddonList
 	backupContainerFile                              string
 	backupDeleteContainerFile                        string
 	cleanupContainerFile                             string
@@ -112,8 +110,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	var rawEtcdDiskSize string
 	var defaultKubernetesAddonsList string
 	var defaultKubernetesAddonsFile string
-	var defaultOpenshiftAddonList string
-	var defaultOpenshiftAddonsFile string
 
 	flag.BoolVar(&c.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. "+
 		"Enabling this will ensure there is only one active controller manager.")
@@ -129,11 +125,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", kubermaticv1.DefaultNodeAccessNetwork, "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
 	flag.StringVar(&c.kubernetesAddonsPath, "kubernetes-addons-path", "/opt/addons/kubernetes", "Path to addon manifests. Should contain sub-folders for each addon")
-	flag.StringVar(&c.openshiftAddonsPath, "openshift-addons-path", "/opt/addons/openshift", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&defaultKubernetesAddonsList, "kubernetes-addons-list", "", "Comma separated list of Addons to install into every user-cluster. Mutually exclusive with `--kubernetes-addons-file`")
 	flag.StringVar(&defaultKubernetesAddonsFile, "kubernetes-addons-file", "", "File that contains a list of default kubernetes addons. Mutually exclusive with `--kubernetes-addons-list`")
-	flag.StringVar(&defaultOpenshiftAddonList, "openshift-addons-list", "", "Comma separated list of addons to install into every openshift user cluster. Mutually exclusive with `--openshift-addons-file`")
-	flag.StringVar(&defaultOpenshiftAddonsFile, "openshift-addons-file", "", "File that contains a list of default openshift addons. Mutually exclusive with `--openshift-addons-list`")
 	flag.StringVar(&c.backupContainerFile, "backup-container", "", fmt.Sprintf("[Required] Filepath of a backup container yaml. It must mount a volume named %s from which it reads the etcd backups", backupcontroller.SharedVolumeName))
 	flag.StringVar(&c.backupDeleteContainerFile, "backup-delete-container", "", "Filepath of a backup deletion container yaml. It receives the name of the backup to delete in an env variable ($BACKUP_TO_DELETE). If not specified, the backup container must handle deletion.")
 	flag.StringVar(&c.cleanupContainerFile, "cleanup-container", "", "(Only required for the old backup controller) Filepath of a cleanup container yaml. The container will be used to cleanup the backup directory for a cluster after it got deleted.")
@@ -182,11 +175,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	}
 
 	c.kubernetesAddons, err = loadAddons(defaultKubernetesAddonsList, defaultKubernetesAddonsFile)
-	if err != nil {
-		return c, err
-	}
-
-	c.openshiftAddons, err = loadAddons(defaultOpenshiftAddonList, defaultOpenshiftAddonsFile)
 	if err != nil {
 		return c, err
 	}

@@ -118,13 +118,6 @@ kubermatic:
           repository: "quay.io/kubermatic/addons"
           tag: "__KUBERMATIC_TAG__"
           pullPolicy: "IfNotPresent"
-      openshift:
-        # Mutually exclusive with `defaultAddons`. The file referenced here is in the static/master/ folder
-        defaultAddonsFile: openshift-addons.yaml
-        image:
-          repository: "quay.io/kubermatic/openshift-addons"
-          tag: "__KUBERMATIC_TAG__"
-          pullPolicy: "IfNotPresent"
     # Specify a custom docker registry which will be used for all images (user cluster control plane + addons)
     overwriteRegistry: ""
     resources:

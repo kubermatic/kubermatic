@@ -60,7 +60,7 @@ type KubermaticConfigurationSpec struct {
 	ExposeStrategy kubermaticv1.ExposeStrategy `json:"exposeStrategy,omitempty"`
 	// Ingress contains settings for making the API and UI accessible remotely.
 	Ingress KubermaticIngressConfiguration `json:"ingress,omitempty"`
-	// Versions configures the available and default Kubernetes/Openshift versions and updates.
+	// Versions configures the available and default Kubernetes versions and updates.
 	Versions KubermaticVersionsConfiguration `json:"versions,omitempty"`
 	// VerticalPodAutoscaler configures the Kubernetes VPA integration.
 	VerticalPodAutoscaler KubermaticVPAConfiguration `json:"verticalPodAutoscaler,omitempty"`
@@ -186,8 +186,6 @@ type KubermaticUserClusterConfiguration struct {
 type KubermaticAddonsConfiguration struct {
 	// Kubernetes controls the addons for Kubernetes-based clusters.
 	Kubernetes KubermaticAddonConfiguration `json:"kubernetes,omitempty"`
-	// Openshift controls the addons for Openshift-based clusters.
-	Openshift KubermaticAddonConfiguration `json:"openshift,omitempty"`
 }
 
 // KubermaticUserClusterMonitoringConfiguration can be used to fine-tune to in-cluster Prometheus.
@@ -272,15 +270,13 @@ type KubermaticProjectsMigratorConfiguration struct {
 	DryRun bool `json:"dryRun,omitempty"`
 }
 
-// KubermaticVersionsConfiguration configures the available and default Kubernetes/Openshift versions.
+// KubermaticVersionsConfiguration configures the available and default Kubernetes versions.
 type KubermaticVersionsConfiguration struct {
 	// Kubernetes configures the Kubernetes versions and updates.
 	Kubernetes KubermaticVersioningConfiguration `json:"kubernetes,omitempty"`
-	// Openshift configures the Openshift versions and updates.
-	Openshift KubermaticVersioningConfiguration `json:"openshift,omitempty"`
 }
 
-// KubermaticVersioningConfiguration configures the available and default Kubernetes/Openshift versions.
+// KubermaticVersioningConfiguration configures the available and default Kubernetes versions.
 type KubermaticVersioningConfiguration struct {
 	// Versions lists the available versions.
 	Versions []*semver.Version `json:"versions,omitempty"`

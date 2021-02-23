@@ -25,8 +25,6 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/semver"
 	testhelper "k8c.io/kubermatic/v2/pkg/test"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var update = flag.Bool("update", false, "update .golden files")
@@ -84,16 +82,6 @@ func TestGetImageTag(t *testing.T) {
 		cluster        *kubermaticv1.Cluster
 		expectedResult string
 	}{
-		{
-			name: "Openshift",
-			cluster: &kubermaticv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{"kubermatic.io/openshift": "true"},
-				},
-				Spec: kubermaticv1.ClusterSpec{Version: *semver.NewSemverOrDie("4.17.18")},
-			},
-			expectedResult: etcdImageTagV33,
-		},
 		{
 			name: "Kubernetes 1.17",
 			cluster: &kubermaticv1.Cluster{

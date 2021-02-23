@@ -43,7 +43,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hetznercloud/hcloud-go v1.23.1
 	github.com/huandu/xstrings v1.3.2 // indirect
-	github.com/iancoleman/strcase v0.1.2
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jetstack/cert-manager v1.1.0
 	github.com/kubermatic/machine-controller v1.23.1

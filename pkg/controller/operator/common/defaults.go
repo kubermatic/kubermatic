@@ -293,32 +293,6 @@ var (
 			},
 		},
 	}
-
-	// DefaultOpenshiftVersioning contains the supported versions for openshift clusters. The OpenShift 4
-	// minor release is: Kubernetes minor - 12, since we only support openshift v4.1.9 and v4.1.18 only
-	// only cri-o 1.13.x is installed to the provisioned machines.
-	DefaultOpenshiftVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
-		Default: semver.MustParse("v4.1.18"),
-		Versions: []*semver.Version{
-			// Openshift 4.1.9
-			semver.MustParse("v4.1.9"),
-			// Openshift 4.1.18
-			semver.MustParse("v4.1.18"),
-		},
-		Updates: []operatorv1alpha1.Update{
-			// ======= Openshift 4.1 =======
-			{
-				// Allow to change to any patch version
-				From: "4.1.*",
-				To:   "4.1.*",
-			},
-			{
-				// Allow to next minor release
-				From: "4.1.*",
-				To:   "2.2.*",
-			},
-		},
-	}
 )
 
 func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logger *zap.SugaredLogger) (*operatorv1alpha1.KubermaticConfiguration, error) {
@@ -393,11 +367,6 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 		logger.Debugw("Defaulting field", "field", "userCluster.addons.kubernetes.defaultManifests")
 	}
 
-	if len(copy.Spec.UserCluster.Addons.Openshift.Default) == 0 && copy.Spec.UserCluster.Addons.Openshift.DefaultManifests == "" {
-		copy.Spec.UserCluster.Addons.Openshift.DefaultManifests = strings.TrimSpace(DefaultOpenshiftAddons)
-		logger.Debugw("Defaulting field", "field", "userCluster.addons.openshift.defaultManifests")
-	}
-
 	if copy.Spec.UserCluster.APIServerReplicas == nil {
 		copy.Spec.UserCluster.APIServerReplicas = pointer.Int32Ptr(DefaultAPIServerReplicas)
 		logger.Debugw("Defaulting field", "field", "userCluster.apiserverReplicas", "value", *copy.Spec.UserCluster.APIServerReplicas)
@@ -447,10 +416,6 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	}
 
 	if err := defaultVersioning(&copy.Spec.Versions.Kubernetes, DefaultKubernetesVersioning, "versions.kubernetes", logger); err != nil {
-		return copy, err
-	}
-
-	if err := defaultVersioning(&copy.Spec.Versions.Openshift, DefaultOpenshiftVersioning, "versions.openshift", logger); err != nil {
 		return copy, err
 	}
 
@@ -507,10 +472,6 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	}
 
 	if err := defaultDockerRepo(&copy.Spec.UserCluster.Addons.Kubernetes.DockerRepository, resources.DefaultKubernetesAddonImage, "userCluster.addons.kubernetes.dockerRepository", logger); err != nil {
-		return copy, err
-	}
-
-	if err := defaultDockerRepo(&copy.Spec.UserCluster.Addons.Openshift.DockerRepository, resources.DefaultOpenshiftAddonImage, "userCluster.addons.openshift.dockerRepository", logger); err != nil {
 		return copy, err
 	}
 
@@ -867,50 +828,6 @@ items:
       addons.kubermatic.io/ensure: true
 `
 
-const DefaultOpenshiftAddons = `
-apiVersion: v1
-kind: List
-items:
-- apiVersion: kubermatic.k8s.io/v1
-  kind: Addon
-  metadata:
-    name: crd
-- apiVersion: kubermatic.k8s.io/v1
-  kind: Addon
-  metadata:
-    name: default-storage-class
-- apiVersion: kubermatic.k8s.io/v1
-  kind: Addon
-  metadata:
-    name: logrotate
-- apiVersion: kubermatic.k8s.io/v1
-  kind: Addon
-  metadata:
-    name: network
-  spec:
-    requiredResourceTypes:
-    - Group: config.openshift.io
-      Kind: Network
-      Version: v1
-- apiVersion: kubermatic.k8s.io/v1
-  kind: Addon
-  metadata:
-    name: openvpn
-- apiVersion: kubermatic.k8s.io/v1
-  kind: Addon
-  metadata:
-    name: rbac
-- apiVersion: kubermatic.k8s.io/v1
-  kind: Addon
-  metadata:
-    name: registry
-  spec:
-    requiredResourceTypes:
-    - Group: cloudcredential.openshift.io
-      Kind: CredentialsRequest
-      Version: v1
-`
-
 type versionsYAML struct {
 	Versions []*version.Version `json:"versions"`
 }
@@ -931,8 +848,6 @@ func CreateVersionsYAML(config *operatorv1alpha1.KubermaticVersionsConfiguration
 	}
 
 	appendOrchestrator(&config.Kubernetes, kubermaticapiv1.KubernetesClusterType)
-	appendOrchestrator(&config.Openshift, kubermaticapiv1.OpenShiftClusterType)
-
 	return toYAML(output)
 }
 
@@ -963,8 +878,6 @@ func CreateUpdatesYAML(config *operatorv1alpha1.KubermaticVersionsConfiguration)
 	}
 
 	appendOrchestrator(&config.Kubernetes, kubermaticapiv1.KubernetesClusterType)
-	appendOrchestrator(&config.Openshift, kubermaticapiv1.OpenShiftClusterType)
-
 	return toYAML(output)
 }
 

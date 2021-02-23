@@ -32,7 +32,6 @@ COPY ./_build/image-loader \
      ./_build/owner-remover \
      ./_build/seed-controller-manager \
      ./_build/user-cluster-controller-manager \
-     ./_build/userdata-openshift \
      /usr/local/bin/
 
 COPY ./cmd/kubermatic-api/swagger.json /opt/swagger.json

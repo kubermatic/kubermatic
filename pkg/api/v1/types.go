@@ -687,8 +687,6 @@ type CreateClusterSpec struct {
 }
 
 const (
-	// OpenShiftClusterType defines the OpenShift cluster type
-	OpenShiftClusterType string = "openshift"
 	// KubernetesClusterType defines the Kubernetes cluster type
 	KubernetesClusterType string = "kubernetes"
 )
@@ -758,9 +756,6 @@ type ClusterSpec struct {
 
 	// ServiceAccount contains service account related settings for the kube-apiserver of user cluster.
 	ServiceAccount *kubermaticv1.ServiceAccountSettings `json:"serviceAccount,omitempty"`
-
-	// Openshift holds all openshift-specific settings
-	Openshift *kubermaticv1.Openshift `json:"openshift,omitempty"`
 
 	// OPAIntegration is a preview feature that enables OPA integration with Kubermatic for the cluster.
 	// Enabling it causes gatekeeper and its resources to be deployed on the user cluster.
@@ -2102,12 +2097,6 @@ const (
 	InClusterPVCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-pv"
 	// InClusterLBCleanupFinalizer indicates that the LBs still need cleanup
 	InClusterLBCleanupFinalizer = "kubermatic.io/cleanup-in-cluster-lb"
-	// InClusterCredentialsRequestsCleanupFinalizer indicates that CredentialsRequests still need cleanup. This
-	// CRD only exists on Openshift and is a no-op for Kubernetes.
-	InClusterCredentialsRequestsCleanupFinalizer = "kubermatic.io/cleanup-credentials-requests"
-	// InClusterImageRegistryConfigCleanupFinalizer indicates that CredentialsRequests still need
-	// cleanup. This CRD only exists on Openshift and is a no-op for Kubernetes.
-	InClusterImageRegistryConfigCleanupFinalizer = "kubermatic.io/cleanup-image-registry-configs"
 	// CredentialsSecretsCleanupFinalizer indicates that secrets for credentials still need cleanup
 	CredentialsSecretsCleanupFinalizer = "kubermatic.io/cleanup-credentials-secrets"
 	// UserClusterRoleCleanupFinalizer indicates that user cluster role still need cleanup
@@ -2129,9 +2118,6 @@ const (
 func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {
 	if externalClusterType == KubernetesClusterType {
 		return kubermaticv1.ClusterTypeKubernetes
-	}
-	if externalClusterType == OpenShiftClusterType {
-		return kubermaticv1.ClusterTypeOpenShift
 	}
 	return kubermaticv1.ClusterTypeAll
 }
