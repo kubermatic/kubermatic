@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
@@ -201,6 +202,13 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 }
 
 func getFlags(data *resources.TemplateData) ([]string, error) {
+	controllers := []string{"*", "bootstrapsigner", "tokencleaner"}
+	// If CCM migration is enabled and all kubeletes have not been migrated yet
+	// disable the cloud controllers.
+	if metav1.HasAnnotation(data.Cluster().ObjectMeta, kubermaticv1.CCMMigrationNeededAnnotation) &&
+		!kubermaticv1helper.ClusterConditionHasStatus(data.Cluster(), kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+		controllers = append(controllers, "-cloud-node-lifecycle", "-route", "-service")
+	}
 	flags := []string{
 		"--kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"--service-account-private-key-file", "/etc/kubernetes/service-account-key/sa.key",
@@ -209,17 +217,19 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 		"--cluster-signing-key-file", "/etc/kubernetes/pki/ca/ca.key",
 		"--cluster-cidr", data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0],
 		"--allocate-node-cidrs",
-		"--controllers", "*,bootstrapsigner,tokencleaner",
+		"--controllers", strings.Join(controllers, ","),
 		"--use-service-account-credentials",
 	}
 
 	featureGates := []string{"RotateKubeletClientCertificate=true",
 		"RotateKubeletServerCertificate=true"}
+	featureGates = append(featureGates, data.GetCSIMigrationFeatureGates()...)
 
 	flags = append(flags, "--feature-gates")
 	flags = append(flags, strings.Join(featureGates, ","))
 
-	cloudProviderName := data.GetKubernetesCloudProviderName()
+	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(),
+		resources.ExternalCloudProviderEnabled(data.Cluster()))
 	if cloudProviderName != "" && cloudProviderName != "external" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")

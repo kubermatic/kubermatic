@@ -162,32 +162,32 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		return nil, err
 	}
 
-	return resources.NewTemplateData(
-		ctx,
-		r,
-		cluster,
-		&datacenter,
-		seed.DeepCopy(),
-		r.overwriteRegistry,
-		r.nodePortRange,
-		r.nodeAccessNetwork,
-		r.etcdDiskSize,
-		r.monitoringScrapeAnnotationPrefix,
-		r.inClusterPrometheusRulesFile,
-		r.inClusterPrometheusDisableDefaultRules,
-		r.inClusterPrometheusDisableDefaultScrapingConfigs,
-		r.inClusterPrometheusScrapingConfigsFile,
-		r.oidcCAFile,
-		r.oidcIssuerURL,
-		r.oidcIssuerClientID,
-		r.nodeLocalDNSCacheEnabled,
-		r.kubermaticImage,
-		r.etcdLauncherImage,
-		r.dnatControllerImage,
-		r.backupSchedule,
-		supportsFailureDomainZoneAntiAffinity,
-		r.versions,
-	), nil
+	return resources.NewTemplateDataBuilder().
+		WithContext(ctx).
+		WithClient(r).
+		WithCluster(cluster).
+		WithDatacenter(&datacenter).
+		WithSeed(seed.DeepCopy()).
+		WithOverwriteRegistry(r.overwriteRegistry).
+		WithNodePortRange(r.nodePortRange).
+		WithNodeAccessNetwork(r.nodeAccessNetwork).
+		WithEtcdDiskSize(r.etcdDiskSize).
+		WithMonitoringScrapeAnnotationPrefix(r.monitoringScrapeAnnotationPrefix).
+		WithInClusterPrometheusRulesFile(r.inClusterPrometheusRulesFile).
+		WithInClusterPrometheusDefaultRulesDisabled(r.inClusterPrometheusDisableDefaultRules).
+		WithInClusterPrometheusDefaultScrapingConfigsDisabled(r.inClusterPrometheusDisableDefaultScrapingConfigs).
+		WithInClusterPrometheusScrapingConfigsFile(r.inClusterPrometheusScrapingConfigsFile).
+		WithOIDCCAFile(r.oidcCAFile).
+		WithOIDCIssuerURL(r.oidcIssuerURL).
+		WithOIDCIssuerClientID(r.oidcIssuerClientID).
+		WithNodeLocalDNSCacheEnabled(r.nodeLocalDNSCacheEnabled).
+		WithKubermaticImage(r.kubermaticImage).
+		WithEtcdLauncherImage(r.etcdLauncherImage).
+		WithDnatControllerImage(r.dnatControllerImage).
+		WithBackupPeriod(r.backupSchedule).
+		WithFailureDomainZoneAntiaffinity(supportsFailureDomainZoneAntiAffinity).
+		WithVersions(r.versions).
+		Build(), nil
 }
 
 // ensureNamespaceExists will create the cluster namespace
@@ -265,7 +265,12 @@ func GetDeploymentCreators(data *resources.TemplateData, enableAPIserverOIDCAuth
 	if data.Cluster().Annotations[kubermaticv1.AnnotationNameClusterAutoscalerEnabled] != "" {
 		deployments = append(deployments, clusterautoscaler.DeploymentCreator(data))
 	}
-	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; flag {
+	// If CCM migration is ongoing defer the deployment of the CCM to the
+	// moment in which cloud controllers or the full in-tree cloud provider
+	// have been deactivated.
+	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
+		(!metav1.HasAnnotation(data.Cluster().ObjectMeta, kubermaticv1.CCMMigrationNeededAnnotation) ||
+			data.KCMCloudControllersDeactivated()) {
 		deployments = append(deployments, cloudcontroller.DeploymentCreator(data))
 	}
 	if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled {

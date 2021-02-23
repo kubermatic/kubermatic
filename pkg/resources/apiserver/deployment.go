@@ -375,7 +375,7 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		flags = append(flags, "--kubelet-preferred-address-types", "ExternalIP,InternalIP")
 	}
 
-	cloudProviderName := data.GetKubernetesCloudProviderName()
+	cloudProviderName := resources.GetKubernetesCloudProviderName(data.Cluster(), resources.ExternalCloudProviderEnabled(data.Cluster()))
 	if cloudProviderName != "" && cloudProviderName != "external" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
@@ -405,6 +405,11 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 		if len(data.OIDCCAFile()) > 0 {
 			flags = append(flags, "--oidc-ca-file", "/etc/kubernetes/dex/ca/caBundle.pem")
 		}
+	}
+
+	if fg := data.GetCSIMigrationFeatureGates(); len(fg) > 0 {
+		flags = append(flags, "--feature-gates")
+		flags = append(flags, strings.Join(fg, ","))
 	}
 
 	return flags, nil

@@ -43,32 +43,24 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, client ctrlrunt
 		return nil, fmt.Errorf("failed to get datacenter %s", cluster.Spec.Cloud.DatacenterName)
 	}
 
-	return resources.NewTemplateData(
-		ctx,
-		client,
-		cluster,
-		&datacenter,
-		seed.DeepCopy(),
-		r.overwriteRegistry,
-		r.nodePortRange,
-		r.nodeAccessNetwork,
-		resource.Quantity{},
-		r.monitoringScrapeAnnotationPrefix,
-		r.inClusterPrometheusRulesFile,
-		r.inClusterPrometheusDisableDefaultRules,
-		r.inClusterPrometheusDisableDefaultScrapingConfigs,
-		r.inClusterPrometheusScrapingConfigsFile,
-		"",
-		"",
-		"",
-		false,
-		"",
-		"",
-		"",
-		20*time.Minute,
-		false,
-		r.versions,
-	), nil
+	return resources.NewTemplateDataBuilder().
+		WithContext(ctx).
+		WithClient(client).
+		WithCluster(cluster).
+		WithDatacenter(&datacenter).
+		WithSeed(seed.DeepCopy()).
+		WithOverwriteRegistry(r.overwriteRegistry).
+		WithNodePortRange(r.nodePortRange).
+		WithNodeAccessNetwork(r.nodeAccessNetwork).
+		WithEtcdDiskSize(resource.Quantity{}).
+		WithMonitoringScrapeAnnotationPrefix(r.monitoringScrapeAnnotationPrefix).
+		WithInClusterPrometheusRulesFile(r.inClusterPrometheusRulesFile).
+		WithInClusterPrometheusDefaultRulesDisabled(r.inClusterPrometheusDisableDefaultRules).
+		WithInClusterPrometheusDefaultScrapingConfigsDisabled(r.inClusterPrometheusDisableDefaultScrapingConfigs).
+		WithInClusterPrometheusScrapingConfigsFile(r.inClusterPrometheusScrapingConfigsFile).
+		WithBackupPeriod(20 * time.Minute).
+		WithVersions(r.versions).
+		Build(), nil
 }
 
 func (r *Reconciler) ensureRoles(ctx context.Context, cluster *kubermaticv1.Cluster) error {
