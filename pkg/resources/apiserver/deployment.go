@@ -243,7 +243,10 @@ func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bo
 }
 
 func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, enableOIDCAuthentication, auditLogEnabled bool) ([]string, error) {
-	overrideFlags := getApiserverOverrideFlags(data)
+	overrideFlags, err := getApiserverOverrideFlags(data)
+	if err != nil {
+		return nil, fmt.Errorf("could not get components override flags: %v", err)
+	}
 
 	cluster := data.Cluster()
 
@@ -406,14 +409,16 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 
 // getApiserverOverrideFlags creates all settings that may be overridden by cluster specific componentsOverrideSettings
 // otherwise global overrides or defaults will be set
-func getApiserverOverrideFlags(data *resources.TemplateData) (settings kubermaticv1.APIServerSettings) {
+func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APIServerSettings, error) {
+	settings := kubermaticv1.APIServerSettings{}
 	// nodePortRange section
 	settings.NodePortRange = data.NodePortRange()
 	overrideNodePortRange := data.Cluster().Spec.ComponentsOverride.Apiserver.NodePortRange
 	if overrideNodePortRange != "" {
-		if _, err := net.ParsePortRange(overrideNodePortRange); err == nil {
-			settings.NodePortRange = overrideNodePortRange
+		if _, err := net.ParsePortRange(overrideNodePortRange); err != nil {
+			return kubermaticv1.APIServerSettings{}, fmt.Errorf("node port range format is invalid: %v", err)
 		}
+		settings.NodePortRange = overrideNodePortRange
 	}
 	if settings.NodePortRange == "" {
 		settings.NodePortRange = defaultNodePortRange
@@ -425,7 +430,7 @@ func getApiserverOverrideFlags(data *resources.TemplateData) (settings kubermati
 		settings.EndpointReconcilingDisabled = data.Cluster().Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled
 	}
 
-	return
+	return settings, nil
 }
 
 func getVolumeMounts() []corev1.VolumeMount {
