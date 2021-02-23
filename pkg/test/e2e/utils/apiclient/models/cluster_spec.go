@@ -59,9 +59,6 @@ type ClusterSpec struct {
 	// opa integration
 	OpaIntegration *OPAIntegrationSettings `json:"opaIntegration,omitempty"`
 
-	// openshift
-	Openshift *Openshift `json:"openshift,omitempty"`
-
 	// service account
 	ServiceAccount *ServiceAccountSettings `json:"serviceAccount,omitempty"`
 
@@ -93,10 +90,6 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateOpaIntegration(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateOpenshift(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -203,24 +196,6 @@ func (m *ClusterSpec) validateOpaIntegration(formats strfmt.Registry) error {
 		if err := m.OpaIntegration.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("opaIntegration")
-			}
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (m *ClusterSpec) validateOpenshift(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Openshift) { // not required
-		return nil
-	}
-
-	if m.Openshift != nil {
-		if err := m.Openshift.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("openshift")
 			}
 			return err
 		}

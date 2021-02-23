@@ -63,7 +63,5 @@ func getVersionsFromKubermaticConfiguration(config *operatorv1alpha1.KubermaticC
 	}
 
 	assembleVersions("kubernetes", config.Spec.Versions.Kubernetes.Versions)
-	assembleVersions("openshift", config.Spec.Versions.Openshift.Versions)
-
 	return versions
 }

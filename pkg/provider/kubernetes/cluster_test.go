@@ -65,24 +65,6 @@ func TestCreateCluster(t *testing.T) {
 			}(),
 		},
 		{
-			name:            "scenario 2, create OpenShift cluster",
-			shareKubeconfig: false,
-			workerName:      "test-openshift",
-			userInfo:        &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
-			project:         genDefaultProject(),
-			spec:            genClusterSpec("test-openshift"),
-			clusterType:     "openshift",
-			existingKubermaticObjects: []ctrlruntimeclient.Object{
-				createAuthenitactedUser(),
-				genDefaultProject(),
-			},
-			expectedCluster: func() *kubermaticv1.Cluster {
-				cluster := genCluster("test-openshift", "openshift", "my-first-project-ID", "test-openshift", "john@acme.com")
-				cluster.ResourceVersion = "1"
-				return cluster
-			}(),
-		},
-		{
 			name:            "scenario 3, create kubernetes cluster when share kubeconfig is enabled and OIDC is set",
 			shareKubeconfig: true,
 			workerName:      "test-kubernetes",
@@ -123,11 +105,6 @@ func TestCreateCluster(t *testing.T) {
 			target := kubernetes.NewClusterProvider(&restclient.Config{}, fakeImpersonationClient, nil, tc.workerName, nil, nil, nil, tc.shareKubeconfig, versions)
 			partialCluster := &kubermaticv1.Cluster{}
 			partialCluster.Spec = *tc.spec
-			if tc.clusterType == "openshift" {
-				partialCluster.Annotations = map[string]string{
-					"kubermatic.io/openshift": "true",
-				}
-			}
 			if tc.expectedCluster != nil {
 				partialCluster.Finalizers = tc.expectedCluster.Finalizers
 			}

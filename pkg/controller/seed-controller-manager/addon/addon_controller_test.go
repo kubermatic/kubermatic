@@ -402,7 +402,7 @@ func TestController_ensureAddonLabelOnManifests(t *testing.T) {
 
 func TestController_getApplyCommand(t *testing.T) {
 	controller := &Reconciler{}
-	cmd := controller.getApplyCommand(context.Background(), "/opt/kubeconfig", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}), false)
+	cmd := controller.getApplyCommand(context.Background(), "/opt/kubeconfig", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}))
 	expected := "kubectl --kubeconfig /opt/kubeconfig apply --prune -f /opt/manifest.yaml -l foo=bar"
 	got := strings.Join(cmd.Args, " ")
 	if got != expected {

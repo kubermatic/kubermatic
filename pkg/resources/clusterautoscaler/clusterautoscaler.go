@@ -160,11 +160,6 @@ func DeploymentCreator(data clusterautoscalerData) reconciling.NamedDeploymentCr
 // version for each Kubernetes version, because the CA imports the scheduler code and the
 // behaviour of that imported code has to match with what the actual scheduler does
 func getTag(cluster *kubermaticv1.Cluster) string {
-	// TODO: Update once we support more than one minor version of openshift
-	if cluster.IsOpenshift() {
-		return "f1df2eb00ad9782b0c23184194008fc3068ad52c-1"
-	}
-
 	switch cluster.Spec.Version.Minor() {
 	case 14:
 		return "fe5bee817ad9d37c8ce5e473af201c2f3fdf5b94-1"

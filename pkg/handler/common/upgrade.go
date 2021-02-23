@@ -60,12 +60,7 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	clusterType := apiv1.KubernetesClusterType
-	if cluster.IsOpenshift() {
-		clusterType = apiv1.OpenShiftClusterType
-	}
-
-	versions, err := updateManager.GetPossibleUpdates(cluster.Spec.Version.String(), clusterType)
+	versions, err := updateManager.GetPossibleUpdates(cluster.Spec.Version.String(), apiv1.KubernetesClusterType)
 	if err != nil {
 		return nil, err
 	}
@@ -73,13 +68,10 @@ func GetUpgradesEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGe
 	upgrades := make([]*apiv1.MasterVersion, 0)
 	for _, v := range versions {
 		isRestricted := false
-		if clusterType == apiv1.KubernetesClusterType {
-			isRestricted, err = isRestrictedByKubeletVersions(v, machineDeployments.Items)
-			if err != nil {
-				return nil, err
-			}
+		isRestricted, err = isRestrictedByKubeletVersions(v, machineDeployments.Items)
+		if err != nil {
+			return nil, err
 		}
-
 		upgrades = append(upgrades, &apiv1.MasterVersion{
 			Version:                    v.Version,
 			RestrictedByKubeletVersion: isRestricted,

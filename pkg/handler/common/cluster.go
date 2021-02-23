@@ -52,7 +52,7 @@ import (
 )
 
 // ClusterTypes holds a list of supported cluster types
-var ClusterTypes = sets.NewString(apiv1.OpenShiftClusterType, apiv1.KubernetesClusterType)
+var ClusterTypes = sets.NewString(apiv1.KubernetesClusterType)
 
 // patchClusterSpec is equivalent of ClusterSpec but it uses default JSON marshalling method instead of custom
 // MarshalJSON defined for ClusterSpec type. This means it should be only used internally as it may contain
@@ -157,14 +157,6 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 	// for example the credentials secret.
 	partialCluster.Labels[kubermaticv1.ProjectIDLabelKey] = projectID
 	partialCluster.Spec = *spec
-	if body.Cluster.Type == "openshift" {
-		if body.Cluster.Spec.Openshift == nil || body.Cluster.Spec.Openshift.ImagePullSecret == "" {
-			return nil, errors.NewBadRequest("openshift clusters must be configured with an imagePullSecret")
-		}
-		partialCluster.Annotations = map[string]string{
-			"kubermatic.io/openshift": "true",
-		}
-	}
 
 	// Enforce audit logging
 	if dc.Spec.EnforceAuditLogging {
@@ -354,7 +346,6 @@ func PatchEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	newInternalCluster.Spec.UsePodNodeSelectorAdmissionPlugin = patchedCluster.Spec.UsePodNodeSelectorAdmissionPlugin
 	newInternalCluster.Spec.AdmissionPlugins = patchedCluster.Spec.AdmissionPlugins
 	newInternalCluster.Spec.AuditLogging = patchedCluster.Spec.AuditLogging
-	newInternalCluster.Spec.Openshift = patchedCluster.Spec.Openshift
 	newInternalCluster.Spec.UpdateWindow = patchedCluster.Spec.UpdateWindow
 	newInternalCluster.Spec.OPAIntegration = patchedCluster.Spec.OPAIntegration
 	newInternalCluster.Spec.PodNodeSelectorAdmissionPluginConfig = patchedCluster.Spec.PodNodeSelectorAdmissionPluginConfig
@@ -854,9 +845,6 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, fil
 
 	if filterSystemLabels {
 		cluster.Labels = label.FilterLabels(label.ClusterResourceType, internalCluster.Labels)
-	}
-	if internalCluster.IsOpenshift() {
-		cluster.Type = apiv1.OpenShiftClusterType
 	}
 
 	return cluster

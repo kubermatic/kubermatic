@@ -40,7 +40,6 @@ import (
 
 const (
 	ClusterTypeKubernetes = "kubernetes"
-	ClusterTypeOpenshift  = "openshift"
 )
 
 func txtFuncMap(overwriteRegistry string) template.FuncMap {
@@ -85,17 +84,12 @@ func NewTemplateData(
 		variables = make(map[string]interface{})
 	}
 
-	clusterType := ClusterTypeKubernetes
-	if cluster.IsOpenshift() {
-		clusterType = ClusterTypeOpenshift
-	}
-
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
 		Variables:      variables,
 		Credentials:    credentials,
 		Cluster: ClusterData{
-			Type:                 clusterType,
+			Type:                 ClusterTypeKubernetes,
 			Name:                 cluster.Name,
 			HumanReadableName:    cluster.Spec.HumanReadableName,
 			Namespace:            cluster.Status.NamespaceName,
@@ -126,7 +120,7 @@ func NewTemplateData(
 // ClusterData contains data related to the user cluster
 // the addon is rendered for.
 type ClusterData struct {
-	// Type is either "kubernetes" or "openshift".
+	// Type is only "kubernetes"
 	Type string
 	// Name is the auto-generated, internal cluster name, e.g. "bbc8sc24wb".
 	Name string

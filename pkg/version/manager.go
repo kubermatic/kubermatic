@@ -19,7 +19,6 @@ package version
 import (
 	"errors"
 	"fmt"
-	"regexp"
 
 	"github.com/Masterminds/semver/v3"
 
@@ -217,17 +216,6 @@ func (m *Manager) GetPossibleUpdates(fromVersionRaw, clusterType string) ([]*Ver
 		return nil, fmt.Errorf("failed to parse version %s: %v", fromVersionRaw, err)
 	}
 	var possibleVersions []*Version
-
-	// can't upgrade OpenShift from version 3.11 or 3.11.*
-	if clusterType == v1.OpenShiftClusterType {
-		forbiddenUpdate, err := regexp.MatchString(`^3\.11(\.(\*|\d+))?$`, fromVersionRaw)
-		if err != nil {
-			return nil, fmt.Errorf("failed to validate version %s: %v", fromVersionRaw, err)
-		}
-		if forbiddenUpdate {
-			return possibleVersions, nil
-		}
-	}
 
 	var toConstraints []*semver.Constraints
 	for _, u := range m.updates {

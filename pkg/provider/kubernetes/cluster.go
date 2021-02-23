@@ -27,7 +27,6 @@ import (
 
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
-	openshiftuserclusterresources "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/openshift"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -309,9 +308,6 @@ func (p *ClusterProvider) GetAdminKubeconfigForCustomerCluster(c *kubermaticv1.C
 
 // GetViewerKubeconfigForCustomerCluster returns the viewer kubeconfig for the given cluster
 func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(c *kubermaticv1.Cluster) (*clientcmdapi.Config, error) {
-	if c.IsOpenshift() {
-		return nil, fmt.Errorf("not implemented")
-	}
 	s := &corev1.Secret{}
 
 	if err := p.GetSeedClusterAdminRuntimeClient().Get(context.Background(), types.NamespacedName{Namespace: c.Status.NamespaceName, Name: resources.ViewerKubeconfigSecretName}, s); err != nil {
@@ -328,9 +324,6 @@ func (p *ClusterProvider) GetViewerKubeconfigForCustomerCluster(c *kubermaticv1.
 
 // RevokeViewerKubeconfig revokes the viewer token and kubeconfig
 func (p *ClusterProvider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error {
-	if c.IsOpenshift() {
-		return errors.New("not implemented")
-	}
 	s := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.ViewerTokenSecretName,
@@ -347,27 +340,10 @@ func (p *ClusterProvider) RevokeViewerKubeconfig(c *kubermaticv1.Cluster) error 
 // RevokeAdminKubeconfig revokes the viewer token and kubeconfig
 func (p *ClusterProvider) RevokeAdminKubeconfig(c *kubermaticv1.Cluster) error {
 	ctx := context.Background()
-	if !c.IsOpenshift() {
-		oldCluster := c.DeepCopy()
-		c.Address.AdminToken = kuberneteshelper.GenerateToken()
-		if err := p.GetSeedClusterAdminRuntimeClient().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("failed to patch cluster with new token: %v", err)
-		}
-		return nil
-	}
-
-	userClusterClient, err := p.GetAdminClientForCustomerCluster(ctx, c)
-	if err != nil {
-		return fmt.Errorf("failed to get usercluster client: %v", err)
-	}
-	serviceAccount := &corev1.ServiceAccount{
-		ObjectMeta: metav1.ObjectMeta{
-			Namespace: metav1.NamespaceSystem,
-			Name:      openshiftuserclusterresources.TokenOwnerServiceAccountName,
-		},
-	}
-	if err := userClusterClient.Delete(ctx, serviceAccount); err != nil {
-		return fmt.Errorf("failed to remove the token owner: %v", err)
+	oldCluster := c.DeepCopy()
+	c.Address.AdminToken = kuberneteshelper.GenerateToken()
+	if err := p.GetSeedClusterAdminRuntimeClient().Patch(ctx, c, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		return fmt.Errorf("failed to patch cluster with new token: %v", err)
 	}
 	return nil
 }

@@ -33,7 +33,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initialmachinedeployment"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
-	openshiftcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/openshift"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/rancher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/seedresourcesuptodatecondition"
@@ -60,7 +59,6 @@ var AllControllers = map[string]controllerCreator{
 	etcdrestorecontroller.ControllerName:          createEtcdRestoreController,
 	monitoring.ControllerName:                     createMonitoringController,
 	cloudcontroller.ControllerName:                createCloudController,
-	openshiftcontroller.ControllerName:            createOpenshiftController,
 	clustercomponentdefaulter.ControllerName:      createClusterComponentDefaulter,
 	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
 	rancher.ControllerName:                        createRancherController,
@@ -123,40 +121,6 @@ func createCloudController(ctrlCtx *controllerContext) error {
 		ctrlCtx.versions,
 	); err != nil {
 		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
-	}
-	return nil
-}
-
-func createOpenshiftController(ctrlCtx *controllerContext) error {
-	backupInterval, err := time.ParseDuration(ctrlCtx.runOptions.backupInterval)
-	if err != nil {
-		return fmt.Errorf("failed to parse %s as duration: %v", ctrlCtx.runOptions.backupInterval, err)
-	}
-
-	if err := openshiftcontroller.Add(
-		ctrlCtx.mgr,
-		ctrlCtx.log,
-		ctrlCtx.runOptions.workerCount,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.seedGetter,
-		ctrlCtx.clientProvider,
-		ctrlCtx.runOptions.overwriteRegistry,
-		ctrlCtx.runOptions.nodeAccessNetwork,
-		ctrlCtx.runOptions.etcdDiskSize,
-		ctrlCtx.dockerPullConfigJSON,
-		ctrlCtx.runOptions.externalURL,
-		ctrlCtx.runOptions.kubermaticImage,
-		ctrlCtx.runOptions.etcdLauncherImage,
-		ctrlCtx.runOptions.dnatControllerImage,
-		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
-		backupInterval,
-		openshiftcontroller.Features{
-			EtcdDataCorruptionChecks: ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
-			VPA:                      ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
-		},
-		ctrlCtx.runOptions.concurrentClusterUpdate,
-		ctrlCtx.versions); err != nil {
-		return fmt.Errorf("failed to add openshift controller to mgr: %v", err)
 	}
 	return nil
 }
@@ -368,7 +332,6 @@ func createAddonController(ctrlCtx *controllerContext) error {
 			},
 		},
 		ctrlCtx.runOptions.kubernetesAddonsPath,
-		ctrlCtx.runOptions.openshiftAddonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
 		ctrlCtx.clientProvider,
@@ -383,7 +346,6 @@ func createAddonInstallerController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.runOptions.kubernetesAddons,
-		ctrlCtx.runOptions.openshiftAddons,
 		ctrlCtx.versions,
 	)
 }

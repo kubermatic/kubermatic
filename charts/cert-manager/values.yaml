@@ -13,8 +13,6 @@
 # limitations under the License.
 
 certManager:
-  isOpenshift: false
-
   # Optional proxy server configuration
   # http_proxy: ""
   # https_proxy: ""

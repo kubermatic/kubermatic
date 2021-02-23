@@ -143,17 +143,6 @@ func TestNodesRemainUntilInClusterResourcesAreGone(t *testing.T) {
 			cluster: getClusterWithFinalizer(clusterName, kubermaticapiv1.InClusterPVCleanupFinalizer),
 			objects: []ctrlruntimeclient.Object{&corev1.PersistentVolume{}},
 		},
-		// https://github.com/kubernetes-sigs/controller-runtime/issues/702
-		//	{
-		//		name:    "Nodes remain because credentialRequests finalizer exists",
-		//		cluster: getClusterWithFinalizer(clusterName, kubermaticapiv1.InClusterCredentialsRequestsCleanupFinalizer),
-		//		objects: []ctrlruntimeclient.Object{unstructuredWithAPIVersionAndKind("cloudcredential.openshift.io/v1", "CredentialsRequest")},
-		//	},
-		//	{
-		//		name:    "Nodes remain because imageRegistryConfigs finalizer exists",
-		//		cluster: getClusterWithFinalizer(clusterName, kubermaticapiv1.InClusterImageRegistryConfigCleanupFinalizer),
-		//		objects: []ctrlruntimeclient.Object{unstructuredWithAPIVersionAndKind("imageregistry.operator.openshift.io/v1", "Config")},
-		//	},
 	}
 
 	for idx := range testCases {

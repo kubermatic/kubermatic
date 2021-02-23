@@ -90,7 +90,6 @@ timeout -s 9 90m ./_build/conformance-tests $EXTRA_ARGS \
   -dex-helm-values-file="$KUBERMATIC_DEX_VALUES_FILE" \
   -only-test-creation=${ONLY_TEST_CREATION:-false} \
   -enable-psp=${KUBERMATIC_PSP_ENABLED:-false} \
-  -openshift=${OPENSHIFT:-false} \
   -print-ginkgo-logs=true \
   -print-container-logs=true \
   -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091"
