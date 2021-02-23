@@ -25,6 +25,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
+
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -33,8 +35,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	appsv1 "k8s.io/api/apps/v1"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -42,6 +44,10 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+)
+
+const (
+	cloudProviderExternal = "external"
 )
 
 // TemplateData is a group of data required for template generation
@@ -533,7 +539,7 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 			klog.Infof("controller-manager command %v %d", cmd.Args, len(cmd.Args))
 			// If no --cloud-provider flag is provided in-tree cloud provider
 			// is disabled.
-			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == "external" {
+			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == cloudProviderExternal {
 				klog.Info("in-tree cloud provider disabled in controller-manager deployment")
 				return ready
 			}
@@ -551,7 +557,7 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 }
 
 // KCMInTreeCloudProviderDisabled checks is the in-tree cloud provider disabled
-// on the KCM deployment. We don't care is the roll-out complete in this case.
+// on the KCM deployment. We don't care if the roll-out is complete in this case.
 func (d *TemplateData) KCMInTreeCloudProviderDisabled() bool {
 	kcm := appsv1.Deployment{}
 	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ControllerManagerDeploymentName, Namespace: d.cluster.Status.NamespaceName}, &kcm); err != nil {
@@ -563,7 +569,7 @@ func (d *TemplateData) KCMInTreeCloudProviderDisabled() bool {
 			klog.Infof("controller-manager command %v %d", cmd.Args, len(cmd.Args))
 			// If no --cloud-provider flag is provided in-tree cloud provider
 			// is disabled.
-			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == "external" {
+			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == cloudProviderExternal {
 				klog.Info("in-tree cloud provider disabled in controller-manager deployment")
 				return true
 			}
@@ -621,7 +627,7 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 		return "gce"
 	case cluster.Spec.Cloud.Openstack != nil:
 		if externalCloudProvider || disabledInTreeProvider {
-			return "external"
+			return cloudProviderExternal
 		}
 		return "openstack"
 	default:
@@ -633,7 +639,6 @@ func ExternalCloudProviderEnabled(cluster *kubermaticv1.Cluster) bool {
 	// If we are migrating from in-tree cloud provider to CSI driver, we
 	// should not disable the in-tree cloud provider until all kubelets are
 	// migrated, otherwise we won't be able to use the volume API.
-	// TODO: Properly handle existing clusters.
 	return cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] &&
 		cluster.Spec.Features[kubermaticv1.ClusterFeatureCSIMigration] &&
 		kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue)
@@ -646,7 +651,14 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		featureFlags = append(featureFlags, "CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true")
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
-		if kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+		if !kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+			return featureFlags
+		}
+
+		gteKube121Condition, _ := semver.NewConstraint(">= 1.21")
+		if gteKube121Condition.Check(cluster.Spec.Version.Semver()) {
+			featureFlags = append(featureFlags, "InTreePluginOpenStackUnregister=true")
+		} else {
 			featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
 		}
 	}
