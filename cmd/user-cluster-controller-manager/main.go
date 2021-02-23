@@ -59,25 +59,26 @@ import (
 )
 
 type controllerRunOptions struct {
-	metricsListenAddr  string
-	healthListenAddr   string
-	version            string
-	networks           networkFlags
-	namespace          string
-	clusterURL         string
-	openvpnServerPort  int
-	kasSecurePort      int
-	tunnelingAgentIP   flagopts.IPValue
-	overwriteRegistry  string
-	cloudProviderName  string
-	nodelabels         string
-	seedKubeconfig     string
-	ownerEmail         string
-	updateWindowStart  string
-	updateWindowLength string
-	dnsClusterIP       string
-	opaIntegration     bool
-	useSSHKeyAgent     bool
+	metricsListenAddr            string
+	healthListenAddr             string
+	version                      string
+	networks                     networkFlags
+	namespace                    string
+	clusterURL                   string
+	openvpnServerPort            int
+	kasSecurePort                int
+	tunnelingAgentIP             flagopts.IPValue
+	overwriteRegistry            string
+	cloudProviderName            string
+	nodelabels                   string
+	seedKubeconfig               string
+	ownerEmail                   string
+	updateWindowStart            string
+	updateWindowLength           string
+	dnsClusterIP                 string
+	opaIntegration               bool
+	opaIntegrationWebhookTimeout int
+	useSSHKeyAgent               bool
 }
 
 func main() {
@@ -106,6 +107,7 @@ func main() {
 	flag.StringVar(&runOp.updateWindowStart, "update-window-start", "", "The start time of the update window, e.g. 02:00")
 	flag.StringVar(&runOp.updateWindowLength, "update-window-length", "", "The length of the update window, e.g. 1h")
 	flag.BoolVar(&runOp.opaIntegration, "opa-integration", false, "Enable OPA integration in user cluster")
+	flag.IntVar(&runOp.opaIntegrationWebhookTimeout, "opa-webhook-timeout", 10, "Timeout for OPA Integration validating webhook, in seconds")
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
 	flag.Parse()
 
@@ -212,6 +214,7 @@ func main() {
 		runOp.opaIntegration,
 		versions,
 		runOp.useSSHKeyAgent,
+		runOp.opaIntegrationWebhookTimeout,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
