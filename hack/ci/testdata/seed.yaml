@@ -59,7 +59,7 @@ spec:
       spec:
         hetzner:
           datacenter: nbg1-dc3
-          network: kubermatic-e2e
+          network: captain
     vsphere-ger:
       location: Hamburg
       country: DE
