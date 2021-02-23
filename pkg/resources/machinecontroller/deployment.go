@@ -66,6 +66,7 @@ type machinecontrollerData interface {
 	DC() *kubermaticv1.Datacenter
 	NodeLocalDNSCacheEnabled() bool
 	Seed() *kubermaticv1.Seed
+	GetCSIMigrationFeatureGates() []string
 }
 
 // DeploymentCreator returns the function to create and update the machine controller deployment
@@ -140,7 +141,7 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					Name:    Name,
 					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + Tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(clusterDNSIP, data.DC().Node, externalCloudProvider),
+					Args:    getFlags(clusterDNSIP, data.DC().Node, externalCloudProvider, data.GetCSIMigrationFeatureGates()),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -246,7 +247,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	return vars, nil
 }
 
-func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, externalCloudProvider bool) []string {
+func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, externalCloudProvider bool, featureGates []string) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-logtostderr",
@@ -278,6 +279,9 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, exte
 
 	if externalCloudProvider {
 		flags = append(flags, "-external-cloud-provider=true")
+	}
+	if len(featureGates) > 0 {
+		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(append(featureGates, "RotateKubeletServerCertificate=true"), ","))
 	}
 
 	return flags

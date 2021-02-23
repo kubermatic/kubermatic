@@ -331,7 +331,8 @@ func (od *openshiftData) BackupSchedule() time.Duration {
 }
 
 func (od *openshiftData) GetKubernetesCloudProviderName() string {
-	return kubernetesresources.GetKubernetesCloudProviderName(od.Cluster())
+	return kubernetesresources.GetKubernetesCloudProviderName(od.Cluster(),
+		od.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider])
 }
 
 func (od *openshiftData) CloudCredentialSecretTemplate() ([]byte, error) {
@@ -364,4 +365,8 @@ func (od *openshiftData) CloudCredentialSecretTemplate() ([]byte, error) {
 
 func (od *openshiftData) Seed() *kubermaticv1.Seed {
 	return od.seed
+}
+
+func (od *openshiftData) GetCSIMigrationFeatureGates() []string {
+	return nil
 }

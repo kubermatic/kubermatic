@@ -81,6 +81,14 @@ func GetClusterCondition(c *kubermaticv1.Cluster, conditionType kubermaticv1.Clu
 	return -1, nil
 }
 
+func ClusterConditionHasStatus(c *kubermaticv1.Cluster, conditionType kubermaticv1.ClusterConditionType, status corev1.ConditionStatus) bool {
+	_, cond := GetClusterCondition(c, conditionType)
+	if cond != nil {
+		return cond.Status == status
+	}
+	return false
+}
+
 // SetClusterCondition sets a condition on the given cluster using the provided type, status,
 // reason and message. It also adds the Kubermatic version and tiemstamps.
 func SetClusterCondition(
