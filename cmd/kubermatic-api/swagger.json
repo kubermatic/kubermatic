@@ -16989,8 +16989,15 @@
       "type": "object",
       "properties": {
         "enabled": {
+          "description": "Enabled is the flag for enabling OPA integration",
           "type": "boolean",
           "x-go-name": "Enabled"
+        },
+        "webhookTimeoutSeconds": {
+          "description": "WebhookTimeout is the timeout that is set for the gatekeeper validating webhook admission review calls.\nBy default 10 seconds.",
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "WebhookTimeoutSeconds"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"

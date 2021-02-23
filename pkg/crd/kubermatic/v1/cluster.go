@@ -333,7 +333,7 @@ type OPAIntegrationSettings struct {
 	Enabled bool `json:"enabled,omitempty"`
 	// WebhookTimeout is the timeout that is set for the gatekeeper validating webhook admission review calls.
 	// By default 10 seconds.
-	WebhookTimeoutSeconds *int `json:"webhookTimeoutSeconds,omitempty"`
+	WebhookTimeoutSeconds *int32 `json:"webhookTimeoutSeconds,omitempty"`
 }
 
 type ServiceAccountSettings struct {
