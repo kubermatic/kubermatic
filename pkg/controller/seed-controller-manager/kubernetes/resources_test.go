@@ -201,35 +201,6 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 			wantCCMCreator: false,
 		},
 		{
-			name: "No CCM migration ongoing",
-			cluster: &kubermaticv1.Cluster{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "cluster-a",
-				},
-				Spec: kubermaticv1.ClusterSpec{
-					Features: map[string]bool{
-						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
-					},
-				},
-				Status: kubermaticv1.ClusterStatus{
-					NamespaceName: "test",
-				},
-			},
-			kcmDeploymentConfig: KCMDeploymentConfig{
-				Flags: []string{},
-				Status: appsv1.DeploymentStatus{
-					ObservedGeneration: 1,
-					Replicas:           2,
-					AvailableReplicas:  1,
-					UpdatedReplicas:    1,
-				},
-				Generation: 1,
-				Replicas:   2,
-				Namespace:  "test",
-			},
-			wantCCMCreator: true,
-		},
-		{
 			name: "No external cloud-provider",
 			cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
