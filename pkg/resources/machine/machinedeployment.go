@@ -90,13 +90,6 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 		}
 		md.Annotations[apiv1.AutoscalerMinSizeAnnotation] = strconv.Itoa(int(nd.Spec.MinReplicas))
 		md.Annotations[apiv1.AutoscalerMaxSizeAnnotation] = strconv.Itoa(int(nd.Spec.MaxReplicas))
-	} else if md.Annotations != nil {
-		if _, ok := md.Annotations[apiv1.AutoscalerMinSizeAnnotation]; ok {
-			delete(md.Annotations, apiv1.AutoscalerMinSizeAnnotation)
-		}
-		if _, ok := md.Annotations[apiv1.AutoscalerMaxSizeAnnotation]; ok {
-			delete(md.Annotations, apiv1.AutoscalerMaxSizeAnnotation)
-		}
 	}
 
 	md.Spec.Template.Spec.Versions.Kubelet = nd.Spec.Template.Versions.Kubelet

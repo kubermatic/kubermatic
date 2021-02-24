@@ -538,6 +538,7 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 
 	// Only the fields from NodeDeploymentSpec will be updated by a patch.
 	// It ensures that the name and resource version are set and the selector stays the same.
+	machineDeployment.Annotations = patchedMachineDeployment.Annotations
 	machineDeployment.Spec.Template.Spec = patchedMachineDeployment.Spec.Template.Spec
 	machineDeployment.Spec.Replicas = patchedMachineDeployment.Spec.Replicas
 	machineDeployment.Spec.Paused = patchedMachineDeployment.Spec.Paused
