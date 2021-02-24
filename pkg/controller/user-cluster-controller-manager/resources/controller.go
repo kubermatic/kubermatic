@@ -86,7 +86,7 @@ func Add(
 		platform:          cloudProviderName,
 		dnsClusterIP:      dnsClusterIP,
 		opaIntegration:    opaIntegration,
-		opaWebhookTimeout:             opaWebhookTimeout,
+		opaWebhookTimeout: opaWebhookTimeout,
 		userSSHKeyAgent:   userSSHKeyAgent,
 		versions:          versions,
 	}

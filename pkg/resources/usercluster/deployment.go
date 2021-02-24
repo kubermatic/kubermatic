@@ -143,7 +143,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			}
 
 			if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds != nil {
-				args = append(args, "-opa-webhook-timeout", fmt.Sprint(data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds))
+				args = append(args, "-opa-webhook-timeout", fmt.Sprint(*data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds))
 			}
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())
