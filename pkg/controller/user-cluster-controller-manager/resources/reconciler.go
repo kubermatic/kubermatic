@@ -448,7 +448,7 @@ func (r *reconciler) reconcileValidatingWebhookConfigurations(
 ) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{}
 	if r.opaIntegration {
-		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace))
+		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace, r.opaWebhookTimeout))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {

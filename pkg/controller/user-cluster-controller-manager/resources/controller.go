@@ -78,6 +78,7 @@ func Add(
 	opaIntegration bool,
 	versions kubermatic.Versions,
 	userSSHKeyAgent bool,
+	opaWebhookTimeout int,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		openshift:                     openshift,
@@ -94,6 +95,7 @@ func Add(
 		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
 		dnsClusterIP:                  dnsClusterIP,
 		opaIntegration:                opaIntegration,
+		opaWebhookTimeout: opaWebhookTimeout,
 		userSSHKeyAgent:               userSSHKeyAgent,
 		versions:                      versions,
 	}
@@ -239,6 +241,7 @@ type reconciler struct {
 	openshiftConsoleCallbackURI   string
 	dnsClusterIP                  string
 	opaIntegration                bool
+	opaWebhookTimeout int
 	userSSHKeyAgent               bool
 	versions                      kubermatic.Versions
 
