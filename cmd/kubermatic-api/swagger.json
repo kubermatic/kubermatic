@@ -16680,6 +16680,16 @@
           "type": "boolean",
           "x-go-name": "DynamicConfig"
         },
+        "maxReplicas": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MaxReplicas"
+        },
+        "minReplicas": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "MinReplicas"
+        },
         "paused": {
           "type": "boolean",
           "x-go-name": "Paused"
