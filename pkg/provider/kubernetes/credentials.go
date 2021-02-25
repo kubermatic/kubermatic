@@ -34,7 +34,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// CreateCredentialSecretForCluster creates a new secret for a credential
+// CreateOrUpdateCredentialSecretForCluster creates a new secret for a credential.
 func CreateOrUpdateCredentialSecretForCluster(ctx context.Context, seedClient ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Cloud.AWS != nil {
 		return createOrUpdateAWSSecret(ctx, seedClient, cluster)
@@ -82,13 +82,17 @@ func ensureCredentialSecret(ctx context.Context, seedClient ctrlruntimeclient.Cl
 	}
 
 	if existingSecret.Name == "" {
+		projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+		if len(projectID) == 0 {
+			return nil, fmt.Errorf("cluster is missing '%s' label", kubermaticv1.ProjectIDLabelKey)
+		}
 		secret := &corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      name,
 				Namespace: resources.KubermaticNamespace,
 				Labels: map[string]string{
 					"name":                         name,
-					kubermaticv1.ProjectIDLabelKey: cluster.Labels[kubermaticv1.ProjectIDLabelKey],
+					kubermaticv1.ProjectIDLabelKey: projectID,
 				},
 			},
 			Type: corev1.SecretTypeOpaque,
