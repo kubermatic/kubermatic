@@ -31,7 +31,7 @@ import (
 )
 
 // ValidatingWebhookConfigurationCreator returns the ValidatingwebhookConfiguration for gatekeeper
-func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string, timeout int) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return resources.GatekeeperValidatingWebhookConfigurationName, func(validatingWebhookConfigurationWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			failurePolicyIgnore := admissionregistrationv1.Ignore
@@ -46,7 +46,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 					AdmissionReviewVersions: []string{admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					FailurePolicy:           &failurePolicyIgnore,
 					SideEffects:             &sideEffectsNone,
-					TimeoutSeconds:          pointer.Int32Ptr(2),
+					TimeoutSeconds:          pointer.Int32Ptr(int32(timeout)),
 					MatchPolicy:             &matchPolicyExact,
 					NamespaceSelector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
@@ -86,7 +86,7 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 					AdmissionReviewVersions: []string{admissionregistrationv1beta1.SchemeGroupVersion.Version},
 					FailurePolicy:           &failurePolicyIgnore,
 					SideEffects:             &sideEffectsNone,
-					TimeoutSeconds:          pointer.Int32Ptr(2),
+					TimeoutSeconds:          pointer.Int32Ptr(int32(timeout)),
 					MatchPolicy:             &matchPolicyExact,
 					NamespaceSelector: &metav1.LabelSelector{
 						MatchExpressions: []metav1.LabelSelectorRequirement{
