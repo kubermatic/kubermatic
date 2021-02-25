@@ -95,6 +95,24 @@ func TestReconcile(t *testing.T) {
 				},
 			}),
 		},
+		{
+			name: "scenario 3: delete kubermatic constraint on seed cluster when the corresponding constraint on user cluster is missing",
+			namespacedName: types.NamespacedName{
+				Namespace: "namespace",
+				Name:      constraintName,
+			},
+			expectedGetErrStatus: metav1.StatusReasonNotFound,
+			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(
+				scheme.Scheme,
+				func() *v1.Constraint {
+					c := test.GenConstraint(constraintName, "namespace", kind)
+					deleteTime := metav1.NewTime(time.Now())
+					c.DeletionTimestamp = &deleteTime
+					c.Finalizers = []string{kubermaticapiv1.GatekeeperConstraintCleanupFinalizer}
+					return c
+				}()),
+			userClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme),
+		},
 	}
 
 	for _, tc := range testCases {
