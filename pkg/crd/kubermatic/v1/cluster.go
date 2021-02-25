@@ -329,7 +329,11 @@ type AuditLoggingSettings struct {
 }
 
 type OPAIntegrationSettings struct {
+	// Enabled is the flag for enabling OPA integration
 	Enabled bool `json:"enabled,omitempty"`
+	// WebhookTimeout is the timeout that is set for the gatekeeper validating webhook admission review calls.
+	// By default 10 seconds.
+	WebhookTimeoutSeconds *int32 `json:"webhookTimeoutSeconds,omitempty"`
 }
 
 type ServiceAccountSettings struct {
