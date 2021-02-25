@@ -118,7 +118,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 		})
 		toDelete.SetName(constraint.Name)
 
-		if err := r.userClient.Delete(ctx, toDelete); err != nil {
+		if err := r.userClient.Delete(ctx, toDelete); err != nil && !kerrors.IsNotFound(err) {
 			return fmt.Errorf("failed to delete constraint: %v", err)
 		}
 
