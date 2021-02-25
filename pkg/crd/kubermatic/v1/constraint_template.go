@@ -52,9 +52,9 @@ type ConstraintTemplateSpec struct {
 // ConstraintTemplateSelector is the object holding the cluster selection filters
 type ConstraintTemplateSelector struct {
 	// Providers is a list of cloud providers to which the Constraint Template applies to. Empty means all providers are selected.
-	Providers []string
+	Providers []string `json:"providers,omitempty"`
 	// LabelSelector selects the Clusters to which the Constraint Template applies based on their labels
-	LabelSelector metav1.LabelSelector
+	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
