@@ -16,11 +16,11 @@ import (
 // swagger:model ConstraintTemplateSelector
 type ConstraintTemplateSelector struct {
 
-	// label selector
-	LabelSelector *LabelSelector `json:"LabelSelector,omitempty"`
-
 	// Providers is a list of cloud providers to which the Constraint Template applies to. Empty means all providers are selected.
-	Providers []string `json:"Providers"`
+	Providers []string `json:"providers"`
+
+	// label selector
+	LabelSelector *LabelSelector `json:"labelSelector,omitempty"`
 }
 
 // Validate validates this constraint template selector
@@ -46,7 +46,7 @@ func (m *ConstraintTemplateSelector) validateLabelSelector(formats strfmt.Regist
 	if m.LabelSelector != nil {
 		if err := m.LabelSelector.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("LabelSelector")
+				return ve.ValidateName("labelSelector")
 			}
 			return err
 		}

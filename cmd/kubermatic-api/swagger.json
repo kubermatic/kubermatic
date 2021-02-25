@@ -14665,15 +14665,16 @@
       "description": "ConstraintTemplateSelector is the object holding the cluster selection filters",
       "type": "object",
       "properties": {
-        "LabelSelector": {
+        "labelSelector": {
           "$ref": "#/definitions/LabelSelector"
         },
-        "Providers": {
+        "providers": {
           "description": "Providers is a list of cloud providers to which the Constraint Template applies to. Empty means all providers are selected.",
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "x-go-name": "Providers"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
