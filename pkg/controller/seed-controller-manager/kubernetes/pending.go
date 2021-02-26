@@ -124,7 +124,12 @@ func (r *Reconciler) ensureClusterNetworkDefaults(ctx context.Context, cluster *
 
 	if cluster.Spec.ClusterNetwork.ProxyMode == "" {
 		setProxyMode := func(c *kubermaticv1.Cluster) {
-			c.Spec.ClusterNetwork.ProxyMode = resources.IPVSProxyMode
+			// IPVS causes issues with Hetzner's LoadBalancers
+			if c.Spec.Cloud.Hetzner != nil {
+				c.Spec.ClusterNetwork.ProxyMode = resources.IPTablesProxyMode
+			} else {
+				c.Spec.ClusterNetwork.ProxyMode = resources.IPVSProxyMode
+			}
 		}
 		modifiers = append(modifiers, setProxyMode)
 	}
