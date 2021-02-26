@@ -44,6 +44,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	cloudProviderExternalFlag = "external"
+)
+
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
 	ctx                      context.Context
@@ -527,7 +531,7 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 			klog.Infof("controller-manager command %v %d", cmd.Args, len(cmd.Args))
 			// If no --cloud-provider flag is provided in-tree cloud provider
 			// is disabled.
-			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == "external" {
+			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == cloudProviderExternalFlag {
 				klog.Info("in-tree cloud provider disabled in controller-manager deployment")
 				return ready
 			}
@@ -592,12 +596,12 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 		return "gce"
 	case cluster.Spec.Cloud.Openstack != nil:
 		if externalCloudProvider {
-			return "external"
+			return cloudProviderExternalFlag
 		}
 		return "openstack"
 	case cluster.Spec.Cloud.Hetzner != nil:
 		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-			return "external"
+			return cloudProviderExternalFlag
 		}
 		return ""
 	default:
