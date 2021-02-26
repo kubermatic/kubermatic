@@ -17,7 +17,7 @@
 {{ if eq .Cluster.CloudProviderName "openstack" }}
 {{ $version := "UNSUPPORTED" }}
 {{ if eq .Cluster.MajorMinorVersion "1.17" }}
-{{ $version = "v1.17.0 "}}
+{{ $version = "v1.17.1 "}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.18" }}
 {{ $version = "v1.18.0 "}}
@@ -29,32 +29,29 @@
 {{ $version = "v1.20.0 "}}
 {{ end }}
 
+---
 kind: DaemonSet
 apiVersion: apps/v1
 metadata:
-  name: csi-cinder-nodeplugin-ubuntu
+  name: csi-cinder-nodeplugin
   namespace: kube-system
 spec:
   selector:
     matchLabels:
-      app: csi-cinder-nodeplugin-ubuntu
+      app: csi-cinder-nodeplugin
   template:
     metadata:
       labels:
-        app: csi-cinder-nodeplugin-ubuntu
+        app: csi-cinder-nodeplugin
     spec:
+      tolerations:
+        - operator: Exists
       serviceAccount: csi-cinder-node-sa
       hostNetwork: true
-      nodeSelector:
-        x-kubernetes.io/distribution: ubuntu
-      tolerations:
-      - key: "node.cloudprovider.kubernetes.io/uninitialized"
-        operator: "Exists"
       containers:
         - name: node-driver-registrar
-          image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
+          image: k8s.gcr.io/sig-storage/csi-node-driver-registrar:v1.3.0
           args:
-            - "--v=5"
             - "--csi-address=$(ADDRESS)"
             - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
           lifecycle:
@@ -76,6 +73,13 @@ spec:
               mountPath: /csi
             - name: registration-dir
               mountPath: /registration
+        - name: liveness-probe
+          image: k8s.gcr.io/sig-storage/livenessprobe:v2.1.0
+          args:
+            - --csi-address=/csi/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
         - name: cinder-csi-plugin
           securityContext:
             privileged: true
@@ -83,7 +87,7 @@ spec:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
           image: docker.io/k8scloudprovider/cinder-csi-plugin:{{ $version }}
-          args :
+          args:
             - /bin/cinder-csi-plugin
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -98,18 +102,25 @@ spec:
             - name: CLOUD_CONFIG
               value: /etc/config/config
           imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 9808
+              name: healthz
+              protocol: TCP
+          # The probe
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 10
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
-            - name: pods-mount-dir
-              mountPath: /var/lib/kubelet/pods
-              mountPropagation: "Bidirectional"
             - name: kubelet-dir
               mountPath: /var/lib/kubelet
               mountPropagation: "Bidirectional"
-            - name: pods-cloud-data
-              mountPath: /var/lib/cloud/data
-              readOnly: true
             - name: pods-probe-dir
               mountPath: /dev
               mountPropagation: "HostToContainer"
@@ -128,14 +139,6 @@ spec:
         - name: kubelet-dir
           hostPath:
             path: /var/lib/kubelet
-            type: Directory
-        - name: pods-mount-dir
-          hostPath:
-            path: /var/lib/kubelet/pods
-            type: Directory
-        - name: pods-cloud-data
-          hostPath:
-            path: /var/lib/cloud/data
             type: Directory
         - name: pods-probe-dir
           hostPath:
@@ -145,231 +148,6 @@ spec:
           secret:
             secretName: cloud-config
 
----
-kind: DaemonSet
-apiVersion: apps/v1
-metadata:
-  name: csi-cinder-nodeplugin-centos
-  namespace: kube-system
-spec:
-  selector:
-    matchLabels:
-      app: csi-cinder-nodeplugin-centos
-  template:
-    metadata:
-      labels:
-        app: csi-cinder-nodeplugin-centos
-    spec:
-      serviceAccount: csi-cinder-node-sa
-      hostNetwork: true
-      nodeSelector:
-        x-kubernetes.io/distribution: centos
-      tolerations:
-      - key: "node.cloudprovider.kubernetes.io/uninitialized"
-        operator: "Exists"
-      containers:
-        - name: node-driver-registrar
-          image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
-          args:
-            - "--v=5"
-            - "--csi-address=$(ADDRESS)"
-            - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
-          lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/sh", "-c", "rm -rf /registration/cinder.csi.openstack.org /registration/cinder.csi.openstack.org-reg.sock"]
-          env:
-            - name: ADDRESS
-              value: /csi/csi.sock
-            - name: DRIVER_REG_SOCK_PATH
-              value: /var/lib/kubelet/plugins/cinder.csi.openstack.org/csi.sock
-            - name: KUBE_NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-          imagePullPolicy: "IfNotPresent"
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /csi
-            - name: registration-dir
-              mountPath: /registration
-        - name: cinder-csi-plugin
-          securityContext:
-            privileged: true
-            capabilities:
-              add: ["SYS_ADMIN"]
-            allowPrivilegeEscalation: true
-          image: docker.io/k8scloudprovider/cinder-csi-plugin:{{ $version }}
-          args :
-            - /bin/cinder-csi-plugin
-            - "--nodeid=$(NODE_ID)"
-            - "--endpoint=$(CSI_ENDPOINT)"
-            - "--cloud-config=$(CLOUD_CONFIG)"
-          env:
-            - name: NODE_ID
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-            - name: CSI_ENDPOINT
-              value: unix://csi/csi.sock
-            - name: CLOUD_CONFIG
-              value: /etc/config/config
-          imagePullPolicy: "IfNotPresent"
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /csi
-            - name: pods-mount-dir
-              mountPath: /var/lib/kubelet/pods
-              mountPropagation: "Bidirectional"
-            - name: kubelet-dir
-              mountPath: /var/lib/kubelet
-              mountPropagation: "Bidirectional"
-            - name: pods-cloud-data
-              mountPath: /var/lib/cloud/data
-              readOnly: true
-            - name: pods-probe-dir
-              mountPath: /dev
-              mountPropagation: "HostToContainer"
-            - name: secret-cinderplugin
-              mountPath: /etc/config
-              readOnly: true
-      volumes:
-        - name: socket-dir
-          hostPath:
-            path: /var/lib/kubelet/plugins/cinder.csi.openstack.org
-            type: DirectoryOrCreate
-        - name: registration-dir
-          hostPath:
-            path: /var/lib/kubelet/plugins_registry/
-            type: Directory
-        - name: kubelet-dir
-          hostPath:
-            path: /var/lib/kubelet
-            type: Directory
-        - name: pods-mount-dir
-          hostPath:
-            path: /var/lib/kubelet/pods
-            type: Directory
-        - name: pods-cloud-data
-          hostPath:
-            path: /var/lib/cloud/data
-            type: Directory
-        - name: pods-probe-dir
-          hostPath:
-            path: /dev
-            type: Directory
-        - name: secret-cinderplugin
-          secret:
-            secretName: cloud-config
 
----
-kind: DaemonSet
-apiVersion: apps/v1
-metadata:
-  name: csi-cinder-nodeplugin-flatcar
-  namespace: kube-system
-spec:
-  selector:
-    matchLabels:
-      app: csi-cinder-nodeplugin-flatcar
-  template:
-    metadata:
-      labels:
-        app: csi-cinder-nodeplugin-flatcar
-    spec:
-      serviceAccount: csi-cinder-node-sa
-      hostNetwork: true
-      nodeSelector:
-        x-kubernetes.io/distribution: flatcar
-      tolerations:
-      - key: "node.cloudprovider.kubernetes.io/uninitialized"
-        operator: "Exists"
-      containers:
-        - name: node-driver-registrar
-          image: quay.io/k8scsi/csi-node-driver-registrar:v1.1.0
-          args:
-            - "--v=5"
-            - "--csi-address=$(ADDRESS)"
-            - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
-          lifecycle:
-            preStop:
-              exec:
-                command: ["/bin/sh", "-c", "rm -rf /registration/cinder.csi.openstack.org /registration/cinder.csi.openstack.org-reg.sock"]
-          env:
-            - name: ADDRESS
-              value: /csi/csi.sock
-            - name: DRIVER_REG_SOCK_PATH
-              value: /var/lib/kubelet/plugins/cinder.csi.openstack.org/csi.sock
-            - name: KUBE_NODE_NAME
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-          imagePullPolicy: "IfNotPresent"
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /csi
-            - name: registration-dir
-              mountPath: /registration
-        - name: cinder-csi-plugin
-          securityContext:
-            privileged: true
-            capabilities:
-              add: ["SYS_ADMIN"]
-            allowPrivilegeEscalation: true
-          image: docker.io/k8scloudprovider/cinder-csi-plugin:{{ $version }}
-          args :
-            - /bin/cinder-csi-plugin
-            - "--nodeid=$(NODE_ID)"
-            - "--endpoint=$(CSI_ENDPOINT)"
-            - "--cloud-config=$(CLOUD_CONFIG)"
-          env:
-            - name: NODE_ID
-              valueFrom:
-                fieldRef:
-                  fieldPath: spec.nodeName
-            - name: CSI_ENDPOINT
-              value: unix://csi/csi.sock
-            - name: CLOUD_CONFIG
-              value: /etc/config/config
-          imagePullPolicy: "IfNotPresent"
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /csi
-            - name: pods-mount-dir
-              mountPath: /var/lib/kubelet/pods
-              mountPropagation: "Bidirectional"
-            - name: kubelet-dir
-              mountPath: /var/lib/kubelet
-              mountPropagation: "Bidirectional"
-            - name: pods-probe-dir
-              mountPath: /dev
-              mountPropagation: "HostToContainer"
-            - name: secret-cinderplugin
-              mountPath: /etc/config
-              readOnly: true
-      volumes:
-        - name: socket-dir
-          hostPath:
-            path: /var/lib/kubelet/plugins/cinder.csi.openstack.org
-            type: DirectoryOrCreate
-        - name: registration-dir
-          hostPath:
-            path: /var/lib/kubelet/plugins_registry/
-            type: Directory
-        - name: kubelet-dir
-          hostPath:
-            path: /var/lib/kubelet
-            type: Directory
-        - name: pods-mount-dir
-          hostPath:
-            path: /var/lib/kubelet/pods
-            type: Directory
-        - name: pods-probe-dir
-          hostPath:
-            path: /dev
-            type: Directory
-        - name: secret-cinderplugin
-          secret:
-            secretName: cloud-config
 {{ end }}
 {{ end }}
