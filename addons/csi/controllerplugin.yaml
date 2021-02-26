@@ -17,7 +17,7 @@
 {{ if eq .Cluster.CloudProviderName "openstack" }}
 {{ $version := "UNSUPPORTED" }}
 {{ if eq .Cluster.MajorMinorVersion "1.17" }}
-{{ $version = "v1.17.0 "}}
+{{ $version = "v1.17.1 "}}
 {{ end }}
 {{ if eq .Cluster.MajorMinorVersion "1.18" }}
 {{ $version = "v1.18.0 "}}
@@ -29,6 +29,7 @@
 {{ $version = "v1.20.0 "}}
 {{ end }}
 
+---
 kind: Service
 apiVersion: v1
 metadata:
@@ -61,15 +62,12 @@ spec:
         app: csi-cinder-controllerplugin
     spec:
       serviceAccount: csi-cinder-controller-sa
-      tolerations:
-      - key: "node.cloudprovider.kubernetes.io/uninitialized"
-        operator: "Exists"
       containers:
         - name: csi-attacher
-          image: quay.io/k8scsi/csi-attacher:v1.2.1
+          image: k8s.gcr.io/sig-storage/csi-attacher:v3.1.0
           args:
-            - "--v=5"
             - "--csi-address=$(ADDRESS)"
+            - "--timeout=3m"
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -78,10 +76,11 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-provisioner
-          image: quay.io/k8scsi/csi-provisioner:v1.3.1
+          image: k8s.gcr.io/sig-storage/csi-provisioner:v2.1.0
           args:
             - "--csi-address=$(ADDRESS)"
-            - "--feature-gates=Topology=true"
+            - "--timeout=3m"
+            - "--default-fstype=ext4"
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -90,9 +89,10 @@ spec:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: csi-snapshotter
-          image: quay.io/k8scsi/csi-snapshotter:v1.2.2
+          image: k8s.gcr.io/sig-storage/csi-snapshotter:v2.1.3
           args:
             - "--csi-address=$(ADDRESS)"
+            - "--timeout=3m"
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -101,10 +101,11 @@ spec:
             - mountPath: /var/lib/csi/sockets/pluginproxy/
               name: socket-dir
         - name: csi-resizer
-          image: quay.io/k8scsi/csi-resizer:v0.3.0
+          image: k8s.gcr.io/sig-storage/csi-resizer:v1.1.0
           args:
-            - "--v=5"
             - "--csi-address=$(ADDRESS)"
+            - "--timeout=3m"
+            - "--handle-volume-inuse-error=false"
           env:
             - name: ADDRESS
               value: /var/lib/csi/sockets/pluginproxy/csi.sock
@@ -112,9 +113,19 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+        - name: liveness-probe
+          image: k8s.gcr.io/sig-storage/livenessprobe:v2.1.0
+          args:
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/sockets/pluginproxy/csi.sock
+          volumeMounts:
+            - mountPath: /var/lib/csi/sockets/pluginproxy/
+              name: socket-dir
         - name: cinder-csi-plugin
           image: docker.io/k8scloudprovider/cinder-csi-plugin:{{ $version }}
-          args :
+          args:
             - /bin/cinder-csi-plugin
             - "--nodeid=$(NODE_ID)"
             - "--endpoint=$(CSI_ENDPOINT)"
@@ -132,6 +143,19 @@ spec:
             - name: CLUSTER_NAME
               value: {{ .Cluster.Name }}
           imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 9808
+              name: healthz
+              protocol: TCP
+          # The probe
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            timeoutSeconds: 10
+            periodSeconds: 60
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
