@@ -1164,14 +1164,14 @@ func (r *testRunner) getGinkgoRuns(
 			ginkgoFocus:   `\[Conformance\]`,
 			ginkgoSkip:    ginkgoSkipParallel,
 			parallelTests: int(nodeNumberTotal) * 3,
-			timeout:       30 * time.Minute,
+			timeout:       60 * time.Minute,
 		},
 		{
 			name:          "serial",
 			ginkgoFocus:   `\[Serial\].*\[Conformance\]`,
 			ginkgoSkip:    `should not cause race condition when used for configmap`,
 			parallelTests: 1,
-			timeout:       30 * time.Minute,
+			timeout:       60 * time.Minute,
 		},
 	}
 	versionRoot := path.Join(repoRoot, MajorMinor)
