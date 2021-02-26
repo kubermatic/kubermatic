@@ -1119,7 +1119,7 @@ func (r Routing) listPacketSizes() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.PacketSizesEndpoint(r.presetsProvider, r.userInfoGetter)),
+		)(provider.PacketSizesEndpoint(r.presetsProvider, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodePacketSizesReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1143,7 +1143,7 @@ func (r Routing) listPacketSizesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.PacketSizesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		)(provider.PacketSizesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.settingsProvider)),
 		provider.DecodePacketSizesNoCredentialsReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
