@@ -95,7 +95,7 @@ func Add(
 		openshiftConsoleCallbackURI:   openshiftConsoleCallbackURI,
 		dnsClusterIP:                  dnsClusterIP,
 		opaIntegration:                opaIntegration,
-		opaWebhookTimeout: opaWebhookTimeout,
+		opaWebhookTimeout:             opaWebhookTimeout,
 		userSSHKeyAgent:               userSSHKeyAgent,
 		versions:                      versions,
 	}
@@ -241,7 +241,7 @@ type reconciler struct {
 	openshiftConsoleCallbackURI   string
 	dnsClusterIP                  string
 	opaIntegration                bool
-	opaWebhookTimeout int
+	opaWebhookTimeout             int
 	userSSHKeyAgent               bool
 	versions                      kubermatic.Versions
 

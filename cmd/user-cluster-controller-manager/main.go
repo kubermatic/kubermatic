@@ -90,7 +90,7 @@ type controllerRunOptions struct {
 	updateWindowLength            string
 	dnsClusterIP                  string
 	opaIntegration                bool
-	opaWebhookTimeout  int
+	opaWebhookTimeout             int
 	useSSHKeyAgent                bool
 }
 
