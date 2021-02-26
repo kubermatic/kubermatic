@@ -27,6 +27,9 @@ type AzureSize struct {
 	// number of cores
 	NumberOfCores int32 `json:"numberOfCores,omitempty"`
 
+	// number of g p us
+	NumberOfGPUs int32 `json:"numberOfGPUs,omitempty"`
+
 	// os disk size in m b
 	OsDiskSizeInMB int32 `json:"osDiskSizeInMB,omitempty"`
 
