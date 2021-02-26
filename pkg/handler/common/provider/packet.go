@@ -20,12 +20,16 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/packethost/packngo"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
+	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/packet"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -37,7 +41,7 @@ type plansRoot struct {
 	Plans []packngo.Plan `json:"plans"`
 }
 
-func PacketSizesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID string) (interface{}, error) {
+func PacketSizesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
 
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
@@ -58,11 +62,16 @@ func PacketSizesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGett
 		return nil, err
 	}
 
-	return PacketSizes(apiKey, projectID)
+	settings, err := settingsProvider.GetGlobalSettings()
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return PacketSizes(apiKey, projectID, settings.Spec.MachineDeploymentVMResourceQuota)
 
 }
 
-func PacketSizes(apiKey, projectID string) (apiv1.PacketSizeList, error) {
+func PacketSizes(apiKey, projectID string, quota kubermaticv1.MachineDeploymentVMResourceQuota) (apiv1.PacketSizeList, error) {
 	sizes := apiv1.PacketSizeList{}
 	root := new(plansRoot)
 
@@ -90,7 +99,35 @@ func PacketSizes(apiKey, projectID string) (apiv1.PacketSizeList, error) {
 		sizes = append(sizes, toPacketSize(plan))
 	}
 
-	return sizes, nil
+	return filterPacketByQuota(sizes, quota), nil
+}
+
+func filterPacketByQuota(instances apiv1.PacketSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.PacketSizeList {
+	filteredRecords := apiv1.PacketSizeList{}
+
+	// Range over the records and apply all the filters to each record.
+	// If the record passes all the filters, add it to the final slice.
+	for _, r := range instances {
+		keep := true
+
+		memoryGB := strings.TrimSuffix(r.Memory, "GB")
+		memory, err := strconv.Atoi(memoryGB)
+		if err == nil {
+			if !handlercommon.FilterCPU(r.CPUs[0].Count, quota.MinCPU, quota.MaxCPU) {
+				keep = false
+			}
+
+			if !handlercommon.FilterMemory(memory, quota.MinRAM, quota.MaxRAM) {
+				keep = false
+			}
+
+			if keep {
+				filteredRecords = append(filteredRecords, r)
+			}
+		}
+	}
+
+	return filteredRecords
 }
 
 func toPacketSize(plan packngo.Plan) apiv1.PacketSize {
