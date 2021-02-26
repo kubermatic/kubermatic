@@ -20,6 +20,9 @@ metadata:
   name: cinder.csi.openstack.org
 spec:
   attachRequired: true
-  podInfoOnMount: false
+  podInfoOnMount: true
+  volumeLifecycleModes:
+  - Persistent
+  - Ephemeral
 {{ end }}
 {{ end }}
