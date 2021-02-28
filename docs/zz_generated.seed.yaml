@@ -124,7 +124,7 @@ spec:
           # Used for automatic network creation
           dns_servers: []
           # Optional: List of enabled flavors for the given datacenter
-          enabled_flavors: null
+          enabled_flavors: []
           # Optional
           enforce_floating_ip: false
           # Optional
