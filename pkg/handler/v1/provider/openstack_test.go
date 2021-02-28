@@ -409,6 +409,55 @@ func TestMeetsOpentackNodeSizeRequirement(t *testing.T) {
 	}
 }
 
+func TestFilterEnabledFlavors(t *testing.T) {
+	tests := []struct {
+		name           string
+		apiSize        apiv1.OpenstackSize
+		enabledFlavors []string
+		enabledFlavor  bool
+	}{
+		{
+			name: "enabled specific flavor",
+			apiSize: apiv1.OpenstackSize{
+				Slug: "m1.small",
+			},
+			enabledFlavors: []string{"m1.small"},
+			enabledFlavor:  true,
+		},
+		{
+			name: "filtered flavor",
+			apiSize: apiv1.OpenstackSize{
+				Slug: "m1.small",
+			},
+			enabledFlavors: []string{"m1.medium"},
+			enabledFlavor:  false,
+		},
+		{
+			name: "enable multiple flavors",
+			apiSize: apiv1.OpenstackSize{
+				Slug: "m1.small",
+			},
+			enabledFlavors: []string{"m1.small", "m1.medium"},
+			enabledFlavor:  true,
+		},
+		{
+			name: "empty enabledFlavors",
+			apiSize: apiv1.OpenstackSize{
+				Slug: "m1.small",
+			},
+			enabledFlavors: []string{},
+			enabledFlavor:  true,
+		},
+	}
+	for _, testToRun := range tests {
+		t.Run(testToRun.name, func(t *testing.T) {
+			if providercommon.IsFlavorEnabled(testToRun.apiSize, testToRun.enabledFlavors) != testToRun.enabledFlavor {
+				t.Errorf("expected result to be %v, but got %v", testToRun.enabledFlavor, !testToRun.enabledFlavor)
+			}
+		})
+	}
+}
+
 func compareJSON(t *testing.T, res *httptest.ResponseRecorder, expectedResponseString string) {
 	t.Helper()
 	var actualResponse interface{}
