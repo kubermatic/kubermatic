@@ -172,7 +172,7 @@ func outputMachineDeployment(md *clusterv1alpha1.MachineDeployment) (*apiv1.Node
 			CreationTimestamp: apiv1.NewTime(md.CreationTimestamp.Time),
 		},
 		Spec: apiv1.NodeDeploymentSpec{
-			Replicas: *md.Spec.Replicas,
+			Replicas:    *md.Spec.Replicas,
 			MinReplicas: minReplicas,
 			MaxReplicas: maxReplicas,
 			Template: apiv1.NodeSpec{
