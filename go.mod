@@ -4,8 +4,8 @@ go 1.14
 
 require (
 	code.cloudfoundry.org/go-pubsub v0.0.0-20180503211407-becd51dc37cb
-	github.com/Azure/azure-sdk-for-go v49.0.0+incompatible
-	github.com/Azure/go-autorest/autorest v0.11.13
+	github.com/Azure/azure-sdk-for-go v51.3.0+incompatible
+	github.com/Azure/go-autorest/autorest v0.11.18
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.5
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/Masterminds/semver/v3 v3.1.1

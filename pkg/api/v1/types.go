@@ -366,6 +366,7 @@ type AzureSizeList []AzureSize
 type AzureSize struct {
 	Name                 string `json:"name"`
 	NumberOfCores        int32  `json:"numberOfCores"`
+	NumberOfGPUs         int32  `json:"numberOfGPUs"`
 	OsDiskSizeInMB       int32  `json:"osDiskSizeInMB"`
 	ResourceDiskSizeInMB int32  `json:"resourceDiskSizeInMB"`
 	MemoryInMB           int32  `json:"memoryInMB"`

@@ -24,7 +24,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2018-06-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-12-01/compute"
 	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2018-06-01/network"
 	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2018-02-01/resources"
 	"github.com/stretchr/testify/assert"
@@ -71,8 +71,8 @@ func TestAzureSizeEndpoint(t *testing.T) {
 			location:   locationUS,
 			secret:     "secret",
 			expectedResponse: `[
-				{"name":"Standard_GS3", "maxDataDiskCount": 3, "memoryInMB": 2048, "numberOfCores": 8, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024},
-				{"name":"Standard_A5", "maxDataDiskCount": 3, "memoryInMB": 2048, "numberOfCores": 8, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024}
+				{"name":"Standard_GS3", "maxDataDiskCount": 3, "memoryInMB": 2048, "numberOfCores": 8, "numberOfGPUs": 0, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024},
+				{"name":"Standard_A5", "maxDataDiskCount": 3, "memoryInMB": 2048, "numberOfCores": 8, "numberOfGPUs": 0, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024}
 			]`,
 		},
 		{
@@ -81,7 +81,7 @@ func TestAzureSizeEndpoint(t *testing.T) {
 			location:   locationEU,
 			secret:     "secret",
 			expectedResponse: `[
-				{"name":"Standard_GS3", "maxDataDiskCount": 3, "memoryInMB": 2048, "numberOfCores": 8, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024}
+				{"name":"Standard_GS3", "maxDataDiskCount": 3, "memoryInMB": 2048, "numberOfCores": 8, "numberOfGPUs": 0, "osDiskSizeInMB": 1024, "resourceDiskSizeInMB":1024}
 			]`,
 		},
 	}
