@@ -100,7 +100,7 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 						"--leader-elect=false",
 						"--allow-untagged-cloud",
 						"--allocate-node-cidrs=true",
-						"--cluster-cidr=10.244.0.0/16",
+						fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0]),
 					},
 					Env: []corev1.EnvVar{
 						{
