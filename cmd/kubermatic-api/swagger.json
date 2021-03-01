@@ -14126,6 +14126,11 @@
           "format": "int32",
           "x-go-name": "NumberOfCores"
         },
+        "numberOfGPUs": {
+          "type": "integer",
+          "format": "int32",
+          "x-go-name": "NumberOfGPUs"
+        },
         "osDiskSizeInMB": {
           "type": "integer",
           "format": "int32",
