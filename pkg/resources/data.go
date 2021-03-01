@@ -525,21 +525,21 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 		return false
 	}
 	ready, _ := kubernetes.IsDeploymentRolloutComplete(&kcm, 0)
-	klog.Infof("controller-manager deployment rollout complete: %t", ready)
+	klog.V(4).Infof("controller-manager deployment rollout complete: %t", ready)
 	if c := getContainer(&kcm, ControllerManagerDeploymentName); c != nil {
 		if ok, cmd := UnwrapCommand(*c); ok {
-			klog.Infof("controller-manager command %v %d", cmd.Args, len(cmd.Args))
+			klog.V(4).Infof("controller-manager command %v %d", cmd.Args, len(cmd.Args))
 			// If no --cloud-provider flag is provided in-tree cloud provider
 			// is disabled.
 			if ok, val := getArgValue(cmd.Args, "--cloud-provider"); !ok || val == cloudProviderExternalFlag {
-				klog.Info("in-tree cloud provider disabled in controller-manager deployment")
+				klog.V(4).Info("in-tree cloud provider disabled in controller-manager deployment")
 				return ready
 			}
 
 			// Otherwise cloud countrollers could have been explicitly disabled
 			if ok, val := getArgValue(cmd.Args, "--controllers"); ok {
 				controllers := strings.Split(val, ",")
-				klog.Infof("cloud controllers disabled in controller-manager deployment %s", controllers)
+				klog.V(4).Infof("cloud controllers disabled in controller-manager deployment %s", controllers)
 				return ready && sets.NewString(controllers...).HasAll("-cloud-node-lifecycle", "-route", "-service")
 			}
 		}
@@ -550,7 +550,7 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 
 func UnwrapCommand(container corev1.Container) (found bool, command httpproberapi.Command) {
 	for i, arg := range container.Args {
-		klog.Infof("unwrap command processing arg: %s", arg)
+		klog.V(4).Infof("unwrap command processing arg: %s", arg)
 		if arg == "-command" && i < len(container.Args)-1 {
 			if err := json.Unmarshal([]byte(container.Args[i+1]), &command); err != nil {
 				return
@@ -563,9 +563,9 @@ func UnwrapCommand(container corev1.Container) (found bool, command httpproberap
 
 func getArgValue(args []string, argName string) (bool, string) {
 	for i, arg := range args {
-		klog.Infof("processing arg %s", arg)
+		klog.V(4).Infof("processing arg %s", arg)
 		if arg == argName {
-			klog.Infof("found argument %s", argName)
+			klog.V(4).Infof("found argument %s", argName)
 			if i >= len(args)-1 {
 				return false, ""
 			}
