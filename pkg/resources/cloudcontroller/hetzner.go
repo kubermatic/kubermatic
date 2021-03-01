@@ -71,7 +71,7 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			f := false
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = &f
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 			}
@@ -91,7 +91,7 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:  HetznerCCMDeploymentName,
+					Name:  ccmContainerName,
 					Image: data.ImageRegistry(resources.RegistryDocker) + "/hetznercloud/hcloud-cloud-controller-manager:v1.8.1",
 					Command: []string{
 						"/bin/hcloud-cloud-controller-manager",
@@ -124,8 +124,8 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			}
 
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				HetznerCCMDeploymentName: hetznerResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name:      openvpnSidecar.Resources.DeepCopy(),
+				ccmContainerName:    hetznerResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {

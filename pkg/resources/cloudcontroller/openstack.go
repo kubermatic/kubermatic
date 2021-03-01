@@ -77,7 +77,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 			f := false
 			dep.Spec.Template.Spec.AutomountServiceAccountToken = &f
 
-			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, "openvpn-client")
+			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
 			if err != nil {
 				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 			}
@@ -101,7 +101,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:    OpenstackCCMDeploymentName,
+					Name:    ccmContainerName,
 					Image:   data.ImageRegistry(resources.RegistryDocker) + "/k8scloudprovider/openstack-cloud-controller-manager:v" + version,
 					Command: []string{"/bin/openstack-cloud-controller-manager"},
 					Args:    getOSFlags(data),
@@ -114,8 +114,8 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 			}
 
 			defResourceRequirements := map[string]*corev1.ResourceRequirements{
-				OpenstackCCMDeploymentName: osResourceRequirements.DeepCopy(),
-				openvpnSidecar.Name:        openvpnSidecar.Resources.DeepCopy(),
+				ccmContainerName:    osResourceRequirements.DeepCopy(),
+				openvpnSidecar.Name: openvpnSidecar.Resources.DeepCopy(),
 			}
 			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defResourceRequirements, nil, dep.Annotations)
 			if err != nil {
