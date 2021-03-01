@@ -19,6 +19,7 @@ package hetzner
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -51,12 +52,15 @@ func (h *hetzner) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 
 	client := hcloud.NewClient(hcloud.WithToken(hetznerToken))
 
+	timeout, cancel := context.WithTimeout(context.TODO(), 10*time.Second)
+	defer cancel()
+
 	if spec.Hetzner.Network == "" {
 		// this validates the token
-		_, _, err = client.ServerType.List(context.TODO(), hcloud.ServerTypeListOpts{})
+		_, _, err = client.ServerType.List(timeout, hcloud.ServerTypeListOpts{})
 	} else {
 		// this validates network and implicitly the token
-		_, _, err = client.Network.GetByName(context.TODO(), spec.Hetzner.Network)
+		_, _, err = client.Network.GetByName(timeout, spec.Hetzner.Network)
 	}
 
 	return err
