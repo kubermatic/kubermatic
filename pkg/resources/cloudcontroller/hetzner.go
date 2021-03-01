@@ -97,7 +97,6 @@ func hetznerDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 						"/bin/hcloud-cloud-controller-manager",
 						"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 						"--cloud-provider=hcloud",
-						"--leader-elect=false",
 						"--allow-untagged-cloud",
 						"--allocate-node-cidrs=true",
 						fmt.Sprintf("--cluster-cidr=%s", data.Cluster().Spec.ClusterNetwork.Pods.CIDRBlocks[0]),
