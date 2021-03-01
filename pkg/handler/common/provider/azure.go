@@ -38,6 +38,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
+// https://docs.microsoft.com/en-us/azure/virtual-machines/sizes-gpu
+var gpuInstanceFamilies = map[string]int32{"Standard_NC6": 1, "Standard_NC12": 2, "Standard_NC24": 4, "Standard_NC24r": 4,
+	"Standard_NC6s_v2": 1, "Standard_NC12s_v2": 2, "Standard_NC24s_v2": 4, "Standard_NC24rs_v2": 4, "Standard_NC6s_v3": 1,
+	"Standard_NC12s_v3": 2, "Standard_NC24s_v3": 4, "Standard_NC24rs_v3": 4, "Standard_NC4as_T4_v3": 1, "Standard_NC8as_T4_v3": 1,
+	"Standard_NC16as_T4_v3": 1, "Standard_NC64as_T4_v3": 4, "Standard_ND6s": 1, "Standard_ND12s": 2, "Standard_ND24s": 4, "Standard_ND24rs": 4,
+	"Standard_ND40rs_v2": 8, "Standard_NV6": 1, "Standard_NV12": 2, "Standard_NV24": 4, "Standard_NV12s_v3": 1, "Standard_NV24s_v3": 2, "Standard_NV48s_v3": 4,
+	"Standard_NV32as_v4": 1}
+
 var NewAzureClientSet = func(subscriptionID, clientID, clientSecret, tenantID string) (AzureClientSet, error) {
 	var err error
 	sizesClient := compute.NewVirtualMachineSizesClient(subscriptionID)
@@ -299,14 +307,6 @@ func isValidVM(sku compute.ResourceSku, location string) bool {
 }
 
 func AzureSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMResourceQuota, subscriptionID, clientID, clientSecret, tenantID, location string) (apiv1.AzureSizeList, error) {
-	// https://docs.microsoft.com/en-us/azure/virtual-machines/sizes-gpu
-	gpuInstanceFamilies := map[string]int32{"Standard_NC6": 1, "Standard_NC12": 2, "Standard_NC24": 4, "Standard_NC24r": 4,
-		"Standard_NC6s_v2": 1, "Standard_NC12s_v2": 2, "Standard_NC24s_v2": 4, "Standard_NC24rs_v2": 4, "Standard_NC6s_v3": 1,
-		"Standard_NC12s_v3": 2, "Standard_NC24s_v3": 4, "Standard_NC24rs_v3": 4, "Standard_NC4as_T4_v3": 1, "Standard_NC8as_T4_v3": 1,
-		"Standard_NC16as_T4_v3": 1, "Standard_NC64as_T4_v3": 4, "Standard_ND6s": 1, "Standard_ND12s": 2, "Standard_ND24s": 4, "Standard_ND24rs": 4,
-		"Standard_ND40rs_v2": 8, "Standardowa_NV6": 1, "Standardowa_NV12": 2, "Standardowa_NV24": 4, "Standard_NV12s_v3": 1, "Standard_NV24s_v3": 2, "Standard_NV48s_v3": 4,
-		"Standard_NV32as_v4": 1}
-
 	sizesClient, err := NewAzureClientSet(subscriptionID, clientID, clientSecret, tenantID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create authorizer for size client: %v", err)
