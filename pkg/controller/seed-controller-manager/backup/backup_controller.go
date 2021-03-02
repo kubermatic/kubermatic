@@ -19,6 +19,7 @@ package backup
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 
@@ -26,6 +27,8 @@ import (
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -42,6 +45,7 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -80,6 +84,7 @@ type Reconciler struct {
 	ctrlruntimeclient.Client
 
 	log              *zap.SugaredLogger
+	scheme           *runtime.Scheme
 	workerName       string
 	storeContainer   corev1.Container
 	cleanupContainer corev1.Container
@@ -93,6 +98,7 @@ type Reconciler struct {
 	// ensuring they're installed. This is used to permanently delete the backup cronjobs
 	// and disable the controller, usually in favor of the new one (../etcdbackup)
 	disabled bool
+	caBundle string
 
 	recorder record.EventRecorder
 	versions kubermatic.Versions
@@ -111,6 +117,7 @@ func Add(
 	backupContainerImage string,
 	versions kubermatic.Versions,
 	disabled bool,
+	caBundleFile string,
 ) error {
 	log = log.Named(ControllerName)
 	if err := validateStoreContainer(storeContainer); err != nil {
@@ -124,6 +131,11 @@ func Add(
 		backupContainerImage = DefaultBackupContainerImage
 	}
 
+	caBundle, err := ioutil.ReadFile(caBundleFile)
+	if err != nil {
+		return fmt.Errorf("failed to read CA bundle file: %v", err)
+	}
+
 	reconciler := &Reconciler{
 		Client:               mgr.GetClient(),
 		log:                  log,
@@ -135,6 +147,8 @@ func Add(
 		disabled:             disabled,
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		versions:             versions,
+		caBundle:             string(caBundle),
+		scheme:               mgr.GetScheme(),
 	}
 	c, err := controller.New(ControllerName, mgr, controller.Options{
 		Reconciler:              reconciler,
@@ -145,11 +159,6 @@ func Add(
 	}
 
 	cronJobMapFn := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
-		// We only care about CronJobs that are in the kube-system namespace
-		if a.GetNamespace() != metav1.NamespaceSystem {
-			return nil
-		}
-
 		if ownerRef := metav1.GetControllerOf(a); ownerRef != nil && ownerRef.Kind == kubermaticv1.ClusterKindName {
 			return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: ownerRef.Name}}}
 		}
@@ -159,7 +168,7 @@ func Add(
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Clusters: %v", err)
 	}
-	if err := c.Watch(&source.Kind{Type: &batchv1beta1.CronJob{}}, cronJobMapFn); err != nil {
+	if err := c.Watch(&source.Kind{Type: &batchv1beta1.CronJob{}}, cronJobMapFn, predicate.ByNamespace(metav1.NamespaceSystem)); err != nil {
 		return fmt.Errorf("failed to watch CronJobs: %v", err)
 	}
 
@@ -291,8 +300,12 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		}
 	}
 
-	if err := r.ensureCronJobSecret(ctx, cluster); err != nil {
-		return fmt.Errorf("failed to create backup secret: %v", err)
+	if err := r.ensureCronJobSecrets(ctx, cluster); err != nil {
+		return fmt.Errorf("failed to reconcile secrets: %v", err)
+	}
+
+	if err := r.ensureCronJobConfigMaps(ctx, cluster); err != nil {
+		return fmt.Errorf("failed to reconcile configmaps: %v", err)
 	}
 
 	if r.disabled {
@@ -305,34 +318,35 @@ func (r *Reconciler) getEtcdSecretName(cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("cluster-%s-etcd-client-certificate", cluster.Name)
 }
 
-func (r *Reconciler) ensureCronJobSecret(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureCronJobSecrets(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	secretName := r.getEtcdSecretName(cluster)
 
 	getCA := func() (*triple.KeyPair, error) {
 		return resources.GetClusterRootCA(ctx, cluster.Status.NamespaceName, r.Client)
 	}
 
-	_, creator := certificates.GetClientCertificateCreator(
-		secretName,
-		"backup",
-		nil,
-		resources.BackupEtcdClientCertificateCertSecretKey,
-		resources.BackupEtcdClientCertificateKeySecretKey,
-		getCA,
-	)()
-
-	wrappedCreator := reconciling.SecretObjectWrapper(creator)
-	wrappedCreator = reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster))(wrappedCreator)
-
-	err := reconciling.EnsureNamedObject(
-		ctx,
-		types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: secretName},
-		wrappedCreator, r.Client, &corev1.Secret{}, false)
-	if err != nil {
-		return fmt.Errorf("failed to ensure Secret %q: %v", secretName, err)
+	creators := []reconciling.NamedSecretCreatorGetter{
+		certificates.GetClientCertificateCreator(
+			secretName,
+			"backup",
+			nil,
+			resources.BackupEtcdClientCertificateCertSecretKey,
+			resources.BackupEtcdClientCertificateKeySecretKey,
+			getCA,
+		),
 	}
 
-	return nil
+	return reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
+}
+
+func (r *Reconciler) ensureCronJobConfigMaps(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	name := resources.BackupCABundleConfigMapName(cluster)
+
+	creators := []reconciling.NamedConfigMapCreatorGetter{
+		caBundleConfigMapCreator(name, r.caBundle),
+	}
+
+	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
 }
 
 func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster) *batchv1.Job {
@@ -340,6 +354,12 @@ func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster) *batchv1.Job {
 	cleanupContainer.Env = append(cleanupContainer.Env, corev1.EnvVar{
 		Name:  clusterEnvVarKey,
 		Value: cluster.Name,
+	})
+
+	cleanupContainer.VolumeMounts = append(cleanupContainer.VolumeMounts, corev1.VolumeMount{
+		Name:      "ca-bundle",
+		MountPath: "/etc/ca-bundle",
+		ReadOnly:  true,
 	})
 
 	return &batchv1.Job{
@@ -366,6 +386,16 @@ func (r *Reconciler) cleanupJob(cluster *kubermaticv1.Cluster) *batchv1.Job {
 							Name: SharedVolumeName,
 							VolumeSource: corev1.VolumeSource{
 								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+							Name: "ca-bundle",
+							VolumeSource: corev1.VolumeSource{
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: resources.BackupCABundleConfigMapName(cluster),
+									},
+								},
 							},
 						},
 					},
@@ -427,8 +457,13 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) reconciling.NamedCro
 							MountPath: "/backup",
 						},
 						{
-							Name:      r.getEtcdSecretName(cluster),
+							Name:      "etcd-client-certificate",
 							MountPath: "/etc/etcd/client",
+						},
+						{
+							Name:      "ca-bundle",
+							MountPath: "/etc/ca-bundle",
+							ReadOnly:  true,
 						},
 					},
 				},
@@ -438,6 +473,12 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) reconciling.NamedCro
 			storeContainer.Env = append(storeContainer.Env, corev1.EnvVar{
 				Name:  clusterEnvVarKey,
 				Value: cluster.Name,
+			})
+
+			storeContainer.VolumeMounts = append(storeContainer.VolumeMounts, corev1.VolumeMount{
+				Name:      "ca-bundle",
+				MountPath: "/etc/ca-bundle/",
+				ReadOnly:  true,
 			})
 
 			cronJob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyNever
@@ -450,10 +491,20 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) reconciling.NamedCro
 					},
 				},
 				{
-					Name: r.getEtcdSecretName(cluster),
+					Name: "etcd-client-certificate",
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName: r.getEtcdSecretName(cluster),
+						},
+					},
+				},
+				{
+					Name: "ca-bundle",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: resources.BackupCABundleConfigMapName(cluster),
+							},
 						},
 					},
 				},
@@ -462,7 +513,6 @@ func (r *Reconciler) cronjob(cluster *kubermaticv1.Cluster) reconciling.NamedCro
 			return cronJob, nil
 		}
 	}
-
 }
 
 func (r *Reconciler) deleteCronJob(ctx context.Context, cluster *kubermaticv1.Cluster) error {

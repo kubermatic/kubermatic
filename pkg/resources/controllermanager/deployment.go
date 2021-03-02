@@ -259,10 +259,15 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 }
 
 func getVolumeMounts() []corev1.VolumeMount {
-	return append([]corev1.VolumeMount{
+	return []corev1.VolumeMount{
 		{
 			Name:      resources.CASecretName,
 			MountPath: "/etc/kubernetes/pki/ca",
+			ReadOnly:  true,
+		},
+		{
+			Name:      resources.CABundleConfigMapName,
+			MountPath: "/etc/kubernetes/pki/ca-bundle",
 			ReadOnly:  true,
 		},
 		{
@@ -280,17 +285,26 @@ func getVolumeMounts() []corev1.VolumeMount {
 			MountPath: "/etc/kubernetes/kubeconfig",
 			ReadOnly:  true,
 		},
-	},
-		resources.GetHostCACertVolumeMounts()...)
+	}
 }
 
 func getVolumes() []corev1.Volume {
-	return append([]corev1.Volume{
+	return []corev1.Volume{
 		{
 			Name: resources.CASecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.CASecretName,
+				},
+			},
+		},
+		{
+			Name: resources.CABundleConfigMapName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resources.CABundleConfigMapName,
+					},
 				},
 			},
 		},
@@ -328,7 +342,7 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		},
-	}, resources.GetHostCACertVolumes()...)
+	}
 }
 
 type kubeControllerManagerEnvData interface {
@@ -343,15 +357,25 @@ func GetEnvVars(data kubeControllerManagerEnvData) ([]corev1.EnvVar, error) {
 	}
 	cluster := data.Cluster()
 
-	var vars []corev1.EnvVar
+	vars := []corev1.EnvVar{
+		// Kubernetes <1.19 did not ship any certificates in their Docker images,
+		// so this not only injects _our_ CA bundle, it injects _the only_ CA bundle for 1.17/1.18 clusters.
+		{
+			Name:  "SSL_CERT_FILE",
+			Value: "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+		},
+	}
+
 	if cluster.Spec.Cloud.AWS != nil {
 		vars = append(vars, corev1.EnvVar{Name: "AWS_ACCESS_KEY_ID", Value: credentials.AWS.AccessKeyID})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_SECRET_ACCESS_KEY", Value: credentials.AWS.SecretAccessKey})
 		vars = append(vars, corev1.EnvVar{Name: "AWS_VPC_ID", Value: cluster.Spec.Cloud.AWS.VPCID})
 	}
+
 	if cluster.Spec.Cloud.GCP != nil {
 		vars = append(vars, corev1.EnvVar{Name: "GOOGLE_APPLICATION_CREDENTIALS", Value: "/etc/gcp/serviceAccount"})
 	}
+
 	vars = append(vars, resources.GetHTTPProxyEnvVarsFromSeed(data.Seed(), data.Cluster().Address.InternalName)...)
 	return vars, nil
 }

@@ -50,6 +50,7 @@ type Reconciler struct {
 	scheme     *runtime.Scheme
 	workerName string
 	versions   kubermaticversion.Versions
+	namespace  string
 }
 
 // Reconcile acts upon requests and will restore the state of resources
@@ -209,10 +210,6 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, config *operatorv1alp
 
 	if config.Spec.ImagePullSecret != "" {
 		creators = append(creators, common.DockercfgSecretCreator(config))
-	}
-
-	if config.Spec.Auth.CABundle != "" {
-		creators = append(creators, common.DexCASecretCreator(config))
 	}
 
 	if err := reconciling.ReconcileSecrets(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {

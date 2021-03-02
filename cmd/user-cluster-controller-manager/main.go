@@ -19,6 +19,7 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"io/ioutil"
 	"net/url"
 	"strings"
 
@@ -41,6 +42,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/pprof"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
@@ -79,6 +81,7 @@ type controllerRunOptions struct {
 	opaIntegration     bool
 	opaWebhookTimeout  int
 	useSSHKeyAgent     bool
+	caBundleFile       string
 }
 
 func main() {
@@ -109,6 +112,7 @@ func main() {
 	flag.BoolVar(&runOp.opaIntegration, "opa-integration", false, "Enable OPA integration in user cluster")
 	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 10, "Timeout for OPA Integration validating webhook, in seconds")
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
+	flag.StringVar(&runOp.caBundleFile, "ca-bundle", "", "The path to the cluster's CA bundle (PEM-encoded).")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -135,6 +139,17 @@ func main() {
 	}
 	if runOp.openvpnServerPort == 0 {
 		log.Fatal("-openvpn-server-port must be set")
+	}
+
+	if len(runOp.caBundleFile) == 0 {
+		log.Fatal("-ca-bundle must be set")
+	}
+	caBundleBytes, err := ioutil.ReadFile(runOp.caBundleFile)
+	if err != nil {
+		log.Fatalw("Failed to read CA file", zap.Error(err))
+	}
+	if err := certificates.ValidateCABundle(string(caBundleBytes)); err != nil {
+		log.Fatalw("CA bundle is invalid", zap.Error(err))
 	}
 
 	nodeLabels := map[string]string{}
@@ -215,6 +230,7 @@ func main() {
 		versions,
 		runOp.useSSHKeyAgent,
 		runOp.opaWebhookTimeout,
+		string(caBundleBytes),
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))

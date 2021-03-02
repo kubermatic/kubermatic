@@ -262,20 +262,22 @@ func TestLoadFiles(t *testing.T) {
 					},
 				}
 
+				caBundle := &corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						ResourceVersion: "123456",
+						Name:            resources.CABundleConfigMapName,
+						Namespace:       cluster.Status.NamespaceName,
+					},
+				}
+
 				dynamicClient := ctrlruntimefakeclient.
 					NewClientBuilder().
 					WithScheme(scheme.Scheme).
-					WithObjects(&corev1.Secret{
-						ObjectMeta: metav1.ObjectMeta{
-							ResourceVersion: "123456",
-							Name:            metricsserver.ServingCertSecretName,
-							Namespace:       cluster.Status.NamespaceName,
-						},
-					},
+					WithObjects(
 						&corev1.Secret{
 							ObjectMeta: metav1.ObjectMeta{
 								ResourceVersion: "123456",
-								Name:            resources.DexCASecretName,
+								Name:            metricsserver.ServingCertSecretName,
 								Namespace:       cluster.Status.NamespaceName,
 							},
 						},
@@ -468,6 +470,7 @@ func TestLoadFiles(t *testing.T) {
 								Namespace:       cluster.Status.NamespaceName,
 							},
 						},
+						caBundle,
 						&corev1.ConfigMap{
 							ObjectMeta: metav1.ObjectMeta{
 								ResourceVersion: "123456",
@@ -548,13 +551,13 @@ func TestLoadFiles(t *testing.T) {
 					close(stopCh)
 				}()
 
-				tmpFile, err := ioutil.TempFile("", "kubermatic")
+				promTmpFile, err := ioutil.TempFile("", "kubermatic")
 				if err != nil {
 					t.Fatalf("couldn't create temp file, see: %v", err)
 				}
 
-				tmpFilePath := tmpFile.Name()
-				_, err = tmpFile.WriteString(`- job_name: custom-test-config
+				promTmpFilePath := promTmpFile.Name()
+				_, err = promTmpFile.WriteString(`- job_name: custom-test-config
   scheme: https
   metrics_path: '/metrics'
   static_configs:
@@ -565,7 +568,18 @@ func TestLoadFiles(t *testing.T) {
 					t.Fatalf("couldn't write to temp file, see: %v", err)
 				}
 				defer (func() {
-					err = os.Remove(tmpFilePath)
+					err = os.Remove(promTmpFilePath)
+					if err != nil {
+						t.Fatalf("couldn't delete temp file, see: %v", err)
+					}
+				})()
+
+				caBundleTmpFile, err := ioutil.TempFile("", "kubermatic")
+				if err != nil {
+					t.Fatalf("couldn't create temp file, see: %v", err)
+				}
+				defer (func() {
+					err = os.Remove(caBundleTmpFile.Name())
 					if err != nil {
 						t.Fatalf("couldn't delete temp file, see: %v", err)
 					}
@@ -589,8 +603,8 @@ func TestLoadFiles(t *testing.T) {
 					WithEtcdDiskSize(resource.MustParse("5Gi")).
 					WithBackupPeriod(20 * time.Minute).
 					WithMonitoringScrapeAnnotationPrefix("kubermatic_io_monitoring").
-					WithInClusterPrometheusScrapingConfigsFile(tmpFilePath).
-					WithOIDCCAFile("test").
+					WithInClusterPrometheusScrapingConfigsFile(promTmpFilePath).
+					WithCABundleFile(caBundleTmpFile.Name()).
 					WithOIDCIssuerURL("https://dev.kubermatic.io/dex").
 					WithOIDCIssuerClientID("kubermaticIssuer").
 					WithNodeLocalDNSCacheEnabled(true).

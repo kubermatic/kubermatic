@@ -96,7 +96,6 @@ type Reconciler struct {
 	etcdBackupRestoreController                      bool
 	backupSchedule                                   time.Duration
 
-	oidcCAFile         string
 	oidcIssuerURL      string
 	oidcIssuerClientID string
 
@@ -104,6 +103,7 @@ type Reconciler struct {
 	versions kubermatic.Versions
 
 	tunnelingAgentIP string
+	caBundle         string
 }
 
 // NewController creates a cluster controller.
@@ -130,7 +130,6 @@ func Add(
 	etcdBackupRestoreController bool,
 	backupSchedule time.Duration,
 
-	oidcCAFile string,
 	oidcIssuerURL string,
 	oidcIssuerClientID string,
 	kubermaticImage string,
@@ -138,6 +137,7 @@ func Add(
 	dnatControllerImage string,
 
 	tunnelingAgentIP string,
+	caBundle string,
 
 	features Features,
 	versions kubermatic.Versions) error {
@@ -171,13 +171,14 @@ func Add(
 		externalURL: externalURL,
 		seedGetter:  seedGetter,
 
-		oidcCAFile:         oidcCAFile,
 		oidcIssuerURL:      oidcIssuerURL,
 		oidcIssuerClientID: oidcIssuerClientID,
 
 		tunnelingAgentIP: tunnelingAgentIP,
-		features:         features,
-		versions:         versions,
+		caBundle:         caBundle,
+
+		features: features,
+		versions: versions,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})

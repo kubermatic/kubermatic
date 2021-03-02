@@ -328,6 +328,12 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 			Namespace: mockNamespaceName,
 		},
 	}
+	caBundleConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.CABundleConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
 	prometheusConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.PrometheusConfigConfigMapName,
@@ -359,7 +365,15 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		},
 	}
 	configMapList := &corev1.ConfigMapList{
-		Items: []corev1.ConfigMap{cloudConfigConfigMap, prometheusConfigMap, dnsResolverConfigMap, openvpnClientConfigsConfigMap, auditConfigMap, admissionControlConfigMapName},
+		Items: []corev1.ConfigMap{
+			cloudConfigConfigMap,
+			caBundleConfigMap,
+			prometheusConfigMap,
+			dnsResolverConfigMap,
+			openvpnClientConfigsConfigMap,
+			auditConfigMap,
+			admissionControlConfigMapName,
+		},
 	}
 	apiServerService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -399,7 +413,6 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		},
 	}
 	secretList := createNamedSecrets([]string{
-		resources.DexCASecretName,
 		resources.CASecretName,
 		resources.TokensSecretName,
 		resources.ApiserverTLSSecretName,
@@ -461,7 +474,6 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		"",
 		"",
 		"",
-		"",
 		true,
 		// Since this is the image-loader we hardcode the default image for pulling.
 		resources.DefaultKubermaticImage,
@@ -470,6 +482,7 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		20*time.Minute,
 		false,
 		kubermaticVersions,
+		"",
 	), nil
 }
 

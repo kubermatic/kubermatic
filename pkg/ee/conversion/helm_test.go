@@ -31,7 +31,9 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/equality"
 	"k8s.io/apimachinery/pkg/util/diff"
 	"k8s.io/utils/pointer"
@@ -133,12 +135,6 @@ func TestConvertAuth(t *testing.T) {
 			yaml: `kubermatic: { domain: "example.com", auth: { tokenIssuer: "https://example.com/some/other/url" } }`,
 			expected: &operatorv1alpha1.KubermaticAuthConfiguration{
 				TokenIssuer: "https://example.com/some/other/url",
-			},
-		},
-		{
-			yaml: `kubermatic: { auth: { caBundle: "aGVsbG8gd29ybGQ=" } }`,
-			expected: &operatorv1alpha1.KubermaticAuthConfiguration{
-				CABundle: "hello world",
 			},
 		},
 		{
@@ -253,6 +249,39 @@ func TestConvertPrometheus(t *testing.T) {
 
 		if !equality.Semantic.DeepEqual(&config.Monitoring, testcase.expected) {
 			t.Errorf("Test case %d failed:\n%v", idx+1, diff.ObjectDiff(testcase.expected, config.Monitoring))
+		}
+	}
+}
+
+func TestConvertCABundle(t *testing.T) {
+	testcases := []struct {
+		yaml     string
+		expected *operatorv1alpha1.KubermaticConfiguration
+	}{
+		{
+			yaml: `kubermatic: { auth: { caBundle: "aGVsbG8gd29ybGQ=" } }`,
+			expected: &operatorv1alpha1.KubermaticConfiguration{
+				Spec: operatorv1alpha1.KubermaticConfigurationSpec{
+					CABundle: v1.TypedLocalObjectReference{
+						Name: resources.CABundleConfigMapName,
+					},
+				},
+			},
+		},
+	}
+
+	for idx, testcase := range testcases {
+		values := parseYAML(t, testcase.yaml)
+		config := &operatorv1alpha1.KubermaticConfiguration{}
+
+		_, err := convertOIDCCABundle(&values, config, "kubermatic")
+		if err != nil {
+			t.Errorf("Test case %d failed, failed to convert: %v", idx+1, err)
+			continue
+		}
+
+		if !equality.Semantic.DeepEqual(config, testcase.expected) {
+			t.Errorf("Test case %d failed:\n%v", idx+1, diff.ObjectDiff(testcase.expected, config))
 		}
 	}
 }

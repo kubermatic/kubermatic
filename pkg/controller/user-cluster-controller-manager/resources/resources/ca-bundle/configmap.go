@@ -14,22 +14,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package apiserver
+package cabundle
 
 import (
-	"crypto/x509"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
-// DexCACertificateCreator returns a function to create/update the secret with the certificate for TLS verification against dex
-func DexCACertificateCreator(getDexCA func() ([]*x509.Certificate, error)) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return resources.DexCASecretName, certificates.GetDexCACreator(
-			resources.DexCAFileName,
-			getDexCA,
-		)
+// ConfigMapCreator returns a ConfigMap containing the CA bundle for the usercluster.
+func ConfigMapCreator(caBundle string) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return resources.CABundleConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			if cm.Data == nil {
+				cm.Data = map[string]string{}
+			}
+
+			cm.Data[resources.CABundleConfigMapKey] = caBundle
+			return cm, nil
+		}
 	}
 }

@@ -19,6 +19,7 @@ package etcdbackup
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"time"
@@ -27,6 +28,7 @@ import (
 	"github.com/robfig/cron"
 	"go.uber.org/zap"
 
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -42,6 +44,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/clock"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -97,9 +100,11 @@ const (
 
 // Reconciler stores necessary components that are required to create etcd backups
 type Reconciler struct {
-	log        *zap.SugaredLogger
-	workerName string
 	ctrlruntimeclient.Client
+
+	log              *zap.SugaredLogger
+	scheme           *runtime.Scheme
+	workerName       string
 	storeContainer   *corev1.Container
 	deleteContainer  *corev1.Container
 	cleanupContainer *corev1.Container
@@ -108,6 +113,7 @@ type Reconciler struct {
 	backupContainerImage string
 	clock                clock.Clock
 	randStringGenerator  func() string
+	caBundle             string
 	recorder             record.EventRecorder
 	versions             kubermatic.Versions
 }
@@ -124,6 +130,7 @@ func Add(
 	cleanupContainer *corev1.Container,
 	backupContainerImage string,
 	versions kubermatic.Versions,
+	caBundleFile string,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
@@ -132,9 +139,15 @@ func Add(
 		backupContainerImage = DefaultBackupContainerImage
 	}
 
+	caBundle, err := ioutil.ReadFile(caBundleFile)
+	if err != nil {
+		return fmt.Errorf("failed to read CA bundle file: %v", err)
+	}
+
 	reconciler := &Reconciler{
-		log:                  log,
 		Client:               client,
+		log:                  log,
+		scheme:               mgr.GetScheme(),
 		workerName:           workerName,
 		storeContainer:       storeContainer,
 		deleteContainer:      deleteContainer,
@@ -143,6 +156,7 @@ func Add(
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		versions:             versions,
 		clock:                &clock.RealClock{},
+		caBundle:             string(caBundle),
 		randStringGenerator: func() string {
 			return rand.String(10)
 		},
@@ -222,8 +236,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
-	if err := r.ensureEtcdClientSecret(ctx, cluster); err != nil {
-		return nil, errors.Wrap(err, "failed to create backup secret")
+	if err := r.ensureSecrets(ctx, cluster); err != nil {
+		return nil, errors.Wrap(err, "failed to create backup secrets")
+	}
+
+	if err := r.ensureConfigMaps(ctx, cluster); err != nil {
+		return nil, errors.Wrap(err, "failed to create backup configmaps")
 	}
 
 	var nextReconcile, totalReconcile *reconcile.Result
@@ -605,7 +623,6 @@ func (r *Reconciler) deleteFinishedBackupJobs(ctx context.Context, backupConfig 
 				retentionTime = succeededJobRetentionTime
 			default:
 				retentionTime = failedJobRetentionTime
-
 			}
 
 			age := r.clock.Now().Sub(backup.BackupFinishedTime.Time)
@@ -716,8 +733,8 @@ func (r *Reconciler) handleFinalization(ctx context.Context, backupConfig *kuber
 			cleanupJob := &batchv1.Job{}
 			err := r.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: cleanupJobName}, cleanupJob)
 			if err == nil {
-				jobSucceeded := nil != getJobConditionIfTrue(cleanupJob, batchv1.JobComplete)
-				jobFailed := nil != getJobConditionIfTrue(cleanupJob, batchv1.JobFailed)
+				jobSucceeded := getJobConditionIfTrue(cleanupJob, batchv1.JobComplete) != nil
+				jobFailed := getJobConditionIfTrue(cleanupJob, batchv1.JobFailed) != nil
 				if jobSucceeded || jobFailed {
 					// job completed either way. delete it.
 					if err := r.Delete(ctx, cleanupJob, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
@@ -782,6 +799,12 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 			Value: backupConfig.Name,
 		})
 
+	storeContainer.VolumeMounts = append(storeContainer.VolumeMounts, corev1.VolumeMount{
+		Name:      "ca-bundle",
+		MountPath: "/etc/ca-bundle/",
+		ReadOnly:  true,
+	})
+
 	job := r.jobBase(backupConfig, cluster, backupStatus.JobName)
 
 	job.Spec.Template.Spec.Containers = []corev1.Container{*storeContainer}
@@ -827,6 +850,11 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 					Name:      r.getEtcdSecretName(cluster),
 					MountPath: "/etc/etcd/client",
 				},
+				{
+					Name:      "ca-bundle",
+					MountPath: "/etc/ca-bundle/",
+					ReadOnly:  true,
+				},
 			},
 		},
 	}
@@ -843,6 +871,16 @@ func (r *Reconciler) backupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clus
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: r.getEtcdSecretName(cluster),
+				},
+			},
+		},
+		{
+			Name: "ca-bundle",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: caBundleConfigMapName(cluster),
+					},
 				},
 			},
 		},
@@ -875,8 +913,27 @@ func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig
 			Name:  backupConfigEnvVarKey,
 			Value: backupConfig.Name,
 		})
+
+	deleteContainer.VolumeMounts = append(deleteContainer.VolumeMounts, corev1.VolumeMount{
+		Name:      "ca-bundle",
+		MountPath: "/etc/ca-bundle/",
+		ReadOnly:  true,
+	})
+
 	job := r.jobBase(backupConfig, cluster, backupStatus.DeleteJobName)
 	job.Spec.Template.Spec.Containers = []corev1.Container{*deleteContainer}
+	job.Spec.Template.Spec.Volumes = []corev1.Volume{
+		{
+			Name: "ca-bundle",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: caBundleConfigMapName(cluster),
+					},
+				},
+			},
+		},
+	}
 	return job
 }
 
@@ -892,8 +949,25 @@ func (r *Reconciler) cleanupJob(backupConfig *kubermaticv1.EtcdBackupConfig, clu
 			Name:  backupConfigEnvVarKey,
 			Value: backupConfig.Name,
 		})
+	cleanupContainer.VolumeMounts = append(cleanupContainer.VolumeMounts, corev1.VolumeMount{
+		Name:      "ca-bundle",
+		MountPath: "/etc/ca-bundle/",
+		ReadOnly:  true,
+	})
 	job := r.jobBase(backupConfig, cluster, jobName)
 	job.Spec.Template.Spec.Containers = []corev1.Container{*cleanupContainer}
+	job.Spec.Template.Spec.Volumes = []corev1.Volume{
+		{
+			Name: "ca-bundle",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: caBundleConfigMapName(cluster),
+					},
+				},
+			},
+		},
+	}
 	return job
 }
 
@@ -953,34 +1027,35 @@ func (r *Reconciler) getEtcdSecretName(cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("cluster-%s-etcd-client-certificate", cluster.Name)
 }
 
-func (r *Reconciler) ensureEtcdClientSecret(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *Reconciler) ensureSecrets(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	secretName := r.getEtcdSecretName(cluster)
 
 	getCA := func() (*triple.KeyPair, error) {
 		return resources.GetClusterRootCA(ctx, cluster.Status.NamespaceName, r.Client)
 	}
 
-	_, creator := certificates.GetClientCertificateCreator(
-		secretName,
-		"backup",
-		nil,
-		resources.BackupEtcdClientCertificateCertSecretKey,
-		resources.BackupEtcdClientCertificateKeySecretKey,
-		getCA,
-	)()
-
-	wrappedCreator := reconciling.SecretObjectWrapper(creator)
-	wrappedCreator = reconciling.OwnerRefWrapper(resources.GetClusterRef(cluster))(wrappedCreator)
-
-	err := reconciling.EnsureNamedObject(
-		ctx,
-		types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: secretName},
-		wrappedCreator, r.Client, &corev1.Secret{}, false)
-	if err != nil {
-		return fmt.Errorf("failed to ensure Secret %q: %v", secretName, err)
+	creators := []reconciling.NamedSecretCreatorGetter{
+		certificates.GetClientCertificateCreator(
+			secretName,
+			"backup",
+			nil,
+			resources.BackupEtcdClientCertificateCertSecretKey,
+			resources.BackupEtcdClientCertificateKeySecretKey,
+			getCA,
+		),
 	}
 
-	return nil
+	return reconciling.ReconcileSecrets(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
+}
+
+func (r *Reconciler) ensureConfigMaps(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	name := caBundleConfigMapName(cluster)
+
+	creators := []reconciling.NamedConfigMapCreatorGetter{
+		caBundleConfigMapCreator(name, r.caBundle),
+	}
+
+	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
 }
 
 func parseCronSchedule(scheduleString string) (cron.Schedule, error) {

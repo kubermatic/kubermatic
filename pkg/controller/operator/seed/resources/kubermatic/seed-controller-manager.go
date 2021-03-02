@@ -64,6 +64,7 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				"-kubernetes-addons-path=/opt/addons/kubernetes",
 				"-worker-count=4",
 				"-admissionwebhook-cert-dir=/opt/webhook-serving-cert/",
+				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-admissionwebhook-cert-name=%s", resources.ServingCertSecretKey),
 				fmt.Sprintf("-admissionwebhook-key-name=%s", resources.ServingCertKeySecretKey),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
@@ -125,6 +126,16 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 					},
 				},
 				{
+					Name: "ca-bundle",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: cfg.Spec.CABundle.Name,
+							},
+						},
+					},
+				},
+				{
 					Name: "backup-container",
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
@@ -148,6 +159,11 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				{
 					Name:      sharedAddonVolume,
 					MountPath: "/opt/addons/",
+					ReadOnly:  true,
+				},
+				{
+					Name:      "ca-bundle",
+					MountPath: "/opt/ca-bundle/",
 					ReadOnly:  true,
 				},
 				{
@@ -211,25 +227,6 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 					fmt.Sprintf("-oidc-issuer-client-id=%s", cfg.Spec.Auth.IssuerClientID),
 					fmt.Sprintf("-oidc-issuer-client-secret=%s", cfg.Spec.Auth.IssuerClientSecret),
 				)
-
-				if cfg.Spec.Auth.CABundle != "" {
-					args = append(args, "-oidc-ca-file=/opt/dex-ca/caBundle.pem")
-
-					volumes = append(volumes, corev1.Volume{
-						Name: "dex-ca",
-						VolumeSource: corev1.VolumeSource{
-							Secret: &corev1.SecretVolumeSource{
-								SecretName: common.DexCASecretName,
-							},
-						},
-					})
-
-					volumeMounts = append(volumeMounts, corev1.VolumeMount{
-						Name:      "dex-ca",
-						MountPath: "/opt/dex-ca",
-						ReadOnly:  true,
-					})
-				}
 			}
 
 			if len(cfg.Spec.UserCluster.Monitoring.CustomScrapingConfigs) > 0 {

@@ -36,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
 	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -43,7 +44,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	knet "k8s.io/apimachinery/pkg/util/net"
-	certutil "k8s.io/client-go/util/cert"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/yaml"
 )
@@ -88,9 +88,9 @@ type controllerRunOptions struct {
 	validationWebhook                                validation.WebhookOpts
 	concurrentClusterUpdate                          int
 	addonEnforceInterval                             int
+	caBundle                                         string
 
 	// OIDC configuration
-	oidcCAFile             string
 	oidcIssuerURL          string
 	oidcIssuerClientID     string
 	oidcIssuerClientSecret string
@@ -140,7 +140,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.inClusterPrometheusScrapingConfigsFile, "in-cluster-prometheus-scraping-configs-file", "", "The file containing the custom scraping configs for the prometheus running in the cluster-foo namespaces.")
 	flag.StringVar(&c.monitoringScrapeAnnotationPrefix, "monitoring-scrape-annotation-prefix", "monitoring.kubermatic.io", "The prefix for monitoring annotations in the user cluster. Default: monitoring.kubermatic.io -> monitoring.kubermatic.io/port, monitoring.kubermatic.io/path")
 	flag.Var(&c.featureGates, "feature-gates", "A set of key=value pairs that describe feature gates for various features.")
-	flag.StringVar(&c.oidcCAFile, "oidc-ca-file", "", "The path to the certificate for the CA that signed your identity provider’s web certificate.")
 	flag.StringVar(&c.oidcIssuerURL, "oidc-issuer-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.StringVar(&c.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&c.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
@@ -155,6 +154,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
+	flag.StringVar(&c.caBundle, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
 	flag.Var(&c.tunnelingAgentIP, "tunneling-agent-ip", "The address used by the tunneling agents.")
 	c.validationWebhook.AddFlags(flag.CommandLine, true)
 	addFlags(flag.CommandLine)
@@ -183,7 +183,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 }
 
 func (o controllerRunOptions) validate() error {
-
 	if o.featureGates.Enabled(features.OpenIDAuthPlugin) {
 		if len(o.oidcIssuerURL) == 0 {
 			return fmt.Errorf("%s feature is enabled but \"oidc-issuer-url\" flag was not specified", features.OpenIDAuthPlugin)
@@ -230,9 +229,9 @@ func (o controllerRunOptions) validate() error {
 	if o.concurrentClusterUpdate < 1 {
 		return fmt.Errorf("--max-parallel-reconcile must be > 0 (was %d)", o.concurrentClusterUpdate)
 	}
-	// Validate OIDC CA file
+
 	if err := o.validateCABundle(); err != nil {
-		return fmt.Errorf("validation CA bundle file failed: %v", err)
+		return fmt.Errorf("invalid CA bundle: %v", err)
 	}
 
 	// Validate node-port range
@@ -251,19 +250,13 @@ func (o controllerRunOptions) validate() error {
 	return nil
 }
 
-// validateDexSecretWithCABundle
 func (o controllerRunOptions) validateCABundle() error {
-	if len(o.oidcCAFile) == 0 {
-		return nil
-	}
-
-	bytes, err := ioutil.ReadFile(o.oidcCAFile)
+	bytes, err := ioutil.ReadFile(o.caBundle)
 	if err != nil {
-		return fmt.Errorf("failed to read '%s': %v", o.oidcCAFile, err)
+		return fmt.Errorf("failed to read %q: %v", o.caBundle, err)
 	}
 
-	_, err = certutil.ParseCertsPEM(bytes)
-	return err
+	return certificates.ValidateCABundle(string(bytes))
 }
 
 func (o controllerRunOptions) nodeLocalDNSCacheEnabled() bool {

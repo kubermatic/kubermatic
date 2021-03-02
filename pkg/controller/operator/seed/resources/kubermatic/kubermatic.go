@@ -36,6 +36,7 @@ const (
 	deleteContainerKey             = "delete-container.yaml"
 	s3EndpointKey                  = "ENDPOINT"
 	s3BucketNameKey                = "BUCKET_NAME"
+	caBundleConfigMapName          = "ca-bundle"
 )
 
 func ClusterRoleBindingName(cfg *operatorv1alpha1.KubermaticConfiguration) string {
@@ -105,6 +106,16 @@ func RestoreS3SettingsConfigMapCreator(cfg *operatorv1alpha1.KubermaticConfigura
 
 			c.Data[s3EndpointKey] = cfg.Spec.SeedController.BackupRestore.S3Endpoint
 			c.Data[s3BucketNameKey] = cfg.Spec.SeedController.BackupRestore.S3BucketName
+
+			return c, nil
+		}
+	}
+}
+
+func CABundleConfigMapCreator(caBundle *corev1.ConfigMap) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return caBundleConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			c.Data = caBundle.Data
 
 			return c, nil
 		}

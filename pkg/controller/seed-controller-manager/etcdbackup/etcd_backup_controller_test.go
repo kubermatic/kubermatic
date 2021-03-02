@@ -133,6 +133,7 @@ func genBackupJob(backupName string, jobName string) *batchv1.Job {
 	reconciler := Reconciler{
 		log:            kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 		Client:         ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
+		scheme:         scheme.Scheme,
 		storeContainer: genStoreContainer(),
 		recorder:       record.NewFakeRecorder(10),
 		clock:          clock.RealClock{},
@@ -156,6 +157,7 @@ func genBackupDeleteJob(backupName string, jobName string) *batchv1.Job {
 	reconciler := Reconciler{
 		log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 		Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
+		scheme:          scheme.Scheme,
 		deleteContainer: genDeleteContainer(),
 		recorder:        record.NewFakeRecorder(10),
 		clock:           clock.RealClock{},
@@ -175,6 +177,7 @@ func genCleanupJob(jobName string) *batchv1.Job {
 	reconciler := Reconciler{
 		log:              kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 		Client:           ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
+		scheme:           scheme.Scheme,
 		cleanupContainer: genCleanupContainer(),
 		recorder:         record.NewFakeRecorder(10),
 		clock:            clock.RealClock{},
@@ -404,6 +407,7 @@ func TestEnsurePendingBackupIsScheduled(t *testing.T) {
 			reconciler := Reconciler{
 				log:                 kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:              ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(cluster, backupConfig).Build(),
+				scheme:              scheme.Scheme,
 				recorder:            record.NewFakeRecorder(10),
 				clock:               clock,
 				randStringGenerator: constRandStringGenerator("xxxx"),
@@ -598,6 +602,7 @@ func TestStartPendingBackupJobs(t *testing.T) {
 			reconciler := Reconciler{
 				log:            kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:         ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:         scheme.Scheme,
 				storeContainer: genStoreContainer(),
 				recorder:       record.NewFakeRecorder(10),
 				clock:          clock,
@@ -871,6 +876,7 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			reconciler := Reconciler{
 				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:          scheme.Scheme,
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),
 				clock:           clock,
@@ -1092,6 +1098,7 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 			reconciler := Reconciler{
 				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:          scheme.Scheme,
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),
 				clock:           clock,
@@ -1384,6 +1391,7 @@ func TestDeleteFinishedBackupJobs(t *testing.T) {
 			reconciler := Reconciler{
 				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:          scheme.Scheme,
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),
 				clock:           clock,
@@ -1689,6 +1697,7 @@ func TestFinalization(t *testing.T) {
 			reconciler := Reconciler{
 				log:             kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
 				Client:          ctrlruntimefakeclient.NewClientBuilder().WithScheme(scheme.Scheme).WithObjects(initObjs...).Build(),
+				scheme:          scheme.Scheme,
 				storeContainer:  genStoreContainer(),
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),

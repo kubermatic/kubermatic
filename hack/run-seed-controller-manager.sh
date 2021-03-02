@@ -53,8 +53,8 @@ OIDC_ISSUER_URL="${OIDC_ISSUER_URL:-$(vault kv get -field=oidc-issuer-url dev/se
 OIDC_ISSUER_CLIENT_ID="${OIDC_ISSUER_CLIENT_ID:-$(vault kv get -field=oidc-issuer-client-id dev/seed-clusters/dev.kubermatic.io)}"
 OIDC_ISSUER_CLIENT_SECRET="${OIDC_ISSUER_CLIENT_SECRET:-$(vault kv get -field=oidc-issuer-client-secret dev/seed-clusters/dev.kubermatic.io)}"
 
-if [ -n "${OIDC_CA_BUNDLE:-}" ]; then
-  CTRL_EXTRA_ARGS="$CTRL_EXTRA_ARGS -oidc-ca-file=$OIDC_CA_BUNDLE"
+if [ -n "${CA_BUNDLE:-}" ]; then
+  CTRL_EXTRA_ARGS="$CTRL_EXTRA_ARGS -ca-bundle=$CA_BUNDLE"
 fi
 
 echodate "Starting seed-controller-manager..."

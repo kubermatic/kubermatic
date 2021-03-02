@@ -23,6 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -80,12 +81,27 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 						},
 					},
 				},
+				{
+					Name: "ca-bundle",
+					VolumeSource: corev1.VolumeSource{
+						ConfigMap: &corev1.ConfigMapVolumeSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: cfg.Spec.CABundle.Name,
+							},
+						},
+					},
+				},
 			}
 
 			volumeMounts := []corev1.VolumeMount{
 				{
 					MountPath: "/opt/extra-files/",
 					Name:      "extra-files",
+					ReadOnly:  true,
+				},
+				{
+					Name:      "ca-bundle",
+					MountPath: "/opt/ca-bundle/",
 					ReadOnly:  true,
 				},
 			}
@@ -97,6 +113,7 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				"-dynamic-presets=true",
 				"-swagger=/opt/swagger.json",
 				"-master-resources=/opt/extra-files",
+				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-versions=/opt/extra-files/%s", common.VersionsFileName),
 				fmt.Sprintf("-updates=/opt/extra-files/%s", common.UpdatesFileName),
 				fmt.Sprintf("-namespace=%s", cfg.Namespace),
@@ -120,25 +137,6 @@ func APIDeploymentCreator(cfg *operatorv1alpha1.KubermaticConfiguration, workerN
 				args = append(args, "-v=4", "-log-debug=true")
 			} else {
 				args = append(args, "-v=2")
-			}
-
-			if cfg.Spec.Auth.CABundle != "" {
-				args = append(args, "-oidc-ca-file=/opt/dex-ca/caBundle.pem")
-
-				volumes = append(volumes, corev1.Volume{
-					Name: "dex-ca",
-					VolumeSource: corev1.VolumeSource{
-						Secret: &corev1.SecretVolumeSource{
-							SecretName: common.DexCASecretName,
-						},
-					},
-				})
-
-				volumeMounts = append(volumeMounts, corev1.VolumeMount{
-					Name:      "dex-ca",
-					MountPath: "/opt/dex-ca",
-					ReadOnly:  true,
-				})
 			}
 
 			if cfg.Spec.FeatureGates.Has(features.OIDCKubeCfgEndpoint) {

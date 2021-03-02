@@ -32,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/features"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
@@ -50,8 +51,6 @@ import (
 // Reconciler (re)stores all components required for running a Kubermatic
 // seed cluster.
 type Reconciler struct {
-	ctrlruntimeclient.Client
-
 	log            *zap.SugaredLogger
 	scheme         *runtime.Scheme
 	namespace      string
@@ -225,6 +224,11 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 		return fmt.Errorf("failed to apply default values to Seed:  %v", err)
 	}
 
+	caBundle, err := certificates.GlobalCABundle(ctx, r.masterClient, cfg)
+	if err != nil {
+		return fmt.Errorf("failed to get CA bundle ConfigMap: %v", err)
+	}
+
 	if err := r.reconcileNamespaces(ctx, cfg, seed, client, log); err != nil {
 		return err
 	}
@@ -249,7 +253,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 		return err
 	}
 
-	if err := r.reconcileConfigMaps(ctx, cfg, seed, client, log); err != nil {
+	if err := r.reconcileConfigMaps(ctx, cfg, seed, client, log, caBundle); err != nil {
 		return err
 	}
 
@@ -257,7 +261,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 		return err
 	}
 
-	if err := r.reconcileDeployments(ctx, cfg, seed, client, log); err != nil {
+	if err := r.reconcileDeployments(ctx, cfg, seed, client, log, caBundle); err != nil {
 		return err
 	}
 
@@ -399,11 +403,12 @@ func (r *Reconciler) reconcileClusterRoleBindings(ctx context.Context, cfg *oper
 	return nil
 }
 
-func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *corev1.ConfigMap) error {
 	log.Debug("reconciling ConfigMaps")
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
 		kubermaticseed.BackupContainersConfigMapCreator(cfg),
+		kubermaticseed.CABundleConfigMapCreator(caBundle),
 	}
 
 	if creator := kubermaticseed.ClusterNamespacePrometheusScrapingConfigsConfigMapCreator(cfg); creator != nil {
@@ -444,10 +449,6 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *operatorv1alpha1
 		creators = append(creators, common.DockercfgSecretCreator(cfg))
 	}
 
-	if cfg.Spec.Auth.CABundle != "" {
-		creators = append(creators, common.DexCASecretCreator(cfg))
-	}
-
 	if err := reconciling.ReconcileSecrets(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Kubermatic Secrets: %v", err)
 	}
@@ -466,7 +467,7 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *operatorv1alpha1
 	return nil
 }
 
-func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
+func (r *Reconciler) reconcileDeployments(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger, caBundle *corev1.ConfigMap) error {
 	log.Debug("reconciling Deployments")
 
 	creators := []reconciling.NamedDeploymentCreatorGetter{

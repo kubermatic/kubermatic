@@ -119,10 +119,18 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
-					Name:         resources.SchedulerDeploymentName,
-					Image:        data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-scheduler:v" + data.Cluster().Spec.Version.String(),
-					Command:      []string{"/usr/local/bin/kube-scheduler"},
-					Args:         flags,
+					Name:    resources.SchedulerDeploymentName,
+					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-scheduler:v" + data.Cluster().Spec.Version.String(),
+					Command: []string{"/usr/local/bin/kube-scheduler"},
+					Args:    flags,
+					Env: []corev1.EnvVar{
+						// Kubernetes <1.19 did not ship any certificates in their Docker images,
+						// so this not only injects _our_ CA bundle, it injects _the only_ CA bundle for 1.17/1.18 clusters.
+						{
+							Name:  "SSL_CERT_FILE",
+							Value: "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+						},
+					},
 					VolumeMounts: volumeMounts,
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
@@ -168,7 +176,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 }
 
 func getVolumeMounts() []corev1.VolumeMount {
-	return append([]corev1.VolumeMount{
+	return []corev1.VolumeMount{
 		{
 			Name:      resources.SchedulerKubeconfigSecretName,
 			MountPath: "/etc/kubernetes/kubeconfig",
@@ -179,11 +187,16 @@ func getVolumeMounts() []corev1.VolumeMount {
 			MountPath: "/etc/kubernetes/pki/ca",
 			ReadOnly:  true,
 		},
-	}, resources.GetHostCACertVolumeMounts()...)
+		{
+			Name:      resources.CABundleConfigMapName,
+			MountPath: "/etc/kubernetes/pki/ca-bundle",
+			ReadOnly:  true,
+		},
+	}
 }
 
 func getVolumes() []corev1.Volume {
-	return append([]corev1.Volume{
+	return []corev1.Volume{
 		{
 			Name: resources.OpenVPNClientCertificatesSecretName,
 			VolumeSource: corev1.VolumeSource{
@@ -207,6 +220,16 @@ func getVolumes() []corev1.Volume {
 			},
 		},
 		{
+			Name: resources.CABundleConfigMapName,
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resources.CABundleConfigMapName,
+					},
+				},
+			},
+		},
+		{
 			Name: resources.SchedulerKubeconfigSecretName,
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
@@ -214,5 +237,5 @@ func getVolumes() []corev1.Volume {
 				},
 			},
 		},
-	}, resources.GetHostCACertVolumes()...)
+	}
 }
