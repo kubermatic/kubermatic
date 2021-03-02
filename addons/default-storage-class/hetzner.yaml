@@ -12,90 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# This is based on
+# https://raw.githubusercontent.com/hetznercloud/csi-driver/v1.5.1/deploy/kubernetes/hcloud-csi.yml
+# and compatible with Kubernetes 1.16+; the only difference between
+# 1.4.0 and 1.5.1 is the NODE_NAME env variable.
+
 {{/* Template must only emit data in case its valid for a given provider. That way we can ensure we don't install it when not needed */}}
-{{ if eq .Cluster.CloudProviderName "azure" }}
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
-  labels:
-    kubernetes.io/cluster-service: "true"
-  name: standard
-provisioner: kubernetes.io/azure-disk
-parameters:
-  kind: Managed
-  storageaccounttype: Standard_LRS
-{{ end }}
-
-{{ if eq .Cluster.CloudProviderName "aws" }}
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
-  labels:
-    kubernetes.io/cluster-service: "true"
-  name: standard-v2
-provisioner: kubernetes.io/aws-ebs
-parameters:
-  type: gp2
-volumeBindingMode: WaitForFirstConsumer
-{{ end }}
-
-{{ if eq .Cluster.CloudProviderName "vsphere" }}
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
-  labels:
-    kubernetes.io/cluster-service: "true"
-  name: standard
-provisioner: kubernetes.io/vsphere-volume
-parameters:
-  diskformat: thin
-{{ end }}
-
-{{ if eq .Cluster.CloudProviderName "openstack" }}
-{{ if .Cluster.Features.Has "externalCloudProvider" }}
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
-  labels:
-    kubernetes.io/cluster-service: "true"
-  name: cinder-csi
-provisioner: cinder.csi.openstack.org
-volumeBindingMode: WaitForFirstConsumer
-{{ else }}
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
-  labels:
-    kubernetes.io/cluster-service: "true"
-  name: standard
-provisioner: kubernetes.io/cinder
-{{ end }}
-{{ end }}
-
-{{ if eq .Cluster.CloudProviderName "gcp" }}
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
-  labels:
-    kubernetes.io/cluster-service: "true"
-  name: standard
-provisioner: kubernetes.io/gce-pd
-parameters:
-  type: pd-ssd
-{{ end }}
-
 {{ if eq .Cluster.CloudProviderName "hetzner" }}
 apiVersion: v1
 kind: Secret
@@ -104,6 +26,16 @@ metadata:
   namespace: kube-system
 data:
   token: {{ .Credentials.Hetzner.Token | b64enc }}
+---
+apiVersion: storage.k8s.io/v1beta1
+kind: CSIDriver
+metadata:
+  name: csi.hetzner.cloud
+spec:
+  attachRequired: true
+  podInfoOnMount: true
+  volumeLifecycleModes:
+    - Persistent
 ---
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -128,7 +60,7 @@ rules:
   # attacher
   - apiGroups: [""]
     resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "update"]
+    verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "list", "watch"]
@@ -136,18 +68,21 @@ rules:
     resources: ["csinodeinfos"]
     verbs: ["get", "list", "watch"]
   - apiGroups: ["storage.k8s.io"]
+    resources: ["csinodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
     resources: ["volumeattachments"]
-    verbs: ["get", "list", "watch", "update"]
+    verbs: ["get", "list", "watch", "update", "patch"]
   # provisioner
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "list"]
   - apiGroups: [""]
     resources: ["persistentvolumes"]
-    verbs: ["get", "list", "watch", "create", "delete"]
+    verbs: ["get", "list", "watch", "create", "delete", "patch"]
   - apiGroups: [""]
-    resources: ["persistentvolumeclaims"]
-    verbs: ["get", "list", "watch", "update"]
+    resources: ["persistentvolumeclaims", "persistentvolumeclaims/status"]
+    verbs: ["get", "list", "watch", "update", "patch"]
   - apiGroups: ["storage.k8s.io"]
     resources: ["storageclasses"]
     verbs: ["get", "list", "watch"]
@@ -160,13 +95,6 @@ rules:
   - apiGroups: ["snapshot.storage.k8s.io"]
     resources: ["volumesnapshotcontents"]
     verbs: ["get", "list"]
-  # cluster registrar
-  - apiGroups: ["apiextensions.k8s.io"]
-    resources: ["customresourcedefinitions"]
-    verbs: ["create", "list", "watch", "delete"]
-  - apiGroups: ["csi.storage.k8s.io"]
-    resources: ["csidrivers"]
-    verbs: ["create", "list", "watch", "delete"]
   # node
   - apiGroups: [""]
     resources: ["events"]
@@ -204,7 +132,20 @@ spec:
       serviceAccount: hcloud-csi
       containers:
         - name: csi-attacher
-          image: '{{ Registry "quay.io" }}/k8scsi/csi-attacher:v1.0.1'
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-attacher:v2.2.0'
+          args:
+            - --csi-address=/var/lib/csi/sockets/pluginproxy/csi.sock
+            - --v=5
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi/sockets/pluginproxy/
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+        - name: csi-resizer
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-resizer:v0.3.0'
           args:
             - --csi-address=/var/lib/csi/sockets/pluginproxy/csi.sock
             - --v=5
@@ -217,10 +158,11 @@ spec:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
         - name: csi-provisioner
-          image: '{{ Registry "quay.io" }}/k8scsi/csi-provisioner:v1.0.1'
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-provisioner:v1.6.0'
           args:
             - --provisioner=csi.hetzner.cloud
             - --csi-address=/var/lib/csi/sockets/pluginproxy/csi.sock
+            - --feature-gates=Topology=true
             - --v=5
           volumeMounts:
             - name: socket-dir
@@ -230,21 +172,19 @@ spec:
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
-        - name: csi-cluster-driver-registrar
-          image: '{{ Registry "quay.io" }}/k8scsi/csi-cluster-driver-registrar:v1.0.1'
-          args:
-            - --pod-info-mount-version="v1"
-            - --csi-address=/var/lib/csi/sockets/pluginproxy/csi.sock
-            - --v=5
-          volumeMounts:
-            - name: socket-dir
-              mountPath: /var/lib/csi/sockets/pluginproxy/
         - name: hcloud-csi-driver
-          image: '{{ Registry "docker.io" }}/hetznercloud/hcloud-csi-driver:1.0.0'
+          image: '{{ Registry "docker.io" }}/hetznercloud/hcloud-csi-driver:1.5.1'
           imagePullPolicy: Always
           env:
             - name: CSI_ENDPOINT
               value: unix:///var/lib/csi/sockets/pluginproxy/csi.sock
+            - name: METRICS_ENDPOINT
+              value: 0.0.0.0:9189
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
             - name: HCLOUD_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -253,11 +193,33 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /var/lib/csi/sockets/pluginproxy/
+          ports:
+            - containerPort: 9189
+              name: metrics
+            - name: healthz
+              containerPort: 9808
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 2
           securityContext:
             privileged: true
             capabilities:
               add: ["SYS_ADMIN"]
             allowPrivilegeEscalation: true
+        - name: liveness-probe
+          imagePullPolicy: Always
+          image: '{{ Registry "docker.io" }}/k8scsi/livenessprobe:v1.1.0'
+          args:
+            - --csi-address=/var/lib/csi/sockets/pluginproxy/csi.sock
+          volumeMounts:
+            - mountPath: /var/lib/csi/sockets/pluginproxy/
+              name: socket-dir
       volumes:
         - name: socket-dir
           emptyDir: {}
@@ -278,11 +240,17 @@ spec:
       labels:
         app: hcloud-csi
     spec:
+      tolerations:
+        - effect: NoExecute
+          operator: Exists
+        - effect: NoSchedule
+          operator: Exists
+        - key: CriticalAddonsOnly
+          operator: Exists
       serviceAccount: hcloud-csi
-      hostNetwork: true
       containers:
         - name: csi-node-driver-registrar
-          image: '{{ Registry "quay.io" }}/k8scsi/csi-node-driver-registrar:v1.0.1'
+          image: '{{ Registry "quay.io" }}/k8scsi/csi-node-driver-registrar:v1.3.0'
           args:
             - --v=5
             - --csi-address=/csi/csi.sock
@@ -301,16 +269,23 @@ spec:
           securityContext:
             privileged: true
         - name: hcloud-csi-driver
-          image: '{{ Registry "docker.io" }}/hetznercloud/hcloud-csi-driver:1.0.0'
+          image: '{{ Registry "docker.io" }}/hetznercloud/hcloud-csi-driver:1.5.1'
           imagePullPolicy: Always
           env:
             - name: CSI_ENDPOINT
               value: unix:///csi/csi.sock
+            - name: METRICS_ENDPOINT
+              value: 0.0.0.0:9189
             - name: HCLOUD_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: hcloud-csi
                   key: token
+            - name: KUBE_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: spec.nodeName
           volumeMounts:
             - name: kubelet-dir
               mountPath: /var/lib/kubelet
@@ -321,6 +296,28 @@ spec:
               mountPath: /dev
           securityContext:
             privileged: true
+          ports:
+            - containerPort: 9189
+              name: metrics
+            - name: healthz
+              containerPort: 9808
+              protocol: TCP
+          livenessProbe:
+            failureThreshold: 5
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 2
+        - name: liveness-probe
+          imagePullPolicy: Always
+          image: '{{ Registry "quay.io" }}/k8scsi/livenessprobe:v1.1.0'
+          args:
+            - --csi-address=/csi/csi.sock
+          volumeMounts:
+            - mountPath: /csi
+              name: plugin-dir
       volumes:
         - name: kubelet-dir
           hostPath:
@@ -338,4 +335,34 @@ spec:
           hostPath:
             path: /dev
             type: Directory
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hcloud-csi-controller-metrics
+  namespace: kube-system
+  labels:
+    app: hcloud-csi
+spec:
+  selector:
+    app: hcloud-csi-controller
+  ports:
+    - port: 9189
+      name: metrics
+      targetPort: metrics
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hcloud-csi-node-metrics
+  namespace: kube-system
+  labels:
+    app: hcloud-csi
+spec:
+  selector:
+    app: hcloud-csi
+  ports:
+    - port: 9189
+      name: metrics
+      targetPort: metrics
 {{ end }}
