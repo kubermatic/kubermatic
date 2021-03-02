@@ -37,6 +37,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	cloudProviderExternalFlag = "external"
+)
+
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
 	ctx                      context.Context
@@ -372,9 +376,14 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster) string {
 		return "gce"
 	case cluster.Spec.Cloud.Openstack != nil:
 		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-			return "external"
+			return cloudProviderExternalFlag
 		}
 		return "openstack"
+	case cluster.Spec.Cloud.Hetzner != nil:
+		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+			return cloudProviderExternalFlag
+		}
+		return ""
 	default:
 		return ""
 	}

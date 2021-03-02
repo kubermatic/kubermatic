@@ -17,6 +17,9 @@ import (
 // swagger:model HetznerNodeSpec
 type HetznerNodeSpec struct {
 
+	// network name
+	Network string `json:"network,omitempty"`
+
 	// server type
 	// Required: true
 	Type *string `json:"type"`

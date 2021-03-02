@@ -334,8 +334,8 @@ func (m *PresetsProvider) setHetznerCredentials(userInfo *provider.UserInfo, pre
 	}
 
 	cloud.Hetzner.Token = preset.Spec.Hetzner.Token
+	cloud.Hetzner.Network = preset.Spec.Hetzner.Network
 	return &cloud, nil
-
 }
 
 func (m *PresetsProvider) setPacketCredentials(userInfo *provider.UserInfo, presetName string, cloud kubermaticv1.CloudSpec) (*kubermaticv1.CloudSpec, error) {

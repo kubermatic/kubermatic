@@ -196,6 +196,12 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 		cloudSpec.Hetzner = &apiv1.HetznerNodeSpec{
 			Type: config.ServerType.Value,
 		}
+		// MachineDeployments created by KKP will only ever have a single network
+		// set, but users might have created ones with many; we have to make a choice
+		// here as to what to display in KKP.
+		if len(config.Networks) > 0 {
+			cloudSpec.Hetzner.Network = config.Networks[0].Value
+		}
 	case providerconfig.CloudProviderVsphere:
 		config := &vsphere.RawConfig{}
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
