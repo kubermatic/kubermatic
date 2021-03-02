@@ -40,7 +40,7 @@ spec:
       location: Frankfurt
       country: DE
       spec:
-         bringyourown: {}
+        bringyourown: {}
     alibaba-eu-central-1a:
       location: Frankfurt
       country: DE
@@ -59,6 +59,7 @@ spec:
       spec:
         hetzner:
           datacenter: nbg1-dc3
+          network: kubermatic-e2e
     vsphere-ger:
       location: Hamburg
       country: DE

@@ -164,6 +164,9 @@ func (r *testRunner) testLB(ctx context.Context, log *zap.SugaredLogger, userClu
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "test",
 			Namespace: ns.Name,
+			Annotations: map[string]string{
+				"load-balancer.hetzner.cloud/location": "nbg1",
+			},
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     corev1.ServiceTypeLoadBalancer,

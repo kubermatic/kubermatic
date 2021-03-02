@@ -97,6 +97,10 @@ spec:
           # Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
           # For informational purposes only.
           location: ""
+          # Network is the pre-existing Hetzner network in which the machines are running.
+          # While machines can be in multiple networks, a single one must be chosen for the
+          # HCloud CCM to work.
+          network: ""
         kubevirt:
           # DNSConfig represents the DNS parameters of a pod. Parameters specified here will be merged to the generated DNS
           # configuration based on DNSPolicy.
