@@ -2,7 +2,7 @@
 
 **Authors**: Rastislav Szabo (@rastislavs), Jiacheng Xu (@jiachengxu), Pavel Aborilov (@aborilov)
 
-**Status**: Draft proposal, PoC in progress.
+**Status**: Draft proposal, [PoC](https://github.com/kubermatic/mla) in progress.
 
 **Issues**: https://github.com/kubermatic/kubermatic/issues/6321, https://github.com/kubermatic/kubermatic/issues/6397
 
@@ -201,7 +201,7 @@ the per-tenant configuration.
 #### Alertmanager
 
 As mentioned above, for sending alerts generated from the logs and metrics gathered in the Seed Cluster, we will deploy
-a single Cortex-Alertmanager instance. To connect it to the Loki infrastructure we will deploy a Loki Ruler instance (
+a single Cortex-Alertmanager instance. To connect it to the Loki infrastructure, we will deploy a Loki Ruler instance (
 which connects to Loki Ingester). The following picture demonstrates the authentication and authorization flow when
 users access Alertmanager:
 
