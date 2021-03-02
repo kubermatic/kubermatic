@@ -25,10 +25,10 @@ spec:
         apiserver-tls-secret-revision: "123456"
         app: apiserver
         audit-config-configmap-revision: "123456"
+        ca-bundle-configmap-revision: "123456"
         ca-secret-revision: "123456"
         cloud-config-configmap-revision: "123456"
         cluster: de-test-01
-        dex-ca-secret-revision: "123456"
         front-proxy-ca-secret-revision: "123456"
         kubelet-client-certificates-secret-revision: "123456"
         kubeletdnatcontroller-kubeconfig-secret-revision: "123456"
@@ -214,6 +214,8 @@ spec:
         - aws
         - --cloud-config
         - /etc/kubernetes/cloud/config
+        - --oidc-ca-file
+        - /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
         - --oidc-issuer-url
         - https://dev.kubermatic.io/dex
         - --oidc-client-id
@@ -224,11 +226,11 @@ spec:
         - 'oidc:'
         - --oidc-groups-claim
         - groups
-        - --oidc-ca-file
-        - /etc/kubernetes/dex/ca/caBundle.pem
         command:
         - /usr/local/bin/kube-apiserver
         env:
+        - name: SSL_CERT_FILE
+          value: /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
         - name: AWS_ACCESS_KEY_ID
           value: aws-access-key-id
         - name: AWS_SECRET_ACCESS_KEY
@@ -291,6 +293,9 @@ spec:
         - mountPath: /etc/kubernetes/pki/ca
           name: ca
           readOnly: true
+        - mountPath: /etc/kubernetes/pki/ca-bundle
+          name: ca-bundle
+          readOnly: true
         - mountPath: /etc/kubernetes/service-account-key
           name: service-account-key
           readOnly: true
@@ -313,15 +318,6 @@ spec:
           name: audit-log
         - mountPath: /etc/kubernetes/adm-control
           name: adm-control
-          readOnly: true
-        - mountPath: /etc/ssl/certs
-          name: ca-certs
-          readOnly: true
-        - mountPath: /usr/share/ca-certificates
-          name: usr-share-ca-certificates
-          readOnly: true
-        - mountPath: /etc/kubernetes/dex/ca
-          name: dex-ca
           readOnly: true
       dnsConfig:
         nameservers:
@@ -371,6 +367,9 @@ spec:
           - key: ca.crt
             path: ca.crt
           secretName: ca
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
       - name: service-account-key
         secret:
           secretName: service-account-key
@@ -398,15 +397,4 @@ spec:
       - configMap:
           name: adm-control
         name: adm-control
-      - hostPath:
-          path: /etc/ssl/certs
-          type: DirectoryOrCreate
-        name: ca-certs
-      - hostPath:
-          path: /usr/share/ca-certificates
-          type: DirectoryOrCreate
-        name: usr-share-ca-certificates
-      - name: dex-ca
-        secret:
-          secretName: dex-ca
 status: {}

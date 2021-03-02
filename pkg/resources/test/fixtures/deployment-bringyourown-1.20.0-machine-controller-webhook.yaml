@@ -16,6 +16,7 @@ spec:
       creationTimestamp: null
       labels:
         app: machine-controller-webhook
+        ca-bundle-configmap-revision: "123456"
         cluster: de-test-01
         machinecontroller-kubeconfig-secret-revision: "123456"
         machinecontroller-webhook-serving-cert-secret-revision: "123456"
@@ -32,7 +33,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"/usr/local/bin/webhook","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-logtostderr","-v","4","-listen-address","0.0.0.0:9876"]}'
+        - '{"command":"/usr/local/bin/webhook","args":["-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","-logtostderr","-v","4","-listen-address","0.0.0.0:9876","-ca-bundle","/etc/kubernetes/pki/ca-bundle/ca-bundle.pem"]}'
         - --crd-to-wait-for
         - Machine,cluster.k8s.io/v1alpha1
         command:
@@ -52,7 +53,7 @@ spec:
           value: apiserver-external.cluster-de-test-01.svc.cluster.local.
         - name: KUBECONFIG
           value: /etc/kubernetes/kubeconfig/kubeconfig
-        image: docker.io/kubermatic/machine-controller:v1.23.1
+        image: docker.io/kubermatic/machine-controller:v1.26.0
         livenessProbe:
           failureThreshold: 8
           httpGet:
@@ -87,6 +88,9 @@ spec:
         - mountPath: /tmp/cert
           name: machinecontroller-webhook-serving-cert
           readOnly: true
+        - mountPath: /etc/kubernetes/pki/ca-bundle
+          name: ca-bundle
+          readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
       imagePullSecrets:
@@ -109,6 +113,9 @@ spec:
       - name: machinecontroller-webhook-serving-cert
         secret:
           secretName: machinecontroller-webhook-serving-cert
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
       - emptyDir: {}
         name: http-prober-bin
 status: {}
