@@ -16,7 +16,7 @@
 
 ### Generate test coverage statistics for Go packages.
 ###
-### Works around the fact that `go test -coverprofile` currently does not work  
+### Works around the fact that `go test -coverprofile` currently does not work
 ### with multiple packages, see https://code.google.com/p/go/issues/detail?id=6909
 ###
 ###     Usage: cover.sh [--html]
@@ -38,8 +38,8 @@ generate_cover_data() {
     go test -covermode="$mode" -coverprofile="$f" "$pkg"
   done
 
-  echo "mode: $mode" >"$profile"
-  grep -h -v "^mode:" "$workdir"/*.cover >>"$profile"
+  echo "mode: $mode" > "$profile"
+  grep -h -v "^mode:" "$workdir"/*.cover >> "$profile"
 }
 
 show_cover_report() {

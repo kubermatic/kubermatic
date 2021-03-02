@@ -33,7 +33,7 @@
 set -euo pipefail
 
 if [ "$#" -lt 1 ] || [ "${1}" == "--help" ]; then
-  cat <<EOF
+  cat << EOF
 Usage: $(basename $0) tag1[ tag2 tagN ...]
 
 Example:
@@ -76,11 +76,11 @@ for TAG in "$@"; do
 
   echodate "Tagging as ${TAG}"
   docker tag "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${PRIMARY_TAG}" "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}"
-  docker tag "${DOCKER_REPO}/nodeport-proxy:${PRIMARY_TAG}"          "${DOCKER_REPO}/nodeport-proxy:${TAG}"
-  docker tag "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}"  "${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
-  docker tag "${DOCKER_REPO}/addons:${PRIMARY_TAG}"                  "${DOCKER_REPO}/addons:${TAG}"
-  docker tag "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}"     "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
-  docker tag "${DOCKER_REPO}/etcd-launcher:${PRIMARY_TAG}"           "${DOCKER_REPO}/etcd-launcher:${TAG}"
+  docker tag "${DOCKER_REPO}/nodeport-proxy:${PRIMARY_TAG}" "${DOCKER_REPO}/nodeport-proxy:${TAG}"
+  docker tag "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
+  docker tag "${DOCKER_REPO}/addons:${PRIMARY_TAG}" "${DOCKER_REPO}/addons:${TAG}"
+  docker tag "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
+  docker tag "${DOCKER_REPO}/etcd-launcher:${PRIMARY_TAG}" "${DOCKER_REPO}/etcd-launcher:${TAG}"
 
   echodate "Pushing images"
   docker push "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}"

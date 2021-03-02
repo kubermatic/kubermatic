@@ -50,5 +50,5 @@ set -x
   -log-debug=$KUBERMATIC_DEBUG \
   -pprof-listen-address=":${PPROF_PORT}" \
   -log-format=Console \
-	-logtostderr \
-	-v=4 # Log-level for the Kube dependencies. Increase up to 9 to get request-level logs.
+  -logtostderr \
+  -v=4 # Log-level for the Kube dependencies. Increase up to 9 to get request-level logs.

@@ -23,7 +23,7 @@ cd $(dirname $0)/../..
 source ./hack/lib.sh
 
 export DEPLOY_STACK=${DEPLOY_STACK:-kubermatic}
-export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
+export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 export DEPLOY_NODEPORT_PROXY=false
 
 if [[ "${DEPLOY_STACK}" == "kubermatic" ]]; then
@@ -35,7 +35,7 @@ export VAULT_ADDR=https://vault.loodse.com/
 retry 5 vault write \
   --format=json auth/approle/login \
   role_id=${VAULT_ROLE_ID} secret_id=${VAULT_SECRET_ID} > /tmp/vault-token-response.json
-export VAULT_TOKEN="$(cat /tmp/vault-token-response.json| jq .auth.client_token -r)"
+export VAULT_TOKEN="$(cat /tmp/vault-token-response.json | jq .auth.client_token -r)"
 export KUBECONFIG=/tmp/kubeconfig
 export VALUES_FILE=/tmp/values.yaml
 export USE_KUBERMATIC_OPERATOR=true

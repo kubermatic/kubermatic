@@ -33,10 +33,10 @@ echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
 export VAULT_TOKEN=$(vault write \
   --format=json auth/approle/login \
-  role_id=${VAULT_ROLE_ID} secret_id=${VAULT_SECRET_ID} \
-  | jq .auth.client_token -r)
+  role_id=${VAULT_ROLE_ID} secret_id=${VAULT_SECRET_ID} |
+  jq .auth.client_token -r)
 
-export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
+export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
 rm -f /tmp/id_rsa
 vault kv get -field=key dev/e2e-machine-controller-ssh-key > /tmp/id_rsa
@@ -76,7 +76,7 @@ function finish {
     echodate "tests failed, describing cluster"
 
     # Describe cluster
-    kubectl describe cluster -l worker-name=${BUILD_ID}|egrep -vi 'Service Account'
+    kubectl describe cluster -l worker-name=${BUILD_ID} | egrep -vi 'Service Account'
 
     # Control plane logs
     echodate "Dumping all conntrol plane logs"
@@ -91,16 +91,16 @@ function finish {
 
     # Display machine events, we don't have to worry about secrets here as they are stored in the machine-controllers env
     # Except for vSphere
-    TMP_KUBECONFIG=$(mktemp);
-    USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} |sed 's#.kubermatic.k8s.io/#-#g')
+    TMP_KUBECONFIG=$(mktemp)
+    USERCLUSTER_NS=$(kubectl get cluster -o name -l worker-name=${BUILD_ID} | sed 's#.kubermatic.k8s.io/#-#g')
     kubectl get secret -n ${USERCLUSTER_NS} admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > ${TMP_KUBECONFIG}
-    kubectl --kubeconfig=${TMP_KUBECONFIG} describe machine -n kube-system|egrep -vi 'password|user'
+    kubectl --kubeconfig=${TMP_KUBECONFIG} describe machine -n kube-system | egrep -vi 'password|user'
   fi
 
   # Delete addons from all clusters that have our worker-name label
   kubectl get cluster -l worker-name=${BUILD_ID} \
-     -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
-     |xargs -n 1 -I ^ kubectl label addon -n cluster-^ --all worker-name-
+    -o go-template='{{range .items}}{{.metadata.name}}{{end}}' |
+    xargs -n 1 -I ^ kubectl label addon -n cluster-^ --all worker-name-
 
   # Delete all clusters that have our worker-name label
   kubectl delete cluster -l worker-name=${BUILD_ID} --wait=false
@@ -108,8 +108,8 @@ function finish {
   # Remove the worker-name label from all clusters that have our worker-name
   # label so the main cluster-controller will clean them up
   kubectl get cluster -l worker-name=${BUILD_ID} \
-    -o go-template='{{range .items}}{{.metadata.name}}{{end}}' \
-      |xargs -I ^ kubectl label cluster ^ worker-name-
+    -o go-template='{{range .items}}{{.metadata.name}}{{end}}' |
+    xargs -I ^ kubectl label cluster ^ worker-name-
 
   # Delete the Helm Deployment of Kubermatic
   helm delete --purge kubermatic-${BUILD_ID} --tiller-namespace=${NAMESPACE}
@@ -125,7 +125,7 @@ function finish {
 trap finish EXIT
 
 # Start docker
-docker ps &>/dev/null || start-docker.sh
+docker ps &> /dev/null || start-docker.sh
 
 retry 5 docker login -u ${QUAY_IO_USERNAME} -p ${QUAY_IO_PASSWORD} quay.io
 
@@ -142,7 +142,7 @@ echodate "Successfully finished building and pushing quay images"
 cd ../../charts
 HELM_EXTRA_ARGS="--set kubermatic.controller.image.tag=${GIT_HEAD_HASH},kubermatic.api.image.tag=${GIT_HEAD_HASH},kubermatic.masterController.image.tag=${GIT_HEAD_HASH}"
 # We must not pull those images from remote. We build them on the fly
-helm template ${HELM_EXTRA_ARGS} kubermatic | grep -v quay.io/kubermatic/kubermatic |../hack/retag-images.sh
+helm template ${HELM_EXTRA_ARGS} kubermatic | grep -v quay.io/kubermatic/kubermatic | ../hack/retag-images.sh
 
 # Push a tiller image
 docker pull gcr.io/kubernetes-helm/tiller:${HELM_VERSION}
@@ -171,7 +171,7 @@ make image-loader
   -log-format=Console
 
 # Build kubermatic binaries and push the image
-if ! curl -Ss --fail "http://127.0.0.1:5000/v2/kubermatic/api/tags/list"|grep -q ${GIT_HEAD_HASH}; then
+if ! curl -Ss --fail "http://127.0.0.1:5000/v2/kubermatic/api/tags/list" | grep -q ${GIT_HEAD_HASH}; then
   echodate "Building binaries"
   time make build
   echodate "Building docker image"
@@ -184,7 +184,8 @@ else
   echodate "Omitting building of binaries and docker image, as tag ${GIT_HEAD_HASH} already exists in local registry"
 fi
 
-INITIAL_MANIFESTS=$(cat <<EOF
+INITIAL_MANIFESTS=$(
+  cat << EOF
 apiVersion: v1
 kind: Namespace
 metadata:
@@ -230,7 +231,7 @@ roleRef:
 EOF
 )
 echodate "Creating namespace ${NAMESPACE} to deploy kubermatic in"
-echo "$INITIAL_MANIFESTS"|kubectl apply -f -
+echo "$INITIAL_MANIFESTS" | kubectl apply -f -
 
 echodate "Deploying tiller"
 helm init \
@@ -256,7 +257,7 @@ retry 3 helm upgrade --install --force --wait --timeout 300 \
 go build --tags "$KUBERMATIC_EDITION" ./cmd/conformance-tests
 
 cp ${KUBECONFIG} /tmp/kubeconfig-remote
-kubectl --kubeconfig /tmp/kubeconfig-remote config set-cluster kubernetes --server=https://${KUBERNETES_CONTROLLER_ADDR}:6443;
+kubectl --kubeconfig /tmp/kubeconfig-remote config set-cluster kubernetes --server=https://${KUBERNETES_CONTROLLER_ADDR}:6443
 
 SSH_OPTS="-i /tmp/id_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
 ssh ${SSH_OPTS} root@${PROXY_EXTERNAL_ADDR} "mkdir -p /tmp/${BUILD_ID}/reports"

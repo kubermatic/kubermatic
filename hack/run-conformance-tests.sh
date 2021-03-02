@@ -58,74 +58,74 @@ extraArgs=""
 provider="${PROVIDER:-aws}"
 
 case "$provider" in
-  alibaba)
-    extraArgs="-alibaba-access-key-id=$ALIBABA_KEY_ID
+alibaba)
+  extraArgs="-alibaba-access-key-id=$ALIBABA_KEY_ID
       -alibaba-secret-access-key=$ALIBABA_SECRET"
-    ;;
+  ;;
 
-  aws)
-    AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-$(vault kv get -field=accessKeyID dev/e2e-aws)}"
-    AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-$(vault kv get -field=secretAccessKey dev/e2e-aws)}"
-    extraArgs="-aws-access-key-id=$AWS_ACCESS_KEY_ID
+aws)
+  AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID:-$(vault kv get -field=accessKeyID dev/e2e-aws)}"
+  AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY:-$(vault kv get -field=secretAccessKey dev/e2e-aws)}"
+  extraArgs="-aws-access-key-id=$AWS_ACCESS_KEY_ID
       -aws-secret-access-key=$AWS_SECRET_ACCESS_KEY"
-    ;;
+  ;;
 
-  azure)
-    AZURE_CLIENT_ID="${AZURE_CLIENT_ID:-$(vault kv get -field=clientID dev/e2e-azure)}"
-    AZURE_CLIENT_SECRET="${AZURE_CLIENT_SECRET:-$(vault kv get -field=clientSecret dev/e2e-azure)}"
-    AZURE_TENANT_ID="${AZURE_TENANT_ID:-$(vault kv get -field=tenantID dev/e2e-azure)}"
-    AZURE_SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID:-$(vault kv get -field=subscriptionID dev/e2e-azure)}"
-    extraArgs="-azure-client-id=$AZURE_CLIENT_ID
+azure)
+  AZURE_CLIENT_ID="${AZURE_CLIENT_ID:-$(vault kv get -field=clientID dev/e2e-azure)}"
+  AZURE_CLIENT_SECRET="${AZURE_CLIENT_SECRET:-$(vault kv get -field=clientSecret dev/e2e-azure)}"
+  AZURE_TENANT_ID="${AZURE_TENANT_ID:-$(vault kv get -field=tenantID dev/e2e-azure)}"
+  AZURE_SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID:-$(vault kv get -field=subscriptionID dev/e2e-azure)}"
+  extraArgs="-azure-client-id=$AZURE_CLIENT_ID
       -azure-client-secret=$AZURE_CLIENT_SECRET
       -azure-tenant-id=$AZURE_TENANT_ID
       -azure-subscription-id=$AZURE_SUBSCRIPTION_ID"
-    ;;
+  ;;
 
-  digitalocean)
-    DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
-    extraArgs="-digitalocean-token=$DO_TOKEN"
-    ;;
+digitalocean)
+  DO_TOKEN="${DO_TOKEN:-$(vault kv get -field=token dev/e2e-digitalocean)}"
+  extraArgs="-digitalocean-token=$DO_TOKEN"
+  ;;
 
-  gcp)
-    extraArgs="-gcp-service-account=$GOOGLE_SERVICE_ACCOUNT"
-    ;;
+gcp)
+  extraArgs="-gcp-service-account=$GOOGLE_SERVICE_ACCOUNT"
+  ;;
 
-  hetzner)
-    HZ_TOKEN="${HZ_TOKEN:-$(vault kv get -field=token dev/e2e-hetzner)}"
-    extraArgs="-hetzner-token=$HZ_TOKEN"
-    ;;
+hetzner)
+  HZ_TOKEN="${HZ_TOKEN:-$(vault kv get -field=token dev/e2e-hetzner)}"
+  extraArgs="-hetzner-token=$HZ_TOKEN"
+  ;;
 
-  kubevirt)
-    extraArgs="-kubevirt-kubeconfig=${KUBEVIRT_KUBECONFIG}"
-    ;;
+kubevirt)
+  extraArgs="-kubevirt-kubeconfig=${KUBEVIRT_KUBECONFIG}"
+  ;;
 
-  openstack)
-    OS_DOMAIN="${OS_DOMAIN:-$(vault kv get -field=OS_USER_DOMAIN_NAME dev/syseleven-openstack)}"
-    OS_TENANT_NAME="${OS_TENANT_NAME:-$(vault kv get -field=OS_TENANT_NAME dev/syseleven-openstack)}"
-    OS_USERNAME="${OS_USERNAME:-$(vault kv get -field=username dev/syseleven-openstack)}"
-    OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/syseleven-openstack)}"
-    extraArgs="-openstack-domain=$OS_DOMAIN
+openstack)
+  OS_DOMAIN="${OS_DOMAIN:-$(vault kv get -field=OS_USER_DOMAIN_NAME dev/syseleven-openstack)}"
+  OS_TENANT_NAME="${OS_TENANT_NAME:-$(vault kv get -field=OS_TENANT_NAME dev/syseleven-openstack)}"
+  OS_USERNAME="${OS_USERNAME:-$(vault kv get -field=username dev/syseleven-openstack)}"
+  OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/syseleven-openstack)}"
+  extraArgs="-openstack-domain=$OS_DOMAIN
       -openstack-tenant=$OS_TENANT_NAME
       -openstack-username=$OS_USERNAME
       -openstack-password=$OS_PASSWORD"
-    ;;
+  ;;
 
-  packet)
-    extraArgs="-packet-api-key=$PACKET_API_KEY
+packet)
+  extraArgs="-packet-api-key=$PACKET_API_KEY
       -packet-project-id=$PACKET_PROJECT_ID"
-    ;;
+  ;;
 
-  vsphere)
-    VSPHERE_USERNAME="${VSPHERE_USERNAME:-$(vault kv get -field=username dev/vsphere)}"
-    VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/vsphere)}"
-    extraArgs="-vsphere-username=$VSPHERE_USERNAME
+vsphere)
+  VSPHERE_USERNAME="${VSPHERE_USERNAME:-$(vault kv get -field=username dev/vsphere)}"
+  VSPHERE_PASSWORD="${VSPHERE_PASSWORD:-$(vault kv get -field=password dev/vsphere)}"
+  extraArgs="-vsphere-username=$VSPHERE_USERNAME
       -vsphere-password=$VSPHERE_PASSWORD"
-    ;;
+  ;;
 
-  *)
-    echodate "Unknown provider $provider (\$PROVIDER) selected."
-    exit 1
-    ;;
+*)
+  echodate "Unknown provider $provider (\$PROVIDER) selected."
+  exit 1
+  ;;
 esac
 
 if [ -n "${VERSIONS:-}" ]; then
@@ -192,15 +192,15 @@ else
     --env "KUBERMATIC_OIDC_PASSWORD=${KUBERMATIC_OIDC_PASSWORD-}" \
     --env "${EXTRA_ENV:-}" \
     quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.21 \
-      _build/conformance-tests $extraArgs \
-        -log-format=console \
-        -worker-name="$USER" \
-        -kubeconfig=/kubeconfig \
-        -reports-root=/reports \
-        -kubermatic-endpoint="$endpoint" \
-        -kubermatic-oidc-token="$oidcToken" \
-        -kubermatic-delete-cluster=true \
-        -providers="$provider" \
-        -distributions="flatcar" \
-        $@
+    _build/conformance-tests $extraArgs \
+    -log-format=console \
+    -worker-name="$USER" \
+    -kubeconfig=/kubeconfig \
+    -reports-root=/reports \
+    -kubermatic-endpoint="$endpoint" \
+    -kubermatic-oidc-token="$oidcToken" \
+    -kubermatic-delete-cluster=true \
+    -providers="$provider" \
+    -distributions="flatcar" \
+    $@
 fi

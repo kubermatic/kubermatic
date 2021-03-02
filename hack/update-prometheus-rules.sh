@@ -27,10 +27,10 @@ if ! [ -x "$(command -v $promtool)" ]; then
   url="https://github.com/prometheus/prometheus/releases/download/v$version/prometheus-$version.linux-amd64.tar.gz"
   promtool=/tmp/promtool
 
-	echodate "Downloading promtool v$version..."
+  echodate "Downloading promtool v$version..."
   wget -O- "$url" | tar xzOf - prometheus-$version.linux-amd64/promtool > $promtool
   chmod +x $promtool
-	echodate "Done!"
+  echodate "Done!"
 fi
 
 cd charts/monitoring/prometheus/rules/

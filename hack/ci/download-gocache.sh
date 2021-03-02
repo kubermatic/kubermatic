@@ -31,7 +31,7 @@ set -euo pipefail
 set -o monitor
 
 # The gocache needs a matching go version to work, so append that to the name
-GO_VERSION="$(go version|awk '{ print $3 }'|sed 's/go//g')"
+GO_VERSION="$(go version | awk '{ print $3 }' | sed 's/go//g')"
 
 # Make sure we never error, this is always best-effort only
 exit_gracefully() {
