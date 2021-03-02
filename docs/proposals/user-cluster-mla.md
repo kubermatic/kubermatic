@@ -7,6 +7,7 @@
 **Issues**: https://github.com/kubermatic/kubermatic/issues/6321, https://github.com/kubermatic/kubermatic/issues/6397
 
 ## Table of Contents
+
 - [Goals](#goals)
 - [Motivation and Background](#motivation-and-background)
 - [Implementation](#implementation)
@@ -78,14 +79,14 @@ review even after a User Cluster goes offline, the setup in User Clusters is ver
 Cluster to the Seed Cluster, and there must be a trusted relationship between the User Cluster users and the Seed
 Cluster operators.
 
-To address these disadvantages, an alternative “decentralized” approach is proposed as well, which could be used  
-even in combination with the previous one for selected clusters. In this approach, each User Cluster will run all MLA
-components locally (installed as KKP Addons) and store all MLA data locally as well. That of course brings a need for
-much more resources and storage in each User Cluster (as shown on the picture below), and makes maintenance more
-complex. The Managed Service Provider users will be able to access the MLA data via the Grafana UI running in the Seed
-Cluster, using data sources pointed to endpoints routed via tunnels between the Seed Cluster and User Clusters. Of
-course, that may result in slower query speeds, and in case that a cluster is not reachable from the Seed, no MLA data
-can be displayed for it.
+To address these disadvantages, an alternative “decentralized” approach is proposed as well, which could be used even in
+combination with the previous one for selected clusters. In this approach, each User Cluster will run all MLA components
+locally (installed as KKP Addons) and store all MLA data locally as well. That of course brings a need for much more
+resources and storage in each User Cluster (as shown on the picture below), and makes maintenance more complex. The
+Managed Service Provider users will be able to access the MLA data via the Grafana UI running in the Seed Cluster, using
+data sources pointed to endpoints routed via tunnels between the Seed Cluster and User Clusters. Of course, that may
+result in slower query speeds, and in case that a cluster is not reachable from the Seed, no MLA data can be displayed
+for it.
 
 <div style="text-align:center">
   <img src="images/mla-distributed.png" width="100%" />
@@ -114,8 +115,8 @@ set to point to its associated MLA Gateway (described below).
 Prometheus will be configured to automatically scrape metrics from all User Cluster pods with the well-known
 [Prometheus Annotations](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus#scraping-pod-metrics-via-annotations).
 The Prometheus manifests will be based on the upstream
-[Prometheus Helm Chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus). It
-will be configured to do a remote write to its associated MLA Gateway (described below).
+[Prometheus Helm Chart](https://github.com/prometheus-community/helm-charts/tree/main/charts/prometheus). It will be
+configured to do a remote write to its associated MLA Gateway (described below).
 
 ### Seed MLA Components
 
@@ -254,14 +255,15 @@ Gateway will be used to serve both Prometheus and Loki connections. Therefore, t
 a User Cluster have to be reachable from the User Cluster itself.
 
 For the initial implementation, we will leverage the existing
-KKP [expose strategies](https://docs.kubermatic.com/kubermatic/master/architecture/concepts/expose_strategy/) that
-are used for exposing Kubernetes control plane services to user clusters for exposing the MLA Gateway. Depending on the
+KKP [expose strategies](https://docs.kubermatic.com/kubermatic/master/architecture/concepts/expose_strategy/) that are
+used for exposing Kubernetes control plane services to user clusters for exposing the MLA Gateway. Depending on the
 strategy used in the Seed it would be one of:
+
 - `NodePort` - would allocate one more NodePort for MLA per user cluster,
 - `Global LoadBalancer` / `One LoadBalancer Per User Cluster` - would allocate one more listener on the LoadBalancer per
-user cluster + one more NodePort per user cluster,
+  user cluster + one more NodePort per user cluster,
 - `SNI` (part of
-the `Tunneling` [expose strategy](https://github.com/kubermatic/kubermatic/blob/master/docs/proposals/http-tunnel-expose-strategy.md)) - would
+  the `Tunneling` [expose strategy](https://github.com/kubermatic/kubermatic/blob/master/docs/proposals/http-tunnel-expose-strategy.md)) - would
   not allocate more LB listeners nor NodePorts. The User Cluster would be connected to a MLA-specific HTTPS
   endpoint for the given cluster, e.g.,  `https://mla.<<cluster-id>>.<<seed-cluster-name>>.base.domain`.
 
