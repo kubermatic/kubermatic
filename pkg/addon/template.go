@@ -187,8 +187,13 @@ func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestP
 		filename := path.Join(manifestPath, info.Name())
 		infoLog := log.With("file", filename)
 
+		// recurse into subdirectory
 		if info.IsDir() {
-			infoLog.Debug("Found directory in manifest path. Ignoring.")
+			subManifests, err := ParseFromFolder(log, overwriteRegistry, filename, data)
+			if err != nil {
+				return nil, err
+			}
+			allManifests = append(allManifests, subManifests...)
 			continue
 		}
 
