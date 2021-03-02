@@ -89,7 +89,7 @@ require (
 	k8s.io/metrics v0.19.4
 	k8s.io/test-infra v0.0.0-20200220102703-18fae0a00a2c
 	k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
-	sigs.k8s.io/controller-runtime v0.8.1
+	sigs.k8s.io/controller-runtime v0.8.2
 	sigs.k8s.io/yaml v1.2.0
 )
 
