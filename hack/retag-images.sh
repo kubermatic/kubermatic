@@ -41,7 +41,7 @@ function retag {
 
   echo -n "Retagging ${image} => ${target_image}"
 
-  if curl -s --fail "http://${TARGET_REGISTRY}/v2/${name}/tags/list" | jq -e ".tags | index(\"${tag}\")" >/dev/null; then
+  if curl -s --fail "http://${TARGET_REGISTRY}/v2/${name}/tags/list" | jq -e ".tags | index(\"${tag}\")" > /dev/null; then
     echo " skipping, exists already"
     return
   fi

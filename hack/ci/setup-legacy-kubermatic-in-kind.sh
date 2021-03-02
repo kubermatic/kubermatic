@@ -68,9 +68,9 @@ fi
 
 echodate "Creating StorageClass kubermatic-fast "
 TEST_NAME="Create StorageClass kubermatic-fast"
-retry 5 kubectl get storageclasses.storage.k8s.io standard -o json \
-  | jq 'del(.metadata)|.metadata.name = "kubermatic-fast"'\
-  | kubectl apply -f -
+retry 5 kubectl get storageclasses.storage.k8s.io standard -o json |
+  jq 'del(.metadata)|.metadata.name = "kubermatic-fast"' |
+  kubectl apply -f -
 echodate "Successfully created StorageClass"
 
 TEST_NAME="Deploy Dex"
@@ -211,9 +211,9 @@ kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 
 echodate "Finished exposing components"
 
 echodate "Waiting for Dex to be ready"
-retry 5 curl -sSf  http://127.0.0.1:5556/dex/healthz
+retry 5 curl -sSf http://127.0.0.1:5556/dex/healthz
 echodate "Dex became ready"
 
 echodate "Waiting for Kubermatic API to be ready"
-retry 5 curl -sSf  http://127.0.0.1:8080/api/v1/healthz
+retry 5 curl -sSf http://127.0.0.1:8080/api/v1/healthz
 echodate "API became ready"

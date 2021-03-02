@@ -16,12 +16,12 @@
 
 set -euo pipefail
 
-CHECKPOINT_PATH="${CHECKPOINT_PATH:-/tmp/startup-script.kubernetes.io_$(md5sum <<<"${STARTUP_SCRIPT}" | cut -c-32)}"
+CHECKPOINT_PATH="${CHECKPOINT_PATH:-/tmp/startup-script.kubernetes.io_$(md5sum <<< "${STARTUP_SCRIPT}" | cut -c-32)}"
 CHECK_INTERVAL_SECONDS="30"
 EXEC=(nsenter -t 1 -m -u -i -n -p --)
 
 do_startup_script() {
-  local err=0;
+  local err=0
 
   "${EXEC[@]}" bash -c "${STARTUP_SCRIPT}" && err=0 || err=$?
   if [[ ${err} != 0 ]]; then

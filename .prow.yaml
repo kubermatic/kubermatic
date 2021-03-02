@@ -86,6 +86,35 @@ presubmits:
         - name: KUBERMATIC_EDITION
           value: ee
 
+  - name: pre-kubermatic-verify-shfmt
+    run_if_changed: "^hack/"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-goproxy: "true"
+    spec:
+      containers:
+      - image: docker.io/mvdan/shfmt:v3.2.1
+        command:
+        - "/bin/shfmt"
+      #   -l        list files whose formatting differs from shfmt's
+      #   -d        error with a diff when the formatting differs
+      #   -i uint   indent: 0 for tabs (default), >0 for number of spaces
+        args:
+        - "-l"
+        - "-sr"
+        - "-i"
+        - "2"
+        - "-d"
+        - "hack"
+        resources:
+          requests:
+            memory: 32Mi
+            cpu: 50m
+          limits:
+            memory: 256Mi
+            cpu: 250m
+
   - name: pre-kubermatic-verify-kubermatic-chart
     run_if_changed: "^(cmd|codegen|hack|pkg|charts)/"
     decorate: true

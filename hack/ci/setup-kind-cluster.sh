@@ -32,7 +32,7 @@ iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --cla
 
 # Make debugging a bit better
 echodate "Configuring bash"
-cat <<EOF >>~/.bashrc
+cat << EOF >> ~/.bashrc
 # Gets set to the CI clusters kubeconfig from a preset
 unset KUBECONFIG
 

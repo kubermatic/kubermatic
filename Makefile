@@ -181,3 +181,7 @@ check-dependencies:
 .PHONY: gen-api-client
 gen-api-client:
 	./hack/gen-api-client.sh
+
+.PHONY: shfmt
+shfmt:
+	shfmt -w -sr -i 2 hack

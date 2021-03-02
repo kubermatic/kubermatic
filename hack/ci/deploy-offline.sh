@@ -33,8 +33,8 @@ echodate "Getting secrets from Vault"
 export VAULT_ADDR=https://vault.loodse.com/
 export VAULT_TOKEN=$(vault write \
   --format=json auth/approle/login \
-  role_id=${VAULT_ROLE_ID} secret_id=${VAULT_SECRET_ID} \
-  | jq .auth.client_token -r)
+  role_id=${VAULT_ROLE_ID} secret_id=${VAULT_SECRET_ID} |
+  jq .auth.client_token -r)
 
 export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 
@@ -82,7 +82,7 @@ make image-loader
 # overrides all the Docker images and for the image-loading we want
 # to get the _original_ image names.
 LOADER_VALUES_FILE=/tmp/loader-values.yaml
-cat <<EOF > ${LOADER_VALUES_FILE}
+cat << EOF > ${LOADER_VALUES_FILE}
 kubermaticOperator:
   image:
     tag: ${GIT_HEAD_HASH}

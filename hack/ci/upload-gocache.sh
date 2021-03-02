@@ -34,11 +34,11 @@ if [ -z "${GOCACHE_MINIO_ADDRESS:-}" ]; then
 fi
 
 # The gocache needs a matching go version to work, so append that to the name
-GO_VERSION="$(go version|awk '{ print $3 }'|sed 's/go//g')"
+GO_VERSION="$(go version | awk '{ print $3 }' | sed 's/go//g')"
 
 GOCACHE_DIR="$(mktemp -d)"
 export GOCACHE="${GOCACHE_DIR}"
-export GIT_HEAD_HASH="$(git rev-parse HEAD|tr -d '\n')"
+export GIT_HEAD_HASH="$(git rev-parse HEAD | tr -d '\n')"
 export CGO_ENABLED=0
 
 echodate "Creating cache for revision ${GIT_HEAD_HASH} / Go ${GO_VERSION} ..."

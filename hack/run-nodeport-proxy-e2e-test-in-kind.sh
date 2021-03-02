@@ -30,7 +30,7 @@ KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.18.2}"
 
 type kind > /dev/null || fatal \
-    "Kind is required to run this script, please refer to: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
+  "Kind is required to run this script, please refer to: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
 
 function clean_up {
   echodate "Deleting cluster ${KIND_CLUSTER_NAME}"
@@ -40,14 +40,14 @@ appendTrap clean_up EXIT
 
 # Only start docker daemon in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
-    start_docker_daemon
+  start_docker_daemon
 fi
 
 # build Docker images
 make -C cmd/nodeport-proxy docker \
-    GOOS="${GOOS}" \
-    DOCKER_REPO="${DOCKER_REPO}" \
-    TAG="${TAG}"
+  GOOS="${GOOS}" \
+  DOCKER_REPO="${DOCKER_REPO}" \
+  TAG="${TAG}"
 
 # setup Kind cluster
 time retry 5 kind create cluster --name "${KIND_CLUSTER_NAME}" --image=kindest/node:"${KIND_NODE_VERSION}"
@@ -57,25 +57,25 @@ time retry 5 kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --nam
 # use ginkgo binary by preference to have better output:
 # https://github.com/onsi/ginkgo/issues/633
 if type ginkgo > /dev/null; then
-    ginkgo --tags=e2e -v pkg/test/e2e/nodeport-proxy/ \
-        -r \
-        --randomizeAllSpecs \
-        --randomizeSuites \
-        --failOnPending \
-        --cover \
-        --trace \
-        --race \
-        --progress \
-        -- --kubeconfig "${HOME}/.kube/config" \
-        --kubermatic-tag "${TAG}" \
-        --debug-log
+  ginkgo --tags=e2e -v pkg/test/e2e/nodeport-proxy/ \
+    -r \
+    --randomizeAllSpecs \
+    --randomizeSuites \
+    --failOnPending \
+    --cover \
+    --trace \
+    --race \
+    --progress \
+    -- --kubeconfig "${HOME}/.kube/config" \
+    --kubermatic-tag "${TAG}" \
+    --debug-log
 else
-    go test --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
-        --ginkgo.randomizeAllSpecs \
-        --ginkgo.failOnPending \
-        --ginkgo.trace \
-        --ginkgo.progress \
-        --kubeconfig "${HOME}/.kube/config" \
-        --kubermatic-tag "${TAG}" \
-        --debug-log
+  go test --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
+    --ginkgo.randomizeAllSpecs \
+    --ginkgo.failOnPending \
+    --ginkgo.trace \
+    --ginkgo.progress \
+    --kubeconfig "${HOME}/.kube/config" \
+    --kubermatic-tag "${TAG}" \
+    --debug-log
 fi
