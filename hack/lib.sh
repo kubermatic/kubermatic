@@ -39,21 +39,22 @@ retry() {
 
 # We use an extra wrapping to write junit and have a timer
 actual_retry() {
-  retries=$1 ; shift
+  retries=$1
+  shift
 
   count=0
   delay=1
   until "$@"; do
     rc=$?
-    count=$(( count + 1 ))
+    count=$((count + 1))
     if [ $count -lt "$retries" ]; then
-      echo "Retry $count/$retries exited $rc, retrying in $delay seconds..." >/dev/stderr
+      echo "Retry $count/$retries exited $rc, retrying in $delay seconds..." > /dev/stderr
       sleep $delay
     else
-      echo "Retry $count/$retries exited $rc, no more retries left." >/dev/stderr
+      echo "Retry $count/$retries exited $rc, no more retries left." > /dev/stderr
       return $rc
     fi
-    delay=$(( delay * 2 ))
+    delay=$((delay * 2))
   done
   return 0
 }
@@ -78,7 +79,7 @@ write_junit() {
     failure='<failure type="Failure">Step failed</failure>'
   fi
   TEST_NAME="[Kubermatic] ${TEST_NAME#\[Kubermatic\] }"
-  cat <<EOF > ${ARTIFACTS}/junit.$(echo $TEST_NAME|sed 's/ /_/g').xml
+  cat << EOF > ${ARTIFACTS}/junit.$(echo $TEST_NAME | sed 's/ /_/g').xml
 <?xml version="1.0" ?>
 <testsuites>
     <testsuite errors="$errors" failures="$errors" name="$TEST_NAME" tests="1">
@@ -113,14 +114,14 @@ containerize() {
 
 ensure_github_host_pubkey() {
   # check whether we already have a known_hosts entry for Github
-  if ssh-keygen -F github.com >/dev/null 2>&1; then
-    echo " [*] Github's SSH host key already present" >/dev/stderr
+  if ssh-keygen -F github.com > /dev/null 2>&1; then
+    echo " [*] Github's SSH host key already present" > /dev/stderr
   else
     local github_rsa_key
     # https://help.github.com/en/github/authenticating-to-github/githubs-ssh-key-fingerprints
     github_rsa_key="github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
 
-    echo " [*] Adding Github's SSH host key to known hosts" >/dev/stderr
+    echo " [*] Adding Github's SSH host key to known hosts" > /dev/stderr
     mkdir -p "$HOME/.ssh"
     chmod 700 "$HOME/.ssh"
     echo "$github_rsa_key" >> "$HOME/.ssh/known_hosts"
@@ -139,7 +140,7 @@ get_latest_dashboard_hash() {
   # which may fail
   local HASH
   HASH="$(retry 5 git ls-remote "$DASHBOARD_URL" "refs/heads/$FOR_BRANCH" | awk '{print $1}')"
-  echodate "The latest dashboard hash for $FOR_BRANCH is $HASH" >/dev/stderr
+  echodate "The latest dashboard hash for $FOR_BRANCH is $HASH" > /dev/stderr
   echo "$HASH"
 }
 
@@ -157,13 +158,13 @@ get_latest_dashboard_tag() {
   TMPDIR=$(mktemp -d dashboard.XXXXX)
 
   # git ls-remote cannot list tags in a meaningful way, so we have to clone the repo
-  echodate "Cloning dashboard repository to find tags in $FOR_BRANCH branch..." >/dev/stderr
+  echodate "Cloning dashboard repository to find tags in $FOR_BRANCH branch..." > /dev/stderr
   git clone -b "$FOR_BRANCH" --single-branch --depth $DEPTH "$DASHBOARD_URL" "$TMPDIR"
 
   local TAG
   TAG="$(git --git-dir $TMPDIR/.git describe --abbrev=0 --tags --first-parent)"
 
-  echodate "The latest dashboard tag in $FOR_BRANCH is $TAG" >/dev/stderr
+  echodate "The latest dashboard tag in $FOR_BRANCH is $TAG" > /dev/stderr
   echo "$TAG"
 }
 
@@ -181,29 +182,29 @@ format_dashboard() {
   local filename="$1"
   local tmpfile="$filename.tmp"
 
-  cat "$filename" | \
-    jq '(.templating.list[] | select(.type=="query") | .options) = []' | \
-    jq '(.templating.list[] | select(.type=="query") | .refresh) = 2' | \
-    jq '(.templating.list[] | select(.type=="query") | .current) = {}' | \
-    jq '(.templating.list[] | select(.type=="datasource") | .current) = {}' | \
-    jq '(.templating.list[] | select(.type=="interval") | .current) = {}' | \
-    jq '(.panels[] | select(.scopedVars!=null) | .scopedVars) = {}' | \
-    jq '(.templating.list[] | select(.type=="datasource") | .hide) = 2' | \
-    jq '(.annotations.list) = []' | \
-    jq '(.links) = []' | \
-    jq '(.refresh) = "30s"' | \
-    jq '(.time.from) = "now-6h"' | \
-    jq '(.editable) = true' | \
-    jq '(.panels[] | select(.type!="row") | .editable) = true' | \
-    jq '(.panels[] | select(.type!="row") | .transparent) = true' | \
-    jq '(.panels[] | select(.type!="row") | .timeRegions) = []' | \
-    jq '(.hideControls) = false' | \
-    jq '(.time.to) = "now"' | \
-    jq '(.timezone) = ""' | \
-    jq '(.graphTooltip) = 1' | \
-    jq 'del(.panels[] | select(.repeatPanelId!=null))' | \
-    jq 'del(.id)' | \
-    jq 'del(.iteration)' | \
+  cat "$filename" |
+    jq '(.templating.list[] | select(.type=="query") | .options) = []' |
+    jq '(.templating.list[] | select(.type=="query") | .refresh) = 2' |
+    jq '(.templating.list[] | select(.type=="query") | .current) = {}' |
+    jq '(.templating.list[] | select(.type=="datasource") | .current) = {}' |
+    jq '(.templating.list[] | select(.type=="interval") | .current) = {}' |
+    jq '(.panels[] | select(.scopedVars!=null) | .scopedVars) = {}' |
+    jq '(.templating.list[] | select(.type=="datasource") | .hide) = 2' |
+    jq '(.annotations.list) = []' |
+    jq '(.links) = []' |
+    jq '(.refresh) = "30s"' |
+    jq '(.time.from) = "now-6h"' |
+    jq '(.editable) = true' |
+    jq '(.panels[] | select(.type!="row") | .editable) = true' |
+    jq '(.panels[] | select(.type!="row") | .transparent) = true' |
+    jq '(.panels[] | select(.type!="row") | .timeRegions) = []' |
+    jq '(.hideControls) = false' |
+    jq '(.time.to) = "now"' |
+    jq '(.timezone) = ""' |
+    jq '(.graphTooltip) = 1' |
+    jq 'del(.panels[] | select(.repeatPanelId!=null))' |
+    jq 'del(.id)' |
+    jq 'del(.iteration)' |
     jq --sort-keys '.' > "$tmpfile"
 
   mv "$tmpfile" "$filename"
@@ -218,14 +219,14 @@ appendTrap() {
   signal="$2"
 
   # Have existing traps, must append
-  if [[ "$(trap -p|grep $signal)" ]]; then
-  existingHandlerName="$(trap -p|grep $signal|awk '{print $3}'|tr -d "'")"
+  if [[ "$(trap -p | grep $signal)" ]]; then
+    existingHandlerName="$(trap -p | grep $signal | awk '{print $3}' | tr -d "'")"
 
-  newHandlerName="${command}_$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 13)"
-  # Need eval to get a random func name
-  eval "$newHandlerName() { $command; $existingHandlerName; }"
-  echodate "Appending $command as trap for $signal, existing command $existingHandlerName"
-  trap $newHandlerName $signal
+    newHandlerName="${command}_$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 13)"
+    # Need eval to get a random func name
+    eval "$newHandlerName() { $command; $existingHandlerName; }"
+    echodate "Appending $command as trap for $signal, existing command $existingHandlerName"
+    trap $newHandlerName $signal
   # First trap
   else
     echodate "Using $command as trap for $signal"
@@ -235,12 +236,12 @@ appendTrap() {
 
 # returns the current time as a number of milliseconds
 nowms() {
-  echo $(( $(date +%s%N) / 1000000 ))
+  echo $(($(date +%s%N) / 1000000))
 }
 
 # returns the number of milliseconds elapsed since the given time
 elapsed() {
-  echo $(( $(nowms) - $1 ))
+  echo $(($(nowms) - $1))
 }
 
 # pushes a Prometheus metric to a pushgateway
@@ -276,12 +277,12 @@ pushElapsed() {
 
 # err print an error log to stderr
 err() {
-  echo "$(date) E: $*" >>/dev/stderr
+  echo "$(date) E: $*" >> /dev/stderr
 }
 
 # fatal can be used to print logs to stderr
 fatal() {
-  echo "$(date) F: $*" >>/dev/stderr
+  echo "$(date) F: $*" >> /dev/stderr
   exit 1
 }
 

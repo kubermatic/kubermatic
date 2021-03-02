@@ -27,10 +27,10 @@ if ! [ -x "$(command -v $velero)" ]; then
   url="https://github.com/vmware-tanzu/velero/releases/download/$version/velero-$version-linux-amd64.tar.gz"
   velero=/tmp/velero
 
-	echodate "Downloading Velero $version..."
+  echodate "Downloading Velero $version..."
   wget -O- "$url" | tar xzOf - velero-$version-linux-amd64/velero > $velero
   chmod +x $velero
-	echodate "Done!"
+  echodate "Done!"
 fi
 
 cd charts/backup/velero/

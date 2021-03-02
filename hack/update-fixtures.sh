@@ -22,9 +22,12 @@ source hack/lib.sh
 CONTAINERIZE_IMAGE=golang:1.15.1 containerize ./hack/update-fixtures.sh
 
 echodate "Updating fixtures..."
-make test-update &>/dev/null
+make test-update &> /dev/null
 echodate "Updated fixtures, starting tests..."
 
-make test || (echodate "Failed to update fixtures!"; exit 1)
+make test || (
+  echodate "Failed to update fixtures!"
+  exit 1
+)
 
 echodate "Successfully updated fixtures!"

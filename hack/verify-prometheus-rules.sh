@@ -22,13 +22,13 @@ source hack/lib.sh
 if ! [ -x "$(command -v promtool)" ]; then
   version=2.19.2
 
-	echodate "Downloading promtool v$version..."
+  echodate "Downloading promtool v$version..."
 
   curl -L https://github.com/prometheus/prometheus/releases/download/v$version/prometheus-$version.linux-amd64.tar.gz | tar -xz
   mv prometheus-$version.linux-amd64/promtool /usr/local/bin/
   rm -rf prometheus-$version.linux-amd64
 
-	echodate "Done!"
+  echodate "Done!"
 fi
 
 echodate "Rebuilding rules..."
