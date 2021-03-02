@@ -209,9 +209,8 @@ users access Alertmanager:
   <img src="images/mla-alertmanager.png" width="100%" />
 </div>
 
-For authentication, an IAP (Identity Aware Proxy) will be deployed behind Ingress for each User Cluster. When it
-receives requests from users, it will inject the `X-Scope-OrgID` request header, and forward the request to the
-Authorization proxy.
+For authentication, an IAP (Identity Aware Proxy) will be deployed behind Ingress. When it receives requests from users,
+it will authenticate the user and forward the request to the Authorization proxy.
 
 An authorization proxy will be implemented and deployed, and it will perform authorization and permission checks to make
 sure only the user who has access to the User Cluster can access the corresponding Alertmanager configuration and UI.
@@ -288,7 +287,7 @@ The MLA Controller will manage the following components in the Seed:
     - Adds / removes users to / from Grafana Organizations when users are added / removed to / from KKP Projects.
     - Configures data sources for individual User Clusters in Grafana Organizations and in the Superuser Organization.
 - IAP:
-    - Deploy and Configures one Ingress and IAP per each User Cluster.
+    - Deploy and Configures one Ingress and configures IAP per each User Cluster.
 
 ## Future Work & Enhancements
 
@@ -308,28 +307,28 @@ Alternatives Considered The Implementation section covers an alternative - “De
 valid, it is left for the future.
 
 Also, we are still looking into how
-to [migrate from Prothemeus to Cortex](https://cortexmetrics.io/docs/blocks-storage/migrate-storage-from-thanos-and-prometheus/)
-. Since we will use Cortex for User-Cluster MLA stack, it could not be integrated with the existing KKP monitoring stack
+to [migrate from Prothemeus to Cortex](https://cortexmetrics.io/docs/blocks-storage/migrate-storage-from-thanos-and-prometheus/).
+Since we will use Cortex for User-Cluster MLA stack, it could not be integrated with the existing KKP monitoring stack
 easily.
 
 ## Tasks & Effort
 
 (for the centralized storage approach)
 
-- MLA stacks in Seed
+- MLA stacks in Seed (10d)
     - Create microservice-based Loki deployment for Seed
     - Create Cortex deployment for Seed
-    - Create multi-tenant Grafana deployment (simple SQLite DB) for Seed
-- MLA resources in User Clusters
+    - Create multi-tenant Grafana deployment for Seed
+- MLA resources in User Clusters (5d)
     - Create Resources for Loki Promtail + Prometheus (sending data to Seed)
     - Add flags to Cluster CRD/API object to enable/disable Promtail + Prometheus installation in user clusters
-- MLA controller
+- MLA controller (10d)
     - Create MLA controller in KKP - Automate Grafana configuration
     - Multi-tenancy support for Grafana in the MLA controller
     - Expose dedicated MLA Gateway per each user cluster
-    - Expose dedicated Ingress and IAP per each user cluster
-- Networking
+    - Expose dedicated Ingress and configure IAP per each user cluster
+- Networking (5d)
     - Expose MLA Gateway using KKP expose strategies
     - Enable mTLS Authentication on MLA Gateways
-- Integration with KKP
+- Integration with KKP (10d)
     - Proposal for integration with the existing Seed monitoring stack and KKP installer
