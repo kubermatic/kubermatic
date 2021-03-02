@@ -207,7 +207,7 @@ spec:
             allowPrivilegeEscalation: true
         - name: liveness-probe
           imagePullPolicy: Always
-          image: '{{ Registry "docker.io" }}/k8scsi/livenessprobe:v1.1.0'
+          image: '{{ Registry "quay.io" }}/k8scsi/livenessprobe:v1.1.0'
           args:
             - --csi-address=/var/lib/csi/sockets/pluginproxy/csi.sock
           volumeMounts:
