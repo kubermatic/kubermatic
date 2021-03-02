@@ -41,6 +41,8 @@ func init() {
 }
 
 func TestCloudControllerManagerDeployment(t *testing.T) {
+	// these tests use openstack as an example for a provider that has
+	// a CCM; the logic tested here is independent of the provider itself
 	testCases := []struct {
 		name                string
 		cluster             *kubermaticv1.Cluster
@@ -60,6 +62,9 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -94,6 +99,9 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
@@ -126,6 +134,9 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				Spec: kubermaticv1.ClusterSpec{
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -163,6 +174,9 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
@@ -196,6 +210,9 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
@@ -225,6 +242,9 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 					},
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
@@ -252,6 +272,11 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				},
 				Status: kubermaticv1.ClusterStatus{
 					NamespaceName: "test",
+				},
+				Spec: kubermaticv1.ClusterSpec{
+					Cloud: kubermaticv1.CloudSpec{
+						Openstack: &kubermaticv1.OpenstackCloudSpec{},
+					},
 				},
 			},
 			kcmDeploymentConfig: KCMDeploymentConfig{

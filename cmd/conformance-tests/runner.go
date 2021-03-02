@@ -1346,7 +1346,8 @@ func supportsStorage(cluster *kubermaticv1.Cluster) bool {
 func supportsLBs(cluster *kubermaticv1.Cluster) bool {
 	return cluster.Spec.Cloud.Azure != nil ||
 		cluster.Spec.Cloud.AWS != nil ||
-		cluster.Spec.Cloud.GCP != nil
+		cluster.Spec.Cloud.GCP != nil ||
+		(cluster.Spec.Cloud.Hetzner != nil && cluster.Spec.Version.Minor() >= 18)
 }
 
 func (r *testRunner) printAllControlPlaneLogs(ctx context.Context, log *zap.SugaredLogger, clusterName string) {

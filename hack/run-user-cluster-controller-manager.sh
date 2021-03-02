@@ -20,13 +20,14 @@ cd $(dirname $0)/..
 source hack/lib.sh
 
 KUBERMATIC_DEBUG=${KUBERMATIC_DEBUG:-true}
+PPROF_PORT=${PPROF_PORT:-6600}
 
 echodate "Compiling user-cluster-controller-manager..."
 make user-cluster-controller-manager
 
 # Getting everything we need from the api
 # This script assumes you are in your cluster namespace, which you can configure via `kubectl config set-context --current --namespace=<<cluster-namespace>>`
-NAMESPACE="${NAMESPACE:-$(kubectl config view --minify | grep namespace |awk '{ print $2 }')}"
+NAMESPACE="${NAMESPACE:-$(kubectl config view --minify | grep namespace | awk '{ print $2 }')}"
 CLUSTER_NAME="$(echo $NAMESPACE | sed 's/cluster-//')"
 CLUSTER_RAW="$(kubectl get cluster $CLUSTER_NAME -o json)"
 CLUSTER_URL="$(echo $CLUSTER_RAW | jq -r '.address.url')"
@@ -36,22 +37,22 @@ if [ -z "${OWNER_EMAIL:-}" ]; then
   exit 1
 fi
 
-# We can not use the `admin-kubeconfig` secret because the user-cluster-controller-manager is
+# We cannot use the `admin-kubeconfig` secret because the user-cluster-controller-manager is
 # the one creating it in case of openshift. So we just use the internal kubeconfig and replace
-# the apiserver uurl
+# the apiserver url
 KUBECONFIG_USERCLUSTER_CONTROLLER_FILE=$(mktemp)
-ADMIN_KUBECONFIG="$(kubectl get secret internal-admin-kubeconfig -o json \
-  | jq '.data.kubeconfig' -r \
-  | base64 -d \
-  | yaml2json \
-  | jq --arg url "$CLUSTER_URL" '.clusters[0].cluster.server = $url')"
-echo $ADMIN_KUBECONFIG > $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE
+kubectl --namespace "$NAMESPACE" get secret internal-admin-kubeconfig -o json | \
+  jq '.data.kubeconfig' -r | \
+  base64 -d | \
+  yq r --tojson - | \
+  jq --arg url "$CLUSTER_URL" '.clusters[0].cluster.server = $url' \
+  > $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE
 echo "Using kubeconfig $KUBECONFIG_USERCLUSTER_CONTROLLER_FILE"
 
-OPENVPN_SERVER_SERVICE_RAW="$(kubectl get service openvpn-server -o json)"
+OPENVPN_SERVER_SERVICE_RAW="$(kubectl --namespace "$NAMESPACE" get service openvpn-server -o json)"
 
-SEED_SERVICEACCOUNT_TOKEN="$(kubectl get secret -o json \
-  | jq '.items[]|select(.metadata.annotations["kubernetes.io/service-account.name"] == "kubermatic-usercluster-controller-manager")|.data.token' -r \
+SEED_SERVICEACCOUNT_TOKEN="$(kubectl --namespace "$NAMESPACE" get secret -o json \
+  | jq -r '.items[]|select(.metadata.annotations["kubernetes.io/service-account.name"] == "kubermatic-usercluster-controller-manager")|.data.token' \
   | base64 -d)"
 SEED_KUBECONFIG=$(mktemp)
 kubectl config view  --flatten --minify -ojson \
@@ -72,6 +73,7 @@ set -x
   -kubeconfig=${KUBECONFIG_USERCLUSTER_CONTROLLER_FILE} \
   -metrics-listen-address=127.0.0.1:8087 \
   -health-listen-address=127.0.0.1:8088 \
+  -pprof-listen-address=":${PPROF_PORT}" \
   -namespace=${NAMESPACE} \
   -openvpn-server-port=${OPENVPN_SERVER_NODEPORT} \
   -cluster-url=${CLUSTER_URL} \
