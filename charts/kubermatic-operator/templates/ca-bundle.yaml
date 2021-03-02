@@ -13,15 +13,11 @@
 # limitations under the License.
 
 apiVersion: v1
-name: kubermatic
-version: 1.1.32
-appVersion: '__KUBERMATIC_TAG__'
-description: Kubermatic chart for master and/or seed clusters.
-keywords:
-- kubermatic
-home: https://www.kubermatic.io/
-sources:
-- https://github.com/kubermatic/kubermatic
-maintainers:
-- name: Loodse GmbH
-  email: support@kubermatic.com
+kind: ConfigMap
+metadata:
+  name: ca-bundle
+  labels:
+    app.kubernetes.io/name: kubermatic-operator
+data:
+  ca-bundle.pem: |
+{{ .Files.Get "static/ca-bundle.pem" | indent 4 }}
