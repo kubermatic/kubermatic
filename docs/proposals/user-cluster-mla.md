@@ -255,7 +255,7 @@ Gateway will be used to serve both Prometheus and Loki connections. Therefore, t
 a User Cluster have to be reachable from the User Cluster itself.
 
 For the initial implementation, we will leverage the existing
-KKP [expose strategies](https://docs.kubermatic.com/kubermatic/master/concepts/expose-strategy/expose_strategy/) that
+KKP [expose strategies](https://docs.kubermatic.com/kubermatic/master/architecture/concepts/expose_strategy/) that
 are used for exposing Kubernetes control plane services to user clusters for exposing the MLA Gateway. Depending on the
 strategy used in the Seed it would be one of:
 `NodePort` - would allocate one more NodePort for MLA per user cluster,
