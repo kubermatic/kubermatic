@@ -6,6 +6,27 @@
 
 **Issues**: https://github.com/kubermatic/kubermatic/issues/6321, https://github.com/kubermatic/kubermatic/issues/6397
 
+## Table of Contents
+- [Goals](#goals)
+- [Motivation and Background](#motivation-and-background)
+- [Implementation](#implementation)
+  - [User Cluster MLA Components](#user-cluster-mla-components)
+    - [Loki Promtail](#loki-promtail)
+    - [Prometheus](#prometheus)
+  - [Seed MLA Components](#seed-mla-components)
+    - [MLA Gateway](#mla-gateway)
+    - [Loki\-Distributed](#loki-distributed)
+    - [Cortex](#cortex)
+      - [Metrics Write Path](#metrics-write-path)
+      - [Metrics Read Path](#metrics-read-path)
+    - [Alertmanager](#alertmanager)
+    - [Grafana](#grafana)
+    - [Storage Backends](#storage-backends)
+  - [Connectivity Between User Cluster and Seed MLA Components](#connectivity-between-user-cluster-and-seed-mla-components)
+  - [MLA Controller in Seed\-Controller\-Manager](#mla-controller-in-seed-controller-manager)
+- [Future Work &amp; Enhancements](#future-work--enhancements)
+- [Tasks &amp; Effort](#tasks--effort)
+
 ## Goals
 
 Provide standardized Monitoring, Logging, and Alerting (MLA) services for User Clusters, that can be used for Managed
