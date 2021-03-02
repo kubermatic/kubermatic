@@ -205,9 +205,10 @@ func TestHetznerNodeSpec_MarshalJSON(t *testing.T) {
 		{
 			"case 2: should marshal when type is provided",
 			&HetznerNodeSpec{
-				Type: "test-type",
+				Type:    "test-type",
+				Network: "test",
 			},
-			"{\"type\":\"test-type\"}",
+			"{\"network\":\"test\",\"type\":\"test-type\"}",
 		},
 	}
 

@@ -177,6 +177,10 @@ type DatacenterSpecHetzner struct {
 	// Datacenter location, e.g. "nbg1-dc3". A list of existing datacenters can be found
 	// at https://wiki.hetzner.de/index.php/Rechenzentren_und_Anbindung/en
 	Datacenter string `json:"datacenter"`
+	// Network is the pre-existing Hetzner network in which the machines are running.
+	// While machines can be in multiple networks, a single one must be chosen for the
+	// HCloud CCM to work.
+	Network string `json:"network"`
 	// Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
 	// For informational purposes only.
 	Location string `json:"location"`

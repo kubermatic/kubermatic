@@ -22,6 +22,11 @@ type DatacenterSpecHetzner struct {
 	// Optional: Detailed location of the datacenter, like "Hamburg" or "Datacenter 7".
 	// For informational purposes only.
 	Location string `json:"location,omitempty"`
+
+	// Network is the pre-existing Hetzner network in which the machines are running.
+	// While machines can be in multiple networks, a single one must be chosen for the
+	// HCloud CCM to work.
+	Network string `json:"network,omitempty"`
 }
 
 // Validate validates this datacenter spec hetzner

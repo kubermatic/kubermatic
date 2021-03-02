@@ -465,7 +465,13 @@ type DigitaloceanCloudSpec struct {
 type HetznerCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	Token string `json:"token,omitempty"` // Token is used to authenticate with the Hetzner cloud API.
+	// Token is used to authenticate with the Hetzner cloud API.
+	Token string `json:"token,omitempty"`
+	// Network is the pre-existing Hetzner network in which the machines are running.
+	// While machines can be in multiple networks, a single one must be chosen for the
+	// HCloud CCM to work.
+	// If this is empty, the network configured on the datacenter will be used.
+	Network string `json:"network,omitempty"`
 }
 
 // AzureCloudSpec specifies access credentials to Azure cloud.
