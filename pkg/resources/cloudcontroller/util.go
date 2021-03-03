@@ -28,7 +28,7 @@ import (
 // ExternalCloudControllerFeatureSupported checks if the
 func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster) bool {
 	switch {
-	case dc.Spec.Openstack != nil:
+	case cluster.Spec.Cloud.Openstack != nil:
 		// When using OpenStack external CCM with Open Telekom Cloud the creation
 		// of LBs fail as documented in the issue below:
 		// https://github.com/kubernetes/cloud-provider-openstack/issues/960
@@ -43,8 +43,8 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 		// introduced in Kubermatic.
 		return !isOTC(dc.Spec.Openstack) && OpenStackCloudControllerSupported(cluster.Spec.Version)
 
-	case dc.Spec.Hetzner != nil:
-		return cluster.Spec.Version.Minor() >= 18
+	case cluster.Spec.Cloud.Hetzner != nil:
+		return dc.Spec.Hetzner.Network != "" && cluster.Spec.Version.Minor() >= 18
 
 	default:
 		return false
