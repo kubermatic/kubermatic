@@ -28,9 +28,15 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
+	"k8s.io/client-go/tools/clientcmd"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
+	"k8s.io/client-go/kubernetes/scheme"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/admin"
@@ -580,6 +586,8 @@ func (r *TestClient) GetClusterHealthStatus(projectID, dc, clusterID string) (*a
 	apiClusterHealth.MachineController = convertHealthStatus(response.Payload.MachineController)
 	apiClusterHealth.Scheduler = convertHealthStatus(response.Payload.Scheduler)
 	apiClusterHealth.UserClusterControllerManager = convertHealthStatus(response.Payload.UserClusterControllerManager)
+	apiClusterHealth.GatekeeperController = convertHealthStatus(response.Payload.GatekeeperController)
+	apiClusterHealth.GatekeeperAudit = convertHealthStatus(response.Payload.GatekeeperAudit)
 
 	return apiClusterHealth, nil
 }
@@ -598,6 +606,26 @@ func (r *TestClient) WaitForClusterHealthy(projectID, dc, clusterID string) erro
 	}
 
 	r.test.Logf("Cluster became healthy after %v", time.Since(before))
+	return nil
+}
+
+func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID string) error {
+	timeout := 5 * time.Minute
+	before := time.Now()
+
+	r.test.Logf("Waiting %v for OPA enabled cluster %s to become healthy...", timeout, clusterID)
+
+	if !WaitFor(5*time.Second, timeout, func() bool {
+		healthStatus, _ := r.GetClusterHealthStatus(projectID, dc, clusterID)
+		return IsHealthyCluster(healthStatus) &&
+			healthStatus.GatekeeperController == kubermaticv1.HealthStatusUp &&
+			healthStatus.GatekeeperAudit == kubermaticv1.HealthStatusUp
+
+	}) {
+		return errors.New("OPA enabled cluster did not become healthy")
+	}
+
+	r.test.Logf("OPA enabled cluster became healthy after %v", time.Since(before))
 	return nil
 }
 
@@ -1286,4 +1314,50 @@ func (r *TestClient) GetKubeconfig(dc, projectID, clusterID string) (string, err
 	}
 
 	return string(conf.Payload), nil
+}
+
+func (r *TestClient) GetUserClusterClient(dc, projectID, clusterID string) (ctrlruntimeclient.Client, error) {
+	userClusterKubeconfig, err := r.GetKubeconfig(dc, projectID, clusterID)
+	if err != nil {
+		return nil, err
+	}
+	config, err := clientcmd.RESTConfigFromKubeConfig([]byte(userClusterKubeconfig))
+	if err != nil {
+		return nil, err
+	}
+
+	return ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: scheme.Scheme})
+}
+
+// GetConstraint gets the constraint with the given name, project and cluster; it does not perform any
+// retries if the API returns errors.
+func (r *TestClient) GetConstraint(projectID, clusterID, name string) (*apiv2.Constraint, error) {
+	params := &project.GetConstraintParams{
+		ProjectID: projectID,
+		ClusterID: clusterID,
+		Name:      name,
+	}
+
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	project, err := r.client.Project.GetConstraint(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertConstraint(project.Payload)
+}
+
+func convertConstraint(constraint *models.Constraint) (*apiv2.Constraint, error) {
+	apiConstraint := &apiv2.Constraint{}
+	apiConstraint.Name = constraint.Name
+	apiConstraint.Spec = kubermaticv1.ConstraintSpec{
+		ConstraintType: constraint.Spec.ConstraintType,
+	}
+
+	return apiConstraint, nil
 }

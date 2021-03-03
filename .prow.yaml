@@ -1256,6 +1256,46 @@ presubmits:
             memory: 6Gi
 
   #########################################################
+  # opa e2e tests
+  #########################################################
+
+  - name: pre-kubermatic-opa-e2e
+    run_if_changed: "(go.mod|go.sum/pkg/|.prow.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-digitalocean: "true"
+      preset-kubeconfig-ci: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-vault: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.23
+          command:
+            - "./hack/ci/run-opa-e2e-tests.sh"
+          env:
+            - name: VERSION_TO_TEST
+              value: v1.20.2
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
+  #########################################################
   # misc
   #########################################################
 
