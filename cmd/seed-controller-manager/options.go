@@ -37,8 +37,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
-	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	"k8c.io/kubermatic/v2/pkg/webhook"
 
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,7 +85,7 @@ type controllerRunOptions struct {
 	apiServerEndpointReconcilingDisabled             bool
 	controllerManagerDefaultReplicas                 int
 	schedulerDefaultReplicas                         int
-	validationWebhook                                validation.WebhookOpts
+	admissionWebhook                                 webhook.Options
 	concurrentClusterUpdate                          int
 	addonEnforceInterval                             int
 
@@ -156,11 +156,11 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
 	flag.Var(&c.tunnelingAgentIP, "tunneling-agent-ip", "The address used by the tunneling agents.")
-	c.validationWebhook.AddFlags(flag.CommandLine, true)
+	c.admissionWebhook.AddFlags(flag.CommandLine, true)
 	addFlags(flag.CommandLine)
 	flag.Parse()
 
-	if err := c.validationWebhook.Validate(); err != nil {
+	if err := c.admissionWebhook.Validate(); err != nil {
 		return c, fmt.Errorf("invalid admission webhook configuration: %v", err)
 	}
 
