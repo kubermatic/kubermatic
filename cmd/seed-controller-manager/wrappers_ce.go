@@ -23,7 +23,7 @@ import (
 	"flag"
 
 	"k8c.io/kubermatic/v2/pkg/provider"
-	seedvalidation "k8c.io/kubermatic/v2/pkg/validation/seed"
+	seedwebhook "k8c.io/kubermatic/v2/pkg/webhook/seed"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -36,8 +36,8 @@ func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, opt
 	return provider.SeedGetterFactory(ctx, client, options.dc, options.namespace)
 }
 
-func seedValidationHandler(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (seedvalidation.AdmissionHandler, error) {
-	return (&seedvalidation.ValidationHandlerBuilder{}).
+func seedValidationHandler(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (seedwebhook.AdmissionHandler, error) {
+	return (&seedwebhook.ValidationHandlerBuilder{}).
 		Client(client).
 		SeedName(options.dc).
 		WorkerName(options.workerName).
