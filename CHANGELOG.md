@@ -1,5 +1,27 @@
 # Kubermatic 2.16
 
+## [v2.16.3](https://github.com/kubermatic/dashboard/releases/tag/v2.16.3)
+
+This version includes significant improvements to Hetzner userclusters. Please refer to the amended [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16/upgrading/2.15_to_2.16/) for more information.
+
+### Misc
+
+- Add support for Hetzner CCM ([#6588](https://github.com/kubermatic/kubermatic/issues/6588))
+- Update Hetzner CSI ([#6615](https://github.com/kubermatic/kubermatic/issues/6615))
+- Update CSI drivers ([#6594](https://github.com/kubermatic/kubermatic/issues/6594))
+- Increase default gatekeeper webhook timeout from 2 to 10 seconds, and add option in cluster settings to configure it ([#6603](https://github.com/kubermatic/kubermatic/issues/6603))
+- Remove duplicate Kubeadm hints from cluster page ([#3114](https://github.com/kubermatic/dashboard/issues/3114))
+- Change vSphere's diskSizeGB option from optional to required ([#3121](https://github.com/kubermatic/dashboard/issues/3121))
+
+### Bugfixes
+
+- Fix a bug in OPA integration where deleting a Constraint Template in the seed cluster, when the user cluster Constraint Template is already deleted, caused the deletion to get stuck. ([#6582](https://github.com/kubermatic/kubermatic/issues/6582))
+- Fix a bug in OPA integration where creating a cluster with OPA integration enabled didn't trigger the Constraint Template reconcile loop ([#6582](https://github.com/kubermatic/kubermatic/issues/6582))
+- Fix a bug with Kubermatic constraints delete getting stuck when corresponding user cluster constraint is missing ([#6598](https://github.com/kubermatic/kubermatic/issues/6598))
+
+
+
+
 ## [v2.16.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.2)
 
 ### Misc
