@@ -51,7 +51,7 @@ const (
 
 type controllerRunOptions struct {
 	internalAddr            string
-	admissionWebhook        webhook.WebhookOpts
+	admissionWebhook        webhook.Options
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 	featureGates            features.FeatureGate

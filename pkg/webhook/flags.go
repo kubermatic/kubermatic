@@ -26,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 )
 
-type WebhookOpts struct {
+type Options struct {
 	listenHost string
 	listenPort int
 	certDir    string
@@ -38,7 +38,7 @@ type WebhookOpts struct {
 	KeyFile       string
 }
 
-func (opts *WebhookOpts) AddFlags(fs *flag.FlagSet, includeDeprecatedFlags bool) {
+func (opts *Options) AddFlags(fs *flag.FlagSet, includeDeprecatedFlags bool) {
 	if includeDeprecatedFlags {
 		fs.StringVar(&opts.ListenAddress, "seed-admissionwebhook-listen-address", ":8100", "The listen address for the seed amission webhook (Deprecated)")
 		fs.StringVar(&opts.CertFile, "seed-admissionwebhook-cert-file", "", "The location of the certificate file (Deprecated)")
@@ -53,11 +53,11 @@ func (opts *WebhookOpts) AddFlags(fs *flag.FlagSet, includeDeprecatedFlags bool)
 
 // Configured() must be called after the Validate() function has normalized the
 // deprecated flags.
-func (opts *WebhookOpts) Configured() bool {
+func (opts *Options) Configured() bool {
 	return opts.certName != "" && opts.keyName != ""
 }
 
-func (opts *WebhookOpts) Validate() error {
+func (opts *Options) Validate() error {
 	// translate deprecated flag into new structure
 	if opts.ListenAddress != "" {
 		host, port, err := net.SplitHostPort(opts.ListenAddress)
@@ -91,7 +91,7 @@ func (opts *WebhookOpts) Validate() error {
 	return nil
 }
 
-func (opts *WebhookOpts) Configure(s *webhook.Server) error {
+func (opts *Options) Configure(s *webhook.Server) error {
 	s.CertDir = opts.certDir
 	s.CertName = opts.certName
 	s.KeyName = opts.keyName

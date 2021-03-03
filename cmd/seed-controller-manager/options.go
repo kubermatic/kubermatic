@@ -85,7 +85,7 @@ type controllerRunOptions struct {
 	apiServerEndpointReconcilingDisabled             bool
 	controllerManagerDefaultReplicas                 int
 	schedulerDefaultReplicas                         int
-	admissionWebhook                                 webhook.WebhookOpts
+	admissionWebhook                                 webhook.Options
 	concurrentClusterUpdate                          int
 	addonEnforceInterval                             int
 
