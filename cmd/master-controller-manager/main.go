@@ -51,7 +51,7 @@ const (
 
 type controllerRunOptions struct {
 	internalAddr            string
-	validationHook          webhook.WebhookOpts
+	admissionWebhook        webhook.WebhookOpts
 	enableLeaderElection    bool
 	leaderElectionNamespace string
 	featureGates            features.FeatureGate
@@ -82,7 +82,7 @@ func main() {
 	pprofOpts.AddFlags(flag.CommandLine)
 	logOpts := kubermaticlog.NewDefaultOptions()
 	logOpts.AddFlags(flag.CommandLine)
-	runOpts.validationHook.AddFlags(flag.CommandLine, true)
+	runOpts.admissionWebhook.AddFlags(flag.CommandLine, true)
 	flag.StringVar(&runOpts.workerName, "worker-name", "", "The name of the worker that will only processes resources with label=worker-name.")
 	flag.IntVar(&ctrlCtx.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&runOpts.internalAddr, "internal-address", "127.0.0.1:8085", "The address on which the /metrics endpoint will be served.")
@@ -109,7 +109,7 @@ func main() {
 
 	cli.Hello(log, "Master Controller-Manager", logOpts.Debug, nil)
 
-	if err := runOpts.validationHook.Validate(); err != nil {
+	if err := runOpts.admissionWebhook.Validate(); err != nil {
 		log.Fatalw("invalid admission webhook configuration", zap.Error(err))
 	}
 
@@ -163,8 +163,8 @@ func main() {
 		log.Fatalw("failed to construct seedKubeconfigGetter", zap.Error(err))
 	}
 
-	if runOpts.validationHook.Configured() {
-		if err := runOpts.validationHook.Configure(mgr.GetWebhookServer()); err != nil {
+	if runOpts.admissionWebhook.Configured() {
+		if err := runOpts.admissionWebhook.Configure(mgr.GetWebhookServer()); err != nil {
 			log.Fatalw("failed to configure admission webhook server", zap.Error(err))
 		}
 
