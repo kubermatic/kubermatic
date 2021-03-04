@@ -38,7 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster"
+	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
