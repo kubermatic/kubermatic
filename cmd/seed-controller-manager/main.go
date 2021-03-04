@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/pprof"
 	"k8c.io/kubermatic/v2/pkg/util/cli"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+	clustermutation "k8c.io/kubermatic/v2/pkg/webhook/cluster/mutation"
 	clustervalidation "k8c.io/kubermatic/v2/pkg/webhook/cluster/validation"
 
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -170,8 +171,10 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 
 		// Setup the admission handler for kubermatic Seed CRDs
 		h.SetupWebhookWithManager(mgr)
-		// Setup the admission handler for kubermatic Cluster CRDs
+		// Setup the validation admission handler for kubermatic Cluster CRDs
 		clustervalidation.NewAdmissionHandler(mgr.GetClient(), options.featureGates).SetupWebhookWithManager(mgr)
+		// Setup the mutation admission handler for kubermatic Cluster CRDs
+		clustermutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 	}
 
 	ctrlCtx := &controllerContext{
