@@ -96,6 +96,7 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *operatorv1alpha1.Kubermatic
 		return ClusterAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
 			failurePolicy := admissionregistrationv1.Fail
+			reinvocationPolicy := admissionregistrationv1.NeverReinvocationPolicy
 			sideEffects := admissionregistrationv1.SideEffectClassNone
 			scope := admissionregistrationv1.ClusterScope
 
@@ -110,6 +111,7 @@ func ClusterMutatingWebhookConfigurationCreator(cfg *operatorv1alpha1.Kubermatic
 					AdmissionReviewVersions: []string{"v1beta1"},
 					MatchPolicy:             &matchPolicy,
 					FailurePolicy:           &failurePolicy,
+					ReinvocationPolicy:      &reinvocationPolicy,
 					SideEffects:             &sideEffects,
 					TimeoutSeconds:          pointer.Int32Ptr(30),
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
