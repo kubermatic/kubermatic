@@ -67,7 +67,8 @@ func ClusterAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguratio
 							Port:      pointer.Int32Ptr(443),
 						},
 					},
-					ObjectSelector: &metav1.LabelSelector{},
+					ObjectSelector:    &metav1.LabelSelector{},
+					NamespaceSelector: &metav1.LabelSelector{},
 					Rules: []admissionregistrationv1.RuleWithOperations{
 						{
 							Rule: admissionregistrationv1.Rule{
