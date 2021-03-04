@@ -37,7 +37,7 @@ const (
 	ClusterAdmissionWebhookName = "kubermatic-clusters"
 )
 
-func ClusterAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func ClusterValidatingWebhookConfigurationCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return ClusterAdmissionWebhookName, func(hook *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			matchPolicy := admissionregistrationv1.Exact
@@ -78,6 +78,58 @@ func ClusterAdmissionWebhookCreator(cfg *operatorv1alpha1.KubermaticConfiguratio
 							},
 							Operations: []admissionregistrationv1.OperationType{
 								admissionregistrationv1.Create,
+								admissionregistrationv1.Update,
+							},
+						},
+					},
+				},
+			}
+
+			return hook, nil
+		}
+	}
+}
+
+func ClusterMutatingWebhookConfigurationCreator(cfg *operatorv1alpha1.KubermaticConfiguration, client ctrlruntimeclient.Client) reconciling.NamedMutatingWebhookConfigurationCreatorGetter {
+	return func() (string, reconciling.MutatingWebhookConfigurationCreator) {
+		return ClusterAdmissionWebhookName, func(hook *admissionregistrationv1.MutatingWebhookConfiguration) (*admissionregistrationv1.MutatingWebhookConfiguration, error) {
+			matchPolicy := admissionregistrationv1.Exact
+			failurePolicy := admissionregistrationv1.Fail
+			sideEffects := admissionregistrationv1.SideEffectClassNone
+			scope := admissionregistrationv1.ClusterScope
+
+			ca, err := common.WebhookCABundle(cfg, client)
+			if err != nil {
+				return nil, fmt.Errorf("cannot find Seed Admission CA bundle: %v", err)
+			}
+
+			hook.Webhooks = []admissionregistrationv1.MutatingWebhook{
+				{
+					Name:                    "clusters.kubermatic.io", // this should be a FQDN
+					AdmissionReviewVersions: []string{"v1beta1"},
+					MatchPolicy:             &matchPolicy,
+					FailurePolicy:           &failurePolicy,
+					SideEffects:             &sideEffects,
+					TimeoutSeconds:          pointer.Int32Ptr(30),
+					ClientConfig: admissionregistrationv1.WebhookClientConfig{
+						CABundle: ca,
+						Service: &admissionregistrationv1.ServiceReference{
+							Name:      clusterWebhookServiceName,
+							Namespace: cfg.Namespace,
+							Path:      pointer.StringPtr("/mutate-kubermatic-k8s-io-cluster"),
+							Port:      pointer.Int32Ptr(443),
+						},
+					},
+					ObjectSelector: &metav1.LabelSelector{},
+					Rules: []admissionregistrationv1.RuleWithOperations{
+						{
+							Rule: admissionregistrationv1.Rule{
+								APIGroups:   []string{kubermaticv1.GroupName},
+								APIVersions: []string{"*"},
+								Resources:   []string{"clusters"},
+								Scope:       &scope,
+							},
+							Operations: []admissionregistrationv1.OperationType{
 								admissionregistrationv1.Update,
 							},
 						},
