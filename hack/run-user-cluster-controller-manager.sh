@@ -71,6 +71,7 @@ echodate "Starting user-cluster-controller-manager..."
 set -x
 ./_build/user-cluster-controller-manager \
   -kubeconfig=${KUBECONFIG_USERCLUSTER_CONTROLLER_FILE} \
+  -ca-bundle=charts/kubermatic-operator/static/ca-bundle.pem \
   -metrics-listen-address=127.0.0.1:8087 \
   -health-listen-address=127.0.0.1:8088 \
   -pprof-listen-address=":${PPROF_PORT}" \

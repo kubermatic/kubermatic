@@ -53,8 +53,8 @@ OIDC_ISSUER_URL="${OIDC_ISSUER_URL:-$(vault kv get -field=oidc-issuer-url dev/se
 OIDC_ISSUER_CLIENT_ID="${OIDC_ISSUER_CLIENT_ID:-$(vault kv get -field=oidc-issuer-client-id dev/seed-clusters/dev.kubermatic.io)}"
 OIDC_ISSUER_CLIENT_SECRET="${OIDC_ISSUER_CLIENT_SECRET:-$(vault kv get -field=oidc-issuer-client-secret dev/seed-clusters/dev.kubermatic.io)}"
 
-if [ -n "${CA_BUNDLE:-}" ]; then
-  CTRL_EXTRA_ARGS="$CTRL_EXTRA_ARGS -ca-bundle=$CA_BUNDLE"
+if [ -z "${CA_BUNDLE:-}" ]; then
+  CA_BUNDLE=charts/kubermatic-operator/static/ca-bundle.pem
 fi
 
 echodate "Starting seed-controller-manager..."
@@ -64,6 +64,7 @@ set -x
   -enable-leader-election=false \
   -datacenter-name=europe-west3-c \
   -kubeconfig=$KUBECONFIG \
+  -ca-bundle=$CA_BUNDLE \
   -versions=charts/kubermatic/static/master/versions.yaml \
   -updates=charts/kubermatic/static/master/updates.yaml \
   -kubernetes-addons-path=addons \

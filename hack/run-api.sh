@@ -64,6 +64,7 @@ echodate "Starting API..."
 set -x
 ./_build/kubermatic-api $API_EXTRA_ARGS \
   -kubeconfig=$KUBECONFIG \
+  -ca-bundle=charts/kubermatic-operator/static/ca-bundle.pem \
   -versions=charts/kubermatic/static/master/versions.yaml \
   -updates=charts/kubermatic/static/master/updates.yaml \
   -master-resources=charts/kubermatic/static/master \
