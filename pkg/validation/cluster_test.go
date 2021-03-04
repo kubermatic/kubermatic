@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8s.io/utils/pointer"
 )
 
 var (
@@ -154,6 +155,78 @@ func TestValidateUpdateWindow(t *testing.T) {
 			// loosely validate the returned error message
 			if test.err != nil && !strings.Contains(err.Error(), test.err.Error()) {
 				t.Errorf("Extected err to contain \"%v\", but got \"%v\"", test.err, err)
+			}
+		})
+	}
+}
+
+func TestValidateLeaderElectionSettings(t *testing.T) {
+	tests := []struct {
+		name                   string
+		leaderElectionSettings kubermaticv1.LeaderElectionSettings
+		wantErr                bool
+	}{
+		{
+			name:                   "empty leader election settings",
+			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{},
+			wantErr:                false,
+		},
+		{
+			name: "valid leader election settings",
+			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
+				LeaseDurationSeconds: pointer.Int32Ptr(int32(10)),
+				RenewDeadlineSeconds: pointer.Int32Ptr(int32(5)),
+				RetryPeriodSeconds:   pointer.Int32Ptr(int32(10)),
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid leader election settings",
+			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
+				LeaseDurationSeconds: pointer.Int32Ptr(int32(5)),
+				RenewDeadlineSeconds: pointer.Int32Ptr(int32(10)),
+				RetryPeriodSeconds:   pointer.Int32Ptr(int32(10)),
+			},
+			wantErr: true,
+		},
+		{
+			name: "lease duration only",
+			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
+				LeaseDurationSeconds: pointer.Int32Ptr(int32(10)),
+			},
+			wantErr: true,
+		},
+		{
+			name: "lease duration only",
+			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
+				RenewDeadlineSeconds: pointer.Int32Ptr(int32(10)),
+			},
+			wantErr: true,
+		},
+		{
+			name: "retry period only",
+			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
+				RetryPeriodSeconds: pointer.Int32Ptr(int32(10)),
+			},
+			wantErr: false,
+		},
+		{
+			name: "negative value",
+			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
+				LeaseDurationSeconds: pointer.Int32Ptr(int32(10)),
+				RenewDeadlineSeconds: pointer.Int32Ptr(int32(-5)),
+				RetryPeriodSeconds:   pointer.Int32Ptr(int32(10)),
+			},
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Logf("Validating: %+v", test.leaderElectionSettings)
+			err := ValidateLeaderElectionSettings(test.leaderElectionSettings)
+
+			if test.wantErr == (err == nil) {
+				t.Errorf("Want error: %t, but got: \"%v\"", test.wantErr, err)
 			}
 		})
 	}

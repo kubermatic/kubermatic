@@ -486,3 +486,22 @@ func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
 	}
 	return nil
 }
+
+func ValidateLeaderElectionSettings(l kubermaticv1.LeaderElectionSettings) error {
+	if l.LeaseDurationSeconds != nil && *l.LeaseDurationSeconds < 0 {
+		return fmt.Errorf("lease duration seconds cannot be negative: %d", *l.LeaseDurationSeconds)
+	}
+	if l.RenewDeadlineSeconds != nil && *l.RenewDeadlineSeconds < 0 {
+		return fmt.Errorf("renew deadline seconds cannot be negative: %d", *l.RenewDeadlineSeconds)
+	}
+	if l.RetryPeriodSeconds != nil && *l.RetryPeriodSeconds < 0 {
+		return fmt.Errorf("retry period seconds cannot be negative: %d", *l.RetryPeriodSeconds)
+	}
+	if lds, rds := l.LeaseDurationSeconds, l.RenewDeadlineSeconds; (lds == nil) != (rds == nil) {
+		return errors.New("leader election lease duration and renew deadline should be either both specified or unspecified")
+	}
+	if lds, rds := l.LeaseDurationSeconds, l.RenewDeadlineSeconds; lds != nil && *lds < *rds {
+		return errors.New("control plane leader election renew deadline cannot be smaller than lease duration")
+	}
+	return nil
+}
