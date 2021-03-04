@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cluster
+package validation
 
 import (
 	"context"
@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-// AdmissionHandler for Kubermatic Cluster CRD.
+// AdmissionHandler for validating Kubermatic Cluster CRD.
 type AdmissionHandler struct {
 	log      logr.Logger
 	decoder  *admission.Decoder
@@ -44,7 +44,7 @@ type AdmissionHandler struct {
 	client   ctrlruntimeclient.Client
 }
 
-// NewAdmissionHandler returns a new cluster.AdmissionHandler.
+// NewAdmissionHandler returns a new cluster validation AdmissionHandler.
 func NewAdmissionHandler(client ctrlruntimeclient.Client, features features.FeatureGate) *AdmissionHandler {
 	return &AdmissionHandler{
 		features: features,
