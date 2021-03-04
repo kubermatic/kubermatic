@@ -90,15 +90,24 @@ func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
 }
 
 func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
+	leaderElectionSettings := ctrlCtx.runOptions.controlPlaneLeaderElectionSettings()
 	defaultCompontentsOverrides := kubermaticv1.ComponentSettings{
 		Apiserver: kubermaticv1.APIServerSettings{
 			DeploymentSettings:          kubermaticv1.DeploymentSettings{Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.apiServerDefaultReplicas))},
 			EndpointReconcilingDisabled: utilpointer.BoolPtr(ctrlCtx.runOptions.apiServerEndpointReconcilingDisabled),
 		},
-		ControllerManager: kubermaticv1.DeploymentSettings{
-			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.controllerManagerDefaultReplicas))},
-		Scheduler: kubermaticv1.DeploymentSettings{
-			Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.schedulerDefaultReplicas))},
+		ControllerManager: kubermaticv1.ControllerSettings{
+			DeploymentSettings: kubermaticv1.DeploymentSettings{
+				Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.controllerManagerDefaultReplicas)),
+			},
+			LeaderElectionSettings: leaderElectionSettings,
+		},
+		Scheduler: kubermaticv1.ControllerSettings{
+			DeploymentSettings: kubermaticv1.DeploymentSettings{
+				Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.schedulerDefaultReplicas)),
+			},
+			LeaderElectionSettings: leaderElectionSettings,
+		},
 	}
 	return clustercomponentdefaulter.Add(
 		ctrlCtx.ctx,
