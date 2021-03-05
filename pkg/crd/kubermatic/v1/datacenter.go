@@ -219,6 +219,8 @@ type DatacenterSpecOpenstack struct {
 	// This setting defaults to false.
 	TrustDevicePath      *bool                         `json:"trust_device_path"`
 	NodeSizeRequirements OpenstackNodeSizeRequirements `json:"node_size_requirements"`
+	// Optional: List of enabled flavors for the given datacenter
+	EnabledFlavors []string `json:"enabled_flavors"`
 }
 
 type OpenstackNodeSizeRequirements struct {

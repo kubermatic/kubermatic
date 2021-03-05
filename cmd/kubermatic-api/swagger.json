@@ -15100,6 +15100,14 @@
           },
           "x-go-name": "DNSServers"
         },
+        "enabled_flavors": {
+          "description": "Optional: List of enabled flavors for the given datacenter",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "EnabledFlavors"
+        },
         "enforce_floating_ip": {
           "description": "Optional",
           "type": "boolean",

@@ -277,7 +277,9 @@ func GetOpenstackSizes(username, password, tenant, tenantID, domain, datacenterN
 			IsPublic: flavor.IsPublic,
 		}
 		if MeetsOpenstackNodeSizeRequirement(apiSize, datacenter.Spec.Openstack.NodeSizeRequirements) {
-			apiSizes = append(apiSizes, apiSize)
+			if IsFlavorEnabled(apiSize, datacenter.Spec.Openstack.EnabledFlavors) {
+				apiSizes = append(apiSizes, apiSize)
+			}
 		}
 	}
 
@@ -315,6 +317,19 @@ func MeetsOpenstackNodeSizeRequirement(apiSize apiv1.OpenstackSize, requirements
 		return false
 	}
 	return true
+}
+
+func IsFlavorEnabled(apiSize apiv1.OpenstackSize, enabledFlavors []string) bool {
+	if len(enabledFlavors) == 0 {
+		// Flavors are enabled if no restrictions were made.
+		return true
+	}
+	for _, flavor := range enabledFlavors {
+		if flavor == apiSize.Slug {
+			return true
+		}
+	}
+	return false
 }
 
 func GetOpenstackSecurityGroups(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password, tenant, tenantID, domain, datacenterName string) ([]apiv1.OpenstackSecurityGroup, error) {

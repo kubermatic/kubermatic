@@ -25,6 +25,9 @@ type DatacenterSpecOpenstack struct {
 	// Used for automatic network creation
 	DNSServers []string `json:"dns_servers"`
 
+	// Optional: List of enabled flavors for the given datacenter
+	EnabledFlavors []string `json:"enabled_flavors"`
+
 	// Optional
 	EnforceFloatingIP bool `json:"enforce_floating_ip,omitempty"`
 
