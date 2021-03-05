@@ -139,6 +139,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 							UseOctavia:           pointer.BoolPtr(true),
 							DNSServers:           []string{},
 							TrustDevicePath:      pointer.BoolPtr(false),
+							EnabledFlavors:       []string{},
 						},
 						Packet: &kubermaticv1.DatacenterSpecPacket{
 							Facilities: []string{},
