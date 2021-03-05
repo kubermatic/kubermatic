@@ -90,7 +90,6 @@ func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
 }
 
 func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
-	leaderElectionSettings := ctrlCtx.runOptions.controlPlaneLeaderElectionSettings()
 	defaultCompontentsOverrides := kubermaticv1.ComponentSettings{
 		Apiserver: kubermaticv1.APIServerSettings{
 			DeploymentSettings:          kubermaticv1.DeploymentSettings{Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.apiServerDefaultReplicas))},
@@ -100,13 +99,11 @@ func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
 			DeploymentSettings: kubermaticv1.DeploymentSettings{
 				Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.controllerManagerDefaultReplicas)),
 			},
-			LeaderElectionSettings: leaderElectionSettings,
 		},
 		Scheduler: kubermaticv1.ControllerSettings{
 			DeploymentSettings: kubermaticv1.DeploymentSettings{
 				Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.schedulerDefaultReplicas)),
 			},
-			LeaderElectionSettings: leaderElectionSettings,
 		},
 	}
 	return clustercomponentdefaulter.Add(
