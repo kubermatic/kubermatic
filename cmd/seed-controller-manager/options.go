@@ -88,9 +88,9 @@ type controllerRunOptions struct {
 	validationWebhook                                validation.WebhookOpts
 	concurrentClusterUpdate                          int
 	addonEnforceInterval                             int
-	controlPlaneLeaderElectLeaseDurationSeconds      int
-	controlPlaneLeaderElectRenewDeadlineSeconds      int
-	controlPlaneLeaderElectRetryPeriodSeconds        int
+	userClusterLeaderElectLeaseDurationSeconds       int
+	userClusterLeaderElectRenewDeadlineSeconds       int
+	userClusterLeaderElectRetryPeriodSeconds         int
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -161,9 +161,9 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
-	flag.IntVar(&c.controlPlaneLeaderElectLeaseDurationSeconds, "control-plane-leader-elect-lease-duration", 0, "The lease duration in seconds used by control plane components using leader election (i.e. controller-manager and scheduler). The default value for the component is used when equal or less than 0.")
-	flag.IntVar(&c.controlPlaneLeaderElectRenewDeadlineSeconds, "control-plane-leader-elect-renew-deadline", 0, "The lease renew deadline in seconds by control plane components using leader election (i.e. controller-manager and scheduler). Should be smaller or equal than control-plane-leader-elect-lease-duration. The default value for the component is used when equal or less than 0.")
-	flag.IntVar(&c.controlPlaneLeaderElectRetryPeriodSeconds, "control-plane-leader-elect-retry-period", 0, "The duration in seconds that control plane components using leader election (i.e. controller-manager and scheduler) should wait between attempting acquisition and renewal of a leadership. The default value for the component is used when equal or less than 0.")
+	flag.IntVar(&c.userClusterLeaderElectLeaseDurationSeconds, "user-cluster-leader-elect-lease-duration", 0, "The lease duration in seconds used by user cluster control plane components having leader election (i.e. controller-manager and scheduler). The default value for the component is used when equal or less than 0.")
+	flag.IntVar(&c.userClusterLeaderElectRenewDeadlineSeconds, "control-plane-leader-elect-renew-deadline", 0, "The lease renew deadline in seconds used by user cluster control plane components having leader election (i.e. controller-manager and scheduler). Should be smaller or equal than control-plane-leader-elect-lease-duration. The default value for the component is used when equal or less than 0.")
+	flag.IntVar(&c.userClusterLeaderElectRetryPeriodSeconds, "control-plane-leader-elect-retry-period", 0, "The duration in seconds that user cluster control plane components having leader election (i.e. controller-manager and scheduler) should wait between attempting acquisition and renewal of a leadership. The default value for the component is used when equal or less than 0.")
 	flag.Var(&c.tunnelingAgentIP, "tunneling-agent-ip", "The address used by the tunneling agents.")
 	c.validationWebhook.AddFlags(flag.CommandLine, true)
 	addFlags(flag.CommandLine)
@@ -302,9 +302,9 @@ func (o controllerRunOptions) controlPlaneLeaderElectionSettings() kubermaticv1.
 		return nil
 	}
 	return kubermaticv1.LeaderElectionSettings{
-		LeaseDurationSeconds: toPointerIfPositive(o.controlPlaneLeaderElectLeaseDurationSeconds),
-		RenewDeadlineSeconds: toPointerIfPositive(o.controlPlaneLeaderElectRenewDeadlineSeconds),
-		RetryPeriodSeconds:   toPointerIfPositive(o.controlPlaneLeaderElectRetryPeriodSeconds),
+		LeaseDurationSeconds: toPointerIfPositive(o.userClusterLeaderElectLeaseDurationSeconds),
+		RenewDeadlineSeconds: toPointerIfPositive(o.userClusterLeaderElectRenewDeadlineSeconds),
+		RetryPeriodSeconds:   toPointerIfPositive(o.userClusterLeaderElectRetryPeriodSeconds),
 	}
 }
 
