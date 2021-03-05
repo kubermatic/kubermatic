@@ -197,7 +197,7 @@ func TestValidateLeaderElectionSettings(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "lease duration only",
+			name: "renew duration only",
 			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
 				RenewDeadlineSeconds: pointer.Int32Ptr(int32(10)),
 			},
