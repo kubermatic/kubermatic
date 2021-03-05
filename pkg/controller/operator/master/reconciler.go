@@ -50,7 +50,6 @@ type Reconciler struct {
 	scheme     *runtime.Scheme
 	workerName string
 	versions   kubermaticversion.Versions
-	namespace  string
 }
 
 // Reconcile acts upon requests and will restore the state of resources

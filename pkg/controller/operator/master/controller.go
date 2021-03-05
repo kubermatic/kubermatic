@@ -63,7 +63,6 @@ func Add(
 		log:        log.Named(ControllerName),
 		workerName: workerName,
 		versions:   kubermatic.NewDefaultVersions(),
-		namespace:  namespace,
 	}
 
 	ctrlOptions := controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers}
