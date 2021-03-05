@@ -388,13 +388,15 @@ type LeaderElectionSettings struct {
 	// LeaseDurationSeconds is the duration in seconds that non-leader candidates
 	// will wait to force acquire leadership. This is measured against time of
 	// last observed ack.
+	// +optional
 	LeaseDurationSeconds *int32 `json:"leaseDurationSeconds,omitempty"`
 	// RenewDeadlineSeconds is the duration in seconds that the acting controlplane
-	// will retry refreshing leadership before giving up. Default is 10
-	// seconds.
+	// will retry refreshing leadership before giving up.
+	// +optional
 	RenewDeadlineSeconds *int32 `json:"renewDeadlineSeconds,omitempty"`
 	// RetryPeriodSeconds is the duration in seconds the LeaderElector clients
-	// should wait between tries of actions. Default is 2 seconds.
+	// should wait between tries of actions.
+	// +optional
 	RetryPeriodSeconds *int32 `json:"retryPeriodSeconds,omitempty"`
 }
 
