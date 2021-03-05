@@ -181,7 +181,7 @@ func TestValidateLeaderElectionSettings(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "valid leader election settings",
+			name: "invalid leader election settings",
 			leaderElectionSettings: kubermaticv1.LeaderElectionSettings{
 				LeaseDurationSeconds: pointer.Int32Ptr(int32(5)),
 				RenewDeadlineSeconds: pointer.Int32Ptr(int32(10)),
