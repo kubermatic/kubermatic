@@ -37,7 +37,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/util/flagopts"
-	"k8c.io/kubermatic/v2/pkg/validation"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -88,9 +87,6 @@ type controllerRunOptions struct {
 	validationWebhook                                validation.WebhookOpts
 	concurrentClusterUpdate                          int
 	addonEnforceInterval                             int
-	userClusterLeaderElectLeaseDurationSeconds       int
-	userClusterLeaderElectRenewDeadlineSeconds       int
-	userClusterLeaderElectRetryPeriodSeconds         int
 
 	// OIDC configuration
 	oidcCAFile             string
@@ -161,9 +157,6 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
-	flag.IntVar(&c.userClusterLeaderElectLeaseDurationSeconds, "user-cluster-leader-elect-lease-duration", 0, "The lease duration in seconds used by user cluster control plane components having leader election (i.e. controller-manager and scheduler). The default value for the component is used when equal or less than 0.")
-	flag.IntVar(&c.userClusterLeaderElectRenewDeadlineSeconds, "control-plane-leader-elect-renew-deadline", 0, "The lease renew deadline in seconds used by user cluster control plane components having leader election (i.e. controller-manager and scheduler). Should be smaller or equal than control-plane-leader-elect-lease-duration. The default value for the component is used when equal or less than 0.")
-	flag.IntVar(&c.userClusterLeaderElectRetryPeriodSeconds, "control-plane-leader-elect-retry-period", 0, "The duration in seconds that user cluster control plane components having leader election (i.e. controller-manager and scheduler) should wait between attempting acquisition and renewal of a leadership. The default value for the component is used when equal or less than 0.")
 	flag.Var(&c.tunnelingAgentIP, "tunneling-agent-ip", "The address used by the tunneling agents.")
 	c.validationWebhook.AddFlags(flag.CommandLine, true)
 	addFlags(flag.CommandLine)
@@ -262,10 +255,6 @@ func (o controllerRunOptions) validate() error {
 		}
 	}
 
-	if err := validation.ValidateLeaderElectionSettings(o.controlPlaneLeaderElectionSettings()); err != nil {
-		return fmt.Errorf("the control plane leader election settings are not valid: %w", err)
-	}
-
 	return nil
 }
 
@@ -291,21 +280,6 @@ func (o controllerRunOptions) nodeLocalDNSCacheEnabled() bool {
 		}
 	}
 	return false
-}
-
-func (o controllerRunOptions) controlPlaneLeaderElectionSettings() kubermaticv1.LeaderElectionSettings {
-	toPointerIfPositive := func(v int) *int32 {
-		if v > 0 {
-			c := int32(v)
-			return &c
-		}
-		return nil
-	}
-	return kubermaticv1.LeaderElectionSettings{
-		LeaseDurationSeconds: toPointerIfPositive(o.userClusterLeaderElectLeaseDurationSeconds),
-		RenewDeadlineSeconds: toPointerIfPositive(o.userClusterLeaderElectRenewDeadlineSeconds),
-		RetryPeriodSeconds:   toPointerIfPositive(o.userClusterLeaderElectRetryPeriodSeconds),
-	}
 }
 
 // controllerContext holds all controllerRunOptions plus everything that
