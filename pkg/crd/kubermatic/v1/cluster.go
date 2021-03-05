@@ -381,7 +381,7 @@ type LeaderElectionSettings struct {
 	// RenewDeadlineSeconds is the duration in seconds that the acting controlplane
 	// will retry refreshing leadership before giving up. Default is 10
 	// seconds.
-	RenewDeadlineSeconds *int32 `json:"leaseDurationSeconds,omitempty"`
+	RenewDeadlineSeconds *int32 `json:"renewDeadlineSeconds,omitempty"`
 	// RetryPeriodSeconds is the duration in seconds the LeaderElector clients
 	// should wait between tries of actions. Default is 2 seconds.
 	RetryPeriodSeconds *int32 `json:"retryPeriodSeconds,omitempty"`
