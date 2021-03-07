@@ -21,7 +21,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"strings"
 	"time"
@@ -49,6 +48,13 @@ const (
 	cloudProviderExternalFlag = "external"
 )
 
+type CABundle interface {
+	CertPool() *x509.CertPool
+	String() string
+	Bytes() []byte
+	File() (string, error)
+}
+
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
 	ctx                      context.Context
@@ -68,7 +74,7 @@ type TemplateData struct {
 	dnatControllerImage      string
 	backupSchedule           time.Duration
 	versions                 kubermatic.Versions
-	caBundleFile             string
+	caBundle                 CABundle
 
 	supportsFailureDomainZoneAntiAffinity bool
 
@@ -157,8 +163,8 @@ func (td *TemplateDataBuilder) WithInClusterPrometheusScrapingConfigsFile(file s
 	return td
 }
 
-func (td *TemplateDataBuilder) WithCABundleFile(file string) *TemplateDataBuilder {
-	td.data.caBundleFile = file
+func (td *TemplateDataBuilder) WithCABundle(bundle CABundle) *TemplateDataBuilder {
+	td.data.caBundle = bundle
 	return td
 }
 
@@ -238,7 +244,7 @@ func NewTemplateData(
 	backupSchedule time.Duration,
 	supportsFailureDomainZoneAntiAffinity bool,
 	versions kubermatic.Versions,
-	caBundleFile string) *TemplateData {
+	caBundle CABundle) *TemplateData {
 	return &TemplateData{
 		ctx:                      ctx,
 		client:                   client,
@@ -257,7 +263,7 @@ func NewTemplateData(
 		dnatControllerImage:      dnatControllerImage,
 		backupSchedule:           backupSchedule,
 		versions:                 versions,
-		caBundleFile:             caBundleFile,
+		caBundle:                 caBundle,
 
 		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
 
@@ -278,20 +284,10 @@ func (d *TemplateData) GetViewerToken() (string, error) {
 	return string(viewerTokenSecret.Data[ViewerTokenSecretKey]), nil
 }
 
-// GetCABundle returns the chain of public certificates of the Dex
-func (d *TemplateData) GetCABundle() ([]*x509.Certificate, error) {
-	return GetCABundleFromFile(d.caBundleFile)
-}
-
-// CABundleFile return CA bundle content as a PEM-encoded string
-func (d *TemplateData) CABundle() (string, error) {
-	content, err := ioutil.ReadFile(d.caBundleFile)
-	return string(content), err
-}
-
-// CABundleFile return CA bundle file
-func (d *TemplateData) CABundleFile() string {
-	return d.caBundleFile
+// GetCABundle returns the set of CA certificates that should be used
+// for all outgoing communication.
+func (d *TemplateData) CABundle() CABundle {
+	return d.caBundle
 }
 
 // OIDCIssuerURL returns URL of the OpenID token issuer

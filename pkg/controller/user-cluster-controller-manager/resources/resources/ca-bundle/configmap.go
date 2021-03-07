@@ -24,14 +24,14 @@ import (
 )
 
 // ConfigMapCreator returns a ConfigMap containing the CA bundle for the usercluster.
-func ConfigMapCreator(caBundle string) reconciling.NamedConfigMapCreatorGetter {
+func ConfigMapCreator(caBundle resources.CABundle) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.CABundleConfigMapName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				cm.Data = map[string]string{}
 			}
 
-			cm.Data[resources.CABundleConfigMapKey] = caBundle
+			cm.Data[resources.CABundleConfigMapKey] = caBundle.String()
 			return cm, nil
 		}
 	}

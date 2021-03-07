@@ -17,11 +17,9 @@ limitations under the License.
 package main
 
 import (
-	"crypto/x509"
 	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -52,7 +50,7 @@ type serverRunOptions struct {
 	namespace        string
 	log              kubermaticlog.Options
 	accessibleAddons sets.String
-	caBundle         *x509.CertPool
+	caBundle         *certificates.CABundle
 
 	// OIDC configuration
 	oidcURL                        string
@@ -125,21 +123,12 @@ func newServerRunOptions() (serverRunOptions, error) {
 		return s, errors.New("no -ca-bundle configured")
 	}
 
-	bytes, err := ioutil.ReadFile(caBundleFile)
+	cabundle, err := certificates.NewCABundleFromFile(caBundleFile)
 	if err != nil {
-		return s, fmt.Errorf("failed to read CA file '%s': %v", caBundleFile, err)
+		return s, fmt.Errorf("failed to read CA bundle file '%s': %v", caBundleFile, err)
 	}
 
-	if err := certificates.ValidateCABundle(string(bytes)); err != nil {
-		return s, fmt.Errorf("CA bundle is invalid: %v", err)
-	}
-
-	pool := x509.NewCertPool()
-	if !pool.AppendCertsFromPEM(bytes) {
-		return s, fmt.Errorf("CA file '%s' does not contain any valid PEM-encoded certificates", caBundleFile)
-	}
-
-	s.caBundle = pool
+	s.caBundle = cabundle
 	s.versions = kubermatic.NewDefaultVersions()
 
 	return s, nil

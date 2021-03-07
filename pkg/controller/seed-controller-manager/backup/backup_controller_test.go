@@ -23,6 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
@@ -91,6 +92,7 @@ func TestEnsureBackupCronJob(t *testing.T) {
 		backupContainerImage: DefaultBackupContainerImage,
 		Client:               ctrlruntimefakeclient.NewClientBuilder().WithObjects(caSecret, cluster).Build(),
 		scheme:               scheme.Scheme,
+		caBundle:             certificates.NewFakeCABundle(),
 	}
 
 	if _, err := reconciler.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: cluster.Name}}); err != nil {

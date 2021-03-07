@@ -19,7 +19,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"io/ioutil"
 	"net/url"
 	"strings"
 
@@ -140,16 +139,8 @@ func main() {
 	if runOp.openvpnServerPort == 0 {
 		log.Fatal("-openvpn-server-port must be set")
 	}
-
 	if len(runOp.caBundleFile) == 0 {
 		log.Fatal("-ca-bundle must be set")
-	}
-	caBundleBytes, err := ioutil.ReadFile(runOp.caBundleFile)
-	if err != nil {
-		log.Fatalw("Failed to read CA file", zap.Error(err))
-	}
-	if err := certificates.ValidateCABundle(string(caBundleBytes)); err != nil {
-		log.Fatalw("CA bundle is invalid", zap.Error(err))
 	}
 
 	nodeLabels := map[string]string{}
@@ -162,6 +153,11 @@ func main() {
 	cfg, err := config.GetConfig()
 	if err != nil {
 		log.Fatalw("Failed getting user cluster controller config", zap.Error(err))
+	}
+
+	caBundle, err := certificates.NewCABundleFromFile(runOp.caBundleFile)
+	if err != nil {
+		log.Fatalw("Failed loading CA bundle", zap.Error(err))
 	}
 
 	rootCtx := signals.SetupSignalHandler()
@@ -230,7 +226,7 @@ func main() {
 		versions,
 		runOp.useSSHKeyAgent,
 		runOp.opaWebhookTimeout,
-		string(caBundleBytes),
+		caBundle,
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))

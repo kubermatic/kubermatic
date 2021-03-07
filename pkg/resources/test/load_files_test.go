@@ -37,6 +37,7 @@ import (
 	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
@@ -210,6 +211,7 @@ func TestLoadFiles(t *testing.T) {
 	}
 
 	kubermaticVersions := kubermatic.NewFakeVersions()
+	caBundle := certificates.NewFakeCABundle()
 
 	for _, ver := range versions {
 		for prov, cloudspec := range clouds {
@@ -262,7 +264,7 @@ func TestLoadFiles(t *testing.T) {
 					},
 				}
 
-				caBundle := &corev1.ConfigMap{
+				caBundleConfigMap := &corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						ResourceVersion: "123456",
 						Name:            resources.CABundleConfigMapName,
@@ -470,7 +472,7 @@ func TestLoadFiles(t *testing.T) {
 								Namespace:       cluster.Status.NamespaceName,
 							},
 						},
-						caBundle,
+						caBundleConfigMap,
 						&corev1.ConfigMap{
 							ObjectMeta: metav1.ObjectMeta{
 								ResourceVersion: "123456",
@@ -574,17 +576,6 @@ func TestLoadFiles(t *testing.T) {
 					}
 				})()
 
-				caBundleTmpFile, err := ioutil.TempFile("", "kubermatic")
-				if err != nil {
-					t.Fatalf("couldn't create temp file, see: %v", err)
-				}
-				defer (func() {
-					err = os.Remove(caBundleTmpFile.Name())
-					if err != nil {
-						t.Fatalf("couldn't delete temp file, see: %v", err)
-					}
-				})()
-
 				ctx := context.Background()
 				data := resources.NewTemplateDataBuilder().
 					WithContext(ctx).
@@ -604,7 +595,7 @@ func TestLoadFiles(t *testing.T) {
 					WithBackupPeriod(20 * time.Minute).
 					WithMonitoringScrapeAnnotationPrefix("kubermatic_io_monitoring").
 					WithInClusterPrometheusScrapingConfigsFile(promTmpFilePath).
-					WithCABundleFile(caBundleTmpFile.Name()).
+					WithCABundle(caBundle).
 					WithOIDCIssuerURL("https://dev.kubermatic.io/dex").
 					WithOIDCIssuerClientID("kubermaticIssuer").
 					WithNodeLocalDNSCacheEnabled(true).

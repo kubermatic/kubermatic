@@ -17,27 +17,20 @@ limitations under the License.
 package apiserver
 
 import (
-	"fmt"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	corev1 "k8s.io/api/core/v1"
 )
 
 type caBundleProvider interface {
-	CABundle() (string, error)
+	CABundle() resources.CABundle
 }
 
 func CABundleCreator(data caBundleProvider) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return resources.CABundleConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
-			caBundle, err := data.CABundle()
-			if err != nil {
-				return c, fmt.Errorf("cannot read CA bundle: %v", err)
-			}
-
 			c.Data = map[string]string{
-				resources.CABundleConfigMapKey: caBundle,
+				resources.CABundleConfigMapKey: data.CABundle().String(),
 			}
 
 			return c, nil

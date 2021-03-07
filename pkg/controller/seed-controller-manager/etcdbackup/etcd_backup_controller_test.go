@@ -28,6 +28,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	batchv1 "k8s.io/api/batch/v1"
@@ -1702,6 +1703,7 @@ func TestFinalization(t *testing.T) {
 				deleteContainer: genDeleteContainer(),
 				recorder:        record.NewFakeRecorder(10),
 				clock:           clock,
+				caBundle:        certificates.NewFakeCABundle(),
 			}
 			if tc.cleanupContainerDefined {
 				reconciler.cleanupContainer = genCleanupContainer()

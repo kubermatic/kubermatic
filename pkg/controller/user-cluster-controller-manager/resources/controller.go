@@ -73,7 +73,7 @@ func Add(
 	versions kubermatic.Versions,
 	userSSHKeyAgent bool,
 	opaWebhookTimeout int,
-	caBundle string,
+	caBundle resources.CABundle,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		version:           version,
@@ -201,7 +201,7 @@ type reconciler struct {
 	opaWebhookTimeout int
 	userSSHKeyAgent   bool
 	versions          kubermatic.Versions
-	caBundle          string
+	caBundle          resources.CABundle
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool

@@ -30,11 +30,11 @@ func caBundleConfigMapName(cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("cluster-%s-ca-bundle", cluster.Name)
 }
 
-func caBundleConfigMapCreator(name string, caBundle string) reconciling.NamedConfigMapCreatorGetter {
+func caBundleConfigMapCreator(name string, caBundle resources.CABundle) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return name, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			c.Data = map[string]string{
-				resources.CABundleConfigMapKey: caBundle,
+				resources.CABundleConfigMapKey: caBundle.String(),
 			}
 
 			return c, nil

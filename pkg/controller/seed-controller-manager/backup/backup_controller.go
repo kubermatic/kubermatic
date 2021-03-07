@@ -19,7 +19,6 @@ package backup
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"strings"
 	"time"
 
@@ -98,7 +97,7 @@ type Reconciler struct {
 	// ensuring they're installed. This is used to permanently delete the backup cronjobs
 	// and disable the controller, usually in favor of the new one (../etcdbackup)
 	disabled bool
-	caBundle string
+	caBundle resources.CABundle
 
 	recorder record.EventRecorder
 	versions kubermatic.Versions
@@ -117,7 +116,7 @@ func Add(
 	backupContainerImage string,
 	versions kubermatic.Versions,
 	disabled bool,
-	caBundleFile string,
+	caBundle resources.CABundle,
 ) error {
 	log = log.Named(ControllerName)
 	if err := validateStoreContainer(storeContainer); err != nil {
@@ -131,11 +130,6 @@ func Add(
 		backupContainerImage = DefaultBackupContainerImage
 	}
 
-	caBundle, err := ioutil.ReadFile(caBundleFile)
-	if err != nil {
-		return fmt.Errorf("failed to read CA bundle file: %v", err)
-	}
-
 	reconciler := &Reconciler{
 		Client:               mgr.GetClient(),
 		log:                  log,
@@ -147,7 +141,7 @@ func Add(
 		disabled:             disabled,
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		versions:             versions,
-		caBundle:             string(caBundle),
+		caBundle:             caBundle,
 		scheme:               mgr.GetScheme(),
 	}
 	c, err := controller.New(ControllerName, mgr, controller.Options{

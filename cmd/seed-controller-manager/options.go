@@ -88,7 +88,7 @@ type controllerRunOptions struct {
 	validationWebhook                                validation.WebhookOpts
 	concurrentClusterUpdate                          int
 	addonEnforceInterval                             int
-	caBundle                                         string
+	caBundle                                         *certificates.CABundle
 
 	// OIDC configuration
 	oidcIssuerURL          string
@@ -107,9 +107,13 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 		// Default IP used by tunneling agents
 		tunnelingAgentIP: flagopts.IPValue{IP: net.ParseIP("192.168.30.10")},
 	}
-	var rawEtcdDiskSize string
-	var defaultKubernetesAddonsList string
-	var defaultKubernetesAddonsFile string
+
+	var (
+		rawEtcdDiskSize             string
+		caBundleFile                string
+		defaultKubernetesAddonsList string
+		defaultKubernetesAddonsFile string
+	)
 
 	flag.BoolVar(&c.enableLeaderElection, "enable-leader-election", true, "Enable leader election for controller manager. "+
 		"Enabling this will ensure there is only one active controller manager.")
@@ -154,7 +158,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.IntVar(&c.schedulerDefaultReplicas, "scheduler-default-replicas", 1, "The default number of replicas for usercluster schedulers")
 	flag.IntVar(&c.concurrentClusterUpdate, "max-parallel-reconcile", 10, "The default number of resources updates per cluster")
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
-	flag.StringVar(&c.caBundle, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
+	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
 	flag.Var(&c.tunnelingAgentIP, "tunneling-agent-ip", "The address used by the tunneling agents.")
 	c.validationWebhook.AddFlags(flag.CommandLine, true)
 	addFlags(flag.CommandLine)
@@ -178,6 +182,12 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	if err != nil {
 		return c, err
 	}
+
+	caBundle, err := certificates.NewCABundleFromFile(caBundleFile)
+	if err != nil {
+		return c, fmt.Errorf("invalid CA bundle file (%q): %v", caBundleFile, err)
+	}
+	c.caBundle = caBundle
 
 	return c, nil
 }
@@ -230,10 +240,6 @@ func (o controllerRunOptions) validate() error {
 		return fmt.Errorf("--max-parallel-reconcile must be > 0 (was %d)", o.concurrentClusterUpdate)
 	}
 
-	if err := o.validateCABundle(); err != nil {
-		return fmt.Errorf("invalid CA bundle: %v", err)
-	}
-
 	// Validate node-port range
 	if _, err := knet.ParsePortRange(o.nodePortRange); err != nil {
 		return fmt.Errorf("failed to parse nodePortRange: %v", err)
@@ -248,15 +254,6 @@ func (o controllerRunOptions) validate() error {
 	}
 
 	return nil
-}
-
-func (o controllerRunOptions) validateCABundle() error {
-	bytes, err := ioutil.ReadFile(o.caBundle)
-	if err != nil {
-		return fmt.Errorf("failed to read %q: %v", o.caBundle, err)
-	}
-
-	return certificates.ValidateCABundle(string(bytes))
 }
 
 func (o controllerRunOptions) nodeLocalDNSCacheEnabled() bool {

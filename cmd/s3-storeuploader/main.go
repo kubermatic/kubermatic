@@ -19,7 +19,6 @@ package main
 import (
 	"crypto/x509"
 	"fmt"
-	"io/ioutil"
 	"os"
 
 	"github.com/urfave/cli"
@@ -184,18 +183,13 @@ func main() {
 func getUploaderFromCtx(c *cli.Context) (*storeuploader.StoreUploader, error) {
 	var rootCAs *x509.CertPool
 
-	caBundleFile := c.String("ca-bundle")
-	if caBundleFile != "" {
-		content, err := ioutil.ReadFile(caBundleFile)
+	if caBundleFile := c.String("ca-bundle"); caBundleFile != "" {
+		bundle, err := certificates.NewCABundleFromFile(caBundleFile)
 		if err != nil {
 			return nil, fmt.Errorf("cannot open CA bundle: %v", err)
 		}
 
-		if err := certificates.ValidateCABundle(string(content)); err != nil {
-			return nil, fmt.Errorf("invalid CA bundle: %v", err)
-		}
-
-		rootCAs.AppendCertsFromPEM(content)
+		rootCAs = bundle.CertPool()
 	}
 
 	uploader, err := storeuploader.New(

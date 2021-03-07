@@ -30,6 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -103,7 +104,7 @@ type Reconciler struct {
 	versions kubermatic.Versions
 
 	tunnelingAgentIP string
-	caBundle         string
+	caBundle         *certificates.CABundle
 }
 
 // NewController creates a cluster controller.
@@ -137,7 +138,7 @@ func Add(
 	dnatControllerImage string,
 
 	tunnelingAgentIP string,
-	caBundle string,
+	caBundle *certificates.CABundle,
 
 	features Features,
 	versions kubermatic.Versions) error {

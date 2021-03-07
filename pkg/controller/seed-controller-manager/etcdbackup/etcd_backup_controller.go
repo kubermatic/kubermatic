@@ -19,7 +19,6 @@ package etcdbackup
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"strconv"
 	"strings"
 	"time"
@@ -113,7 +112,7 @@ type Reconciler struct {
 	backupContainerImage string
 	clock                clock.Clock
 	randStringGenerator  func() string
-	caBundle             string
+	caBundle             resources.CABundle
 	recorder             record.EventRecorder
 	versions             kubermatic.Versions
 }
@@ -130,18 +129,13 @@ func Add(
 	cleanupContainer *corev1.Container,
 	backupContainerImage string,
 	versions kubermatic.Versions,
-	caBundleFile string,
+	caBundle resources.CABundle,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
 	if backupContainerImage == "" {
 		backupContainerImage = DefaultBackupContainerImage
-	}
-
-	caBundle, err := ioutil.ReadFile(caBundleFile)
-	if err != nil {
-		return fmt.Errorf("failed to read CA bundle file: %v", err)
 	}
 
 	reconciler := &Reconciler{
@@ -156,7 +150,7 @@ func Add(
 		recorder:             mgr.GetEventRecorderFor(ControllerName),
 		versions:             versions,
 		clock:                &clock.RealClock{},
-		caBundle:             string(caBundle),
+		caBundle:             caBundle,
 		randStringGenerator: func() string {
 			return rand.String(10)
 		},
