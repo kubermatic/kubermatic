@@ -25,11 +25,31 @@ import (
 
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+// CABundleConfigMapCreator returns a ConfigMapCreatorGetter that
+// creates a ca-bundle ConfigMap for use in seeds and userclusters.
+//
+// TODO: Do not use fmt.Stringer, but a better type for the CA bundle
+//       parameter. "*CABundle" is not viable because most of the codebase
+//       deals with "resources.CABundle", which in turn exists to
+//       prevent an import loop between this and the "resources" package.
+func CABundleConfigMapCreator(name string, caBundle fmt.Stringer) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return name, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			c.Data = map[string]string{
+				resources.CABundleConfigMapKey: caBundle.String(),
+			}
+
+			return c, nil
+		}
+	}
+}
 
 // CABundle represents an x509.CertPool that was loaded from a file
 // and which needs to be access both as a cert pool (i.e. parsed)
@@ -101,29 +121,7 @@ func (b *CABundle) CertPool() *x509.CertPool {
 }
 
 func (b *CABundle) String() string {
-	return string(b.Bytes())
-}
-
-func (b *CABundle) Bytes() []byte {
-	return b.bytes
-}
-
-func (b *CABundle) File() (string, error) {
-	if b.filename == "" {
-		tmpfile, err := ioutil.TempFile("", "kkpcabundle")
-		if err != nil {
-			return "", err
-		}
-		defer tmpfile.Close()
-
-		if _, err := tmpfile.Write(b.Bytes()); err != nil {
-			return "", err
-		}
-
-		b.filename = tmpfile.Name()
-	}
-
-	return b.filename, nil
+	return string(b.bytes)
 }
 
 func GlobalCABundle(ctx context.Context, client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration) (*corev1.ConfigMap, error) {

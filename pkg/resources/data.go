@@ -51,8 +51,6 @@ const (
 type CABundle interface {
 	CertPool() *x509.CertPool
 	String() string
-	Bytes() []byte
-	File() (string, error)
 }
 
 // TemplateData is a group of data required for template generation

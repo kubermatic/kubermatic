@@ -337,7 +337,7 @@ func (r *Reconciler) ensureCronJobConfigMaps(ctx context.Context, cluster *kuber
 	name := resources.BackupCABundleConfigMapName(cluster)
 
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		caBundleConfigMapCreator(name, r.caBundle),
+		certificates.CABundleConfigMapCreator(name, r.caBundle),
 	}
 
 	return reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client, common.OwnershipModifierFactory(cluster, r.scheme))
