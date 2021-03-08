@@ -22,13 +22,13 @@ grafana:
   replicas: 1
   image:
     repository: docker.io/grafana/grafana
-    tag: 7.1.5
+    tag: 7.4.3
   utilImage:
     repository: quay.io/kubermatic/util
     tag: 1.4.1
   pluginImage:
     repository: quay.io/kubermatic/grafana-plugins
-    tag: 1.1.0
+    tag: 1.2.0
   resources:
     requests:
       cpu: 100m
