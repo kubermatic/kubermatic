@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -33,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
+	"k8c.io/kubermatic/v2/pkg/test"
 )
 
 func init() {
@@ -46,10 +46,10 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 	// a CCM; the logic tested here is independent of the provider itself
 
 	testCases := []struct {
-		name                string
-		cluster             *kubermaticv1.Cluster
-		kcmDeploymentConfig KCMDeploymentConfig
-		wantCCMCreator      bool
+		name           string
+		cluster        *kubermaticv1.Cluster
+		kcmDeployment  *appsv1.Deployment
+		wantCCMCreator bool
 	}{
 		{
 			name: "KCM ready and cloud-provider disabled",
@@ -73,18 +73,15 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					NamespaceName: "test",
 				},
 			},
-			kcmDeploymentConfig: KCMDeploymentConfig{
-				Flags: []string{},
-				Status: appsv1.DeploymentStatus{
-					ObservedGeneration: 1,
-					Replicas:           1,
-					AvailableReplicas:  1,
-					UpdatedReplicas:    1,
-				},
-				Generation: 1,
-				Replicas:   1,
-				Namespace:  "test",
-			},
+			kcmDeployment: test.NewDeploymentBuilder(test.NamespacedName{Name: resources.ControllerManagerDeploymentName, Namespace: "test"}).
+				ContainerBuilder().
+				WithName(resources.ControllerManagerDeploymentName).
+				WithImage("my-registy.io/kube-controller-manager:v1.18").
+				WithCommand("/usr/local/bin/kube-controller-manager").
+				AddContainer().
+				WithGeneration(1).
+				WithReplicas(1).
+				WithStatus(appsv1.DeploymentStatus{ObservedGeneration: 1, Replicas: 1, AvailableReplicas: 1, UpdatedReplicas: 1}).Build(),
 			wantCCMCreator: true,
 		},
 		{
@@ -109,18 +106,16 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					NamespaceName: "test",
 				},
 			},
-			kcmDeploymentConfig: KCMDeploymentConfig{
-				Flags: []string{"--cloud-provider", "openstack", "--controllers", "-cloud-node-lifecycle,-route,-service"},
-				Status: appsv1.DeploymentStatus{
-					ObservedGeneration: 1,
-					Replicas:           1,
-					AvailableReplicas:  1,
-					UpdatedReplicas:    1,
-				},
-				Generation: 1,
-				Replicas:   1,
-				Namespace:  "test",
-			},
+			kcmDeployment: test.NewDeploymentBuilder(test.NamespacedName{Name: resources.ControllerManagerDeploymentName, Namespace: "test"}).
+				ContainerBuilder().
+				WithName(resources.ControllerManagerDeploymentName).
+				WithImage("my-registy.io/kube-controller-manager:v1.18").
+				WithCommand("/usr/local/bin/kube-controller-manager").
+				WithArgs("--cloud-provider", "openstack", "--controllers", "-cloud-node-lifecycle,-route,-service").
+				AddContainer().
+				WithGeneration(1).
+				WithReplicas(1).
+				WithStatus(appsv1.DeploymentStatus{ObservedGeneration: 1, Replicas: 1, AvailableReplicas: 1, UpdatedReplicas: 1}).Build(),
 			wantCCMCreator: true,
 		},
 		{
@@ -145,18 +140,16 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					NamespaceName: "test",
 				},
 			},
-			kcmDeploymentConfig: KCMDeploymentConfig{
-				Flags: []string{"--cloud-provider", "openstack", "--controllers", "-cloud-node-lifecycle,-route"},
-				Status: appsv1.DeploymentStatus{
-					ObservedGeneration: 1,
-					Replicas:           1,
-					AvailableReplicas:  1,
-					UpdatedReplicas:    1,
-				},
-				Generation: 1,
-				Replicas:   1,
-				Namespace:  "test",
-			},
+			kcmDeployment: test.NewDeploymentBuilder(test.NamespacedName{Name: resources.ControllerManagerDeploymentName, Namespace: "test"}).
+				ContainerBuilder().
+				WithName(resources.ControllerManagerDeploymentName).
+				WithImage("my-registy.io/kube-controller-manager:v1.18").
+				WithCommand("/usr/local/bin/kube-controller-manager").
+				WithArgs("--cloud-provider", "openstack", "--controllers", "-cloud-node-lifecycle,-route").
+				AddContainer().
+				WithGeneration(1).
+				WithReplicas(1).
+				WithStatus(appsv1.DeploymentStatus{ObservedGeneration: 1, Replicas: 1, AvailableReplicas: 1, UpdatedReplicas: 1}).Build(),
 			wantCCMCreator: false,
 		},
 		{
@@ -184,18 +177,15 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					NamespaceName: "test",
 				},
 			},
-			kcmDeploymentConfig: KCMDeploymentConfig{
-				Flags: []string{},
-				Status: appsv1.DeploymentStatus{
-					ObservedGeneration: 1,
-					Replicas:           2,
-					AvailableReplicas:  1,
-					UpdatedReplicas:    1,
-				},
-				Generation: 1,
-				Replicas:   2,
-				Namespace:  "test",
-			},
+			kcmDeployment: test.NewDeploymentBuilder(test.NamespacedName{Name: resources.ControllerManagerDeploymentName, Namespace: "test"}).
+				ContainerBuilder().
+				WithName(resources.ControllerManagerDeploymentName).
+				WithImage("my-registy.io/kube-controller-manager:v1.18").
+				WithCommand("/usr/local/bin/kube-controller-manager").
+				AddContainer().
+				WithGeneration(1).
+				WithReplicas(2).
+				WithStatus(appsv1.DeploymentStatus{ObservedGeneration: 1, Replicas: 2, AvailableReplicas: 1, UpdatedReplicas: 1}).Build(),
 			wantCCMCreator: false,
 		},
 		{
@@ -220,18 +210,16 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					NamespaceName: "test",
 				},
 			},
-			kcmDeploymentConfig: KCMDeploymentConfig{
-				Flags: []string{"--cloud-provider", "openstack"},
-				Status: appsv1.DeploymentStatus{
-					ObservedGeneration: 1,
-					Replicas:           1,
-					AvailableReplicas:  1,
-					UpdatedReplicas:    1,
-				},
-				Generation: 1,
-				Replicas:   1,
-				Namespace:  "test",
-			},
+			kcmDeployment: test.NewDeploymentBuilder(test.NamespacedName{Name: resources.ControllerManagerDeploymentName, Namespace: "test"}).
+				ContainerBuilder().
+				WithName(resources.ControllerManagerDeploymentName).
+				WithImage("my-registy.io/kube-controller-manager:v1.18").
+				WithCommand("/usr/local/bin/kube-controller-manager").
+				WithArgs("--cloud-provider", "openstack").
+				AddContainer().
+				WithGeneration(1).
+				WithReplicas(1).
+				WithStatus(appsv1.DeploymentStatus{ObservedGeneration: 1, Replicas: 1, AvailableReplicas: 1, UpdatedReplicas: 1}).Build(),
 			wantCCMCreator: false,
 		},
 		{
@@ -252,18 +240,16 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					NamespaceName: "test",
 				},
 			},
-			kcmDeploymentConfig: KCMDeploymentConfig{
-				Flags: []string{},
-				Status: appsv1.DeploymentStatus{
-					ObservedGeneration: 1,
-					Replicas:           2,
-					AvailableReplicas:  1,
-					UpdatedReplicas:    1,
-				},
-				Generation: 1,
-				Replicas:   2,
-				Namespace:  "test",
-			},
+			kcmDeployment: test.NewDeploymentBuilder(test.NamespacedName{Name: resources.ControllerManagerDeploymentName, Namespace: "test"}).
+				ContainerBuilder().
+				WithName(resources.ControllerManagerDeploymentName).
+				WithImage("my-registy.io/kube-controller-manager:v1.18").
+				WithCommand("/usr/local/bin/kube-controller-manager").
+				WithArgs("--cloud-provider", "openstack").
+				AddContainer().
+				WithGeneration(1).
+				WithReplicas(2).
+				WithStatus(appsv1.DeploymentStatus{ObservedGeneration: 1, Replicas: 2, AvailableReplicas: 1, UpdatedReplicas: 1}).Build(),
 			wantCCMCreator: true,
 		},
 		{
@@ -281,18 +267,15 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 					},
 				},
 			},
-			kcmDeploymentConfig: KCMDeploymentConfig{
-				Flags: []string{},
-				Status: appsv1.DeploymentStatus{
-					ObservedGeneration: 1,
-					Replicas:           1,
-					AvailableReplicas:  1,
-					UpdatedReplicas:    1,
-				},
-				Generation: 1,
-				Replicas:   1,
-				Namespace:  "test",
-			},
+			kcmDeployment: test.NewDeploymentBuilder(test.NamespacedName{Name: resources.ControllerManagerDeploymentName, Namespace: "test"}).
+				ContainerBuilder().
+				WithName(resources.ControllerManagerDeploymentName).
+				WithImage("my-registy.io/kube-controller-manager:v1.18").
+				WithCommand("/usr/local/bin/kube-controller-manager").
+				AddContainer().
+				WithGeneration(1).
+				WithReplicas(1).
+				WithStatus(appsv1.DeploymentStatus{ObservedGeneration: 1, Replicas: 1, AvailableReplicas: 1, UpdatedReplicas: 1}).Build(),
 			wantCCMCreator: false,
 		},
 	}
@@ -321,7 +304,7 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 				WithCABundle(caBundle).
 				Build()
 			// Add the KCM deployment
-			if err := fc.Create(ctx, tc.kcmDeploymentConfig.Create(td)); err != nil {
+			if err := fc.Create(ctx, wrapControllerManagerContainer(t, tc.kcmDeployment, td)); err != nil {
 				t.Fatalf("error occurred while creating KCM deployment: %v", err)
 			}
 			creators := GetDeploymentCreators(td, false)
@@ -339,39 +322,9 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 	}
 }
 
-type KCMDeploymentConfig struct {
-	Flags      []string
-	Generation int64
-	Namespace  string
-	Replicas   int32
-	Status     appsv1.DeploymentStatus
-}
-
-func (k KCMDeploymentConfig) Create(td *resources.TemplateData) *appsv1.Deployment {
-	d := appsv1.Deployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:       resources.ControllerManagerDeploymentName,
-			Namespace:  k.Namespace,
-			Generation: k.Generation,
-		},
-		Spec: appsv1.DeploymentSpec{
-			Replicas: &k.Replicas,
-			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:    resources.ControllerManagerDeploymentName,
-							Image:   "my-registy.io/kube-controller-manager:v1.18",
-							Command: []string{"/usr/local/bin/kube-controller-manager"},
-							Args:    k.Flags,
-						},
-					},
-				},
-			},
-		},
-		Status: k.Status,
-	}
+func wrapControllerManagerContainer(t *testing.T, d *appsv1.Deployment, td *resources.TemplateData) *appsv1.Deployment {
 	wrappedPodSpec, _ := apiserver.IsRunningWrapper(td, d.Spec.Template.Spec, sets.NewString(resources.ControllerManagerDeploymentName))
+	t.Logf("Deployment: %+v\n", d.Spec.Template)
 	d.Spec.Template.Spec = *wrappedPodSpec
-	return &d
+	return d
 }

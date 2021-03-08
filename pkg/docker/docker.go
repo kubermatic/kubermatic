@@ -184,3 +184,16 @@ func Copy(ctx context.Context, log *zap.SugaredLogger, image string, dst string,
 
 	return nil
 }
+
+// ExtractTag returns the tag
+func ExtractTag(image string) (string, error) {
+	ref, err := reference.ParseNamed(image)
+	if err != nil {
+		return "", err
+	}
+	taggedRef, ok := ref.(reference.NamedTagged)
+	if !ok {
+		return "", errors.New("image has no tag")
+	}
+	return taggedRef.Tag(), nil
+}

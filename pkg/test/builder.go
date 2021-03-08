@@ -19,6 +19,7 @@ package test
 import (
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -47,6 +48,11 @@ func (b *ObjectBuilder) WithAnnotation(key, value string) *ObjectBuilder {
 		b.Annotations = map[string]string{}
 	}
 	b.Annotations[key] = value
+	return b
+}
+
+func (b *ObjectBuilder) WithGeneration(gen int64) *ObjectBuilder {
+	b.Generation = gen
 	return b
 }
 
@@ -140,7 +146,7 @@ type EndpointsBuilder struct {
 	epsSubsets []corev1.EndpointSubset
 }
 
-// NewServiceBuilder returns a ServiceBuilder to be used to build a
+// NewEndpointsBuilder returns a ServiceBuilder to be used to build a
 // v1.Endpoints with name and namespace given in input.
 func NewEndpointsBuilder(nn NamespacedName) *EndpointsBuilder {
 	return &EndpointsBuilder{
@@ -156,11 +162,11 @@ func (b *EndpointsBuilder) WithResourceVersion(rs string) *EndpointsBuilder {
 	return b
 }
 
-// WithEndpointsSubset starts the creation of an Endpoints Subset, the creation
-// must me terminated with a call to DoneWithEndpointSubset, after ports and
+// EndpointsSubsetBuilder starts the creation of an Endpoints Subset, the creation
+// must me terminated with a call to BuildEndpointSubset, after ports and
 // addresses are added.
 // nolint:golint
-func (b *EndpointsBuilder) WithEndpointsSubset() *epsSubsetBuilder {
+func (b *EndpointsBuilder) EndpointsSubsetBuilder() *epsSubsetBuilder {
 	return &epsSubsetBuilder{eb: b}
 }
 
@@ -218,10 +224,10 @@ func (b *epsSubsetBuilder) WithEndpointPort(
 	})
 }
 
-// DoneWithEndpointSubset concludes the creation of the Subset and returns the
+// BuildEndpointSubset concludes the creation of the Subset and returns the
 // EndpointsBuilder to start the creation of a new Subset or create the
 // Endpoints with Build method.
-func (b *epsSubsetBuilder) DoneWithEndpointSubset(eps ...corev1.EndpointPort) *EndpointsBuilder {
+func (b *epsSubsetBuilder) BuildEndpointSubset(eps ...corev1.EndpointPort) *EndpointsBuilder {
 	b.epsPorts = append(b.epsPorts, eps...)
 	b.eb.epsSubsets = append(b.eb.epsSubsets, corev1.EndpointSubset{
 		Addresses:         b.epsAddresses,
@@ -229,4 +235,182 @@ func (b *epsSubsetBuilder) DoneWithEndpointSubset(eps ...corev1.EndpointPort) *E
 		Ports:             b.epsPorts,
 	})
 	return b.eb
+}
+
+// DeploymentBuilder is a builder providing a fluent API for v1.Deployment
+// creation.
+type DeploymentBuilder struct {
+	ObjectBuilder
+
+	replicas int32
+	spec     corev1.PodSpec
+	status   appsv1.DeploymentStatus
+}
+
+// NewEndpointsBuilder returns a ServiceBuilder to be used to build a
+// v1.Deployment with name and namespace given in input.
+func NewDeploymentBuilder(nn NamespacedName) *DeploymentBuilder {
+	return &DeploymentBuilder{
+		ObjectBuilder: ObjectBuilder{
+			Name:      nn.Name,
+			Namespace: nn.Namespace,
+		},
+	}
+}
+
+func (db *DeploymentBuilder) WithGeneration(gen int64) *DeploymentBuilder {
+	_ = db.ObjectBuilder.WithGeneration(gen)
+	return db
+}
+
+func (db *DeploymentBuilder) WithReplicas(replicas int32) *DeploymentBuilder {
+	db.replicas = replicas
+	return db
+}
+
+func (db *DeploymentBuilder) WithStatus(s appsv1.DeploymentStatus) *DeploymentBuilder {
+	db.status = s
+	return db
+}
+
+func (db *DeploymentBuilder) WithRolloutInProgress() *DeploymentBuilder {
+	db.status = appsv1.DeploymentStatus{ObservedGeneration: 2, Replicas: 2, AvailableReplicas: 2, UpdatedReplicas: 1}
+	db.ObjectBuilder.Generation = 2
+	db.replicas = 2
+	return db
+}
+
+func (db *DeploymentBuilder) WithRolloutComplete() *DeploymentBuilder {
+	db.status = appsv1.DeploymentStatus{ObservedGeneration: 1, Replicas: 1, AvailableReplicas: 1, UpdatedReplicas: 1}
+	db.ObjectBuilder.Generation = 1
+	db.replicas = 1
+	return db
+}
+
+// ContainerBuilder starts the creation of a new Container, the creation
+// must me terminated with a call to BuildContainer.
+// nolint:golint
+func (db *DeploymentBuilder) ContainerBuilder() *deploymentContainerBuilder {
+	return &deploymentContainerBuilder{
+		db: db,
+		containerBuilder: containerBuilder{
+			psb: &podSpecBuilder{},
+		},
+	}
+}
+
+func (db *DeploymentBuilder) Build() *appsv1.Deployment {
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta(db.ObjectBuilder),
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "Deployment",
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &db.replicas,
+			Template: corev1.PodTemplateSpec{
+				Spec: db.spec,
+			},
+		},
+		Status: db.status,
+	}
+}
+
+type deploymentPodSpecBuilder struct {
+	db *DeploymentBuilder
+	podSpecBuilder
+}
+
+func (dpsb *deploymentPodSpecBuilder) ContainerBuilder() *deploymentContainerBuilder {
+	return &deploymentContainerBuilder{
+		db: dpsb.db,
+		containerBuilder: containerBuilder{
+			psb: &podSpecBuilder{},
+		},
+	}
+}
+
+type deploymentContainerBuilder struct {
+	containerBuilder
+	db *DeploymentBuilder
+}
+
+func (dcb *deploymentContainerBuilder) WithName(name string) *deploymentContainerBuilder {
+	_ = dcb.containerBuilder.WithName(name)
+	return dcb
+}
+
+func (dcb *deploymentContainerBuilder) WithImage(image string) *deploymentContainerBuilder {
+	_ = dcb.containerBuilder.WithImage(image)
+	return dcb
+}
+
+func (dcb *deploymentContainerBuilder) WithCommand(command ...string) *deploymentContainerBuilder {
+	_ = dcb.containerBuilder.WithCommand(command...)
+	return dcb
+}
+
+func (dcb *deploymentContainerBuilder) WithArgs(command ...string) *deploymentContainerBuilder {
+	_ = dcb.containerBuilder.WithArgs(command...)
+	return dcb
+}
+
+func (dcb *deploymentContainerBuilder) AddContainer() *DeploymentBuilder {
+	ps := dcb.containerBuilder.AddContainer().Build()
+	dcb.db.spec.Containers = append(dcb.db.spec.Containers, ps.Containers...)
+	return dcb.db
+}
+
+type podSpecBuilder struct {
+	containers []corev1.Container
+}
+
+func (psb *podSpecBuilder) WithContainer(c corev1.Container) *podSpecBuilder {
+	psb.containers = append(psb.containers, c)
+	return psb
+}
+
+type containerBuilder struct {
+	psb *podSpecBuilder
+
+	name    string
+	image   string
+	command []string
+	args    []string
+}
+
+func (cb *containerBuilder) WithName(name string) *containerBuilder {
+	cb.name = name
+	return cb
+}
+
+func (cb *containerBuilder) WithImage(image string) *containerBuilder {
+	cb.image = image
+	return cb
+}
+
+func (cb *containerBuilder) WithCommand(command ...string) *containerBuilder {
+	cb.command = command
+	return cb
+}
+
+func (cb *containerBuilder) WithArgs(args ...string) *containerBuilder {
+	cb.args = args
+	return cb
+}
+
+func (cb *containerBuilder) AddContainer() *podSpecBuilder {
+	_ = cb.psb.WithContainer(corev1.Container{
+		Name:    cb.name,
+		Image:   cb.image,
+		Args:    cb.args,
+		Command: cb.command,
+	})
+	return cb.psb
+}
+
+func (psb *podSpecBuilder) Build() *corev1.PodSpec {
+	return &corev1.PodSpec{
+		Containers: psb.containers,
+	}
 }

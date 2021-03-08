@@ -22,6 +22,7 @@ import (
 	"strconv"
 
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -145,6 +146,17 @@ func GetDeploymentCondition(status appsv1.DeploymentStatus, condType appsv1.Depl
 	for i := range status.Conditions {
 		c := status.Conditions[i]
 		if c.Type == condType {
+			return &c
+		}
+	}
+	return nil
+}
+
+// GetDeploymentContainer returns the container with the given name from the
+// deployment or nil if not found.
+func GetDeploymentContainer(d *appsv1.Deployment, containerName string) *corev1.Container {
+	for _, c := range d.Spec.Template.Spec.Containers {
+		if c.Name == containerName {
 			return &c
 		}
 	}

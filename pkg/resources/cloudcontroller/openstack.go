@@ -82,7 +82,12 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 			}
 
-			version, err := getOSVersion(data.Cluster().Spec.Version)
+			v, err := data.GetControlPlaneComponentVersion(dep, resources.ControllerManagerDeploymentName)
+			if err != nil {
+				return nil, err
+			}
+
+			version, err := getOSVersion(*v)
 			if err != nil {
 				return nil, err
 			}

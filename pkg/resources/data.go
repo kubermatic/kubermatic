@@ -29,13 +29,16 @@ import (
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/docker"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
+	"k8c.io/kubermatic/v2/pkg/semver"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	appsv1 "k8s.io/api/apps/v1"
 
 	corev1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -513,6 +516,73 @@ func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
 	return GetCSIMigrationFeatureGates(d.Cluster())
 }
 
+func (d *TemplateData) Seed() *kubermaticv1.Seed {
+	return d.seed
+}
+
+// currentApiserverVersion returns the current version of the KAS, a bool
+// indicating whether the deployment rollout is complete and an error in case
+// something unexpected happens.
+func (d *TemplateData) currentApiserverVersion() (version *semver.Semver, rolloutComplete bool, err error) {
+	kas := appsv1.Deployment{}
+	if err := d.client.Get(d.ctx, ctrlruntimeclient.ObjectKey{Name: ApiserverDeploymentName, Namespace: d.cluster.Status.NamespaceName}, &kas); err != nil {
+		// Do not wrap to be able to use kerrors.IsNotFound.
+		return nil, false, err
+	}
+	v, found, err := GetDeploymentContainerSemver(&kas, ApiserverDeploymentName)
+	if err != nil || !found {
+		return nil, false, fmt.Errorf("error occurred while getting apiserver version: %w", err)
+	}
+
+	ready, err := kubernetes.IsDeploymentRolloutComplete(&kas, 0)
+	if err != nil {
+		return nil, false, fmt.Errorf("error occurred while checking apiserver rollout status: %w", err)
+	}
+	return v, ready, nil
+}
+
+// GetControlPlaneComponentVersion returns the wanted version for the
+// controlplane component taking into account the version skew policy.
+// This method can be used for all k8s control plane components apart from
+// Apiserver where it is always safe to use the version in the Cluster spec.
+// https://kubernetes.io/docs/setup/release/version-skew-policy/#kube-controller-manager-kube-scheduler-and-cloud-controller-manager
+func (d *TemplateData) GetControlPlaneComponentVersion(current *appsv1.Deployment, containerName string) (*semver.Semver, error) {
+	curr, found, err := GetDeploymentContainerSemver(current, containerName)
+	if err != nil {
+		return nil, err
+	}
+	// We assume that when the container is not found in the Deployment we are
+	// on fresh install, so there is no need of ensuring the version skew
+	// policy.
+	// Note that this could happen also when the Deployment is manually
+	// deleted, this corner case is not covered by this logic.
+	if !found {
+		return &d.Cluster().Spec.Version, nil
+	}
+	kasVer, rolloutComplete, err := d.currentApiserverVersion()
+	if err != nil {
+		// To avoid breaking backward compatiblity (.e.g. image-loader) we return the
+		// version in the Cluster spec if the KAS deployment is not found.
+		if kerrors.IsNotFound(err) {
+			return &d.Cluster().Spec.Version, nil
+		}
+		return nil, err
+	}
+	// If the rollout of the KAS is not complete we keep current version.
+	if !rolloutComplete {
+		return curr, nil
+	}
+	// compare major and minor version and return the wanted version only if
+	// version skew is respected, otherwise fallback to KAS version.
+	if d.Cluster().Spec.Version.Major() > kasVer.Major() {
+		return kasVer, nil
+	}
+	if d.Cluster().Spec.Version.Major() == kasVer.Major() && d.Cluster().Spec.Version.Minor() > kasVer.Minor() {
+		return kasVer, nil
+	}
+	return &d.Cluster().Spec.Version, nil
+}
+
 // KCMCloudControllersDeactivated return true if the KCM is ready and the
 // cloud-controllers are disabled.
 // * There is no 'cloud-provider' flag.
@@ -527,7 +597,7 @@ func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 	}
 	ready, _ := kubernetes.IsDeploymentRolloutComplete(&kcm, 0)
 	klog.V(4).Infof("controller-manager deployment rollout complete: %t", ready)
-	if c := getContainer(&kcm, ControllerManagerDeploymentName); c != nil {
+	if c := kubernetes.GetDeploymentContainer(&kcm, ControllerManagerDeploymentName); c != nil {
 		if ok, cmd := UnwrapCommand(*c); ok {
 			klog.V(4).Infof("controller-manager command %v %d", cmd.Args, len(cmd.Args))
 			// If no --cloud-provider flag is provided in-tree cloud provider
@@ -574,15 +644,6 @@ func getArgValue(args []string, argName string) (bool, string) {
 		}
 	}
 	return false, ""
-}
-
-func getContainer(d *appsv1.Deployment, containerName string) *corev1.Container {
-	for _, c := range d.Spec.Template.Spec.Containers {
-		if c.Name == containerName {
-			return &c
-		}
-	}
-	return nil
 }
 
 func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloudProvider bool) string {
@@ -636,6 +697,20 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 	return featureFlags
 }
 
-func (d *TemplateData) Seed() *kubermaticv1.Seed {
-	return d.seed
+func GetDeploymentContainerSemver(d *appsv1.Deployment, containerName string) (*semver.Semver, bool, error) {
+	c := kubernetes.GetDeploymentContainer(d, containerName)
+	if c == nil {
+		return nil, false, nil
+	}
+
+	tag, err := docker.ExtractTag(c.Image)
+	if err != nil {
+		return nil, true, fmt.Errorf("error occurred while extracting current version from %s: %v", containerName, err)
+	}
+
+	v, err := semver.NewSemver(tag)
+	if err != nil {
+		return nil, true, fmt.Errorf("error occurred while parsing current version from %s: %v", containerName, err)
+	}
+	return v, true, nil
 }

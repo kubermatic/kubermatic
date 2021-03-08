@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudconfig"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
+	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -61,7 +62,12 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 			dep.Name = resources.ControllerManagerDeploymentName
 			dep.Labels = resources.BaseAppLabels(name, nil)
 
-			flags, err := getFlags(data)
+			version, err := data.GetControlPlaneComponentVersion(dep, resources.ControllerManagerDeploymentName)
+			if err != nil {
+				return nil, err
+			}
+
+			flags, err := getFlags(data, version)
 			if err != nil {
 				return nil, err
 			}
@@ -153,7 +159,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				*openvpnSidecar,
 				{
 					Name:    resources.ControllerManagerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-controller-manager:v" + data.Cluster().Spec.Version.String(),
+					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-controller-manager:v" + version.String(),
 					Command: []string{"/usr/local/bin/kube-controller-manager"},
 					Args:    flags,
 					Env:     envVars,
@@ -201,7 +207,7 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 	}
 }
 
-func getFlags(data *resources.TemplateData) ([]string, error) {
+func getFlags(data *resources.TemplateData, version *semver.Semver) ([]string, error) {
 	controllers := []string{"*", "bootstrapsigner", "tokencleaner"}
 	// If CCM migration is enabled and all kubeletes have not been migrated yet
 	// disable the cloud controllers.
@@ -233,7 +239,7 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	if cloudProviderName != "" && cloudProviderName != "external" {
 		flags = append(flags, "--cloud-provider", cloudProviderName)
 		flags = append(flags, "--cloud-config", "/etc/kubernetes/cloud/config")
-		if cloudProviderName == "azure" && data.Cluster().Spec.Version.Semver().Minor() >= 15 {
+		if cloudProviderName == "azure" && version.Semver().Minor() >= 15 {
 			// Required so multiple clusters using the same resource group can allocate public IPs.
 			// Ref: https://github.com/kubernetes/kubernetes/pull/77630
 			flags = append(flags, "--cluster-name", data.Cluster().Name)
