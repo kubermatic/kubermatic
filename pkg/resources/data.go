@@ -561,7 +561,7 @@ func (d *TemplateData) GetControlPlaneComponentVersion(current *appsv1.Deploymen
 	}
 	kasVer, rolloutComplete, err := d.currentApiserverVersion()
 	if err != nil {
-		// To avoid breaking backward compatiblity (.e.g. image-loader) we return the
+		// To avoid breaking backward compatibility (.e.g. image-loader) we return the
 		// version in the Cluster spec if the KAS deployment is not found.
 		if kerrors.IsNotFound(err) {
 			return &d.Cluster().Spec.Version, nil
