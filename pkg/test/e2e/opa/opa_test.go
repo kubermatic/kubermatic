@@ -210,8 +210,7 @@ func setOPAIntegration(ctx context.Context, client ctrlruntimeclient.Client, clu
 		Enabled: enabled,
 	}
 
-	client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
-	return client.Update(ctx, cluster)
+	return client.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
 }
 
 func testConstraintForConfigMap(ctx context.Context, userClient ctrlruntimeclient.Client) error {
@@ -286,7 +285,7 @@ func createCT(ctx context.Context, client ctrlruntimeclient.Client) (*kubermatic
 				Validation: &constrainttemplatev1beta1.Validation{
 					OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
 						Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
-							"labels": apiextensionsv1beta1.JSONSchemaProps{
+							"labels": {
 								Type: "array",
 								Items: &apiextensionsv1beta1.JSONSchemaPropsOrArray{
 									Schema: &apiextensionsv1beta1.JSONSchemaProps{
