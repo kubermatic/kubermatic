@@ -19,7 +19,7 @@ ENV MC_VERSION=RELEASE.2020-09-03T00-08-28Z \
     HELM_VERSION=v2.16.9 \
     VAULT_VERSION=1.5.1 \
     YQ_VERSION=3.3.4 \
-    WWHRD_VERSION=0.3.0
+    WWHRD_VERSION=0.4.0
 
 RUN apk add --no-cache -U \
     bash \

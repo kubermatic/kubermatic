@@ -16,10 +16,10 @@ FROM alpine:3.12 AS builder
 
 RUN apk update
 RUN apk add curl
-RUN cd tmp && curl -L --fail https://github.com/frapposelli/wwhrd/releases/download/v0.3.0/wwhrd_0.3.0_linux_amd64.tar.gz | tar -xvz
+RUN cd tmp && curl -L --fail https://github.com/frapposelli/wwhrd/releases/download/v0.4.0/wwhrd_0.4.0_linux_amd64.tar.gz | tar -xvz
 RUN /tmp/wwhrd -v
 
-FROM alpine:3.12
+FROM golang:1.15.1
 
 COPY --from=builder /tmp/wwhrd /usr/local/bin/
 ENTRYPOINT ["wwhrd"]

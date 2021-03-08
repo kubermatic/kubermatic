@@ -266,7 +266,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/util:1.4.1
+      - image: quay.io/kubermatic/wwhrd:0.4.0-0
         command:
         - ./hack/verify-licenses.sh
         resources:

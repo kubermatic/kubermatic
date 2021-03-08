@@ -104,9 +104,10 @@ containerize() {
       -w /go/src/k8c.io/kubermatic \
       -e "GOCACHE=$gocache" \
       -u "$(id -u):$(id -g)" \
+      --entrypoint="$cmd" \
       --rm \
       -it \
-      $image $cmd $@
+      $image $@
 
     exit $?
   fi
