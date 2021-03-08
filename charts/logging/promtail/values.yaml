@@ -17,7 +17,7 @@ promtail:
 
   image:
     repository: docker.io/grafana/promtail
-    tag: 1.6.1
+    tag: 2.1.0
     pullPolicy: IfNotPresent
 
   loki:
