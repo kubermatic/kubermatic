@@ -19,6 +19,10 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
+CONTAINERIZE_IMAGE=quay.io/kubermatic/wwhrd:0.4.0-0 containerize ./hack/verify-licenses.sh
+
+go mod vendor
+
 echodate "Checking licenses..."
 wwhrd check -q
 echodate "Check successful."
