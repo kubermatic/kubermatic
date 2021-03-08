@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-blacklist:
+denylist:
   - GPL-2.0
   - LGPL-3.0
 
-whitelist:
+allowlist:
   - Apache-2.0
   - MIT
   - BSD-2-Clause
@@ -25,32 +25,21 @@ whitelist:
   - ISC
 
 exceptions:
-  - code.cloudfoundry.org/go-pubsub # Apache 2.0 - Cannot detect the license for some reason.
-  - code.cloudfoundry.org/go-pubsub/internal/node # Apache 2.0 - Cannot detect the license for some reason.
   - github.com/cristim/ec2-instances-info # Public domain: https://github.com/cristim/ec2-instances-info/blob/master/LICENSE.
   - github.com/cristim/ec2-instances-info/data # MIT: https://github.com/powdahound/ec2instances.info/blob/master/LICENSE.
-  - github.com/davecgh/go-spew/spew # ISC - Cannot detect the license for some reason.
-  - github.com/docker/spdystream # Apache 2.0 - Detector picks up on the CC-BY-4.0 license that is only for the documentation.
-  - github.com/docker/spdystream/spdy # Apache 2.0 - Detector picks up on the CC-BY-4.0 license that is only for the documentation.
-  - github.com/ghodss/yaml # BSD-3-Clause and MIT
-  - github.com/go-openapi/inflect # MIT - Cannot detect the license for some reason.
-  - github.com/gogo/protobuf/proto # BSD-3-Clause, as is the entire repository
-  - github.com/gogo/protobuf/sortkeys # BSD-3-Clause, as is the entire repository
-  - github.com/gogo/protobuf/gogoproto # BSD-3-Clause, as is the entire repository
-  - github.com/gogo/protobuf/protoc-gen-gogo/descriptor # BSD-3-Clause, as is the entire repository
-  - github.com/hashicorp/golang-lru # MPL-2.0 - used in transient vendor projects
-  - github.com/hashicorp/golang-lru/simplelru # MPL-2.0 - used in transient vendor projects
-  - github.com/hashicorp/hcl # MPL-2.0 - used in transient vendor projects
-  - github.com/hashicorp/hcl/hcl/ast # MPL-2.0 - used in transient vendor projects
-  - github.com/hashicorp/hcl/hcl/parser # MPL-2.0 - used in transient vendor projects
-  - github.com/hashicorp/hcl/hcl/printer # MPL-2.0 - used in transient vendor projects
-  - github.com/hashicorp/hcl/hcl/scanner # MPL-2.0 - used in transient vendor projects
-  - github.com/hashicorp/hcl/hcl/strconv # MPL-2.0 - used in transient vendor projects
-  - github.com/hashicorp/hcl/hcl/token # MPL-2.0 - used in transient vendor projects
-  - github.com/hashicorp/hcl/json/parser # MPL-2.0 - used in transient vendor projects
-  - github.com/hashicorp/hcl/json/scanner # MPL-2.0 - used in transient vendor projects
-  - github.com/hashicorp/hcl/json/token # MPL-2.0 - used in transient vendor projects
-  - github.com/kr/logfmt # MIT - No separate license file included.
-  - github.com/opencontainers/go-digest # Apache 2.0 - Cannot detect the license for some reason.
-  - github.com/spf13/cobra # Apache 2.0 - Cannot detect the license for some reason.
-  - sigs.k8s.io/yaml # MIT - Cannot detect the license for some reason.
+  - github.com/hashicorp/errwrap # MPL-2.0
+  - github.com/hashicorp/go-cleanhttp # MPL-2.0
+  - github.com/hashicorp/go-multierror # MPL-2.0
+  - github.com/hashicorp/go-retryablehttp # MPL-2.0
+  - github.com/hashicorp/golang-lru # MPL-2.0
+  - github.com/hashicorp/golang-lru/simplelru # MPL-2.0
+  - github.com/hashicorp/hcl # MPL-2.0
+  - github.com/hashicorp/hcl/hcl/ast # MPL-2.0
+  - github.com/hashicorp/hcl/hcl/parser # MPL-2.0
+  - github.com/hashicorp/hcl/hcl/printer # MPL-2.0
+  - github.com/hashicorp/hcl/hcl/scanner # MPL-2.0
+  - github.com/hashicorp/hcl/hcl/strconv # MPL-2.0
+  - github.com/hashicorp/hcl/hcl/token # MPL-2.0
+  - github.com/hashicorp/hcl/json/parser # MPL-2.0
+  - github.com/hashicorp/hcl/json/scanner # MPL-2.0
+  - github.com/hashicorp/hcl/json/token # MPL-2.0

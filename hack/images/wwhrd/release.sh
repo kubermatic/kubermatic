@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)
 
 REPOSITORY=quay.io/kubermatic/wwhrd
-VERSION=0.3.0
+VERSION=0.4.0
 NUMBER=0
 
 docker build --no-cache --pull -t "${REPOSITORY}:${VERSION}-${NUMBER}" .
