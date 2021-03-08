@@ -17,9 +17,8 @@ nginx:
   asDaemonSet: false
   replicas: 3
   image:
-    # us, eu or asia
-    repository: eu.gcr.io/k8s-artifacts-prod/ingress-nginx/controller
-    tag: v0.34.1
+    repository: k8s.gcr.io/ingress-nginx/controller
+    tag: v0.44.0
   config: {}
 #   load-balance: "least_conn"
   extraArgs: []
