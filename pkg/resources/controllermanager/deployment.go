@@ -255,6 +255,17 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	// We're going to use the https endpoints for scraping the metrics starting from 1.12. Thus we can deactivate the http endpoint
 	flags = append(flags, "--port", "0")
 
+	// Apply leader election settings
+	if lds := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.LeaseDurationSeconds; lds != nil {
+		flags = append(flags, "--leader-elect-lease-duration", fmt.Sprintf("%ds", *lds))
+	}
+	if rds := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RenewDeadlineSeconds; rds != nil {
+		flags = append(flags, "--leader-elect-renew-deadline", fmt.Sprintf("%ds", *rds))
+	}
+	if rps := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RetryPeriodSeconds; rps != nil {
+		flags = append(flags, "--leader-elect-retry-period", fmt.Sprintf("%ds", *rps))
+	}
+
 	return flags, nil
 }
 
