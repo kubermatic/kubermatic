@@ -61,3 +61,9 @@ nginx:
     # cluster-wide endpoints. Available values: "Local" and "Cluster".
     # "Local" preserves the client source IP, and "Cluster" doesn't.
     externalTrafficPolicy: ""
+
+    # a list of additional annotations for the LoadBalancer service; use this
+    # to set any provider-related settings
+    annotations:
+      # make sure the LoadBalancer stays when this Helm release is ever removed
+      "helm.sh/resource-policy": keep
