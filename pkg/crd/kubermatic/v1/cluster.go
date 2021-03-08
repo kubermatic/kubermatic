@@ -306,8 +306,8 @@ type AuditLoggingSettings struct {
 
 type ComponentSettings struct {
 	Apiserver         APIServerSettings       `json:"apiserver"`
-	ControllerManager DeploymentSettings      `json:"controllerManager"`
-	Scheduler         DeploymentSettings      `json:"scheduler"`
+	ControllerManager ControllerSettings      `json:"controllerManager"`
+	Scheduler         ControllerSettings      `json:"scheduler"`
 	Etcd              EtcdStatefulSetSettings `json:"etcd"`
 	Prometheus        StatefulSetSettings     `json:"prometheus"`
 }
@@ -316,6 +316,11 @@ type APIServerSettings struct {
 	DeploymentSettings `json:",inline"`
 
 	EndpointReconcilingDisabled *bool `json:"endpointReconcilingDisabled,omitempty"`
+}
+
+type ControllerSettings struct {
+	DeploymentSettings     `json:",inline"`
+	LeaderElectionSettings `json:"leaderElection,omitempty"`
 }
 
 type DeploymentSettings struct {
@@ -330,6 +335,22 @@ type StatefulSetSettings struct {
 type EtcdStatefulSetSettings struct {
 	ClusterSize int                          `json:"clusterSize,omitempty"`
 	Resources   *corev1.ResourceRequirements `json:"resources,omitempty"`
+}
+
+type LeaderElectionSettings struct {
+	// LeaseDurationSeconds is the duration in seconds that non-leader candidates
+	// will wait to force acquire leadership. This is measured against time of
+	// last observed ack.
+	// +optional
+	LeaseDurationSeconds *int32 `json:"leaseDurationSeconds,omitempty"`
+	// RenewDeadlineSeconds is the duration in seconds that the acting controlplane
+	// will retry refreshing leadership before giving up.
+	// +optional
+	RenewDeadlineSeconds *int32 `json:"renewDeadlineSeconds,omitempty"`
+	// RetryPeriodSeconds is the duration in seconds the LeaderElector clients
+	// should wait between tries of actions.
+	// +optional
+	RetryPeriodSeconds *int32 `json:"retryPeriodSeconds,omitempty"`
 }
 
 // ClusterNetworkingConfig specifies the different networking
