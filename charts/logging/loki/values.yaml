@@ -39,7 +39,6 @@ loki:
           kvstore:
             store: inmemory
           replication_factor: 1
-
     limits_config:
       enforce_metric_name: false
       reject_old_samples: true
@@ -53,6 +52,13 @@ loki:
         index:
           prefix: index_
           period: 144h
+      - from: 2021-07-01
+        store: boltdb-shipper
+        object_store: filesystem
+        schema: v11
+        index:
+          prefix: index_
+          period: 24h
     server:
       http_listen_port: 3100
     storage_config:
@@ -68,7 +74,7 @@ loki:
 
   image:
     repository: docker.io/grafana/loki
-    tag: 1.6.1
+    tag: 2.1.0
     pullPolicy: IfNotPresent
 
   ## The app name of loki clients
