@@ -15,7 +15,7 @@
 iap:
   image:
     repository: quay.io/oauth2-proxy/oauth2-proxy
-    tag: v6.1.1
+    tag: v7.0.1
     pullPolicy: IfNotPresent
 
   # secret which holds the CA certificates that should be used when connecting to the provider
