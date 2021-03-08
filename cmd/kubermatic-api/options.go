@@ -17,16 +17,16 @@ limitations under the License.
 package main
 
 import (
-	"crypto/x509"
+	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
@@ -50,6 +50,7 @@ type serverRunOptions struct {
 	namespace        string
 	log              kubermaticlog.Options
 	accessibleAddons sets.String
+	caBundle         *certificates.CABundle
 
 	// OIDC configuration
 	oidcURL                        string
@@ -59,7 +60,6 @@ type serverRunOptions struct {
 	oidcIssuerRedirectURI          string
 	oidcIssuerCookieHashKey        string
 	oidcIssuerCookieSecureMode     bool
-	oidcCABundle                   *x509.CertPool
 	oidcSkipTLSVerify              bool
 	oidcIssuerOfflineAccessAsScope bool
 
@@ -75,7 +75,7 @@ func newServerRunOptions() (serverRunOptions, error) {
 	var (
 		rawExposeStrategy   string
 		rawAccessibleAddons string
-		oidcCAFile          string
+		caBundleFile        string
 	)
 
 	s.log = kubermaticlog.NewDefaultOptions()
@@ -91,9 +91,9 @@ func newServerRunOptions() (serverRunOptions, error) {
 	flag.StringVar(&s.presetsFile, "presets", "", "The optional file path for a file containing presets")
 	flag.StringVar(&s.swaggerFile, "swagger", "./cmd/kubermatic-api/swagger.json", "The swagger.json file path")
 	flag.StringVar(&rawAccessibleAddons, "accessible-addons", "", "Comma-separated list of user cluster addons to expose via the API")
+	flag.StringVar(&caBundleFile, "ca-bundle", "", "The path to the certificate for the CA that signed your identity provider’s web certificate.")
 	flag.StringVar(&s.oidcURL, "oidc-url", "", "URL of the OpenID token issuer. Example: http://auth.int.kubermatic.io")
 	flag.BoolVar(&s.oidcSkipTLSVerify, "oidc-skip-tls-verify", false, "Skip TLS verification for the token issuer")
-	flag.StringVar(&oidcCAFile, "oidc-ca-file", "", "The path to the certificate for the CA that signed your identity provider’s web certificate.")
 	flag.StringVar(&s.oidcAuthenticatorClientID, "oidc-authenticator-client-id", "", "Authenticator client ID")
 	flag.StringVar(&s.oidcIssuerClientID, "oidc-issuer-client-id", "", "Issuer client ID")
 	flag.StringVar(&s.oidcIssuerClientSecret, "oidc-issuer-client-secret", "", "OpenID client secret")
@@ -119,20 +119,16 @@ func newServerRunOptions() (serverRunOptions, error) {
 	s.accessibleAddons = sets.NewString(strings.Split(rawAccessibleAddons, ",")...)
 	s.accessibleAddons.Delete("")
 
-	if len(oidcCAFile) > 0 {
-		bytes, err := ioutil.ReadFile(oidcCAFile)
-		if err != nil {
-			return s, fmt.Errorf("failed to read OpenID CA file '%s': %v", oidcCAFile, err)
-		}
-
-		pool := x509.NewCertPool()
-		if !pool.AppendCertsFromPEM(bytes) {
-			return s, fmt.Errorf("OpenID CA file '%s' does not contain any valid PEM-encoded certificates", oidcCAFile)
-		}
-
-		s.oidcCABundle = pool
+	if len(caBundleFile) == 0 {
+		return s, errors.New("no -ca-bundle configured")
 	}
 
+	cabundle, err := certificates.NewCABundleFromFile(caBundleFile)
+	if err != nil {
+		return s, fmt.Errorf("failed to read CA bundle file '%s': %v", caBundleFile, err)
+	}
+
+	s.caBundle = cabundle
 	s.versions = kubermatic.NewDefaultVersions()
 
 	return s, nil

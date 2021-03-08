@@ -93,11 +93,9 @@ spec:
         {{- end }}
         - -nodeport-range={{ .Values.kubermatic.controller.nodeportRange }}
         - -docker-pull-config-json-file=/opt/docker/.dockerconfigjson
+        - -ca-bundle=/opt/ca-bundle/ca-bundle.pem
         {{- if regexMatch ".*OpenIDAuthPlugin=true.*" (default "" .Values.kubermatic.controller.featureGates) }}
         # the following flags enable oidc auth plugin on kube-API servers
-        {{- if .Values.kubermatic.auth.caBundle }}
-        - -oidc-ca-file=/opt/dex-ca/caBundle.pem
-        {{- end }}
         - -oidc-issuer-url={{ .Values.kubermatic.auth.tokenIssuer }}
         - -oidc-issuer-client-id={{ .Values.kubermatic.auth.issuerClientID }}
         - -oidc-issuer-client-secret={{ .Values.kubermatic.auth.issuerClientSecret }}
@@ -157,6 +155,9 @@ spec:
           containerPort: 8085
           protocol: TCP
         volumeMounts:
+        - name: ca-bundle
+          mountPath: "/opt/ca-bundle/"
+          readOnly: true
         {{- if .Values.kubermatic.auth.caBundle }}
         - name: dex-ca
           mountPath: "/opt/dex-ca/"
@@ -196,6 +197,9 @@ spec:
       imagePullSecrets:
       - name: dockercfg
       volumes:
+      - name: ca-bundle
+        configMap:
+          name: ca-bundle
       {{- if .Values.kubermatic.auth.caBundle }}
       - name: dex-ca
         secret:

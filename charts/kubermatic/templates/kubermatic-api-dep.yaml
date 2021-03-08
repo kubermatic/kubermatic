@@ -72,9 +72,7 @@ spec:
         - -accessible-addons={{- (.Files.Get "static/master/accessible-addons.yaml" | fromYaml).addons | join "," }}
         {{- end }}
         - -feature-gates={{ .Values.kubermatic.api.featureGates }}
-        {{- if .Values.kubermatic.auth.caBundle }}
-        - -oidc-ca-file=/opt/dex-ca/caBundle.pem
-        {{- end }}
+        - -ca-bundle=/opt/ca-bundle/ca-bundle.pem
         # the following flags enable oidc kubeconfig feature/endpoint
         {{- if regexMatch ".*OIDCKubeCfgEndpoint=true.*" (default "" .Values.kubermatic.api.featureGates) }}
         - -oidc-issuer-redirect-uri={{ .Values.kubermatic.auth.issuerRedirectURL }}
@@ -112,6 +110,9 @@ spec:
             path: /api/v1/healthz
             scheme: HTTP
         volumeMounts:
+        - name: ca-bundle
+          mountPath: "/opt/ca-bundle/"
+          readOnly: true
         {{- if .Values.kubermatic.auth.caBundle }}
         - name: dex-ca
           mountPath: "/opt/dex-ca/"
@@ -138,6 +139,9 @@ spec:
       imagePullSecrets:
       - name: dockercfg
       volumes:
+      - name: ca-bundle
+        configMap:
+          name: ca-bundle
       {{- if .Values.kubermatic.auth.caBundle }}
       - name: dex-ca
         secret:

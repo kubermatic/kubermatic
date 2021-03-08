@@ -52,7 +52,7 @@ var (
 
 const (
 	Name = "machine-controller"
-	Tag  = "v1.23.1"
+	Tag  = "v1.26.0"
 
 	NodeLocalDNSCacheAddress = "169.254.20.10"
 )
@@ -103,7 +103,9 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 			}
 			dep.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 
-			volumes := []corev1.Volume{getKubeconfigVolume()}
+			volumes := []corev1.Volume{getKubeconfigVolume(), getCABundleVolume()}
+			dep.Spec.Template.Spec.Volumes = volumes
+
 			podLabels, err := data.GetPodTemplateLabels(Name, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %v", err)
@@ -117,8 +119,6 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 					"prometheus.io/port":   "8080",
 				},
 			}
-
-			dep.Spec.Template.Spec.Volumes = volumes
 
 			clusterDNSIP := NodeLocalDNSCacheAddress
 			if !data.NodeLocalDNSCacheEnabled() {
@@ -166,6 +166,11 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 							MountPath: "/etc/kubernetes/kubeconfig",
 							ReadOnly:  true,
 						},
+						{
+							Name:      resources.CABundleConfigMapName,
+							MountPath: "/etc/kubernetes/pki/ca-bundle",
+							ReadOnly:  true,
+						},
 					},
 				},
 			}
@@ -176,17 +181,6 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 
 			return dep, nil
 		}
-	}
-}
-
-func getKubeconfigVolume() corev1.Volume {
-	return corev1.Volume{
-		Name: resources.MachineControllerKubeconfigSecretName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: resources.MachineControllerKubeconfigSecretName,
-			},
-		},
 	}
 }
 
@@ -255,6 +249,7 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, exte
 		"-cluster-dns", clusterDNSIP,
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
+		"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
 	}
 
 	if nodeSettings != nil {

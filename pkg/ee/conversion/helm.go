@@ -41,6 +41,7 @@ import (
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/client-go/tools/clientcmd"
@@ -162,6 +163,14 @@ func HelmValuesFileToCRDs(yamlContent []byte, opt Options) ([]runtime.Object, er
 		return nil, fmt.Errorf("failed to create KubermaticConfiguration: %v", err)
 	}
 	result = append(result, config)
+
+	caBundle, err := convertOIDCCABundle(&values, config, opt.Namespace)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create OIDC ConfigMap: %v", err)
+	}
+	if caBundle != nil {
+		result = append(result, caBundle)
+	}
 
 	if opt.IncludeSeeds {
 		seeds, err := convertSeeds(&values, opt.Namespace, opt.PauseSeeds)
@@ -371,15 +380,37 @@ func convertPresets(values *helmValues, targetNamespace string) ([]runtime.Objec
 	return result, nil
 }
 
+func convertOIDCCABundle(values *helmValues, config *operatorv1alpha1.KubermaticConfiguration, targetNamespace string) (*corev1.ConfigMap, error) {
+	if values.Kubermatic.Auth.CABundle == "" {
+		return nil, nil
+	}
+
+	caBundle, err := base64.StdEncoding.DecodeString(values.Kubermatic.Auth.CABundle)
+	if err != nil {
+		return nil, fmt.Errorf("invalid CA bundle: %v", err)
+	}
+
+	config.Spec.CABundle.Name = resources.CABundleConfigMapName
+
+	return &corev1.ConfigMap{
+		TypeMeta: v1.TypeMeta{
+			APIVersion: "v1",
+			Kind:       "ConfigMap",
+		},
+		ObjectMeta: v1.ObjectMeta{
+			Name:      config.Spec.CABundle.Name,
+			Namespace: targetNamespace,
+		},
+		Data: map[string]string{
+			resources.CABundleConfigMapKey: string(caBundle),
+		},
+	}, nil
+}
+
 func convertAuth(values *kubermaticValues) (*operatorv1alpha1.KubermaticAuthConfiguration, error) {
 	effectiveClientID := values.Auth.ClientID
 	if effectiveClientID == "" {
 		effectiveClientID = common.DefaultAuthClientID
-	}
-
-	caBundle, err := base64.StdEncoding.DecodeString(values.Auth.CABundle)
-	if err != nil {
-		return nil, fmt.Errorf("invalid CA bundle: %v", err)
 	}
 
 	return &operatorv1alpha1.KubermaticAuthConfiguration{
@@ -389,7 +420,6 @@ func convertAuth(values *kubermaticValues) (*operatorv1alpha1.KubermaticAuthConf
 		IssuerRedirectURL:        strIfChanged(values.Auth.IssuerRedirectURL, fmt.Sprintf("https://%s/api/v1/kubeconfig", values.Domain)),
 		IssuerClientSecret:       values.Auth.IssuerClientSecret,
 		IssuerCookieKey:          values.Auth.IssuerCookieKey,
-		CABundle:                 string(caBundle),
 		SkipTokenIssuerTLSVerify: values.Auth.SkipTokenIssuerTLSVerify == "true",
 		ServiceAccountKey:        values.Auth.ServiceAccountKey,
 	}, nil

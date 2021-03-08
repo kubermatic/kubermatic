@@ -66,8 +66,9 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 				return nil, err
 			}
 
-			volumes := []corev1.Volume{getKubeconfigVolume(), getServingCertVolume()}
+			volumes := []corev1.Volume{getKubeconfigVolume(), getServingCertVolume(), getCABundleVolume()}
 			dep.Spec.Template.Spec.Volumes = volumes
+
 			podLabels, err := data.GetPodTemplateLabels(resources.MachineControllerWebhookDeploymentName, volumes, nil)
 			if err != nil {
 				return nil, fmt.Errorf("failed to create pod labels: %v", err)
@@ -85,6 +86,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 						"-logtostderr",
 						"-v", "4",
 						"-listen-address", "0.0.0.0:9876",
+						"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
 					},
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "KUBECONFIG",
@@ -128,6 +130,11 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 							MountPath: "/tmp/cert",
 							ReadOnly:  true,
 						},
+						{
+							Name:      resources.CABundleConfigMapName,
+							MountPath: "/etc/kubernetes/pki/ca-bundle",
+							ReadOnly:  true,
+						},
 					},
 				},
 			}
@@ -169,17 +176,6 @@ func ServiceCreator() reconciling.NamedServiceCreatorGetter {
 
 			return se, nil
 		}
-	}
-}
-
-func getServingCertVolume() corev1.Volume {
-	return corev1.Volume{
-		Name: resources.MachineControllerWebhookServingCertSecretName,
-		VolumeSource: corev1.VolumeSource{
-			Secret: &corev1.SecretVolumeSource{
-				SecretName: resources.MachineControllerWebhookServingCertSecretName,
-			},
-		},
 	}
 }
 

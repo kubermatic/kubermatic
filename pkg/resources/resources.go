@@ -20,12 +20,14 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
+	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net"
+	"net/http"
 	"time"
 
 	"github.com/minio/minio-go"
@@ -197,10 +199,6 @@ const (
 	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
 	//ApiserverFrontProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
 	ApiserverFrontProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
-	// DexCASecretName is the name of the secret that contains the Dex CA bundle
-	DexCASecretName = "dex-ca"
-	// DexCAFileName is the name of Dex CA bundle file
-	DexCAFileName = "caBundle.pem"
 	// GoogleServiceAccountSecretName is the name of the secret that contains the Google Service Account.
 	GoogleServiceAccountSecretName = "google-service-account"
 	// GoogleServiceAccountVolumeName is the name of the volume containing the Google Service Account secret.
@@ -214,10 +212,10 @@ const (
 	// the Kubernetes Dashboard
 	KubernetesDashboardCsrfTokenSecretName = "kubernetes-dashboard-csrf"
 
-	// HostCACertVolumeName is the name for the /etc/ssl/certs host mount volume
-	HostCACertVolumeName = "ca-certs"
-	// HostUsrShareCACertVolumeName is the anme for the /usr/share/ca-certificates host mount volume
-	HostUsrShareCACertVolumeName = "usr-share-ca-certificates"
+	// CABundleConfigMapName is the name for the configmap that contains the CA bundle for all usercluster components
+	CABundleConfigMapName = "ca-bundle"
+	// CABundleConfigMapKey is the key under which a ConfigMap must contain a PEM-encoded collection of certificates
+	CABundleConfigMapKey = "ca-bundle.pem"
 
 	// CloudConfigConfigMapName is the name for the configmap containing the cloud-config
 	CloudConfigConfigMapName = "cloud-config"
@@ -849,19 +847,19 @@ func getClusterCAFromLister(ctx context.Context, namespace, name string, client 
 	return certs[0], key, nil
 }
 
-// GetDexCAFromFile returns the Dex CA from the lister
-func GetDexCAFromFile(caBundleFilePath string) ([]*x509.Certificate, error) {
-	rawData, err := ioutil.ReadFile(caBundleFilePath)
+// GetCABundleFromFile returns the CA bundle from a file
+func GetCABundleFromFile(file string) ([]*x509.Certificate, error) {
+	rawData, err := ioutil.ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read CA bundle file %q: %v", caBundleFilePath, err)
+		return nil, fmt.Errorf("failed to read file %q: %v", file, err)
 	}
 
-	dexCACerts, err := certutil.ParseCertsPEM(rawData)
+	caCerts, err := certutil.ParseCertsPEM(rawData)
 	if err != nil {
 		return nil, fmt.Errorf("got an invalid cert: %v", err)
 	}
 
-	return dexCACerts, nil
+	return caCerts, nil
 }
 
 // GetClusterRootCA returns the root CA of the cluster from the lister
@@ -1095,45 +1093,11 @@ func SupportsFailureDomainZoneAntiAffinity(ctx context.Context, client ctrlrunti
 	return len(nodeList.Items) != 0, nil
 }
 
-// GetHostCACertVolumes returns a list of v1 volumes so that pod can have root CA-certs
-func GetHostCACertVolumes() []corev1.Volume {
-	doc := corev1.HostPathDirectoryOrCreate
-	return []corev1.Volume{
-		{
-			Name: HostCACertVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/etc/ssl/certs",
-					Type: &doc,
-				},
-			},
-		},
-		{
-			Name: HostUsrShareCACertVolumeName,
-			VolumeSource: corev1.VolumeSource{
-				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/usr/share/ca-certificates",
-					Type: &doc,
-				},
-			},
-		},
-	}
-}
-
-// GetHostCACertVolumeMounts returns a list of v1 volumeMounts such that pod could mount from the host OS root CA-certs
-func GetHostCACertVolumeMounts() []corev1.VolumeMount {
-	return []corev1.VolumeMount{
-		{
-			Name:      HostCACertVolumeName,
-			MountPath: "/etc/ssl/certs",
-			ReadOnly:  true,
-		},
-		{
-			Name:      HostUsrShareCACertVolumeName,
-			MountPath: "/usr/share/ca-certificates",
-			ReadOnly:  true,
-		},
-	}
+// BackupCABundleConfigMapName returns the name of the ConfigMap in the kube-system namespace
+// that holds the CA bundle for a given cluster. As the CA bundle technically can be different
+// per usercluster, this is not a constant.
+func BackupCABundleConfigMapName(cluster *kubermaticv1.Cluster) string {
+	return fmt.Sprintf("cluster-%s-ca-bundle", cluster.Name)
 }
 
 // GetEtcdRestoreS3Client returns an S3 client for downloading the backup for a given EtcdRestore.
@@ -1151,7 +1115,6 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		for k, v := range secret.Data {
 			secretData[k] = string(v)
 		}
-
 	} else {
 		if !createSecretIfMissing {
 			return nil, "", fmt.Errorf("BackupDownloadCredentialsSecret not set")
@@ -1216,11 +1179,31 @@ func GetEtcdRestoreS3Client(ctx context.Context, restore *kubermaticv1.EtcdResto
 		endpoint = EtcdRestoreDefaultS3SEndpoint
 	}
 
+	caBundleConfigMap := &corev1.ConfigMap{}
+	caBundleKey := types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: BackupCABundleConfigMapName(cluster)}
+	if err := client.Get(ctx, caBundleKey, caBundleConfigMap); err != nil {
+		return nil, "", fmt.Errorf("failed to get CA bundle ConfigMap: %w", err)
+	}
+	bundle, ok := caBundleConfigMap.Data[CABundleConfigMapKey]
+	if !ok {
+		return nil, "", fmt.Errorf("ConfigMap does not contain key %q", CABundleConfigMapKey)
+	}
+
+	pool := x509.NewCertPool()
+	if !pool.AppendCertsFromPEM([]byte(bundle)) {
+		return nil, "", errors.New("CA bundle does not contain any valid certificates")
+	}
+
 	s3Client, err := minio.New(endpoint, accessKeyID, secretAccessKey, true)
 	if err != nil {
 		return nil, "", fmt.Errorf("error creating s3 client: %w", err)
 	}
 	s3Client.SetAppInfo("kubermatic", "v0.1")
+
+	s3Client.SetCustomTransport(&http.Transport{
+		TLSClientConfig:    &tls.Config{RootCAs: pool},
+		DisableCompression: true,
+	})
 
 	return s3Client, bucketName, nil
 }

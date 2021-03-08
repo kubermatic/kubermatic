@@ -17,19 +17,23 @@ limitations under the License.
 package apiserver
 
 import (
-	"crypto/x509"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	corev1 "k8s.io/api/core/v1"
 )
 
-// DexCACertificateCreator returns a function to create/update the secret with the certificate for TLS verification against dex
-func DexCACertificateCreator(getDexCA func() ([]*x509.Certificate, error)) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return resources.DexCASecretName, certificates.GetDexCACreator(
-			resources.DexCAFileName,
-			getDexCA,
-		)
+type caBundleProvider interface {
+	CABundle() resources.CABundle
+}
+
+func CABundleCreator(data caBundleProvider) reconciling.NamedConfigMapCreatorGetter {
+	return func() (string, reconciling.ConfigMapCreator) {
+		return resources.CABundleConfigMapName, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+			c.Data = map[string]string{
+				resources.CABundleConfigMapKey: data.CABundle().String(),
+			}
+
+			return c, nil
+		}
 	}
 }

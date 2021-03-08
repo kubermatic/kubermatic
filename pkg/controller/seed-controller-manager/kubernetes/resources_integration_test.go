@@ -25,6 +25,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -85,6 +86,8 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		}
 	}()
 
+	caBundle := certificates.NewFakeCABundle()
+
 	testCluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "test-cluster",
@@ -117,11 +120,24 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		},
 	}
 
+	caBundleConfigMap := &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: testCluster.Status.NamespaceName,
+			Name:      resources.CABundleConfigMapName,
+		},
+		Data: map[string]string{
+			resources.CABundleConfigMapKey: caBundle.String(),
+		},
+	}
+
 	if err := mgr.GetClient().Create(ctx, testCluster); err != nil {
 		t.Fatalf("failed to create testcluster: %v", err)
 	}
 	if err := mgr.GetClient().Create(ctx, lbService); err != nil {
 		t.Fatalf("failed to create the loadbalancer service: %v", err)
+	}
+	if err := mgr.GetClient().Create(ctx, caBundleConfigMap); err != nil {
+		t.Fatalf("failed to create the CA bundle: %v", err)
 	}
 
 	// Status must be set *after* the Service has been created, because
@@ -154,6 +170,7 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 				},
 			}, nil
 		},
+		caBundle: caBundle,
 	}
 
 	if err := r.ensureClusterNetworkDefaults(ctx, testCluster); err != nil {

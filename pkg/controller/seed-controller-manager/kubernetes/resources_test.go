@@ -31,6 +31,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 )
 
@@ -43,6 +44,7 @@ func init() {
 func TestCloudControllerManagerDeployment(t *testing.T) {
 	// these tests use openstack as an example for a provider that has
 	// a CCM; the logic tested here is independent of the provider itself
+
 	testCases := []struct {
 		name                string
 		cluster             *kubermaticv1.Cluster
@@ -295,15 +297,28 @@ func TestCloudControllerManagerDeployment(t *testing.T) {
 		},
 	}
 
+	caBundle := certificates.NewFakeCABundle()
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			fc := fake.NewClientBuilder().Build()
+			caBundleConfigMap := &corev1.ConfigMap{
+				ObjectMeta: metav1.ObjectMeta{
+					Namespace: tc.cluster.Status.NamespaceName,
+					Name:      resources.CABundleConfigMapName,
+				},
+				Data: map[string]string{
+					resources.CABundleConfigMapKey: caBundle.String(),
+				},
+			}
+
+			fc := fake.NewClientBuilder().WithObjects(caBundleConfigMap).Build()
 			td := resources.NewTemplateDataBuilder().
 				WithContext(ctx).
 				WithClient(fc).
 				WithCluster(tc.cluster).
+				WithCABundle(caBundle).
 				Build()
 			// Add the KCM deployment
 			if err := fc.Create(ctx, tc.kcmDeploymentConfig.Create(td)); err != nil {

@@ -12,10 +12,19 @@ command:
   bucket=kubermatic-etcd-backups
 
   # by default, we keep the most recent backup for every user cluster
-  s3-storeuploader delete-old-revisions --max-revisions 1 --endpoint "$endpoint" --bucket "$bucket" --prefix $CLUSTER
+  s3-storeuploader delete-old-revisions \
+    --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+    --max-revisions 1 \
+    --endpoint "$endpoint" \
+    --bucket "$bucket" \
+    --prefix $CLUSTER
 
   # alternatively, delete all backups for this cluster
-  #s3-storeuploader delete-all --endpoint "$endpoint" --bucket "$bucket" --prefix $CLUSTER
+  #s3-storeuploader delete-all \
+  # --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+  # --endpoint "$endpoint" \
+  # --bucket "$bucket" \
+  # --prefix $CLUSTER
 env:
 - name: ACCESS_KEY_ID
   valueFrom:

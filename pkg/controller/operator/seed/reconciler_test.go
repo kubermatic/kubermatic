@@ -28,6 +28,8 @@ import (
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
@@ -429,7 +431,23 @@ func TestBasicReconciling(t *testing.T) {
 func createTestReconciler(allSeeds map[string]*kubermaticv1.Seed, cfg *operatorv1alpha1.KubermaticConfiguration, seeds []string, syncedSeeds sets.String) *Reconciler {
 	masterObjects := []ctrlruntimeclient.Object{}
 	if cfg != nil {
-		masterObjects = append(masterObjects, cfg)
+		// CABundle is defaulted in reallife scenarios
+		defaulted, err := common.DefaultConfiguration(cfg, kubermaticlog.NewDefault().Sugar())
+		if err != nil {
+			panic(err)
+		}
+
+		caBundle := certificates.NewFakeCABundle()
+
+		masterObjects = append(masterObjects, cfg, &corev1.ConfigMap{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      defaulted.Spec.CABundle.Name,
+				Namespace: defaulted.Namespace,
+			},
+			Data: map[string]string{
+				resources.CABundleConfigMapKey: caBundle.String(),
+			},
+		})
 	}
 
 	masterSeeds := map[string]*kubermaticv1.Seed{} // makes the seedsGetter implementation easier

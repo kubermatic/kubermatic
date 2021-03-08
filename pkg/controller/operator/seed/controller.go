@@ -113,6 +113,12 @@ func Add(
 		return fmt.Errorf("failed to create watcher for %T: %v", config, err)
 	}
 
+	// watch for changes to the global CA bundle ConfigMap and replicate it into each Seed
+	configMap := &corev1.ConfigMap{}
+	if err := c.Watch(&source.Kind{Type: configMap}, configEventHandler, namespacePredicate); err != nil {
+		return fmt.Errorf("failed to create watcher for %T: %v", configMap, err)
+	}
+
 	// watch for changes to Seed CRs inside the master cluster and reconcile the seed itself only
 	seed := &kubermaticv1.Seed{}
 	if err := c.Watch(&source.Kind{Type: seed}, &handler.EnqueueRequestForObject{}, namespacePredicate); err != nil {

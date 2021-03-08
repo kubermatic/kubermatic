@@ -36,7 +36,6 @@ spec:
         memory: 512Mi
   # Auth defines keys and URLs for Dex.
   auth:
-    caBundle: ""
     clientID: kubermatic
     issuerClientID: kubermaticIssuer
     issuerClientSecret: ""
@@ -45,6 +44,19 @@ spec:
     serviceAccountKey: ""
     skipTokenIssuerTLSVerify: false
     tokenIssuer: https://example.com/dex
+  # CABundle references a ConfigMap in the same namespace as the KubermaticConfiguration.
+  # This ConfigMap must contain a ca-bundle.pem with PEM-encoded certificates. This bundle
+  # automatically synchronized into each seed and each usercluster. APIGroup and Kind are
+  # currently ignored.
+  caBundle:
+    # APIGroup is the group for the resource being referenced.
+    # If APIGroup is not specified, the specified Kind must be in the core API group.
+    # For any other third-party types, APIGroup is required.
+    apiGroup: null
+    # Kind is the type of resource being referenced
+    kind: ""
+    # Name is the name of resource being referenced
+    name: ca-bundle
   # ExposeStrategy is the strategy to expose the cluster with.
   # Note: The `seed_dns_overwrite` setting of a Seed's datacenter doesn't have any effect
   # if this is set to LoadBalancerStrategy.
@@ -142,10 +154,19 @@ spec:
         bucket=kubermatic-etcd-backups
 
         # by default, we keep the most recent backup for every user cluster
-        s3-storeuploader delete-old-revisions --max-revisions 1 --endpoint "$endpoint" --bucket "$bucket" --prefix $CLUSTER
+        s3-storeuploader delete-old-revisions \
+          --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+          --max-revisions 1 \
+          --endpoint "$endpoint" \
+          --bucket "$bucket" \
+          --prefix $CLUSTER
 
         # alternatively, delete all backups for this cluster
-        #s3-storeuploader delete-all --endpoint "$endpoint" --bucket "$bucket" --prefix $CLUSTER
+        #s3-storeuploader delete-all \
+        # --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+        # --endpoint "$endpoint" \
+        # --bucket "$bucket" \
+        # --prefix $CLUSTER
       env:
       - name: ACCESS_KEY_ID
         valueFrom:
@@ -180,8 +201,20 @@ spec:
         endpoint=minio.minio.svc.cluster.local:9000
         bucket=kubermatic-etcd-backups
 
-        s3-storeuploader store --file /backup/snapshot.db --endpoint "$endpoint" --bucket "$bucket" --create-bucket --prefix $CLUSTER
-        s3-storeuploader delete-old-revisions --max-revisions 20 --endpoint "$endpoint" --bucket "$bucket" --prefix $CLUSTER
+        s3-storeuploader store \
+          --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+          --file /backup/snapshot.db \
+          --endpoint "$endpoint" \
+          --bucket "$bucket" \
+          --create-bucket \
+          --prefix $CLUSTER
+
+        s3-storeuploader delete-old-revisions \
+          --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+          --max-revisions 20 \
+          --endpoint "$endpoint" \
+          --bucket "$bucket" \
+          --prefix $CLUSTER
       env:
       - name: ACCESS_KEY_ID
         valueFrom:

@@ -177,7 +177,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithInClusterPrometheusDefaultRulesDisabled(r.inClusterPrometheusDisableDefaultRules).
 		WithInClusterPrometheusDefaultScrapingConfigsDisabled(r.inClusterPrometheusDisableDefaultScrapingConfigs).
 		WithInClusterPrometheusScrapingConfigsFile(r.inClusterPrometheusScrapingConfigsFile).
-		WithOIDCCAFile(r.oidcCAFile).
+		WithCABundle(r.caBundle).
 		WithOIDCIssuerURL(r.oidcIssuerURL).
 		WithOIDCIssuerClientID(r.oidcIssuerClientID).
 		WithNodeLocalDNSCacheEnabled(r.nodeLocalDNSCacheEnabled).
@@ -326,10 +326,6 @@ func (r *Reconciler) GetSecretCreators(data *resources.TemplateData) []reconcili
 		))
 	}
 
-	if len(data.OIDCCAFile()) > 0 {
-		creators = append(creators, apiserver.DexCACertificateCreator(data.GetDexCA))
-	}
-
 	if data.Cluster().Spec.Cloud.GCP != nil {
 		creators = append(creators, resources.ServiceAccountSecretCreator(data))
 	}
@@ -401,6 +397,7 @@ func GetConfigMapCreators(data *resources.TemplateData) []reconciling.NamedConfi
 		dns.ConfigMapCreator(data),
 		apiserver.AuditConfigMapCreator(),
 		apiserver.AdmissionControlCreator(data),
+		apiserver.CABundleCreator(data),
 	}
 }
 
