@@ -15,7 +15,7 @@
 minio:
   image:
     repository: docker.io/minio/minio
-    tag: RELEASE.2020-09-10T22-02-45Z
+    tag: RELEASE.2021-03-04T00-53-13Z
   storeSize: 100Gi
 
   # These settings are required. Keys must be alphanumeric.
