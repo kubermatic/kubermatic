@@ -206,7 +206,7 @@ func role() reconciling.NamedRoleCreatorGetter {
 			r.Rules = []rbacv1.PolicyRule{
 				{
 					APIGroups: []string{""},
-					Resources: []string{"services", "pods"},
+					Resources: []string{"endpoints", "services"},
 					Verbs:     []string{"list", "get", "watch"},
 				},
 				{
