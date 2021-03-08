@@ -23,6 +23,13 @@ metadata:
     target: {{ .name }}
   annotations:
     kubernetes.io/ingress.class: "nginx"
+    {{- with $.Values.iap.certIssuer }}
+    {{- if eq .kind "ClusterIssuer" }}
+    cert-manager.io/cluster-issuer: {{ .name | quote }}
+    {{- else }}
+    cert-manager.io/issuer: {{ .name | quote }}
+    {{- end }}
+    {{- end }}
 {{- if .ingress.annotations }}
 {{ toYaml .ingress.annotations | indent 4 }}
 {{- end }}

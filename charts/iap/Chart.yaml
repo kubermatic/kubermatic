@@ -14,8 +14,8 @@
 
 apiVersion: v1
 name: iap
-version: 3.1.2
-appVersion: v6.1.1
+version: 3.2.0
+appVersion: v7.0.1
 description: A Helm chart to install OAuth2-Proxy as an identity-aware proxy.
 keywords:
 - kubermatic
