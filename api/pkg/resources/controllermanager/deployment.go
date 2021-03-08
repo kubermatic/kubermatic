@@ -267,6 +267,17 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 	// Force the authentication lookup to succeed, otherwise if it fails all requests will be treated as anonymous and thus fail
 	flags = append(flags, "--authentication-tolerate-lookup-failure=false")
 
+	// Apply leader election settings
+	if lds := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.LeaseDurationSeconds; lds != nil {
+		flags = append(flags, "--leader-elect-lease-duration", fmt.Sprintf("%ds", *lds))
+	}
+	if rds := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RenewDeadlineSeconds; rds != nil {
+		flags = append(flags, "--leader-elect-renew-deadline", fmt.Sprintf("%ds", *rds))
+	}
+	if rps := data.Cluster().Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings.DeepCopy().RetryPeriodSeconds; rps != nil {
+		flags = append(flags, "--leader-elect-retry-period", fmt.Sprintf("%ds", *rps))
+	}
+
 	return flags, nil
 }
 
