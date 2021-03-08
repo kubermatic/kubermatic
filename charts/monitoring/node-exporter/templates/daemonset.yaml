@@ -90,7 +90,8 @@ spec:
           path: /
       securityContext:
         runAsNonRoot: true
-        runAsUser: 65534
+        runAsUser: 65532
+        runAsGroup: 65534
       nodeSelector:
 {{ toYaml .Values.nodeExporter.nodeSelector | indent 8 }}
       affinity:
