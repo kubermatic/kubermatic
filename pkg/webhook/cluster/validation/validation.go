@@ -26,6 +26,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/validation"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -95,6 +96,12 @@ func (h *AdmissionHandler) validateCreateOrUpdate(ctx context.Context, c *kuberm
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling &&
 		!h.features.Enabled(features.TunnelingExposeStrategy) {
 		return errors.New("cannot create cluster with Tunneling expose strategy, the TunnelingExposeStrategy feature gate is not enabled")
+	}
+	if err := validation.ValidateLeaderElectionSettings(c.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings); err != nil {
+		return fmt.Errorf("controller manager leader election settings are not valid: %w", err)
+	}
+	if err := validation.ValidateLeaderElectionSettings(c.Spec.ComponentsOverride.Scheduler.LeaderElectionSettings); err != nil {
+		return fmt.Errorf("scheduler leader election settings are not valid: %w", err)
 	}
 
 	if err := h.rejectUserSSHKeyAgentChanges(ctx, c); err != nil {
