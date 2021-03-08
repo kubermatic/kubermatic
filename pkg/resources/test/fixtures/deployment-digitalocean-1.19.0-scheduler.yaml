@@ -20,6 +20,7 @@ spec:
       creationTimestamp: null
       labels:
         app: scheduler
+        ca-bundle-configmap-revision: "123456"
         ca-secret-revision: "123456"
         cluster: de-test-01
         openvpn-client-certificates-secret-revision: "123456"
@@ -110,6 +111,9 @@ spec:
         - '{"command":"/usr/local/bin/kube-scheduler","args":["--kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authentication-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--authorization-kubeconfig","/etc/kubernetes/kubeconfig/kubeconfig","--client-ca-file","/etc/kubernetes/pki/ca/ca.crt","--port","0"]}'
         command:
         - /http-prober-bin/http-prober
+        env:
+        - name: SSL_CERT_FILE
+          value: /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
         image: k8s.gcr.io/kube-scheduler:v1.19.0
         livenessProbe:
           failureThreshold: 8
@@ -145,11 +149,8 @@ spec:
         - mountPath: /etc/kubernetes/pki/ca
           name: ca
           readOnly: true
-        - mountPath: /etc/ssl/certs
-          name: ca-certs
-          readOnly: true
-        - mountPath: /usr/share/ca-certificates
-          name: usr-share-ca-certificates
+        - mountPath: /etc/kubernetes/pki/ca-bundle
+          name: ca-bundle
           readOnly: true
         - mountPath: /http-prober-bin
           name: http-prober-bin
@@ -187,17 +188,12 @@ spec:
           - key: ca.crt
             path: ca.crt
           secretName: ca
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
       - name: scheduler-kubeconfig
         secret:
           secretName: scheduler-kubeconfig
-      - hostPath:
-          path: /etc/ssl/certs
-          type: DirectoryOrCreate
-        name: ca-certs
-      - hostPath:
-          path: /usr/share/ca-certificates
-          type: DirectoryOrCreate
-        name: usr-share-ca-certificates
       - emptyDir: {}
         name: http-prober-bin
 status: {}

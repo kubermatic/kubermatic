@@ -22,6 +22,7 @@ import (
 	"net"
 
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
+	cabundle "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/ca-bundle"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
@@ -400,6 +401,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 	if len(r.tunnelingAgentIP) > 0 {
 		creators = []reconciling.NamedConfigMapCreatorGetter{
 			openvpn.ClientConfigConfigMapCreator(r.tunnelingAgentIP.String(), r.openvpnServerPort),
+			cabundle.ConfigMapCreator(r.caBundle),
 			envoyagent.ConfigMapCreator(envoyagent.Config{
 				AdminPort: 9902,
 				ProxyHost: r.clusterURL.Hostname(),
@@ -421,6 +423,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 	} else {
 		creators = []reconciling.NamedConfigMapCreatorGetter{
 			openvpn.ClientConfigConfigMapCreator(r.clusterURL.Hostname(), r.openvpnServerPort),
+			cabundle.ConfigMapCreator(r.caBundle),
 		}
 	}
 

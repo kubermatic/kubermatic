@@ -20,6 +20,7 @@ spec:
       creationTimestamp: null
       labels:
         app: controller-manager
+        ca-bundle-configmap-revision: "123456"
         ca-secret-revision: "123456"
         cloud-config-configmap-revision: "123456"
         cluster: de-test-01
@@ -113,6 +114,8 @@ spec:
         command:
         - /http-prober-bin/http-prober
         env:
+        - name: SSL_CERT_FILE
+          value: /etc/kubernetes/pki/ca-bundle/ca-bundle.pem
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY
@@ -157,6 +160,9 @@ spec:
         - mountPath: /etc/kubernetes/pki/ca
           name: ca
           readOnly: true
+        - mountPath: /etc/kubernetes/pki/ca-bundle
+          name: ca-bundle
+          readOnly: true
         - mountPath: /etc/kubernetes/service-account-key
           name: service-account-key
           readOnly: true
@@ -165,12 +171,6 @@ spec:
           readOnly: true
         - mountPath: /etc/kubernetes/kubeconfig
           name: controllermanager-kubeconfig
-          readOnly: true
-        - mountPath: /etc/ssl/certs
-          name: ca-certs
-          readOnly: true
-        - mountPath: /usr/share/ca-certificates
-          name: usr-share-ca-certificates
           readOnly: true
         - mountPath: /sys/class/dmi/id/product_serial
           name: cloud-config
@@ -206,6 +206,9 @@ spec:
       - name: ca
         secret:
           secretName: ca
+      - configMap:
+          name: ca-bundle
+        name: ca-bundle
       - name: service-account-key
         secret:
           secretName: service-account-key
@@ -218,14 +221,6 @@ spec:
       - name: controllermanager-kubeconfig
         secret:
           secretName: controllermanager-kubeconfig
-      - hostPath:
-          path: /etc/ssl/certs
-          type: DirectoryOrCreate
-        name: ca-certs
-      - hostPath:
-          path: /usr/share/ca-certificates
-          type: DirectoryOrCreate
-        name: usr-share-ca-certificates
       - emptyDir: {}
         name: http-prober-bin
 status: {}

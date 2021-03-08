@@ -102,7 +102,6 @@ func (fake *fakeDataProvider) GetFrontProxyCA() (*triple.KeyPair, error)  { retu
 func (fake *fakeDataProvider) GetRootCA() (*triple.KeyPair, error)        { return fake.caPair, nil }
 func (fake *fakeDataProvider) GetOpenVPNCA() (*ECDSAKeyPair, error)       { return &ECDSAKeyPair{}, nil }
 func (fake *fakeDataProvider) InClusterApiserverAddress() (string, error) { return "", nil }
-func (fake *fakeDataProvider) GetDexCA() ([]*x509.Certificate, error)     { return nil, nil }
 
 func checkKubeConfigRegeneration(t *testing.T, orgs []string) {
 	// get a ca for testing and setup fake data

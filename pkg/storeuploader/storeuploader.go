@@ -17,8 +17,11 @@ limitations under the License.
 package storeuploader
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"sort"
@@ -43,12 +46,20 @@ type StoreUploader struct {
 }
 
 // New returns a new instance of the StoreUploader
-func New(endpoint string, secure bool, accessKeyID, secretAccessKey string, logger *zap.SugaredLogger) (*StoreUploader, error) {
+func New(endpoint string, secure bool, accessKeyID, secretAccessKey string, logger *zap.SugaredLogger, rootCAs *x509.CertPool) (*StoreUploader, error) {
 	client, err := minio.New(endpoint, accessKeyID, secretAccessKey, secure)
 	if err != nil {
 		return nil, err
 	}
 	client.SetAppInfo("kubermatic-store-uploader", "v0.1")
+
+	if rootCAs != nil {
+		client.SetCustomTransport(&http.Transport{
+			TLSClientConfig:    &tls.Config{RootCAs: rootCAs},
+			DisableCompression: true,
+		})
+	}
+
 	return &StoreUploader{
 		client: client,
 		logger: logger,

@@ -159,13 +159,13 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
 		backupInterval,
-		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
 		ctrlCtx.runOptions.oidcIssuerClientID,
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.etcdLauncherImage,
 		ctrlCtx.runOptions.dnatControllerImage,
 		ctrlCtx.runOptions.tunnelingAgentIP.String(),
+		ctrlCtx.runOptions.caBundle,
 		kubernetescontroller.Features{
 			VPA:                          ctrlCtx.runOptions.featureGates.Enabled(features.VerticalPodAutoscaler),
 			EtcdDataCorruptionChecks:     ctrlCtx.runOptions.featureGates.Enabled(features.EtcdDataCorruptionChecks),
@@ -208,6 +208,7 @@ func createEtcdBackupController(ctrlCtx *controllerContext) error {
 		cleanupContainer,
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.versions,
+		ctrlCtx.runOptions.caBundle,
 	)
 }
 
@@ -242,6 +243,7 @@ func createBackupController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.backupContainerImage,
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
+		ctrlCtx.runOptions.caBundle,
 	)
 }
 

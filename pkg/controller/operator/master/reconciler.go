@@ -211,10 +211,6 @@ func (r *Reconciler) reconcileSecrets(ctx context.Context, config *operatorv1alp
 		creators = append(creators, common.DockercfgSecretCreator(config))
 	}
 
-	if config.Spec.Auth.CABundle != "" {
-		creators = append(creators, common.DexCASecretCreator(config))
-	}
-
 	if err := reconciling.ReconcileSecrets(ctx, creators, config.Namespace, r.Client, common.OwnershipModifierFactory(config, r.scheme)); err != nil {
 		return fmt.Errorf("failed to reconcile Secrets: %v", err)
 	}

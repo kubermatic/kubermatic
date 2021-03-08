@@ -131,6 +131,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-owner-email", data.Cluster().Status.UserEmail,
 				fmt.Sprintf("-enable-ssh-key-agent=%t", data.Cluster().Spec.EnableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
+				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 			}, getNetworkArgs(data)...)
 
 			if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
@@ -191,6 +192,11 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 							MountPath: "/etc/kubernetes/kubeconfig",
 							ReadOnly:  true,
 						},
+						{
+							Name:      "ca-bundle",
+							MountPath: "/opt/ca-bundle/",
+							ReadOnly:  true,
+						},
 					},
 				},
 			}
@@ -218,6 +224,16 @@ func getVolumes() []corev1.Volume {
 			VolumeSource: corev1.VolumeSource{
 				Secret: &corev1.SecretVolumeSource{
 					SecretName: resources.InternalUserClusterAdminKubeconfigSecretName,
+				},
+			},
+		},
+		{
+			Name: "ca-bundle",
+			VolumeSource: corev1.VolumeSource{
+				ConfigMap: &corev1.ConfigMapVolumeSource{
+					LocalObjectReference: corev1.LocalObjectReference{
+						Name: resources.CABundleConfigMapName,
+					},
 				},
 			},
 		},

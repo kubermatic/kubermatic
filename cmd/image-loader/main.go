@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
@@ -41,6 +42,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/docker"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	metricsserver "k8c.io/kubermatic/v2/pkg/resources/metrics-server"
 	ksemver "k8c.io/kubermatic/v2/pkg/semver"
 	kubermaticversion "k8c.io/kubermatic/v2/pkg/version"
@@ -139,6 +141,11 @@ func main() {
 		log.Fatalw("Error loading versions", zap.Error(err))
 	}
 
+	caBundle, err := certificates.NewCABundleFromFile(filepath.Join(o.chartsPath, "kubermatic-operator/static/ca-bundle.pem"))
+	if err != nil {
+		log.Fatalw("Error loading CA bundle", zap.Error(err))
+	}
+
 	kubermaticVersions := kubermatic.NewDefaultVersions()
 
 	// if no local addons path is given, use the configured addons
@@ -177,7 +184,7 @@ func main() {
 			continue
 		}
 		versionLog.Info("Collecting images...")
-		images, err := getImagesForVersion(log, clusterVersion, kubermaticConfig, o.addonsPath, kubermaticVersions)
+		images, err := getImagesForVersion(log, clusterVersion, kubermaticConfig, o.addonsPath, kubermaticVersions, caBundle)
 		if err != nil {
 			versionLog.Fatalw("failed to get images", zap.Error(err))
 		}
@@ -234,8 +241,8 @@ func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, ima
 	return nil
 }
 
-func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, config *operatorv1alpha1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions) (images []string, err error) {
-	templateData, err := getTemplateData(clusterVersion, kubermaticVersions)
+func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, config *operatorv1alpha1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
+	templateData, err := getTemplateData(clusterVersion, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -320,11 +327,17 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersions kubermatic.Versions) (*resources.TemplateData, error) {
+func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      resources.CloudConfigConfigMapName,
+			Namespace: mockNamespaceName,
+		},
+	}
+	caBundleConfigMap := corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.CABundleConfigMapName,
 			Namespace: mockNamespaceName,
 		},
 	}
@@ -359,7 +372,15 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		},
 	}
 	configMapList := &corev1.ConfigMapList{
-		Items: []corev1.ConfigMap{cloudConfigConfigMap, prometheusConfigMap, dnsResolverConfigMap, openvpnClientConfigsConfigMap, auditConfigMap, admissionControlConfigMapName},
+		Items: []corev1.ConfigMap{
+			cloudConfigConfigMap,
+			caBundleConfigMap,
+			prometheusConfigMap,
+			dnsResolverConfigMap,
+			openvpnClientConfigsConfigMap,
+			auditConfigMap,
+			admissionControlConfigMapName,
+		},
 	}
 	apiServerService := corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
@@ -399,7 +420,6 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		},
 	}
 	secretList := createNamedSecrets([]string{
-		resources.DexCASecretName,
 		resources.CASecretName,
 		resources.TokensSecretName,
 		resources.ApiserverTLSSecretName,
@@ -461,7 +481,6 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		"",
 		"",
 		"",
-		"",
 		true,
 		// Since this is the image-loader we hardcode the default image for pulling.
 		resources.DefaultKubermaticImage,
@@ -470,6 +489,7 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		20*time.Minute,
 		false,
 		kubermaticVersions,
+		caBundle,
 	), nil
 }
 

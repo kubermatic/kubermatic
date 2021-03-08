@@ -44,6 +44,7 @@ const (
 	DefaultEtcdVolumeSize                         = "5Gi"
 	DefaultAuthClientID                           = "kubermatic"
 	DefaultIngressClass                           = "nginx"
+	DefaultCABundleConfigMapName                  = "ca-bundle"
 	DefaultAPIReplicas                            = 2
 	DefaultUIReplicas                             = 2
 	DefaultSeedControllerMgrReplicas              = 1
@@ -303,6 +304,11 @@ func DefaultConfiguration(config *operatorv1alpha1.KubermaticConfiguration, logg
 	if copy.Spec.ExposeStrategy == "" {
 		copy.Spec.ExposeStrategy = DefaultExposeStrategy
 		logger.Debugw("Defaulting field", "field", "exposeStrategy", "value", copy.Spec.ExposeStrategy)
+	}
+
+	if copy.Spec.CABundle.Name == "" {
+		copy.Spec.CABundle.Name = DefaultCABundleConfigMapName
+		logger.Debugw("Defaulting field", "field", "caBundle.name", "value", copy.Spec.CABundle.Name)
 	}
 
 	if copy.Spec.SeedController.MaximumParallelReconciles == 0 {
@@ -641,8 +647,20 @@ command:
   endpoint=minio.minio.svc.cluster.local:9000
   bucket=kubermatic-etcd-backups
 
-  s3-storeuploader store --file /backup/snapshot.db --endpoint "$endpoint" --bucket "$bucket" --create-bucket --prefix $CLUSTER
-  s3-storeuploader delete-old-revisions --max-revisions 20 --endpoint "$endpoint" --bucket "$bucket" --prefix $CLUSTER
+  s3-storeuploader store \
+    --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+    --file /backup/snapshot.db \
+    --endpoint "$endpoint" \
+    --bucket "$bucket" \
+    --create-bucket \
+    --prefix $CLUSTER
+
+  s3-storeuploader delete-old-revisions \
+    --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+    --max-revisions 20 \
+    --endpoint "$endpoint" \
+    --bucket "$bucket" \
+    --prefix $CLUSTER
 env:
 - name: ACCESS_KEY_ID
   valueFrom:
@@ -667,7 +685,13 @@ command:
 - -c
 - |
   set -e
-  s3cmd --no-check-certificate --access_key=$ACCESS_KEY_ID --secret_key=$SECRET_ACCESS_KEY --host=$ENDPOINT --host-bucket='%(bucket).'$ENDPOINT put /backup/snapshot.db s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_CREATE
+  s3cmd \
+    --ca-certs=/etc/ca-bundle/ca-bundle.pem \
+    --access_key=$ACCESS_KEY_ID \
+    --secret_key=$SECRET_ACCESS_KEY \
+    --host=$ENDPOINT \
+    --host-bucket='%(bucket).'$ENDPOINT \
+    put /backup/snapshot.db s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_CREATE
 env:
 - name: ACCESS_KEY_ID
   valueFrom:
@@ -701,7 +725,14 @@ command:
 - /bin/sh
 - -c
 - |
-  s3cmd --no-check-certificate --access_key=$ACCESS_KEY_ID --secret_key=$SECRET_ACCESS_KEY --host=$ENDPOINT --host-bucket='%(bucket).'$ENDPOINT del s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_DELETE
+  s3cmd \
+    --ca-certs=/etc/ca-bundle/ca-bundle.pem \
+    --access_key=$ACCESS_KEY_ID \
+    --secret_key=$SECRET_ACCESS_KEY \
+    --host=$ENDPOINT \
+    --host-bucket='%(bucket).'$ENDPOINT \
+    del s3://$BUCKET_NAME/$CLUSTER-$BACKUP_TO_DELETE
+
   case $? in
   12)
     # backup no longer exists, which is fine
@@ -750,10 +781,19 @@ command:
   bucket=kubermatic-etcd-backups
 
   # by default, we keep the most recent backup for every user cluster
-  s3-storeuploader delete-old-revisions --max-revisions 1 --endpoint "$endpoint" --bucket "$bucket" --prefix $CLUSTER
+  s3-storeuploader delete-old-revisions \
+    --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+    --max-revisions 1 \
+    --endpoint "$endpoint" \
+    --bucket "$bucket" \
+    --prefix $CLUSTER
 
   # alternatively, delete all backups for this cluster
-  #s3-storeuploader delete-all --endpoint "$endpoint" --bucket "$bucket" --prefix $CLUSTER
+  #s3-storeuploader delete-all \
+  # --ca-bundle=/etc/ca-bundle/ca-bundle.pem \
+  # --endpoint "$endpoint" \
+  # --bucket "$bucket" \
+  # --prefix $CLUSTER
 env:
 - name: ACCESS_KEY_ID
   valueFrom:

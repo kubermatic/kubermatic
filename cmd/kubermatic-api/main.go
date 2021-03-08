@@ -330,7 +330,7 @@ func createOIDCClients(options serverRunOptions) (auth.OIDCIssuerVerifier, error
 			auth.NewQueryParamBearerTokenExtractor("token"),
 		),
 		options.oidcSkipTLSVerify,
-		options.oidcCABundle,
+		options.caBundle.CertPool(),
 	)
 }
 
@@ -346,7 +346,7 @@ func createAuthClients(options serverRunOptions, prov providers) (auth.TokenVeri
 			auth.NewQueryParamBearerTokenExtractor("token"),
 		),
 		options.oidcSkipTLSVerify,
-		options.oidcCABundle,
+		options.caBundle.CertPool(),
 	)
 
 	if err != nil {

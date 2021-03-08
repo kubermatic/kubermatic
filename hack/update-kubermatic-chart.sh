@@ -21,6 +21,10 @@ source hack/lib.sh
 
 CONTAINERIZE_IMAGE=golang:1.15.1 containerize ./hack/update-kubermatic-chart.sh
 
+echodate "Updating CA bundle..."
+curl -Lo charts/kubermatic-operator/static/ca-bundle.pem https://curl.se/ca/cacert.pem
+echodate "Done."
+
 echodate "Updating static files in Kubermatic Helm chart..."
 go run codegen/kubermatic_operator/main.go
 echodate "Done."

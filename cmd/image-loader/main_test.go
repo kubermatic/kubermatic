@@ -23,6 +23,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -40,9 +41,14 @@ func TestRetagImageForAllVersions(t *testing.T) {
 	clusterVersions := getVersionsFromKubermaticConfiguration(config)
 	addonPath := "../../addons"
 
+	caBundle, err := certificates.NewCABundleFromFile("../../charts/kubermatic-operator/static/ca-bundle.pem")
+	if err != nil {
+		t.Errorf("failed to load CA bundle: %v", err)
+	}
+
 	imageSet := sets.NewString()
 	for _, clusterVersion := range clusterVersions {
-		images, err := getImagesForVersion(log, clusterVersion, config, addonPath, kubermaticVersions)
+		images, err := getImagesForVersion(log, clusterVersion, config, addonPath, kubermaticVersions, caBundle)
 		if err != nil {
 			t.Errorf("Error calling getImagesForVersion: %v", err)
 		}

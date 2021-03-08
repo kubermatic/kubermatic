@@ -38,6 +38,11 @@ type KubermaticConfiguration struct {
 
 // KubermaticConfigurationSpec is the spec for a Kubermatic installation.
 type KubermaticConfigurationSpec struct {
+	// CABundle references a ConfigMap in the same namespace as the KubermaticConfiguration.
+	// This ConfigMap must contain a ca-bundle.pem with PEM-encoded certificates. This bundle
+	// automatically synchronized into each seed and each usercluster. APIGroup and Kind are
+	// currently ignored.
+	CABundle corev1.TypedLocalObjectReference `json:"caBundle,omitempty"`
 	// ImagePullSecret is used to authenticate against Docker registries.
 	ImagePullSecret string `json:"imagePullSecret,omitempty"`
 	// Auth defines keys and URLs for Dex.
@@ -77,7 +82,6 @@ type KubermaticAuthConfiguration struct {
 	IssuerClientID           string `json:"issuerClientID,omitempty"`
 	IssuerClientSecret       string `json:"issuerClientSecret,omitempty"`
 	IssuerCookieKey          string `json:"issuerCookieKey,omitempty"`
-	CABundle                 string `json:"caBundle,omitempty"`
 	ServiceAccountKey        string `json:"serviceAccountKey,omitempty"`
 	SkipTokenIssuerTLSVerify bool   `json:"skipTokenIssuerTLSVerify,omitempty"`
 }

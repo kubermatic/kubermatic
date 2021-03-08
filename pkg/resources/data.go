@@ -48,6 +48,11 @@ const (
 	cloudProviderExternalFlag = "external"
 )
 
+type CABundle interface {
+	CertPool() *x509.CertPool
+	String() string
+}
+
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
 	ctx                      context.Context
@@ -59,7 +64,6 @@ type TemplateData struct {
 	nodePortRange            string
 	nodeAccessNetwork        string
 	etcdDiskSize             resource.Quantity
-	oidcCAFile               string
 	oidcIssuerURL            string
 	oidcIssuerClientID       string
 	nodeLocalDNSCacheEnabled bool
@@ -68,6 +72,7 @@ type TemplateData struct {
 	dnatControllerImage      string
 	backupSchedule           time.Duration
 	versions                 kubermatic.Versions
+	caBundle                 CABundle
 
 	supportsFailureDomainZoneAntiAffinity bool
 
@@ -156,8 +161,8 @@ func (td *TemplateDataBuilder) WithInClusterPrometheusScrapingConfigsFile(file s
 	return td
 }
 
-func (td *TemplateDataBuilder) WithOIDCCAFile(file string) *TemplateDataBuilder {
-	td.data.oidcCAFile = file
+func (td *TemplateDataBuilder) WithCABundle(bundle CABundle) *TemplateDataBuilder {
+	td.data.caBundle = bundle
 	return td
 }
 
@@ -228,7 +233,6 @@ func NewTemplateData(
 	inClusterPrometheusDisableDefaultRules bool,
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
 	inClusterPrometheusScrapingConfigsFile string,
-	oidcCAFile string,
 	oidcURL string,
 	oidcIssuerClientID string,
 	nodeLocalDNSCacheEnabled bool,
@@ -237,7 +241,8 @@ func NewTemplateData(
 	dnatControllerImage string,
 	backupSchedule time.Duration,
 	supportsFailureDomainZoneAntiAffinity bool,
-	versions kubermatic.Versions) *TemplateData {
+	versions kubermatic.Versions,
+	caBundle CABundle) *TemplateData {
 	return &TemplateData{
 		ctx:                      ctx,
 		client:                   client,
@@ -248,7 +253,6 @@ func NewTemplateData(
 		nodePortRange:            nodePortRange,
 		nodeAccessNetwork:        nodeAccessNetwork,
 		etcdDiskSize:             etcdDiskSize,
-		oidcCAFile:               oidcCAFile,
 		oidcIssuerURL:            oidcURL,
 		oidcIssuerClientID:       oidcIssuerClientID,
 		nodeLocalDNSCacheEnabled: nodeLocalDNSCacheEnabled,
@@ -257,6 +261,7 @@ func NewTemplateData(
 		dnatControllerImage:      dnatControllerImage,
 		backupSchedule:           backupSchedule,
 		versions:                 versions,
+		caBundle:                 caBundle,
 
 		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
 
@@ -277,14 +282,10 @@ func (d *TemplateData) GetViewerToken() (string, error) {
 	return string(viewerTokenSecret.Data[ViewerTokenSecretKey]), nil
 }
 
-// GetDexCA returns the chain of public certificates of the Dex
-func (d *TemplateData) GetDexCA() ([]*x509.Certificate, error) {
-	return GetDexCAFromFile(d.oidcCAFile)
-}
-
-// OIDCCAFile return CA file
-func (d *TemplateData) OIDCCAFile() string {
-	return d.oidcCAFile
+// GetCABundle returns the set of CA certificates that should be used
+// for all outgoing communication.
+func (d *TemplateData) CABundle() CABundle {
+	return d.caBundle
 }
 
 // OIDCIssuerURL returns URL of the OpenID token issuer

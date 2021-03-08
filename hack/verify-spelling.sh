@@ -24,7 +24,7 @@ CONTAINERIZE_IMAGE=quay.io/kubermatic/codespell:1.17.1 containerize ./hack/verif
 echodate "Running codespell..."
 
 codespell \
-  --skip .git,_build,_dist,vendor,go.mod,go.sum,swagger.json,*.png,*.woff,*.woff2 \
+  --skip .git,_build,_dist,vendor,go.mod,go.sum,swagger.json,*.png,*.woff,*.woff2,*.pem \
   --ignore-words .codespell.exclude \
   --check-filenames \
   --check-hidden

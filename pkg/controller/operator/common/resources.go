@@ -59,7 +59,6 @@ const (
 	KubernetesAddonsFileName = "kubernetes-addons.yaml"
 
 	DockercfgSecretName  = "dockercfg"
-	DexCASecretName      = "dex-ca"
 	ExtraFilesSecretName = "extra-files"
 
 	SeedWebhookServiceName    = "seed-webhook"
@@ -105,16 +104,6 @@ func DockercfgSecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) recon
 
 			return createSecretData(s, map[string]string{
 				corev1.DockerConfigJsonKey: cfg.Spec.ImagePullSecret,
-			}), nil
-		}
-	}
-}
-
-func DexCASecretCreator(cfg *operatorv1alpha1.KubermaticConfiguration) reconciling.NamedSecretCreatorGetter {
-	return func() (string, reconciling.SecretCreator) {
-		return DexCASecretName, func(s *corev1.Secret) (*corev1.Secret, error) {
-			return createSecretData(s, map[string]string{
-				"caBundle.pem": cfg.Spec.Auth.CABundle,
 			}), nil
 		}
 	}
