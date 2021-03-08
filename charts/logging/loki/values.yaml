@@ -66,11 +66,19 @@ loki:
         directory: /data/loki/index
       filesystem:
         directory: /data/loki/chunks
+      boltdb_shipper:
+        active_index_directory: /data/loki/boltdb-shipper-active
+        cache_location: /data/loki/boltdb-shipper-cache
+        cache_ttl: 24h
+        shared_store: filesystem
     chunk_store_config:
       max_look_back_period: 720h
     table_manager:
       retention_deletes_enabled: true
       retention_period: 720h
+    compactor:
+      working_directory: /data/loki/boltdb-shipper-compactor
+      shared_store: filesystem
 
   image:
     repository: docker.io/grafana/loki
