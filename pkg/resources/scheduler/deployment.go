@@ -68,6 +68,17 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				"--port", "0",
 			}
 
+			// Apply leader election settings
+			if lds := data.Cluster().Spec.ComponentsOverride.Scheduler.LeaderElectionSettings.LeaseDurationSeconds; lds != nil {
+				flags = append(flags, "--leader-elect-lease-duration", fmt.Sprintf("%ds", *lds))
+			}
+			if rds := data.Cluster().Spec.ComponentsOverride.Scheduler.LeaderElectionSettings.DeepCopy().RenewDeadlineSeconds; rds != nil {
+				flags = append(flags, "--leader-elect-renew-deadline", fmt.Sprintf("%ds", *rds))
+			}
+			if rps := data.Cluster().Spec.ComponentsOverride.Scheduler.LeaderElectionSettings.DeepCopy().RetryPeriodSeconds; rps != nil {
+				flags = append(flags, "--leader-elect-retry-period", fmt.Sprintf("%ds", *rps))
+			}
+
 			dep.Spec.Replicas = resources.Int32(1)
 			if data.Cluster().Spec.ComponentsOverride.Scheduler.Replicas != nil {
 				dep.Spec.Replicas = data.Cluster().Spec.ComponentsOverride.Scheduler.Replicas
