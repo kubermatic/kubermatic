@@ -241,7 +241,7 @@ func processImages(ctx context.Context, log *zap.SugaredLogger, dryRun bool, ima
 	return nil
 }
 
-func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, config *operatorv1alpha1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle *certificates.CABundle) (images []string, err error) {
+func getImagesForVersion(log *zap.SugaredLogger, clusterVersion *kubermaticversion.Version, config *operatorv1alpha1.KubermaticConfiguration, addonsPath string, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (images []string, err error) {
 	templateData, err := getTemplateData(clusterVersion, kubermaticVersions, caBundle)
 	if err != nil {
 		return nil, err
@@ -327,7 +327,7 @@ func getImagesFromPodSpec(spec corev1.PodSpec) (images []string) {
 	return images
 }
 
-func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersions kubermatic.Versions, caBundle *certificates.CABundle) (*resources.TemplateData, error) {
+func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersions kubermatic.Versions, caBundle resources.CABundle) (*resources.TemplateData, error) {
 	// We need listers and a set of objects to not have our deployment/statefulset creators fail
 	cloudConfigConfigMap := corev1.ConfigMap{
 		ObjectMeta: metav1.ObjectMeta{

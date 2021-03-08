@@ -39,7 +39,7 @@ import (
 //       parameter. "*CABundle" is not viable because most of the codebase
 //       deals with "resources.CABundle", which in turn exists to
 //       prevent an import loop between this and the "resources" package.
-func CABundleConfigMapCreator(name string, caBundle fmt.Stringer) reconciling.NamedConfigMapCreatorGetter {
+func CABundleConfigMapCreator(name string, caBundle fmt.Stringer) reconciling.NamedConfigMapCreatorGetter { //nolint:interfacer
 	return func() (string, reconciling.ConfigMapCreator) {
 		return name, func(c *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			c.Data = map[string]string{
