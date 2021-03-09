@@ -488,6 +488,7 @@ func GenTestSeed() *kubermaticv1.Seed {
 							HTTPProxy: kubermaticv1.NewProxyValue("HTTPProxy"),
 						},
 						InsecureRegistries: []string{"incsecure-registry"},
+						RegistryMirrors:    []string{"http://127.0.0.1:5001"},
 						PauseImage:         "pause-image",
 						HyperkubeImage:     "hyperkube-image",
 					},

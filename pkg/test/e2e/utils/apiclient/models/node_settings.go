@@ -28,6 +28,10 @@ type NodeSettings struct {
 	// If not set, the kubelet will default it.
 	PauseImage string `json:"pause_image,omitempty"`
 
+	// Optional: These image registries will be configured as registry mirrors
+	// on the container runtime.
+	RegistryMirrors []string `json:"registry_mirrors"`
+
 	// http proxy
 	HTTPProxy ProxyValue `json:"http_proxy,omitempty"`
 
