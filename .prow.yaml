@@ -1260,7 +1260,7 @@ presubmits:
   #########################################################
 
   - name: pre-kubermatic-opa-e2e
-    run_if_changed: "(go.mod|go.sum/pkg/|.prow.yaml)"
+    run_if_changed: "(go.mod|go.sum|pkg/|.prow.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:

@@ -54,7 +54,7 @@ func TestOPAIntegration(t *testing.T) {
 	ctx := context.Background()
 
 	if err := constrainttemplatev1beta1.AddToSchemes.AddToScheme(scheme.Scheme); err != nil {
-		t.Fatalf("failed to register gatekeeper scheme")
+		t.Fatalf("failed to register gatekeeper scheme: %v", err)
 	}
 
 	// validate kubeconfig by creating a client
