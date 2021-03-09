@@ -25,6 +25,7 @@
     - [Storage Backends](#storage-backends)
   - [Connectivity Between User Cluster and Seed MLA Components](#connectivity-between-user-cluster-and-seed-mla-components)
   - [MLA Controller in Seed\-Controller\-Manager](#mla-controller-in-seed-controller-manager)
+  - [Project and User Information Propagation](#project-and-user-information-propagation)
 - [Future Work &amp; Enhancements](#future-work--enhancements)
 - [Tasks &amp; Effort](#tasks--effort)
 
