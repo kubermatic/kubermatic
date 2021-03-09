@@ -1,5 +1,19 @@
 # Kubermatic 2.16
 
+## [v2.16.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.4)
+
+### Misc
+
+- Provide the possibility of configuring leader election parameters for user cluster components ([#6641](https://github.com/kubermatic/kubermatic/issues/6641))
+- Add `registry_mirrors` to Seed node settings ([#6667](https://github.com/kubermatic/kubermatic/issues/6667))
+
+### Bugfixes
+
+- Fix nodeport-proxy role used with LoadBalancer expose strategy ([#6646](https://github.com/kubermatic/kubermatic/issues/6646))
+
+
+
+
 ## [v2.16.3](https://github.com/kubermatic/dashboard/releases/tag/v2.16.3)
 
 This version includes significant improvements to Hetzner userclusters. Please refer to the amended [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16/upgrading/2.15_to_2.16/) for more information.
