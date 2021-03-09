@@ -290,6 +290,43 @@ The MLA Controller will manage the following components in the Seed:
 - IAP:
     - Deploy and Configures one Ingress and configures IAP per each User Cluster.
 
+### Project and User Information Propagation
+As we mentioned in the previous sections, the MLA controller in the Seed Cluster will configure a Grafana Organization
+for each KKP project, and map KKP users to Grafana Organization users. Currently, the `Project` and `User` objects only
+exist in Master Cluster, and there are two options to propagate Project and User information from Master Cluster to Seed
+Cluster:
+- **Propagate `Project` and `UserProjectBinding` objects from Master Cluster to Seed Cluster.** The advantage of this
+  option
+  is that we can use existing KKP CRDs. The limitation is that those objects will be duplicated in each Seed Cluster.
+- **Create a Propagation CRD.** Instead of propagating `Project` and `UserProjectBinding` objects to Seed Cluster, we
+  can create a CRD that will include Project-User mapping information in Master Cluster:
+
+```yaml
+apiVersion: kubermatic.k8s.io/v1
+kind: UserProjectMapping
+metadata:
+  name: example
+spec:
+  project:
+    id: 92d86czsj5
+    name: mla-project
+  users:
+    - email: mla-user1@loodse.com
+      id: mla-user1-id
+      name: User 1
+    - email: mla-user2@loodse.com
+      id: mla-user2-id
+      name: User 2
+```
+
+In this case, only `UserProjectMapping` objects will be propagated to Seed Cluster, which will reduce duplication of
+`UserProjectBinding` and `Project` in the Seed Cluster. A potential limitation of this approach is that
+`UserProjectMapping` may need to be extended or refactored for other use cases in the future (e.g., KKP User and Kubeflow
+Profile mapping in Kubeflow integration).
+
+Both of the above options require a synchronization controller to be implemented in Master-Controller-Manager, which
+will propagate project and user information from Master Cluster to Seed Cluster.
+
 ## Future Work & Enhancements
 
 This proposal does not cover some advanced topics that are left for future enhancements, such as:
@@ -323,7 +360,9 @@ easily.
 - MLA resources in User Clusters (5d)
     - Create Resources for Loki Promtail + Prometheus (sending data to Seed)
     - Add flags to Cluster CRD/API object to enable/disable Promtail + Prometheus installation in user clusters
-- MLA controller (10d)
+- MLA synchronization controller in Master (10d)
+    - Create a synchronization controller to propagate User-Project mapping information from Master Cluster to Seed Cluster
+- MLA controller in Seed (10d)
     - Create MLA controller in KKP - Automate Grafana configuration
     - Multi-tenancy support for Grafana in the MLA controller
     - Expose dedicated MLA Gateway per each user cluster
