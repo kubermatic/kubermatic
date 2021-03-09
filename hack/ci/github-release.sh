@@ -136,14 +136,14 @@ function tar_to_zip() {
 }
 
 function build_installer() {
-  make kubermatic-installer
+  make clean kubermatic-installer
   if [ "$GOOS" == "windows" ]; then
     mv _build/kubermatic-installer _build/kubermatic-installer.exe
   fi
 }
 
 function build_tools() {
-  make image-loader
+  make clean image-loader
   if [ "$GOOS" == "windows" ]; then
     mv _build/image-loader _build/image-loader.exe
   fi
