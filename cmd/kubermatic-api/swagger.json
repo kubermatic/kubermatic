@@ -16813,6 +16813,14 @@
           "description": "Optional: Translates to --pod-infra-container-image on the kubelet.\nIf not set, the kubelet will default it.",
           "type": "string",
           "x-go-name": "PauseImage"
+        },
+        "registry_mirrors": {
+          "description": "Optional: These image registries will be configured as registry mirrors\non the container runtime.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "RegistryMirrors"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"

@@ -125,6 +125,7 @@ func createExampleSeed() *kubermaticv1.Seed {
 					Node: &kubermaticv1.NodeSettings{
 						ProxySettings:      proxySettings,
 						InsecureRegistries: []string{},
+						RegistryMirrors:    []string{},
 					},
 					Spec: kubermaticv1.DatacenterSpec{
 						Digitalocean: &kubermaticv1.DatacenterSpecDigitalocean{},

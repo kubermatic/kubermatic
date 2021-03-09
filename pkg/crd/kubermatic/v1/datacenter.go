@@ -396,6 +396,9 @@ type NodeSettings struct {
 	// Optional: These image registries will be configured as insecure
 	// on the container runtime.
 	InsecureRegistries []string `json:"insecure_registries,omitempty"`
+	// Optional: These image registries will be configured as registry mirrors
+	// on the container runtime.
+	RegistryMirrors []string `json:"registry_mirrors,omitempty"`
 	// Optional: Translates to --pod-infra-container-image on the kubelet.
 	// If not set, the kubelet will default it.
 	PauseImage string `json:"pause_image,omitempty"`
