@@ -19,7 +19,8 @@ nginx:
   image:
     repository: k8s.gcr.io/ingress-nginx/controller
     tag: v0.44.0
-  config: {}
+  config: 
+    proxy-buffer-size: "16k"
 #   load-balance: "least_conn"
   extraArgs: []
   resources:
