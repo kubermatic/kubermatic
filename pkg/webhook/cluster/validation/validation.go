@@ -80,6 +80,11 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			return webhook.Denied(fmt.Sprintf("cluster validation request %s rejected: %v", req.UID, validationErr))
 		}
 
+		immutabilityErr := h.validateUpdateImmutability(req, cluster)
+		if immutabilityErr != nil {
+			h.log.Info("cluster admission failed", "error", immutabilityErr)
+			return webhook.Denied(fmt.Sprintf("cluster validation request %s rejected: %v", req.UID, immutabilityErr))
+		}
 	case admissionv1.Delete:
 		// NOP we always allow delete operarions at the moment
 	default:
@@ -100,6 +105,26 @@ func (h *AdmissionHandler) validateCreateOrUpdate(ctx context.Context, c *kuberm
 	if err := h.rejectUserSSHKeyAgentChanges(ctx, c); err != nil {
 		h.log.Info("cluster admission failed", "error", err)
 		return err
+	}
+
+	return nil
+}
+
+func (h *AdmissionHandler) validateUpdateImmutability(req webhook.AdmissionRequest, c *kubermaticv1.Cluster) error {
+	// Immutability should be validated only for update requests
+	if req.Operation != admissionv1.Update {
+		return nil
+	}
+	oldCluster := &kubermaticv1.Cluster{}
+	if err := h.decoder.DecodeRaw(req.OldObject, oldCluster); err != nil {
+		return fmt.Errorf("failed to decode old cluster object: %v", err)
+	}
+
+	// Validate ExternalCloudProvider feature flag immutability.
+	// Once the feature flag is enabled, it must not be disabled.
+	if vOld, v := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
+		c.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; vOld && !v {
+		return fmt.Errorf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureExternalCloudProvider)
 	}
 
 	return nil
