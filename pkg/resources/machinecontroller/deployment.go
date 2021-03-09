@@ -260,6 +260,9 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, exte
 		if len(nodeSettings.InsecureRegistries) > 0 {
 			flags = append(flags, "-node-insecure-registries", strings.Join(nodeSettings.InsecureRegistries, ","))
 		}
+		if len(nodeSettings.RegistryMirrors) > 0 {
+			flags = append(flags, "-node-registry-mirrors", strings.Join(nodeSettings.RegistryMirrors, ","))
+		}
 		if !nodeSettings.HTTPProxy.Empty() {
 			flags = append(flags, "-node-http-proxy", nodeSettings.HTTPProxy.String())
 		}
