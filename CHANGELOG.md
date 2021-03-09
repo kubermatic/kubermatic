@@ -1,5 +1,32 @@
 # Kubermatic 2.16
 
+## [v2.16.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.5)
+
+### Misc
+
+- Update nginx-ingress-controller to 0.44.0 ([#6651](https://github.com/kubermatic/kubermatic/issues/6651))
+
+### Bugfixes
+
+- Fix CE installer binary in EE downloads ([#6673](https://github.com/kubermatic/kubermatic/issues/6673))
+
+
+
+
+## [v2.16.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.4)
+
+### Misc
+
+- Provide the possibility of configuring leader election parameters for user cluster components ([#6641](https://github.com/kubermatic/kubermatic/issues/6641))
+- Add `registry_mirrors` to Seed node settings ([#6667](https://github.com/kubermatic/kubermatic/issues/6667))
+
+### Bugfixes
+
+- Fix nodeport-proxy role used with LoadBalancer expose strategy ([#6646](https://github.com/kubermatic/kubermatic/issues/6646))
+
+
+
+
 ## [v2.16.3](https://github.com/kubermatic/dashboard/releases/tag/v2.16.3)
 
 This version includes significant improvements to Hetzner userclusters. Please refer to the amended [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16/upgrading/2.15_to_2.16/) for more information.
@@ -208,6 +235,19 @@ as well as the [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16
 
 
 # Kubermatic 2.15
+
+## [v2.15.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.8)
+
+### Misc
+
+- Provide the possibility of configuring leader election parameters for user cluster components ([#6641](https://github.com/kubermatic/kubermatic/issues/6641))
+
+### Bugfixes
+
+- Fix CE installer binary in EE downloads ([#6673](https://github.com/kubermatic/kubermatic/issues/6673))
+
+
+
 
 ## [v2.15.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.7)
 
