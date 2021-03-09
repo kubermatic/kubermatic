@@ -183,6 +183,9 @@ func TestHandle(t *testing.T) {
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: false}.Do(),
 					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: false}.Do(),
+					},
 				},
 			},
 			wantAllowed: true,
@@ -193,6 +196,132 @@ func TestHandle(t *testing.T) {
 					},
 					Spec: kubermaticv1.ClusterSpec{
 						EnableUserSSHKeyAgent: false,
+					},
+				},
+			).Build(),
+		},
+		{
+			name: "Accept a cluster create request with externalCloudProvider disabled",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", ExternalCloudProvider: false}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			client: ctrlruntimefakeclient.NewClientBuilder().WithObjects(
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "foo",
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						Features: map[string]bool{
+							kubermaticv1.ClusterFeatureExternalCloudProvider: false,
+						},
+					},
+				},
+			).Build(),
+		},
+		{
+			name: "Accept a cluster create request with externalCloudProvider enabled",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", ExternalCloudProvider: true}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			client: ctrlruntimefakeclient.NewClientBuilder().WithObjects(
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "foo",
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						Features: map[string]bool{
+							kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						},
+					},
+				},
+			).Build(),
+		},
+		{
+			name: "Accept enabling the externalCloudProvider feature",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", ExternalCloudProvider: true}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", ExternalCloudProvider: false}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			client: ctrlruntimefakeclient.NewClientBuilder().WithObjects(
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "foo",
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						Features: map[string]bool{
+							kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						},
+					},
+				},
+			).Build(),
+		},
+		{
+			name: "Reject disabling the externalCloudProvider feature",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", ExternalCloudProvider: false}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", ExternalCloudProvider: true}.Do(),
+					},
+				},
+			},
+			wantAllowed: false,
+			client: ctrlruntimefakeclient.NewClientBuilder().WithObjects(
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "foo",
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						Features: map[string]bool{
+							kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+						},
 					},
 				},
 			).Build(),
@@ -219,10 +348,11 @@ func TestHandle(t *testing.T) {
 }
 
 type rawClusterGen struct {
-	Name             string
-	Namespace        string
-	ExposeStrategy   string
-	EnableUserSSHKey bool
+	Name                  string
+	Namespace             string
+	ExposeStrategy        string
+	EnableUserSSHKey      bool
+	ExternalCloudProvider bool
 }
 
 func (r rawClusterGen) Do() []byte {
@@ -235,7 +365,10 @@ func (r rawClusterGen) Do() []byte {
   },
   "spec": {
 	"exposeStrategy": "{{ .ExposeStrategy }}",
-    "enableUserSSHKey": {{ .EnableUserSSHKey }}
+	"enableUserSSHKey": {{ .EnableUserSSHKey }},
+	"features": {
+		"externalCloudProvider": {{ .ExternalCloudProvider }}
+	}
   }
 }`)
 	sb := bytes.Buffer{}
