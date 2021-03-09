@@ -328,6 +328,11 @@ Profile mapping in Kubeflow integration).
 Both of the above options require a synchronization controller to be implemented in Master-Controller-Manager, which
 will propagate project and user information from Master Cluster to Seed Cluster.
 
+In KKP, two synchronization controllers (master-constraint-template-controller, and seed-sync-controller) have been
+implemented to synchronize `ConstraintTemplate` and `Seed` Objects from Master Cluster to Seed Cluster. We can also
+implement a generic synchronization controller to work with all those Objects that need to be propagated from Master
+Cluster to Seed Cluster.
+
 ## Future Work & Enhancements
 
 This proposal does not cover some advanced topics that are left for future enhancements, such as:
