@@ -2431,6 +2431,11 @@ func (in *NodeSettings) DeepCopyInto(out *NodeSettings) {
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.RegistryMirrors != nil {
+		in, out := &in.RegistryMirrors, &out.RegistryMirrors
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	return
 }
 
