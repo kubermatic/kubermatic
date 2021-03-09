@@ -1,5 +1,18 @@
 # Kubermatic 2.16
 
+## [v2.16.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.5)
+
+### Misc
+
+- Update nginx-ingress-controller to 0.44.0 ([#6651](https://github.com/kubermatic/kubermatic/issues/6651))
+
+### Bugfixes
+
+- Fix CE installer binary in EE downloads ([#6673](https://github.com/kubermatic/kubermatic/issues/6673))
+
+
+
+
 ## [v2.16.4](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.4)
 
 ### Misc
@@ -222,6 +235,19 @@ as well as the [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16
 
 
 # Kubermatic 2.15
+
+## [v2.15.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.8)
+
+### Misc
+
+- Provide the possibility of configuring leader election parameters for user cluster components ([#6641](https://github.com/kubermatic/kubermatic/issues/6641))
+
+### Bugfixes
+
+- Fix CE installer binary in EE downloads ([#6673](https://github.com/kubermatic/kubermatic/issues/6673))
+
+
+
 
 ## [v2.15.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.7)
 
