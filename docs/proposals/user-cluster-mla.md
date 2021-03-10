@@ -26,6 +26,10 @@
   - [Connectivity Between User Cluster and Seed MLA Components](#connectivity-between-user-cluster-and-seed-mla-components)
   - [MLA Controller in Seed\-Controller\-Manager](#mla-controller-in-seed-controller-manager)
   - [Project and User Information Propagation](#project-and-user-information-propagation)
+- [Alternatives Considered](#alternatives-considered)
+  - [Decentralized Approach](#decentralized-approach)
+  - [UserProjectMapping](#userprojectmapping)
+  - [Prometheus Migration to Cortex](#prometheus-migration-to-cortex)
 - [Future Work &amp; Enhancements](#future-work--enhancements)
 - [Tasks &amp; Effort](#tasks--effort)
 
@@ -294,13 +298,33 @@ The MLA Controller will manage the following components in the Seed:
 ### Project and User Information Propagation
 As we mentioned in the previous sections, the MLA controller in the Seed Cluster will configure a Grafana Organization
 for each KKP project, and map KKP users to Grafana Organization users. Currently, the `Project` and `User` objects only
-exist in Master Cluster, and there are two options to propagate Project and User information from Master Cluster to Seed
-Cluster:
-- **Propagate `Project` and `UserProjectBinding` objects from Master Cluster to Seed Cluster.** The advantage of this
-  option
-  is that we can use existing KKP CRDs. The limitation is that those objects will be duplicated in each Seed Cluster.
-- **Create a Propagation CRD.** Instead of propagating `Project` and `UserProjectBinding` objects to Seed Cluster, we
-  can create a CRD that will include Project-User mapping information in Master Cluster:
+exist in Master Cluster. To make User-Project mapping information available in Seed Cluster, a synchronization
+controller will be implemented in Master-Controller-Manager, which will propagate `Project` and `UserProjectBinding`
+objects from Master Cluster to Seed Cluster.
+
+## Future Work & Enhancements
+
+This proposal does not cover some advanced topics that are left for future enhancements, such as:
+
+- “Decentralized” MLA approach as described in the Implementation section.
+- Lightweight User Cluster agents for edge use-cases (Grafana Agent).
+- Automatic cleanup of outdated data / data of deleted tenants.
+- Customization of scrape targets per User Cluster for Loki / Prometheus
+- Auto-scaling of MLA components in the Seed with the amount of User Clusters / nodes of User Clusters.
+- Integration with the existing monitoring stack and the upgrade procedure for existing KKP installations.
+- Automated Grafana Dashboard creation.
+- High Availability Grafana setup.
+- Automated backups of data.
+
+## Alternatives Considered 
+### Decentralized Approach
+The Implementation section covers an alternative - “Decentralized” approach. Although it is very valid, it is left for
+the future.
+
+### UserProjectMapping
+An alternative approach to handle `Project` and `User` propagation is to create a propagation CRD. Instead
+of propagating `Project` and `UserProjectBinding` objects to Seed Cluster, we can create a CRD that will include
+Project-User mapping information in Master Cluster:
 
 ```yaml
 apiVersion: kubermatic.k8s.io/v1
@@ -321,37 +345,17 @@ spec:
 ```
 
 In this case, only `UserProjectMapping` objects will be propagated to Seed Cluster, which will reduce duplication of
-`UserProjectBinding` and `Project` in the Seed Cluster. A potential limitation of this approach is that
-`UserProjectMapping` may need to be extended or refactored for other use cases in the future (e.g., KKP User and Kubeflow
-Profile mapping in Kubeflow integration).
-
-Both of the above options require a synchronization controller to be implemented in Master-Controller-Manager, which
-will propagate project and user information from Master Cluster to Seed Cluster.
+`UserProjectBinding` and `Project` in the Seed Cluster. However, in the scenario that Master Cluster and Seed 
+Cluster are on the same Kubernetes cluster, `UserProejctMapping` will be redundant.
 
 In KKP, two synchronization controllers (master-constraint-template-controller, and seed-sync-controller) have been
 implemented to synchronize `ConstraintTemplate` and `Seed` Objects from Master Cluster to Seed Cluster. We can also
 implement a generic synchronization controller to work with all those Objects that need to be propagated from Master
 Cluster to Seed Cluster.
 
-## Future Work & Enhancements
-
-This proposal does not cover some advanced topics that are left for future enhancements, such as:
-
-- “Decentralized” MLA approach as described in the Implementation section.
-- Lightweight User Cluster agents for edge use-cases (Grafana Agent).
-- Automatic cleanup of outdated data / data of deleted tenants.
-- Customization of scrape targets per User Cluster for Loki / Prometheus
-- Auto-scaling of MLA components in the Seed with the amount of User Clusters / nodes of User Clusters.
-- Integration with the existing monitoring stack and the upgrade procedure for existing KKP installations.
-- Automated Grafana Dashboard creation.
-- High Availability Grafana setup.
-- Automated backups of data.
-
-Alternatives Considered The Implementation section covers an alternative - “Decentralized” approach. Although it is very
-valid, it is left for the future.
-
-Also, we are still looking into how
-to [migrate from Prothemeus to Cortex](https://cortexmetrics.io/docs/blocks-storage/migrate-storage-from-thanos-and-prometheus/).
+### Prometheus Migration to Cortex
+Also, we are still looking into how to
+[migrate from Prometheus to Cortex](https://cortexmetrics.io/docs/blocks-storage/migrate-storage-from-thanos-and-prometheus/).
 Since we will use Cortex for User-Cluster MLA stack, it could not be integrated with the existing KKP monitoring stack
 easily.
 
