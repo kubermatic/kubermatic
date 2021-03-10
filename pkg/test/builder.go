@@ -316,20 +316,6 @@ func (db *DeploymentBuilder) Build() *appsv1.Deployment {
 	}
 }
 
-type deploymentPodSpecBuilder struct {
-	db *DeploymentBuilder
-	podSpecBuilder
-}
-
-func (dpsb *deploymentPodSpecBuilder) ContainerBuilder() *deploymentContainerBuilder {
-	return &deploymentContainerBuilder{
-		db: dpsb.db,
-		containerBuilder: containerBuilder{
-			psb: &podSpecBuilder{},
-		},
-	}
-}
-
 type deploymentContainerBuilder struct {
 	containerBuilder
 	db *DeploymentBuilder
