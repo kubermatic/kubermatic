@@ -353,7 +353,7 @@ implemented to synchronize `ConstraintTemplate` and `Seed` Objects from Master C
 implement a generic synchronization controller to work with all those Objects that need to be propagated from Master
 Cluster to Seed Cluster.
 
-### Prometheus Migration to Cortex
+### Migrate Prometheus to Cortex
 Also, we are still looking into how to
 [migrate from Prometheus to Cortex](https://cortexmetrics.io/docs/blocks-storage/migrate-storage-from-thanos-and-prometheus/).
 Since we will use Cortex for User-Cluster MLA stack, it could not be integrated with the existing KKP monitoring stack
