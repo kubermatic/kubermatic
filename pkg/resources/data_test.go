@@ -222,7 +222,7 @@ func TestGetControlPlaneComponentVersion(t *testing.T) {
 				WithClient(cli).
 				Build()
 			if tc.kasDeployment != nil {
-				cli.Create(context.TODO(), tc.kasDeployment)
+				_ = cli.Create(context.TODO(), tc.kasDeployment)
 			}
 			ver, err := td.GetControlPlaneComponentVersion(tc.compDeployment, tc.containerName)
 			if e, a := tc.wantError, err != nil; e != a {
