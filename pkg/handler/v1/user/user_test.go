@@ -761,7 +761,7 @@ func TestAddUserToProject(t *testing.T) {
 		{
 			Name: "scenario 8: john tries to add a service account to a project",
 			Body: func() string {
-				sa := test.GenServiceAccount("1", "test-1", "editors", "plan9-ID")
+				sa := test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID")
 				return fmt.Sprintf(`{"email":"%s", "projects":[{"id":"plan9-ID", "group":"editors"}]}`, sa.Spec.Email)
 			}(),
 			HTTPStatus:    http.StatusBadRequest,
@@ -775,7 +775,7 @@ func TestAddUserToProject(t *testing.T) {
 				test.GenBinding("my-third-project-ID", "john@acme.com", "editors"),
 				/*add users*/
 				genUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			ExistingAPIUser:  *genAPIUser("john", "john@acme.com"),
 			ExpectedResponse: `{"error":{"code":400,"message":"cannot add the given member serviceaccount-1@sa.kubermatic.io to the project plan9 because the email indicates a service account"}}`,

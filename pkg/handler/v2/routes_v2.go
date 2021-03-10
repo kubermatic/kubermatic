@@ -22,6 +22,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -35,6 +36,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/preset"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/serviceaccount"
 )
 
 // RegisterV2 declares all router paths for v2
@@ -460,6 +462,12 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPut).
 		Path("/providers/{provider_name}/presets").
 		Handler(r.updatePreset())
+
+	// Define a set of endpoints for service accounts management
+	mux.Methods(http.MethodPost).
+		Path("/serviceaccounts").
+		Handler(r.createMainServiceAccount())
+
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -3096,6 +3104,33 @@ func (r Routing) updatePreset() http.Handler {
 		)(preset.UpdatePreset(r.presetsProvider, r.userInfoGetter)),
 		preset.DecodeUpdatePreset,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/serviceaccounts mainserviceaccounts createMainServiceAccount
+//
+//     Creates the given service account
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ServiceAccount
+//       401: empty
+//       403: empty
+func (r Routing) createMainServiceAccount() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(serviceaccount.CreateEndpoint(r.serviceAccountProvider, r.userInfoGetter)),
+		serviceaccount.DecodeAddReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

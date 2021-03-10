@@ -111,7 +111,7 @@ func TestCreateServiceAccountProject(t *testing.T) {
 				test.GenBinding("my-first-project-ID", "john@acme.com", "owners"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenInactiveServiceAccount("", "test", "editors", "my-first-project-ID"),
+				test.GenInactiveProjectServiceAccount("", "test", "editors", "my-first-project-ID"),
 			},
 			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:    "my-first-project-ID",
@@ -236,9 +236,9 @@ func TestList(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-3@sa.kubermatic.io", "viewers"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
-				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
-				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("2", "test-2", "editors", "test-ID"),
+				test.GenProjectServiceAccount("3", "test-3", "viewers", "plan9-ID"),
 			},
 			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
 			expectedSA: []apiv1.ServiceAccount{
@@ -272,9 +272,9 @@ func TestList(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-3@sa.kubermatic.io", "viewers"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenInactiveServiceAccount("1", "test-1", "editors", "plan9-ID"),
-				test.GenInactiveServiceAccount("2", "test-2", "editors", "test-ID"),
-				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
+				test.GenInactiveProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenInactiveProjectServiceAccount("2", "test-2", "editors", "test-ID"),
+				test.GenProjectServiceAccount("3", "test-3", "viewers", "plan9-ID"),
 			},
 			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
 			expectedSA: []apiv1.ServiceAccount{
@@ -310,9 +310,9 @@ func TestList(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 				genUser("bob", "bob@acme.com", true),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
-				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
-				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("2", "test-2", "editors", "test-ID"),
+				test.GenProjectServiceAccount("3", "test-3", "viewers", "plan9-ID"),
 			},
 			existingAPIUser: *test.GenAPIUser("bob", "bob@acme.com"),
 			expectedSA: []apiv1.ServiceAccount{
@@ -399,7 +399,7 @@ func TestEdit(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 				/*add service account*/
-				test.GenServiceAccount("19840801", "test", "viewers", "plan9-ID"),
+				test.GenProjectServiceAccount("19840801", "test", "viewers", "plan9-ID"),
 			},
 			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:   "plan9-ID",
@@ -421,8 +421,8 @@ func TestEdit(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 				/*add service account*/
-				test.GenServiceAccount("19840801", "test-1", "viewers", "plan9-ID"),
-				test.GenServiceAccount("2", "test-2", "viewers", "plan9-ID"),
+				test.GenProjectServiceAccount("19840801", "test-1", "viewers", "plan9-ID"),
+				test.GenProjectServiceAccount("2", "test-2", "viewers", "plan9-ID"),
 			},
 			existingAPIUser:       *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:         "plan9-ID",
@@ -446,7 +446,7 @@ func TestEdit(t *testing.T) {
 				test.GenUser("", "john", "john@acme.com"),
 				genUser("bob", "bob@acme.com", true),
 				/*add service account*/
-				test.GenServiceAccount("19840801", "test", "viewers", "plan9-ID"),
+				test.GenProjectServiceAccount("19840801", "test", "viewers", "plan9-ID"),
 			},
 			existingAPIUser: *test.GenAPIUser("bob", "bob@acme.com"),
 			projectToSync:   "plan9-ID",
@@ -537,7 +537,7 @@ func TestDelete(t *testing.T) {
 				test.GenDefaultOwnerBinding(),
 				test.GenBinding("my-first-project-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),
 				/*add service account*/
-				test.GenServiceAccount("19840801", "test", "viewers", "my-first-project-ID"),
+				test.GenProjectServiceAccount("19840801", "test", "viewers", "my-first-project-ID"),
 			},
 			saToDelete: "19840801",
 		},
@@ -556,7 +556,7 @@ func TestDelete(t *testing.T) {
 				test.GenDefaultOwnerBinding(),
 				test.GenBinding("my-first-project-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),
 				/*add service account*/
-				test.GenServiceAccount("19840801", "test", "viewers", "my-first-project-ID"),
+				test.GenProjectServiceAccount("19840801", "test", "viewers", "my-first-project-ID"),
 			},
 			saToDelete: "19840801",
 		},
@@ -575,7 +575,7 @@ func TestDelete(t *testing.T) {
 				test.GenDefaultOwnerBinding(),
 				test.GenBinding("my-first-project-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),
 				/*add service account*/
-				test.GenServiceAccount("19840801", "test", "viewers", "my-first-project-ID"),
+				test.GenProjectServiceAccount("19840801", "test", "viewers", "my-first-project-ID"),
 			},
 			saToDelete: "19840801",
 		},
