@@ -29,7 +29,7 @@
 - [Alternatives Considered](#alternatives-considered)
   - [Decentralized Approach](#decentralized-approach)
   - [UserProjectMapping](#userprojectmapping)
-  - [Prometheus Migration to Cortex](#prometheus-migration-to-cortex)
+  - [Migrate Prometheus to Cortex](#migrate-prometheus-to-cortex)
 - [Future Work &amp; Enhancements](#future-work--enhancements)
 - [Tasks &amp; Effort](#tasks--effort)
 
