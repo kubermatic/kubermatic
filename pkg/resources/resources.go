@@ -209,6 +209,8 @@ const (
 
 	// HostCACertVolumeName is the name for the /etc/ssl/certs host mount volume
 	HostCACertVolumeName = "ca-certs"
+	// HostPKIVolumeName is the name for the /etc/ssl/certs host mount volume
+	HostPKIVolumeName = "pki"
 	// HostUsrShareCACertVolumeName is the anme for the /usr/share/ca-certificates host mount volume
 	HostUsrShareCACertVolumeName = "usr-share-ca-certificates"
 
@@ -1052,7 +1054,16 @@ func GetHostCACertVolumes() []corev1.Volume {
 			Name: HostCACertVolumeName,
 			VolumeSource: corev1.VolumeSource{
 				HostPath: &corev1.HostPathVolumeSource{
-					Path: "/etc/ssl/certs",
+					Path: "/etc/ssl",
+					Type: &doc,
+				},
+			},
+		},
+		{
+			Name: HostPKIVolumeName,
+			VolumeSource: corev1.VolumeSource{
+				HostPath: &corev1.HostPathVolumeSource{
+					Path: "/etc/pki",
 					Type: &doc,
 				},
 			},
@@ -1069,12 +1080,20 @@ func GetHostCACertVolumes() []corev1.Volume {
 	}
 }
 
-// GetHostCACertVolumeMounts returns a list of v1 volumeMounts such that pod could mount from the host OS root CA-certs
+// GetHostCACertVolumeMounts returns a list of v1 volumeMounts
+// such that pod could mount from the host OS root CA-certs.
+// Note that on some OS /etc/ssl only contains symlinks to
+// /etc/pki, which is why we mount both.
 func GetHostCACertVolumeMounts() []corev1.VolumeMount {
 	return []corev1.VolumeMount{
 		{
 			Name:      HostCACertVolumeName,
-			MountPath: "/etc/ssl/certs",
+			MountPath: "/etc/ssl",
+			ReadOnly:  true,
+		},
+		{
+			Name:      HostPKIVolumeName,
+			MountPath: "/etc/pki",
 			ReadOnly:  true,
 		},
 		{
