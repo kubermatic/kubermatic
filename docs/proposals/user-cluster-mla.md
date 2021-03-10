@@ -322,9 +322,9 @@ The Implementation section covers an alternative - “Decentralized” approach.
 the future.
 
 ### UserProjectMapping
-An alternative approach to handle `Project` and `User` propagation is to create a propagation CRD. Instead
-of propagating `Project` and `UserProjectBinding` objects to Seed Cluster, we can create a CRD that will include
-Project-User mapping information in Master Cluster:
+An alternative approach to handle `Project` and `User` propagation is to create a propagation CRD. Instead of propagating
+`Project` and `UserProjectBinding` objects to Seed Cluster, we can create a CRD that will include Project-User mapping
+information in Master Cluster:
 
 ```yaml
 apiVersion: kubermatic.k8s.io/v1
