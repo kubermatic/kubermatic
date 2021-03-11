@@ -492,6 +492,15 @@ as well as the [2.15 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.15
 
 # Kubermatic 2.14
 
+## [v2.14.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.11)
+
+### Misc
+
+- Provide the possibility of configuring leader election parameters for user cluster components ([#6641](https://github.com/kubermatic/kubermatic/pull/6641))
+
+
+
+
 ## [v2.14.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.10)
 
 ### Misc
