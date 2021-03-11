@@ -13187,6 +13187,50 @@
           }
         }
       }
+    },
+    "/api/v2/serviceaccounts": {
+      "post": {
+        "description": "Creates the given service account",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "mainserviceaccounts"
+        ],
+        "operationId": "createMainServiceAccount",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ServiceAccount"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ServiceAccount",
+            "schema": {
+              "$ref": "#/definitions/ServiceAccount"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {

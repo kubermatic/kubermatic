@@ -485,8 +485,8 @@ func TestListProjectMethod(t *testing.T) {
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return fakeClient, nil
 			}
-			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
-			userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount, kubermaticClient)
+			projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsProjectServiceAccount)
+			userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsProjectServiceAccount, kubermaticClient)
 
 			userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 			if err != nil {
@@ -893,9 +893,9 @@ func TestServiceAccountProjectAccess(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
-			existingSa:                    test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+			existingSa:                    test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			projectToSync:                 "plan9-ID",
 			bodyCreate:                    `{"name":"my-first-project"}`,
 			expectedGetProjectResponse:    `{"id":"plan9-ID","name":"plan9","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active","owners":[{"name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}]}`,

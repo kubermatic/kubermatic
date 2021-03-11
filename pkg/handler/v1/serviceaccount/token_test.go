@@ -63,9 +63,9 @@ func TestCreateTokenProject(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-3@sa.kubermatic.io", "viewers"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
-				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
-				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("2", "test-2", "editors", "test-ID"),
+				test.GenProjectServiceAccount("3", "test-3", "viewers", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{},
 			existingAPIUser:        *test.GenAPIUser("john", "john@acme.com"),
@@ -86,9 +86,9 @@ func TestCreateTokenProject(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-3@sa.kubermatic.io", "viewers"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
-				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
-				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("2", "test-2", "editors", "test-ID"),
+				test.GenProjectServiceAccount("3", "test-3", "viewers", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test", "1"),
@@ -112,9 +112,9 @@ func TestCreateTokenProject(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 				genUser("bob", "bob@acme.com", true),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
-				test.GenServiceAccount("2", "test-2", "editors", "test-ID"),
-				test.GenServiceAccount("3", "test-3", "viewers", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("2", "test-2", "editors", "test-ID"),
+				test.GenProjectServiceAccount("3", "test-3", "viewers", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{},
 			existingAPIUser:        *test.GenAPIUser("bob", "bob@acme.com"),
@@ -198,7 +198,7 @@ func TestListTokens(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -226,8 +226,8 @@ func TestListTokens(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 				genUser("bob", "bob@acme.com", true),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
-				test.GenServiceAccount("5", "test-2", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("5", "test-2", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -297,7 +297,7 @@ func TestServiceAccountCanGetProject(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 			},
-			existingSa:       test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+			existingSa:       test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
 			projectToSync:    "plan9-ID",
 			expectedResponse: `{"id":"plan9-ID","name":"plan9","creationTimestamp":"2013-02-03T19:54:00Z","status":"Active","owners":[{"name":"john","creationTimestamp":"0001-01-01T00:00:00Z","email":"john@acme.com"}]}`,
@@ -383,7 +383,7 @@ func TestPatchToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -406,7 +406,7 @@ func TestPatchToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -429,7 +429,7 @@ func TestPatchToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -454,7 +454,7 @@ func TestPatchToken(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 				genUser("bob", "bob@acme.com", true),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -537,7 +537,7 @@ func TestUpdateToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -560,7 +560,7 @@ func TestUpdateToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -583,7 +583,7 @@ func TestUpdateToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -608,7 +608,7 @@ func TestUpdateToken(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 				genUser("bob", "bob@acme.com", true),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -632,7 +632,7 @@ func TestUpdateToken(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 				genUser("bob", "bob@acme.com", false),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -713,7 +713,7 @@ func TestDeleteToken(t *testing.T) {
 				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
@@ -739,7 +739,7 @@ func TestDeleteToken(t *testing.T) {
 				/*add users*/
 				test.GenUser("", "john", "john@acme.com"),
 				genUser("bob", "bob@acme.com", true),
-				test.GenServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
 			},
 			existingKubernetesObjs: []ctrlruntimeclient.Object{
 				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
