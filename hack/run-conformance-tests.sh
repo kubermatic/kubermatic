@@ -191,7 +191,7 @@ else
     --env "KUBERMATIC_OIDC_LOGIN=${KUBERMATIC_OIDC_LOGIN-}" \
     --env "KUBERMATIC_OIDC_PASSWORD=${KUBERMATIC_OIDC_PASSWORD-}" \
     --env "${EXTRA_ENV:-}" \
-    quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.21 \
+    quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24 \
     _build/conformance-tests $extraArgs \
     -log-format=console \
     -worker-name="$USER" \
