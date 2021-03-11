@@ -520,45 +520,48 @@ func DatacenterCloudProviderName(spec *kubermaticv1.DatacenterSpec) (string, err
 
 // ServiceAccountProvider declares the set of methods for interacting with kubermatic service account
 type ServiceAccountProvider interface {
-	Create(userInfo *UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
-	List(userInfo *UserInfo, project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
-	Get(userInfo *UserInfo, name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
-	Update(userInfo *UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
-	Delete(userInfo *UserInfo, name string) error
+	CreateProjectServiceAccount(userInfo *UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
+	ListProjectServiceAccount(userInfo *UserInfo, project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
+	GetProjectServiceAccount(userInfo *UserInfo, name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
+	UpdateProjectServiceAccount(userInfo *UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
+	DeleteProjectServiceAccount(userInfo *UserInfo, name string) error
+
+	ListMainServiceAccounts(userInfo *UserInfo, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
+	CreateMainServiceAccount(userInfo *UserInfo, name, group string) (*kubermaticv1.User, error)
 }
 
 // PrivilegedServiceAccountProvider declares the set of methods for interacting with kubermatic service account
 type PrivilegedServiceAccountProvider interface {
-	// CreateUnsecured creates a service accounts
+	// CreateUnsecuredProjectServiceAccount creates a project service account
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resources
-	CreateUnsecured(project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
+	CreateUnsecuredProjectServiceAccount(project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error)
 
-	// ListUnsecured gets all service accounts
+	// ListUnsecuredProjectServiceAccount gets all project service accounts
 	// If you want to filter the result please take a look at ServiceAccountListOptions
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	ListUnsecured(project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
+	ListUnsecuredProjectServiceAccount(project *kubermaticv1.Project, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
 
-	// GetUnsecured gets all service accounts
+	// GetUnsecuredProjectServiceAccount get the project service account
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
+	GetUnsecuredProjectServiceAccount(name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
 
-	// UpdateUnsecured gets all service accounts
+	// UpdateUnsecuredProjectServiceAccount updates the project service account
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	UpdateUnsecured(serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
+	UpdateUnsecuredProjectServiceAccount(serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
 
-	// DeleteUnsecured gets all service accounts
+	// DeleteUnsecuredProjectServiceAccount deletes the project service account
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
-	DeleteUnsecured(name string) error
+	DeleteUnsecuredProjectServiceAccount(name string) error
 }
 
 // ServiceAccountGetOptions allows to set filters that will be applied to filter the get result.

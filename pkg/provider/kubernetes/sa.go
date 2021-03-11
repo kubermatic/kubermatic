@@ -31,8 +31,10 @@ import (
 )
 
 const (
-	ServiceAccountLabelGroup = "initialGroup"
-	saPrefix                 = "serviceaccount-"
+	ServiceAccountLabelGroup      = "initialGroup"
+	ServiceAccountAnnotationOwner = "owner"
+	saPrefix                      = "serviceaccount-"
+	mainSAPrefix                  = "main-serviceaccount-"
 )
 
 // NewServiceAccountProvider returns a service account provider
@@ -56,8 +58,8 @@ type ServiceAccountProvider struct {
 	domain string
 }
 
-// Create creates a new service account
-func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error) {
+// CreateProjectServiceAccount creates a new service account for the project
+func (p *ServiceAccountProvider) CreateProjectServiceAccount(userInfo *provider.UserInfo, project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error) {
 	if project == nil {
 		return nil, kerrors.NewBadRequest("Project cannot be nil")
 	}
@@ -65,7 +67,7 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 		return nil, kerrors.NewBadRequest("Service account name and group cannot be empty when creating a new SA resource")
 	}
 
-	sa := genServiceAccount(project, name, group, p.domain)
+	sa := genProjectServiceAccount(project, name, group, p.domain)
 
 	masterImpersonatedClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createMasterImpersonatedClient)
 	if err != nil {
@@ -75,15 +77,15 @@ func (p *ServiceAccountProvider) Create(userInfo *provider.UserInfo, project *ku
 	if err := masterImpersonatedClient.Create(context.Background(), sa); err != nil {
 		return nil, err
 	}
-	sa.Name = removeSAPrefix(sa.Name)
+	sa.Name = removeProjectSAPrefix(sa.Name)
 	return sa, nil
 }
 
-// CreateUnsecured creates a new service accounts
+// CreateUnsecuredProjectServiceAccount creates a new service accounts
 //
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to create the resources
-func (p *ServiceAccountProvider) CreateUnsecured(project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error) {
+func (p *ServiceAccountProvider) CreateUnsecuredProjectServiceAccount(project *kubermaticv1.Project, name, group string) (*kubermaticv1.User, error) {
 	if project == nil {
 		return nil, kerrors.NewBadRequest("Project cannot be nil")
 	}
@@ -91,17 +93,17 @@ func (p *ServiceAccountProvider) CreateUnsecured(project *kubermaticv1.Project, 
 		return nil, kerrors.NewBadRequest("Service account name and group cannot be empty when creating a new SA resource")
 	}
 
-	sa := genServiceAccount(project, name, group, p.domain)
+	sa := genProjectServiceAccount(project, name, group, p.domain)
 
 	if err := p.clientPrivileged.Create(context.Background(), sa); err != nil {
 		return nil, err
 	}
 
-	sa.Name = removeSAPrefix(sa.Name)
+	sa.Name = removeProjectSAPrefix(sa.Name)
 	return sa, nil
 }
 
-func genServiceAccount(project *kubermaticv1.Project, name, group, domain string) *kubermaticv1.User {
+func genProjectServiceAccount(project *kubermaticv1.Project, name, group, domain string) *kubermaticv1.User {
 	uniqueID := rand.String(10)
 	uniqueName := fmt.Sprintf("%s%s", saPrefix, uniqueID)
 
@@ -122,8 +124,8 @@ func genServiceAccount(project *kubermaticv1.Project, name, group, domain string
 	return sa
 }
 
-// List gets service accounts for the project
-func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kubermaticv1.Project, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
+// ListProjectServiceAccount gets service accounts for the project
+func (p *ServiceAccountProvider) ListProjectServiceAccount(userInfo *provider.UserInfo, project *kubermaticv1.Project, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
@@ -134,7 +136,7 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 		options = &provider.ServiceAccountListOptions{}
 	}
 
-	resultList, err := p.listSA(project)
+	resultList, err := p.listProjectSA(project)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +159,7 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 	}
 
 	for _, sa := range resultList {
-		sa.Name = removeSAPrefix(sa.Name)
+		sa.Name = removeProjectSAPrefix(sa.Name)
 	}
 
 	if len(options.ServiceAccountName) == 0 {
@@ -175,12 +177,12 @@ func (p *ServiceAccountProvider) List(userInfo *provider.UserInfo, project *kube
 	return filteredList, nil
 }
 
-// ListUnsecured gets all service accounts
+// ListUnsecuredProjectServiceAccount gets all service accounts for the project
 // If you want to filter the result please take a look at ServiceAccountListOptions
 //
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to get the resources
-func (p *ServiceAccountProvider) ListUnsecured(project *kubermaticv1.Project, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
+func (p *ServiceAccountProvider) ListUnsecuredProjectServiceAccount(project *kubermaticv1.Project, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
 	if project == nil {
 		return nil, kerrors.NewBadRequest("project cannot be nil")
 	}
@@ -188,13 +190,13 @@ func (p *ServiceAccountProvider) ListUnsecured(project *kubermaticv1.Project, op
 		options = &provider.ServiceAccountListOptions{}
 	}
 
-	resultList, err := p.listSA(project)
+	resultList, err := p.listProjectSA(project)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, sa := range resultList {
-		sa.Name = removeSAPrefix(sa.Name)
+		sa.Name = removeProjectSAPrefix(sa.Name)
 	}
 
 	if len(options.ServiceAccountName) == 0 {
@@ -212,7 +214,7 @@ func (p *ServiceAccountProvider) ListUnsecured(project *kubermaticv1.Project, op
 	return filteredList, nil
 }
 
-func (p *ServiceAccountProvider) listSA(project *kubermaticv1.Project) ([]*kubermaticv1.User, error) {
+func (p *ServiceAccountProvider) listProjectSA(project *kubermaticv1.Project) ([]*kubermaticv1.User, error) {
 	serviceAccounts := &kubermaticv1.UserList{}
 	if err := p.clientPrivileged.List(context.Background(), serviceAccounts); err != nil {
 		return nil, err
@@ -220,7 +222,7 @@ func (p *ServiceAccountProvider) listSA(project *kubermaticv1.Project) ([]*kuber
 
 	resultList := make([]*kubermaticv1.User, 0)
 	for _, sa := range serviceAccounts.Items {
-		if hasSAPrefix(sa.Name) {
+		if hasProjectSAPrefix(sa.Name) {
 			for _, owner := range sa.GetOwnerReferences() {
 				if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName && owner.Name == project.Name {
 					resultList = append(resultList, sa.DeepCopy())
@@ -231,8 +233,8 @@ func (p *ServiceAccountProvider) listSA(project *kubermaticv1.Project) ([]*kuber
 	return resultList, nil
 }
 
-// Get method returns service account with given name
-func (p *ServiceAccountProvider) Get(userInfo *provider.UserInfo, name string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
+// GetProjectServiceAccount method returns project service account with given name
+func (p *ServiceAccountProvider) GetProjectServiceAccount(userInfo *provider.UserInfo, name string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
@@ -248,23 +250,23 @@ func (p *ServiceAccountProvider) Get(userInfo *provider.UserInfo, name string, o
 		return nil, err
 	}
 
-	name = addSAPrefix(name)
+	name = addProjectSAPrefix(name)
 	serviceAccount := &kubermaticv1.User{}
 	if err := masterImpersonatedClient.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: name}, serviceAccount); err != nil {
 		return nil, err
 	}
 
 	if options.RemovePrefix {
-		serviceAccount.Name = removeSAPrefix(serviceAccount.Name)
+		serviceAccount.Name = removeProjectSAPrefix(serviceAccount.Name)
 	}
 	return serviceAccount, nil
 }
 
-// GetUnsecured gets all service accounts
+// GetUnsecuredProjectServiceAccount gets the project service account
 //
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to get the resource
-func (p *ServiceAccountProvider) GetUnsecured(name string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
+func (p *ServiceAccountProvider) GetUnsecuredProjectServiceAccount(name string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
 	if len(name) == 0 {
 		return nil, kerrors.NewBadRequest("service account name cannot be empty")
 	}
@@ -272,20 +274,20 @@ func (p *ServiceAccountProvider) GetUnsecured(name string, options *provider.Ser
 		options = &provider.ServiceAccountGetOptions{RemovePrefix: true}
 	}
 
-	name = addSAPrefix(name)
+	name = addProjectSAPrefix(name)
 	serviceAccount := &kubermaticv1.User{}
 	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: name}, serviceAccount); err != nil {
 		return nil, err
 	}
 
 	if options.RemovePrefix {
-		serviceAccount.Name = removeSAPrefix(serviceAccount.Name)
+		serviceAccount.Name = removeProjectSAPrefix(serviceAccount.Name)
 	}
 	return serviceAccount, nil
 }
 
-// Update simply updates the given service account
-func (p *ServiceAccountProvider) Update(userInfo *provider.UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
+// UpdateProjectServiceAccount simply updates the given project service account
+func (p *ServiceAccountProvider) UpdateProjectServiceAccount(userInfo *provider.UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
 	if userInfo == nil {
 		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
 	}
@@ -298,35 +300,35 @@ func (p *ServiceAccountProvider) Update(userInfo *provider.UserInfo, serviceAcco
 		return nil, err
 	}
 
-	serviceAccount.Name = addSAPrefix(serviceAccount.Name)
+	serviceAccount.Name = addProjectSAPrefix(serviceAccount.Name)
 
 	if err := masterImpersonatedClient.Update(context.Background(), serviceAccount); err != nil {
 		return nil, err
 	}
-	serviceAccount.Name = removeSAPrefix(serviceAccount.Name)
+	serviceAccount.Name = removeProjectSAPrefix(serviceAccount.Name)
 	return serviceAccount, nil
 }
 
-// UpdateUnsecured gets all service accounts
+// UpdateUnsecuredProjectServiceAccount updated the project service account
 //
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to update the resource
-func (p *ServiceAccountProvider) UpdateUnsecured(serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
+func (p *ServiceAccountProvider) UpdateUnsecuredProjectServiceAccount(serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
 	if serviceAccount == nil {
 		return nil, kerrors.NewBadRequest("service account name cannot be nil")
 	}
 
-	serviceAccount.Name = addSAPrefix(serviceAccount.Name)
+	serviceAccount.Name = addProjectSAPrefix(serviceAccount.Name)
 
 	if err := p.clientPrivileged.Update(context.Background(), serviceAccount); err != nil {
 		return nil, err
 	}
-	serviceAccount.Name = removeSAPrefix(serviceAccount.Name)
+	serviceAccount.Name = removeProjectSAPrefix(serviceAccount.Name)
 	return serviceAccount, nil
 }
 
-// Delete simply deletes the given service account
-func (p *ServiceAccountProvider) Delete(userInfo *provider.UserInfo, name string) error {
+// DeleteProjectServiceAccount simply deletes the given project service account
+func (p *ServiceAccountProvider) DeleteProjectServiceAccount(userInfo *provider.UserInfo, name string) error {
 	if userInfo == nil {
 		return kerrors.NewBadRequest("userInfo cannot be nil")
 	}
@@ -339,47 +341,129 @@ func (p *ServiceAccountProvider) Delete(userInfo *provider.UserInfo, name string
 		return err
 	}
 
-	name = addSAPrefix(name)
+	name = addProjectSAPrefix(name)
 	return masterImpersonatedClient.Delete(context.Background(), &kubermaticv1.User{ObjectMeta: metav1.ObjectMeta{Name: name}})
 }
 
-// DeleteUnsecured gets all service accounts
+// DeleteUnsecuredProjectServiceAccount deletes project service account
 //
 // Note that this function:
 // is unsafe in a sense that it uses privileged account to delete the resource
-func (p *ServiceAccountProvider) DeleteUnsecured(name string) error {
+func (p *ServiceAccountProvider) DeleteUnsecuredProjectServiceAccount(name string) error {
 	if len(name) == 0 {
 		return kerrors.NewBadRequest("service account name cannot be empty")
 	}
 
-	name = addSAPrefix(name)
+	name = addProjectSAPrefix(name)
 	return p.clientPrivileged.Delete(context.Background(), &kubermaticv1.User{
 		ObjectMeta: metav1.ObjectMeta{Name: name},
 	})
 }
 
-// IsServiceAccounts determines whether the given email address
-// belongs to a service account
-func IsServiceAccount(email string) bool {
-	return hasSAPrefix(email)
+// IsProjectServiceAccount determines whether the given email address
+// belongs to a project service account
+func IsProjectServiceAccount(email string) bool {
+	return hasProjectSAPrefix(email)
 }
 
-// removeSAPrefix removes "serviceaccount-" from a SA's ID,
+// removeProjectSAPrefix removes "serviceaccount-" from a SA's ID,
 // for example given "serviceaccount-7d4b5695vb" it returns "7d4b5695vb"
-func removeSAPrefix(id string) string {
+func removeProjectSAPrefix(id string) string {
 	return strings.TrimPrefix(id, saPrefix)
 }
 
-// addSAPrefix adds "serviceaccount-" prefix to a SA's ID,
+// addProjectSAPrefix adds "serviceaccount-" prefix to a SA's ID,
 // for example given "7d4b5695vb" it returns "serviceaccount-7d4b5695vb"
-func addSAPrefix(id string) string {
-	if !hasSAPrefix(id) {
+func addProjectSAPrefix(id string) string {
+	if !hasProjectSAPrefix(id) {
 		return fmt.Sprintf("%s%s", saPrefix, id)
 	}
 	return id
 }
 
-// hasSAPrefix checks if the given id has "serviceaccount-" prefix
-func hasSAPrefix(sa string) bool {
+// hasProjectSAPrefix checks if the given id has "serviceaccount-" prefix
+func hasProjectSAPrefix(sa string) bool {
 	return strings.HasPrefix(sa, saPrefix)
+}
+
+// CreateMainServiceAccount creates a new main service account
+func (p *ServiceAccountProvider) CreateMainServiceAccount(userInfo *provider.UserInfo, name, group string) (*kubermaticv1.User, error) {
+	if len(name) == 0 || len(group) == 0 {
+		return nil, kerrors.NewBadRequest("Service account name and group cannot be empty when creating a new main service account resource")
+	}
+
+	sa := genMainServiceAccount(name, group, p.domain, userInfo.Email)
+
+	if err := p.clientPrivileged.Create(context.Background(), sa); err != nil {
+		return nil, err
+	}
+	sa.Name = removeMainSAPrefix(sa.Name)
+	return sa, nil
+}
+
+// ListMainServiceAccounts gets main service accounts
+func (p *ServiceAccountProvider) ListMainServiceAccounts(userInfo *provider.UserInfo, options *provider.ServiceAccountListOptions) ([]*kubermaticv1.User, error) {
+	if userInfo == nil {
+		return nil, kerrors.NewBadRequest("userInfo cannot be nil")
+	}
+	if options == nil {
+		options = &provider.ServiceAccountListOptions{}
+	}
+
+	serviceAccounts := &kubermaticv1.UserList{}
+	if err := p.clientPrivileged.List(context.Background(), serviceAccounts); err != nil {
+		return nil, err
+	}
+
+	resultList := make([]*kubermaticv1.User, 0)
+	for _, sa := range serviceAccounts.Items {
+		if hasMainSAPrefix(sa.Name) && sa.Annotations != nil {
+			if strings.EqualFold(sa.Annotations[ServiceAccountAnnotationOwner], userInfo.Email) {
+				resultList = append(resultList, &sa)
+			}
+		}
+	}
+
+	for _, sa := range resultList {
+		sa.Name = removeMainSAPrefix(sa.Name)
+	}
+
+	if len(options.ServiceAccountName) == 0 {
+		return resultList, nil
+	}
+
+	filteredList := make([]*kubermaticv1.User, 0)
+	for _, sa := range resultList {
+		if sa.Spec.Name == options.ServiceAccountName {
+			filteredList = append(filteredList, sa)
+			break
+		}
+	}
+
+	return filteredList, nil
+}
+
+func genMainServiceAccount(name, group, domain, owner string) *kubermaticv1.User {
+	uniqueID := rand.String(10)
+	uniqueName := fmt.Sprintf("%s%s", mainSAPrefix, uniqueID)
+
+	sa := &kubermaticv1.User{}
+	sa.Name = uniqueName
+	sa.Spec.Email = fmt.Sprintf("%s@%s", uniqueName, domain)
+	sa.Spec.Name = name
+	sa.Spec.ID = uniqueID
+	sa.Annotations = map[string]string{ServiceAccountAnnotationOwner: owner}
+	sa.Labels = map[string]string{ServiceAccountLabelGroup: group}
+	return sa
+}
+
+// removeProjectSAPrefix removes "main-serviceaccount-" from a SA's ID,
+// for example given "main-serviceaccount-7d4b5695vb" it returns "7d4b5695vb"
+func removeMainSAPrefix(id string) string {
+	return strings.TrimPrefix(id, mainSAPrefix)
+}
+
+// hasMainSAPrefix checks if the given id has "main-serviceaccount-" prefix
+func hasMainSAPrefix(sa string) bool {
+	return strings.HasPrefix(sa, mainSAPrefix)
 }

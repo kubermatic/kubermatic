@@ -50,7 +50,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		}
 
 		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
-		if kubernetes.IsServiceAccount(user.Spec.Email) {
+		if kubernetes.IsProjectServiceAccount(user.Spec.Email) {
 			return nil, errors.New(http.StatusForbidden, "the Service Account is not allowed to create a project")
 		}
 

@@ -51,7 +51,7 @@ func TestCreateToken(t *testing.T) {
 		{
 			name:          "scenario 1, create token",
 			userInfo:      &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
-			saToSync:      createSA("test-1", "my-first-project-ID", "viewers", "1"),
+			saToSync:      createProjectSA("test-1", "my-first-project-ID", "viewers", "1"),
 			projectToSync: "my-first-project-ID",
 			tokenName:     "test-token",
 			tokenID:       "sa-token-1",
@@ -109,7 +109,7 @@ func TestListTokens(t *testing.T) {
 			name:     "scenario 1, get all tokens for the service account 'serviceaccount-1' in project: 'my-first-project-ID'",
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			saToSync: func() *kubermaticv1.User {
-				sa := createSA("test-1", "my-first-project-ID", "viewers", "1")
+				sa := createProjectSA("test-1", "my-first-project-ID", "viewers", "1")
 				// "serviceaccount-" prefix is removed by the provider
 				sa.Name = "1"
 				return sa
@@ -132,7 +132,7 @@ func TestListTokens(t *testing.T) {
 			name:     "scenario 2, get token with specific name",
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			saToSync: func() *kubermaticv1.User {
-				sa := createSA("test-1", "my-first-project-ID", "viewers", "1")
+				sa := createProjectSA("test-1", "my-first-project-ID", "viewers", "1")
 				// "serviceaccount-" prefix is removed by the provider
 				sa.Name = "1"
 				return sa
@@ -215,7 +215,7 @@ func TestGetToken(t *testing.T) {
 			name:     "scenario 1, get token for the service account 'serviceaccount-1' in project: 'my-first-project-ID'",
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			saToSync: func() *kubermaticv1.User {
-				sa := createSA("test-1", "my-first-project-ID", "viewers", "1")
+				sa := createProjectSA("test-1", "my-first-project-ID", "viewers", "1")
 				// "serviceaccount-" prefix is removed by the provider
 				sa.Name = "1"
 				return sa
@@ -290,7 +290,7 @@ func TestUpdateToken(t *testing.T) {
 			name:     "scenario 1, update token name",
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			saToSync: func() *kubermaticv1.User {
-				sa := createSA("test-1", "my-first-project-ID", "viewers", "1")
+				sa := createProjectSA("test-1", "my-first-project-ID", "viewers", "1")
 				// "serviceaccount-" prefix is removed by the provider
 				sa.Name = "1"
 				return sa
@@ -370,7 +370,7 @@ func TestDeleteToken(t *testing.T) {
 			name:     "scenario 1, delete token from service account 'serviceaccount-1' in project: 'my-first-project-ID'",
 			userInfo: &provider.UserInfo{Email: "john@acme.com", Group: "owners-abcd"},
 			saToSync: func() *kubermaticv1.User {
-				sa := createSA("test-1", "my-first-project-ID", "viewers", "1")
+				sa := createProjectSA("test-1", "my-first-project-ID", "viewers", "1")
 				// "serviceaccount-" prefix is removed by the provider
 				sa.Name = "1"
 				return sa

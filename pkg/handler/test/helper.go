@@ -219,7 +219,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
-	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount, kubermaticClient)
+	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsProjectServiceAccount, kubermaticClient)
 	adminProvider := kubernetes.NewAdminProvider(fakeClient)
 	settingsProvider := kubernetes.NewSettingsProvider(ctx, kubermaticClient, fakeClient)
 	addonConfigProvider := kubernetes.NewAddonConfigProvider(fakeClient)
@@ -233,7 +233,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, nil, err
 	}
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
-	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
+	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsProjectServiceAccount)
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 	if err != nil {
 		return nil, nil, err
@@ -638,8 +638,8 @@ func GenUser(id, name, email string) *kubermaticv1.User {
 	}
 }
 
-// GenInactiveServiceAccount generates a Service Account resource
-func GenInactiveServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
+// GenInactiveProjectServiceAccount generates a Service Account resource
+func GenInactiveProjectServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
 	user := GenUser(id, name, fmt.Sprintf("serviceaccount-%s@sa.kubermatic.io", id))
 	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: fmt.Sprintf("%s-%s", group, projectName)}
 	user.OwnerReferences = []metav1.OwnerReference{
@@ -657,10 +657,21 @@ func GenInactiveServiceAccount(id, name, group, projectName string) *kubermaticv
 	return user
 }
 
-func GenServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
-	sa := GenInactiveServiceAccount(id, name, group, projectName)
+func GenProjectServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
+	sa := GenInactiveProjectServiceAccount(id, name, group, projectName)
 	sa.Labels = map[string]string{}
 	return sa
+}
+
+func GenMainServiceAccount(id, name, group, ownerEmail string) *kubermaticv1.User {
+	user := GenUser(id, name, fmt.Sprintf("main-serviceaccount-%s@sa.kubermatic.io", id))
+	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: group}
+	user.Annotations = map[string]string{kubernetes.ServiceAccountAnnotationOwner: ownerEmail}
+
+	user.Spec.ID = id
+	user.Name = fmt.Sprintf("main-serviceaccount-%s", id)
+	user.UID = ""
+	return user
 }
 
 // GenAPIUser generates a API user

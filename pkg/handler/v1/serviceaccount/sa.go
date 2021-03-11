@@ -86,14 +86,14 @@ func listSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountP
 	}
 
 	if adminUserInfo.IsAdmin {
-		return privilegedServiceAccount.ListUnsecured(project, options)
+		return privilegedServiceAccount.ListUnsecuredProjectServiceAccount(project, options)
 	}
 
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return nil, err
 	}
-	return serviceAccountProvider.List(userInfo, project, options)
+	return serviceAccountProvider.ListProjectServiceAccount(userInfo, project, options)
 }
 
 func createSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, sa apiv1.ServiceAccount) (*kubermaticapiv1.User, error) {
@@ -103,14 +103,14 @@ func createSA(ctx context.Context, serviceAccountProvider provider.ServiceAccoun
 	}
 	groupName := rbac.GenerateActualGroupNameFor(project.Name, sa.Group)
 	if adminUserInfo.IsAdmin {
-		return privilegedServiceAccount.CreateUnsecured(project, sa.Name, groupName)
+		return privilegedServiceAccount.CreateUnsecuredProjectServiceAccount(project, sa.Name, groupName)
 	}
 
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return nil, err
 	}
-	return serviceAccountProvider.Create(userInfo, project, sa.Name, groupName)
+	return serviceAccountProvider.CreateProjectServiceAccount(userInfo, project, sa.Name, groupName)
 }
 
 // ListEndpoint returns service accounts of the given project
@@ -228,14 +228,14 @@ func updateSA(ctx context.Context, serviceAccountProvider provider.ServiceAccoun
 	}
 
 	if adminUserInfo.IsAdmin {
-		return privilegedServiceAccount.UpdateUnsecured(sa)
+		return privilegedServiceAccount.UpdateUnsecuredProjectServiceAccount(sa)
 	}
 
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return nil, err
 	}
-	return serviceAccountProvider.Update(userInfo, sa)
+	return serviceAccountProvider.UpdateProjectServiceAccount(userInfo, sa)
 }
 
 func getSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, userInfoGetter provider.UserInfoGetter, project *kubermaticapiv1.Project, serviceAccountID string, options *provider.ServiceAccountGetOptions) (*kubermaticapiv1.User, error) {
@@ -245,14 +245,14 @@ func getSA(ctx context.Context, serviceAccountProvider provider.ServiceAccountPr
 	}
 
 	if adminUserInfo.IsAdmin {
-		return privilegedServiceAccount.GetUnsecured(serviceAccountID, options)
+		return privilegedServiceAccount.GetUnsecuredProjectServiceAccount(serviceAccountID, options)
 	}
 
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return nil, err
 	}
-	return serviceAccountProvider.Get(userInfo, serviceAccountID, options)
+	return serviceAccountProvider.GetProjectServiceAccount(userInfo, serviceAccountID, options)
 }
 
 // DeleteEndpoint deletes the service account for the given project
@@ -294,14 +294,14 @@ func deleteSA(ctx context.Context, serviceAccountProvider provider.ServiceAccoun
 	}
 
 	if adminUserInfo.IsAdmin {
-		return privilegedServiceAccount.DeleteUnsecured(serviceAccountID)
+		return privilegedServiceAccount.DeleteUnsecuredProjectServiceAccount(serviceAccountID)
 	}
 
 	userInfo, err := userInfoGetter(ctx, project.Name)
 	if err != nil {
 		return err
 	}
-	return serviceAccountProvider.Delete(userInfo, serviceAccountID)
+	return serviceAccountProvider.DeleteProjectServiceAccount(userInfo, serviceAccountID)
 }
 
 // addReq defines HTTP request for addServiceAccountToProject
@@ -428,7 +428,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func decodeServiceAccountIDReq(c context.Context, r *http.Request) (serviceAccountIDReq, error) {
+func decodeServiceAccountIDReq(_ context.Context, r *http.Request) (serviceAccountIDReq, error) {
 	var req serviceAccountIDReq
 
 	saID, ok := mux.Vars(r)["serviceaccount_id"]
