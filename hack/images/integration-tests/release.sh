@@ -20,7 +20,7 @@ cd $(dirname $0)
 
 REPOSITORY=quay.io/kubermatic/integration-tests
 VERSION=4
-BUILD_SUFFIX=1
+BUILD_SUFFIX=2
 
 docker build --no-cache --pull -t "$REPOSITORY:$VERSION-$BUILD_SUFFIX" .
 docker push "$REPOSITORY:$VERSION-$BUILD_SUFFIX"

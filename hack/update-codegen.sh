@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 source hack/lib.sh
 
-CONTAINERIZE_IMAGE=golang:1.15.1 containerize ./hack/update-codegen.sh
+CONTAINERIZE_IMAGE=golang:1.16.1 containerize ./hack/update-codegen.sh
 
 echodate "Creating vendor directory"
 go mod vendor
