@@ -13189,6 +13189,39 @@
       }
     },
     "/api/v2/serviceaccounts": {
+      "get": {
+        "description": "List main service accounts",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "mainserviceaccounts"
+        ],
+        "operationId": "listMainServiceAccounts",
+        "responses": {
+          "200": {
+            "description": "ServiceAccount",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/ServiceAccount"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
       "post": {
         "description": "Creates the given service account",
         "consumes": [

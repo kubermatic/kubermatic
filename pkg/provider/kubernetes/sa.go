@@ -419,7 +419,7 @@ func (p *ServiceAccountProvider) ListMainServiceAccounts(userInfo *provider.User
 	for _, sa := range serviceAccounts.Items {
 		if hasMainSAPrefix(sa.Name) && sa.Annotations != nil {
 			if strings.EqualFold(sa.Annotations[ServiceAccountAnnotationOwner], userInfo.Email) {
-				resultList = append(resultList, &sa)
+				resultList = append(resultList, sa.DeepCopy())
 			}
 		}
 	}
