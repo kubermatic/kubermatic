@@ -32,7 +32,7 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func TestCreateServiceAccountProject(t *testing.T) {
+func TestCreateMainServiceAccount(t *testing.T) {
 	t.Parallel()
 
 	testcases := []struct {
@@ -124,6 +124,90 @@ func TestCreateServiceAccountProject(t *testing.T) {
 
 			} else {
 				test.CompareWithResult(t, res, tc.expectedResponse)
+			}
+
+		})
+	}
+}
+
+func TestListMainServiceAccounts(t *testing.T) {
+	t.Parallel()
+
+	testcases := []struct {
+		name                   string
+		expectedSA             []apiv1.ServiceAccount
+		expectedError          string
+		httpStatus             int
+		existingAPIUser        apiv1.User
+		existingKubermaticObjs []ctrlruntimeclient.Object
+	}{
+		{
+			name:       "scenario 1: list main service accounts",
+			httpStatus: http.StatusOK,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				test.GenBinding("plan9-ID", "serviceaccount-3@sa.kubermatic.io", "viewers"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				test.GenMainServiceAccount("4", "test-4", "editors", "john@acme.com"),
+				test.GenMainServiceAccount("5", "test-5", "viewers", "john@acme.com"),
+				test.GenMainServiceAccount("6", "test-5", "viewers", "bob@acme.com"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenProjectServiceAccount("2", "test-2", "editors", "test-ID"),
+				test.GenProjectServiceAccount("3", "test-3", "viewers", "plan9-ID"),
+			},
+			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
+			expectedSA: []apiv1.ServiceAccount{
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "4",
+						Name: "test-4",
+					},
+					Group:  "editors",
+					Status: "Active",
+				},
+				{
+					ObjectMeta: apiv1.ObjectMeta{
+						ID:   "5",
+						Name: "test-5",
+					},
+					Group:  "viewers",
+					Status: "Active",
+				},
+			},
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/api/v2/serviceaccounts", nil)
+			res := httptest.NewRecorder()
+
+			ep, err := test.CreateTestEndpoint(tc.existingAPIUser, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			if tc.httpStatus == http.StatusOK {
+				actualSA := test.NewServiceAccountV1SliceWrapper{}
+				actualSA.DecodeOrDie(res.Body, t).Sort()
+
+				wrappedExpectedSA := test.NewServiceAccountV1SliceWrapper(tc.expectedSA)
+				wrappedExpectedSA.Sort()
+
+				actualSA.EqualOrDie(wrappedExpectedSA, t)
+
+			} else {
+				test.CompareWithResult(t, res, tc.expectedError)
 			}
 
 		})
