@@ -56,7 +56,7 @@ func CreateEndpoint(serviceAccountProvider provider.ServiceAccountProvider, user
 		}
 
 		// check if service account name is already reserved in the project
-		existingSAList, err := listSA(userInfo, serviceAccountProvider, userInfoGetter, &saFromRequest)
+		existingSAList, err := listSA(userInfo, serviceAccountProvider, &saFromRequest)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -71,6 +71,26 @@ func CreateEndpoint(serviceAccountProvider provider.ServiceAccountProvider, user
 		}
 
 		return convertInternalServiceAccountToExternal(mainSA), nil
+	}
+}
+
+// ListEndpoint returns main service accounts
+func ListEndpoint(serviceAccountProvider provider.ServiceAccountProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+
+		resultList := make([]*apiv1.ServiceAccount, 0)
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		existingSAList, err := listSA(userInfo, serviceAccountProvider, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		for _, internalMainServiceAccount := range existingSAList {
+			resultList = append(resultList, convertInternalServiceAccountToExternal(internalMainServiceAccount))
+		}
+		return resultList, nil
 	}
 }
 
@@ -103,7 +123,7 @@ func DecodeAddReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-func listSA(userInfo *provider.UserInfo, serviceAccountProvider provider.ServiceAccountProvider, userInfoGetter provider.UserInfoGetter, sa *apiv1.ServiceAccount) ([]*kubermaticapiv1.User, error) {
+func listSA(userInfo *provider.UserInfo, serviceAccountProvider provider.ServiceAccountProvider, sa *apiv1.ServiceAccount) ([]*kubermaticapiv1.User, error) {
 	var options *provider.ServiceAccountListOptions
 
 	if sa != nil {

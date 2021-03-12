@@ -467,6 +467,9 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPost).
 		Path("/serviceaccounts").
 		Handler(r.createMainServiceAccount())
+	mux.Methods(http.MethodGet).
+		Path("/serviceaccounts").
+		Handler(r.listMainServiceAccounts())
 
 }
 
@@ -3131,6 +3134,30 @@ func (r Routing) createMainServiceAccount() http.Handler {
 		)(serviceaccount.CreateEndpoint(r.serviceAccountProvider, r.userInfoGetter)),
 		serviceaccount.DecodeAddReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/serviceaccounts mainserviceaccounts listMainServiceAccounts
+//
+//     List main service accounts
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ServiceAccount
+//       401: empty
+//       403: empty
+func (r Routing) listMainServiceAccounts() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(serviceaccount.ListEndpoint(r.serviceAccountProvider, r.userInfoGetter)),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
