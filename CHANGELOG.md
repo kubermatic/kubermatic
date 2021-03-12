@@ -236,6 +236,15 @@ as well as the [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16
 
 # Kubermatic 2.15
 
+## [v2.15.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.9)
+
+### Bugfixes
+
+- Fix CA certificates not being mounted on Seed clusters using CentOS/Fedora ([#6680](https://github.com/kubermatic/kubermatic/issues/6680))
+
+
+
+
 ## [v2.15.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.8)
 
 ### Misc
