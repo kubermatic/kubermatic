@@ -46,7 +46,7 @@ spec:
         - name: OS_PASSWORD
           value: openstack-password
         - name: OS_APPLICATION_CREDENTIAL_ID
-        - name: OS_APPLICATION_CREDENTIAL_ID
+        - name: OS_APPLICATION_CREDENTIAL_SECRET
         - name: OS_DOMAIN_NAME
           value: openstack-domain
         - name: OS_TENANT_NAME

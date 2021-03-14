@@ -62,7 +62,9 @@ elif [[ $provider == "openstack" ]]; then
   EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-tenant=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
-    -openstack-password=${OS_PASSWORD}"
+    -openstack-password=${OS_PASSWORD}
+    -openstack-application-credential-id=${OS_APPLICATION_CREDENTIAL_ID}
+    -openstack-application-credential-secret=${OS_APPLICATION_CREDENTIAL_SECRET}"
 elif [[ $provider == "vsphere" ]]; then
   EXTRA_ARGS="-vsphere-username=${VSPHERE_E2E_USERNAME}
     -vsphere-password=${VSPHERE_E2E_PASSWORD}"
