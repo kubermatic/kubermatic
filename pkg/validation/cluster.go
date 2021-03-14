@@ -302,26 +302,27 @@ func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kuber
 			return err
 		}
 	}
-	if spec.Username == "" {
-		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackUsername); err != nil {
-			return err
+	if spec.ApplicationCredentialID == "" || spec.ApplicationCredentialSecret == "" {
+		if spec.Username == "" {
+			if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackUsername); err != nil {
+				return err
+			}
 		}
-	}
-	if spec.Password == "" {
-		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackPassword); err != nil {
-			return err
+		if spec.Password == "" {
+			if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackPassword); err != nil {
+				return err
+			}
 		}
-	}
-
-	var errs []error
-	if spec.Tenant == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenant))
-	}
-	if spec.TenantID == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
-		errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenantID))
-	}
-	if utilerror.NewAggregate(errs) != nil {
-		return errors.New("no tenant name or ID specified")
+		var errs []error
+		if spec.Tenant == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+			errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenant))
+		}
+		if spec.TenantID == "" && spec.CredentialsReference != nil && spec.CredentialsReference.Name != "" {
+			errs = append(errs, kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackTenantID))
+		}
+		if utilerror.NewAggregate(errs) != nil {
+			return errors.New("no tenant name or ID specified")
+		}
 	}
 
 	if spec.FloatingIPPool == "" && dc.Spec.Openstack != nil && dc.Spec.Openstack.EnforceFloatingIP {

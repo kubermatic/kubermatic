@@ -16,6 +16,12 @@ import (
 // swagger:model OpenstackCloudSpec
 type OpenstackCloudSpec struct {
 
+	// application credential ID
+	ApplicationCredentialID string `json:"applicationCredentialID,omitempty"`
+
+	// application credential secret
+	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`
+
 	// domain
 	Domain string `json:"domain,omitempty"`
 

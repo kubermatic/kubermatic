@@ -128,10 +128,12 @@ type secrets struct {
 		Token string
 	}
 	OpenStack struct {
-		Domain   string
-		Tenant   string
-		Username string
-		Password string
+		Domain                      string
+		Tenant                      string
+		Username                    string
+		Password                    string
+		ApplicationCredentialID     string
+		ApplicationCredentialSecret string
 	}
 	VSphere struct {
 		Username string
@@ -230,6 +232,8 @@ func main() {
 	flag.StringVar(&opts.secrets.OpenStack.Tenant, "openstack-tenant", "", "OpenStack: Tenant")
 	flag.StringVar(&opts.secrets.OpenStack.Username, "openstack-username", "", "OpenStack: Username")
 	flag.StringVar(&opts.secrets.OpenStack.Password, "openstack-password", "", "OpenStack: Password")
+	flag.StringVar(&opts.secrets.OpenStack.ApplicationCredentialID, "openstack-application-credential-id", "", "OpenStack: ApplicationCredentialID")
+	flag.StringVar(&opts.secrets.OpenStack.ApplicationCredentialSecret, "openstack-application-credential-secret", "", "OpenStack: ApplicationCredentialSecret")
 	flag.StringVar(&opts.secrets.VSphere.Username, "vsphere-username", "", "vSphere: Username")
 	flag.StringVar(&opts.secrets.VSphere.Password, "vsphere-password", "", "vSphere: Password")
 	flag.StringVar(&opts.secrets.Azure.ClientID, "azure-client-id", "", "Azure: ClientID")

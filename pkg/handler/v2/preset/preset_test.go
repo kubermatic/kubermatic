@@ -975,7 +975,59 @@ func TestUpdatePreset(t *testing.T) {
 
 		// scenario 4
 		{
-			Name:       "scenario 4: block user from updating multiple providers at once",
+			Name:       "scenario 4: replace username/password with application credentials",
+			PresetName: "openstack-preset",
+			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderOpenstack, Enabled: true},
+			Body: `{
+						"metadata": {
+						"name": "openstack-preset"
+						},
+						"spec": {
+						"openstack": {
+							"applicationCredentialID": "updated",
+							"applicationCredentialSecret": "updated",
+							"domain": "updated"
+						}
+						}
+			}`,
+			ExistingPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "openstack-preset"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+					Openstack: &kubermaticv1.Openstack{
+						Username:       "test",
+						Password:       "test",
+						TenantID:       "test",
+						Domain:         "test",
+						FloatingIPPool: "test",
+						RouterID:       "test",
+					},
+				},
+			},
+			ExpectedPreset: &kubermaticv1.Preset{
+				ObjectMeta: v1.ObjectMeta{Name: "openstack-preset", ResourceVersion: "1"},
+				TypeMeta:   v1.TypeMeta{Kind: "Preset", APIVersion: "kubermatic.k8s.io/v1"},
+				Spec: kubermaticv1.PresetSpec{
+					Digitalocean: &kubermaticv1.Digitalocean{
+						Token: "test",
+					},
+					Openstack: &kubermaticv1.Openstack{
+						ApplicationCredentialID:     "updated",
+						ApplicationCredentialSecret: "updated",
+						Domain:                      "updated",
+					},
+				},
+			},
+			HTTPStatus:      http.StatusOK,
+			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
+		},
+
+		// scenario 5
+		{
+			Name:       "scenario 5: block user from updating multiple providers at once",
 			PresetName: "openstack-preset",
 			Provider:   v2.PresetProvider{Name: kubermaticv1.ProviderOpenstack, Enabled: true},
 			Body: `{
@@ -1012,9 +1064,9 @@ func TestUpdatePreset(t *testing.T) {
 			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
 		},
 
-		// scenario 5
+		// scenario 6
 		{
-			Name:     "scenario 5: block preset update for regular user",
+			Name:     "scenario 6: block preset update for regular user",
 			Provider: v2.PresetProvider{Name: kubermaticv1.ProviderFake, Enabled: true},
 			Body: `{
 					 "metadata": {

@@ -133,13 +133,15 @@ func CloudConfig(
 		}
 		openstackCloudConfig := &openstack.CloudConfig{
 			Global: openstack.GlobalOpts{
-				AuthURL:    dc.Spec.Openstack.AuthURL,
-				Username:   credentials.Openstack.Username,
-				Password:   credentials.Openstack.Password,
-				DomainName: credentials.Openstack.Domain,
-				TenantName: credentials.Openstack.Tenant,
-				TenantID:   credentials.Openstack.TenantID,
-				Region:     dc.Spec.Openstack.Region,
+				AuthURL:                     dc.Spec.Openstack.AuthURL,
+				Username:                    credentials.Openstack.Username,
+				Password:                    credentials.Openstack.Password,
+				ApplicationCredentialID:     credentials.Openstack.ApplicationCredentialID,
+				ApplicationCredentialSecret: credentials.Openstack.ApplicationCredentialSecret,
+				DomainName:                  credentials.Openstack.Domain,
+				TenantName:                  credentials.Openstack.Tenant,
+				TenantID:                    credentials.Openstack.TenantID,
+				Region:                      dc.Spec.Openstack.Region,
 			},
 			BlockStorage: openstack.BlockStorageOpts{
 				BSVersion:       "auto",

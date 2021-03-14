@@ -546,7 +546,28 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedCloudSpec: &kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{Tenant: "a", Domain: "b", Password: "c", Username: "d"}},
 		},
 		{
-			name:       "test 8: set credentials for Vsphere provider",
+			name:       "test 8: set application credentials for OpenStack provider",
+			presetName: "test",
+			userInfo:   provider.UserInfo{Email: "test@example.com"},
+			presets: []ctrlruntimeclient.Object{
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: "example.com",
+						Openstack: &kubermaticv1.Openstack{
+							ApplicationCredentialID: "a", ApplicationCredentialSecret: "b", Domain: "c",
+						},
+					},
+				},
+			},
+			dc:                &kubermaticv1.Datacenter{Spec: kubermaticv1.DatacenterSpec{Openstack: &kubermaticv1.DatacenterSpecOpenstack{EnforceFloatingIP: false}}},
+			cloudSpec:         kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+			expectedCloudSpec: &kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{ApplicationCredentialID: "a", ApplicationCredentialSecret: "b", Domain: "c"}},
+		},
+		{
+			name:       "test 9: set credentials for Vsphere provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
 			presets: []ctrlruntimeclient.Object{
@@ -566,7 +587,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedCloudSpec: &kubermaticv1.CloudSpec{VSphere: &kubermaticv1.VSphereCloudSpec{Password: "secret", Username: "bob"}},
 		},
 		{
-			name:       "test 9: set credentials for Azure provider",
+			name:       "test 10: set credentials for Azure provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
 			presets: []ctrlruntimeclient.Object{
@@ -586,7 +607,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedCloudSpec: &kubermaticv1.CloudSpec{Azure: &kubermaticv1.AzureCloudSpec{SubscriptionID: "a", ClientID: "b", ClientSecret: "c", TenantID: "d"}},
 		},
 		{
-			name:       "test 10: no credentials for Azure provider",
+			name:       "test 11: no credentials for Azure provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
 			presets: []ctrlruntimeclient.Object{
@@ -603,7 +624,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedError: "the preset test doesn't contain credential for Azure provider",
 		},
 		{
-			name:       "test 11: cloud provider spec is empty",
+			name:       "test 12: cloud provider spec is empty",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
 			presets: []ctrlruntimeclient.Object{
@@ -623,7 +644,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedError: "can not find provider to set credentials",
 		},
 		{
-			name:       "test 12: set credentials for Kubevirt provider",
+			name:       "test 13: set credentials for Kubevirt provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
 			presets: []ctrlruntimeclient.Object{
@@ -643,7 +664,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedCloudSpec: &kubermaticv1.CloudSpec{Kubevirt: &kubermaticv1.KubevirtCloudSpec{Kubeconfig: "test"}},
 		},
 		{
-			name:       "test 13: credential with wrong email domain returns error",
+			name:       "test 14: credential with wrong email domain returns error",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
 			presets: []ctrlruntimeclient.Object{
@@ -664,7 +685,7 @@ func TestCredentialEndpoint(t *testing.T) {
 			expectedError: "preset.kubermatic.k8s.io \"test\" not found",
 		},
 		{
-			name:       "test 14: set credentials for Alibaba provider",
+			name:       "test 15: set credentials for Alibaba provider",
 			presetName: "test",
 			userInfo:   provider.UserInfo{Email: "test@example.com"},
 			presets: []ctrlruntimeclient.Object{

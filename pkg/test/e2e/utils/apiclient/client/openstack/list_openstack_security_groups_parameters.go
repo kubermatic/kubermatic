@@ -60,6 +60,10 @@ for the list openstack security groups operation typically these are written to 
 */
 type ListOpenstackSecurityGroupsParams struct {
 
+	/*ApplicationCredentialID*/
+	ApplicationCredentialID *string
+	/*ApplicationCredentialSecret*/
+	ApplicationCredentialSecret *string
 	/*Credential*/
 	Credential *string
 	/*DatacenterName*/
@@ -111,6 +115,28 @@ func (o *ListOpenstackSecurityGroupsParams) WithHTTPClient(client *http.Client) 
 // SetHTTPClient adds the HTTPClient to the list openstack security groups params
 func (o *ListOpenstackSecurityGroupsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
+}
+
+// WithApplicationCredentialID adds the applicationCredentialID to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) WithApplicationCredentialID(applicationCredentialID *string) *ListOpenstackSecurityGroupsParams {
+	o.SetApplicationCredentialID(applicationCredentialID)
+	return o
+}
+
+// SetApplicationCredentialID adds the applicationCredentialId to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) SetApplicationCredentialID(applicationCredentialID *string) {
+	o.ApplicationCredentialID = applicationCredentialID
+}
+
+// WithApplicationCredentialSecret adds the applicationCredentialSecret to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) WithApplicationCredentialSecret(applicationCredentialSecret *string) *ListOpenstackSecurityGroupsParams {
+	o.SetApplicationCredentialSecret(applicationCredentialSecret)
+	return o
+}
+
+// SetApplicationCredentialSecret adds the applicationCredentialSecret to the list openstack security groups params
+func (o *ListOpenstackSecurityGroupsParams) SetApplicationCredentialSecret(applicationCredentialSecret *string) {
+	o.ApplicationCredentialSecret = applicationCredentialSecret
 }
 
 // WithCredential adds the credential to the list openstack security groups params
@@ -197,6 +223,24 @@ func (o *ListOpenstackSecurityGroupsParams) WriteToRequest(r runtime.ClientReque
 		return err
 	}
 	var res []error
+
+	if o.ApplicationCredentialID != nil {
+
+		// header param ApplicationCredentialID
+		if err := r.SetHeaderParam("ApplicationCredentialID", *o.ApplicationCredentialID); err != nil {
+			return err
+		}
+
+	}
+
+	if o.ApplicationCredentialSecret != nil {
+
+		// header param ApplicationCredentialSecret
+		if err := r.SetHeaderParam("ApplicationCredentialSecret", *o.ApplicationCredentialSecret); err != nil {
+			return err
+		}
+
+	}
 
 	if o.Credential != nil {
 

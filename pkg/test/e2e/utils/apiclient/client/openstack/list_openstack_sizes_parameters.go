@@ -60,6 +60,10 @@ for the list openstack sizes operation typically these are written to a http.Req
 */
 type ListOpenstackSizesParams struct {
 
+	/*ApplicationCredentialID*/
+	ApplicationCredentialID *string
+	/*ApplicationCredentialSecret*/
+	ApplicationCredentialSecret *string
 	/*Credential*/
 	Credential *string
 	/*DatacenterName*/
@@ -111,6 +115,28 @@ func (o *ListOpenstackSizesParams) WithHTTPClient(client *http.Client) *ListOpen
 // SetHTTPClient adds the HTTPClient to the list openstack sizes params
 func (o *ListOpenstackSizesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
+}
+
+// WithApplicationCredentialID adds the applicationCredentialID to the list openstack sizes params
+func (o *ListOpenstackSizesParams) WithApplicationCredentialID(applicationCredentialID *string) *ListOpenstackSizesParams {
+	o.SetApplicationCredentialID(applicationCredentialID)
+	return o
+}
+
+// SetApplicationCredentialID adds the applicationCredentialId to the list openstack sizes params
+func (o *ListOpenstackSizesParams) SetApplicationCredentialID(applicationCredentialID *string) {
+	o.ApplicationCredentialID = applicationCredentialID
+}
+
+// WithApplicationCredentialSecret adds the applicationCredentialSecret to the list openstack sizes params
+func (o *ListOpenstackSizesParams) WithApplicationCredentialSecret(applicationCredentialSecret *string) *ListOpenstackSizesParams {
+	o.SetApplicationCredentialSecret(applicationCredentialSecret)
+	return o
+}
+
+// SetApplicationCredentialSecret adds the applicationCredentialSecret to the list openstack sizes params
+func (o *ListOpenstackSizesParams) SetApplicationCredentialSecret(applicationCredentialSecret *string) {
+	o.ApplicationCredentialSecret = applicationCredentialSecret
 }
 
 // WithCredential adds the credential to the list openstack sizes params
@@ -197,6 +223,24 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 		return err
 	}
 	var res []error
+
+	if o.ApplicationCredentialID != nil {
+
+		// header param ApplicationCredentialID
+		if err := r.SetHeaderParam("ApplicationCredentialID", *o.ApplicationCredentialID); err != nil {
+			return err
+		}
+
+	}
+
+	if o.ApplicationCredentialSecret != nil {
+
+		// header param ApplicationCredentialSecret
+		if err := r.SetHeaderParam("ApplicationCredentialSecret", *o.ApplicationCredentialSecret); err != nil {
+			return err
+		}
+
+	}
 
 	if o.Credential != nil {
 

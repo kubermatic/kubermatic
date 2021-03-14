@@ -104,10 +104,14 @@ openstack)
   OS_TENANT_NAME="${OS_TENANT_NAME:-$(vault kv get -field=OS_TENANT_NAME dev/syseleven-openstack)}"
   OS_USERNAME="${OS_USERNAME:-$(vault kv get -field=username dev/syseleven-openstack)}"
   OS_PASSWORD="${OS_PASSWORD:-$(vault kv get -field=password dev/syseleven-openstack)}"
+  OS_APPLICATION_CREDENTIAL_ID="${OS_APPLICATION_CREDENTIAL_ID:-$(vault kv get -field=application-credential-id dev/syseleven-openstack)}"
+  OS_APPLICATION_CREDENTIAL_SECRET="${OS_APPLICATION_CREDENTIAL_SECRET:-$(vault kv get -field=application-credential-secret dev/syseleven-openstack)}"
   extraArgs="-openstack-domain=$OS_DOMAIN
       -openstack-tenant=$OS_TENANT_NAME
       -openstack-username=$OS_USERNAME
-      -openstack-password=$OS_PASSWORD"
+      -openstack-password=$OS_PASSWORD
+      -openstack-application-credential-id=$OS_APPLICATION_CREDENTIAL_ID
+      -openstack-application-credential-secret=$OS_APPLICATION_CREDENTIAL_SECRET"
   ;;
 
 packet)

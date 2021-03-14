@@ -300,11 +300,13 @@ func (s AWS) IsValid() bool {
 type Openstack struct {
 	PresetProvider `json:",inline"`
 
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Tenant   string `json:"tenant"`
-	TenantID string `json:"tenantID"`
-	Domain   string `json:"domain"`
+	Username                    string `json:"username,omitempty"`
+	Password                    string `json:"password,omitempty"`
+	Tenant                      string `json:"tenant,omitempty"`
+	TenantID                    string `json:"tenantID,omitempty"`
+	Domain                      string `json:"domain"`
+	ApplicationCredentialID     string `json:"applicationCredentialID,omitempty"`
+	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`
 
 	Network        string `json:"network,omitempty"`
 	SecurityGroups string `json:"securityGroups,omitempty"`
@@ -314,9 +316,13 @@ type Openstack struct {
 }
 
 func (s Openstack) IsValid() bool {
-	return len(s.Username) > 0 &&
-		len(s.Password) > 0 &&
-		(len(s.Tenant) > 0 || len(s.TenantID) > 0) &&
+	// It's valid if either ApplicationCredentialID/Secret are specified or
+	// Username/Password and Tenant(ID)
+	return ((len(s.ApplicationCredentialID) > 0 &&
+		len(s.ApplicationCredentialSecret) > 0) ||
+		(len(s.Username) > 0 &&
+			len(s.Password) > 0 &&
+			(len(s.Tenant) > 0 || len(s.TenantID) > 0))) &&
 		len(s.Domain) > 0
 }
 
