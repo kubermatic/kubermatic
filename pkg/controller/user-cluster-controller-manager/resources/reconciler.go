@@ -136,7 +136,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		return err
 	}
 
-	if err := r.reconcileValidatingWebhookConfigurations(ctx, data); err != nil {
+	if err := r.reconcileValidatingWebhookConfigurations(ctx); err != nil {
 		return err
 	}
 
@@ -187,6 +187,16 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
+	// OPA related resources
+	if r.opaIntegration {
+		creators = []reconciling.NamedServiceAccountCreatorGetter{
+			gatekeeper.ServiceAccountCreator(),
+		}
+		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", resources.GatekeeperNamespace, err)
+		}
+	}
+
 	return nil
 }
 
@@ -231,6 +241,16 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 	}
 	if err := reconciling.ReconcileRoles(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", kubernetesdashboard.Namespace, err)
+	}
+
+	// OPA relate resources
+	if r.opaIntegration {
+		creators = []reconciling.NamedRoleCreatorGetter{
+			gatekeeper.RoleCreator(),
+		}
+		if err := reconciling.ReconcileRoles(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", resources.GatekeeperNamespace, err)
+		}
 	}
 
 	return nil
@@ -280,6 +300,16 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile RoleBindings in the namespace: %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
+	// OPA relate resources
+	if r.opaIntegration {
+		creators = []reconciling.NamedRoleBindingCreatorGetter{
+			gatekeeper.RoleBindingCreator(),
+		}
+		if err := reconciling.ReconcileRoleBindings(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile RoleBindings in namespace %s: %v", resources.GatekeeperNamespace, err)
+		}
+	}
+
 	return nil
 }
 
@@ -293,6 +323,9 @@ func (r *reconciler) reconcileClusterRoles(ctx context.Context) error {
 		clusterautoscaler.ClusterRoleCreator(),
 		kubernetesdashboard.ClusterRoleCreator(),
 		coredns.ClusterRoleCreator(),
+	}
+	if r.opaIntegration {
+		creators = append(creators, gatekeeper.ClusterRoleCreator())
 	}
 
 	if err := reconciling.ReconcileClusterRoles(ctx, creators, "", r.Client); err != nil {
@@ -320,6 +353,9 @@ func (r *reconciler) reconcileClusterRoleBindings(ctx context.Context) error {
 		kubernetesdashboard.ClusterRoleBindingCreator(),
 		coredns.ClusterRoleBindingCreator(),
 	}
+	if r.opaIntegration {
+		creators = append(creators, gatekeeper.ClusterRoleBindingCreator())
+	}
 
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, creators, "", r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ClusterRoleBindings: %v", err)
@@ -336,7 +372,11 @@ func (r *reconciler) reconcileCRDs(ctx context.Context) error {
 	}
 
 	if r.opaIntegration {
-		creators = append(creators, gatekeeper.ConfigCRDCreator(), gatekeeper.ConstraintTemplateCRDCreator())
+		creators = append(creators,
+			gatekeeper.ConfigCRDCreator(),
+			gatekeeper.ConstraintTemplateCRDCreator(),
+			gatekeeper.ConstraintPodStatusRDCreator(),
+			gatekeeper.ConstraintTemplatePodStatusRDCreator())
 	}
 
 	if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", r.Client); err != nil {
@@ -356,10 +396,10 @@ func (r *reconciler) reconcileMutatingWebhookConfigurations(ctx context.Context,
 	return nil
 }
 
-func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context, data reconcileData) error {
+func (r *reconciler) reconcileValidatingWebhookConfigurations(ctx context.Context) error {
 	creators := []reconciling.NamedValidatingWebhookConfigurationCreatorGetter{}
 	if r.opaIntegration {
-		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(data.caCert.Cert, r.namespace, r.opaWebhookTimeout))
+		creators = append(creators, gatekeeper.ValidatingWebhookConfigurationCreator(r.opaWebhookTimeout))
 	}
 
 	if err := reconciling.ReconcileValidatingWebhookConfigurations(ctx, creators, "", r.Client); err != nil {
@@ -384,6 +424,16 @@ func (r *reconciler) reconcileServices(ctx context.Context) error {
 	}
 	if err := reconciling.ReconcileServices(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Services in namespace %s: %v", kubernetesdashboard.Namespace, err)
+	}
+
+	// OPA related resources
+	if r.opaIntegration {
+		creators := []reconciling.NamedServiceCreatorGetter{
+			gatekeeper.ServiceCreator(),
+		}
+		if err := reconciling.ReconcileServices(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Services in namespace %s: %v", resources.GatekeeperNamespace, err)
+		}
 	}
 
 	return nil
@@ -462,6 +512,16 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
+	// OPA relate resources
+	if r.opaIntegration {
+		creators = []reconciling.NamedSecretCreatorGetter{
+			gatekeeper.SecretCreator(),
+		}
+		if err := reconciling.ReconcileSecrets(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.GatekeeperNamespace, err)
+		}
+	}
+
 	return nil
 }
 
@@ -514,6 +574,18 @@ func (r *reconciler) reconcileDeployments(ctx context.Context) error {
 
 	if err := reconciling.ReconcileDeployments(ctx, kubeSystemCreators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", metav1.NamespaceSystem, err)
+	}
+
+	// OPA related resources
+	if r.opaIntegration {
+		creators := []reconciling.NamedDeploymentCreatorGetter{
+			gatekeeper.ControllerDeploymentCreator(),
+			gatekeeper.AuditDeploymentCreator(),
+		}
+
+		if err := reconciling.ReconcileDeployments(ctx, creators, resources.GatekeeperNamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", resources.GatekeeperNamespace, err)
+		}
 	}
 
 	return nil

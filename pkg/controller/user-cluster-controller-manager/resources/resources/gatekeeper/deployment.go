@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -19,11 +19,7 @@ package gatekeeper
 import (
 	"fmt"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates/servingcerthelper"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -31,15 +27,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
 )
 
 const (
 	controllerName = resources.GatekeeperControllerDeploymentName
 	auditName      = resources.GatekeeperAuditDeploymentName
-	imageName      = "open-policy-agent/gatekeeper"
-	tag            = "v3.1.0-beta.9"
+	imageName      = "openpolicyagent/gatekeeper"
+	tag            = "v3.1.3"
 	// Namespace used by Dashboard to find required resources.
 	webhookServerPort  = 8443
 	metricsPort        = 8888
@@ -84,15 +79,8 @@ var (
 	}
 )
 
-// gatekeeperData is the data needed to construct the Gatekeeper components
-type gatekeeperData interface {
-	Cluster() *kubermaticv1.Cluster
-	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
-	ImageRegistry(string) string
-}
-
 // ControllerDeploymentCreator returns the function to create and update the Gatekeeper controller deployment
-func ControllerDeploymentCreator(data gatekeeperData) reconciling.NamedDeploymentCreatorGetter {
+func ControllerDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return controllerName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = controllerName
@@ -108,34 +96,31 @@ func ControllerDeploymentCreator(data gatekeeperData) reconciling.NamedDeploymen
 				MatchLabels: resources.BaseAppLabels(controllerName, gatekeeperControllerLabels),
 			}
 
-			volumes := getControllerVolumes()
-			podLabels, err := data.GetPodTemplateLabels(controllerName, volumes, gatekeeperControllerLabels)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
-			}
-
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
+				Labels: resources.BaseAppLabels(controllerName, gatekeeperControllerLabels),
 			}
 
 			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
-			dep.Spec.Template.Spec.Containers = getControllerContainers(data, dep.Spec.Template.Spec.Containers)
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			dep.Spec.Template.Spec.Containers = getControllerContainers()
+			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(controllerName, data.Cluster().Status.NamespaceName)
 
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(controllerName))
-			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
+			dep.Spec.Template.Spec.Volumes = []corev1.Volume{
+				{
+					Name: resources.GatekeeperWebhookServerCertSecretName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.GatekeeperWebhookServerCertSecretName,
+						},
+					},
+				},
 			}
-			dep.Spec.Template.Spec = *wrappedPodSpec
 
 			return dep, nil
 		}
@@ -143,7 +128,7 @@ func ControllerDeploymentCreator(data gatekeeperData) reconciling.NamedDeploymen
 }
 
 // AuditDeploymentCreator returns the function to create and update the Gatekeeper audit deployment
-func AuditDeploymentCreator(data gatekeeperData) reconciling.NamedDeploymentCreatorGetter {
+func AuditDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return auditName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
 			dep.Name = auditName
@@ -159,66 +144,39 @@ func AuditDeploymentCreator(data gatekeeperData) reconciling.NamedDeploymentCrea
 				MatchLabels: resources.BaseAppLabels(auditName, gatekeeperAuditLabels),
 			}
 
-			volumes := getAuditVolumes()
-			podLabels, err := data.GetPodTemplateLabels(auditName, volumes, gatekeeperAuditLabels)
-			if err != nil {
-				return nil, fmt.Errorf("failed to create pod labels: %v", err)
-			}
-
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{
-				Labels: podLabels,
+				Labels: resources.BaseAppLabels(auditName, gatekeeperAuditLabels),
 			}
 
 			dep.Spec.Template.Spec.TerminationGracePeriodSeconds = pointer.Int64Ptr(60)
 			dep.Spec.Template.Spec.NodeSelector = map[string]string{"kubernetes.io/os": "linux"}
 			dep.Spec.Template.Spec.ServiceAccountName = serviceAccountName
 
-			dep.Spec.Template.Spec.Volumes = volumes
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
-			dep.Spec.Template.Spec.Containers = getAuditContainers(data, dep.Spec.Template.Spec.Containers)
-			err = resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
+			dep.Spec.Template.Spec.Containers = getAuditContainers()
+			err := resources.SetResourceRequirements(dep.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, dep.Annotations)
 			if err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
-			dep.Spec.Template.Spec.Affinity = resources.HostnameAntiAffinity(auditName, data.Cluster().Status.NamespaceName)
-
-			wrappedPodSpec, err := apiserver.IsRunningWrapper(data, dep.Spec.Template.Spec, sets.NewString(auditName))
-			if err != nil {
-				return nil, fmt.Errorf("failed to add apiserver.IsRunningWrapper: %v", err)
-			}
-			dep.Spec.Template.Spec = *wrappedPodSpec
 
 			return dep, nil
 		}
 	}
 }
 
-func getControllerContainers(data gatekeeperData, existingContainers []corev1.Container) []corev1.Container {
+func getControllerContainers() []corev1.Container {
 
 	return []corev1.Container{{
 		Name:            controllerName,
-		Image:           fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, tag),
+		Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag),
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/manager"},
 		Args: []string{
 			"--port=8443",
 			"--logtostderr",
-			fmt.Sprintf("--exempt-namespace=%s", data.Cluster().Status.NamespaceName),
+			fmt.Sprintf("--exempt-namespace=%s", resources.GatekeeperNamespace),
 			"--operation=webhook",
-			"--disable-cert-rotation=true",
-			"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
-		},
-		VolumeMounts: []corev1.VolumeMount{
-			{
-				Name:      resources.GatekeeperWebhookServerCertSecretName,
-				MountPath: "/certs",
-				ReadOnly:  true,
-			},
-			{
-				Name:      resources.AdminKubeconfigSecretName,
-				MountPath: "/etc/kubernetes/kubeconfig",
-				ReadOnly:  true,
-			},
+			//"--disable-cert-rotation=true",
 		},
 		Ports: []corev1.ContainerPort{
 			{
@@ -234,6 +192,13 @@ func getControllerContainers(data gatekeeperData, existingContainers []corev1.Co
 				Protocol:      corev1.ProtocolTCP,
 			},
 		},
+		VolumeMounts: []corev1.VolumeMount{
+			{
+				Name:      resources.GatekeeperWebhookServerCertSecretName,
+				MountPath: "/certs",
+				ReadOnly:  true,
+			},
+		},
 		Env: []corev1.EnvVar{
 			{Name: "POD_NAMESPACE",
 				Value: resources.GatekeeperNamespace},
@@ -286,24 +251,16 @@ func getControllerContainers(data gatekeeperData, existingContainers []corev1.Co
 	}}
 }
 
-func getAuditContainers(data gatekeeperData, existingContainers []corev1.Container) []corev1.Container {
+func getAuditContainers() []corev1.Container {
 
 	return []corev1.Container{{
 		Name:            auditName,
-		Image:           fmt.Sprintf("%s/%s:%s", data.ImageRegistry(resources.RegistryQuay), imageName, tag),
+		Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, imageName, tag),
 		ImagePullPolicy: corev1.PullAlways,
 		Command:         []string{"/manager"},
 		Args: []string{
 			"--logtostderr",
 			"--operation=audit",
-			"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
-		},
-		VolumeMounts: []corev1.VolumeMount{
-			{
-				Name:      resources.AdminKubeconfigSecretName,
-				MountPath: "/etc/kubernetes/kubeconfig",
-				ReadOnly:  true,
-			},
 		},
 		Ports: []corev1.ContainerPort{
 			{
@@ -365,54 +322,4 @@ func getAuditContainers(data gatekeeperData, existingContainers []corev1.Contain
 			RunAsUser:    pointer.Int64Ptr(1000),
 		},
 	}}
-}
-
-func getControllerVolumes() []corev1.Volume {
-	return []corev1.Volume{
-		{
-			Name: resources.AdminKubeconfigSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.AdminKubeconfigSecretName,
-				},
-			},
-		},
-		{
-			Name: resources.GatekeeperWebhookServerCertSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.GatekeeperWebhookServerCertSecretName,
-				},
-			},
-		},
-	}
-}
-
-func getAuditVolumes() []corev1.Volume {
-	return []corev1.Volume{
-		{
-			Name: resources.AdminKubeconfigSecretName,
-			VolumeSource: corev1.VolumeSource{
-				Secret: &corev1.SecretVolumeSource{
-					SecretName: resources.AdminKubeconfigSecretName,
-				},
-			},
-		},
-	}
-}
-
-type gatekeeperWebhookCertificateCreatorData interface {
-	GetRootCA() (*triple.KeyPair, error)
-	Cluster() *kubermaticv1.Cluster
-}
-
-// TLSServingCertSecretCreator returns a function to manage the TLS serving cert for gatkeeper webhook
-func TLSServingCertSecretCreator(data gatekeeperWebhookCertificateCreatorData) reconciling.NamedSecretCreatorGetter {
-	commonName := fmt.Sprintf("%s.%s.svc.cluster.local", resources.GatekeeperWebhookServiceName, data.Cluster().Status.NamespaceName)
-	return servingcerthelper.ServingCertSecretCreator(data.GetRootCA,
-		resources.GatekeeperWebhookServerCertSecretName,
-		// Must match what's configured in the gatekeeper webhook
-		commonName,
-		[]string{commonName},
-		nil)
 }
