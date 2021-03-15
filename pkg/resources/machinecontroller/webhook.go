@@ -64,7 +64,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 
 			externalCloudProvider := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
 			if externalCloudProvider {
-				args = append(args, "-node-external-cloud-provider=true")
+				args = append(args, "-node-external-cloud-provider")
 			}
 
 			featureGates := data.GetCSIMigrationFeatureGates()
