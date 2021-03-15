@@ -57,7 +57,6 @@ spec:
           # to define the AMIs statically.
           images:
             centos: ""
-            coreos: ""
             flatcar: ""
             rhel: ""
             sles: ""
@@ -139,7 +138,6 @@ spec:
           # Images to use for each supported operating system.
           images:
             centos: ""
-            coreos: ""
             flatcar: ""
             rhel: ""
             sles: ""
@@ -206,7 +204,6 @@ spec:
           # See: https://github.com/kubermatic/machine-controller/blob/master/docs/vsphere.md#template-vms-preparation
           templates:
             centos: ""
-            coreos: ""
             flatcar: ""
             rhel: ""
             sles: ""
