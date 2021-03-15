@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.11
-ARG OPENVPN_VERSION
+FROM alpine:3.13
+ARG OPENVPN_VERSION=2.5.0-r1
 LABEL maintainer="support@kubermatic.com"
 
 RUN apk add -U \
