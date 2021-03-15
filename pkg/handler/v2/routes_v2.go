@@ -470,6 +470,9 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/serviceaccounts").
 		Handler(r.listMainServiceAccounts())
+	mux.Methods(http.MethodPut).
+		Path("/serviceaccounts/{serviceaccount_id}").
+		Handler(r.updateMainServiceAccount())
 
 }
 
@@ -3157,6 +3160,33 @@ func (r Routing) listMainServiceAccounts() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(serviceaccount.ListEndpoint(r.serviceAccountProvider, r.userInfoGetter)),
 		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/V2/serviceaccounts/{serviceaccount_id} mainserviceaccounts updateMainServiceAccount
+//
+//     Updates main service account
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ServiceAccount
+//       401: empty
+//       403: empty
+func (r Routing) updateMainServiceAccount() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(serviceaccount.UpdateEndpoint(r.serviceAccountProvider, r.userInfoGetter)),
+		serviceaccount.DecodeUpdateReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

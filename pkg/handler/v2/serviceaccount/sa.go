@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
@@ -92,6 +93,116 @@ func ListEndpoint(serviceAccountProvider provider.ServiceAccountProvider, userIn
 		}
 		return resultList, nil
 	}
+}
+
+// UpdateEndpoint changes the service account group and/or name in the given project
+func UpdateEndpoint(serviceAccountProvider provider.ServiceAccountProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(updateReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		saFromRequest := req.Body
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+
+		sa, err := serviceAccountProvider.GetMainServiceAccount(userInfo, req.ServiceAccountID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		// update the service account name
+		if sa.Spec.Name != saFromRequest.Name {
+			// check if service account name is already reserved in the project
+			existingSAList, err := listSA(userInfo, serviceAccountProvider, &saFromRequest)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+
+			if len(existingSAList) > 0 {
+				return nil, errors.NewAlreadyExists("service account", saFromRequest.Name)
+			}
+			sa.Spec.Name = saFromRequest.Name
+		}
+
+		sa.Labels[serviceaccount.ServiceAccountLabelGroup] = saFromRequest.Group
+
+		updatedSA, err := serviceAccountProvider.UpdateMainServiceAccount(userInfo, sa)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		result := convertInternalServiceAccountToExternal(updatedSA)
+		return result, nil
+	}
+}
+
+// Validate validates UpdateEndpoint request
+func (r updateReq) Validate() error {
+	if r.ServiceAccountID != r.Body.ID {
+		return fmt.Errorf("service account ID mismatch, you requested to update ServiceAccount = %s but body contains ServiceAccount = %s", r.ServiceAccountID, r.Body.ID)
+	}
+
+	for _, existingGroupPrefix := range serviceAccountGroupsPrefixes {
+		if existingGroupPrefix == r.Body.Group {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid group name %s", r.Body.Group)
+}
+
+// DecodeUpdateReq  decodes an HTTP request into updateReq
+func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req updateReq
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	saIDReq, err := decodeServiceAccountIDReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ServiceAccountID = saIDReq.ServiceAccountID
+
+	return req, nil
+}
+
+func decodeServiceAccountIDReq(_ context.Context, r *http.Request) (serviceAccountIDReq, error) {
+	var req serviceAccountIDReq
+
+	saID, ok := mux.Vars(r)["serviceaccount_id"]
+	if !ok {
+		return req, fmt.Errorf("'serviceaccount_id' parameter is required")
+	}
+	req.ServiceAccountID = saID
+
+	return req, nil
+}
+
+// serviceAccountIDReq represents a request that contains main service account ID in the path
+type serviceAccountIDReq struct {
+	// in: path
+	ServiceAccountID string `json:"serviceaccount_id"`
+}
+
+// updateReq defines HTTP request for updateMainServiceAccount
+// swagger:parameters updateMainServiceAccount
+type updateReq struct {
+	// in: body
+	Body apiv1.ServiceAccount
+
+	serviceAccountIDReq
 }
 
 // addReq defines HTTP request for createMainServiceAccount
