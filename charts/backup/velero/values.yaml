@@ -58,7 +58,6 @@ velero:
         cpu: 100m
         memory: 30Mi
       limits:
-        cpu: 300m
         # during backups memory usage can spike, see https://github.com/restic/restic/issues/979
         memory: 1Gi
 
@@ -127,8 +126,7 @@ velero:
       cpu: 100m
       memory: 50Mi
     limits:
-      cpu: 200m
-      memory: 100Mi
+      memory: 512Mi
 
   affinity:
     # Backups are potentially long-running tasks and rescheduling Velero
