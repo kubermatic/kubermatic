@@ -20,10 +20,6 @@ import (
 	"context"
 	"fmt"
 
-	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
-
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -32,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -48,30 +45,22 @@ const (
 )
 
 type reconciler struct {
-	log                     *zap.SugaredLogger
-	recorder                record.EventRecorder
-	masterClient            ctrlruntimeclient.Client
-	seedClientGetter        provider.SeedClientGetter
-	workerNameLabelSelector labels.Selector
+	log              *zap.SugaredLogger
+	recorder         record.EventRecorder
+	masterClient     ctrlruntimeclient.Client
+	seedClientGetter provider.SeedClientGetter
 }
 
 func Add(mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
-	workerName string,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter) error {
 
-	workerSelector, err := workerlabel.LabelSelector(workerName)
-	if err != nil {
-		return fmt.Errorf("failed to build worker-name selector: %v", err)
-	}
-
 	reconciler := &reconciler{
-		log:                     log.Named(ControllerName),
-		recorder:                mgr.GetEventRecorderFor(ControllerName),
-		masterClient:            mgr.GetClient(),
-		seedClientGetter:        provider.SeedClientGetterFactory(seedKubeconfigGetter),
-		workerNameLabelSelector: workerSelector,
+		log:              log.Named(ControllerName),
+		recorder:         mgr.GetEventRecorderFor(ControllerName),
+		masterClient:     mgr.GetClient(),
+		seedClientGetter: provider.SeedClientGetterFactory(seedKubeconfigGetter),
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -83,14 +72,14 @@ func Add(mgr manager.Manager,
 		&source.Kind{Type: &kubermaticv1.Project{}},
 		&handler.EnqueueRequestForObject{},
 	); err != nil {
-		return fmt.Errorf("failed to create watch for Projects: %v", err)
+		return fmt.Errorf("failed to create watch for projects: %v", err)
 	}
 
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.Seed{}},
 		enqueueAllProjects(reconciler.masterClient, reconciler.log),
 	); err != nil {
-		return fmt.Errorf("failed to create seed watcher: %v", err)
+		return fmt.Errorf("failed to create watch for seeds: %v", err)
 	}
 
 	return nil
@@ -109,40 +98,27 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		if err := r.handleDeletion(ctx, log, project); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %v", err)
 		}
+		return reconcile.Result{}, nil
 	}
 
-	kuberneteshelper.AddFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer)
-	if err := r.masterClient.Update(ctx, project); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to add Project finalizer %s: %v", project.Name, err)
+	if !kuberneteshelper.HasFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer) {
+		kuberneteshelper.AddFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer)
+		if err := r.masterClient.Update(ctx, project); err != nil {
+			return reconcile.Result{}, fmt.Errorf("failed to add project finalizer %s: %v", project.Name, err)
+		}
 	}
 
-	projectCreatorGetter := []reconciling.NamedKubermaticV1ProjectCreatorGetter{
+	projectCreatorGetters := []reconciling.NamedKubermaticV1ProjectCreatorGetter{
 		projectCreatorGetter(project),
 	}
 
 	err := r.syncAllSeeds(ctx, log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
-		workerNameLabelSelectorRequirements, _ := r.workerNameLabelSelector.Requirements()
-		projectLabelRequirement, err := labels.NewRequirement(kubermaticv1.ProjectIDLabelKey, selection.Equals, []string{project.Name})
-		if err != nil {
-			return fmt.Errorf("failed to construct label requirement for project: %v", err)
-		}
-
-		listOpts := &ctrlruntimeclient.ListOptions{
-			LabelSelector: labels.NewSelector().Add(append(workerNameLabelSelectorRequirements, *projectLabelRequirement)...),
-		}
-		clusterList := &kubermaticv1.ClusterList{}
-		if err := seedClusterClient.List(ctx, clusterList, listOpts); err != nil {
-			return fmt.Errorf("failed to list Cluster objects: %v", err)
-		}
-		if len(clusterList.Items) == 0 {
-			// No cluster within this Project is found in this Seed, so in this case, we don't sync this Project to Seed.
-			return nil
-		}
-		return reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetter, "", seedClusterClient)
+		return reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClusterClient)
 	})
 
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("reconciled Project: %s: %v", project.Name, err)
+		r.recorder.Eventf(project, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+		return reconcile.Result{}, fmt.Errorf("reconciled project: %s: %v", project.Name, err)
 	}
 	return reconcile.Result{}, nil
 }
@@ -157,9 +133,11 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 	if err != nil {
 		return err
 	}
-	kuberneteshelper.RemoveFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer)
-	if err := r.masterClient.Update(ctx, project); err != nil {
-		return fmt.Errorf("failed to remove Project finalizer %s: %v", project.Name, err)
+	if kuberneteshelper.HasFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer) {
+		kuberneteshelper.RemoveFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer)
+		if err := r.masterClient.Update(ctx, project); err != nil {
+			return fmt.Errorf("failed to remove project finalizer %s: %v", project.Name, err)
+		}
 	}
 	return nil
 }
@@ -178,26 +156,16 @@ func (r *reconciler) syncAllSeeds(
 	for _, seed := range seedList.Items {
 		seedClient, err := r.seedClientGetter(&seed)
 		if err != nil {
-			return fmt.Errorf("failed getting seed client for Seed %s: %w", seed.Name, err)
+			return fmt.Errorf("failed getting seed client for seed %s: %w", seed.Name, err)
 		}
 
 		err = action(seedClient, project)
 		if err != nil {
-			return fmt.Errorf("failed syncing Project for Seed %s: %w", seed.Name, err)
+			return fmt.Errorf("failed syncing project for seed %s: %w", seed.Name, err)
 		}
-		log.Debugw("Reconciled Project with Seed", "seed", seed.Name)
+		log.Debugw("Reconciled project with seed", "seed", seed.Name)
 	}
 	return nil
-}
-
-func projectCreatorGetter(project *kubermaticv1.Project) reconciling.NamedKubermaticV1ProjectCreatorGetter {
-	return func() (string, reconciling.KubermaticV1ProjectCreator) {
-		return project.Name, func(p *kubermaticv1.Project) (*kubermaticv1.Project, error) {
-			p.Name = project.Name
-			p.Spec = project.Spec
-			return p, nil
-		}
-	}
 }
 
 func enqueueAllProjects(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
@@ -207,7 +175,7 @@ func enqueueAllProjects(client ctrlruntimeclient.Client, log *zap.SugaredLogger)
 		projectList := &kubermaticv1.ProjectList{}
 		if err := client.List(context.Background(), projectList); err != nil {
 			log.Error(err)
-			utilruntime.HandleError(fmt.Errorf("failed to list Projects: %v", err))
+			utilruntime.HandleError(fmt.Errorf("failed to list projects: %v", err))
 		}
 		for _, project := range projectList.Items {
 			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
