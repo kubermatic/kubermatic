@@ -195,7 +195,6 @@ func getControllerContainers() []corev1.Container {
 			{
 				Name:      resources.GatekeeperWebhookServerCertSecretName,
 				MountPath: "/certs",
-				ReadOnly:  true,
 			},
 		},
 		Env: []corev1.EnvVar{
