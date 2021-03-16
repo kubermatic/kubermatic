@@ -89,7 +89,7 @@ func TestOPAIntegration(t *testing.T) {
 	defer cleanupProject(t, project.ID)
 
 	t.Log("creating cluster...")
-	apiCluster, err := testClient.CreateDOCluster(project.ID, datacenter, rand.String(10), credential, version, location, 0)
+	apiCluster, err := testClient.CreateDOCluster(project.ID, datacenter, rand.String(10), credential, version, location, 1)
 	if err != nil {
 		t.Fatalf("failed to create cluster: %v", err)
 	}
@@ -97,6 +97,10 @@ func TestOPAIntegration(t *testing.T) {
 	// wait for the cluster to become healthy
 	if err := testClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
 		t.Fatalf("cluster did not become healthy: %v", err)
+	}
+
+	if err := testClient.WaitForClusterNodeDeploymentsToByReady(project.ID, datacenter, apiCluster.ID, 1); err != nil {
+		t.Fatalf("cluster nodes not ready: %v", err)
 	}
 
 	// get the cluster object (the CRD, not the API's representation)
