@@ -18,6 +18,7 @@ package machinecontroller
 
 import (
 	"fmt"
+	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -53,6 +54,24 @@ var (
 func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.MachineControllerWebhookDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			args := []string{
+				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
+				"-logtostderr",
+				"-v", "4",
+				"-listen-address", "0.0.0.0:9876",
+				"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+			}
+
+			externalCloudProvider := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
+			if externalCloudProvider {
+				args = append(args, "-node-external-cloud-provider")
+			}
+
+			featureGates := data.GetCSIMigrationFeatureGates()
+			if len(featureGates) > 0 {
+				args = append(args, "-node-kubelet-feature-gates", strings.Join(featureGates, ","))
+			}
+
 			dep.Name = resources.MachineControllerWebhookDeploymentName
 			dep.Labels = resources.BaseAppLabels(resources.MachineControllerWebhookDeploymentName, nil)
 			dep.Spec.Replicas = resources.Int32(1)
@@ -81,13 +100,7 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 					Name:    Name,
 					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + Tag,
 					Command: []string{"/usr/local/bin/webhook"},
-					Args: []string{
-						"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
-						"-logtostderr",
-						"-v", "4",
-						"-listen-address", "0.0.0.0:9876",
-						"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
-					},
+					Args:    args,
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",

@@ -52,7 +52,7 @@ var (
 
 const (
 	Name = "machine-controller"
-	Tag  = "v1.26.0"
+	Tag  = "v1.27.1"
 
 	NodeLocalDNSCacheAddress = "169.254.20.10"
 )
@@ -133,15 +133,13 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 				return nil, err
 			}
 
-			externalCloudProvider := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
-
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
 					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + Tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(clusterDNSIP, data.DC().Node, externalCloudProvider, data.GetCSIMigrationFeatureGates()),
+					Args:    getFlags(clusterDNSIP, data.DC().Node),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -241,7 +239,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	return vars, nil
 }
 
-func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, externalCloudProvider bool, featureGates []string) []string {
+func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-logtostderr",
@@ -273,13 +271,6 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, exte
 		if nodeSettings.HyperkubeImage != "" {
 			flags = append(flags, "-node-hyperkube-image", nodeSettings.HyperkubeImage)
 		}
-	}
-
-	if externalCloudProvider {
-		flags = append(flags, "-external-cloud-provider=true")
-	}
-	if len(featureGates) > 0 {
-		flags = append(flags, "-node-kubelet-feature-gates", strings.Join(append(featureGates, "RotateKubeletServerCertificate=true"), ","))
 	}
 
 	return flags
