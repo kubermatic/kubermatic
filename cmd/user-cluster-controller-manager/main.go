@@ -123,7 +123,7 @@ func main() {
 	flag.StringVar(&runOp.updateWindowStart, "update-window-start", "", "The start time of the update window, e.g. 02:00")
 	flag.StringVar(&runOp.updateWindowLength, "update-window-length", "", "The length of the update window, e.g. 1h")
 	flag.BoolVar(&runOp.opaIntegration, "opa-integration", false, "Enable OPA integration in user cluster")
-	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 10, "Timeout for OPA Integration validating webhook, in seconds")
+	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 3, "Timeout for OPA Integration validating webhook, in seconds")
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
 	flag.Parse()
 
