@@ -30,12 +30,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/diff"
+	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func TestReconcileBinding(t *testing.T) {
+func TestReconcileBindingForProjectServiceAccount(t *testing.T) {
 
 	tests := []struct {
 		name                      string
@@ -107,6 +108,73 @@ func TestReconcileBinding(t *testing.T) {
 	}
 }
 
+func TestReconcileBindingForMainServiceAccount(t *testing.T) {
+
+	tests := []struct {
+		name                      string
+		saName                    string
+		existingKubermaticObjects []ctrlruntimeclient.Object
+		expectedBindingNames      sets.String
+	}{
+		{
+			name:                      "scenario 1: the human user has one owned project, new binding will be created",
+			saName:                    "main-serviceaccount-abcd",
+			existingKubermaticObjects: test.GenDefaultKubermaticObjects(genMainServiceAccount("abcd", "editors", test.GenDefaultUser().Spec.Email)),
+			expectedBindingNames:      sets.NewString("my-first-project-ID-main-service", "my-first-project-ID-bob@acme.com"),
+		},
+		{
+			name:   "scenario 2: the human doesn't have owned projects",
+			saName: "main-serviceaccount-abcd",
+			existingKubermaticObjects: []ctrlruntimeclient.Object{
+				// add a project
+				test.GenDefaultProject(),
+				// add a user
+				test.GenDefaultUser(),
+				// add binding
+				test.GenBinding(test.GenDefaultProject().Name, test.GenDefaultUser().Spec.Email, "editors"),
+				genMainServiceAccount("abcd", "editors", test.GenDefaultUser().Spec.Email),
+			},
+			expectedBindingNames: sets.NewString("my-first-project-ID-bob@acme.com"),
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			kubermaticFakeClient := fakectrlruntimeclient.NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(test.existingKubermaticObjects...).
+				Build()
+
+			// act
+			ctx := context.Background()
+			target := reconcileServiceAccountProjectBinding{Client: kubermaticFakeClient}
+
+			_, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.saName}})
+
+			// validate
+			if err != nil {
+				t.Fatal(err)
+			}
+			bindings := &kubermaticv1.UserProjectBindingList{}
+			err = kubermaticFakeClient.List(ctx, bindings)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(bindings.Items) != len(test.expectedBindingNames) {
+				t.Fatalf("expected %d bindings got %d", len(test.expectedBindingNames), len(bindings.Items))
+			}
+
+			for _, binding := range bindings.Items {
+				if test.expectedBindingNames.Has(binding.Name) {
+					t.Fatalf("expected binding name")
+				}
+			}
+		})
+	}
+}
+
 func genSABinding(projectID, saName, email, group string) *kubermaticv1.UserProjectBinding {
 	binding := test.GenBinding(projectID, email, group)
 	binding.OwnerReferences[0].Kind = kubermaticv1.UserKindName
@@ -138,6 +206,18 @@ func genServiceAccount(id, name, group, projectName string) *kubermaticv1.User {
 	}
 	user.Name = fmt.Sprintf("serviceaccount-%s", id)
 	user.Spec.Email = "serviceaccount-abcd@sa.kubermatic.io"
+
+	return user
+}
+
+func genMainServiceAccount(id, group, owner string) *kubermaticv1.User {
+	user := &kubermaticv1.User{}
+	user.Labels = map[string]string{kubernetes.ServiceAccountLabelGroup: group}
+	user.Annotations = map[string]string{OwnerAnnotationKey: owner}
+
+	user.Name = fmt.Sprintf("main-serviceaccount-%s", id)
+	user.Spec.Email = fmt.Sprintf("main-serviceaccount-%s@sa.kubermatic.io", id)
+	user.Spec.ID = id
 
 	return user
 }
