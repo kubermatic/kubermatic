@@ -176,7 +176,6 @@ func getControllerContainers() []corev1.Container {
 			"--logtostderr",
 			fmt.Sprintf("--exempt-namespace=%s", resources.GatekeeperNamespace),
 			"--operation=webhook",
-			//"--disable-cert-rotation=true",
 		},
 		Ports: []corev1.ContainerPort{
 			{
