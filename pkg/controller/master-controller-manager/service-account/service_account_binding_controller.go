@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"strings"
 
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	serviceaccount "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
@@ -28,8 +29,10 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -37,7 +40,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const controllerName = "kubermatic_serviceaccount_projectbinding_controller"
+const (
+	controllerName         = "kubermatic_serviceaccount_projectbinding_controller"
+	MainServiceAccountName = "main-serviceaccount"
+	ServiceAcountName      = "serviceaccount"
+	OwnerAnnotationKey     = "owner"
+)
 
 func Add(mgr manager.Manager) error {
 	r := &reconcileServiceAccountProjectBinding{Client: mgr.GetClient()}
@@ -52,31 +60,130 @@ func Add(mgr manager.Manager) error {
 	if err != nil {
 		return err
 	}
+	if err = c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, enqueueUserProjectBindings(mgr.GetClient())); err != nil {
+		return fmt.Errorf("failed to establish watch for the UserProjectBinding %v", err)
+	}
 	return nil
 }
 
 // reconcileServiceAccountProjectBinding reconciles User objects
 type reconcileServiceAccountProjectBinding struct {
-	ctrlruntimeclient.Client
+	client.Client
 }
 
 func (r *reconcileServiceAccountProjectBinding) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	resourceName := request.Name
-	if !strings.HasPrefix(resourceName, "serviceaccount") {
-		return reconcile.Result{}, nil
+	// project service account
+	if strings.HasPrefix(resourceName, ServiceAcountName) {
+		if err := r.ensureServiceAccountProjectBinding(ctx, resourceName); err != nil {
+			logger := log.Logger.With("controller", controllerName)
+			logger.Errorw("failed to reconcile in controller", "error", err)
+			return reconcile.Result{}, err
+		}
+	}
+	// main service account
+	if strings.HasPrefix(resourceName, MainServiceAccountName) {
+		if err := r.ensureMainServiceAccountProjectBinding(ctx, resourceName); err != nil {
+			logger := log.Logger.With("controller", controllerName)
+			logger.Errorw("failed to reconcile in controller", "error", err)
+			return reconcile.Result{}, err
+		}
 	}
 
-	if err := r.ensureServiceAccountProjectBinding(ctx, resourceName); err != nil {
-		logger := log.Logger.With("controller", controllerName)
-		logger.Errorw("failed to reconcile in controller", "error", err)
-		return reconcile.Result{}, err
-	}
 	return reconcile.Result{}, nil
+}
+
+func (r *reconcileServiceAccountProjectBinding) ensureMainServiceAccountProjectBinding(ctx context.Context, saName string) error {
+	sa := &kubermaticv1.User{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: metav1.NamespaceAll, Name: saName}, sa); err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
+	group, ok := sa.GetLabels()[serviceaccount.ServiceAccountLabelGroup]
+	if !ok {
+		return fmt.Errorf("unable to find group for the service account = %s", sa.Name)
+	}
+
+	// get service account owner
+	ownerEmail, ok := sa.GetAnnotations()[OwnerAnnotationKey]
+	if !ok {
+		return fmt.Errorf("unable to find owner for the service account = %s", sa.Name)
+	}
+
+	ownerList := &kubermaticv1.UserList{}
+	if err := r.List(ctx, ownerList); err != nil {
+		return err
+	}
+
+	var ownerUser *kubermaticv1.User
+	for _, owner := range ownerList.Items {
+		if strings.EqualFold(owner.Spec.Email, ownerEmail) {
+			ownerUser = owner.DeepCopy()
+		}
+	}
+
+	if ownerUser == nil {
+		return fmt.Errorf("unable to find owner for the email = %s", ownerEmail)
+	}
+
+	if err := r.deleteMainServiceAccountBindings(ctx, sa); err != nil {
+		return err
+	}
+
+	if err := r.createMainServiceAccountBindings(ctx, sa, group, ownerUser.Spec.Email); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *reconcileServiceAccountProjectBinding) deleteMainServiceAccountBindings(ctx context.Context, sa *kubermaticv1.User) error {
+	allMemberMappings := &kubermaticv1.UserProjectBindingList{}
+	if err := r.List(ctx, allMemberMappings); err != nil {
+		return err
+	}
+
+	for _, memberMapping := range allMemberMappings.Items {
+		if strings.EqualFold(memberMapping.Spec.UserEmail, sa.Spec.Email) {
+			existingBinding := memberMapping.DeepCopy()
+			if err := r.Delete(ctx, existingBinding); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *reconcileServiceAccountProjectBinding) createMainServiceAccountBindings(ctx context.Context, sa *kubermaticv1.User, group, ownerEmail string) error {
+	allMemberMappings := &kubermaticv1.UserProjectBindingList{}
+	if err := r.List(ctx, allMemberMappings); err != nil {
+		return err
+	}
+
+	for _, memberMapping := range allMemberMappings.Items {
+		projectID := memberMapping.Spec.ProjectID
+
+		saGroup := fmt.Sprintf("%s-%s", group, projectID)
+
+		// create a new binding for the owned projects
+		if strings.EqualFold(memberMapping.Spec.UserEmail, ownerEmail) && strings.HasPrefix(memberMapping.Spec.Group, rbac.OwnerGroupNamePrefix) {
+			sa.Labels[serviceaccount.ServiceAccountLabelGroup] = saGroup
+			if err := r.createBinding(ctx, sa, projectID); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBinding(ctx context.Context, saName string) error {
 	sa := &kubermaticv1.User{}
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Namespace: metav1.NamespaceAll, Name: saName}, sa); err != nil {
+	if err := r.Get(ctx, client.ObjectKey{Namespace: metav1.NamespaceAll, Name: saName}, sa); err != nil {
 		if kerrors.IsNotFound(err) {
 			return nil
 		}
@@ -106,7 +213,7 @@ func (r *reconcileServiceAccountProjectBinding) ensureServiceAccountProjectBindi
 	}
 
 	bindings := &kubermaticv1.UserProjectBindingList{}
-	if err := r.List(ctx, bindings, &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector}); err != nil {
+	if err := r.List(ctx, bindings, &client.ListOptions{LabelSelector: labelSelector}); err != nil {
 		return err
 	}
 
@@ -169,4 +276,72 @@ func (r *reconcileServiceAccountProjectBinding) createBinding(ctx context.Contex
 	}
 
 	return r.Create(ctx, binding)
+}
+
+// enqueueUserProjectBindings enqueues the human UserProjectBindings for changes
+func enqueueUserProjectBindings(c client.Reader) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
+
+		userProjectBinding := &kubermaticv1.UserProjectBinding{}
+		if err := c.Get(context.Background(), client.ObjectKey{Namespace: metav1.NamespaceAll, Name: a.GetName()}, userProjectBinding); err != nil {
+			if kerrors.IsNotFound(err) {
+				return []reconcile.Request{}
+			}
+			utilruntime.HandleError(fmt.Errorf("failed to get userProjectBinding: %v", err))
+			return []reconcile.Request{}
+		}
+
+		// check only human user bindings
+		if strings.HasPrefix(userProjectBinding.Spec.UserEmail, ServiceAcountName) || strings.HasPrefix(userProjectBinding.Spec.UserEmail, MainServiceAccountName) {
+			return []reconcile.Request{}
+		}
+
+		users := &kubermaticv1.UserList{}
+		if err := c.List(context.Background(), users); err != nil {
+			utilruntime.HandleError(fmt.Errorf("failed to list users: %v", err))
+			return []reconcile.Request{}
+		}
+
+		var humanUser *kubermaticv1.User
+		for _, user := range users.Items {
+			if strings.EqualFold(user.Spec.Email, userProjectBinding.Spec.UserEmail) {
+				humanUser = user.DeepCopy()
+				break
+			}
+		}
+
+		if humanUser == nil {
+			utilruntime.HandleError(fmt.Errorf("project %v is bound for not existing user: %v", userProjectBinding.Spec.ProjectID, userProjectBinding.Spec.UserEmail))
+			return []reconcile.Request{}
+		}
+
+		request := []reconcile.Request{}
+		for _, mainSA := range getMainServiceAccountsForHumanUser(users, humanUser).Items {
+			{
+				request = append(request, reconcile.Request{NamespacedName: types.NamespacedName{Name: mainSA.Name}})
+			}
+		}
+		return request
+	})
+}
+
+func getMainServiceAccountsForHumanUser(users *kubermaticv1.UserList, humanUser *kubermaticv1.User) *kubermaticv1.UserList {
+	resultList := &kubermaticv1.UserList{}
+	for _, user := range users.Items {
+		if strings.HasPrefix(user.Name, MainServiceAccountName) && hasAnnotation(OwnerAnnotationKey, humanUser.Spec.Email, user) {
+			resultList.Items = append(resultList.Items, user)
+		}
+	}
+	return resultList
+}
+
+func hasAnnotation(key, value string, user kubermaticv1.User) bool {
+	if user.Annotations == nil {
+		return false
+	}
+	if strings.EqualFold(user.Annotations[key], value) {
+		return true
+	}
+
+	return false
 }
