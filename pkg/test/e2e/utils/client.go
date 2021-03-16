@@ -472,7 +472,7 @@ func (r *TestClient) CreateDOCluster(projectID, dc, name, credential, version, l
 	}
 
 	if replicas > 0 {
-		instanceSize := "s-1vcpu-1gb"
+		instanceSize := "s-2vcpu-1gb"
 
 		clusterSpec.NodeDeployment = &models.NodeDeployment{
 			Spec: &models.NodeDeploymentSpec{
