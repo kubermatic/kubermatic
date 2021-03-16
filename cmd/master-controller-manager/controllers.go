@@ -20,6 +20,8 @@ import (
 	"context"
 	"fmt"
 
+	projectsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-sync"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
@@ -82,6 +84,9 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	}
 	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create master constraint template controller: %v", err)
+	}
+	if err := projectsync.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.workerName, ctrlCtx.seedKubeconfigGetter); err != nil {
+		return fmt.Errorf("failed to create projectsync controller: %v", err)
 	}
 
 	return nil

@@ -161,6 +161,11 @@ func main() {
 				ImportAlias:      "kubermaticv1",
 				APIVersionPrefix: "KubermaticV1",
 			},
+			{
+				ResourceName:     "Project",
+				ImportAlias:      "kubermaticv1",
+				APIVersionPrefix: "KubermaticV1",
+			},
 		},
 	}
 
