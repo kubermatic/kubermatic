@@ -49,6 +49,10 @@ func GetAPIV1OperatingSystemSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv
 		return nil, fmt.Errorf("failed to get machine providerConfig: %v", err)
 	}
 
+	if decodedProviderSpec.OperatingSystemSpec.Raw == nil {
+		return &apiv1.OperatingSystemSpec{}, nil
+	}
+
 	operatingSystemSpec := &apiv1.OperatingSystemSpec{}
 
 	switch decodedProviderSpec.OperatingSystem {
