@@ -473,6 +473,9 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPut).
 		Path("/serviceaccounts/{serviceaccount_id}").
 		Handler(r.updateMainServiceAccount())
+	mux.Methods(http.MethodDelete).
+		Path("/serviceaccounts/{serviceaccount_id}").
+		Handler(r.deleteMainServiceAccount())
 
 }
 
@@ -3187,6 +3190,31 @@ func (r Routing) updateMainServiceAccount() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(serviceaccount.UpdateEndpoint(r.serviceAccountProvider, r.userInfoGetter)),
 		serviceaccount.DecodeUpdateReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/serviceaccounts/{serviceaccount_id} mainserviceaccounts deleteMainServiceAccount
+//
+//     Deletes main service account
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteMainServiceAccount() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		serviceaccount.DecodeDeleteReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

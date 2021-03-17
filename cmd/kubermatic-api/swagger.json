@@ -13315,6 +13315,44 @@
           }
         }
       }
+    },
+    "/api/v2/serviceaccounts/{serviceaccount_id}": {
+      "delete": {
+        "description": "Deletes main service account",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "mainserviceaccounts"
+        ],
+        "operationId": "deleteMainServiceAccount",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ServiceAccountID",
+            "name": "serviceaccount_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
