@@ -43,6 +43,9 @@ spec:
           - -access-key-id=$(ACCESS_KEY_ID)
           - -secret-access-key=$(SECRET_ACCESS_KEY)
           - -bucket={{ .Values.s3Exporter.bucket }}
+{{- if .Values.s3Exporter.caBundleConfigMap }}
+          - -ca-bundle=/etc/cabundle/cabundle.pem
+{{- end }}
           env:
           - name: ACCESS_KEY_ID
             valueFrom:
@@ -56,6 +59,16 @@ spec:
                 key: SECRET_ACCESS_KEY
           resources:
 {{ toYaml .Values.s3Exporter.resources | indent 12 }}
+{{- with .Values.s3Exporter.caBundleConfigMap }}
+          volumeMounts:
+            - name: cabundle
+              mountPath: /etc/cabundle
+              readOnly: true
+      volumes:
+        - name: cabundle
+          configMap:
+            name: '{{ . }}'
+{{- end }}
       nodeSelector:
 {{ toYaml .Values.s3Exporter.nodeSelector | indent 8 }}
       affinity:
