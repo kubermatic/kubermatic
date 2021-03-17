@@ -17,8 +17,10 @@ limitations under the License.
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
 	"strings"
 
@@ -28,6 +30,7 @@ import (
 	kubermaticclientset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned"
 	"k8c.io/kubermatic/v2/pkg/exporters/s3"
 	"k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	"k8s.io/client-go/tools/clientcmd"
 )
@@ -42,6 +45,7 @@ func main() {
 	bucket := flag.String("bucket", "kubermatic-etcd-backups", "The bucket to monitor")
 	kubeconfig := flag.String("kubeconfig", "", "Path to a kubeconfig. Only required if out-of-cluster.")
 	listenAddress := flag.String("address", ":9340", "The port to listen on")
+	caBundleFile := flag.String("ca-bundle", "", "Filename of the CA bundle to use (if not given, default system certificates are used)")
 	flag.Parse()
 
 	// setup logging
@@ -82,6 +86,20 @@ func main() {
 	minioClient, err := minio.New(endpoint, *accessKeyID, *secretAccessKey, secure)
 	if err != nil {
 		logger.Fatalw("Failed to get S3 client", zap.Error(err))
+	}
+
+	minioClient.SetAppInfo("kubermatic-exporter", "v0.1")
+
+	if *caBundleFile != "" {
+		bundle, err := certificates.NewCABundleFromFile(*caBundleFile)
+		if err != nil {
+			logger.Fatalw("Failed to load CA bundle", zap.Error(err))
+		}
+
+		minioClient.SetCustomTransport(&http.Transport{
+			TLSClientConfig:    &tls.Config{RootCAs: bundle.CertPool()},
+			DisableCompression: true,
+		})
 	}
 
 	s3.MustRun(minioClient, kubermaticClient, *bucket, *listenAddress, logger)

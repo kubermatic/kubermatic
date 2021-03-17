@@ -15,16 +15,17 @@
 s3Exporter:
   image:
     repository: quay.io/kubermatic/s3-exporter
-    tag: v0.4
+    tag: v0.5
   endpoint: http://minio.minio.svc.cluster.local:9000
   bucket: kubermatic-etcd-backups
+  # uncomment this and create a ConfigMap with a "cabundle.pem" in it,
+  # then update the name here; this will configure the exporter to use
+  # your CA bundle when communicating with S3.
+  # caBundleConfigMap: name-of-the-configmap
   resources:
     requests:
       cpu: 50m
       memory: 24Mi
-    limits:
-      cpu: 150m
-      memory: 32Mi
   nodeSelector: {}
   affinity: {}
   tolerations: []

@@ -637,7 +637,7 @@ func defaultVersioning(settings *operatorv1alpha1.KubermaticVersioningConfigurat
 
 const DefaultBackupStoreContainer = `
 name: store-container
-image: quay.io/kubermatic/s3-storer:v0.1.4
+image: quay.io/kubermatic/s3-storer:v0.1.5
 command:
 - /bin/sh
 - -c
@@ -770,7 +770,7 @@ env:
 
 const DefaultBackupCleanupContainer = `
 name: cleanup-container
-image: quay.io/kubermatic/s3-storer:v0.1.4
+image: quay.io/kubermatic/s3-storer:v0.1.5
 command:
 - /bin/sh
 - -c
