@@ -14,6 +14,8 @@ Usage of ./s3-exporter:
         The port to listen on (default ":9340")
   -bucket string
         The bucket to monitor (default "kubermatic-etcd-backups")
+  -ca-bundle string
+        Filename of the CA bundle to use (if not given, default system certificates are used)
   -endpoint string
         The s3 endpoint, e.G. https://my-s3.com:9000
   -kubeconfig string
