@@ -443,6 +443,59 @@ func (p *ServiceAccountProvider) ListMainServiceAccounts(userInfo *provider.User
 	return filteredList, nil
 }
 
+// GetMainServiceAccount gets the main service account
+func (p *ServiceAccountProvider) GetMainServiceAccount(userInfo *provider.UserInfo, name string, options *provider.ServiceAccountGetOptions) (*kubermaticv1.User, error) {
+	if len(name) == 0 {
+		return nil, kerrors.NewBadRequest("service account name cannot be empty")
+	}
+	if options == nil {
+		options = &provider.ServiceAccountGetOptions{RemovePrefix: true}
+	}
+
+	name = addMainSAPrefix(name)
+	serviceAccount := &kubermaticv1.User{}
+	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: name}, serviceAccount); err != nil {
+		return nil, err
+	}
+
+	if options.RemovePrefix {
+		serviceAccount.Name = removeMainSAPrefix(serviceAccount.Name)
+	}
+
+	if serviceAccount.Annotations == nil {
+		return nil, kerrors.NewInternalError(fmt.Errorf("missing owner annotation"))
+	}
+
+	if !strings.EqualFold(serviceAccount.Annotations[ServiceAccountAnnotationOwner], userInfo.Email) {
+		return nil, kerrors.NewInternalError(fmt.Errorf("actual user %s is not the owner of the service account %s", userInfo.Email, name))
+	}
+
+	return serviceAccount, nil
+}
+
+// UpdateUnsecuredProjectServiceAccount updated the project service account
+func (p *ServiceAccountProvider) UpdateMainServiceAccount(userInfo *provider.UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error) {
+	if serviceAccount == nil {
+		return nil, kerrors.NewBadRequest("service account name cannot be nil")
+	}
+
+	if serviceAccount.Annotations == nil {
+		return nil, kerrors.NewInternalError(fmt.Errorf("missing owner annotation"))
+	}
+
+	if !strings.EqualFold(serviceAccount.Annotations[ServiceAccountAnnotationOwner], userInfo.Email) {
+		return nil, kerrors.NewInternalError(fmt.Errorf("actual user %s is not the owner of the service account %s", userInfo.Email, serviceAccount.Name))
+	}
+
+	serviceAccount.Name = addMainSAPrefix(serviceAccount.Name)
+
+	if err := p.clientPrivileged.Update(context.Background(), serviceAccount); err != nil {
+		return nil, err
+	}
+	serviceAccount.Name = removeMainSAPrefix(serviceAccount.Name)
+	return serviceAccount, nil
+}
+
 func genMainServiceAccount(name, group, domain, owner string) *kubermaticv1.User {
 	uniqueID := rand.String(10)
 	uniqueName := fmt.Sprintf("%s%s", mainSAPrefix, uniqueID)
@@ -466,4 +519,13 @@ func removeMainSAPrefix(id string) string {
 // hasMainSAPrefix checks if the given id has "main-serviceaccount-" prefix
 func hasMainSAPrefix(sa string) bool {
 	return strings.HasPrefix(sa, mainSAPrefix)
+}
+
+// addMainSAPrefix adds "main-serviceaccount-" prefix to a SA's ID,
+// for example given "7d4b5695vb" it returns "main-serviceaccount-7d4b5695vb"
+func addMainSAPrefix(id string) string {
+	if !hasMainSAPrefix(id) {
+		return fmt.Sprintf("%s%s", mainSAPrefix, id)
+	}
+	return id
 }

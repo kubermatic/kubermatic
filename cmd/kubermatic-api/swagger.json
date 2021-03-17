@@ -13,6 +13,57 @@
     "version": "2.11"
   },
   "paths": {
+    "/api/V2/serviceaccounts/{serviceaccount_id}": {
+      "put": {
+        "description": "Updates main service account",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "mainserviceaccounts"
+        ],
+        "operationId": "updateMainServiceAccount",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ServiceAccountID",
+            "name": "serviceaccount_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ServiceAccount"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ServiceAccount",
+            "schema": {
+              "$ref": "#/definitions/ServiceAccount"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}": {
       "delete": {
         "description": "Unassignes an ssh key from the given cluster",

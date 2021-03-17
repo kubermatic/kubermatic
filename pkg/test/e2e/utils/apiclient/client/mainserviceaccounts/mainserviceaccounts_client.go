@@ -29,6 +29,8 @@ type ClientService interface {
 
 	ListMainServiceAccounts(params *ListMainServiceAccountsParams, authInfo runtime.ClientAuthInfoWriter) (*ListMainServiceAccountsOK, error)
 
+	UpdateMainServiceAccount(params *UpdateMainServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateMainServiceAccountOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -97,6 +99,40 @@ func (a *Client) ListMainServiceAccounts(params *ListMainServiceAccountsParams, 
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListMainServiceAccountsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  UpdateMainServiceAccount Updates main service account
+*/
+func (a *Client) UpdateMainServiceAccount(params *UpdateMainServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateMainServiceAccountOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateMainServiceAccountParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "updateMainServiceAccount",
+		Method:             "PUT",
+		PathPattern:        "/api/V2/serviceaccounts/{serviceaccount_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateMainServiceAccountReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*UpdateMainServiceAccountOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateMainServiceAccountDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
