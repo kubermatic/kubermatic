@@ -125,9 +125,6 @@ func UpdateEndpoint(serviceAccountProvider provider.ServiceAccountProvider, user
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
 
 			if len(existingSAList) > 0 {
 				return nil, errors.NewAlreadyExists("service account", saFromRequest.Name)
