@@ -56,16 +56,6 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		*healthMapping[name].healthStatus = kubermaticv1helper.GetHealthStatus(status, cluster, r.versions)
 	}
 
-	if cluster.Spec.OPAIntegration != nil && cluster.Spec.OPAIntegration.Enabled {
-		ctrlHealth, auditHealth, err := r.getGatekeeperHealth(ctx, cluster)
-		if err != nil {
-			return nil, err
-		}
-
-		extendedHealth.GatekeeperController = kubermaticv1helper.GetHealthStatus(ctrlHealth, cluster, r.versions)
-		extendedHealth.GatekeeperAudit = kubermaticv1helper.GetHealthStatus(auditHealth, cluster, r.versions)
-	}
-
 	var err error
 	key := types.NamespacedName{Namespace: ns, Name: resources.EtcdStatefulSetName}
 
@@ -123,34 +113,4 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	return err
-}
-
-func (r *Reconciler) getGatekeeperHealth(ctx context.Context, cluster *kubermaticv1.Cluster) (
-	ctlrHealth kubermaticv1.HealthStatus, auditHealth kubermaticv1.HealthStatus, err error) {
-
-	// When client is unavailable, set the status to down, if the cluster is not done provisioning it will be set to
-	// Provisioning status
-	userClusterClient, err := r.userClusterConnProvider.GetClient(ctx, cluster)
-	if err != nil {
-		return kubermaticv1.HealthStatusDown, kubermaticv1.HealthStatusDown, nil
-	}
-
-	ctlrHealth, err = resources.HealthyDeployment(ctx,
-		userClusterClient,
-		types.NamespacedName{Namespace: resources.GatekeeperNamespace, Name: resources.GatekeeperControllerDeploymentName},
-		1)
-	if err != nil {
-		return kubermaticv1.HealthStatusDown, kubermaticv1.HealthStatusDown,
-			fmt.Errorf("failed to get dep health %q: %v", resources.GatekeeperControllerDeploymentName, err)
-	}
-
-	auditHealth, err = resources.HealthyDeployment(ctx,
-		userClusterClient,
-		types.NamespacedName{Namespace: resources.GatekeeperNamespace, Name: resources.GatekeeperAuditDeploymentName},
-		1)
-	if err != nil {
-		return kubermaticv1.HealthStatusDown, kubermaticv1.HealthStatusDown,
-			fmt.Errorf("failed to get dep health %q: %v", resources.GatekeeperAuditDeploymentName, err)
-	}
-	return ctlrHealth, auditHealth, nil
 }

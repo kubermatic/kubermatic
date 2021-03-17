@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"net"
+	"strings"
 
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
 	cabundle "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/ca-bundle"
@@ -40,12 +41,15 @@ import (
 	systembasicuser "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/system-basic-user"
 	userauth "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/user-auth"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/usersshkeys"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // Reconcile creates, updates, or deletes Kubernetes resources to match the desired state.
@@ -143,6 +147,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	// Try to delete OPA integration deployment if its present
 	if !r.opaIntegration {
 		if err := r.ensureOPAIntegrationIsRemoved(ctx); err != nil {
+			return err
+		}
+	} else {
+		if err := r.healthCheck(ctx); err != nil {
 			return err
 		}
 	}
@@ -616,4 +624,51 @@ func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (r *reconciler) healthCheck(ctx context.Context) error {
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.seedClient.Get(ctx,
+		types.NamespacedName{Namespace: r.namespace, Name: strings.TrimPrefix(r.namespace, "cluster-")}, cluster); err != nil {
+		return fmt.Errorf("failed getting cluster for cluster health check: %v", err)
+	}
+	oldCluster := cluster.DeepCopy()
+
+	ctrlHealth, auditHealth, err := r.getGatekeeperHealth(ctx)
+	if err != nil {
+		return err
+	}
+
+	cluster.Status.ExtendedHealth.GatekeeperController = ctrlHealth
+	cluster.Status.ExtendedHealth.GatekeeperAudit = auditHealth
+
+	if oldCluster.Status.ExtendedHealth != cluster.Status.ExtendedHealth {
+		if err := r.seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+			return fmt.Errorf("error patching cluster health status: %v", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) getGatekeeperHealth(ctx context.Context) (
+	ctlrHealth kubermaticv1.HealthStatus, auditHealth kubermaticv1.HealthStatus, err error) {
+
+	ctlrHealth, err = resources.HealthyDeployment(ctx,
+		r.Client,
+		types.NamespacedName{Namespace: resources.GatekeeperNamespace, Name: resources.GatekeeperControllerDeploymentName},
+		1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, kubermaticv1.HealthStatusDown,
+			fmt.Errorf("failed to get dep health %q: %v", resources.GatekeeperControllerDeploymentName, err)
+	}
+
+	auditHealth, err = resources.HealthyDeployment(ctx,
+		r.Client,
+		types.NamespacedName{Namespace: resources.GatekeeperNamespace, Name: resources.GatekeeperAuditDeploymentName},
+		1)
+	if err != nil {
+		return kubermaticv1.HealthStatusDown, kubermaticv1.HealthStatusDown,
+			fmt.Errorf("failed to get dep health %q: %v", resources.GatekeeperAuditDeploymentName, err)
+	}
+	return ctlrHealth, auditHealth, nil
 }
