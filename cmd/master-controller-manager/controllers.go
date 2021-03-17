@@ -25,6 +25,7 @@ import (
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
 	masterconstrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-template-controller"
 	projectlabelsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-label-synchronizer"
+	projectsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-sync"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	seedproxy "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-proxy"
 	seedsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/seed-sync"
@@ -82,6 +83,9 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	}
 	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create master constraint template controller: %v", err)
+	}
+	if err := projectsync.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.seedKubeconfigGetter); err != nil {
+		return fmt.Errorf("failed to create projectsync controller: %v", err)
 	}
 
 	return nil
