@@ -22,11 +22,10 @@ import (
 	"testing"
 	"time"
 
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
-
 	"k8s.io/apimachinery/pkg/api/errors"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
