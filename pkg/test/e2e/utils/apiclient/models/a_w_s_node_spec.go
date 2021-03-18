@@ -31,6 +31,9 @@ type AWSNodeSpec struct {
 	// Required: true
 	InstanceType *string `json:"instanceType"`
 
+	// IsSpotInstance indicates whether the created machine is an aws ec2 spot instance or on-demand ec2 instance.
+	IsSpotInstance bool `json:"isSpotInstance,omitempty"`
+
 	// The VPC subnet to which the node shall be connected.
 	SubnetID string `json:"subnetID,omitempty"`
 
