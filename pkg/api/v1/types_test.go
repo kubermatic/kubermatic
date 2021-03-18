@@ -456,7 +456,7 @@ func TestAWSNodeSpec_MarshalJSON(t *testing.T) {
 				VolumeSize:   1,
 				VolumeType:   "test-volume",
 			},
-			"{\"instanceType\":\"test-instance\",\"diskSize\":1,\"volumeType\":\"test-volume\",\"ami\":\"\",\"tags\":null,\"availabilityZone\":\"\",\"subnetID\":\"\",\"assignPublicIP\":null}",
+			"{\"instanceType\":\"test-instance\",\"diskSize\":1,\"volumeType\":\"test-volume\",\"ami\":\"\",\"tags\":null,\"availabilityZone\":\"\",\"subnetID\":\"\",\"assignPublicIP\":null,\"isSpotInstance\":null}",
 		},
 	}
 
