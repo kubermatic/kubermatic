@@ -190,7 +190,7 @@ var (
 	}
 
 	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
-		Default: semver.MustParse("v1.19.3"),
+		Default: semver.MustParse("v1.19.8"),
 		Versions: []*semver.Version{
 			// Kubernetes 1.17
 			semver.MustParse("v1.17.9"),
@@ -207,6 +207,7 @@ var (
 			semver.MustParse("v1.19.0"),
 			semver.MustParse("v1.19.2"),
 			semver.MustParse("v1.19.3"),
+			semver.MustParse("v1.19.8"),
 			// Kubernetes 1.20
 			semver.MustParse("v1.20.2"),
 		},

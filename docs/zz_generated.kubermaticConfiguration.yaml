@@ -396,7 +396,7 @@ spec:
     # Kubernetes configures the Kubernetes versions and updates.
     kubernetes:
       # Default is the default version to offer users.
-      default: 1.19.3
+      default: 1.19.8
       # Updates is a list of available and automatic upgrades.
       # All 'to' versions must be configured in the version list for this orchestrator.
       # Each update may optionally be configured to be 'automatic: true', in which case the
@@ -458,6 +458,7 @@ spec:
         - 1.19.0
         - 1.19.2
         - 1.19.3
+        - 1.19.8
         - 1.20.2
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:

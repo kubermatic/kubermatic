@@ -442,12 +442,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.22
+      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
         env:
         - name: KUBERMATIC_EDITION
           value: ee
         - name: VERSIONS_TO_TEST
-          value: "v1.19.3"
+          value: "v1.19.8"
         - name: DISTRIBUTIONS
           value: ubuntu
         - name: SERVICE_ACCOUNT_KEY
