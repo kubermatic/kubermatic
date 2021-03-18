@@ -252,10 +252,14 @@ pushMetric() {
   local labels="${3:-}"
   local kind="${4:-gauge}"
   local help="${5:-}"
-  local pushgateway="pushgateway.monitoring.svc.cluster.local.:9091"
+  local pushgateway="${PUSHGATEWAY_URL:-}"
   local job="ci"
   local instance="$PROW_JOB_ID"
   local prowjob="$JOB_NAME"
+
+  if [ -z "$pushgateway" ]; then
+    return
+  fi
 
   local payload="# TYPE $metric $kind"
 
@@ -269,7 +273,7 @@ pushMetric() {
 
   payload="$payload\n$metric{prowjob=\"$prowjob\"$labels} $value\n"
 
-  echo -e "$payload" | curl --data-binary @- -s "http://$pushgateway/metrics/job/$job/instance/$instance"
+  echo -e "$payload" | curl --data-binary @- -s "$pushgateway/metrics/job/$job/instance/$instance"
 }
 
 pushElapsed() {
