@@ -1434,6 +1434,8 @@ type AWSNodeSpec struct {
 	// assigned during launch overriding a possible setting in the used AWS subnet.
 	// required: false
 	AssignPublicIP *bool `json:"assignPublicIP"`
+	// IsSpotInstance indicates whether the created machine is an aws ec2 spot instance or on-demand ec2 instance.
+	IsSpotInstance *bool `json:"isSpotInstance"`
 }
 
 func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {
@@ -1464,6 +1466,7 @@ func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {
 		AvailabilityZone string            `json:"availabilityZone"`
 		SubnetID         string            `json:"subnetID"`
 		AssignPublicIP   *bool             `json:"assignPublicIP"`
+		IsSpotInstance   *bool             `json:"isSpotInstance"`
 	}{
 		InstanceType:     spec.InstanceType,
 		VolumeSize:       spec.VolumeSize,
@@ -1473,6 +1476,7 @@ func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {
 		AvailabilityZone: spec.AvailabilityZone,
 		SubnetID:         spec.SubnetID,
 		AssignPublicIP:   spec.AssignPublicIP,
+		IsSpotInstance:   spec.IsSpotInstance,
 	}
 
 	return json.Marshal(&res)

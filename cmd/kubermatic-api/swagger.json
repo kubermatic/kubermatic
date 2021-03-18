@@ -13346,6 +13346,11 @@
           "x-go-name": "InstanceType",
           "example": "t2.micro"
         },
+        "isSpotInstance": {
+          "description": "IsSpotInstance indicates whether the created machine is an aws ec2 spot instance or on-demand ec2 instance.",
+          "type": "boolean",
+          "x-go-name": "IsSpotInstance"
+        },
         "subnetID": {
           "description": "The VPC subnet to which the node shall be connected.",
           "type": "string",
