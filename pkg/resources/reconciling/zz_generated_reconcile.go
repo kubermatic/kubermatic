@@ -988,3 +988,40 @@ func ReconcileKubermaticV1Projects(ctx context.Context, namedGetters []NamedKube
 
 	return nil
 }
+
+// KubermaticV1UserProjectBindingCreator defines an interface to create/update UserProjectBindings
+type KubermaticV1UserProjectBindingCreator = func(existing *kubermaticv1.UserProjectBinding) (*kubermaticv1.UserProjectBinding, error)
+
+// NamedKubermaticV1UserProjectBindingCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1UserProjectBindingCreatorGetter = func() (name string, create KubermaticV1UserProjectBindingCreator)
+
+// KubermaticV1UserProjectBindingObjectWrapper adds a wrapper so the KubermaticV1UserProjectBindingCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1UserProjectBindingObjectWrapper(create KubermaticV1UserProjectBindingCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.UserProjectBinding))
+		}
+		return create(&kubermaticv1.UserProjectBinding{})
+	}
+}
+
+// ReconcileKubermaticV1UserProjectBindings will create and update the KubermaticV1UserProjectBindings coming from the passed KubermaticV1UserProjectBindingCreator slice
+func ReconcileKubermaticV1UserProjectBindings(ctx context.Context, namedGetters []NamedKubermaticV1UserProjectBindingCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1UserProjectBindingObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.UserProjectBinding{}, false); err != nil {
+			return fmt.Errorf("failed to ensure UserProjectBinding %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
