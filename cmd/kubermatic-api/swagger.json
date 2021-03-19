@@ -13353,6 +13353,57 @@
           }
         }
       }
+    },
+    "/api/v2/serviceaccounts/{serviceaccount_id}/tokens": {
+      "post": {
+        "description": "Generates a token for the given main service account",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "tokens"
+        ],
+        "operationId": "addTokenToMainServiceAccount",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ServiceAccountID",
+            "name": "serviceaccount_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ServiceAccountToken"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ServiceAccountToken",
+            "schema": {
+              "$ref": "#/definitions/ServiceAccountToken"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {

@@ -477,6 +477,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/serviceaccounts/{serviceaccount_id}").
 		Handler(r.deleteMainServiceAccount())
 
+	// Defines set of HTTP endpoints for tokens of the given service account
+	mux.Methods(http.MethodPost).
+		Path("/serviceaccounts/{serviceaccount_id}/tokens").
+		Handler(r.addTokenToMainServiceAccount())
+
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -3216,6 +3221,33 @@ func (r Routing) deleteMainServiceAccount() http.Handler {
 		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		serviceaccount.DecodeDeleteReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/serviceaccounts/{serviceaccount_id}/tokens tokens addTokenToMainServiceAccount
+//
+//     Generates a token for the given main service account
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ServiceAccountToken
+//       401: empty
+//       403: empty
+func (r Routing) addTokenToMainServiceAccount() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(serviceaccount.CreateTokenEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
+		serviceaccount.DecodeAddTokenReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
