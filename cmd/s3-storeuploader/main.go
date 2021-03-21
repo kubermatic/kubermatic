@@ -35,7 +35,7 @@ func main() {
 	app := cli.NewApp()
 	app.Name = "S3 storer"
 	app.Usage = ""
-	app.Version = "v1.0.0"
+	app.Version = "v0.1.6"
 	app.Description = "Helper tool to backup files to S3 and maintain a given number of revisions"
 
 	endpointFlag := cli.StringFlag{
@@ -74,7 +74,7 @@ func main() {
 		Name:  "secure",
 		Usage: "Enable tls validation",
 	}
-	caBundleFlag := cli.BoolFlag{
+	caBundleFlag := cli.StringFlag{
 		Name:  "ca-bundle",
 		Usage: "Filename of the CA bundle to use (if not given, default system certificates are used)",
 	}

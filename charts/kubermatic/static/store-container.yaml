@@ -1,7 +1,7 @@
 # This file has been generated using hack/update-kubermatic-chart.sh, do not edit.
 
 name: store-container
-image: quay.io/kubermatic/s3-storer:v0.1.5
+image: quay.io/kubermatic/s3-storer:v0.1.6
 command:
 - /bin/sh
 - -c
