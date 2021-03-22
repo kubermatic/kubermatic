@@ -45,6 +45,7 @@ webhooks:
           - UPDATE
         resources:
           - "*/*"
+    admissionReviewVersions: ["v1", "v1beta1"]
     failurePolicy: Fail
     sideEffects: None
     clientConfig:
