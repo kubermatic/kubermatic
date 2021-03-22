@@ -1,5 +1,19 @@
 # Kubermatic 2.16
 
+## [v2.16.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.6)
+
+### Bugfixes
+
+- Fix cert-manager validating webhook ([#6741](https://github.com/kubermatic/kubermatic/issues/6741))
+- Fix the operator failing to reconcile the ValidatingWebhookConfiguration object for the cluster validation webhook ([#6639](https://github.com/kubermatic/kubermatic/issues/6639))
+
+### Misc
+
+- Change default gatekeeper webhook timeout to 3 sec ([#6709](https://github.com/kubermatic/kubermatic/issues/6709))
+- Update Velero to 1.5.3 ([#6701](https://github.com/kubermatic/kubermatic/issues/6701))
+
+
+
 ## [v2.16.5](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.5)
 
 ### Misc
@@ -235,6 +249,15 @@ as well as the [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16
 
 
 # Kubermatic 2.15
+
+## [v2.15.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.10)
+
+### Bugfixes
+
+- Fix cert-manager validating webhook ([#6741](https://github.com/kubermatic/kubermatic/issues/6741))
+
+
+
 
 ## [v2.15.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.9)
 
@@ -500,6 +523,15 @@ as well as the [2.15 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.15
 
 
 # Kubermatic 2.14
+
+## [v2.14.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.12)
+
+### Bugfixes
+
+- Fix cert-manager validating webhook ([#6743](https://github.com/kubermatic/kubermatic/issues/6743))
+
+
+
 
 ## [v2.14.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.11)
 
