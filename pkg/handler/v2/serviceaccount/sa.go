@@ -144,6 +144,64 @@ func UpdateEndpoint(serviceAccountProvider provider.ServiceAccountProvider, user
 	}
 }
 
+// DeleteEndpoint deletes the service account
+func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccount provider.PrivilegedServiceAccountProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req, ok := request.(deleteReq)
+		if !ok {
+			return nil, errors.NewBadRequest("invalid request")
+		}
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+
+		// check if service account exist before deleting it
+		sa, err := serviceAccountProvider.GetMainServiceAccount(userInfo, req.ServiceAccountID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		if err := serviceAccountProvider.DeleteMainServiceAccount(userInfo, sa); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return nil, nil
+	}
+}
+
+// deleteReq defines HTTP request for deleteMainServiceAccount
+// swagger:parameters deleteMainServiceAccount
+type deleteReq struct {
+	serviceAccountIDReq
+}
+
+// Validate validates DeleteEndpoint request
+func (r deleteReq) Validate() error {
+	if len(r.ServiceAccountID) == 0 {
+		return fmt.Errorf("the service account ID cannot be empty")
+	}
+	return nil
+}
+
+// DecodeDeleteeReq  decodes an HTTP request into deleteReq
+func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req deleteReq
+
+	saIDReq, err := decodeServiceAccountIDReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ServiceAccountID = saIDReq.ServiceAccountID
+
+	return req, nil
+}
+
 // Validate validates UpdateEndpoint request
 func (r updateReq) Validate() error {
 	if r.ServiceAccountID != r.Body.ID {
