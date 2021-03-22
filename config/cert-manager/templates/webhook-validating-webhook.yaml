@@ -51,4 +51,4 @@ webhooks:
       service:
         name: webhook
         namespace: {{ .Release.Namespace | quote }}
-        path: /mutate
+        path: /validate
