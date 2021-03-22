@@ -328,6 +328,11 @@ cleanup_kubermatic_clusters_in_kind() {
 }
 
 start_docker_daemon() {
+  if docker stats --no-stream > /dev/null 2>&1; then
+    echodate "Not starting Docker again, it's already running."
+    return
+  fi
+
   # Start Docker daemon
   echodate "Starting Docker"
   dockerd > /tmp/docker.log 2>&1 &

@@ -340,6 +340,32 @@ presubmits:
             memory: 1Gi
             cpu: 0.5
 
+  - name: pre-kubermatic-test-helm-charts
+    run_if_changed: "charts/"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-docker-pull: "true"
+      preset-kind-volume-mounts: "true"
+      preset-vault: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/e2e-kind:v1.0.24
+          command:
+            - "./hack/ci/test-helm-charts.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+
   #########################################################
   # Base Kubernetes Tests (AWS, Flatcar)
   #########################################################
