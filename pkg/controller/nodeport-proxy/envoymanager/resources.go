@@ -259,6 +259,14 @@ func (sb *snapshotBuilder) makeSNIListener(fcs ...*envoylistenerv3.FilterChain) 
 				},
 			},
 		},
+		// TLS inspector need to be activated explicitly starting from Envoy
+		// 1.17.
+		ListenerFilters: []*envoylistenerv3.ListenerFilter{
+			{
+				Name:       envoywellknown.TlsInspector,
+				ConfigType: &envoylistenerv3.ListenerFilter_TypedConfig{},
+			},
+		},
 		FilterChains: fcs,
 	}
 	return sniListener

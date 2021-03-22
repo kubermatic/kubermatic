@@ -30,15 +30,16 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/test"
+	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 )
 
 var _ = ginkgo.Describe("NodeportProxy", func() {
 	ginkgo.Describe("all services", func() {
 		var svcJig *ServiceJig
 		ginkgo.BeforeEach(func() {
-			k8scli, _, _ := GetClientsOrDie()
+			k8scli, _, _ := e2eutils.GetClientsOrDie()
 			svcJig = &ServiceJig{
-				Log:    logger,
+				Log:    e2eutils.DefaultLogger,
 				Client: k8scli,
 			}
 		})
@@ -71,7 +72,7 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 			ginkgo.It("should be exposed", func() {
 				ginkgo.By("updating the lb service")
 				portsToBeExposed := sets.NewInt32()
-				logger.Debugw("computing ports to be exposed", "services", svcJig.Services)
+				e2eutils.DefaultLogger.Debugw("computing ports to be exposed", "services", svcJig.Services)
 				for _, svc := range svcJig.Services {
 					portsToBeExposed = ExtractNodePorts(svc).Union(portsToBeExposed)
 				}
@@ -88,7 +89,7 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 				for _, svc := range svcJig.Services {
 					lbSvc := deployer.GetLbService()
 					targetNp := FindExposingNodePort(lbSvc, svc.Spec.Ports[0].NodePort)
-					logger.Debugw("found target nodeport in lb service", "service", svc, "port", targetNp)
+					e2eutils.DefaultLogger.Debugw("found target nodeport in lb service", "service", svc, "port", targetNp)
 					gomega.Expect(networkingTest.DialFromNode("127.0.0.1", int(targetNp), 5, 1, sets.NewString(svcJig.ServicePods[svc.Name]...), false)).Should(gomega.HaveLen(0), "All exposed endpoints should be hit")
 				}
 			})
@@ -121,7 +122,7 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 				for _, svc := range svcJig.Services {
 					lbSvc := deployer.GetLbService()
 					targetNp := FindExposingNodePort(lbSvc, 6443)
-					logger.Debugw("found target nodeport in lb service", "service", svc, "port", targetNp)
+					e2eutils.DefaultLogger.Debugw("found target nodeport in lb service", "service", svc, "port", targetNp)
 					gomega.Expect(networkingTest.DialFromNode(fmt.Sprintf("%s.example.com", svc.Name), int(targetNp), 5, 1, sets.NewString(svcJig.ServicePods[svc.Name]...), true, "-k", "--resolve", fmt.Sprintf("%s.example.com:%d:127.0.0.1", svc.Name, targetNp))).Should(gomega.HaveLen(0), "All exposed endpoints should be hit")
 				}
 			})
@@ -152,7 +153,7 @@ var _ = ginkgo.Describe("NodeportProxy", func() {
 				for _, svc := range svcJig.Services {
 					lbSvc := deployer.GetLbService()
 					targetNp := FindExposingNodePort(lbSvc, 8088)
-					logger.Debugw("found target nodeport in lb service", "service", svc, "port", targetNp)
+					e2eutils.DefaultLogger.Debugw("found target nodeport in lb service", "service", svc, "port", targetNp)
 					gomega.Expect(networkingTest.DialFromNode(fmt.Sprintf("%s.%s.svc.cluster.local", svc.Name, svc.Namespace), 8080, 15, 1, sets.NewString(svcJig.ServicePods[svc.Name]...), true, "--proxy", fmt.Sprintf("127.0.0.1:%d", targetNp))).Should(gomega.HaveLen(0), "All exposed endpoints should be hit")
 				}
 			})

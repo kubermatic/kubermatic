@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+admin:
+  access_log_path: /dev/null
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: 9001
 dynamic_resources:
   cds_config:
     resource_api_version: V3
@@ -37,8 +43,7 @@ node:
 static_resources:
   clusters:
   - name: xds_cluster
-    connect_timeout: { seconds: 5 }
-    type: STRICT_DNS
+    connect_timeout: 5s
     load_assignment:
       cluster_name: xds_cluster
       endpoints:
@@ -48,20 +53,7 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: 8001
-    lb_policy: ROUND_ROBIN
     http2_protocol_options: {}
-    circuit_breakers:
-      thresholds:
-      - priority: high
-        max_connections: 100000
-        max_pending_requests: 100000
-        max_requests: 60000000
-        max_retries: 50
-      - priority: default
-        max_connections: 100000
-        max_pending_requests: 100000
-        max_requests: 60000000
-        max_retries: 50
   - name: statsd
     connect_timeout: "0.25s"
     type: STRICT_DNS
@@ -75,15 +67,9 @@ static_resources:
               socket_address:
                 address: 127.0.0.1
                 port_value: 9125
-  listeners:
-admin:
-  access_log_path: /dev/null
-  address:
-    socket_address:
-      address: 127.0.0.1
-      port_value: 9001
 stats_sinks:
-- name: envoy.statsd
-  config:
+- name: envoy.stat_sinks.statsd
+  typed_config:
+    "@type": type.googleapis.com/envoy.config.metrics.v3.StatsdSink
     tcp_cluster_name: statsd
     prefix: front-envoy

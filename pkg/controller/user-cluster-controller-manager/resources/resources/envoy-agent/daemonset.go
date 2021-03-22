@@ -49,7 +49,6 @@ var (
 
 const (
 	envoyImageName = "envoyproxy/envoy"
-	envoyImageTag  = "v1.17.0"
 )
 
 // DaemonSetCreator returns the function to create and update the Envoy DaemonSet
@@ -71,24 +70,25 @@ func DaemonSetCreator(agentIP net.IP, versions kubermatic.Versions) reconciling.
 					map[string]string{"app.kubernetes.io/name": "envoy-agent"}),
 			}
 
-			//TODO(youssefazrak) needed?
-			ds.Spec.Template.Spec.PriorityClassName = "system-cluster-critical"
-			ds.Spec.Template.Spec.DNSPolicy = corev1.DNSClusterFirst
-
-			ds.Spec.Template.Spec.HostNetwork = true
-
-			volumes := getVolumes()
-			ds.Spec.Template.Spec.Volumes = volumes
-
-			ds.Spec.Template.Spec.InitContainers = getInitContainers(agentIP, versions)
-			ds.Spec.Template.Spec.Containers = getContainers()
-			err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, ds.Annotations)
-			if err != nil {
+			ds.Spec.Template.Spec = getAgentPodSpec(agentIP, versions)
+			if err := resources.SetResourceRequirements(ds.Spec.Template.Spec.Containers, defaultResourceRequirements, nil, ds.Annotations); err != nil {
 				return nil, fmt.Errorf("failed to set resource requirements: %v", err)
 			}
 
 			return ds, nil
 		}
+	}
+}
+
+func getAgentPodSpec(agentIP net.IP, versions kubermatic.Versions) corev1.PodSpec {
+	return corev1.PodSpec{
+		InitContainers: getInitContainers(agentIP, versions),
+		Containers:     getContainers(versions),
+		//TODO(youssefazrak) needed?
+		PriorityClassName: "system-cluster-critical",
+		DNSPolicy:         corev1.DNSClusterFirst,
+		HostNetwork:       true,
+		Volumes:           getVolumes(),
 	}
 }
 
@@ -133,11 +133,11 @@ func getInitContainers(ip net.IP, v kubermatic.Versions) []corev1.Container {
 	}
 }
 
-func getContainers() []corev1.Container {
+func getContainers(v kubermatic.Versions) []corev1.Container {
 	return []corev1.Container{
 		{
 			Name:            resources.EnvoyAgentDaemonSetName,
-			Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, envoyImageName, envoyImageTag),
+			Image:           fmt.Sprintf("%s/%s:%s", resources.RegistryDocker, envoyImageName, v.Envoy),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			// This amount of logs will be kept for the Tech Preview of
@@ -153,9 +153,9 @@ func getContainers() []corev1.Container {
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
 					Add: []corev1.Capability{
-						"CAP_CHOWN",
-						"CAP_SETGID",
-						"CAP_SETUID",
+						"CHOWN",
+						"SETGID",
+						"SETUID",
 						"NET_BIND_SERVICE",
 					},
 					Drop: []corev1.Capability{
