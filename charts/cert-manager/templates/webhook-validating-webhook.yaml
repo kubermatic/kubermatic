@@ -52,4 +52,4 @@ webhooks:
       service:
         name: cert-manager-webhook
         namespace: {{ .Release.Namespace | quote }}
-        path: /mutate
+        path: /validate
