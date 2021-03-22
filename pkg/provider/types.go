@@ -593,8 +593,11 @@ type ServiceAccountTokenProvider interface {
 
 // ServiceAccountTokenListOptions allows to set filters that will be applied to filter the result.
 type ServiceAccountTokenListOptions struct {
-	// TokenID list only tokens with the specified name
+	// TokenID list only tokens with the specified ID
 	TokenID string
+
+	// TokenName list only tokens with the specified name
+	TokenName string
 
 	// LabelSelector list only tokens with the specified label
 	LabelSelector labels.Selector

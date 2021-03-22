@@ -222,7 +222,6 @@ func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAcc
 		}
 		return nil, kerrors.NewNotFound(v1.SchemeGroupVersion.WithResource("secret").GroupResource(), options.TokenID)
 	}
-
 	if options.ServiceAccountID != "" {
 		resultList := make([]*v1.Secret, 0)
 		for _, token := range allTokens {
@@ -233,10 +232,24 @@ func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAcc
 				}
 			}
 		}
-		return resultList, nil
+		return filterByTokenName(resultList, options.TokenID), nil
 	}
 
-	return allTokens, nil
+	return filterByTokenName(allTokens, options.TokenID), nil
+}
+
+func filterByTokenName(allTokens []*v1.Secret, tokenID string) []*v1.Secret {
+	if tokenID != "" {
+		for _, token := range allTokens {
+			name, ok := token.Labels["name"]
+			if ok {
+				if name == tokenID {
+					return []*v1.Secret{token}
+				}
+			}
+		}
+	}
+	return allTokens
 }
 
 func isToken(secret *v1.Secret) bool {
