@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: cert-manager:leaderelection
@@ -33,7 +33,7 @@ rules:
 ---
 # grant cert-manager permission to manage the leaderelection configmap in the
 # leader election namespace
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: cert-manager:leaderelection
@@ -53,7 +53,7 @@ subjects:
 
 ---
 # Issuer controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-issuers
@@ -77,7 +77,7 @@ rules:
 
 ---
 # ClusterIssuer controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-clusterissuers
@@ -101,7 +101,7 @@ rules:
 
 ---
 # Certificates controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-certificates
@@ -134,7 +134,7 @@ rules:
 
 ---
 # Orders controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-orders
@@ -170,7 +170,7 @@ rules:
 
 ---
 # Challenges controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-challenges
@@ -225,7 +225,7 @@ rules:
 
 ---
 # ingress-shim controller role
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: cert-manager-controller-ingress-shim
@@ -254,7 +254,7 @@ rules:
     verbs: ["create", "patch"]
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-issuers
@@ -272,7 +272,7 @@ subjects:
     kind: ServiceAccount
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-clusterissuers
@@ -290,7 +290,7 @@ subjects:
     kind: ServiceAccount
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-certificates
@@ -308,7 +308,7 @@ subjects:
     kind: ServiceAccount
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-orders
@@ -326,7 +326,7 @@ subjects:
     kind: ServiceAccount
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-challenges
@@ -344,7 +344,7 @@ subjects:
     kind: ServiceAccount
 
 ---
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: cert-manager-controller-ingress-shim
