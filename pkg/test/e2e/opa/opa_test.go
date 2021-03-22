@@ -218,7 +218,7 @@ func setOPAIntegration(ctx context.Context, client ctrlruntimeclient.Client, clu
 }
 
 func testConstraintForConfigMap(ctx context.Context, userClient ctrlruntimeclient.Client) error {
-	if !utils.WaitFor(1*time.Second, 1*time.Minute, func() bool {
+	if !utils.WaitFor(1*time.Second, 5*time.Minute, func() bool {
 		cm := genTestConfigMap()
 		err := userClient.Create(ctx, cm)
 		return err != nil && strings.Contains(err.Error(), "you must provide labels")
