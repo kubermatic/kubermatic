@@ -90,6 +90,14 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
+	if err := r.ensureClusterRoles(ctx); err != nil {
+		return err
+	}
+
+	if err := r.ensureClusterRoleBindings(ctx, cluster); err != nil {
+		return err
+	}
+
 	// check that all StatefulSets are created
 	if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
 		return err
@@ -358,6 +366,28 @@ func (r *Reconciler) ensureRoleBindings(ctx context.Context, c *kubermaticv1.Clu
 	if err := reconciling.ReconcileRoleBindings(ctx, namedRoleBindingCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure RoleBindings: %v", err)
 	}
+	return nil
+}
+
+func (r *Reconciler) ensureClusterRoles(ctx context.Context) error {
+	namedClusterRoleCreatorGetters := []reconciling.NamedClusterRoleCreatorGetter{
+		usercluster.ClusterRoleCreator,
+	}
+	if err := reconciling.ReconcileClusterRoles(ctx, namedClusterRoleCreatorGetters, "", r.Client); err != nil {
+		return fmt.Errorf("failed to ensure Cluster Roles: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermaticv1.Cluster) error {
+	namedClusterRoleBindingsCreatorGetters := []reconciling.NamedClusterRoleBindingCreatorGetter{
+		usercluster.ClusterRoleBinding(c.Status.NamespaceName),
+	}
+	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingsCreatorGetters, "", r.Client); err != nil {
+		return fmt.Errorf("failed to ensure Cluster Role Bindings: %v", err)
+	}
+
 	return nil
 }
 
