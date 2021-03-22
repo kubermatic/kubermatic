@@ -26,6 +26,7 @@ import (
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/util/rand"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -467,7 +468,7 @@ func (p *ServiceAccountProvider) GetMainServiceAccount(userInfo *provider.UserIn
 	}
 
 	if !strings.EqualFold(serviceAccount.Annotations[ServiceAccountAnnotationOwner], userInfo.Email) {
-		return nil, kerrors.NewInternalError(fmt.Errorf("actual user %s is not the owner of the service account %s", userInfo.Email, name))
+		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("actual user %s is not the owner of the service account %s", userInfo.Email, name))
 	}
 
 	return serviceAccount, nil
@@ -484,7 +485,7 @@ func (p *ServiceAccountProvider) UpdateMainServiceAccount(userInfo *provider.Use
 	}
 
 	if !strings.EqualFold(serviceAccount.Annotations[ServiceAccountAnnotationOwner], userInfo.Email) {
-		return nil, kerrors.NewInternalError(fmt.Errorf("actual user %s is not the owner of the service account %s", userInfo.Email, serviceAccount.Name))
+		return nil, kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("actual user %s is not the owner of the service account %s", userInfo.Email, serviceAccount.Name))
 	}
 
 	serviceAccount.Name = addMainSAPrefix(serviceAccount.Name)
@@ -507,7 +508,7 @@ func (p *ServiceAccountProvider) DeleteMainServiceAccount(userInfo *provider.Use
 	}
 
 	if !strings.EqualFold(serviceAccount.Annotations[ServiceAccountAnnotationOwner], userInfo.Email) {
-		return kerrors.NewInternalError(fmt.Errorf("actual user %s is not the owner of the service account %s", userInfo.Email, serviceAccount.Name))
+		return kerrors.NewForbidden(schema.GroupResource{}, userInfo.Email, fmt.Errorf("actual user %s is not the owner of the service account %s", userInfo.Email, serviceAccount.Name))
 	}
 
 	serviceAccount.Name = addMainSAPrefix(serviceAccount.Name)
