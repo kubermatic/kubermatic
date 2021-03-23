@@ -19,19 +19,137 @@ package kubermaticmaster
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/sirupsen/logrus"
+	"k8c.io/kubermatic/v2/pkg/install/helm"
+	"k8c.io/kubermatic/v2/pkg/install/stack"
+	"k8c.io/kubermatic/v2/pkg/install/util"
+	"k8c.io/kubermatic/v2/pkg/log"
 
 	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
 	v1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 
+	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
+	logger.Info("📦 Deploying cert-manager…")
+	sublogger := log.Prefix(logger, "   ")
+
+	if opt.KubermaticConfiguration.Spec.Ingress.CertificateIssuer.Name == "" {
+		sublogger.Info("No CertificateIssuer configured in KubermaticConfiguration, skipping.")
+		return nil
+	}
+
+	chartDir := filepath.Join(opt.ChartsDirectory, "cert-manager")
+
+	chart, err := helm.LoadChart(chartDir)
+	if err != nil {
+		return fmt.Errorf("failed to load Helm chart: %v", err)
+	}
+
+	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, CertManagerNamespace); err != nil {
+		return fmt.Errorf("failed to create namespace: %v", err)
+	}
+
+	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, CertManagerNamespace, CertManagerReleaseName)
+	if err != nil {
+		return fmt.Errorf("failed to check to Helm release: %v", err)
+	}
+
+	// if a pre-2.0 version of the chart is installed, we must perform a
+	// larger migration to bring the cluster from cert-manager 0.16 to 1.x
+	// (and its CRD from v1alpha2 to v1)
+	v2 := semver.MustParse("2.0.0")
+
+	if release != nil && release.Version.LessThan(v2) && !chart.Version.LessThan(v2) {
+		if err := purgeCertManager(ctx, sublogger, kubeClient, helmClient, opt, chart, release); err != nil {
+			return fmt.Errorf("upgrade failed: %v", err)
+		}
+	}
+
+	sublogger.Info("Deploying Custom Resource Definitions…")
+	if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(chartDir, "crd")); err != nil {
+		return fmt.Errorf("failed to deploy CRDs: %v", err)
+	}
+
+	sublogger.Info("Deploying Helm chart…")
+	release, err = util.CheckHelmRelease(ctx, sublogger, helmClient, CertManagerNamespace, CertManagerReleaseName)
+	if err != nil {
+		return fmt.Errorf("failed to check to Helm release: %v", err)
+	}
+
+	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, CertManagerNamespace, CertManagerReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
+		return fmt.Errorf("failed to deploy Helm release: %v", err)
+	}
+
+	if err := waitForCertManagerWebhook(ctx, sublogger, kubeClient); err != nil {
+		return fmt.Errorf("failed to verify that the webhook is functioning: %v", err)
+	}
+
+	logger.Info("✅ Success.")
+
+	return nil
+}
+
+// purgeCertManager removes all tracecs of cert-manager from the cluster,
+// so that the installer can then install it cleanly.
+func purgeCertManager(
+	ctx context.Context,
+	logger *logrus.Entry,
+	kubeClient ctrlruntimeclient.Client,
+	helmClient helm.Client,
+	opt stack.DeployOptions,
+	chart *helm.Chart,
+	release *helm.Release,
+) error {
+	logger.Infof("%s detected, performing upgrade to Helm chart %s…", release.Version.String(), chart.Version.String())
+
+	// step 1: purge the Helm release
+	logger.Info("Uninstalling cert-manager…")
+	if err := helmClient.UninstallRelease(CertManagerNamespace, CertManagerReleaseName); err != nil {
+		return fmt.Errorf("failed to uninstall release: %v", err)
+	}
+
+	// step 2: delete all cert-manager CRDs
+	logger.Info("Removing cert-manager Custom Resource Definitions…")
+	crdNames := []string{
+		"certificaterequests.cert-manager.io",
+		"certificates.cert-manager.io",
+		"challenges.acme.cert-manager.io",
+		"clusterissuers.cert-manager.io",
+		"issuers.cert-manager.io",
+		"orders.acme.cert-manager.io",
+	}
+	for _, crdName := range crdNames {
+		logger.Info("  %s", crdName)
+
+		crd := apiextensionsv1beta1.CustomResourceDefinition{}
+		key := types.NamespacedName{Name: crdName}
+
+		if err := kubeClient.Get(ctx, key, &crd); err != nil {
+			if kerrors.IsNotFound(err) {
+				continue
+			}
+
+			return fmt.Errorf("failed to retrieve CRD %s: %v", crdName, err)
+		}
+
+		if err := kubeClient.Delete(ctx, &crd); err != nil {
+			return fmt.Errorf("failed to delete CRD %s: %v", crdName, err)
+		}
+	}
+
+	return nil
+}
 
 func waitForCertManagerWebhook(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client) error {
 	logger.Debug("Waiting for webhook to become ready…")
@@ -45,7 +163,9 @@ func waitForCertManagerWebhook(ctx context.Context, logger *logrus.Entry, kubeCl
 
 	// always clean up on a best-effort basis
 	defer func() {
-		_ = deleteCertificate(ctx, kubeClient, CertManagerNamespace, certName)
+		if err := deleteCertificate(ctx, kubeClient, CertManagerNamespace, certName); err != nil {
+			logger.Warnf("Failed to cleanup: %v", err)
+		}
 	}()
 
 	// create a dummy cert to see if the webhook is alive and well
