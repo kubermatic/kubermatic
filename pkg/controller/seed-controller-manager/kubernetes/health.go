@@ -47,11 +47,6 @@ func (r *Reconciler) clusterHealth(ctx context.Context, cluster *kubermaticv1.Cl
 		resources.UserClusterControllerDeploymentName: {healthStatus: &extendedHealth.UserClusterControllerManager, minReady: 1},
 	}
 
-	if cluster.Spec.OPAIntegration != nil && cluster.Spec.OPAIntegration.Enabled {
-		healthMapping[resources.GatekeeperControllerDeploymentName] = &depInfo{healthStatus: &extendedHealth.GatekeeperController, minReady: 1}
-		healthMapping[resources.GatekeeperAuditDeploymentName] = &depInfo{healthStatus: &extendedHealth.GatekeeperAudit, minReady: 1}
-	}
-
 	for name := range healthMapping {
 		key := types.NamespacedName{Namespace: ns, Name: name}
 		status, err := resources.HealthyDeployment(ctx, r, key, healthMapping[name].minReady)
