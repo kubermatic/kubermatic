@@ -50,6 +50,9 @@ const (
 	// HTTP/2 CONNECT for tunneling traffic from the worker nodes to the
 	// control plane.
 	TunnelingExposeStrategy = "TunnelingExposeStrategy"
+
+	// MLAStack if enabled MonitoringLoggingAlerting stack will be deployed with corresponding controller
+	MLAStack = "MLAStack"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

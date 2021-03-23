@@ -22,6 +22,8 @@ import (
 	"io/ioutil"
 	"time"
 
+	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
+
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addon"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
@@ -65,6 +67,7 @@ var AllControllers = map[string]controllerCreator{
 	pvwatcher.ControllerName:                      createPvWatcherController,
 	constrainttemplatecontroller.ControllerName:   createConstraintTemplateController,
 	initialmachinedeployment.ControllerName:       createInitialMachineDeploymentController,
+	mla.ControllerName:                            createMLAController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -397,5 +400,20 @@ func createInitialMachineDeploymentController(ctrlCtx *controllerContext) error 
 		ctrlCtx.clientProvider,
 		ctrlCtx.log,
 		ctrlCtx.versions,
+	)
+}
+
+func createMLAController(ctrlCtx *controllerContext) error {
+	if !ctrlCtx.runOptions.featureGates.Enabled(features.MLAStack) {
+		return nil
+	}
+	return mla.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.versions,
+		ctrlCtx.runOptions.grafanaURL,
+		ctrlCtx.runOptions.grafanaHeaderName,
 	)
 }
