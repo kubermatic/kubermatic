@@ -31,6 +31,8 @@ type ClientService interface {
 
 	DeleteServiceAccountToken(params *DeleteServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteServiceAccountTokenOK, error)
 
+	ListMainServiceAccountTokens(params *ListMainServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListMainServiceAccountTokensOK, error)
+
 	ListServiceAccountTokens(params *ListServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListServiceAccountTokensOK, error)
 
 	PatchServiceAccountToken(params *PatchServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*PatchServiceAccountTokenOK, error)
@@ -139,6 +141,40 @@ func (a *Client) DeleteServiceAccountToken(params *DeleteServiceAccountTokenPara
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteServiceAccountTokenDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListMainServiceAccountTokens List tokens for the given main service account
+*/
+func (a *Client) ListMainServiceAccountTokens(params *ListMainServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListMainServiceAccountTokensOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListMainServiceAccountTokensParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listMainServiceAccountTokens",
+		Method:             "GET",
+		PathPattern:        "/api/v2/serviceaccounts/{serviceaccount_id}/tokens",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListMainServiceAccountTokensReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListMainServiceAccountTokensOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListMainServiceAccountTokensDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

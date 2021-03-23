@@ -52,7 +52,7 @@ func CreateTokenEndpoint(serviceAccountProvider provider.ServiceAccountProvider,
 
 		sa, err := serviceAccountProvider.GetMainServiceAccount(userInfo, req.ServiceAccountID, nil)
 		if err != nil {
-			return nil, err
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		// check if token name is already reserved for service account
@@ -86,6 +86,50 @@ func CreateTokenEndpoint(serviceAccountProvider provider.ServiceAccountProvider,
 	}
 }
 
+// ListTokenEndpoint gets token for the main service account
+func ListTokenEndpoint(serviceAccountProvider provider.ServiceAccountProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		resultList := make([]*apiv1.PublicServiceAccountToken, 0)
+		req := request.(commonTokenReq)
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+
+		sa, err := serviceAccountProvider.GetMainServiceAccount(userInfo, req.ServiceAccountID, nil)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		existingSecretList, err := listSAToken(privilegedServiceAccountTokenProvider, sa, "", "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var errorList []string
+		for _, secret := range existingSecretList {
+
+			externalToken, err := convertInternalTokenToPublicExternal(secret, tokenAuthenticator)
+			if err != nil {
+				errorList = append(errorList, err.Error())
+				continue
+			}
+			resultList = append(resultList, externalToken)
+		}
+
+		if len(errorList) > 0 {
+			return nil, errors.NewWithDetails(http.StatusInternalServerError, "failed to get some service account tokens, please examine details field for more info", errorList)
+		}
+
+		return resultList, nil
+	}
+}
+
 func listSAToken(privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, sa *kubermaticapiv1.User, tokenID, tokenName string) ([]*v1.Secret, error) {
 	options := &provider.ServiceAccountTokenListOptions{}
 	options.TokenID = tokenID
@@ -109,6 +153,8 @@ type addTokenReq struct {
 	Body apiv1.ServiceAccountToken
 }
 
+// commonTokenReq defines HTTP request for listMainServiceAccountTokens
+// swagger:parameters listMainServiceAccountTokens
 type commonTokenReq struct {
 	serviceAccountIDReq
 }

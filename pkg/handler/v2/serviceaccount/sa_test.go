@@ -370,7 +370,7 @@ func TestDelete(t *testing.T) {
 		},
 		{
 			name:            "scenario 2: the user John can't delete Bob's main service account",
-			httpStatus:      http.StatusInternalServerError,
+			httpStatus:      http.StatusForbidden,
 			existingAPIUser: test.GenAPIUser("john", "john@acme.com"),
 			existingKubermaticObjs: []ctrlruntimeclient.Object{
 				// add a project
@@ -383,6 +383,7 @@ func TestDelete(t *testing.T) {
 				test.GenBinding("my-first-project-ID", "serviceaccount-1@sa.kubermatic.io", "viewers"),
 				/*add service account*/
 				test.GenProjectServiceAccount("19840801", "test", "viewers", "my-first-project-ID"),
+				test.GenMainServiceAccount("6", "test-5", "viewers", "bob@acme.com"),
 			},
 			saToDelete: "6",
 		},
