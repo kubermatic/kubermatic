@@ -68,6 +68,7 @@ var (
 	DefaultAccessibleAddons = []string{
 		"cluster-autoscaler",
 		"node-exporter",
+		"multus",
 		"gatekeeper",
 	}
 
