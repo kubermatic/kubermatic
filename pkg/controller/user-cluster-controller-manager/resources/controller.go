@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -135,6 +136,7 @@ func Add(
 		&admissionregistrationv1.MutatingWebhookConfiguration{},
 		&admissionregistrationv1.ValidatingWebhookConfiguration{},
 		&apiextensionsv1beta1.CustomResourceDefinition{},
+		&appsv1.Deployment{},
 	}
 
 	// Avoid getting triggered by the leader lease AKA: If the annotation exists AND changed on

@@ -24,10 +24,13 @@ import (
 )
 
 const (
-	configAPIGroup               = "config.gatekeeper.sh"
-	configAPIVersion             = "v1alpha1"
-	constraintTemplateAPIGroup   = "templates.gatekeeper.sh"
-	constraintTemplateAPIVersion = "v1beta1"
+	configAPIGroup                        = "config.gatekeeper.sh"
+	configAPIVersion                      = "v1alpha1"
+	constraintTemplateAPIGroup            = "templates.gatekeeper.sh"
+	constraintTemplateAPIVersion          = "v1beta1"
+	statusAPIGroup                        = "status.gatekeeper.sh"
+	constraintPodStatusAPIVersion         = "v1beta1"
+	constraintTemplatePodStatusAPIVersion = "v1beta1"
 )
 
 // ConfigCRDCreator returns the gatekeeper config CRD definition
@@ -65,6 +68,44 @@ func ConstraintTemplateCRDCreator() reconciling.NamedCustomResourceDefinitionCre
 			crd.Spec.Scope = apiextensionsv1beta1.ClusterScoped
 			crd.Spec.Names.Kind = "ConstraintTemplate"
 			crd.Spec.Names.Plural = "constrainttemplates"
+			crd.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
+
+			return crd, nil
+		}
+	}
+}
+
+// ConstraintPodStatusRDCreator returns the gatekeeper ConstraintPodStatus CRD definition
+func ConstraintPodStatusRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+		return resources.GatekeeperConstraintPodStatusCRDName, func(crd *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+			crd.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
+			crd.Spec.Group = statusAPIGroup
+			crd.Spec.Versions = []apiextensionsv1beta1.CustomResourceDefinitionVersion{
+				{Name: constraintPodStatusAPIVersion, Served: true, Storage: true},
+			}
+			crd.Spec.Scope = apiextensionsv1beta1.NamespaceScoped
+			crd.Spec.Names.Kind = "ConstraintPodStatus"
+			crd.Spec.Names.Plural = "constraintpodstatuses"
+			crd.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
+
+			return crd, nil
+		}
+	}
+}
+
+// ConstraintTemplatePodStatusRDCreator returns the gatekeeper ConstraintTemplatePodStatus CRD definition
+func ConstraintTemplatePodStatusRDCreator() reconciling.NamedCustomResourceDefinitionCreatorGetter {
+	return func() (string, reconciling.CustomResourceDefinitionCreator) {
+		return resources.GatekeeperConstraintTemplatePodStatusCRDName, func(crd *apiextensionsv1beta1.CustomResourceDefinition) (*apiextensionsv1beta1.CustomResourceDefinition, error) {
+			crd.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
+			crd.Spec.Group = statusAPIGroup
+			crd.Spec.Versions = []apiextensionsv1beta1.CustomResourceDefinitionVersion{
+				{Name: constraintTemplatePodStatusAPIVersion, Served: true, Storage: true},
+			}
+			crd.Spec.Scope = apiextensionsv1beta1.NamespaceScoped
+			crd.Spec.Names.Kind = "ConstraintTemplatePodStatus"
+			crd.Spec.Names.Plural = "constrainttemplatepodstatuses"
 			crd.Spec.Subresources = &apiextensionsv1beta1.CustomResourceSubresources{Status: &apiextensionsv1beta1.CustomResourceSubresourceStatus{}}
 
 			return crd, nil
