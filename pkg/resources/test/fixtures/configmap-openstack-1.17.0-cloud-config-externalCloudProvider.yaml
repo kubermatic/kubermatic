@@ -1,0 +1,30 @@
+# This file has been generated, DO NOT EDIT.
+
+data:
+  config: |
+    [Global]
+    auth-url    = "https://example.com:8000/v3"
+    username    = "openstack-username"
+    password    = "openstack-password"
+    tenant-name = "openstack-tenant"
+    tenant-id   = ""
+    domain-name = "openstack-domain"
+    region      = "cbk"
+
+    [LoadBalancer]
+    lb-version = "v2"
+    subnet-id = ""
+    floating-network-id = ""
+    lb-method = "ROUND_ROBIN"
+    lb-provider = ""
+    manage-security-groups = true
+
+    [BlockStorage]
+    ignore-volume-az  = true
+    trust-device-path = false
+    bs-version        = "auto"
+  fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00
+metadata:
+  creationTimestamp: null
+  labels:
+    app: cloud-config
