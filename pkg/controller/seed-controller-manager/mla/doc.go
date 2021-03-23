@@ -14,4 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+/*
+Package mla contains controllers that are responsible for configuring MLA (Monitoring, Logging, and Alerting)
+for user clusters.
+*/
 package mla

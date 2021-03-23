@@ -18,7 +18,9 @@ package mla
 
 import (
 	"go.uber.org/zap"
+
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
