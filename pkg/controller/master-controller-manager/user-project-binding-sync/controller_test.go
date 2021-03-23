@@ -14,16 +14,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package projectsync
+package userprojectbindingsync
 
 import (
 	"context"
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -39,25 +39,25 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-const projectName = "project-test"
+const userProjectBindingName = "user-project-binding-test"
 
 func TestReconcile(t *testing.T) {
 
 	testCases := []struct {
-		name            string
-		requestName     string
-		expectedProject *kubermaticv1.Project
-		masterClient    ctrlruntimeclient.Client
-		seedClient      ctrlruntimeclient.Client
+		name                       string
+		requestName                string
+		expectedUserProjectBinding *kubermaticv1.UserProjectBinding
+		masterClient               ctrlruntimeclient.Client
+		seedClient                 ctrlruntimeclient.Client
 	}{
 		{
-			name:            "scenario 1: sync project from master cluster to seed cluster",
-			requestName:     projectName,
-			expectedProject: generateProject(projectName, false),
+			name:                       "scenario 1: sync userProjectBinding from master cluster to seed cluster",
+			requestName:                userProjectBindingName,
+			expectedUserProjectBinding: generateUserProjectBinding(userProjectBindingName, false),
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(generateProject(projectName, false), test.GenTestSeed()).
+				WithObjects(generateUserProjectBinding(userProjectBindingName, false), test.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
@@ -65,18 +65,18 @@ func TestReconcile(t *testing.T) {
 				Build(),
 		},
 		{
-			name:            "scenario 2: cleanup project on the seed cluster when master project is being terminated",
-			requestName:     projectName,
-			expectedProject: nil,
+			name:                       "scenario 2: cleanup userProjectBinding on the seed cluster when master userProjectBinding is being terminated",
+			requestName:                userProjectBindingName,
+			expectedUserProjectBinding: nil,
 			masterClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(generateProject(projectName, true), test.GenTestSeed()).
+				WithObjects(generateUserProjectBinding(userProjectBindingName, true), test.GenTestSeed()).
 				Build(),
 			seedClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
-				WithObjects(generateProject(projectName, false), test.GenTestSeed()).
+				WithObjects(generateUserProjectBinding(userProjectBindingName, false), test.GenTestSeed()).
 				Build(),
 		},
 	}
@@ -98,45 +98,44 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
-			seedProject := &kubermaticv1.Project{}
-			err := tc.seedClient.Get(ctx, request.NamespacedName, seedProject)
-			if tc.expectedProject == nil {
+			seedUserProjectBinding := &kubermaticv1.UserProjectBinding{}
+			err := tc.seedClient.Get(ctx, request.NamespacedName, seedUserProjectBinding)
+			if tc.expectedUserProjectBinding == nil {
 				if err == nil {
-					t.Fatal("failed clean up project on the seed cluster")
+					t.Fatal("failed clean up userProjectBinding on the seed cluster")
 				} else if !errors.IsNotFound(err) {
-					t.Fatalf("failed to get project: %v", err)
+					t.Fatalf("failed to get userProjectBinding: %v", err)
 				}
 			} else {
 				if err != nil {
-					t.Fatalf("failed to get project: %v", err)
+					t.Fatalf("failed to get userProjectBinding: %v", err)
 				}
-				if !reflect.DeepEqual(seedProject.Spec, tc.expectedProject.Spec) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedProject, tc.expectedProject))
+				if !reflect.DeepEqual(seedUserProjectBinding.Spec, tc.expectedUserProjectBinding.Spec) {
+					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedUserProjectBinding, tc.expectedUserProjectBinding))
 				}
-				if !reflect.DeepEqual(seedProject.Name, tc.expectedProject.Name) {
-					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedProject, tc.expectedProject))
+				if !reflect.DeepEqual(seedUserProjectBinding.Name, tc.expectedUserProjectBinding.Name) {
+					t.Fatalf("diff: %s", diff.ObjectGoPrintSideBySide(seedUserProjectBinding, tc.expectedUserProjectBinding))
 				}
 			}
 		})
 	}
 }
 
-func generateProject(name string, deleted bool) *kubermaticv1.Project {
-	project := &kubermaticv1.Project{
+func generateUserProjectBinding(name string, deleted bool) *kubermaticv1.UserProjectBinding {
+	userProjectBinding := &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
-		Spec: kubermaticv1.ProjectSpec{
-			Name: fmt.Sprintf("project-%s", name),
-		},
-		Status: kubermaticv1.ProjectStatus{
-			Phase: kubermaticv1.ProjectActive,
+		Spec: kubermaticv1.UserProjectBindingSpec{
+			ProjectID: "test-project",
+			Group:     rbac.EditorGroupNamePrefix + "test-project",
+			UserEmail: "test@test.com",
 		},
 	}
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
-		project.DeletionTimestamp = &deleteTime
-		project.Finalizers = append(project.Finalizers, v1.SeedProjectCleanupFinalizer)
+		userProjectBinding.DeletionTimestamp = &deleteTime
+		userProjectBinding.Finalizers = append(userProjectBinding.Finalizers, v1.SeedUserProjectBindingCleanupFinalizer)
 	}
-	return project
+	return userProjectBinding
 }
