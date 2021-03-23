@@ -13355,6 +13355,48 @@
       }
     },
     "/api/v2/serviceaccounts/{serviceaccount_id}/tokens": {
+      "get": {
+        "description": "List tokens for the given main service account",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "tokens"
+        ],
+        "operationId": "listMainServiceAccountTokens",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ServiceAccountID",
+            "name": "serviceaccount_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "PublicServiceAccountToken",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/PublicServiceAccountToken"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
       "post": {
         "description": "Generates a token for the given main service account",
         "consumes": [
