@@ -251,6 +251,166 @@ func TestListTokens(t *testing.T) {
 	}
 }
 
+func TestUpdateToken(t *testing.T) {
+	t.Parallel()
+	expiry, err := test.GenDefaultExpiry()
+	if err != nil {
+		t.Fatal(err)
+	}
+	testcases := []struct {
+		name                   string
+		body                   string
+		existingKubermaticObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
+		expectedToken          apiv1.PublicServiceAccountToken
+		expectedErrorMsg       string
+		saToSync               string
+		tokenToSync            string
+		httpStatus             int
+		existingAPIUser        apiv1.User
+	}{
+		{
+			name:       "scenario 1: change token name successfully and regenerate token",
+			httpStatus: http.StatusOK,
+			body:       `{"name":"test-new-name", "id":"1"}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenMainServiceAccount("2", "test-4", "viewers", "john@acme.com"),
+			},
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
+				test.GenDefaultSaToken("", "2", "test-4", "1"),
+			},
+			existingAPIUser: *test.GenAPIUser("john", "john@acme.com"),
+			saToSync:        "2",
+			tokenToSync:     "1",
+			expectedToken:   genPublicServiceAccountToken("1", "test-new-name", expiry),
+		},
+		{
+			name:       "scenario 2: changed name is empty",
+			httpStatus: http.StatusBadRequest,
+			body:       `{"name":"","id":"sa-token-1"}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenMainServiceAccount("2", "test-4", "viewers", "john@acme.com"),
+			},
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
+				test.GenDefaultSaToken("", "2", "test-1", "1"),
+			},
+			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
+			saToSync:         "2",
+			tokenToSync:      "1",
+			expectedErrorMsg: `{"error":{"code":400,"message":"new name can not be empty"}}`,
+		},
+		{
+			name:       "scenario 3: new name exists for other token",
+			httpStatus: http.StatusConflict,
+			body:       `{"name":"test-2","id":"3"}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenMainServiceAccount("2", "test-4", "viewers", "john@acme.com"),
+			},
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-2", "2"),
+				test.GenDefaultSaToken("", "2", "test-1", "3"),
+				test.GenDefaultSaToken("", "2", "test-2", "4"),
+			},
+			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
+			saToSync:         "2",
+			tokenToSync:      "3",
+			expectedErrorMsg: `{"error":{"code":409,"message":"token \"test-2\" already exists"}}`,
+		},
+		{
+			name:       "scenario 4: the user Bob can't change John's token name and regenerate token",
+			httpStatus: http.StatusForbidden,
+			body:       `{"name":"test-new-name", "id":"2"}`,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				test.GenUser("", "bob", "bob@acme.com"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenMainServiceAccount("2", "test-4", "viewers", "john@acme.com"),
+			},
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
+				test.GenDefaultSaToken("", "2", "test-2", "2"),
+			},
+			existingAPIUser:  *test.GenAPIUser("bob", "bob@acme.com"),
+			saToSync:         "2",
+			tokenToSync:      "2",
+			expectedErrorMsg: `{"error":{"code":403,"message":"forbidden: actual user bob@acme.com is not the owner of the service account main-serviceaccount-2"}}`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("PUT", fmt.Sprintf("/api/v2/serviceaccounts/%s/tokens/%s", tc.saToSync, tc.tokenToSync), strings.NewReader(tc.body))
+			res := httptest.NewRecorder()
+
+			ep, _, err := test.CreateTestEndpointAndGetClients(tc.existingAPIUser, nil, tc.existingKubernetesObjs, []ctrlruntimeclient.Object{}, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			if len(tc.expectedErrorMsg) == 0 {
+				var token apiv1.ServiceAccountToken
+				err = json.Unmarshal(res.Body.Bytes(), &token)
+				if err != nil {
+					t.Fatal(err.Error())
+				}
+
+				if token.Name != tc.expectedToken.Name {
+					t.Fatalf("expected new name %s got %s", tc.expectedToken.Name, token.Name)
+				}
+				if token.ID != tc.expectedToken.ID {
+					t.Fatalf("expected ID %s got %s", tc.expectedToken.ID, token.ID)
+				}
+				if token.Expiry == tc.expectedToken.Expiry {
+					t.Fatalf("token should be regenerated and expiration times should not be equal but got %v", token.Expiry)
+				}
+				if token.Token == test.TestFakeToken {
+					t.Fatalf("token should be regenerated")
+				}
+
+			} else {
+				test.CompareWithResult(t, res, tc.expectedErrorMsg)
+			}
+		})
+	}
+}
+
 func genPublicServiceAccountToken(id, name string, expiry apiv1.Time) apiv1.PublicServiceAccountToken {
 	token := apiv1.PublicServiceAccountToken{}
 	token.ID = id
