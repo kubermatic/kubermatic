@@ -17,19 +17,24 @@ limitations under the License.
 package mla
 
 import (
+	"fmt"
+
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	grafanasdk "github.com/aborilov/sdk"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 const (
 	ControllerName = "kubermatic_mla_controller"
+	mlaFinalizer   = "kubermatic.io/mla"
 )
 
 // Add creates a new MLA controller that is responsible for
 // managing Monitoring, Logging and Alerting for user clusters.
+// * project controller - create/update Grafana organizations based on Kubermatic Projects
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
@@ -39,6 +44,9 @@ func Add(
 	grafanaURL string,
 	grafanaHeader string,
 ) error {
-	// controllers will be here in the future PRs
+	grafanaClient := grafanasdk.NewClient(grafanaURL, "admin:admin", grafanasdk.DefaultHTTPClient)
+	if err := newProjectReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient); err != nil {
+		return fmt.Errorf("failed to create mla project controller: %v", err)
+	}
 	return nil
 }
