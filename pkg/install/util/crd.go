@@ -44,8 +44,10 @@ func DeployCRDs(ctx context.Context, kubeClient ctrlruntimeclient.Client, log lo
 		if err := kubeClient.Create(ctx, crd); err != nil && !kerrors.IsAlreadyExists(err) {
 			return fmt.Errorf("failed to deploy CRD %s: %v", crd.GetName(), err)
 		}
+	}
 
-		// wait for CRD to be established
+	// wait for CRDs to be established
+	for _, crd := range crds {
 		if err := WaitForReadyCRD(ctx, kubeClient, crd.GetName(), 30*time.Second); err != nil {
 			return fmt.Errorf("failed to wait for CRD %s to have Established=True condition: %v", crd.GetName(), err)
 		}
