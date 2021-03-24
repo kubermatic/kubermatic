@@ -925,7 +925,7 @@ type NamedKubermaticV1ProjectCreatorGetter = func() (name string, create Kuberma
 // KubermaticV1ProjectObjectWrapper adds a wrapper so the KubermaticV1ProjectCreator matches ObjectCreator.
 // This is needed as Go does not support function interface matching.
 func KubermaticV1ProjectObjectWrapper(create KubermaticV1ProjectCreator) ObjectCreator {
-	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+	return func(existing runtime.Object) (runtime.Object, error) {
 		if existing != nil {
 			return create(existing.(*kubermaticv1.Project))
 		}

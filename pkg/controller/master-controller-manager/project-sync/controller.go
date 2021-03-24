@@ -45,18 +45,21 @@ const (
 )
 
 type reconciler struct {
+	ctx              context.Context
 	log              *zap.SugaredLogger
 	recorder         record.EventRecorder
 	masterClient     ctrlruntimeclient.Client
 	seedClientGetter provider.SeedClientGetter
 }
 
-func Add(mgr manager.Manager,
+func Add(ctx context.Context,
+	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
 	seedKubeconfigGetter provider.SeedKubeconfigGetter) error {
 
 	reconciler := &reconciler{
+		ctx:              ctx,
 		log:              log.Named(ControllerName),
 		recorder:         mgr.GetEventRecorderFor(ControllerName),
 		masterClient:     mgr.GetClient(),
@@ -86,16 +89,16 @@ func Add(mgr manager.Manager,
 }
 
 // Reconcile reconciles Kubermatic Project objects on the master cluster to all seed clusters
-func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *reconciler) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 
 	project := &kubermaticv1.Project{}
-	if err := r.masterClient.Get(ctx, request.NamespacedName, project); err != nil {
+	if err := r.masterClient.Get(r.ctx, request.NamespacedName, project); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
 	if !project.DeletionTimestamp.IsZero() {
-		if err := r.handleDeletion(ctx, log, project); err != nil {
+		if err := r.handleDeletion(r.ctx, log, project); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %v", err)
 		}
 		return reconcile.Result{}, nil
@@ -103,7 +106,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	if !kuberneteshelper.HasFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer) {
 		kuberneteshelper.AddFinalizer(project, kubermaticapiv1.SeedProjectCleanupFinalizer)
-		if err := r.masterClient.Update(ctx, project); err != nil {
+		if err := r.masterClient.Update(r.ctx, project); err != nil {
 			return reconcile.Result{}, fmt.Errorf("failed to add project finalizer %s: %v", project.Name, err)
 		}
 	}
@@ -112,8 +115,8 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		projectCreatorGetter(project),
 	}
 
-	err := r.syncAllSeeds(ctx, log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
-		return reconciling.ReconcileKubermaticV1Projects(ctx, projectCreatorGetters, "", seedClusterClient)
+	err := r.syncAllSeeds(r.ctx, log, project, func(seedClusterClient ctrlruntimeclient.Client, project *kubermaticv1.Project) error {
+		return reconciling.ReconcileKubermaticV1Projects(r.ctx, projectCreatorGetters, "", seedClusterClient)
 	})
 
 	if err != nil {
@@ -168,8 +171,8 @@ func (r *reconciler) syncAllSeeds(
 	return nil
 }
 
-func enqueueAllProjects(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+func enqueueAllProjects(client ctrlruntimeclient.Client, log *zap.SugaredLogger) *handler.EnqueueRequestsFromMapFunc {
+	return &handler.EnqueueRequestsFromMapFunc{ToRequests: handler.ToRequestsFunc(func(a handler.MapObject) []reconcile.Request {
 		var requests []reconcile.Request
 
 		projectList := &kubermaticv1.ProjectList{}
@@ -183,5 +186,5 @@ func enqueueAllProjects(client ctrlruntimeclient.Client, log *zap.SugaredLogger)
 			}})
 		}
 		return requests
-	})
+	})}
 }

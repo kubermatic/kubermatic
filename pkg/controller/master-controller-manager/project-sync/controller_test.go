@@ -54,30 +54,22 @@ func TestReconcile(t *testing.T) {
 			name:            "scenario 1: sync project from master cluster to seed cluster",
 			requestName:     projectName,
 			expectedProject: generateProject(projectName, false),
-			masterClient: fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(generateProject(projectName, false), test.GenTestSeed()).
-				Build(),
-			seedClient: fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				Build(),
+			masterClient: fakectrlruntimeclient.NewFakeClientWithScheme(
+				scheme.Scheme,
+				generateProject(projectName, false),
+				test.GenTestSeed()),
+			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme),
 		},
 		{
 			name:            "scenario 2: cleanup project on the seed cluster when master project is being terminated",
 			requestName:     projectName,
 			expectedProject: nil,
-			masterClient: fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(generateProject(projectName, true), test.GenTestSeed()).
-				Build(),
-			seedClient: fakectrlruntimeclient.
-				NewClientBuilder().
-				WithScheme(scheme.Scheme).
-				WithObjects(generateProject(projectName, false), test.GenTestSeed()).
-				Build(),
+			masterClient: fakectrlruntimeclient.NewFakeClientWithScheme(
+				scheme.Scheme,
+				generateProject(projectName, true),
+				test.GenTestSeed()),
+			seedClient: fakectrlruntimeclient.NewFakeClientWithScheme(scheme.Scheme,
+				generateProject(projectName, false), test.GenTestSeed()),
 		},
 	}
 
@@ -85,6 +77,7 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			r := &reconciler{
+				ctx:          ctx,
 				log:          kubermaticlog.Logger,
 				recorder:     &record.FakeRecorder{},
 				masterClient: tc.masterClient,
@@ -94,7 +87,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
-			if _, err := r.Reconcile(ctx, request); err != nil {
+			if _, err := r.Reconcile(request); err != nil {
 				t.Fatalf("reconciling failed: %v", err)
 			}
 
