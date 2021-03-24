@@ -1,0 +1,120 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  labels:
+    app: openstack-cloud-controller-manager
+  name: openstack-cloud-controller-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openstack-cloud-controller-manager
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: openstack-cloud-controller-manager
+        cluster: de-test-01
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - args:
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local./healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
+        - -command
+        - '{"command":"/usr/sbin/openvpn","args":["--client","--proto","tcp","--dev","tun","--auth-nocache","--remote","openvpn-server.cluster-de-test-01.svc.cluster.local.","1194","--nobind","--connect-timeout","5","--connect-retry","1","--ca","/etc/openvpn/pki/client/ca.crt","--cert","/etc/openvpn/pki/client/client.crt","--key","/etc/openvpn/pki/client/client.key","--remote-cert-tls","server","--link-mtu","1432","--cipher","AES-256-GCM","--auth","SHA1","--keysize","256","--script-security","2","--status","/run/openvpn-status","--log","/dev/stdout"]}'
+        command:
+        - /http-prober-bin/http-prober
+        image: quay.io/kubermatic/openvpn:v2.4.8-r1
+        name: openvpn-client
+        resources:
+          limits:
+            cpu: 100m
+            memory: 32Mi
+          requests:
+            cpu: 5m
+            memory: 5Mi
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /etc/openvpn/pki/client
+          name: openvpn-client-certificates
+          readOnly: true
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      - args:
+        - -endpoint
+        - https://apiserver-external.cluster-de-test-01.svc.cluster.local./healthz
+        - -insecure
+        - -retries
+        - "100"
+        - -retry-wait
+        - "2"
+        - -timeout
+        - "1"
+        - -command
+        - '{"command":"/bin/openstack-cloud-controller-manager","args":["--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig","--v=1","--cloud-config=/etc/kubernetes/cloud/config","--cloud-provider=openstack"]}'
+        command:
+        - /http-prober-bin/http-prober
+        image: docker.io/k8scloudprovider/openstack-cloud-controller-manager:v1.18.0
+        name: cloud-controller-manager
+        resources:
+          limits:
+            cpu: 500m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - mountPath: /etc/kubernetes/kubeconfig
+          name: cloud-controller-manager-kubeconfig
+          readOnly: true
+        - mountPath: /etc/kubernetes/cloud
+          name: cloud-config
+          readOnly: true
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      dnsConfig:
+        nameservers:
+        - 192.0.2.14
+        options:
+        - name: ndots
+          value: "5"
+        searches:
+        - kube-system.svc.cluster.local
+        - svc.cluster.local
+        - cluster.local
+      dnsPolicy: None
+      initContainers:
+      - command:
+        - /bin/cp
+        - /usr/local/bin/http-prober
+        - /http-prober-bin/http-prober
+        image: quay.io/kubermatic/http-prober:v0.3.1
+        name: copy-http-prober
+        resources: {}
+        volumeMounts:
+        - mountPath: /http-prober-bin
+          name: http-prober-bin
+      volumes:
+      - name: openvpn-client-certificates
+        secret:
+          secretName: openvpn-client-certificates
+      - name: cloud-controller-manager-kubeconfig
+        secret:
+          secretName: cloud-controller-manager-kubeconfig
+      - configMap:
+          name: cloud-config
+        name: cloud-config
+      - emptyDir: {}
+        name: http-prober-bin
+status: {}
