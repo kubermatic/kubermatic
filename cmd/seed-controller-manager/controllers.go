@@ -32,6 +32,7 @@ import (
 	etcdrestorecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdrestore"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/initialmachinedeployment"
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/mla"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/pvwatcher"
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/rancher"
@@ -65,6 +66,7 @@ var AllControllers = map[string]controllerCreator{
 	pvwatcher.ControllerName:                      createPvWatcherController,
 	constrainttemplatecontroller.ControllerName:   createConstraintTemplateController,
 	initialmachinedeployment.ControllerName:       createInitialMachineDeploymentController,
+	mla.ControllerName:                            createMLAController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -397,5 +399,20 @@ func createInitialMachineDeploymentController(ctrlCtx *controllerContext) error 
 		ctrlCtx.clientProvider,
 		ctrlCtx.log,
 		ctrlCtx.versions,
+	)
+}
+
+func createMLAController(ctrlCtx *controllerContext) error {
+	if !ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) {
+		return nil
+	}
+	return mla.Add(
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerCount,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.versions,
+		ctrlCtx.runOptions.grafanaURL,
+		ctrlCtx.runOptions.grafanaHeaderName,
 	)
 }
