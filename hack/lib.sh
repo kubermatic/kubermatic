@@ -327,6 +327,14 @@ cleanup_kubermatic_clusters_in_kind() {
   set -e
 }
 
+docker_logs() {
+  if [[ $? -ne 0 ]]; then
+    echodate "Printing Docker logs"
+    cat /tmp/docker.log
+    echodate "Done printing Docker logs"
+  fi
+}
+
 start_docker_daemon() {
   if docker stats --no-stream > /dev/null 2>&1; then
     echodate "Not starting Docker again, it's already running."
@@ -337,14 +345,6 @@ start_docker_daemon() {
   echodate "Starting Docker"
   dockerd > /tmp/docker.log 2>&1 &
   echodate "Started Docker successfully"
-
-  function docker_logs {
-    if [[ $? -ne 0 ]]; then
-      echodate "Printing Docker logs"
-      cat /tmp/docker.log
-      echodate "Done printing Docker logs"
-    fi
-  }
   appendTrap docker_logs EXIT
 
   # Wait for Docker to start
