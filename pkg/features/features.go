@@ -51,8 +51,8 @@ const (
 	// control plane.
 	TunnelingExposeStrategy = "TunnelingExposeStrategy"
 
-	// MLAStack if enabled MonitoringLoggingAlerting stack will be deployed with corresponding controller
-	MLAStack = "MLAStack"
+	// UserClusterMLA if enabled MonitoringLoggingAlerting stack will be deployed with corresponding controller
+	UserClusterMLA = "UserClusterMLA"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.

@@ -403,7 +403,7 @@ func createInitialMachineDeploymentController(ctrlCtx *controllerContext) error 
 }
 
 func createMLAController(ctrlCtx *controllerContext) error {
-	if !ctrlCtx.runOptions.featureGates.Enabled(features.MLAStack) {
+	if !ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) {
 		return nil
 	}
 	return mla.Add(
