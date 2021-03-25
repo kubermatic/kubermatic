@@ -17,6 +17,8 @@ limitations under the License.
 package usercluster
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 
@@ -120,7 +122,7 @@ func ClusterRoleCreator() (string, reconciling.ClusterRoleCreator) {
 
 func ClusterRoleBinding(namespace string) reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
-		return roleBindingName, func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
+		return GenClusterRoleBindingName(namespace), func(rb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
 			rb.RoleRef = rbacv1.RoleRef{
 				Name:     roleName,
 				Kind:     "ClusterRole",
@@ -136,4 +138,8 @@ func ClusterRoleBinding(namespace string) reconciling.NamedClusterRoleBindingCre
 			return rb, nil
 		}
 	}
+}
+
+func GenClusterRoleBindingName(targetNamespace string) string {
+	return fmt.Sprintf("%s-%s", roleBindingName, targetNamespace)
 }

@@ -77,6 +77,11 @@ func (d *Deletion) CleanupCluster(ctx context.Context, log *zap.SugaredLogger, c
 		return err
 	}
 
+	// Delete ClusterRoleBindings on for the cluster on the seed cluster
+	if err := d.cleanupClusterRoleBindings(ctx, cluster); err != nil {
+		return err
+	}
+
 	// If we still have nodes, we must not cleanup other infrastructure at the cloud provider
 	if kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
 		return nil
