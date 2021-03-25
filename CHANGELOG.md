@@ -1,5 +1,20 @@
 # Kubermatic 2.16
 
+## [v2.16.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.7)
+
+### Bugfixes
+
+- Fix deployment of Openstack CCM ([#6750](https://github.com/kubermatic/kubermatic/issues/6750))
+- Projects are now synced from the Master cluster to all Seed clusters. Fixes issue where user clusters could not be created properly on multi seed clusters, when the seed is not also the master cluster ([#6754](https://github.com/kubermatic/kubermatic/issues/6754))
+- Fix installer trying an invalid certificate to test cert-manager ([#6761](https://github.com/kubermatic/kubermatic/issues/6761))
+
+### Misc
+
+- Allow to disable the s3-credentials Secret in the Minio chart ([#6760](https://github.com/kubermatic/kubermatic/issues/6760))
+
+
+
+
 ## [v2.16.6](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.6)
 
 ### Bugfixes
