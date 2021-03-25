@@ -22,17 +22,18 @@ import (
 	"os"
 	"path/filepath"
 
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func LoadFromDirectory(directory string) ([]apiextensionsv1beta1.CustomResourceDefinition, error) {
+func LoadFromDirectory(directory string) ([]ctrlruntimeclient.Object, error) {
 	files, err := filepath.Glob(filepath.Join(directory, "*.yaml"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to list YAML files in %q: %v", directory, err)
 	}
 
-	crds := []apiextensionsv1beta1.CustomResourceDefinition{}
+	crds := []ctrlruntimeclient.Object{}
 
 	for _, filename := range files {
 		loaded, err := LoadFromFile(filename)
@@ -46,25 +47,25 @@ func LoadFromDirectory(directory string) ([]apiextensionsv1beta1.CustomResourceD
 	return crds, nil
 }
 
-func LoadFromFile(filename string) ([]apiextensionsv1beta1.CustomResourceDefinition, error) {
+func LoadFromFile(filename string) ([]ctrlruntimeclient.Object, error) {
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %v", err)
 	}
 	defer f.Close()
 
-	crds := []apiextensionsv1beta1.CustomResourceDefinition{}
+	crds := []ctrlruntimeclient.Object{}
 	decoder := yamlutil.NewYAMLOrJSONDecoder(f, 1024)
 
 	for {
-		crd := apiextensionsv1beta1.CustomResourceDefinition{}
+		crd := unstructured.Unstructured{}
 
 		err = decoder.Decode(&crd)
 		if err != nil {
 			break
 		}
 
-		crds = append(crds, crd)
+		crds = append(crds, &crd)
 	}
 
 	if err != io.EOF {
