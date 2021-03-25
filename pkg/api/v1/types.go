@@ -2127,6 +2127,8 @@ const (
 	SeedProjectCleanupFinalizer = "kubermatic.io/cleanup-seed-projects"
 	// SeedUserProjectBindingCleanupFinalizer indicates that Kubermatic UserProjectBindings on the seed clusters need cleanup
 	SeedUserProjectBindingCleanupFinalizer = "kubermatic.io/cleanup-seed-user-project-bindings"
+	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup
+	ClusterRoleBindingsCleanupFinalizer = "kubermatic.io/cleanup-cluster-role-bindings"
 )
 
 func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {
