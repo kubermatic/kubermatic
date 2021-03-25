@@ -20,7 +20,7 @@ cd $(dirname $0)
 
 REPOSITORY=quay.io/kubermatic/wwhrd
 VERSION=0.4.0
-NUMBER=1
+NUMBER=2
 
 docker build --no-cache --pull -t "${REPOSITORY}:${VERSION}-${NUMBER}" .
 docker push "${REPOSITORY}:${VERSION}-${NUMBER}"

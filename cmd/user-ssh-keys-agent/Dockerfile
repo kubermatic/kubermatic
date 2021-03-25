@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.10
+FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
 COPY ./_build/user-ssh-keys-agent /usr/local/bin/user-ssh-keys-agent

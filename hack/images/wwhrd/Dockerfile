@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.12 AS builder
+FROM alpine:3.13 AS builder
 
 RUN apk update
 RUN apk add curl
@@ -20,6 +20,7 @@ RUN cd tmp && curl -L --fail https://github.com/frapposelli/wwhrd/releases/downl
 RUN /tmp/wwhrd -v
 
 FROM golang:1.16.1
+LABEL maintainer="support@kubermatic.com"
 
 COPY --from=builder /tmp/wwhrd /usr/local/bin/
 ENTRYPOINT ["wwhrd"]
