@@ -23,6 +23,16 @@ minio:
     accessKey: '' # 32 byte long
     secretKey: '' # 64 byte long
 
+    # When set to true, a Secret will be created in the given namespace.
+    # Kubermatic requires an "s3-credentials" Secret in the kube-system
+    # namespace to perform usercluster etcd snapshots, _if_ the default
+    # backup containers are used (see KubermaticConfiguration).
+    # Otherwise, this can be disabled for example by setting
+    # `--set "minio.credentials.secret=null"` when running Helm.
+    secret:
+      name: s3-credentials
+      namespace: kube-system
+
   flags:
     # Set to true to enable Minio's strict S3 compatibility mode.
     # See https://github.com/minio/minio/pull/7609 for more information.
@@ -49,14 +59,14 @@ minio:
         cpu: 100m
         memory: 32Mi
       limits:
-        cpu: 300m
+        cpu: 1
         memory: 512Mi
     backup:
       requests:
         cpu: 50m
         memory: 32Mi
       limits:
-        cpu: 500m
+        cpu: 1
         memory: 1500Mi
 
   nodeSelector: {}
