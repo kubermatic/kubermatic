@@ -20,10 +20,10 @@ import (
 	"bytes"
 	"html/template"
 
-	corev1 "k8s.io/api/core/v1"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 type Config struct {

@@ -17,10 +17,10 @@ limitations under the License.
 package promtail
 
 import (
-	rbacv1 "k8s.io/api/rbac/v1"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	rbacv1 "k8s.io/api/rbac/v1"
 )
 
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
