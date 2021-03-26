@@ -22,7 +22,7 @@ certManager:
     replicas: 1
     image:
       repository: quay.io/jetstack/cert-manager-controller
-      tag: v0.16.1
+      tag: v1.2.0
       pullPolicy: IfNotPresent
     pullSecrets: []
 
@@ -31,7 +31,7 @@ certManager:
         cpu: 100m
         memory: 64Mi
       limits:
-        memory: 128Mi
+        memory: 256Mi
 
     affinity: {}
     nodeSelector: {}
@@ -52,7 +52,7 @@ certManager:
     replicas: 1
     image:
       repository: quay.io/jetstack/cert-manager-webhook
-      tag: v0.16.1
+      tag: v1.2.0
       pullPolicy: IfNotPresent
 
     resources:
@@ -60,7 +60,7 @@ certManager:
         cpu: 100m
         memory: 30Mi
       limits:
-        memory: 128Mi
+        memory: 256Mi
 
     affinity: {}
     nodeSelector: {}
@@ -81,7 +81,7 @@ certManager:
     replicas: 1
     image:
       repository: quay.io/jetstack/cert-manager-cainjector
-      tag: v0.16.1
+      tag: v1.2.0
       pullPolicy: IfNotPresent
 
     resources:
@@ -90,7 +90,7 @@ certManager:
         memory: 32Mi
       limits:
         cpu: 100m
-        memory: 128Mi
+        memory: 256Mi
 
     nodeSelector: {}
     affinity: {}

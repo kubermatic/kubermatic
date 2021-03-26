@@ -19,6 +19,13 @@ metadata:
   name: api
   annotations:
     kubernetes.io/ingress.class: {{ (default "nginx" .Values.kubermatic.ingressClass) }}
+    {{- with $.Values.kubermatic.certIssuer }}
+    {{- if eq .kind "ClusterIssuer" }}
+    cert-manager.io/cluster-issuer: {{ .name | quote }}
+    {{- else }}
+    cert-manager.io/issuer: {{ .name | quote }}
+    {{- end }}
+    {{- end }}
 spec:
   tls:
   - secretName: kubermatic-tls
