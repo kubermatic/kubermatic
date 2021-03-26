@@ -14,13 +14,12 @@
 
 apiVersion: v1
 name: cert-manager
-version: 1.4.2
-appVersion: v0.16.1
+version: 2.0.0
+appVersion: v1.2.0
 description: A Helm chart for cert-manager
 keywords:
 - kubermatic
 - cert-manager
-- kube-lego
 - letsencrypt
 - tls
 home: https://github.com/jetstack/cert-manager
