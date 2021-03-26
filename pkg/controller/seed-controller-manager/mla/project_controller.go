@@ -123,7 +123,7 @@ func (r *projectReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	org := grafanasdk.Org{
 		Name: getOrgNameForProject(project),
 	}
-	if err := r.ensureOrganization(ctx, project, org, grafanaOrgAnnotationKey); err != nil {
+	if err := r.ensureOrganization(ctx, log, project, org, grafanaOrgAnnotationKey); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Organization Datasources: %w", err)
 	}
 
@@ -164,14 +164,22 @@ func (r *projectReconciler) createGrafanaOrg(ctx context.Context, org grafanasdk
 	return org, nil
 }
 
-func (r *projectReconciler) ensureOrganization(ctx context.Context, project *kubermaticv1.Project, expected grafanasdk.Org, annotationKey string) error {
+func (r *projectReconciler) ensureOrganization(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project, expected grafanasdk.Org, annotationKey string) error {
 	orgID, ok := project.GetAnnotations()[annotationKey]
 	if !ok {
 		org, err := r.createGrafanaOrg(ctx, expected)
 		if err != nil {
 			return fmt.Errorf("unable to create grafana org: %w", err)
 		}
-		return r.setAnnotation(ctx, project, annotationKey, strconv.FormatUint(uint64(org.ID), 10))
+		if err := r.setAnnotation(ctx, project, annotationKey, strconv.FormatUint(uint64(org.ID), 10)); err != nil {
+			// revert org creation, if deletion failed, we can do much about it
+			if status, err := r.grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
+				log.Errorf("unable to delete organization: %w (status: %s, message: %s)",
+					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			}
+			return err
+		}
+		return nil
 	}
 	id, err := strconv.ParseUint(orgID, 10, 32)
 	if err != nil {
@@ -185,7 +193,15 @@ func (r *projectReconciler) ensureOrganization(ctx context.Context, project *kub
 		if err != nil {
 			return fmt.Errorf("unable to create grafana org: %w", err)
 		}
-		return r.setAnnotation(ctx, project, annotationKey, strconv.FormatUint(uint64(org.ID), 10))
+		if err := r.setAnnotation(ctx, project, annotationKey, strconv.FormatUint(uint64(org.ID), 10)); err != nil {
+			// revert org creation, if deletion failed, we can do much about it
+			if status, err := r.grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
+				log.Errorf("unable to delete organization: %w (status: %s, message: %s)",
+					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			}
+			return err
+		}
+		return nil
 	}
 	expected.ID = uint(id)
 	if !reflect.DeepEqual(org, expected) {
