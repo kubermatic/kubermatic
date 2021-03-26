@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.12
+FROM alpine:3.13
+LABEL maintainer="support@kubermatic.com"
 
 RUN mkdir -p /plugins
 WORKDIR /plugins
