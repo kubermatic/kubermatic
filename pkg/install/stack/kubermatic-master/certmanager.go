@@ -377,30 +377,6 @@ func removeFinalizersFromCustomResources(ctx context.Context, kubeClient ctrlrun
 	return nil
 }
 
-func waitForCRDsGone(ctx context.Context, kubeClient ctrlruntimeclient.Client, crds []schema.GroupVersionKind, finalizers []string) error {
-	for _, crdGVK := range crds {
-		items, err := util.ListResources(ctx, kubeClient, crdGVK)
-		if err != nil {
-			return fmt.Errorf("failed to list %s resources: %v", crdGVK.Kind, err)
-		}
-
-		for idx := range items {
-			item := items[idx]
-
-			if kubernetes.HasAnyFinalizer(&item, finalizers...) {
-				oldItem := item.DeepCopy()
-				kubernetes.RemoveFinalizer(&item, finalizers...)
-
-				if err := kubeClient.Patch(ctx, &item, ctrlruntimeclient.MergeFrom(oldItem)); err != nil {
-					return fmt.Errorf("failed to patch %s %s/%s: %v", crdGVK.Kind, item.GetNamespace(), item.GetName(), err)
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
 func waitForCertManagerWebhook(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client) error {
 	logger.Debug("Waiting for webhook to become ready…")
 

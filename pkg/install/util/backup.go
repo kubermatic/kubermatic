@@ -62,10 +62,14 @@ func DumpResources(ctx context.Context, filename string, objects []unstructured.
 	encoder := yaml.NewEncoder(f)
 	encoder.SetIndent(2)
 
-	f.WriteString(fmt.Sprintf("# This backup was created %s.\n", time.Now().Format(time.UnixDate)))
+	if _, err := f.WriteString(fmt.Sprintf("# This backup was created %s.\n", time.Now().Format(time.UnixDate))); err != nil {
+		return fmt.Errorf("failed to write date: %v", err)
+	}
 
 	for _, item := range objects {
-		encoder.Encode(item.Object)
+		if err := encoder.Encode(item.Object); err != nil {
+			return fmt.Errorf("failed to encode object as YAML: %v", err)
+		}
 	}
 
 	return nil
