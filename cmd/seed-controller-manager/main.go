@@ -91,7 +91,11 @@ func main() {
 		electionName += "-" + options.workerName
 	}
 
-	cfg := ctrlruntime.GetConfigOrDie()
+	cfg, err := ctrlruntime.GetConfig()
+	if err != nil {
+		log.Fatalw("Failed to get kubeconfig", zap.Error(err))
+	}
+
 	// Create a manager, disable metrics as we have our own handler that exposes
 	// the metrics of both the ctrltuntime registry and the default registry
 	mgr, err := manager.New(cfg, manager.Options{
