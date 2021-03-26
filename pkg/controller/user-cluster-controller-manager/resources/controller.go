@@ -57,6 +57,11 @@ const (
 	controllerName = "user-cluster-controller"
 )
 
+type UserClusterMLA struct {
+	Logging        bool
+	MLAGatewayPort int
+}
+
 // Add creates a new user cluster controller.
 func Add(
 	mgr manager.Manager,
@@ -75,6 +80,7 @@ func Add(
 	userSSHKeyAgent bool,
 	opaWebhookTimeout int,
 	caBundle resources.CABundle,
+	userClusterMLA UserClusterMLA,
 	log *zap.SugaredLogger) error {
 	r := &reconciler{
 		version:           version,
@@ -92,6 +98,7 @@ func Add(
 		userSSHKeyAgent:   userSSHKeyAgent,
 		versions:          versions,
 		caBundle:          caBundle,
+		userClusterMLA:    userClusterMLA,
 	}
 
 	var err error
@@ -204,6 +211,7 @@ type reconciler struct {
 	userSSHKeyAgent   bool
 	versions          kubermatic.Versions
 	caBundle          resources.CABundle
+	userClusterMLA    UserClusterMLA
 
 	rLock                      *sync.Mutex
 	reconciledSuccessfullyOnce bool
