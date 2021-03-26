@@ -78,6 +78,15 @@ func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctr
 	v2 := semver.MustParse("2.0.0")
 
 	if release != nil && release.Version.LessThan(v2) && !chart.Version.LessThan(v2) {
+		if !opt.EnableCertManagerV2Migration {
+			sublogger.Warn("cert-manager CRDs need to be migrated. This requires to temporarily remove and recreate")
+			sublogger.Warn("all related resources (like Certificates, Issuers, etc.). Rerun the installer with")
+			sublogger.Warn("--migrate-cert-manager to enable this mandatory migration.")
+			sublogger.Warn("Please refer to the KKP 2.17 upgrade notes for more information.")
+
+			return fmt.Errorf("user must acknowledge the migration using --migrate-cert-manager")
+		}
+
 		if err := migrateCertManagerV2(ctx, sublogger, kubeClient, helmClient, opt, chart, release); err != nil {
 			return fmt.Errorf("upgrade failed: %v", err)
 		}
