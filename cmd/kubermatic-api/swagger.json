@@ -13446,6 +13446,64 @@
           }
         }
       }
+    },
+    "/api/v2/serviceaccounts/{serviceaccount_id}/tokens/{token_id}": {
+      "put": {
+        "description": "Updates and regenerates the token",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "tokens"
+        ],
+        "operationId": "updateMainServiceAccountToken",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ServiceAccountID",
+            "name": "serviceaccount_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "TokenID",
+            "name": "token_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/PublicServiceAccountToken"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ServiceAccountToken",
+            "schema": {
+              "$ref": "#/definitions/ServiceAccountToken"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
