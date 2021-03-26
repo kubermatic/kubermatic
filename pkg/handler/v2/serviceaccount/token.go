@@ -24,6 +24,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -130,6 +131,78 @@ func ListTokenEndpoint(serviceAccountProvider provider.ServiceAccountProvider, p
 	}
 }
 
+// UpdateTokenEndpoint updates and regenerates the token for the given service account
+func UpdateTokenEndpoint(serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(updateTokenReq)
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		secret, err := updateEndpoint(ctx, serviceAccountProvider, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, userInfoGetter, tokenGenerator, req.ServiceAccountID, req.TokenID, req.Body.Name, true)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		externalToken, err := convertInternalTokenToPrivateExternal(secret, tokenAuthenticator)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		return externalToken, nil
+	}
+}
+
+func updateEndpoint(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, userInfoGetter provider.UserInfoGetter, tokenGenerator serviceaccount.TokenGenerator, saID, tokenID, newName string, regenerateToken bool) (*v1.Secret, error) {
+
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, err
+	}
+
+	sa, err := serviceAccountProvider.GetMainServiceAccount(userInfo, saID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	existingSecret, err := serviceAccountTokenProvider.Get(userInfo, tokenID)
+	if err != nil {
+		return nil, err
+	}
+	existingName, ok := existingSecret.Labels["name"]
+	if !ok {
+		return nil, fmt.Errorf("can not find token name in secret %s", existingSecret.Name)
+	}
+
+	if newName == existingName && !regenerateToken {
+		return existingSecret, nil
+	}
+
+	if newName != existingName {
+		// check if token name is already reserved for service account
+		existingTokenList, err := listSAToken(privilegedServiceAccountTokenProvider, sa, "", newName)
+		if err != nil {
+			return nil, err
+		}
+		if len(existingTokenList) > 0 {
+			return nil, errors.NewAlreadyExists("token", newName)
+		}
+		existingSecret.Labels["name"] = newName
+	}
+
+	if regenerateToken {
+		token, err := tokenGenerator.Generate(serviceaccount.Claims(sa.Spec.Email, "", existingSecret.Name))
+		if err != nil {
+			return nil, fmt.Errorf("can not generate token data")
+		}
+
+		existingSecret.Data["token"] = []byte(token)
+	}
+
+	return serviceAccountTokenProvider.Update(userInfo, existingSecret)
+}
+
 func listSAToken(privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, sa *kubermaticapiv1.User, tokenID, tokenName string) ([]*v1.Secret, error) {
 	options := &provider.ServiceAccountTokenListOptions{}
 	options.TokenID = tokenID
@@ -143,6 +216,39 @@ func listSAToken(privilegedServiceAccountTokenProvider provider.PrivilegedServic
 func createSAToken(privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, sa *kubermaticapiv1.User, tokenName, tokenID, tokenData string) (*v1.Secret, error) {
 
 	return privilegedServiceAccountTokenProvider.CreateUnsecured(sa, "", tokenName, tokenID, tokenData)
+}
+
+// updateTokenReq defines HTTP request for updateMainServiceAccountToken
+// swagger:parameters updateMainServiceAccountToken
+type updateTokenReq struct {
+	commonTokenReq
+	tokenIDReq
+	// in: body
+	Body apiv1.PublicServiceAccountToken
+}
+
+// tokenIDReq represents a request that contains the token ID in the path
+type tokenIDReq struct {
+	// in: path
+	TokenID string `json:"token_id"`
+}
+
+// Validate validates updateTokenReq request
+func (r updateTokenReq) Validate() error {
+	if err := r.commonTokenReq.Validate(); err != nil {
+		return err
+	}
+	if len(r.TokenID) == 0 {
+		return fmt.Errorf("token ID cannot be empty")
+	}
+	if len(r.Body.Name) == 0 {
+		return fmt.Errorf("new name can not be empty")
+	}
+	if r.TokenID != r.Body.ID {
+		return fmt.Errorf("token ID mismatch, you requested to update token = %s but body contains token = %s", r.TokenID, r.Body.ID)
+	}
+
+	return nil
 }
 
 // addTokenReq defines HTTP request for addTokenToMainServiceAccount
@@ -207,6 +313,43 @@ func DecodeTokenReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.ServiceAccountID = saIDReq.ServiceAccountID
+
+	return req, nil
+}
+
+// DecodeUpdateTokenReq  decodes an HTTP request into updateTokenReq
+func DecodeUpdateTokenReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req updateTokenReq
+
+	rawReq, err := DecodeTokenReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	tokenReq := rawReq.(commonTokenReq)
+	req.ServiceAccountID = tokenReq.ServiceAccountID
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	tokenID, err := decodeTokenIDReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.TokenID = tokenID.TokenID
+
+	return req, nil
+}
+
+func decodeTokenIDReq(c context.Context, r *http.Request) (tokenIDReq, error) {
+	var req tokenIDReq
+
+	tokenID, ok := mux.Vars(r)["token_id"]
+	if !ok {
+		return req, fmt.Errorf("'token_id' parameter is required")
+	}
+	req.TokenID = tokenID
 
 	return req, nil
 }
