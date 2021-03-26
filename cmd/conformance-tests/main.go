@@ -106,6 +106,7 @@ type Opts struct {
 	kubermaticAuthenticator      runtime.ClientAuthInfoWriter
 	scenarioOptions              string
 	pushgatewayEndpoint          string
+	containerLogsDirectory       string
 
 	secrets secrets
 }
@@ -220,6 +221,7 @@ func main() {
 	flag.StringVar(&opts.dexHelmValuesFile, "dex-helm-values-file", "", "Helm values.yaml of the OAuth (Dex) chart to read and configure a matching client for. Only needed if -create-oidc-token is enabled.")
 	flag.StringVar(&opts.scenarioOptions, "scenario-options", "", "Additional options to be passed to scenarios, e.g. to configure specific features to be tested.")
 	flag.StringVar(&opts.pushgatewayEndpoint, "pushgateway-endpoint", "", "host:port of a Prometheus Pushgateway to send runtime metrics to")
+	flag.StringVar(&opts.containerLogsDirectory, "container-logs-directory", "", "directory where logfiles for all usercluster controlplane containers should be put")
 
 	// cloud provider credentials
 	flag.StringVar(&opts.secrets.AWS.AccessKeyID, "aws-access-key-id", "", "AWS: AccessKeyID")
@@ -274,6 +276,12 @@ func main() {
 
 	if len(opts.distributions) == 0 {
 		log.Fatal("No distribution to use in tests remained after evaluating -distributions and -exclude-distributions")
+	}
+
+	if len(opts.containerLogsDirectory) != 0 {
+		if err := os.MkdirAll(opts.containerLogsDirectory, 0755); err != nil {
+			log.Fatalw("Failed to ensure container logs directory", zap.Error(err))
+		}
 	}
 
 	osNames := []string{}

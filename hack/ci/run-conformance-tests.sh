@@ -73,6 +73,9 @@ elif [[ $provider == "alibaba" ]]; then
     -alibaba-secret-access-key=${ALIBABA_E2E_TESTS_SECRET}"
 fi
 
+containerLogs="$ARTIFACTS/containerlogs/"
+mkdir -p "$containerLogs"
+
 timeout -s 9 90m ./_build/conformance-tests $EXTRA_ARGS \
   -name-prefix=prow-e2e \
   -kubeconfig=$KUBECONFIG \
@@ -90,6 +93,5 @@ timeout -s 9 90m ./_build/conformance-tests $EXTRA_ARGS \
   -dex-helm-values-file="$KUBERMATIC_DEX_VALUES_FILE" \
   -only-test-creation=${ONLY_TEST_CREATION:-false} \
   -enable-psp=${KUBERMATIC_PSP_ENABLED:-false} \
-  -print-ginkgo-logs=true \
-  -print-container-logs=true \
+  -container-logs-directory="$containerLogs" \
   -pushgateway-endpoint="pushgateway.monitoring.svc.cluster.local.:9091"
