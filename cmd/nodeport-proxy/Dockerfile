@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:latest
+FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
 ADD ./_build/lb-updater /
