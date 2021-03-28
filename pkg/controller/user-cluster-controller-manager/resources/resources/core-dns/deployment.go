@@ -118,11 +118,10 @@ func PodDisruptionBudgetCreator() reconciling.NamedPodDisruptionBudgetCreatorGet
 }
 
 func getContainers(clusterVersion *semver.Version) []corev1.Container {
-	coreDNSVersion := dns.GetCoreDNSVersion(clusterVersion)
 	return []corev1.Container{
 		{
 			Name:            resources.CoreDNSDeploymentName,
-			Image:           fmt.Sprintf("%s/coredns/coredns:%s", resources.RegistryDocker, coreDNSVersion),
+			Image:           fmt.Sprintf("%s/%s", resources.RegistryK8SGCR, dns.GetCoreDNSImage(clusterVersion)),
 			ImagePullPolicy: corev1.PullIfNotPresent,
 
 			Args: []string{"-conf", "/etc/coredns/Corefile"},

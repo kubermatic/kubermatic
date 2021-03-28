@@ -47,26 +47,22 @@ var (
 	}
 )
 
-const DefaultCoreDNSVesion = "1.6.5"
-
 // source: https://github.com/kubernetes/kubernetes/blob/vX.YY.0/cmd/kubeadm/app/constants/constants.go
-// CoreDNSVersion constant
-var kubernetesTocorednsVersionsMapping = map[string]string{
-	"1.21": "1.8.0",
-	"1.20": "1.7.0",
-	"1.19": "1.7.0",
-	"1.18": "1.6.7",
-	"1.17": "1.6.5",
-}
-
-func GetCoreDNSVersion(kubernetesVersion *semver.Version) string {
-	majorMinorClusterVersion := fmt.Sprintf("%d.%d", kubernetesVersion.Major(), kubernetesVersion.Minor())
-	coreDNSVersion, found := kubernetesTocorednsVersionsMapping[majorMinorClusterVersion]
-	if !found {
-		coreDNSVersion = DefaultCoreDNSVesion
+func GetCoreDNSImage(kubernetesVersion *semver.Version) string {
+	switch fmt.Sprintf("%d.%d", kubernetesVersion.Major(), kubernetesVersion.Minor()) {
+	case "1.17":
+		return "coredns:1.6.5"
+	case "1.18":
+		return "coredns/coredns:v1.6.7"
+	case "1.19":
+		return "coredns/coredns:v1.7.0"
+	case "1.20":
+		return "coredns/coredns:v1.7.0"
+	case "1.21":
+		return "coredns/coredns:v1.8.0"
+	default:
+		return "coredns:1.6.5"
 	}
-
-	return coreDNSVersion
 }
 
 // ServiceCreator returns the function to reconcile the DNS service
@@ -99,9 +95,6 @@ type deploymentCreatorData interface {
 func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.DNSResolverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			kubernetesVersion := data.Cluster().Spec.Version.Version
-			coreDNSVersion := GetCoreDNSVersion(kubernetesVersion)
-
 			dep.Name = resources.DNSResolverDeploymentName
 			dep.Labels = resources.BaseAppLabels(resources.DNSResolverDeploymentName, nil)
 			dep.Spec.Replicas = resources.Int32(2)
@@ -136,7 +129,7 @@ func DeploymentCreator(data deploymentCreatorData) reconciling.NamedDeploymentCr
 				*openvpnSidecar,
 				{
 					Name:  resources.DNSResolverDeploymentName,
-					Image: data.ImageRegistry(resources.RegistryK8SGCR) + "/coredns:" + coreDNSVersion,
+					Image: data.ImageRegistry(resources.RegistryK8SGCR) + "/" + GetCoreDNSImage(data.Cluster().Spec.Version.Version),
 					Args:  []string{"-conf", "/etc/coredns/Corefile"},
 					VolumeMounts: []corev1.VolumeMount{
 						{
