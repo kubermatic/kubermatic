@@ -445,6 +445,10 @@ spec:
           to: 1.20.*
         - from: 1.20.*
           to: 1.20.*
+        - from: 1.20.*
+          to: 1.21.*
+        - from: 1.21.*
+          to: 1.21.*
       # Versions lists the available versions.
       versions:
         - 1.17.9
@@ -461,6 +465,7 @@ spec:
         - 1.19.3
         - 1.19.8
         - 1.20.2
+        - 1.21.0-rc.0
   # VerticalPodAutoscaler configures the Kubernetes VPA integration.
   verticalPodAutoscaler:
     admissionController:
