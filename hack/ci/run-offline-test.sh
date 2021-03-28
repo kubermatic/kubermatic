@@ -124,9 +124,7 @@ function finish {
 }
 trap finish EXIT
 
-# Start docker
-docker ps &> /dev/null || start-docker.sh
-
+start_docker_daemon
 retry 5 docker login -u ${QUAY_IO_USERNAME} -p ${QUAY_IO_PASSWORD} quay.io
 
 echodate "Building and pushing Docker images"

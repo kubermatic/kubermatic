@@ -35,8 +35,9 @@ fi
 
 apt install time -y
 
+start_docker_daemon
+
 echodate "Logging into Quay"
-docker ps > /dev/null 2>&1 || start-docker.sh
 retry 5 docker login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
 echodate "Successfully logged into Quay"
 

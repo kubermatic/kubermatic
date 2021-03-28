@@ -26,36 +26,6 @@ export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
 
 start_docker_daemon
 
-# Prevent mtu-related timeouts
-echodate "Setting iptables rule to clamp mss to path mtu"
-iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
-
-# Make debugging a bit better
-echodate "Configuring bash"
-cat << EOF >> ~/.bashrc
-# Gets set to the CI clusters kubeconfig from a preset
-unset KUBECONFIG
-
-cn() {
-  kubectl config set-context --current --namespace=\$1
-}
-
-kubeconfig() {
-  TMP_KUBECONFIG=\$(mktemp);
-  kubectl get secret admin-kubeconfig -o go-template='{{ index .data "kubeconfig" }}' | base64 -d > \$TMP_KUBECONFIG;
-  export KUBECONFIG=\$TMP_KUBECONFIG;
-  cn kube-system
-}
-
-# this alias makes it so that watch can be used with other aliases, like "watch k get pods"
-alias watch='watch '
-alias k=kubectl
-alias ll='ls -lh --file-type --group-directories-first'
-alias lll='ls -lahF --group-directories-first'
-source <(k completion bash )
-source <(k completion bash | sed s/kubectl/k/g)
-EOF
-
 # Load kind image
 echodate "Loading kindest image"
 docker load --input /kindest.tar
@@ -67,8 +37,8 @@ echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
 
 beforeKindCreate=$(nowms)
-export KIND_NODE_VERSION=v1.18.2
-kind create cluster --name "$KIND_CLUSTER_NAME" --image=kindest/node:$KIND_NODE_VERSION
+# KIND_NODE_VERSION is defined by the kind Docker image
+kind create cluster --name "$KIND_CLUSTER_NAME" --image "kindest/node:$KIND_NODE_VERSION"
 pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$KIND_NODE_VERSION\""
 
 if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
