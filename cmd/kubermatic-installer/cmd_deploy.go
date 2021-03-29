@@ -201,7 +201,10 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			return fmt.Errorf("failed to get config: %v", err)
 		}
 
-		mgr, err := manager.New(ctrlConfig, manager.Options{})
+		mgr, err := manager.New(ctrlConfig, manager.Options{
+			MetricsBindAddress:     "0",
+			HealthProbeBindAddress: "0",
+		})
 		if err != nil {
 			return fmt.Errorf("failed to construct mgr: %v", err)
 		}
