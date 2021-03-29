@@ -173,7 +173,7 @@ func (r *projectReconciler) ensureOrganization(ctx context.Context, log *zap.Sug
 			// revert org creation, if deletion failed, we can't do much about it
 			// if we failed at this moment and the project would be renamed quickly, that organization will be orphaned and we will never remove it.
 			if status, err := r.grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
-				log.Errorf("unable to delete organization: %w (status: %s, message: %s)",
+				log.Debugf("unable to delete organization: %w (status: %s, message: %s)",
 					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 			}
 			return err
@@ -195,7 +195,7 @@ func (r *projectReconciler) ensureOrganization(ctx context.Context, log *zap.Sug
 		if err := r.setAnnotation(ctx, project, annotationKey, strconv.FormatUint(uint64(org.ID), 10)); err != nil {
 			// revert org creation, if deletion failed, we can't do much about it
 			if status, err := r.grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
-				log.Errorf("unable to delete organization: %w (status: %s, message: %s)",
+				log.Debugf("unable to delete organization: %w (status: %s, message: %s)",
 					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 			}
 			return err
