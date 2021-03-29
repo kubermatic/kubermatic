@@ -17,13 +17,13 @@ limitations under the License.
 package promtail
 
 import (
+	"k8c.io/kubermatic/v2/pkg/resources"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
-	"k8c.io/kubermatic/v2/pkg/resources"
 )
 
 func ResourcesOnDeletion() []ctrlruntimeclient.Object {
