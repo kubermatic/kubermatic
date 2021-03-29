@@ -65,6 +65,10 @@ func TestGetDefaultGlobalSettings(t *testing.T) {
 					MaxRAM:    0,
 					EnableGPU: false,
 				},
+				OPAOptions: kubermaticv1.OPAOptions{
+					Enabled:  false,
+					Enforced: false,
+				},
 			},
 		},
 	}

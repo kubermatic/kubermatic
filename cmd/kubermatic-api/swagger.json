@@ -17362,6 +17362,18 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
+    "OPAOptions": {
+      "type": "object",
+      "properties": {
+        "Enabled": {
+          "type": "boolean"
+        },
+        "Enforced": {
+          "type": "boolean"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "ObjectMeta": {
       "description": "ObjectMeta defines the set of fields that objects returned from the API have",
       "type": "object",
@@ -18732,6 +18744,9 @@
         },
         "machineDeploymentVMResourceQuota": {
           "$ref": "#/definitions/MachineDeploymentVMResourceQuota"
+        },
+        "opaOptions": {
+          "$ref": "#/definitions/OPAOptions"
         },
         "restrictProjectCreation": {
           "type": "boolean",

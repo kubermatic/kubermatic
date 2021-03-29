@@ -99,6 +99,10 @@ func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.Kubermat
 				MaxRAM:    128,
 				EnableGPU: false,
 			},
+			OPAOptions: kubermaticv1.OPAOptions{
+				Enabled:  false,
+				Enforced: false,
+			},
 		},
 	}
 	if err := s.runtimeClient.Create(context.Background(), defaultSettings); err != nil {
