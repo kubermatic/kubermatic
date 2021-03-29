@@ -158,6 +158,14 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		}
 	}
 
+	if !r.userClusterMLA.Logging {
+		if err := r.ensurePromtailIsRemoved(ctx); err != nil {
+			return err
+		}
+		if err := r.ensureMLAIsRemoved(ctx); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -713,4 +721,22 @@ func (r *reconciler) getGatekeeperHealth(ctx context.Context) (
 			fmt.Errorf("failed to get dep health %q: %v", resources.GatekeeperAuditDeploymentName, err)
 	}
 	return ctlrHealth, auditHealth, nil
+}
+
+func (r *reconciler) ensurePromtailIsRemoved(ctx context.Context) error {
+	for _, resource := range promtail.ResourcesOnDeletion() {
+		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure promtail is removed/not present: %v", err)
+		}
+	}
+	return nil
+}
+
+func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
+	for _, resource := range mla.ResourcesOnDeletion() {
+		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
+			return fmt.Errorf("failed to ensure promtail is removed/not present: %v", err)
+		}
+	}
+	return nil
 }
