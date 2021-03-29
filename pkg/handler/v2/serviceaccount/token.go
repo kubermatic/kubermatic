@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"unicode/utf8"
 
@@ -154,6 +155,37 @@ func UpdateTokenEndpoint(serviceAccountProvider provider.ServiceAccountProvider,
 	}
 }
 
+// PatchTokenEndpoint patches the token name
+func PatchTokenEndpoint(serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, tokenAuthenticator serviceaccount.TokenAuthenticator, tokenGenerator serviceaccount.TokenGenerator, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchTokenReq)
+		err := req.Validate()
+		if err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		tokenReq := &apiv1.PublicServiceAccountToken{}
+		if err := json.Unmarshal(req.Body, tokenReq); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		if len(tokenReq.Name) == 0 {
+			return nil, errors.NewBadRequest("new name can not be empty")
+		}
+
+		secret, err := updateEndpoint(ctx, serviceAccountProvider, serviceAccountTokenProvider, privilegedServiceAccountTokenProvider, userInfoGetter, tokenGenerator, req.ServiceAccountID, req.TokenID, tokenReq.Name, false)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		externalToken, err := convertInternalTokenToPublicExternal(secret, tokenAuthenticator)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, err.Error())
+		}
+
+		return externalToken, nil
+	}
+}
+
 func updateEndpoint(ctx context.Context, serviceAccountProvider provider.ServiceAccountProvider, serviceAccountTokenProvider provider.ServiceAccountTokenProvider, privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, userInfoGetter provider.UserInfoGetter, tokenGenerator serviceaccount.TokenGenerator, saID, tokenID, newName string, regenerateToken bool) (*v1.Secret, error) {
 
 	userInfo, err := userInfoGetter(ctx, "")
@@ -216,6 +248,15 @@ func listSAToken(privilegedServiceAccountTokenProvider provider.PrivilegedServic
 func createSAToken(privilegedServiceAccountTokenProvider provider.PrivilegedServiceAccountTokenProvider, sa *kubermaticapiv1.User, tokenName, tokenID, tokenData string) (*v1.Secret, error) {
 
 	return privilegedServiceAccountTokenProvider.CreateUnsecured(sa, "", tokenName, tokenID, tokenData)
+}
+
+// patchTokenReq defines HTTP request for patchMainServiceAccountToken
+// swagger:parameters patchMainServiceAccountToken
+type patchTokenReq struct {
+	commonTokenReq
+	tokenIDReq
+	// in: body
+	Body []byte
 }
 
 // updateTokenReq defines HTTP request for updateMainServiceAccountToken
@@ -284,6 +325,47 @@ func (r commonTokenReq) Validate() error {
 	}
 
 	return nil
+}
+
+// Validate validates patchTokenReq request
+func (r patchTokenReq) Validate() error {
+	if err := r.commonTokenReq.Validate(); err != nil {
+		return err
+	}
+	if len(r.TokenID) == 0 {
+		return fmt.Errorf("token ID cannot be empty")
+	}
+	if len(r.Body) == 0 {
+		return fmt.Errorf("body can not be empty")
+	}
+
+	return nil
+}
+
+// DecodePatchTokenReq  decodes an HTTP request into patchTokenReq
+func DecodePatchTokenReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchTokenReq
+
+	rawReq, err := DecodeTokenReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	tokenReq := rawReq.(commonTokenReq)
+	req.ServiceAccountID = tokenReq.ServiceAccountID
+
+	req.Body, err = ioutil.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	tokenID, err := decodeTokenIDReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.TokenID = tokenID.TokenID
+
+	return req, nil
 }
 
 // DecodeAddReq  decodes an HTTP request into addReq
