@@ -56,13 +56,9 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			dep.Labels = resources.BaseAppLabels(resources.CoreDNSDeploymentName, nil)
 
 			dep.Spec.Replicas = resources.Int32(2)
-			// The Selector is immutable, so we don't change it if it's set. This happens in upgrade cases
-			// where coredns is switched from a manifest based addon to a user-cluster-controller-manager resource
-			if dep.Spec.Selector == nil {
-				dep.Spec.Selector = &metav1.LabelSelector{
-					MatchLabels: resources.BaseAppLabels(resources.CoreDNSDeploymentName,
-						map[string]string{"app.kubernetes.io/name": "kube-dns"}),
-				}
+			dep.Spec.Selector = &metav1.LabelSelector{
+				MatchLabels: resources.BaseAppLabels(resources.CoreDNSDeploymentName,
+					map[string]string{"app.kubernetes.io/name": "kube-dns"}),
 			}
 
 			iptr := intstr.FromInt(1)

@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/machinecontroller"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -253,8 +254,19 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, addo
 	}
 
 	if addon.DeletionTimestamp != nil {
-		if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
-			return nil, fmt.Errorf("failed to delete manifests from cluster: %v", err)
+		// CoreDNS has a special upgrade case: CoreDNS was moved into a resource instead of a manifest addon. When KKP is upgraded
+		// from 2.14.x to 2.15.x, the CoreDNS manifest is actually removed from the KKP container, so it's resources are not cleaned up by r.cleanupManfests().
+		// When the resources are applied later in the user-cluster-controller, it fails because the old manifest deployment
+		// still exists and it's has immutable fields that can't be updated.
+		if addon.Name == "dns" {
+			// We only need to remove the deployment, the other resources are mutable and will be updated gracefully buy the user-cluster-controller
+			if err := r.removeCoreDNSManifestDeployment(ctx, cluster); err != nil {
+				return nil, fmt.Errorf("failed to remove deprecated CoreDNS resources from cluster: %v", err)
+			}
+		} else {
+			if err := r.cleanupManifests(ctx, log, addon, cluster); err != nil {
+				return nil, fmt.Errorf("failed to delete manifests from cluster: %v", err)
+			}
 		}
 		if err := r.removeCleanupFinalizer(ctx, log, addon); err != nil {
 			return nil, fmt.Errorf("failed to ensure that the cleanup finalizer got removed from the addon: %v", err)
@@ -631,4 +643,27 @@ func addonResourcesCreated(addon *kubermaticv1.Addon) bool {
 
 func hasEnsureResourcesLabel(addon *kubermaticv1.Addon) bool {
 	return addon.Labels[addonEnsureLabelKey] == "true"
+}
+
+// removeCoreDNSManifestResources will delete the CoreDNS Deployment from KKP 2.14.x deprecated addon manifest.
+func (r *Reconciler) removeCoreDNSManifestDeployment(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	userClusterClient, err := r.KubeconfigProvider.GetClient(cluster)
+	if err != nil {
+		return fmt.Errorf("failed to get client for usercluster: %v", err)
+	}
+
+	deploy := &appsv1.Deployment{}
+	if err := userClusterClient.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: "coredns"}, deploy); err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to get CoreDNS deployment from user cluster: %v", err)
+	}
+	if err := userClusterClient.Delete(ctx, deploy); err != nil {
+		if kerrors.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("failed to delete CoreDNS deployment from user cluster: %v", err)
+	}
+	return nil
 }
