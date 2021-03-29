@@ -735,7 +735,7 @@ func (r *reconciler) ensurePromtailIsRemoved(ctx context.Context) error {
 func (r *reconciler) ensureMLAIsRemoved(ctx context.Context) error {
 	for _, resource := range mla.ResourcesOnDeletion() {
 		if err := r.Client.Delete(ctx, resource); err != nil && !errors.IsNotFound(err) {
-			return fmt.Errorf("failed to ensure promtail is removed/not present: %v", err)
+			return fmt.Errorf("failed to ensure mla is removed/not present: %v", err)
 		}
 	}
 	return nil
