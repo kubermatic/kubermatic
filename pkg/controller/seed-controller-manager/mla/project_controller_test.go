@@ -267,11 +267,11 @@ func TestProjectReconcile(t *testing.T) {
 						decoder := json.NewDecoder(r.Body)
 						reqMap := map[string]interface{}{}
 						if err := decoder.Decode(&reqMap); err != nil {
-							t.Fatalf("unmarshal request failed: %v", err)
+							t.Fatalf("%s: unmarshal request failed: %v", tcRequest.name, err)
 						}
 						tcMap := map[string]interface{}{}
 						if err := json.Unmarshal([]byte(tcRequest.body), &tcMap); err != nil {
-							t.Fatalf("unmarshal expected map failed: %v", err)
+							t.Fatalf("%s: unmarshal expected map failed: %v", tcRequest.name, err)
 						}
 						assert.Equal(t, reqMap, tcMap)
 					}
