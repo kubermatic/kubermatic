@@ -29,6 +29,8 @@ type ClientService interface {
 
 	AddTokenToServiceAccount(params *AddTokenToServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenToServiceAccountCreated, error)
 
+	DeleteMainServiceAccountToken(params *DeleteMainServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMainServiceAccountTokenOK, error)
+
 	DeleteServiceAccountToken(params *DeleteServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteServiceAccountTokenOK, error)
 
 	ListMainServiceAccountTokens(params *ListMainServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListMainServiceAccountTokensOK, error)
@@ -111,6 +113,40 @@ func (a *Client) AddTokenToServiceAccount(params *AddTokenToServiceAccountParams
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*AddTokenToServiceAccountDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteMainServiceAccountToken Deletes the token
+*/
+func (a *Client) DeleteMainServiceAccountToken(params *DeleteMainServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMainServiceAccountTokenOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteMainServiceAccountTokenParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteMainServiceAccountToken",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/serviceaccounts/{serviceaccount_id}/tokens/{token_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteMainServiceAccountTokenReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteMainServiceAccountTokenOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteMainServiceAccountTokenDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

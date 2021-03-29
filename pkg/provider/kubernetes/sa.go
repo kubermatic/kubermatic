@@ -367,6 +367,12 @@ func IsProjectServiceAccount(email string) bool {
 	return hasProjectSAPrefix(email)
 }
 
+// IsServiceAccount determines whether the given email address
+// belongs to a project service account or main service account
+func IsServiceAccount(email string) bool {
+	return hasProjectSAPrefix(email) || hasMainSAPrefix(email)
+}
+
 // removeProjectSAPrefix removes "serviceaccount-" from a SA's ID,
 // for example given "serviceaccount-7d4b5695vb" it returns "7d4b5695vb"
 func removeProjectSAPrefix(id string) string {
