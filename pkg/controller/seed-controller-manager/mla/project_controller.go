@@ -41,7 +41,7 @@ import (
 )
 
 const (
-	grafanaOrgAnnotationKey = "mla.k8s.io/organization"
+	grafanaOrgAnnotationKey = "mla.k8c.io/organization"
 )
 
 // projectReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
@@ -170,7 +170,7 @@ func (r *projectReconciler) ensureOrganization(ctx context.Context, log *zap.Sug
 			return fmt.Errorf("unable to create grafana org: %w", err)
 		}
 		if err := r.setAnnotation(ctx, project, annotationKey, strconv.FormatUint(uint64(org.ID), 10)); err != nil {
-			// revert org creation, if deletion failed, we can do much about it
+			// revert org creation, if deletion failed, we can't do much about it
 			if status, err := r.grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
 				log.Errorf("unable to delete organization: %w (status: %s, message: %s)",
 					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
@@ -192,7 +192,7 @@ func (r *projectReconciler) ensureOrganization(ctx context.Context, log *zap.Sug
 			return fmt.Errorf("unable to create grafana org: %w", err)
 		}
 		if err := r.setAnnotation(ctx, project, annotationKey, strconv.FormatUint(uint64(org.ID), 10)); err != nil {
-			// revert org creation, if deletion failed, we can do much about it
+			// revert org creation, if deletion failed, we can't do much about it
 			if status, err := r.grafanaClient.DeleteOrg(ctx, org.ID); err != nil {
 				log.Errorf("unable to delete organization: %w (status: %s, message: %s)",
 					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
