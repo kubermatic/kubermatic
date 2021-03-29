@@ -24,7 +24,7 @@ containerize ./hack/update-cert-manager-crds.sh
 cd charts/cert-manager/
 
 version=$(yq r values.yaml certManager.controller.image.tag)
-source=https://github.com/jetstack/cert-manager/releases/download/$version/cert-manager-legacy.crds.yaml
+source=https://github.com/jetstack/cert-manager/releases/download/$version/cert-manager.crds.yaml
 
 # do not use "crds/" or else Helm will try to install the
 # CRDs and then never ever touch them again

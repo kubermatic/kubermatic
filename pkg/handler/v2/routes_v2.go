@@ -481,6 +481,12 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPost).
 		Path("/serviceaccounts/{serviceaccount_id}/tokens").
 		Handler(r.addTokenToMainServiceAccount())
+	mux.Methods(http.MethodGet).
+		Path("/serviceaccounts/{serviceaccount_id}/tokens").
+		Handler(r.listMainServiceAccountTokens())
+	mux.Methods(http.MethodPut).
+		Path("/serviceaccounts/{serviceaccount_id}/tokens/{token_id}").
+		Handler(r.updateMainServiceAccountToken())
 
 }
 
@@ -3248,6 +3254,57 @@ func (r Routing) addTokenToMainServiceAccount() http.Handler {
 		)(serviceaccount.CreateTokenEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodeAddTokenReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/serviceaccounts/{serviceaccount_id}/tokens tokens listMainServiceAccountTokens
+//
+//     List tokens for the given main service account
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []PublicServiceAccountToken
+//       401: empty
+//       403: empty
+func (r Routing) listMainServiceAccountTokens() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(serviceaccount.ListTokenEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.userInfoGetter)),
+		serviceaccount.DecodeTokenReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v2/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens updateMainServiceAccountToken
+//
+//     Updates and regenerates the token
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ServiceAccountToken
+//       401: empty
+//       403: empty
+func (r Routing) updateMainServiceAccountToken() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(serviceaccount.UpdateTokenEndpoint(r.serviceAccountProvider, r.serviceAccountTokenProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
+		serviceaccount.DecodeUpdateTokenReq,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

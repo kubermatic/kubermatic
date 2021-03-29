@@ -17,11 +17,7 @@ limitations under the License.
 package gatekeeper
 
 import (
-	"crypto/x509"
-	"fmt"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
@@ -31,7 +27,7 @@ import (
 )
 
 // ValidatingWebhookConfigurationCreator returns the ValidatingwebhookConfiguration for gatekeeper
-func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace string, timeout int) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
+func ValidatingWebhookConfigurationCreator(timeout int) reconciling.NamedValidatingWebhookConfigurationCreatorGetter {
 	return func() (string, reconciling.ValidatingWebhookConfigurationCreator) {
 		return resources.GatekeeperValidatingWebhookConfigurationName, func(validatingWebhookConfigurationWebhookConfiguration *admissionregistrationv1.ValidatingWebhookConfiguration) (*admissionregistrationv1.ValidatingWebhookConfiguration, error) {
 			failurePolicyIgnore := admissionregistrationv1.Ignore
@@ -40,6 +36,11 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 			allScopes := admissionregistrationv1.AllScopes
 
 			validatingWebhookConfigurationWebhookConfiguration.Labels = map[string]string{"gatekeeper.sh/system": "yes"}
+			// Get cabundle if set
+			var caBundle []byte
+			if len(validatingWebhookConfigurationWebhookConfiguration.Webhooks) > 0 {
+				caBundle = validatingWebhookConfigurationWebhookConfiguration.Webhooks[0].ClientConfig.CABundle
+			}
 			validatingWebhookConfigurationWebhookConfiguration.Webhooks = []admissionregistrationv1.ValidatingWebhook{
 				{
 					Name:                    "validation.gatekeeper.sh",
@@ -62,9 +63,13 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 					},
 					ObjectSelector: &metav1.LabelSelector{},
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
-						URL: pointer.StringPtr(fmt.Sprintf(
-							"https://%s.%s.svc.cluster.local/v1/admit", resources.GatekeeperWebhookServiceName, namespace)),
-						CABundle: triple.EncodeCertPEM(caCert),
+						CABundle: caBundle,
+						Service: &admissionregistrationv1.ServiceReference{
+							Name:      resources.GatekeeperWebhookServiceName,
+							Namespace: resources.GatekeeperNamespace,
+							Path:      pointer.StringPtr("/v1/admit"),
+							Port:      pointer.Int32Ptr(443),
+						},
 					},
 					Rules: []admissionregistrationv1.RuleWithOperations{
 						{
@@ -102,9 +107,13 @@ func ValidatingWebhookConfigurationCreator(caCert *x509.Certificate, namespace s
 					},
 					ObjectSelector: &metav1.LabelSelector{},
 					ClientConfig: admissionregistrationv1.WebhookClientConfig{
-						URL: pointer.StringPtr(fmt.Sprintf(
-							"https://%s.%s.svc.cluster.local/v1/admitlabel", resources.GatekeeperWebhookServiceName, namespace)),
-						CABundle: triple.EncodeCertPEM(caCert),
+						CABundle: caBundle,
+						Service: &admissionregistrationv1.ServiceReference{
+							Name:      resources.GatekeeperWebhookServiceName,
+							Namespace: resources.GatekeeperNamespace,
+							Path:      pointer.StringPtr("/v1/admitlabel"),
+							Port:      pointer.Int32Ptr(443),
+						},
 					},
 					Rules: []admissionregistrationv1.RuleWithOperations{
 						{

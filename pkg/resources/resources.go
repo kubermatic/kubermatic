@@ -372,6 +372,10 @@ const (
 	GatekeeperConfigCRDName = "configs.config.gatekeeper.sh"
 	// GatekeeperConstraintTemplateCRDName defines the CRD name for gatekeeper constraint template objects
 	GatekeeperConstraintTemplateCRDName = "constrainttemplates.templates.gatekeeper.sh"
+	// GatekeeperConstraintPodStatusCRDName defines the CRD name for gatekeeper ConstraintPodStatus objects
+	GatekeeperConstraintPodStatusCRDName = "constraintpodstatuses.status.gatekeeper.sh"
+	// GatekeeperConstraintTemplatePodStatusCRDName defines the CRD name for gatekeeper ConstraintTemplatePodStatus objects
+	GatekeeperConstraintTemplatePodStatusCRDName = "constrainttemplatepodstatuses.status.gatekeeper.sh"
 
 	// MachineControllerMutatingWebhookConfigurationName is the name of the machine-controllers mutating webhook
 	// configuration

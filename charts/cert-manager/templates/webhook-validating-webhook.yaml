@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: admissionregistration.k8s.io/v1beta1
+apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
   name: cert-manager-webhook
@@ -45,10 +45,11 @@ webhooks:
           - UPDATE
         resources:
           - "*/*"
+    admissionReviewVersions: ["v1", "v1beta1"]
     failurePolicy: Fail
     sideEffects: None
     clientConfig:
       service:
         name: cert-manager-webhook
         namespace: {{ .Release.Namespace | quote }}
-        path: /mutate
+        path: /validate

@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-kind: Secret
+apiVersion: cert-manager.io/v1
+kind: Certificate
 metadata:
-  name: s3-credentials
-  namespace: kube-system
-type: Opaque
-data:
-  ACCESS_KEY_ID: "{{ .Values.minio.credentials.accessKey | b64enc }}"
-  SECRET_ACCESS_KEY: "{{ .Values.minio.credentials.secretKey | b64enc }}"
+  name: test-cert
+spec:
+  dnsNames:
+    - test.example.com
+  issuerRef:
+    group: cert-manager.io
+    kind: ClusterIssuer
+    name: letsencrypt-prod
+  secretName: test-tls

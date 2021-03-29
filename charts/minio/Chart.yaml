@@ -14,7 +14,7 @@
 
 apiVersion: v1
 name: minio
-version: 1.0.20
+version: 1.0.21
 appVersion: RELEASE.2021-03-04T00-53-13Z
 description: minio
 keywords:

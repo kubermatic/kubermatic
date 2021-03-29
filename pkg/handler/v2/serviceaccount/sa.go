@@ -115,7 +115,7 @@ func UpdateEndpoint(serviceAccountProvider provider.ServiceAccountProvider, user
 
 		sa, err := serviceAccountProvider.GetMainServiceAccount(userInfo, req.ServiceAccountID, nil)
 		if err != nil {
-			return nil, err
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		// update the service account name
@@ -164,7 +164,7 @@ func DeleteEndpoint(serviceAccountProvider provider.ServiceAccountProvider, priv
 		// check if service account exist before deleting it
 		sa, err := serviceAccountProvider.GetMainServiceAccount(userInfo, req.ServiceAccountID, nil)
 		if err != nil {
-			return nil, err
+			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
 		if err := serviceAccountProvider.DeleteMainServiceAccount(userInfo, sa); err != nil {

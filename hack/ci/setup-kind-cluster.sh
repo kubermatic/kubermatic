@@ -67,45 +67,48 @@ echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
 
 beforeKindCreate=$(nowms)
-export KIND_NODE_VERSION=v1.18.2
+export KIND_NODE_VERSION=v1.20.2
 kind create cluster --name "$KIND_CLUSTER_NAME" --image=kindest/node:$KIND_NODE_VERSION
 pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$KIND_NODE_VERSION\""
 
-# Start cluster exposer, which will expose services from within kind as
-# a NodePort service on the host
-echodate "Starting cluster exposer"
+if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
+  # Start cluster exposer, which will expose services from within kind as
+  # a NodePort service on the host
+  echodate "Starting cluster exposer"
 
-CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./pkg/test/clusterexposer/cmd
-/tmp/clusterexposer \
-  --kubeconfig-inner "$KUBECONFIG" \
-  --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
-  --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
+  CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./pkg/test/clusterexposer/cmd
+  /tmp/clusterexposer \
+    --kubeconfig-inner "$KUBECONFIG" \
+    --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
+    --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
 
-function print_cluster_exposer_logs {
-  if [[ $? -ne 0 ]]; then
-    # Tolerate errors and just continue
-    set +e
-    echodate "Printing cluster exposer logs"
-    cat /var/log/clusterexposer.log
-    echodate "Done printing cluster exposer logs"
-    set -e
-  fi
-}
-appendTrap print_cluster_exposer_logs EXIT
+  function print_cluster_exposer_logs {
+    if [[ $? -ne 0 ]]; then
+      # Tolerate errors and just continue
+      set +e
+      echodate "Printing cluster exposer logs"
+      cat /var/log/clusterexposer.log
+      echodate "Done printing cluster exposer logs"
+      set -e
+    fi
+  }
+  appendTrap print_cluster_exposer_logs EXIT
 
-TEST_NAME="Wait for cluster exposer"
-echodate "Waiting for cluster exposer to be running"
+  TEST_NAME="Wait for cluster exposer"
+  echodate "Waiting for cluster exposer to be running"
 
-retry 5 curl -s --fail http://127.0.0.1:2047/metrics -o /dev/null
-echodate "Cluster exposer is running"
+  retry 5 curl -s --fail http://127.0.0.1:2047/metrics -o /dev/null
+  echodate "Cluster exposer is running"
 
-echodate "Setting up iptables rules for to make nodeports available"
-KIND_NETWORK_IF=$(ip -br addr | grep -- 'br-' | cut -d' ' -f1)
+  echodate "Setting up iptables rules for to make nodeports available"
+  KIND_NETWORK_IF=$(ip -br addr | grep -- 'br-' | cut -d' ' -f1)
 
-iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.18.0.2
-# By default all traffic gets dropped unless specified (tested with docker server 18.09.1)
-iptables -t filter -I DOCKER-USER -d 172.18.0.2/32 ! -i $KIND_NETWORK_IF -o $KIND_NETWORK_IF -p tcp -m multiport --dports=30000:33000 -j ACCEPT
-# Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
+  iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.18.0.2
+  # By default all traffic gets dropped unless specified (tested with docker server 18.09.1)
+  iptables -t filter -I DOCKER-USER -d 172.18.0.2/32 ! -i $KIND_NETWORK_IF -o $KIND_NETWORK_IF -p tcp -m multiport --dports=30000:33000 -j ACCEPT
+  # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
 
-echodate "Successfully set up iptables rules for nodeports"
+  echodate "Successfully set up iptables rules for nodeports"
+fi
+
 echodate "Kind cluster $KIND_CLUSTER_NAME using Kubernetes $KIND_NODE_VERSION is up and running."

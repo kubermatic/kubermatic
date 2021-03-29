@@ -232,22 +232,23 @@ func (p *ServiceAccountTokenProvider) ListUnsecured(options *provider.ServiceAcc
 				}
 			}
 		}
-		return filterByTokenName(resultList, options.TokenID), nil
+		return filterByTokenName(resultList, options.TokenName), nil
 	}
 
-	return filterByTokenName(allTokens, options.TokenID), nil
+	return filterByTokenName(allTokens, options.TokenName), nil
 }
 
-func filterByTokenName(allTokens []*v1.Secret, tokenID string) []*v1.Secret {
-	if tokenID != "" {
+func filterByTokenName(allTokens []*v1.Secret, tokenName string) []*v1.Secret {
+	if tokenName != "" {
 		for _, token := range allTokens {
 			name, ok := token.Labels["name"]
 			if ok {
-				if name == tokenID {
+				if name == tokenName {
 					return []*v1.Secret{token}
 				}
 			}
 		}
+		return make([]*v1.Secret, 0)
 	}
 	return allTokens
 }
