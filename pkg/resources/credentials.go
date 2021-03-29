@@ -281,21 +281,22 @@ func GetHetznerCredentials(data CredentialsData) (HetznerCredentials, error) {
 
 func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error) {
 	spec := data.Cluster().Spec.Cloud.Openstack
-	openstackCredentials := OpenstackCredentials{}
+	openstackCredentials := OpenstackCredentials{
+		ApplicationCredentialID:     spec.ApplicationCredentialID,
+		ApplicationCredentialSecret: spec.ApplicationCredentialSecret,
+	}
+
 	var err error
 
-	if spec.ApplicationCredentialID != "" {
-		openstackCredentials.ApplicationCredentialID = spec.ApplicationCredentialID
-	} else {
+	if openstackCredentials.ApplicationCredentialID == "" {
 		openstackCredentials.ApplicationCredentialID, _ = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackApplicationCredentialID)
 	}
-	if spec.ApplicationCredentialSecret != "" {
-		openstackCredentials.ApplicationCredentialSecret = spec.ApplicationCredentialSecret
-	} else {
+
+	if spec.ApplicationCredentialSecret == "" {
 		openstackCredentials.ApplicationCredentialSecret, _ = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackApplicationCredentialSecret)
 	}
 
-	if openstackCredentials.ApplicationCredentialID == "" || openstackCredentials.ApplicationCredentialSecret == "" {
+	if openstackCredentials.ApplicationCredentialID == "" && openstackCredentials.ApplicationCredentialSecret == "" {
 		if spec.Username != "" {
 			openstackCredentials.Username = spec.Username
 		} else if openstackCredentials.Username, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackUsername); err != nil {
