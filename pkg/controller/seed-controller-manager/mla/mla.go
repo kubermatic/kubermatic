@@ -21,13 +21,13 @@ import (
 	"fmt"
 	"strings"
 
-	grafanasdk "github.com/kubermatic/grafanasdk"
 	"go.uber.org/zap"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
 
+	grafanasdk "github.com/kubermatic/grafanasdk"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
@@ -58,7 +58,6 @@ func Add(
 			grafanaSecret, n)
 	}
 	secret := corev1.Secret{}
-	mgr.GetConfig()
 	client, err := ctrlruntimeclient.New(mgr.GetConfig(), ctrlruntimeclient.Options{})
 	if err != nil {
 		return err
