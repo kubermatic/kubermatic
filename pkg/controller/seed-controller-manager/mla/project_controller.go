@@ -25,7 +25,6 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -87,9 +86,7 @@ func newProjectReconciler(
 		return err
 	}
 
-	debugPredicate := predicate.ByLabel(kubermaticv1.WorkerNameLabelKey, workerName)
-
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}, debugPredicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Projects: %v", err)
 	}
 	return err
