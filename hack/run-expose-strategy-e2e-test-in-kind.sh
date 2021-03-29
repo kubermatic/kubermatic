@@ -46,9 +46,13 @@ TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.20.2}"
 USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.20.2}"
-REPOSUFFIX="${REPOSUFFIX:-""}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 HELM_BINARY="${HELM_BINARY:-helm}" # This works when helm 3 is in path
+
+REPOSUFFIX=""
+if [ "${KUBERMATIC_EDITION}" == "ee" ]; then
+  REPOSUFFIX="-${KUBERMATIC_EDITION}"
+fi
 
 type kind > /dev/null || fatal \
   "Kind is required to run this script, please refer to: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
@@ -99,7 +103,7 @@ kind export kubeconfig --name=${KIND_CLUSTER_NAME}
 time retry 5 kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time retry 5 kind load docker-image "${DOCKER_REPO}/addons:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time retry 5 kind load docker-image "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}" --name "${KIND_CLUSTER_NAME}"
-time retry 5 kind load docker-image "${DOCKER_REPO}/kubeletdnat-controller${REPOSUFFIX}:${TAG}" --name "${KIND_CLUSTER_NAME}"
+time retry 5 kind load docker-image "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time retry 5 kind load docker-image "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" --name "${KIND_CLUSTER_NAME}"
 
 # This is just used as a const
