@@ -10,7 +10,6 @@ require (
 	github.com/Azure/go-autorest/autorest/to v0.4.0
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/Masterminds/sprig/v3 v3.1.0
-	github.com/aborilov/sdk v0.0.0-20210312074130-7a0f0d1d82a6
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.751
 	github.com/apoydence/onpar v0.0.0-20200406201722-06f95a1c68e8 // indirect
 	github.com/aws/aws-sdk-go v1.36.2
@@ -41,12 +40,12 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.4.2
-	github.com/grafana-tools/sdk v0.0.0-20210310213032-c3f3511b3e9b // indirect
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hetznercloud/hcloud-go v1.23.1
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jetstack/cert-manager v1.1.0
+	github.com/kubermatic/grafanasdk v0.9.2
 	github.com/kubermatic/machine-controller v1.27.1
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect

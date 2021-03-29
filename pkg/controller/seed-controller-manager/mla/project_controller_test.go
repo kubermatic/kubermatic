@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/stretchr/testify/assert"
 
-	grafanasdk "github.com/aborilov/sdk"
+	grafanasdk "github.com/kubermatic/grafanasdk"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"

@@ -148,8 +148,6 @@ github.com/Shopify/toxiproxy v2.1.4+incompatible/go.mod h1:OXgGpZ6Cli1/URJOF1DMx
 github.com/Venafi/vcert/v4 v4.11.0/go.mod h1:OE+UZ0cj8qqVUuk0u7R4GIk4ZB6JMSf/WySqnBPNwws=
 github.com/VividCortex/gohistogram v1.0.0/go.mod h1:Pf5mBqqDxYaXu3hDrrU+w6nw50o/4+TcAqDqk/vUH7g=
 github.com/a8m/expect v1.0.0/go.mod h1:4IwSCMumY49ScypDnjNbYEjgVeqy1/U2cEs3Lat96eA=
-github.com/aborilov/sdk v0.0.0-20210312074130-7a0f0d1d82a6 h1:yITi8gyNWL7MHfQGxVmVrgoaAxD04mliB9Q4SeILioQ=
-github.com/aborilov/sdk v0.0.0-20210312074130-7a0f0d1d82a6/go.mod h1:e5oXTYJSMjdhpqfoiYfwyjDOjalA5c6YCZc/dA4tRAE=
 github.com/afex/hystrix-go v0.0.0-20180502004556-fa1af6a1f4f5/go.mod h1:SkGFH1ia65gfNATL8TAiHDNxPzPdmEL5uirI2Uyuz6c=
 github.com/agnivade/levenshtein v1.0.1/go.mod h1:CURSv5d9Uaml+FovSIICkLbAUZ9S4RqaHDIsdSBg7lM=
 github.com/ajeddeloh/go-json v0.0.0-20170920214419-6a2fe990e083 h1:uwcvnXW76Y0rHM+qs7y8iHknWUWXYFNlD6FEVhc47TU=
@@ -662,8 +660,6 @@ github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0U
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/gosimple/slug v1.1.1 h1:fRu/digW+NMwBIP+RmviTK97Ho/bEj/C9swrCspN3D4=
 github.com/gosimple/slug v1.1.1/go.mod h1:ER78kgg1Mv0NQGlXiDe57DpCyfbNywXXZ9mIorhxAf0=
-github.com/grafana-tools/sdk v0.0.0-20210310213032-c3f3511b3e9b h1:Vy3JtO3P5dKIV6gkTyyM0HrpviFmxeFJLwF6ZJMPRLY=
-github.com/grafana-tools/sdk v0.0.0-20210310213032-c3f3511b3e9b/go.mod h1:uby+6hPUCRVNG/iAZKCOlaq5YhyK0oKMRke+FDesZdw=
 github.com/gregjones/httpcache v0.0.0-20180305231024-9cad4c3443a7/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
 github.com/gregjones/httpcache v0.0.0-20181110185634-c63ab54fda8f/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
 github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc/go.mod h1:FecbI9+v66THATjSRHfNgh1IVFe/9kFxbXtjV0ctIMA=
@@ -817,6 +813,8 @@ github.com/kr/pty v1.1.8/go.mod h1:O1sed60cT9XZ5uDucP5qwvh+TE3NnUj51EiZO/lmSfw=
 github.com/kr/text v0.1.0/go.mod h1:4Jbv+DJW3UT/LiOwJeYQe1efqtUx/iVham/4vfdArNI=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
 github.com/kr/text v0.2.0/go.mod h1:eLer722TekiGuMkidMxC/pM04lWEeraHUUmBw8l2grE=
+github.com/kubermatic/grafanasdk v0.9.2 h1:Su8P7oYOxtPBzYVaufKN2czIEDofQRA60USkdwwHsOw=
+github.com/kubermatic/grafanasdk v0.9.2/go.mod h1:AimXbqcsMVZSLok7vVjmIueL5qNTsrEbpzufi2ks9w8=
 github.com/kubermatic/machine-controller v1.27.1 h1:FPMnVwsRSAZFf/v9hfR3rcBzpYU7tpNfv1Nrv2RRMic=
 github.com/kubermatic/machine-controller v1.27.1/go.mod h1:dcJ+GdDSCxCwM0poxwOK8hVO7epiOORDmNMmb2veyw4=
 github.com/kylelemons/godebug v0.0.0-20170820004349-d65d576e9348/go.mod h1:B69LEHPfb2qLo0BaaOLcbitczOKLWTsrBG9LczfCD4k=

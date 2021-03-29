@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"strings"
 
-	grafanasdk "github.com/aborilov/sdk"
+	grafanasdk "github.com/kubermatic/grafanasdk"
 	"go.uber.org/zap"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
