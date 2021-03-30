@@ -27,9 +27,7 @@ import (
 )
 
 func ResourcesOnDeletion() []ctrlruntimeclient.Object {
-	var toRemove []ctrlruntimeclient.Object
-
-	toRemove = append(toRemove,
+	return []ctrlruntimeclient.Object{
 		&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.PromtailDaemonSetName,
@@ -58,6 +56,5 @@ func ResourcesOnDeletion() []ctrlruntimeclient.Object {
 				Name: resources.PromtailClusterRoleBindingName,
 			},
 		},
-	)
-	return toRemove
+	}
 }

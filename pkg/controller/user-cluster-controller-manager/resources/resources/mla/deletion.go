@@ -25,14 +25,11 @@ import (
 )
 
 func ResourcesOnDeletion() []ctrlruntimeclient.Object {
-	var toRemove []ctrlruntimeclient.Object
-
-	toRemove = append(toRemove,
+	return []ctrlruntimeclient.Object{
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
 				Name: resources.MLANamespace,
 			},
 		},
-	)
-	return toRemove
+	}
 }
