@@ -56,7 +56,7 @@ type SettingSpec struct {
 	MachineDeploymentVMResourceQuota *MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota,omitempty"`
 
 	// opa options
-	OpaOptions *OPAOptions `json:"opaOptions,omitempty"`
+	OpaOptions *OpaOptions `json:"opaOptions,omitempty"`
 }
 
 // Validate validates this setting spec

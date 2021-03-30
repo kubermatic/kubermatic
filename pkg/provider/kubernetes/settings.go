@@ -99,7 +99,7 @@ func (s *SettingsProvider) createDefaultGlobalSettings() (*kubermaticv1.Kubermat
 				MaxRAM:    128,
 				EnableGPU: false,
 			},
-			OPAOptions: kubermaticv1.OPAOptions{
+			OpaOptions: kubermaticv1.OpaOptions{
 				Enabled:  false,
 				Enforced: false,
 			},

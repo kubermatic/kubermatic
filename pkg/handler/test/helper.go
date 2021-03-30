@@ -487,7 +487,7 @@ func GenTestSeed() *kubermaticv1.Seed {
 					Location: "Alexandria",
 					Country:  "Egypt",
 					Spec: kubermaticv1.DatacenterSpec{
-						Fake: &kubermaticv1.DatacenterSpecFake{},
+						Fake:                     &kubermaticv1.DatacenterSpecFake{},
 						EnforcePodSecurityPolicy: true,
 					},
 				},
@@ -809,11 +809,11 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 		},
 		Status: kubermaticv1.ClusterStatus{
 			ExtendedHealth: kubermaticv1.ExtendedClusterHealth{
-				Apiserver:         kubermaticv1.HealthStatusUp,
-				Scheduler:         kubermaticv1.HealthStatusUp,
-				Controller:        kubermaticv1.HealthStatusUp,
-				MachineController: kubermaticv1.HealthStatusUp,
-				Etcd:              kubermaticv1.HealthStatusUp,
+				Apiserver:                    kubermaticv1.HealthStatusUp,
+				Scheduler:                    kubermaticv1.HealthStatusUp,
+				Controller:                   kubermaticv1.HealthStatusUp,
+				MachineController:            kubermaticv1.HealthStatusUp,
+				Etcd:                         kubermaticv1.HealthStatusUp,
 				UserClusterControllerManager: kubermaticv1.HealthStatusUp,
 				CloudProviderInfrastructure:  kubermaticv1.HealthStatusUp,
 			},
@@ -948,7 +948,7 @@ func GenDefaultSaToken(projectID, saID, name, id string) *corev1.Secret {
 	secret.Data["token"] = []byte(TestFakeToken)
 	secret.Labels = map[string]string{
 		kubermaticv1.ProjectIDLabelKey: projectID,
-		"name": name,
+		"name":                         name,
 	}
 	secret.OwnerReferences = []metav1.OwnerReference{
 		{
@@ -1048,7 +1048,7 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 			DisplayTermsOfService: false,
 			EnableDashboard:       true,
 			EnableOIDCKubeconfig:  false,
-			OPAOptions: kubermaticv1.OPAOptions{
+			OpaOptions: kubermaticv1.OpaOptions{
 				Enabled:  false,
 				Enforced: false,
 			},
@@ -1113,7 +1113,7 @@ func GenDefaultGlobalSettings() *kubermaticv1.KubermaticSetting {
 			DisplayAPIDocs:              true,
 			DisplayTermsOfService:       true,
 			EnableExternalClusterImport: true,
-			OPAOptions: kubermaticv1.OPAOptions{
+			OpaOptions: kubermaticv1.OpaOptions{
 				Enabled:  true,
 				Enforced: true,
 			},

@@ -10,25 +10,25 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// OPAOptions o p a options
+// OpaOptions opa options
 //
-// swagger:model OPAOptions
-type OPAOptions struct {
+// swagger:model OpaOptions
+type OpaOptions struct {
 
 	// enabled
-	Enabled bool `json:"Enabled,omitempty"`
+	Enabled bool `json:"enabled,omitempty"`
 
 	// enforced
-	Enforced bool `json:"Enforced,omitempty"`
+	Enforced bool `json:"enforced,omitempty"`
 }
 
-// Validate validates this o p a options
-func (m *OPAOptions) Validate(formats strfmt.Registry) error {
+// Validate validates this opa options
+func (m *OpaOptions) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
 // MarshalBinary interface implementation
-func (m *OPAOptions) MarshalBinary() ([]byte, error) {
+func (m *OpaOptions) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -36,8 +36,8 @@ func (m *OPAOptions) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *OPAOptions) UnmarshalBinary(b []byte) error {
-	var res OPAOptions
+func (m *OpaOptions) UnmarshalBinary(b []byte) error {
+	var res OpaOptions
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

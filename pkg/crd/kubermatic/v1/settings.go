@@ -54,7 +54,7 @@ type SettingSpec struct {
 	UserProjectsLimit           int64          `json:"userProjectsLimit"`
 	RestrictProjectCreation     bool           `json:"restrictProjectCreation"`
 	EnableExternalClusterImport bool           `json:"enableExternalClusterImport"`
-	OPAOptions                  OPAOptions     `json:"opaOptions"`
+	OpaOptions                  OpaOptions     `json:"opaOptions"`
 
 	MachineDeploymentVMResourceQuota MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota"`
 
@@ -88,9 +88,9 @@ type MachineDeploymentVMResourceQuota struct {
 	EnableGPU bool `json:"enableGPU"`
 }
 
-type OPAOptions struct {
-	Enabled  bool
-	Enforced bool
+type OpaOptions struct {
+	Enabled  bool `json:"enabled"`
+	Enforced bool `json:"enforced"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
