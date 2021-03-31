@@ -45,6 +45,7 @@ type ConstraintStatus struct {
 	Enforcement    string      `json:"enforcement,omitempty"`
 	AuditTimestamp string      `json:"auditTimestamp,omitempty"`
 	Violations     []Violation `json:"violations,omitempty"`
+	Synced         *bool       `json:"synced,omitempty"`
 }
 
 // Violation represents a gatekeeper constraint violation
