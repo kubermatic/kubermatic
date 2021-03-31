@@ -37,8 +37,28 @@ echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
 
 beforeKindCreate=$(nowms)
-# KIND_NODE_VERSION is defined by the kind Docker image
-kind create cluster --name "$KIND_CLUSTER_NAME" --image "kindest/node:$KIND_NODE_VERSION"
+cat <<EOF | kind create cluster --config=-
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: $KIND_CLUSTER_NAME
+nodes:
+  - role: control-plane
+    # KIND_NODE_VERSION is defined by the kind Docker image
+    image: kindest/node:$KIND_NODE_VERSION
+    # this allows us to reach NodePort services
+    # from the test pod (i.e. localhost) and is
+    # more stable than doing a long-lived
+    # kubectl port-forward
+    extraPortMappings:
+      # oauth/dex
+      - containerPort: 32000
+        hostPort: 5556
+        protocol: TCP
+      # kubermatic/kubermatic-api
+      - containerPort: 32001
+        hostPort: 8080
+        protocol: TCP
+EOF
 pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$KIND_NODE_VERSION\""
 
 if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
