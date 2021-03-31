@@ -37,7 +37,7 @@ echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
 
 beforeKindCreate=$(nowms)
-cat <<EOF | kind create cluster --config=-
+cat << EOF | kind create cluster --config=-
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: $KIND_CLUSTER_NAME

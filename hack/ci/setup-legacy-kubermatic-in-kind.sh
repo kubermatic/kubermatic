@@ -207,8 +207,41 @@ appendTrap cleanup_kubermatic_clusters_in_kind EXIT
 
 TEST_NAME="Expose Dex and Kubermatic API"
 echodate "Exposing Dex and Kubermatic API to localhost..."
-kubectl port-forward --address 0.0.0.0 -n oauth svc/dex 5556 &
-kubectl port-forward --address 0.0.0.0 -n kubermatic svc/kubermatic-api 8080:80 &
+
+cat << EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: dex-nodeport
+  namespace: oauth
+spec:
+  type: NodePort
+  ports:
+    - name: dex
+      port: 5556
+      protocol: TCP
+      nodePort: 32000
+  selector:
+    app: dex
+EOF
+
+cat << EOF | kubectl apply -f -
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubermatic-api-nodeport
+  namespace: kubermatic
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 8080
+      protocol: TCP
+      nodePort: 32001
+  selector:
+    app.kubernetes.io/name: kubermatic-api
+EOF
+
 echodate "Finished exposing components"
 
 echodate "Waiting for Dex to be ready"
