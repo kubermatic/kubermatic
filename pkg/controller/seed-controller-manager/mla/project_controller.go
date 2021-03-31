@@ -126,13 +126,16 @@ func (r *projectReconciler) Reconcile(ctx context.Context, request reconcile.Req
 }
 
 func (r *projectReconciler) handleDeletion(ctx context.Context, project *kubermaticv1.Project) error {
-	org, err := r.grafanaClient.GetOrgByOrgName(ctx, getOrgNameForProject(project))
-	if err != nil {
-		return err
-	}
-	_, err = r.grafanaClient.DeleteOrg(ctx, org.ID)
-	if err != nil {
-		return err
+	orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
+	if ok {
+		id, err := strconv.ParseUint(orgID, 10, 32)
+		if err != nil {
+			return err
+		}
+		_, err = r.grafanaClient.DeleteOrg(ctx, uint(id))
+		if err != nil {
+			return err
+		}
 	}
 	kubernetes.RemoveFinalizer(project, mlaFinalizer)
 	if err := r.Update(ctx, project); err != nil {

@@ -179,6 +179,7 @@ func TestProjectReconcile(t *testing.T) {
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "delete",
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
+					Annotations:       map[string]string{grafanaOrgAnnotationKey: "1"},
 				},
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",
@@ -193,17 +194,10 @@ func TestProjectReconcile(t *testing.T) {
 					path:     "/api/orgs/1",
 					response: `{}`,
 				},
-				{
-					name:     "get org by name",
-					code:     200,
-					method:   "GET",
-					path:     "/api/orgs/name/projectName-delete",
-					response: `{"id":1,"name":"projectName-delete","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`,
-				},
 			},
 		},
 		{
-			name: "delete org for project, get failed",
+			name: "delete org for project without annotation",
 			project: &kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "delete",
@@ -214,41 +208,9 @@ func TestProjectReconcile(t *testing.T) {
 					Name: "projectName",
 				},
 			},
-			hasFinalizer: true,
-			err:          true,
-			requests: []request{
-				{
-					name:     "get org by name",
-					code:     404,
-					method:   "GET",
-					path:     "/api/orgs/name/projectName-delete",
-					response: `{"id":1,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`,
-				},
-			},
-		},
-		{
-			name: "delete org for project delete failed",
-			project: &kubermaticv1.Project{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:              "delete",
-					DeletionTimestamp: &metav1.Time{Time: time.Now()},
-					Finalizers:        []string{mlaFinalizer},
-				},
-				Spec: kubermaticv1.ProjectSpec{
-					Name: "projectName",
-				},
-			},
-			hasFinalizer: true,
-			err:          true,
-			requests: []request{
-				{
-					name:     "get org by name",
-					code:     200,
-					method:   "GET",
-					path:     "/api/orgs/name/projectName-delete",
-					response: `{"id":1,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`,
-				},
-			},
+			hasFinalizer: false,
+			err:          false,
+			requests:     []request{},
 		},
 	}
 
