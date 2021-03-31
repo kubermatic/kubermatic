@@ -13,6 +13,7 @@ require (
 	github.com/aliyun/alibaba-cloud-sdk-go v1.61.751
 	github.com/apoydence/onpar v0.0.0-20200406201722-06f95a1c68e8 // indirect
 	github.com/aws/aws-sdk-go v1.36.2
+	github.com/bmizerany/assert v0.0.0-20160611221934-b7ed37b82869 // indirect
 	github.com/coreos/go-oidc v2.2.1+incompatible
 	github.com/coreos/locksmith v0.6.2
 	github.com/cristim/ec2-instances-info v0.0.0-20201110114654-2dfcc09f67d4
@@ -26,6 +27,7 @@ require (
 	github.com/go-kit/kit v0.10.0
 	github.com/go-logr/logr v0.3.0
 	github.com/go-logr/zapr v0.3.0
+	github.com/go-macaron/session v1.0.2 // indirect
 	github.com/go-openapi/errors v0.19.9
 	github.com/go-openapi/runtime v0.19.24
 	github.com/go-openapi/strfmt v0.19.11
@@ -40,12 +42,14 @@ require (
 	github.com/gorilla/mux v1.8.0
 	github.com/gorilla/securecookie v1.1.1
 	github.com/gorilla/websocket v1.4.2
+	github.com/grafana/grafana v6.1.6+incompatible
 	github.com/hashicorp/go-multierror v1.1.0
 	github.com/hetznercloud/hcloud-go v1.23.1
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
+	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac // indirect
 	github.com/jetstack/cert-manager v1.1.0
-	github.com/kubermatic/grafanasdk v0.9.2
+	github.com/kubermatic/grafanasdk v0.9.3
 	github.com/kubermatic/machine-controller v1.27.1
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
@@ -64,6 +68,7 @@ require (
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.6.1
+	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/urfave/cli v1.22.5
 	github.com/vmware/govmomi v0.23.1
 	go.etcd.io/etcd/v3 v3.3.0-rc.0.0.20200728214110-6c81b20ec8de

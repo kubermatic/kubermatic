@@ -41,6 +41,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
+type request struct {
+	name     string
+	code     int
+	method   string
+	path     string
+	body     string
+	response string
+}
+
 func newTestProjectReconciler(t *testing.T, objects []ctrlruntimeclient.Object, handler http.Handler) (*projectReconciler, *httptest.Server) {
 	dynamicClient := ctrlruntimefakeclient.
 		NewClientBuilder().
@@ -60,32 +69,26 @@ func newTestProjectReconciler(t *testing.T, objects []ctrlruntimeclient.Object, 
 }
 
 func TestProjectReconcile(t *testing.T) {
-	type request struct {
-		name     string
-		code     int
-		method   string
-		path     string
-		body     string
-		response string
-	}
 	testCases := []struct {
 		name         string
-		project      *kubermaticv1.Project
+		requestName  string
+		objects      []ctrlruntimeclient.Object
 		handlerFunc  http.HandlerFunc
 		requests     []request
 		hasFinalizer bool
 		err          bool
 	}{
 		{
-			name: "create org for project",
-			project: &kubermaticv1.Project{
+			name:        "create org for project",
+			requestName: "create",
+			objects: []ctrlruntimeclient.Object{&kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "create",
 				},
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",
 				},
-			},
+			}},
 			hasFinalizer: true,
 			requests: []request{
 				{
@@ -99,21 +102,23 @@ func TestProjectReconcile(t *testing.T) {
 			},
 		},
 		{
-			name: "create org for project - failed",
-			project: &kubermaticv1.Project{
+			name:        "create org for project - failed",
+			requestName: "create",
+			objects: []ctrlruntimeclient.Object{&kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "create",
 				},
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",
 				},
-			},
+			}},
 			hasFinalizer: true,
 			err:          true,
 		},
 		{
-			name: "create org for project - org already exists",
-			project: &kubermaticv1.Project{
+			name:        "create org for project - org already exists",
+			requestName: "create",
+			objects: []ctrlruntimeclient.Object{&kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "create",
 					Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
@@ -121,7 +126,7 @@ func TestProjectReconcile(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",
 				},
-			},
+			}},
 			requests: []request{
 				{
 					name:     "get org by name",
@@ -143,8 +148,9 @@ func TestProjectReconcile(t *testing.T) {
 			err:          false,
 		},
 		{
-			name: "update org for project",
-			project: &kubermaticv1.Project{
+			name:        "update org for project",
+			requestName: "create",
+			objects: []ctrlruntimeclient.Object{&kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        "create",
 					Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
@@ -152,7 +158,7 @@ func TestProjectReconcile(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",
 				},
-			},
+			}},
 			requests: []request{
 				{
 					name:     "get org by id",
@@ -174,8 +180,9 @@ func TestProjectReconcile(t *testing.T) {
 			err:          false,
 		},
 		{
-			name: "delete org for project",
-			project: &kubermaticv1.Project{
+			name:        "delete org for project",
+			requestName: "delete",
+			objects: []ctrlruntimeclient.Object{&kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "delete",
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
@@ -184,7 +191,7 @@ func TestProjectReconcile(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",
 				},
-			},
+			}},
 			hasFinalizer: false,
 			requests: []request{
 				{
@@ -197,8 +204,9 @@ func TestProjectReconcile(t *testing.T) {
 			},
 		},
 		{
-			name: "delete org for project without annotation",
-			project: &kubermaticv1.Project{
+			name:        "delete org for project without annotation",
+			requestName: "delete",
+			objects: []ctrlruntimeclient.Object{&kubermaticv1.Project{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:              "delete",
 					DeletionTimestamp: &metav1.Time{Time: time.Now()},
@@ -207,7 +215,7 @@ func TestProjectReconcile(t *testing.T) {
 				Spec: kubermaticv1.ProjectSpec{
 					Name: "projectName",
 				},
-			},
+			}},
 			hasFinalizer: false,
 			err:          false,
 			requests:     []request{},
@@ -218,34 +226,10 @@ func TestProjectReconcile(t *testing.T) {
 		tc := testCases[idx]
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-
-			handled := 0
-			r := mux.NewRouter()
-			for _, tcRequest := range tc.requests {
-				tcRequest := tcRequest
-				r.HandleFunc(tcRequest.path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					if tcRequest.body != "" {
-						defer r.Body.Close()
-						decoder := json.NewDecoder(r.Body)
-						reqMap := map[string]interface{}{}
-						if err := decoder.Decode(&reqMap); err != nil {
-							t.Fatalf("%s: unmarshal request failed: %v", tcRequest.name, err)
-						}
-						tcMap := map[string]interface{}{}
-						if err := json.Unmarshal([]byte(tcRequest.body), &tcMap); err != nil {
-							t.Fatalf("%s: unmarshal expected map failed: %v", tcRequest.name, err)
-						}
-						assert.Equal(t, reqMap, tcMap)
-					}
-					w.WriteHeader(tcRequest.code)
-					fmt.Fprint(w, tcRequest.response)
-					handled++
-				})).Methods(tcRequest.method)
-			}
 			ctx := context.Background()
-			objects := []ctrlruntimeclient.Object{tc.project}
-			controller, server := newTestProjectReconciler(t, objects, r)
-			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.project.Name}}
+			r, assertExpectation := buildTestServer(t, tc.requests)
+			controller, server := newTestProjectReconciler(t, tc.objects, r)
+			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
 			_, err := controller.Reconcile(ctx, request)
 			if err != nil && !tc.err {
 				assert.Nil(t, err)
@@ -256,9 +240,39 @@ func TestProjectReconcile(t *testing.T) {
 				t.Fatalf("unable to get project: %v", err)
 			}
 			assert.Equal(t, tc.hasFinalizer, kubernetes.HasFinalizer(project, mlaFinalizer))
-			assert.Equal(t, handled, len(tc.requests))
+			assertExpectation()
 			server.Close()
 		})
 	}
 
+}
+
+func buildTestServer(t *testing.T, requests []request) (http.Handler, func() bool) {
+	handled := 0
+	assertExpectation := func() bool {
+		return assert.Equal(t, handled, len(requests))
+	}
+	r := mux.NewRouter()
+	for _, request := range requests {
+		request := request
+		r.HandleFunc(request.path, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if request.body != "" {
+				defer r.Body.Close()
+				decoder := json.NewDecoder(r.Body)
+				reqMap := map[string]interface{}{}
+				if err := decoder.Decode(&reqMap); err != nil {
+					t.Fatalf("%s: unmarshal request failed: %v", request.name, err)
+				}
+				tcMap := map[string]interface{}{}
+				if err := json.Unmarshal([]byte(request.body), &tcMap); err != nil {
+					t.Fatalf("%s: unmarshal expected map failed: %v", request.name, err)
+				}
+				assert.Equal(t, reqMap, tcMap)
+			}
+			w.WriteHeader(request.code)
+			fmt.Fprint(w, request.response)
+			handled++
+		})).Methods(request.method)
+	}
+	return r, assertExpectation
 }

@@ -85,7 +85,6 @@ func newProjectReconciler(
 	if err != nil {
 		return err
 	}
-
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Projects: %v", err)
 	}
