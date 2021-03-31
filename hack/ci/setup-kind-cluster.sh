@@ -58,8 +58,34 @@ nodes:
       - containerPort: 32001
         hostPort: 8080
         protocol: TCP
+    # make sure PVCs can be mounted to this tmpfs instead
+    # of to an SSD-backed emptyDir
+    extraMounts:
+      - hostPath: /scratchpad
+        containerPath: /scratchpad
 EOF
 pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$KIND_NODE_VERSION\""
+
+# reconfigure the local-path-provisioner to use the tmpfs
+cat << EOF | kubectl apply --filename -
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-path-config
+  namespace: local-path-storage
+data:
+  config.json: |-
+    {
+      "nodePathMap":[
+        {
+          "node":"DEFAULT_PATH_FOR_NON_LISTED_NODES",
+          "paths":["/scratchpad"]
+        }
+      ]
+    }
+EOF
+
+kubectl --namespace local-path-storage rollout restart deployment/local-path-provisioner
 
 if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   # Start cluster exposer, which will expose services from within kind as

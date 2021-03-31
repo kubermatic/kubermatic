@@ -410,6 +410,13 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+        volumeMounts:
+        - name: scratchpad
+          mountPath: /scratchpad
+      volumes:
+        - name: scratchpad
+          emptyDir:
+            medium: Memory
 
   - name: pre-kubermatic-e2e-aws-flatcar-1.18
     decorate: true
