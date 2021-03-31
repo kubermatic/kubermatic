@@ -219,7 +219,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
-	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsProjectServiceAccount, kubermaticClient)
+	userProvider := kubernetes.NewUserProvider(fakeClient, kubernetes.IsServiceAccount, kubermaticClient)
 	adminProvider := kubernetes.NewAdminProvider(fakeClient)
 	settingsProvider := kubernetes.NewSettingsProvider(ctx, kubermaticClient, fakeClient)
 	addonConfigProvider := kubernetes.NewAddonConfigProvider(fakeClient)
@@ -233,7 +233,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, nil, err
 	}
 	serviceAccountProvider := kubernetes.NewServiceAccountProvider(fakeImpersonationClient, fakeClient, "localhost")
-	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsProjectServiceAccount)
+	projectMemberProvider := kubernetes.NewProjectMemberProvider(fakeImpersonationClient, fakeClient, kubernetes.IsServiceAccount)
 	userInfoGetter, err := provider.UserInfoGetterFactory(projectMemberProvider)
 	if err != nil {
 		return nil, nil, err
