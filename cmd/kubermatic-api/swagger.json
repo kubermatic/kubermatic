@@ -15064,6 +15064,10 @@
           "type": "string",
           "x-go-name": "Enforcement"
         },
+        "synced": {
+          "type": "boolean",
+          "x-go-name": "Synced"
+        },
         "violations": {
           "type": "array",
           "items": {
