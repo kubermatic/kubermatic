@@ -564,6 +564,100 @@ func TestPatchToken(t *testing.T) {
 	}
 }
 
+func TestDeleteToken(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		name                   string
+		existingKubermaticObjs []ctrlruntimeclient.Object
+		existingKubernetesObjs []ctrlruntimeclient.Object
+		saToSync               string
+		tokenToDelete          string
+		httpStatus             int
+		existingAPIUser        apiv1.User
+		expectedResponse       string
+	}{
+		{
+			name:       "scenario 1: delete token",
+			httpStatus: http.StatusOK,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenMainServiceAccount("2", "test-2", "viewers", "john@acme.com"),
+			},
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
+				test.GenDefaultSaToken("plan10-ID", "serviceaccount-2", "test-2", "2"),
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-3", "3"),
+				test.GenDefaultSaToken("plan11-ID", "serviceaccount-3", "test-4", "4"),
+				test.GenDefaultSaToken("", "2", "test-1", "5"),
+				test.GenDefaultSaToken("", "2", "test-2", "6"),
+				test.GenDefaultSaToken("", "2", "test-3", "7"),
+				test.GenDefaultSaToken("", "2", "test-4", "8"),
+			},
+			existingAPIUser:  *test.GenAPIUser("john", "john@acme.com"),
+			saToSync:         "2",
+			tokenToDelete:    "6",
+			expectedResponse: "{}",
+		},
+		{
+			name:       "scenario 2: the user Bob can't delete John's token",
+			httpStatus: http.StatusForbidden,
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				/*add projects*/
+				test.GenProject("plan9", kubermaticapiv1.ProjectActive, test.DefaultCreationTimestamp()),
+				/*add bindings*/
+				test.GenBinding("plan9-ID", "john@acme.com", "owners"),
+				test.GenBinding("plan9-ID", "serviceaccount-1@sa.kubermatic.io", "editors"),
+				/*add users*/
+				test.GenUser("", "john", "john@acme.com"),
+				test.GenUser("", "bob", "bob@acme.com"),
+				test.GenProjectServiceAccount("1", "test-1", "editors", "plan9-ID"),
+				test.GenMainServiceAccount("2", "test-2", "viewers", "john@acme.com"),
+			},
+			existingKubernetesObjs: []ctrlruntimeclient.Object{
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-1", "1"),
+				test.GenDefaultSaToken("plan10-ID", "serviceaccount-2", "test-2", "2"),
+				test.GenDefaultSaToken("plan9-ID", "serviceaccount-1", "test-3", "3"),
+				test.GenDefaultSaToken("plan11-ID", "serviceaccount-3", "test-4", "4"),
+				test.GenDefaultSaToken("", "2", "test-1", "5"),
+				test.GenDefaultSaToken("", "2", "test-2", "6"),
+				test.GenDefaultSaToken("", "2", "test-3", "7"),
+				test.GenDefaultSaToken("", "2", "test-4", "8"),
+			},
+			existingAPIUser:  *test.GenAPIUser("bob", "bob@acme.com"),
+			saToSync:         "2",
+			tokenToDelete:    "5",
+			expectedResponse: `{"error":{"code":403,"message":"forbidden: actual user bob@acme.com is not the owner of the service account main-serviceaccount-2"}}`,
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/serviceaccounts/%s/tokens/%s", tc.saToSync, tc.tokenToDelete), strings.NewReader(""))
+			res := httptest.NewRecorder()
+
+			ep, err := test.CreateTestEndpoint(tc.existingAPIUser, tc.existingKubernetesObjs, tc.existingKubermaticObjs, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.httpStatus {
+				t.Fatalf("expected HTTP status code %d, got %d: %s", tc.httpStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.expectedResponse)
+		})
+	}
+}
+
 func genPublicServiceAccountToken(id, name string, expiry apiv1.Time) apiv1.PublicServiceAccountToken {
 	token := apiv1.PublicServiceAccountToken{}
 	token.ID = id
