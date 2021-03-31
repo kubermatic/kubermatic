@@ -60,29 +60,30 @@ import (
 )
 
 type controllerRunOptions struct {
-	metricsListenAddr  string
-	healthListenAddr   string
-	version            string
-	networks           networkFlags
-	namespace          string
-	clusterURL         string
-	openvpnServerPort  int
-	kasSecurePort      int
-	tunnelingAgentIP   flagopts.IPValue
-	overwriteRegistry  string
-	cloudProviderName  string
-	nodelabels         string
-	seedKubeconfig     string
-	ownerEmail         string
-	updateWindowStart  string
-	updateWindowLength string
-	dnsClusterIP       string
-	opaIntegration     bool
-	opaWebhookTimeout  int
-	useSSHKeyAgent     bool
-	caBundleFile       string
-	mlaGatewayPort     int
-	userClusterLogging bool
+	metricsListenAddr     string
+	healthListenAddr      string
+	version               string
+	networks              networkFlags
+	namespace             string
+	clusterURL            string
+	openvpnServerPort     int
+	kasSecurePort         int
+	tunnelingAgentIP      flagopts.IPValue
+	overwriteRegistry     string
+	cloudProviderName     string
+	nodelabels            string
+	seedKubeconfig        string
+	ownerEmail            string
+	updateWindowStart     string
+	updateWindowLength    string
+	dnsClusterIP          string
+	opaIntegration        bool
+	opaWebhookTimeout     int
+	useSSHKeyAgent        bool
+	caBundleFile          string
+	mlaGatewayPort        int
+	userClusterLogging    bool
+	userClusterMonitoring bool
 }
 
 func main() {
@@ -116,6 +117,7 @@ func main() {
 	flag.StringVar(&runOp.caBundleFile, "ca-bundle", "", "The path to the cluster's CA bundle (PEM-encoded).")
 	flag.IntVar(&runOp.mlaGatewayPort, "mla-gateway-port", 0, "The port of MLA(Monitoring, Logging, and Alerting) gateway.")
 	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
+	flag.BoolVar(&runOp.userClusterMonitoring, "user-cluster-monitoring", false, "Enable monitoring in user cluster.")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -146,9 +148,9 @@ func main() {
 	if len(runOp.caBundleFile) == 0 {
 		log.Fatal("-ca-bundle must be set")
 	}
-	if runOp.userClusterLogging {
+	if runOp.userClusterLogging || runOp.userClusterMonitoring {
 		if runOp.mlaGatewayPort == 0 {
-			log.Fatal("-mla-gateway-port must be set when enabling user cluster logging")
+			log.Fatal("-mla-gateway-port must be set when enabling user cluster logging or monitoring")
 		}
 	}
 
@@ -238,6 +240,7 @@ func main() {
 		caBundle,
 		usercluster.UserClusterMLA{
 			Logging:        runOp.userClusterLogging,
+			Monitoring:     runOp.userClusterMonitoring,
 			MLAGatewayPort: runOp.mlaGatewayPort,
 		},
 		log,
