@@ -81,6 +81,8 @@ type controllerRunOptions struct {
 	opaWebhookTimeout  int
 	useSSHKeyAgent     bool
 	caBundleFile       string
+	mlaGatewayPort     int
+	userClusterLogging bool
 }
 
 func main() {
@@ -112,6 +114,8 @@ func main() {
 	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 3, "Timeout for OPA Integration validating webhook, in seconds")
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
 	flag.StringVar(&runOp.caBundleFile, "ca-bundle", "", "The path to the cluster's CA bundle (PEM-encoded).")
+	flag.IntVar(&runOp.mlaGatewayPort, "mla-gateway-port", 0, "The port of MLA(Monitoring, Logging, and Alerting) gateway.")
+	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -141,6 +145,11 @@ func main() {
 	}
 	if len(runOp.caBundleFile) == 0 {
 		log.Fatal("-ca-bundle must be set")
+	}
+	if runOp.userClusterLogging {
+		if runOp.mlaGatewayPort == 0 {
+			log.Fatal("-mla-gateway-port must be set when enabling user cluster logging")
+		}
 	}
 
 	nodeLabels := map[string]string{}
@@ -227,6 +236,10 @@ func main() {
 		runOp.useSSHKeyAgent,
 		runOp.opaWebhookTimeout,
 		caBundle,
+		usercluster.UserClusterMLA{
+			Logging:        runOp.userClusterLogging,
+			MLAGatewayPort: runOp.mlaGatewayPort,
+		},
 		log,
 	); err != nil {
 		log.Fatalw("Failed to register user cluster controller", zap.Error(err))
