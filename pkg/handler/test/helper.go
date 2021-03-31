@@ -1048,10 +1048,6 @@ func GenDefaultSettings() *kubermaticv1.KubermaticSetting {
 			DisplayTermsOfService: false,
 			EnableDashboard:       true,
 			EnableOIDCKubeconfig:  false,
-			OpaOptions: kubermaticv1.OpaOptions{
-				Enabled:  false,
-				Enforced: false,
-			},
 		},
 	}
 }
