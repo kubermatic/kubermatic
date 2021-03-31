@@ -21,6 +21,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -65,8 +66,15 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			}
 
 			testClient := utils.NewTestClient(masterToken, t)
-			project, cluster := createProjectWithCluster(t, testClient, tc.dc, tc.credential, tc.version, tc.location, tc.replicas)
+			project, cluster, err := createProjectWithCluster(t, testClient, tc.dc, tc.credential, tc.version, tc.location, tc.replicas)
+			if err != nil {
+				t.Fatalf("failed to setup: %v", err)
+			}
 			defer cleanupProject(t, project.ID)
+
+			if err := testClient.WaitForClusterHealthy(project.ID, tc.dc, cluster.ID); err != nil {
+				t.Fatalf("cluster not ready: %v", err)
+			}
 
 			// wait for controller to provision the roles
 			var roleErr error
@@ -153,20 +161,16 @@ func getErrorResponse(err error) string {
 	return string(rawData)
 }
 
-func createProjectWithCluster(t *testing.T, testClient *utils.TestClient, dc, credential, version, location string, replicas int32) (*v1.Project, *v1.Cluster) {
+func createProjectWithCluster(t *testing.T, testClient *utils.TestClient, dc, credential, version, location string, replicas int32) (*v1.Project, *v1.Cluster, error) {
 	project, err := testClient.CreateProject(rand.String(10))
 	if err != nil {
-		t.Fatalf("failed to create project %v", err)
+		return nil, nil, fmt.Errorf("failed to create project %v", err)
 	}
 
 	cluster, err := testClient.CreateDOCluster(project.ID, dc, rand.String(10), credential, version, location, replicas)
 	if err != nil {
-		t.Fatalf("failed to create cluster: %v", err)
+		return nil, nil, fmt.Errorf("failed to create cluster: %v", err)
 	}
 
-	if err := testClient.WaitForClusterHealthy(project.ID, dc, cluster.ID); err != nil {
-		t.Fatalf("cluster not ready: %v", err)
-	}
-
-	return project, cluster
+	return project, cluster, nil
 }
