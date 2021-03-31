@@ -212,7 +212,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 		})
 
 		if err := clusterCli.Get(ctx, types.NamespacedName{Namespace: ConstraintNamespace, Name: constraint.Name}, instance); err != nil {
-			// Cant get status, because the Kubermatic Constraint is not synced yet as a Gatekeeper Constraint on the user cluster
+			// Can't get status, because the Kubermatic Constraint is not synced yet as a Gatekeeper Constraint on the user cluster
 			apiConstraint.Status = &apiv2.ConstraintStatus{Synced: pointer.BoolPtr(false)}
 			return apiConstraint, nil
 		}
