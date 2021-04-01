@@ -27,7 +27,7 @@ DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
 GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
-KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.20.2}"
+KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.18.2}"
 
 type kind > /dev/null || fatal \
   "Kind is required to run this script, please refer to: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
