@@ -70,7 +70,7 @@ rules:
 	}
 }
 
-// DeploymentCreator returns the function to create and update the API server deployment
+// DeploymentCreator returns the function to create and update the API server deployment XXX
 func DeploymentCreator(data *resources.TemplateData, enableOIDCAuthentication bool) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.ApiserverDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
