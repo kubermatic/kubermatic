@@ -26,7 +26,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: golang:1.16.2
+      - image: golang:1.16.1
         command:
         - make
         args:
@@ -48,7 +48,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: golang:1.16.2
+      - image: golang:1.16.1
         command:
         - make
         args:
@@ -123,7 +123,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:1.16.2-19.03-0
+      - image: quay.io/kubermatic/build:1.16.1-19.03-0
         command:
         - "./hack/verify-kubermatic-chart.sh"
         resources:
@@ -167,7 +167,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:1.16.2-19.03-0
+      - image: quay.io/kubermatic/build:1.16.1-19.03-0
         command:
         - "./hack/verify-docs.sh"
         resources:
@@ -223,7 +223,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:1.16.2-19.03-0
+      - image: quay.io/kubermatic/build:1.16.1-19.03-0
         command:
         - make
         args:
@@ -1376,7 +1376,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:1.16.2-19.03-0
+      - image: quay.io/kubermatic/build:1.16.1-19.03-0
         command:
         - "./hack/ci/run-offline-test.sh"
         # docker-in-docker needs privileged mode
