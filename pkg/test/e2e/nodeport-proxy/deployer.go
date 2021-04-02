@@ -24,20 +24,21 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
-	features "k8c.io/kubermatic/v2/pkg/features"
-	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
+	"k8c.io/kubermatic/v2/pkg/controller/operator/seed/resources/nodeportproxy"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
+	features "k8c.io/kubermatic/v2/pkg/features"
+	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
 const (
@@ -179,11 +180,11 @@ func (d *Deployer) GetLbService() *corev1.Service {
 }
 
 func (d *Deployer) waitForPodsCreated(dep *appsv1.Deployment) ([]string, error) {
-	return WaitForPodsCreated(d.Client, int(*dep.Spec.Replicas), dep.Namespace, dep.Spec.Selector.MatchLabels)
+	return e2eutils.WaitForPodsCreated(d.Client, int(*dep.Spec.Replicas), dep.Namespace, dep.Spec.Selector.MatchLabels)
 }
 
 func (d *Deployer) waitForPodsReady(pods ...string) error {
-	if !CheckPodsRunningReady(d.Client, d.Namespace, pods, podReadinessTimeout) {
+	if !e2eutils.CheckPodsRunningReady(d.Client, d.Namespace, pods, podReadinessTimeout) {
 		return fmt.Errorf("timeout waiting for %d pods to be ready", len(pods))
 	}
 	return nil

@@ -17,27 +17,18 @@ limitations under the License.
 package nodeportproxy
 
 import (
-	"bytes"
-	"context"
 	"fmt"
-	"io"
 	"net"
-	"net/url"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-	"go.uber.org/zap"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/remotecommand"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"k8s.io/utils/pointer"
+
+	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 )
 
 const (
@@ -45,72 +36,8 @@ const (
 	hostTestContainerName = "agnhost-container"
 )
 
-type NetworkingTestConfig struct {
-	Log           *zap.SugaredLogger
-	Namespace     string
-	Client        ctrlruntimeclient.Client
-	PodRestClient rest.Interface
-	Config        *rest.Config
-
-	// HostTestContainerPod is a pod running using the hostexec image.
-	HostTestContainerPod *corev1.Pod
-}
-
-// DeployTestPod deploys the pod to be used to shoot the requests to the
-// nodeport proxy service.
-func (n *NetworkingTestConfig) DeployTestPod() error {
-	hostTestContainerPod := n.newAgnhostPod(n.Namespace)
-	if err := n.Client.Create(context.TODO(), hostTestContainerPod); err != nil {
-		return errors.Wrap(err, "failed to create host test pod")
-	}
-
-	if err := n.waitForPodsReady(hostTestPodName); err != nil {
-		return errors.Wrap(err, "timeout occurred while waiting for host test pod readiness")
-	}
-
-	if err := n.Client.Get(context.TODO(), types.NamespacedName{
-		Namespace: hostTestContainerPod.Namespace,
-		Name:      hostTestContainerPod.Name,
-	}, hostTestContainerPod); err != nil {
-		return errors.Wrap(err, "failed to get host test pod")
-	}
-	n.HostTestContainerPod = hostTestContainerPod
-	return nil
-}
-
-// newAgnhostPod returns a pod using the HostNetwork to be used to shoot the
-// nodeport proxy service.
-func (n *NetworkingTestConfig) newAgnhostPod(ns string) *corev1.Pod {
-	immediate := int64(0)
-	pod := &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      hostTestPodName,
-			Namespace: ns,
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					Name:            hostTestContainerName,
-					Image:           AgnhostImage,
-					Args:            []string{"pause"},
-					SecurityContext: &corev1.SecurityContext{},
-					ImagePullPolicy: corev1.PullIfNotPresent,
-				},
-			},
-			HostNetwork:                   true,
-			SecurityContext:               &corev1.PodSecurityContext{},
-			TerminationGracePeriodSeconds: &immediate,
-		},
-	}
-	return pod
-}
-
-// CleanUp deletes the resources.
-func (n *NetworkingTestConfig) CleanUp() error {
-	if n.HostTestContainerPod != nil {
-		return n.Client.Delete(context.TODO(), n.HostTestContainerPod)
-	}
-	return nil
+type networkingTestConfig struct {
+	e2eutils.TestPodConfig
 }
 
 // Based on:
@@ -125,7 +52,7 @@ func (n *NetworkingTestConfig) CleanUp() error {
 // maxTries == minTries will confirm that we see the expected endpoints and no
 // more for maxTries. Use this if you want to eg: fail a readiness check on a
 // pod and confirm it doesn't show up as an endpoint.
-func (n *NetworkingTestConfig) DialFromNode(targetIP string, targetPort, maxTries, minTries int, expectedEps sets.String, https bool, args ...string) sets.String {
+func (n *networkingTestConfig) DialFromNode(targetIP string, targetPort, maxTries, minTries int, expectedEps sets.String, https bool, args ...string) sets.String {
 	ipPort := net.JoinHostPort(targetIP, strconv.Itoa(targetPort))
 	// The current versions of curl included in CentOS and RHEL distros
 	// misinterpret square brackets around IPv6 as globbing, so use the -g
@@ -157,7 +84,7 @@ func (n *NetworkingTestConfig) DialFromNode(targetIP string, targetPort, maxTrie
 	filterCmd := fmt.Sprintf("%s | grep -v '^\\s*$'", cmd)
 
 	for i := 0; i < maxTries; i++ {
-		stdout, stderr, err := n.exec("/bin/sh", "-c", filterCmd)
+		stdout, stderr, err := n.Exec(hostTestContainerName, "/bin/sh", "-c", filterCmd)
 		if err != nil || len(stderr) > 0 {
 			// A failure to exec command counts as a try, not a hard fail.
 			// Also note that we will keep failing for maxTries in tests where
@@ -188,48 +115,28 @@ func (n *NetworkingTestConfig) DialFromNode(targetIP string, targetPort, maxTrie
 	return diff
 }
 
-// exec executes the command in the host network container.
-func (n *NetworkingTestConfig) exec(command ...string) (string, string, error) {
-
-	const tty = false
-
-	req := n.PodRestClient.Post().
-		Resource("pods").
-		Name(hostTestPodName).
-		Namespace(n.Namespace).
-		SubResource("exec").
-		Param("container", hostTestContainerName)
-	req.VersionedParams(&corev1.PodExecOptions{
-		Container: hostTestContainerName,
-		Command:   command,
-		Stdin:     false,
-		Stdout:    true,
-		Stderr:    true,
-		TTY:       tty,
-	}, scheme.ParameterCodec)
-
-	var stdout, stderr bytes.Buffer
-	err := execute("POST", req.URL(), n.Config, nil, &stdout, &stderr, tty)
-
-	return stdout.String(), stderr.String(), err
-}
-
-func (n *NetworkingTestConfig) waitForPodsReady(pods ...string) error {
-	if !CheckPodsRunningReady(n.Client, n.Namespace, pods, podReadinessTimeout) {
-		return fmt.Errorf("timeout waiting for %d pods to be ready", len(pods))
+// newAgnhostPod returns a pod using the HostNetwork to be used to shoot the
+// nodeport proxy service.
+func newAgnhostPod(ns string) *corev1.Pod {
+	pod := &corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hostTestPodName,
+			Namespace: ns,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{
+				{
+					Name:            hostTestContainerName,
+					Image:           AgnhostImage,
+					Args:            []string{"pause"},
+					SecurityContext: &corev1.SecurityContext{},
+					ImagePullPolicy: corev1.PullIfNotPresent,
+				},
+			},
+			HostNetwork:                   true,
+			SecurityContext:               &corev1.PodSecurityContext{},
+			TerminationGracePeriodSeconds: pointer.Int64Ptr(0),
+		},
 	}
-	return nil
-}
-
-func execute(method string, url *url.URL, config *rest.Config, stdin io.Reader, stdout, stderr io.Writer, tty bool) error {
-	exec, err := remotecommand.NewSPDYExecutor(config, method, url)
-	if err != nil {
-		return err
-	}
-	return exec.Stream(remotecommand.StreamOptions{
-		Stdin:  stdin,
-		Stdout: stdout,
-		Stderr: stderr,
-		Tty:    tty,
-	})
+	return pod
 }

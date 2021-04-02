@@ -1263,7 +1263,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
+      - image: quay.io/kubermatic/e2e-kind:v1.0.24
         imagePullPolicy: Always
         command:
         - make
@@ -1320,6 +1320,41 @@ presubmits:
               cpu: 2
             limits:
               memory: 6Gi
+
+  #########################################################
+  # Expose Strategy e2e tests
+  #########################################################
+
+  - name: pre-kubermatic-expose-strategy-e2e
+    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+      - image: quay.io/kubermatic/e2e-kind:v1.0.27
+        imagePullPolicy: Always
+        command:
+        - make
+        args:
+        - run-expose-strategy-e2e-test-in-kind
+        env:
+        - name: KIND_NODE_VERSION
+          value: v1.20.2
+        - name: HELM_BINARY
+          value: helm3
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            memory: 4Gi
+            cpu: 2
+          limits:
+            memory: 6Gi
 
   #########################################################
   # misc

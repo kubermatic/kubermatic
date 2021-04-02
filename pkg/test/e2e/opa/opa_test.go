@@ -20,7 +20,6 @@ package opa
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"strings"
 	"testing"
@@ -37,7 +36,6 @@ import (
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/client-go/tools/clientcmd"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -46,7 +44,6 @@ var (
 	location   = "do-fra1"
 	version    = utils.KubernetesVersion()
 	credential = "e2e-digitalocean"
-	kubeconfig = flag.String("kubeconfig", "", "kubeconfig for the Seed cluster")
 	ctKind     = "RequiredLabels"
 )
 
@@ -57,20 +54,9 @@ func TestOPAIntegration(t *testing.T) {
 		t.Fatalf("failed to register gatekeeper scheme: %v", err)
 	}
 
-	// validate kubeconfig by creating a client
-	if kubeconfig == nil {
-		t.Fatal("-kubeconfig must be specified and pointing to the Seed cluster")
-	}
-
-	t.Log("creating client for Seed cluster...")
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	client, _, _, err := utils.GetClients()
 	if err != nil {
-		t.Fatalf("failed to create Seed cluster client: %v", err)
-	}
-
-	client, err := ctrlruntimeclient.New(config, ctrlruntimeclient.Options{Scheme: scheme.Scheme})
-	if err != nil {
-		t.Fatalf("failed to create Seed cluster client: %v", err)
+		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
 
 	// login
