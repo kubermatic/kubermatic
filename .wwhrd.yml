@@ -45,3 +45,4 @@ exceptions:
   - github.com/hashicorp/hcl/json/token # MPL-2.0
   - github.com/ajeddeloh/go-json # Since it's a fork, https://github.com/golang/go/blob/master/LICENSE
   - github.com/gosimple/slug # MPL-2.0. Required for https://github.com/grafana-tools/sdk
+  - github.com/go-sql-driver/mysql # MPL-2.0. Required for https://github.com/grafana/grafana
