@@ -573,7 +573,7 @@ const (
 )
 
 const (
-	MLANamespace                   = "mla"
+	MLANamespace                   = "mla-system"
 	PromtailServiceAccountName     = "promtail"
 	PromtailClusterRoleName        = "promtail"
 	PromtailClusterRoleBindingName = "promtail"
