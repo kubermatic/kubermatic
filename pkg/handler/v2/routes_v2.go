@@ -487,7 +487,12 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPut).
 		Path("/serviceaccounts/{serviceaccount_id}/tokens/{token_id}").
 		Handler(r.updateMainServiceAccountToken())
-
+	mux.Methods(http.MethodPatch).
+		Path("/serviceaccounts/{serviceaccount_id}/tokens/{token_id}").
+		Handler(r.patchMainServiceAccountToken())
+	mux.Methods(http.MethodDelete).
+		Path("/serviceaccounts/{serviceaccount_id}/tokens/{token_id}").
+		Handler(r.deleteMainServiceAccountToken())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -3302,8 +3307,59 @@ func (r Routing) updateMainServiceAccountToken() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.UpdateTokenEndpoint(r.serviceAccountProvider, r.serviceAccountTokenProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
+		)(serviceaccount.UpdateTokenEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
 		serviceaccount.DecodeUpdateTokenReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v2/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens patchMainServiceAccountToken
+//
+//     Patches the token name
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: PublicServiceAccountToken
+//       401: empty
+//       403: empty
+func (r Routing) patchMainServiceAccountToken() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(serviceaccount.PatchTokenEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
+		serviceaccount.DecodePatchTokenReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens deleteMainServiceAccountToken
+//
+//     Deletes the token
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteMainServiceAccountToken() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(serviceaccount.DeleteTokenEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountTokenProvider, r.userInfoGetter)),
+		serviceaccount.DecodeDeleteTokenReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

@@ -67,7 +67,7 @@ echodate "Creating the kind cluster"
 export KUBECONFIG=~/.kube/config
 
 beforeKindCreate=$(nowms)
-export KIND_NODE_VERSION=v1.20.2
+export KIND_NODE_VERSION=v1.18.2
 kind create cluster --name "$KIND_CLUSTER_NAME" --image=kindest/node:$KIND_NODE_VERSION
 pushElapsed kind_cluster_create_duration_milliseconds $beforeKindCreate "node_version=\"$KIND_NODE_VERSION\""
 

@@ -572,6 +572,15 @@ const (
 	EtcdClientKeyFile  = "/etc/etcd/pki/client/apiserver-etcd-client.key"
 )
 
+const (
+	MLANamespace                   = "mla-system"
+	PromtailServiceAccountName     = "promtail"
+	PromtailClusterRoleName        = "promtail"
+	PromtailClusterRoleBindingName = "promtail"
+	PromtailSecretName             = "promtail"
+	PromtailDaemonSetName          = "promtail"
+)
+
 // ECDSAKeyPair is a ECDSA x509 certificate and private key
 type ECDSAKeyPair struct {
 	Key  *ecdsa.PrivateKey
