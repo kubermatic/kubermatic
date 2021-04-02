@@ -211,6 +211,9 @@ func (r *userProjectBindingReconciler) getGrafanaOrgUser(ctx context.Context, or
 
 func (r *userProjectBindingReconciler) addGrafanaOrgUser(ctx context.Context, orgID uint, email, role string) (*grafanasdk.OrgUser, error) {
 	req, err := http.NewRequest("GET", r.grafanaURL+"/api/user", nil)
+	if err != nil {
+		return nil, err
+	}
 	req.Header.Add(r.grafanaHeader, email)
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
@@ -223,7 +226,7 @@ func (r *userProjectBindingReconciler) addGrafanaOrgUser(ctx context.Context, or
 	defer resp.Body.Close()
 	decoder := json.NewDecoder(resp.Body)
 	if err := decoder.Decode(res); err != nil || res.ID == 0 {
-		return nil, fmt.Errorf("unable to decode responce : %w", err)
+		return nil, fmt.Errorf("unable to decode response : %w", err)
 	}
 	// delete user from default org
 	if status, err := r.grafanaClient.DeleteOrgUser(ctx, defaultOrgID, res.ID); err != nil {
@@ -242,6 +245,6 @@ func (r *userProjectBindingReconciler) addGrafanaOrgUser(ctx context.Context, or
 		OrgId: orgID,
 		Email: email,
 		Login: email,
-		Role:  string(role),
+		Role:  role,
 	}, nil
 }
