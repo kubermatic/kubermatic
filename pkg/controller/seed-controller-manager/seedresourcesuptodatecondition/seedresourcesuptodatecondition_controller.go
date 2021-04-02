@@ -148,7 +148,6 @@ func (r *reconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluste
 }
 
 func (r *reconciler) seedResourcesUpToDate(ctx context.Context, cluster *kubermaticv1.Cluster) (bool, error) {
-
 	listOpts := &ctrlruntimeclient.ListOptions{Namespace: cluster.Status.NamespaceName}
 
 	statefulSets := &appsv1.StatefulSetList{}
@@ -182,5 +181,11 @@ func (r *reconciler) seedResourcesUpToDate(ctx context.Context, cluster *kuberma
 		}
 	}
 
-	return true, nil
+	// This is to avoid setting the resource up-to-date condition in the
+	// initial stage when deploymens and statefulsets are not yet deployed.
+	// TODO(irozzo) This is not perfect as we may endup in a situation where
+	// the available control plane components are ready, but not all components have
+	// been deployed yet. This scenario is quite unlikely to happen though and
+	// the impact of having the condition set is not big.
+	return len(deployments.Items) > 0 || len(statefulSets.Items) > 0, nil
 }

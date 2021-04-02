@@ -25,11 +25,12 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
+	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )
 
 var deployer *Deployer
-var networkingTest *NetworkingTestConfig
+var networkingTest *networkingTestConfig
 var skipCleanup bool
 var debugLog bool
 var versions = kubermatic.NewDefaultVersions()
@@ -46,18 +47,21 @@ func TestNodeportProxy(t *testing.T) {
 }
 
 var _ = ginkgo.BeforeSuite(func() {
-	logger = CreateLogger(debugLog)
-	k8scli, podRestCli, config := GetClientsOrDie()
+	e2eutils.DefaultLogger = e2eutils.CreateLogger(debugLog)
+	k8scli, podRestCli, config := e2eutils.GetClientsOrDie()
 	deployer = &Deployer{
-		Log:      logger,
+		Log:      e2eutils.DefaultLogger,
 		Client:   k8scli,
 		Versions: versions,
 	}
-	networkingTest = &NetworkingTestConfig{
-		Log:           logger,
-		Client:        k8scli,
-		Config:        config,
-		PodRestClient: podRestCli,
+	networkingTest = &networkingTestConfig{
+		TestPodConfig: e2eutils.TestPodConfig{
+			Log:           e2eutils.DefaultLogger,
+			Client:        k8scli,
+			Config:        config,
+			PodRestClient: podRestCli,
+			CreatePodFunc: newAgnhostPod,
+		},
 	}
 	gomega.Expect(deployer.SetUp()).NotTo(gomega.HaveOccurred(), "nodeport-proxy should deploy successfully")
 	// We put the test pod in same namespace as the nodeport proxy

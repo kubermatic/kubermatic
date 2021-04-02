@@ -343,7 +343,8 @@ start_docker_daemon() {
 
   # Start Docker daemon
   echodate "Starting Docker"
-  dockerd > /tmp/docker.log 2>&1 &
+  # Set the MTU to 1400 to avoid issues with our CI environment.
+  dockerd --mtu 1400 > /tmp/docker.log 2>&1 &
   echodate "Started Docker successfully"
   appendTrap docker_logs EXIT
 
