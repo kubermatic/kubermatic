@@ -31,7 +31,7 @@ import (
 
 const (
 	imageName = "prometheus/prometheus"
-	tag       = "v2.24.0"
+	tag       = "v2.26.0"
 
 	configVolumeName  = "config-volume"
 	configPath        = "/etc/config"
