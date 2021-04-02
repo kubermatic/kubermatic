@@ -407,6 +407,7 @@ func createMLAController(ctrlCtx *controllerContext) error {
 		return nil
 	}
 	return mla.Add(
+		ctrlCtx.ctx,
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerCount,
@@ -414,5 +415,6 @@ func createMLAController(ctrlCtx *controllerContext) error {
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.grafanaURL,
 		ctrlCtx.runOptions.grafanaHeaderName,
+		ctrlCtx.runOptions.grafanaSecret,
 	)
 }

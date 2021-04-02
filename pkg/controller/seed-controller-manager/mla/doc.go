@@ -17,5 +17,6 @@ limitations under the License.
 /*
 Package mla contains controllers that are responsible for configuring MLA (Monitoring, Logging, and Alerting)
 for user clusters.
+- project_controller - Create/Update Grafana Organizations based on Kubermatic Projects.
 */
 package mla
