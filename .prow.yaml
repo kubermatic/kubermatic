@@ -35,6 +35,9 @@ presubmits:
           requests:
             memory: 7Gi
             cpu: 2
+          limits:
+            memory: 7Gi
+            cpu: 2
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -55,7 +58,7 @@ presubmits:
         - verify
         resources:
           requests:
-            memory: 1.5Gi
+            memory: 2.5Gi
             cpu: 1
           limits:
             memory: 2.5Gi
@@ -77,8 +80,8 @@ presubmits:
         - "./hack/ci/verify-chart-versions.sh"
         resources:
           requests:
-            memory: 128Mi
-            cpu: 50m
+            memory: 256Mi
+            cpu: 250m
           limits:
             memory: 256Mi
             cpu: 250m
@@ -109,8 +112,8 @@ presubmits:
         - "hack"
         resources:
           requests:
-            memory: 32Mi
-            cpu: 50m
+            memory: 256Mi
+            cpu: 250m
           limits:
             memory: 256Mi
             cpu: 250m
@@ -128,8 +131,8 @@ presubmits:
         - "./hack/verify-kubermatic-chart.sh"
         resources:
           requests:
-            memory: 512Mi
-            cpu: 250m
+            memory: 1Gi
+            cpu: 1
           limits:
             memory: 1Gi
             cpu: 1
@@ -150,8 +153,8 @@ presubmits:
         - "./hack/verify-grafana-dashboards.sh"
         resources:
           requests:
-            memory: 64Mi
-            cpu: 50m
+            memory: 128Mi
+            cpu: 250m
           limits:
             memory: 128Mi
             cpu: 250m
@@ -172,6 +175,9 @@ presubmits:
         - "./hack/verify-docs.sh"
         resources:
           requests:
+            memory: 1Gi
+            cpu: 1
+          limits:
             memory: 1Gi
             cpu: 1
         env:
@@ -195,6 +201,9 @@ presubmits:
           requests:
             memory: 10Gi
             cpu: 3
+          limits:
+            memory: 10Gi
+            cpu: 3
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -214,6 +223,9 @@ presubmits:
           requests:
             memory: 512Mi
             cpu: 0.5
+          limits:
+            memory: 512Mi
+            cpu: 0.5
 
   - name: pre-kubermatic-dependencies
     run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
@@ -230,6 +242,9 @@ presubmits:
         - check-dependencies
         resources:
           requests:
+            memory: 256Mi
+            cpu: 1
+          limits:
             memory: 256Mi
             cpu: 1
         env:
@@ -254,6 +269,9 @@ presubmits:
           requests:
             memory: 1Gi
             cpu: 0.5
+          limits:
+            memory: 1Gi
+            cpu: 0.5
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -273,6 +291,9 @@ presubmits:
           requests:
             memory: 512Mi
             cpu: 1
+          limits:
+            memory: 512Mi
+            cpu: 1
 
   - name: pre-kubermatic-verify-boilerplate
     always_run: true
@@ -287,6 +308,9 @@ presubmits:
         - ./hack/verify-boilerplate.sh
         resources:
           requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
             memory: 256Mi
             cpu: 100m
 
@@ -304,6 +328,13 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 256Mi
+            cpu: 100m
       imagePullSecrets:
       - name: quay
 
@@ -321,6 +352,13 @@ presubmits:
         env:
         - name: KUBERMATIC_EDITION
           value: ee
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 256Mi
+            cpu: 100m
       imagePullSecrets:
       - name: quay
 
@@ -337,6 +375,9 @@ presubmits:
         - ./hack/ci/test-github-release.sh
         resources:
           requests:
+            memory: 1Gi
+            cpu: 0.5
+          limits:
             memory: 1Gi
             cpu: 0.5
 
@@ -365,6 +406,7 @@ presubmits:
               cpu: 2
             limits:
               memory: 6Gi
+              cpu: 2
 
   #########################################################
   # Base Kubernetes Tests (AWS, Flatcar)
@@ -410,6 +452,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-aws-flatcar-1.18
     decorate: true
@@ -451,6 +494,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.19
     decorate: true
@@ -492,6 +536,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.20
     decorate: true
@@ -533,6 +578,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.20-ce
     decorate: true
@@ -576,6 +622,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.20-legacy
     decorate: true
@@ -622,6 +669,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   #########################################################
   # Extended Kubernetes Tests (various cloud providers, OS)
@@ -671,6 +719,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.20
     decorate: true
@@ -715,6 +764,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.20-psp
     decorate: true
@@ -762,6 +812,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-do-centos-1.20
     decorate: true
@@ -806,6 +857,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-packet-ubuntu-1.20
     decorate: true
@@ -849,6 +901,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-kubevirt-centos-1.20
     decorate: true
@@ -892,6 +945,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-hetzner-ubuntu-1.20
     decorate: true
@@ -937,6 +991,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-openstack-ubuntu-1.20
     decorate: true
@@ -982,6 +1037,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-openstack-centos-1.20
     decorate: true
@@ -1027,6 +1083,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.20
     decorate: true
@@ -1070,6 +1127,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.20-customfolder
     decorate: true
@@ -1116,6 +1174,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.20-datastore-cluster
     decorate: true
@@ -1162,6 +1221,7 @@ presubmits:
             cpu: 3.5
           limits:
             memory: 4Gi
+            cpu: 3.5
 
   #########################################################
   # REST API e2e tests
@@ -1195,10 +1255,11 @@ presubmits:
           privileged: true
         resources:
           requests:
-            memory: 4Gi
+            memory: 6Gi
             cpu: 2
           limits:
             memory: 6Gi
+            cpu: 2
         env:
         - name: KUBERMATIC_EDITION
           value: ee
@@ -1243,10 +1304,11 @@ presubmits:
           privileged: true
         resources:
           requests:
-            memory: 4Gi
+            memory: 6Gi
             cpu: 2
           limits:
             memory: 6Gi
+            cpu: 2
 
   #########################################################
   # NodePort Proxy e2e tests
@@ -1276,10 +1338,11 @@ presubmits:
           privileged: true
         resources:
           requests:
-            memory: 4Gi
+            memory: 6Gi
             cpu: 2
           limits:
             memory: 6Gi
+            cpu: 2
 
   #########################################################
   # opa e2e tests
@@ -1316,10 +1379,11 @@ presubmits:
             privileged: true
           resources:
             requests:
-              memory: 4Gi
+              memory: 6Gi
               cpu: 2
             limits:
               memory: 6Gi
+              cpu: 2
 
   #########################################################
   # Expose Strategy e2e tests
@@ -1351,10 +1415,11 @@ presubmits:
           privileged: true
         resources:
           requests:
-            memory: 4Gi
+            memory: 6Gi
             cpu: 2
           limits:
             memory: 6Gi
+            cpu: 2
 
   #########################################################
   # misc
@@ -1379,8 +1444,8 @@ presubmits:
           privileged: true
         resources:
           requests:
-            memory: 2.5Gi
-            cpu: 500m
+            memory: 4Gi
+            cpu: 2
           limits:
             memory: 4Gi
             cpu: 2
@@ -1401,7 +1466,7 @@ presubmits:
         - test-integration
         resources:
           requests:
-            memory: 4Gi
+            memory: 6Gi
             cpu: 2
           limits:
             memory: 6Gi
