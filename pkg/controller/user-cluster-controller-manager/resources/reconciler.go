@@ -24,6 +24,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/cloudcontroller"
 	cabundle "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/ca-bundle"
+	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/cloudinitsettings"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/clusterautoscaler"
 	controllermanager "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/controller-manager"
 	coredns "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/resources/resources/core-dns"
@@ -206,6 +207,13 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
+	cloudInitSACreator := []reconciling.NamedServiceAccountCreatorGetter{
+		cloudinitsettings.ServiceAccountCreator(),
+	}
+	if err := reconciling.ReconcileServiceAccounts(ctx, cloudInitSACreator, resources.CloudInitSettingsNamespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile cloud-init-getter in the namespace %s: %v", resources.CloudInitSettingsNamespace, err)
+	}
+
 	// OPA related resources
 	if r.opaIntegration {
 		creators = []reconciling.NamedServiceAccountCreatorGetter{
@@ -271,6 +279,13 @@ func (r *reconciler) reconcileRoles(ctx context.Context) error {
 		return fmt.Errorf("failed to reconcile Roles in the namespace %s: %v", kubernetesdashboard.Namespace, err)
 	}
 
+	cloudInitRoleCreator := []reconciling.NamedRoleCreatorGetter{
+		cloudinitsettings.RoleCreator(),
+	}
+	if err := reconciling.ReconcileRoles(ctx, cloudInitRoleCreator, resources.CloudInitSettingsNamespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile cloud-init-getter role in the namespace %s: %v", resources.CloudInitSettingsNamespace, err)
+	}
+
 	// OPA relate resources
 	if r.opaIntegration {
 		creators = []reconciling.NamedRoleCreatorGetter{
@@ -326,6 +341,13 @@ func (r *reconciler) reconcileRoleBindings(ctx context.Context) error {
 	}
 	if err := reconciling.ReconcileRoleBindings(ctx, creators, kubernetesdashboard.Namespace, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile RoleBindings in the namespace: %s: %v", kubernetesdashboard.Namespace, err)
+	}
+
+	cloudInitRoleBindingCreator := []reconciling.NamedRoleBindingCreatorGetter{
+		cloudinitsettings.RoleBindingCreator(),
+	}
+	if err := reconciling.ReconcileRoleBindings(ctx, cloudInitRoleBindingCreator, resources.CloudInitSettingsNamespace, r.Client); err != nil {
+		return fmt.Errorf("failed to reconcile cloud-init-getter RoleBindings in the namespace: %s: %v", resources.CloudInitSettingsNamespace, err)
 	}
 
 	// OPA relate resources
@@ -604,6 +626,7 @@ func (r *reconciler) reconcileNamespaces(ctx context.Context) error {
 
 	creators := []reconciling.NamedNamespaceCreatorGetter{
 		kubernetesdashboard.NamespaceCreator,
+		cloudinitsettings.NamespaceCreator,
 	}
 	if r.opaIntegration {
 		creators = append(creators, gatekeeper.NamespaceCreator)

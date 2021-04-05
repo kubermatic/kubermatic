@@ -331,7 +331,9 @@ const (
 	KubermaticNamespace = "kubermatic"
 	// GatekeeperNamespace is the main gatkeeper namespace where the gatekeeper config is stored
 	GatekeeperNamespace = "gatekeeper-system"
-
+	// CloudInitSettingsNamespace are used in order to reach, authenticate and be authorized by the api server, to fetch
+	// the machine  provisioning cloud-init
+	CloudInitSettingsNamespace = "cloud-init-settings"
 	// DefaultOwnerReadOnlyMode represents file mode with read permission for owner only
 	DefaultOwnerReadOnlyMode = 0400
 
