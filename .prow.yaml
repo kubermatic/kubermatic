@@ -26,18 +26,18 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: golang:1.16.1
-        command:
-        - make
-        args:
-        - test
-        resources:
-          requests:
-            memory: 7Gi
-            cpu: 2
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - make
+          args:
+            - test
+          resources:
+            requests:
+              memory: 7Gi
+              cpu: 2
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
 
   - name: pre-kubermatic-verify
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
@@ -48,21 +48,21 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: golang:1.16.1
-        command:
-        - make
-        args:
-        - verify
-        resources:
-          requests:
-            memory: 1.5Gi
-            cpu: 1
-          limits:
-            memory: 2.5Gi
-            cpu: 2
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - make
+          args:
+            - verify
+          resources:
+            requests:
+              memory: 1.5Gi
+              cpu: 1
+            limits:
+              memory: 2.5Gi
+              cpu: 2
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
 
   - name: pre-kubermatic-verify-charts
     run_if_changed: "^charts/"
@@ -72,19 +72,19 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/util:1.5.0
-        command:
-        - "./hack/ci/verify-chart-versions.sh"
-        resources:
-          requests:
-            memory: 128Mi
-            cpu: 50m
-          limits:
-            memory: 256Mi
-            cpu: 250m
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - "./hack/ci/verify-chart-versions.sh"
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 50m
+            limits:
+              memory: 256Mi
+              cpu: 250m
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
 
   - name: pre-kubermatic-verify-shfmt
     run_if_changed: "^hack/"
@@ -94,26 +94,26 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: docker.io/mvdan/shfmt:v3.2.1
-        command:
-        - "/bin/shfmt"
-      #   -l        list files whose formatting differs from shfmt's
-      #   -d        error with a diff when the formatting differs
-      #   -i uint   indent: 0 for tabs (default), >0 for number of spaces
-        args:
-        - "-l"
-        - "-sr"
-        - "-i"
-        - "2"
-        - "-d"
-        - "hack"
-        resources:
-          requests:
-            memory: 32Mi
-            cpu: 50m
-          limits:
-            memory: 256Mi
-            cpu: 250m
+        - image: docker.io/mvdan/shfmt:v3.2.1
+          command:
+            - "/bin/shfmt"
+          #   -l        list files whose formatting differs from shfmt's
+          #   -d        error with a diff when the formatting differs
+          #   -i uint   indent: 0 for tabs (default), >0 for number of spaces
+          args:
+            - "-l"
+            - "-sr"
+            - "-i"
+            - "2"
+            - "-d"
+            - "hack"
+          resources:
+            requests:
+              memory: 32Mi
+              cpu: 50m
+            limits:
+              memory: 256Mi
+              cpu: 250m
 
   - name: pre-kubermatic-verify-kubermatic-chart
     run_if_changed: "^(cmd|codegen|hack|pkg|charts)/"
@@ -123,19 +123,19 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/go-docker:16.1-1903-0
-        command:
-        - "./hack/verify-kubermatic-chart.sh"
-        resources:
-          requests:
-            memory: 512Mi
-            cpu: 250m
-          limits:
-            memory: 1Gi
-            cpu: 1
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - "./hack/verify-kubermatic-chart.sh"
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 250m
+            limits:
+              memory: 1Gi
+              cpu: 1
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
 
   - name: pre-kubermatic-verify-grafana-dashboards
     run_if_changed: "^charts/monitoring/grafana/"
@@ -145,19 +145,19 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/util:1.5.0
-        command:
-        - "./hack/verify-grafana-dashboards.sh"
-        resources:
-          requests:
-            memory: 64Mi
-            cpu: 50m
-          limits:
-            memory: 128Mi
-            cpu: 250m
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - "./hack/verify-grafana-dashboards.sh"
+          resources:
+            requests:
+              memory: 64Mi
+              cpu: 50m
+            limits:
+              memory: 128Mi
+              cpu: 250m
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
 
   - name: pre-kubermatic-verify-docs
     run_if_changed: "^(cmd|codegen|hack|pkg|docs)/"
@@ -167,16 +167,16 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/go-docker:16.1-1903-0
-        command:
-        - "./hack/verify-docs.sh"
-        resources:
-          requests:
-            memory: 1Gi
-            cpu: 1
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - "./hack/verify-docs.sh"
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 1
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
 
   - name: pre-kubermatic-lint
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
@@ -186,18 +186,18 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: golangci/golangci-lint:v1.30.0
-        command:
-        - make
-        args:
-        - lint
-        resources:
-          requests:
-            memory: 10Gi
-            cpu: 3
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
+        - image: golangci/golangci-lint:v1.30.0
+          command:
+            - make
+          args:
+            - lint
+          resources:
+            requests:
+              memory: 10Gi
+              cpu: 3
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
 
   - name: pre-kubermatic-spellcheck
     always_run: true
@@ -205,15 +205,15 @@ presubmits:
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     spec:
       containers:
-      - image: quay.io/kubermatic/codespell:1.17.1
-        command:
-        - make
-        args:
-        - spellcheck
-        resources:
-          requests:
-            memory: 512Mi
-            cpu: 0.5
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - make
+          args:
+            - spellcheck
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 0.5
 
   - name: pre-kubermatic-dependencies
     run_if_changed: "^(cmd/|codegen/|hack/|pkg/|go.mod|go.sum)"
@@ -223,18 +223,18 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/go-docker:16.1-1903-0
-        command:
-        - make
-        args:
-        - check-dependencies
-        resources:
-          requests:
-            memory: 256Mi
-            cpu: 1
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - make
+          args:
+            - check-dependencies
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 1
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
 
   - name: pre-kubermatic-shellcheck
     optional: true
@@ -244,19 +244,19 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: koalaman/shellcheck-alpine:v0.7.0
-        command:
-        - sh
-        args:
-        - -c
-        - shellcheck --shell=bash $(find . -name '*.sh')
-        resources:
-          requests:
-            memory: 1Gi
-            cpu: 0.5
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
+        - image: koalaman/shellcheck-alpine:v0.7.0
+          command:
+            - sh
+          args:
+            - -c
+            - shellcheck --shell=bash $(find . -name '*.sh')
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 0.5
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
 
   - name: pre-kubermatic-license-validation
     run_if_changed: "^go.(mod|sum)$"
@@ -266,13 +266,13 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/wwhrd:0.4.0-2
-        command:
-        - ./hack/verify-licenses.sh
-        resources:
-          requests:
-            memory: 512Mi
-            cpu: 1
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - ./hack/verify-licenses.sh
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 1
 
   - name: pre-kubermatic-verify-boilerplate
     always_run: true
@@ -282,13 +282,13 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic-labs/boilerplate:v0.1.1
-        command:
-        - ./hack/verify-boilerplate.sh
-        resources:
-          requests:
-            memory: 256Mi
-            cpu: 100m
+        - image: quay.io/kubermatic-labs/boilerplate:v0.1.1
+          command:
+            - ./hack/verify-boilerplate.sh
+          resources:
+            requests:
+              memory: 256Mi
+              cpu: 100m
 
   - name: pre-kubermatic-prometheus-rules-validation
     run_if_changed: "charts/monitoring"
@@ -298,14 +298,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/util:1.5.0
-        command:
-        - ./hack/verify-prometheus-rules.sh
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-      imagePullSecrets:
-      - name: quay
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - ./hack/verify-prometheus-rules.sh
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
 
   - name: pre-kubermatic-user-cluster-prometheus-config-validation
     run_if_changed: "pkg/resources/prometheus"
@@ -315,14 +313,12 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/promtool:2.7.0-3
-        command:
-        - "./hack/ci/verify-user-cluster-prometheus-configs.sh"
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-      imagePullSecrets:
-      - name: quay
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - "./hack/ci/verify-user-cluster-prometheus-configs.sh"
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
 
   - name: pre-kubermatic-simulate-github-release
     run_if_changed: "hack/ci/github-release.sh"
@@ -332,13 +328,13 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        command:
-        - ./hack/ci/test-github-release.sh
-        resources:
-          requests:
-            memory: 1Gi
-            cpu: 0.5
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - ./hack/ci/test-github-release.sh
+          resources:
+            requests:
+              memory: 1Gi
+              cpu: 0.5
 
   - name: pre-kubermatic-test-helm-charts
     run_if_changed: "charts/"
@@ -351,7 +347,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/e2e-kind:v1.0.24
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
           command:
             - "./hack/ci/test-helm-charts.sh"
           env:
@@ -386,30 +382,30 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.17.16"
-        - name: DISTRIBUTIONS
-          value: flatcar
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.17.16"
+            - name: DISTRIBUTIONS
+              value: flatcar
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-aws-flatcar-1.18
     decorate: true
@@ -427,30 +423,30 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.18.14"
-        - name: DISTRIBUTIONS
-          value: flatcar
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.18.14"
+            - name: DISTRIBUTIONS
+              value: flatcar
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.19
     decorate: true
@@ -468,30 +464,30 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.19.8"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.19.8"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.20
     decorate: true
@@ -509,30 +505,30 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.20-ce
     decorate: true
@@ -550,32 +546,32 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: "ce"
-        - name: ONLY_TEST_CREATION
-          value: "true"
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: "ce"
+            - name: ONLY_TEST_CREATION
+              value: "true"
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-aws-ubuntu-1.20-legacy
     decorate: true
@@ -593,35 +589,35 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: "ee"
-        - name: ONLY_TEST_CREATION
-          value: "true"
-        # do not use kubermatic-installer, but instead the `kubermatic` Helm chart (EE-only)
-        - name: USE_LEGACY_HELM_CHART
-          value: "true"
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: "ee"
+            - name: ONLY_TEST_CREATION
+              value: "true"
+            # do not use kubermatic-installer, but instead the `kubermatic` Helm chart (EE-only)
+            - name: USE_LEGACY_HELM_CHART
+              value: "true"
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   #########################################################
   # Extended Kubernetes Tests (various cloud providers, OS)
@@ -643,34 +639,34 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: PROVIDER
-          value: "azure"
-        - name: DEFAULT_TIMEOUT_MINUTES
-          value: "20"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: PROVIDER
+              value: "azure"
+            - name: DEFAULT_TIMEOUT_MINUTES
+              value: "20"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.20
     decorate: true
@@ -689,32 +685,32 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: PROVIDER
-          value: "gcp"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: PROVIDER
+              value: "gcp"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-gcp-ubuntu-1.20-psp
     decorate: true
@@ -732,36 +728,36 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: PROVIDER
-          value: "gcp"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: KUBERMATIC_PSP_ENABLED
-          value: "true"
-        - name: ONLY_TEST_CREATION
-          value: "true"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: PROVIDER
+              value: "gcp"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: KUBERMATIC_PSP_ENABLED
+              value: "true"
+            - name: ONLY_TEST_CREATION
+              value: "true"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-do-centos-1.20
     decorate: true
@@ -780,32 +776,32 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: DISTRIBUTIONS
-          value: centos
-        - name: PROVIDER
-          value: "digitalocean"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: DISTRIBUTIONS
+              value: centos
+            - name: PROVIDER
+              value: "digitalocean"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-packet-ubuntu-1.20
     decorate: true
@@ -823,32 +819,32 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: PROVIDER
-          value: "packet"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: PROVIDER
+              value: "packet"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-kubevirt-centos-1.20
     decorate: true
@@ -866,32 +862,32 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: PROVIDER
-          value: "kubevirt"
-        - name: DISTRIBUTIONS
-          value: centos
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: PROVIDER
+              value: "kubevirt"
+            - name: DISTRIBUTIONS
+              value: centos
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-hetzner-ubuntu-1.20
     decorate: true
@@ -909,34 +905,34 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: PROVIDER
-          value: "hetzner"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: DEFAULT_TIMEOUT_MINUTES
-          value: "20"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: PROVIDER
+              value: "hetzner"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: DEFAULT_TIMEOUT_MINUTES
+              value: "20"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-openstack-ubuntu-1.20
     decorate: true
@@ -954,34 +950,34 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: PROVIDER
-          value: "openstack"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: DEFAULT_TIMEOUT_MINUTES
-          value: "20"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: PROVIDER
+              value: "openstack"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: DEFAULT_TIMEOUT_MINUTES
+              value: "20"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-openstack-centos-1.20
     decorate: true
@@ -999,34 +995,34 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: PROVIDER
-          value: "openstack"
-        - name: DEFAULT_TIMEOUT_MINUTES
-          value: "20"
-        - name: DISTRIBUTIONS
-          value: centos
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: PROVIDER
+              value: "openstack"
+            - name: DEFAULT_TIMEOUT_MINUTES
+              value: "20"
+            - name: DISTRIBUTIONS
+              value: centos
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.20
     decorate: true
@@ -1044,32 +1040,32 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: PROVIDER
-          value: "vsphere"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: PROVIDER
+              value: "vsphere"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.20-customfolder
     decorate: true
@@ -1088,34 +1084,34 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: PROVIDER
-          value: "vsphere"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: SCENARIO_OPTIONS
-          value: "custom-folder"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: PROVIDER
+              value: "vsphere"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SCENARIO_OPTIONS
+              value: "custom-folder"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.20-datastore-cluster
     decorate: true
@@ -1134,34 +1130,34 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: VERSIONS_TO_TEST
-          value: "v1.20.2"
-        - name: PROVIDER
-          value: "vsphere"
-        - name: DISTRIBUTIONS
-          value: ubuntu
-        - name: SCENARIO_OPTIONS
-          value: "datastore-cluster"
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        command:
-        - "./hack/ci/run-e2e-tests.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 3.5
-          limits:
-            memory: 4Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.2"
+            - name: PROVIDER
+              value: "vsphere"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SCENARIO_OPTIONS
+              value: "datastore-cluster"
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          command:
+            - "./hack/ci/run-e2e-tests.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 3.5
+            limits:
+              memory: 4Gi
 
   #########################################################
   # REST API e2e tests
@@ -1184,29 +1180,29 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        imagePullPolicy: Always
-        command:
-        - "./hack/ci/run-api-e2e.sh"
-        env:
-        - name: VERSION_TO_TEST
-          value: v1.18.10
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 2
-          limits:
-            memory: 6Gi
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          imagePullPolicy: Always
+          command:
+            - "./hack/ci/run-api-e2e.sh"
+          env:
+            - name: VERSION_TO_TEST
+              value: v1.18.10
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
 
   #########################################################
   # etcd-launcher e2e tests
@@ -1226,27 +1222,27 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
-        command:
-        - "./hack/ci/run-etcd-launcher-tests.sh"
-        env:
-        - name: VERSION_TO_TEST
-          value: v1.20.2
-        - name: KUBERMATIC_EDITION
-          value: ee
-        - name: SERVICE_ACCOUNT_KEY
-          valueFrom:
-            secretKeyRef:
-              name: e2e-ci
-              key: serviceAccountSigningKey
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 2
-          limits:
-            memory: 6Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - "./hack/ci/run-etcd-launcher-tests.sh"
+          env:
+            - name: VERSION_TO_TEST
+              value: v1.20.2
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
 
   #########################################################
   # NodePort Proxy e2e tests
@@ -1263,23 +1259,23 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:v1.0.24
-        imagePullPolicy: Always
-        command:
-        - make
-        args:
-        - run-nodeport-proxy-e2e-test-in-kind
-        env:
-        - name: KIND_NODE_VERSION
-          value: v1.19.1
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 2
-          limits:
-            memory: 6Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          imagePullPolicy: Always
+          command:
+            - make
+          args:
+            - run-nodeport-proxy-e2e-test-in-kind
+          env:
+            - name: KIND_NODE_VERSION
+              value: v1.19.1
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
 
   #########################################################
   # opa e2e tests
@@ -1299,7 +1295,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-        - image: quay.io/kubermatic/e2e-kind:with-conformance-tests-v1.0.24
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
           command:
             - "./hack/ci/run-opa-e2e-tests.sh"
           env:
@@ -1336,25 +1332,25 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/e2e-kind:v1.0.27
-        imagePullPolicy: Always
-        command:
-        - make
-        args:
-        - run-expose-strategy-e2e-test-in-kind
-        env:
-        - name: KIND_NODE_VERSION
-          value: v1.20.2
-        - name: HELM_BINARY
-          value: helm3
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 2
-          limits:
-            memory: 6Gi
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          imagePullPolicy: Always
+          command:
+            - make
+          args:
+            - run-expose-strategy-e2e-test-in-kind
+          env:
+            - name: KIND_NODE_VERSION
+              value: v1.20.2
+            - name: HELM_BINARY
+              value: helm3
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
 
   #########################################################
   # misc
@@ -1371,19 +1367,19 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/go-docker:16.1-1903-0
-        command:
-        - "./hack/ci/run-offline-test.sh"
-        # docker-in-docker needs privileged mode
-        securityContext:
-          privileged: true
-        resources:
-          requests:
-            memory: 2.5Gi
-            cpu: 500m
-          limits:
-            memory: 4Gi
-            cpu: 2
+        - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
+          command:
+            - "./hack/ci/run-offline-test.sh"
+          # docker-in-docker needs privileged mode
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 2.5Gi
+              cpu: 500m
+            limits:
+              memory: 4Gi
+              cpu: 2
 
   - name: pre-kubermatic-test-integration
     run_if_changed: "^(cmd|codegen|hack|pkg)/"
@@ -1394,18 +1390,18 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/integration-tests:4-2
-        command:
-        - make
-        args:
-        - test-integration
-        resources:
-          requests:
-            memory: 4Gi
-            cpu: 2
-          limits:
-            memory: 6Gi
-            cpu: 2
-        env:
-        - name: KUBERMATIC_EDITION
-          value: ee
+        - image: quay.io/kubermatic/integration-tests:4-2
+          command:
+            - make
+          args:
+            - test-integration
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
+              cpu: 2
+          env:
+            - name: KUBERMATIC_EDITION
+              value: ee
