@@ -183,50 +183,6 @@ func deployNginxIngressController(ctx context.Context, logger *logrus.Entry, kub
 	return nil
 }
 
-func deployCertManager(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
-	logger.Info("📦 Deploying cert-manager…")
-	sublogger := log.Prefix(logger, "   ")
-
-	if opt.KubermaticConfiguration.Spec.Ingress.CertificateIssuer.Name == "" {
-		sublogger.Info("No CertificateIssuer configured in KubermaticConfiguration, skipping.")
-		return nil
-	}
-
-	chartDir := filepath.Join(opt.ChartsDirectory, "cert-manager")
-
-	chart, err := helm.LoadChart(chartDir)
-	if err != nil {
-		return fmt.Errorf("failed to load Helm chart: %v", err)
-	}
-
-	sublogger.Info("Deploying Custom Resource Definitions…")
-	if err := util.DeployCRDs(ctx, kubeClient, sublogger, filepath.Join(chartDir, "crd")); err != nil {
-		return fmt.Errorf("failed to deploy CRDs: %v", err)
-	}
-
-	if err := util.EnsureNamespace(ctx, sublogger, kubeClient, CertManagerNamespace); err != nil {
-		return fmt.Errorf("failed to create namespace: %v", err)
-	}
-
-	sublogger.Info("Deploying Helm chart…")
-	release, err := util.CheckHelmRelease(ctx, sublogger, helmClient, CertManagerNamespace, CertManagerReleaseName)
-	if err != nil {
-		return fmt.Errorf("failed to check to Helm release: %v", err)
-	}
-
-	if err := util.DeployHelmChart(ctx, sublogger, helmClient, chart, CertManagerNamespace, CertManagerReleaseName, opt.HelmValues, true, opt.ForceHelmReleaseUpgrade, release); err != nil {
-		return fmt.Errorf("failed to deploy Helm release: %v", err)
-	}
-
-	if err := waitForCertManagerWebhook(ctx, sublogger, kubeClient); err != nil {
-		return fmt.Errorf("failed to verify that the webhook is functioning: %v", err)
-	}
-
-	logger.Info("✅ Success.")
-
-	return nil
-}
-
 func deployDex(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, helmClient helm.Client, opt stack.DeployOptions) error {
 	logger.Info("📦 Deploying Dex…")
 	sublogger := log.Prefix(logger, "   ")
