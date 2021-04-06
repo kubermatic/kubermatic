@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/grafana/grafana/pkg/models"
 	"go.uber.org/zap"
@@ -83,11 +84,12 @@ func Add(
 	if !ok {
 		return fmt.Errorf("Grafana Secret %q does not contain auth", grafanaSecret)
 	}
-	grafanaClient := grafanasdk.NewClient(grafanaURL, string(auth), grafanasdk.DefaultHTTPClient)
+	httpClient := &http.Client{Timeout: 15 * time.Second}
+	grafanaClient := grafanasdk.NewClient(grafanaURL, string(auth), httpClient)
 	if err := newProjectReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient); err != nil {
 		return fmt.Errorf("failed to create mla project controller: %v", err)
 	}
-	if err := newUserProjectBindingReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, &http.Client{}, grafanaURL, grafanaHeader); err != nil {
+	if err := newUserProjectBindingReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader); err != nil {
 		return fmt.Errorf("failed to create mla userprojectbinding controller: %v", err)
 	}
 	return nil
