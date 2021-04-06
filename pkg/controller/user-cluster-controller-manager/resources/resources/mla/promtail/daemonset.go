@@ -126,7 +126,7 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 					ReadinessProbe: &corev1.Probe{
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
-								Path:   "/readyz",
+								Path:   "/ready",
 								Port:   intstr.FromString(metricsPortName),
 								Scheme: corev1.URISchemeHTTP,
 							},

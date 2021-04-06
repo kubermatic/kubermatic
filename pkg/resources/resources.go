@@ -579,6 +579,12 @@ const (
 	PromtailClusterRoleBindingName = "promtail"
 	PromtailSecretName             = "promtail"
 	PromtailDaemonSetName          = "promtail"
+
+	UserClusterPrometheusConfigMapName          = "prometheus"
+	UserClusterPrometheusServiceAccountName     = "prometheus"
+	UserClusterPrometheusClusterRoleName        = "prometheus"
+	UserClusterPrometheusClusterRoleBindingName = "prometheus"
+	UserClusterPrometheusDeploymentName         = "prometheus"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certificate and private key
