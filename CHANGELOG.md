@@ -1,5 +1,15 @@
 # Kubermatic 2.16
 
+## [v2.16.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.8)
+
+### Misc
+
+- Installer does not listen on port 8080 anymore ([#6788](https://github.com/kubermatic/kubermatic/issues/6788))
+- Node-local-dns is now using UDP for external queries ([#6796](https://github.com/kubermatic/kubermatic/issues/6796))
+
+
+
+
 ## [v2.16.7](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.7)
 
 ### Bugfixes
@@ -264,6 +274,16 @@ as well as the [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16
 
 
 # Kubermatic 2.15
+
+## [v2.15.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.11)
+
+### Misc
+
+- Installer does not listen on port 8080 anymore ([#6788](https://github.com/kubermatic/kubermatic/issues/6788))
+- Node-local-dns is now using UDP for external queries ([#6796](https://github.com/kubermatic/kubermatic/issues/6796))
+
+
+
 
 ## [v2.15.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.10)
 
@@ -538,6 +558,15 @@ as well as the [2.15 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.15
 
 
 # Kubermatic 2.14
+
+## [v2.14.13](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.13)
+
+### Bugfixes
+
+- Node-local-dns is now using UDP for external queries ([#6840](https://github.com/kubermatic/kubermatic/issues/6840))
+
+
+
 
 ## [v2.14.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.14.12)
 
