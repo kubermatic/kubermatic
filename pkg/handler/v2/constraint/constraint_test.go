@@ -26,6 +26,8 @@ import (
 	"strings"
 	"testing"
 
+	"k8s.io/utils/pointer"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -62,6 +64,11 @@ func TestListConstraints(t *testing.T) {
 				test.GenDefaultAPIConstraint("ct1", "RequiredLabel"),
 				test.GenDefaultAPIConstraint("ct2", "RequiredLabel"),
 				test.GenDefaultAPIConstraint("ct3", "UniqueLabel"),
+				func() apiv2.Constraint {
+					c := test.GenDefaultAPIConstraint("ct4", "UniqueLabel")
+					c.Status = &apiv2.ConstraintStatus{Synced: pointer.BoolPtr(false)}
+					return c
+				}(),
 			},
 			HTTPStatus: http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
@@ -70,6 +77,7 @@ func TestListConstraints(t *testing.T) {
 				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 				test.GenConstraint("ct2", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 				test.GenConstraint("ct3", test.GenDefaultCluster().Status.NamespaceName, "UniqueLabel"),
+				test.GenConstraint("ct4", test.GenDefaultCluster().Status.NamespaceName, "UniqueLabel"),
 			),
 			ExistingGatekeeperObjects: []ctrlruntimeclient.Object{
 				genGatekeeperConstraint("ct1", "RequiredLabel", t),
@@ -185,7 +193,7 @@ func TestGetConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}},"status":{"enforcement":"true","auditTimestamp":"2019-05-11T01:46:13Z","violations":[{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"default"},{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"gatekeeper"}]}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}},"status":{"enforcement":"true","auditTimestamp":"2019-05-11T01:46:13Z","violations":[{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"default"},{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"gatekeeper"}],"synced":true}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -219,7 +227,7 @@ func TestGetConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}},"status":{"enforcement":"true","auditTimestamp":"2019-05-11T01:46:13Z","violations":[{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"default"},{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"gatekeeper"}]}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}},"status":{"enforcement":"true","auditTimestamp":"2019-05-11T01:46:13Z","violations":[{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"default"},{"enforcementAction":"deny","kind":"Namespace","message":"'you must provide labels: {\"gatekeeper\"}'","name":"gatekeeper"}],"synced":true}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -231,6 +239,21 @@ func TestGetConstraints(t *testing.T) {
 				genGatekeeperConstraint("ct1", "RequiredLabel", t),
 			},
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			Name:             "scenario 4: user can get constraint which is not synced yet on the user cluster",
+			ConstraintName:   "ct1",
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"rawJSON":"{\"labels\":[\"gatekeeper\",\"opa\"]}"}},"status":{"synced":false}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
+			),
+			ExistingGatekeeperObjects: []ctrlruntimeclient.Object{},
+			ExistingAPIUser:           test.GenDefaultAPIUser(),
 		},
 	}
 

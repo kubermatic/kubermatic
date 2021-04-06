@@ -35,6 +35,7 @@ import (
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 	prometheusapi "github.com/prometheus/client_golang/api"
+	"k8s.io/utils/pointer"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -1505,6 +1506,7 @@ func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
 					Name:              "gatekeeper",
 				},
 			},
+			Synced: pointer.BoolPtr(true),
 		},
 	}
 }
