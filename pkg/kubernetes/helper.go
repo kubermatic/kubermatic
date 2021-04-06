@@ -54,10 +54,10 @@ func HasOnlyFinalizer(o metav1.Object, name string) bool {
 	return set.Has(name) && set.Len() == 1
 }
 
-// RemoveFinalizer removes the given finalizer from the object
-func RemoveFinalizer(obj metav1.Object, toRemove string) {
+// RemoveFinalizer removes the given finalizers from the object
+func RemoveFinalizer(obj metav1.Object, toRemove ...string) {
 	set := sets.NewString(obj.GetFinalizers()...)
-	set.Delete(toRemove)
+	set.Delete(toRemove...)
 	obj.SetFinalizers(set.List())
 }
 
