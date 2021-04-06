@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Masterminds/semver/v3"
+	semver "github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
 	"k8s.io/client-go/tools/clientcmd"
@@ -897,6 +897,10 @@ func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettin
 		DisplayTermsOfService: gSettings.DisplayTermsOfService,
 		EnableOIDCKubeconfig:  gSettings.EnableOIDCKubeconfig,
 		EnableDashboard:       gSettings.EnableDashboard,
+		OpaOptions: kubermaticv1.OpaOptions{
+			Enabled:  gSettings.OpaOptions.Enabled,
+			Enforced: gSettings.OpaOptions.Enforced,
+		},
 	}
 }
 

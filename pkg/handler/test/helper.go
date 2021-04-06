@@ -1110,6 +1110,10 @@ func GenDefaultGlobalSettings() *kubermaticv1.KubermaticSetting {
 			DisplayAPIDocs:              true,
 			DisplayTermsOfService:       true,
 			EnableExternalClusterImport: true,
+			OpaOptions: kubermaticv1.OpaOptions{
+				Enabled:  true,
+				Enforced: true,
+			},
 		},
 	}
 }
