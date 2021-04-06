@@ -24,6 +24,9 @@ type ConstraintStatus struct {
 	// enforcement
 	Enforcement string `json:"enforcement,omitempty"`
 
+	// synced
+	Synced bool `json:"synced,omitempty"`
+
 	// violations
 	Violations []*Violation `json:"violations"`
 }

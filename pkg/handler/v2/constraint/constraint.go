@@ -28,6 +28,7 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+	"k8s.io/utils/pointer"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -46,12 +47,10 @@ import (
 )
 
 const (
-	ConstraintsGroup          = "constraints.gatekeeper.sh"
-	ConstraintsVersion        = "v1beta1"
-	ConstraintNamespace       = "kubermatic"
-	constraintStatusField     = "status"
-	constraintParametersField = "parameters"
-	constraintSpecField       = "spec"
+	ConstraintsGroup      = "constraints.gatekeeper.sh"
+	ConstraintsVersion    = "v1beta1"
+	ConstraintNamespace   = "kubermatic"
+	constraintStatusField = "status"
 )
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
@@ -77,12 +76,18 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 
 		// collect constraint types
 		cKinds := sets.String{}
+		// create apiConstraint map
+		apiConstraintMap := make(map[string]*apiv2.Constraint, len(constraintList.Items))
 		for _, ct := range constraintList.Items {
 			cKinds.Insert(ct.Spec.ConstraintType)
+
+			apiConstraint := convertInternalToAPIConstraint(&ct)
+			apiConstraint.Status = &apiv2.ConstraintStatus{Synced: pointer.BoolPtr(false)}
+
+			apiConstraintMap[genConstraintKey(ct.Spec.ConstraintType, ct.Name)] = apiConstraint
 		}
 
-		// List all diffrerent constraints and convert
-		var apiConstraintList []*apiv2.Constraint
+		// List all diffrerent gatekeeper constraints and get status
 		for kind := range cKinds {
 			list := &unstructured.UnstructuredList{}
 			list.SetGroupVersionKind(schema.GroupVersionKind{
@@ -95,82 +100,26 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 			}
 
 			for _, uc := range list.Items {
-				apiC, err := convertUnstructuredToAPIConstraint(&uc, kind)
+				constraintStatus, err := getConstraintStatus(&uc)
 				if err != nil {
 					return nil, err
 				}
-				apiConstraintList = append(apiConstraintList, apiC)
+				if apiConstraint, ok := apiConstraintMap[genConstraintKey(kind, uc.GetName())]; ok {
+					apiConstraint.Status = constraintStatus
+				}
 			}
+		}
+		var apiConstraintList []*apiv2.Constraint
+		for _, apiConstraint := range apiConstraintMap {
+			apiConstraintList = append(apiConstraintList, apiConstraint)
 		}
 
 		return apiConstraintList, nil
 	}
 }
 
-func convertUnstructuredToAPIConstraint(uc *unstructured.Unstructured, constraintType string) (*apiv2.Constraint, error) {
-	constraint := &apiv2.Constraint{}
-
-	constraint.Name = uc.GetName()
-	status, err := getConstraintStatus(uc)
-	if err != nil {
-		return nil, err
-	}
-	constraint.Status = status
-
-	match, err := getConstraintMatch(uc)
-	if err != nil {
-		return nil, err
-	}
-	constraint.Spec.Match = *match
-
-	params, err := getConstraintParameters(uc)
-	if err != nil {
-		return nil, err
-	}
-	constraint.Spec.Parameters = *params
-	constraint.Spec.ConstraintType = constraintType
-
-	return constraint, nil
-}
-
-func getConstraintParameters(uc *unstructured.Unstructured) (*v1.Parameters, error) {
-	parameters := &v1.Parameters{}
-	params, found, err := unstructured.NestedFieldNoCopy(uc.Object, constraintSpecField, constraintParametersField)
-	if err != nil {
-		return parameters, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error getting parameters: %v", err))
-	}
-	if !found {
-		return parameters, nil
-	}
-
-	paramsRaw, err := json.Marshal(params)
-	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error marshalling constraint params: %v", err))
-	}
-	parameters.RawJSON = string(paramsRaw)
-
-	return parameters, nil
-}
-
-func getConstraintMatch(uc *unstructured.Unstructured) (*v1.Match, error) {
-	matchUn, _, err := unstructured.NestedFieldNoCopy(uc.Object, constraintSpecField, "match")
-	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error getting match: %v", err))
-	}
-
-	match := &v1.Match{}
-
-	matchRaw, err := json.Marshal(matchUn)
-	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error marshalling constraint match: %v", err))
-	}
-
-	err = json.Unmarshal(matchRaw, match)
-	if err != nil {
-		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error unmarshalling constraint match: %v", err))
-	}
-
-	return match, nil
+func genConstraintKey(constraintType, name string) string {
+	return fmt.Sprintf("%s-%s", constraintType, name)
 }
 
 func getConstraintStatus(uc *unstructured.Unstructured) (*apiv2.ConstraintStatus, error) {
@@ -191,6 +140,7 @@ func getConstraintStatus(uc *unstructured.Unstructured) (*apiv2.ConstraintStatus
 		return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("error unmarshalling constraint status: %v", err))
 	}
 
+	constraintStatus.Synced = pointer.BoolPtr(true)
 	return constraintStatus, nil
 }
 
@@ -251,6 +201,9 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		// convert to API constraint
+		apiConstraint := convertInternalToAPIConstraint(constraint)
+
 		instance := &unstructured.Unstructured{}
 		instance.SetGroupVersionKind(schema.GroupVersionKind{
 			Group:   ConstraintsGroup,
@@ -259,11 +212,11 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 		})
 
 		if err := clusterCli.Get(ctx, types.NamespacedName{Namespace: ConstraintNamespace, Name: constraint.Name}, instance); err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			// Can't get status, because the Kubermatic Constraint is not synced yet as a Gatekeeper Constraint on the user cluster
+			apiConstraint.Status = &apiv2.ConstraintStatus{Synced: pointer.BoolPtr(false)}
+			return apiConstraint, nil
 		}
 
-		// convert to API constraint
-		apiConstraint := convertInternalToAPIConstraint(constraint)
 		cStatus, err := getConstraintStatus(instance)
 		if err != nil {
 			return nil, err
