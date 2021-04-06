@@ -100,6 +100,14 @@ func Add(
 	return nil
 }
 
+func getDatasourceUIDForCluster(datasourceType string, cluster *kubermaticv1.Cluster) string {
+	return fmt.Sprintf("%s-%s", datasourceType, cluster.Name)
+}
+
+func getPrometheusDatasourceUIDForCluster(cluster *kubermaticv1.Cluster) string {
+	return fmt.Sprintf("prometheus-%s", cluster.Name)
+}
+
 func getLokiDatasourceNameForCluster(cluster *kubermaticv1.Cluster) string {
 	return fmt.Sprintf("Loki %s", cluster.Spec.HumanReadableName)
 }

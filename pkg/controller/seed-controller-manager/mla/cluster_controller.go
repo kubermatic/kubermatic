@@ -18,9 +18,9 @@ package mla
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
-	"strconv"
 
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -31,7 +31,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 
@@ -47,6 +46,8 @@ import (
 const (
 	lokiDatasourceAnnotationKey       = "mla.k8s.io/loki"
 	prometheusDatasourceAnnotationKey = "mla.k8s.io/prometheus"
+	prometheusType                    = "prometheus"
+	lokiType                          = "loki"
 )
 
 // clusterReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
@@ -136,35 +137,32 @@ func (r *clusterReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, fmt.Errorf("unable to get project name from label")
 	}
 
-	project := &kubermaticv1.Project{}
-	if err := r.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to get project: %w", err)
-	}
-
-	org, err := r.grafanaClient.GetOrgByOrgName(ctx, getOrgNameForProject(project))
+	org, err := getOrgByProjectID(ctx, r.Client, r.grafanaClient, projectID)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
 	lokiDS := grafanasdk.Datasource{
 		OrgID:  org.ID,
+		UID:    getDatasourceUIDForCluster(lokiType, cluster),
 		Name:   getLokiDatasourceNameForCluster(cluster),
-		Type:   "loki",
+		Type:   lokiType,
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local", cluster.Status.NamespaceName),
 	}
-	if err := r.ensureDatasource(ctx, cluster, lokiDS, lokiDatasourceAnnotationKey); err != nil {
+	if err := r.ensureDatasource(ctx, cluster, lokiDS); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Loki Datasources: %w", err)
 	}
 
 	prometheusDS := grafanasdk.Datasource{
 		OrgID:  org.ID,
+		UID:    getDatasourceUIDForCluster(prometheusType, cluster),
 		Name:   getPrometheusDatasourceNameForCluster(cluster),
-		Type:   "prometheus",
+		Type:   prometheusType,
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local/api/prom", cluster.Status.NamespaceName),
 	}
-	if err := r.ensureDatasource(ctx, cluster, prometheusDS, prometheusDatasourceAnnotationKey); err != nil {
+	if err := r.ensureDatasource(ctx, cluster, prometheusDS); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Prometheus Datasources: %w", err)
 	}
 
@@ -184,38 +182,23 @@ func (r *clusterReconciler) setAnnotation(ctx context.Context, cluster *kubermat
 	return nil
 }
 
-func (r *clusterReconciler) ensureDatasource(ctx context.Context, cluster *kubermaticv1.Cluster, expected grafanasdk.Datasource, annotationKey string) error {
-	dsID, ok := cluster.GetAnnotations()[annotationKey]
-	if !ok {
+func (r *clusterReconciler) ensureDatasource(ctx context.Context, cluster *kubermaticv1.Cluster, expected grafanasdk.Datasource) error {
+	ds, err := r.grafanaClient.GetDatasourceByUID(ctx, expected.UID)
+	if errors.As(err, &grafanasdk.ErrNotFound{}) {
 		status, err := r.grafanaClient.CreateDatasource(ctx, expected)
 		if err != nil {
 			return fmt.Errorf("unable to add datasource: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 		if status.ID == nil {
-			return fmt.Errorf("datasource ID is nil")
+			// possibly already exists with such name
+			var err error
+			ds, err = r.grafanaClient.GetDatasourceByName(ctx, expected.Name)
+			if err != nil {
+				return fmt.Errorf("unable to get datasource by name %s", expected.Name)
+			}
 		}
-		return r.setAnnotation(ctx, cluster, annotationKey, strconv.FormatUint(uint64(*status.ID), 10))
 	}
-	id, err := strconv.ParseUint(dsID, 10, 32)
-	if err != nil {
-		return err
-	}
-
-	ds, err := r.grafanaClient.GetDatasource(ctx, uint(id))
-	if err != nil {
-		// possibly not found
-		status, err := r.grafanaClient.CreateDatasource(ctx, expected)
-		if err != nil {
-			return fmt.Errorf("unable to add datasource: %w (status: %s, message: %s)",
-				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-		}
-		if status.ID == nil {
-			return fmt.Errorf("datasource ID is nil")
-		}
-		return r.setAnnotation(ctx, cluster, annotationKey, strconv.FormatUint(uint64(*status.ID), 10))
-	}
-	expected.ID = uint(id)
 	if !reflect.DeepEqual(ds, expected) {
 		if status, err := r.grafanaClient.UpdateDatasource(ctx, expected); err != nil {
 			return fmt.Errorf("unable to update datasource: %w (status: %s, message: %s)",
@@ -260,12 +243,7 @@ func (r *clusterReconciler) handleDeletion(ctx context.Context, cluster *kuberma
 		return fmt.Errorf("unable to get project name from label")
 	}
 
-	project := &kubermaticv1.Project{}
-	if err := r.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
-		return fmt.Errorf("failed to get project: %w", err)
-	}
-
-	org, err := r.grafanaClient.GetOrgByOrgName(ctx, getOrgNameForProject(project))
+	org, err := getOrgByProjectID(ctx, r.Client, r.grafanaClient, projectID)
 	if err != nil {
 		return err
 	}
@@ -273,11 +251,11 @@ func (r *clusterReconciler) handleDeletion(ctx context.Context, cluster *kuberma
 		return fmt.Errorf("unable to switch context to org %d: %w (status: %s, message: %s)",
 			org.ID, err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
-	if status, err := r.grafanaClient.DeleteDatasourceByName(ctx, getPrometheusDatasourceNameForCluster(cluster)); err != nil {
+	if status, err := r.grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(lokiType, cluster)); err != nil {
 		return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
-	if status, err := r.grafanaClient.DeleteDatasourceByName(ctx, getLokiDatasourceNameForCluster(cluster)); err != nil {
+	if status, err := r.grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(prometheusType, cluster)); err != nil {
 		return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}

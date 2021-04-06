@@ -18,17 +18,24 @@ package mla
 
 import (
 	"bytes"
+	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+
+	grafanasdk "github.com/kubermatic/grafanasdk"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
 )
@@ -315,4 +322,21 @@ func GatewayDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			return d, nil
 		}
 	}
+}
+
+func getOrgByProjectID(ctx context.Context, client ctrlruntimeclient.Client, grafanaClient *grafanasdk.Client, projectID string) (grafanasdk.Org, error) {
+	project := &kubermaticv1.Project{}
+	if err := client.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
+		return grafanasdk.Org{}, fmt.Errorf("failed to get project: %w", err)
+	}
+
+	orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
+	if !ok {
+		return grafanasdk.Org{}, fmt.Errorf("project should have grafana org annotation set")
+	}
+	id, err := strconv.ParseUint(orgID, 10, 32)
+	if err != nil {
+		return grafanasdk.Org{}, err
+	}
+	return grafanaClient.GetOrgById(ctx, uint(id))
 }
