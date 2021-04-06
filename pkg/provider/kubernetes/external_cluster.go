@@ -317,6 +317,14 @@ func (p *ExternalClusterProvider) IsMetricServerAvailable(cluster *kubermaticapi
 func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cluster *kubermaticapiv1.ExternalCluster, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
 	name := cluster.GetKubeconfigSecretName()
 
+	if cluster.Labels == nil {
+		return nil, fmt.Errorf("missing cluster labels")
+	}
+	projectID, ok := cluster.Labels[kubermaticapiv1.ProjectIDLabelKey]
+	if !ok {
+		return nil, fmt.Errorf("missing cluster projectID label")
+	}
+
 	namespacedName := types.NamespacedName{Namespace: resources.KubermaticNamespace, Name: name}
 	existingSecret := &corev1.Secret{}
 
@@ -324,18 +332,19 @@ func (p *ExternalClusterProvider) ensureKubeconfigSecret(ctx context.Context, cl
 		if !kerrors.IsNotFound(err) {
 			return nil, fmt.Errorf("failed to probe for secret %q: %v", name, err)
 		}
-		return createKubeconfigSecret(ctx, p.clientPrivileged, name, secretData)
+		return createKubeconfigSecret(ctx, p.clientPrivileged, name, projectID, secretData)
 	}
 
-	return updateKubeconfigSecret(ctx, p.clientPrivileged, existingSecret, secretData)
+	return updateKubeconfigSecret(ctx, p.clientPrivileged, existingSecret, projectID, secretData)
 
 }
 
-func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
+func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, name, projectID string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: resources.KubermaticNamespace,
+			Labels:    map[string]string{kubermaticapiv1.ProjectIDLabelKey: projectID},
 		},
 		Type: corev1.SecretTypeOpaque,
 		Data: secretData,
@@ -351,7 +360,7 @@ func createKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 	}, nil
 }
 
-func updateKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, existingSecret *corev1.Secret, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
+func updateKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client, existingSecret *corev1.Secret, projectID string, secretData map[string][]byte) (*providerconfig.GlobalSecretKeySelector, error) {
 	if existingSecret.Data == nil {
 		existingSecret.Data = map[string][]byte{}
 	}
@@ -363,6 +372,11 @@ func updateKubeconfigSecret(ctx context.Context, client ctrlruntimeclient.Client
 			requiresUpdate = true
 			break
 		}
+	}
+
+	if existingSecret.Labels == nil {
+		existingSecret.Labels = map[string]string{kubermaticapiv1.ProjectIDLabelKey: projectID}
+		requiresUpdate = true
 	}
 
 	if requiresUpdate {
