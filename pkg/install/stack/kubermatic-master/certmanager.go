@@ -188,17 +188,13 @@ func migrateCertManagerV2(
 	logger.Info("Removing Custom Resource Definitions…")
 	for _, crdGVK := range allCRDs {
 		crd := apiextensionsv1.CustomResourceDefinition{}
-		key := types.NamespacedName{Name: crdName(crdGVK)}
+		crd.Name = crdName(crdGVK)
 
-		if err := kubeClient.Get(ctx, key, &crd); err != nil {
+		if err := kubeClient.Delete(ctx, &crd); err != nil {
 			if kerrors.IsNotFound(err) {
 				continue
 			}
 
-			return fmt.Errorf("failed to retrieve CRD %s: %v", crdGVK.Kind, err)
-		}
-
-		if err := kubeClient.Delete(ctx, &crd); err != nil {
 			return fmt.Errorf("failed to delete CRD %s: %v", crdGVK.Kind, err)
 		}
 	}
