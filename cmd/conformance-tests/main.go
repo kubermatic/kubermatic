@@ -60,7 +60,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
@@ -75,7 +74,6 @@ type Opts struct {
 	customTestTimeout            time.Duration
 	userClusterPollInterval      time.Duration
 	deleteClusterAfterTests      bool
-	kubeconfigPath               string
 	nodeCount                    int
 	publicKeys                   [][]byte
 	reportsRoot                  string
@@ -189,7 +187,6 @@ func main() {
 
 	supportedVersions := getLatestMinorVersions(common.DefaultKubernetesVersioning.Versions)
 
-	flag.StringVar(&opts.kubeconfigPath, "kubeconfig", "/config/kubeconfig", "path to kubeconfig file")
 	flag.StringVar(&opts.existingClusterLabel, "existing-cluster-label", "", "label to use to select an existing cluster for testing. If provided, no cluster will be created. Sample: my=cluster")
 	flag.StringVar(&providers, "providers", "aws,digitalocean,openstack,hetzner,vsphere,azure,packet,gcp", "comma separated list of providers to test")
 	flag.StringVar(&opts.namePrefix, "name-prefix", "", "prefix used for all cluster names")
@@ -382,9 +379,9 @@ func main() {
 		log.Fatalw("Failed to create SSH keys", zap.Error(err))
 	}
 
-	config, err := clientcmd.BuildConfigFromFlags("", opts.kubeconfigPath)
+	_, _, config, err := utils.GetClients()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalw("Failed to get client config", zap.Error(err))
 	}
 	opts.seedRestConfig = config
 

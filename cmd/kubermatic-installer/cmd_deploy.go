@@ -87,6 +87,10 @@ var (
 		Name:  "storageclass",
 		Usage: fmt.Sprintf("Type of StorageClass to create (one of %v)", common.SupportedStorageClassProviders().List()),
 	}
+	enableCertManagerV2MigrationFlag = cli.BoolFlag{
+		Name:  "migrate-cert-manager",
+		Usage: "enable the migration for cert-manager CRDs from v1alpha2 to v1",
+	}
 )
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
@@ -104,6 +108,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			deployHelmTimeoutFlag,
 			deployHelmBinaryFlag,
 			deployStorageClassFlag,
+			enableCertManagerV2MigrationFlag,
 		},
 	}
 }
@@ -248,15 +253,16 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		}
 
 		opt := stack.DeployOptions{
-			HelmClient:                 helmClient,
-			KubeClient:                 kubeClient,
-			HelmValues:                 helmValues,
-			KubermaticConfiguration:    kubermaticConfig,
-			RawKubermaticConfiguration: rawKubermaticConfig,
-			Logger:                     subLogger,
-			StorageClassProvider:       ctx.String(deployStorageClassFlag.Name),
-			ForceHelmReleaseUpgrade:    ctx.Bool(deployForceFlag.Name),
-			ChartsDirectory:            ctx.GlobalString(chartsDirectoryFlag.Name),
+			HelmClient:                   helmClient,
+			KubeClient:                   kubeClient,
+			HelmValues:                   helmValues,
+			KubermaticConfiguration:      kubermaticConfig,
+			RawKubermaticConfiguration:   rawKubermaticConfig,
+			Logger:                       subLogger,
+			StorageClassProvider:         ctx.String(deployStorageClassFlag.Name),
+			ForceHelmReleaseUpgrade:      ctx.Bool(deployForceFlag.Name),
+			ChartsDirectory:              ctx.GlobalString(chartsDirectoryFlag.Name),
+			EnableCertManagerV2Migration: ctx.Bool(enableCertManagerV2MigrationFlag.Name),
 		}
 
 		logger.Infof("🧩 Deploying %s…", kubermaticStack.Name())

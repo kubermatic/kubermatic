@@ -70,7 +70,7 @@ if type ginkgo > /dev/null; then
     --kubermatic-tag "${TAG}" \
     --debug-log
 else
-  go test --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
+  CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/nodeport-proxy/... \
     --ginkgo.randomizeAllSpecs \
     --ginkgo.failOnPending \
     --ginkgo.trace \

@@ -18,11 +18,15 @@ package semver
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"strconv"
 
 	semverlib "github.com/Masterminds/semver/v3"
 )
+
+// ensure that Semver implements flag.Value interface.
+var _ flag.Value = &Semver{}
 
 // Semver is struct that encapsulates semver.Semver struct so we can use it in API
 // +k8s:deepcopy-gen=true
@@ -33,7 +37,7 @@ type Semver struct {
 // NewSemver creates new Semver version struct and returns pointer to it
 func NewSemver(ver string) (*Semver, error) {
 	v := &Semver{}
-	err := v.set(ver)
+	err := v.Set(ver)
 	if err != nil {
 		return nil, err
 	}
@@ -49,8 +53,8 @@ func NewSemverOrDie(ver string) *Semver {
 	return sv
 }
 
-// set initializes semver struct and sets version
-func (s *Semver) set(ver string) error {
+// Set initializes semver struct and sets version
+func (s *Semver) Set(ver string) error {
 	sv, err := semverlib.NewVersion(ver)
 	if err != nil {
 		return err
@@ -91,7 +95,7 @@ func (s *Semver) UnmarshalJSON(data []byte) error {
 	if ver == "" {
 		return nil
 	}
-	return s.set(ver)
+	return s.Set(ver)
 }
 
 // MarshalJSON converts Semver struct to JSON
