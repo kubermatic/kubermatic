@@ -54,6 +54,9 @@ type SettingSpec struct {
 
 	// machine deployment VM resource quota
 	MachineDeploymentVMResourceQuota *MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota,omitempty"`
+
+	// opa options
+	OpaOptions *OpaOptions `json:"opaOptions,omitempty"`
 }
 
 // Validate validates this setting spec
@@ -73,6 +76,10 @@ func (m *SettingSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateMachineDeploymentVMResourceQuota(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateOpaOptions(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -142,6 +149,24 @@ func (m *SettingSpec) validateMachineDeploymentVMResourceQuota(formats strfmt.Re
 		if err := m.MachineDeploymentVMResourceQuota.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("machineDeploymentVMResourceQuota")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *SettingSpec) validateOpaOptions(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.OpaOptions) { // not required
+		return nil
+	}
+
+	if m.OpaOptions != nil {
+		if err := m.OpaOptions.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("opaOptions")
 			}
 			return err
 		}

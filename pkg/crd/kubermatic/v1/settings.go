@@ -54,6 +54,7 @@ type SettingSpec struct {
 	UserProjectsLimit           int64          `json:"userProjectsLimit"`
 	RestrictProjectCreation     bool           `json:"restrictProjectCreation"`
 	EnableExternalClusterImport bool           `json:"enableExternalClusterImport"`
+	OpaOptions                  OpaOptions     `json:"opaOptions"`
 
 	MachineDeploymentVMResourceQuota MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota"`
 
@@ -85,6 +86,11 @@ type MachineDeploymentVMResourceQuota struct {
 	MaxRAM int `json:"maxRAM"`
 
 	EnableGPU bool `json:"enableGPU"`
+}
+
+type OpaOptions struct {
+	Enabled  bool `json:"enabled"`
+	Enforced bool `json:"enforced"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
