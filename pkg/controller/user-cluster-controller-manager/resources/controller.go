@@ -59,6 +59,7 @@ const (
 
 type UserClusterMLA struct {
 	Logging        bool
+	Monitoring     bool
 	MLAGatewayPort int
 }
 
