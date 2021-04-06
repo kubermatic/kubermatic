@@ -28,6 +28,7 @@ import (
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -55,6 +56,7 @@ var (
 // managing Monitoring, Logging and Alerting for user clusters.
 // * project controller - create/update/delete Grafana organizations based on Kubermatic Projects
 // * userprojectbinding controller - create/update/delete Grafana Users to organizations based on Kubermatic UserProjectBindings
+// * cluster controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
@@ -92,5 +94,16 @@ func Add(
 	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader); err != nil {
 		return fmt.Errorf("failed to create mla userprojectbinding controller: %v", err)
 	}
+	if err := newClusterReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient); err != nil {
+		return fmt.Errorf("failed to create mla cluster controller: %v", err)
+	}
 	return nil
+}
+
+func getLokiDatasourceNameForCluster(cluster *kubermaticv1.Cluster) string {
+	return fmt.Sprintf("Loki %s", cluster.Spec.HumanReadableName)
+}
+
+func getPrometheusDatasourceNameForCluster(cluster *kubermaticv1.Cluster) string {
+	return fmt.Sprintf("Prometheus %s", cluster.Spec.HumanReadableName)
 }
