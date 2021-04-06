@@ -1181,12 +1181,18 @@ presubmits:
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
-          imagePullPolicy: Always
           command:
             - "./hack/ci/run-api-e2e.sh"
           env:
             - name: VERSION_TO_TEST
               value: v1.18.10
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
           securityContext:
             privileged: true
           resources:
@@ -1195,14 +1201,6 @@ presubmits:
               cpu: 2
             limits:
               memory: 6Gi
-          env:
-            - name: KUBERMATIC_EDITION
-              value: ee
-            - name: SERVICE_ACCOUNT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: e2e-ci
-                  key: serviceAccountSigningKey
 
   #########################################################
   # etcd-launcher e2e tests
@@ -1260,7 +1258,6 @@ presubmits:
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
-          imagePullPolicy: Always
           command:
             - make
           args:
@@ -1333,7 +1330,6 @@ presubmits:
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.16-kind-0.8-nodejs-14.16-0
-          imagePullPolicy: Always
           command:
             - make
           args:
