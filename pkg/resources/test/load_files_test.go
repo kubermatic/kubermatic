@@ -33,6 +33,7 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	kubernetescontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/kubernetes"
 	monitoringcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/monitoring"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -302,6 +303,10 @@ func TestLoadFiles(t *testing.T) {
 							},
 							ServiceAccount: &kubermaticv1.ServiceAccountSettings{
 								TokenVolumeProjectionEnabled: true,
+							},
+							MLA: &kubermaticv1.MLASettings{
+								MonitoringEnabled: true,
+								LoggingEnabled:    false,
 							},
 						},
 						Address: kubermaticv1.ClusterAddress{

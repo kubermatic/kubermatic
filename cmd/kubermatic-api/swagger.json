@@ -14961,6 +14961,9 @@
           },
           "x-go-name": "MachineNetworks"
         },
+        "mla": {
+          "$ref": "#/definitions/MLASettings"
+        },
         "oidc": {
           "$ref": "#/definitions/OIDCSettings"
         },
@@ -16789,6 +16792,22 @@
         }
       },
       "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
+    },
+    "MLASettings": {
+      "type": "object",
+      "properties": {
+        "loggingEnabled": {
+          "description": "LoggingEnabled is the flag for enabling logging in user cluster.",
+          "type": "boolean",
+          "x-go-name": "LoggingEnabled"
+        },
+        "monitoringEnabled": {
+          "description": "MonitoringEnabled is the flag for enabling monitoring in user cluster.",
+          "type": "boolean",
+          "x-go-name": "MonitoringEnabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "MachineDeploymentStatus": {
       "description": "[MachineDeploymentStatus]\nMachineDeploymentStatus defines the observed state of MachineDeployment",

@@ -131,6 +131,8 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-owner-email", data.Cluster().Status.UserEmail,
 				fmt.Sprintf("-enable-ssh-key-agent=%t", data.Cluster().Spec.EnableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
+				fmt.Sprintf("-user-cluster-monitoring=%t", data.Cluster().Spec.MLA != nil && data.Cluster().Spec.MLA.MonitoringEnabled),
+				fmt.Sprintf("-user-cluster-logging=%t", data.Cluster().Spec.MLA != nil && data.Cluster().Spec.MLA.LoggingEnabled),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 			}, getNetworkArgs(data)...)
 
