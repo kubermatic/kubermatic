@@ -135,7 +135,7 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 	// the user cluster (in case errors happen and the controller needs to re-reconcile), we ensure that the MD
 	// has a proper name instead of relying on the GenerateName.
 	partialCluster.Annotations = make(map[string]string)
-	if body.NodeDeployment != nil {
+	if body.NodeDeployment != nil && body.NodeDeployment.Spec.Replicas > 0 {
 		isBYO, err := common.IsBringYourOwnProvider(spec.Cloud)
 		if err != nil {
 			return nil, errors.NewBadRequest("cannot verify the provider due to an invalid spec: %v", err)
