@@ -327,29 +327,9 @@ cleanup_kubermatic_clusters_in_kind() {
   set -e
 }
 
-docker_logs() {
-  if [[ $? -ne 0 ]]; then
-    echodate "Printing Docker logs"
-    cat /tmp/docker.log
-    echodate "Done printing Docker logs"
-  fi
-}
-
 start_docker_daemon() {
-  if docker stats --no-stream > /dev/null 2>&1; then
-    echodate "Not starting Docker again, it's already running."
-    return
-  fi
-
-  # Start Docker daemon
-  echodate "Starting Docker"
-  # Set the MTU to 1400 to avoid issues with our CI environment.
-  dockerd --mtu 1400 > /tmp/docker.log 2>&1 &
-  echodate "Started Docker successfully"
-  appendTrap docker_logs EXIT
-
-  # Wait for Docker to start
-  echodate "Waiting for Docker"
-  retry 5 docker stats --no-stream
-  echodate "Docker became ready"
+  # This script is provided by our Docker images.
+  # It is safe to call this multiple times, nothing will
+  # happen if a Docker daemon is already running.
+  start-docker.sh
 }
