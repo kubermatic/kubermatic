@@ -43,6 +43,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/mainserviceaccounts"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/project"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/serviceaccounts"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/tokens"
@@ -1354,6 +1355,68 @@ func (r *TestClient) GetConstraint(projectID, clusterID, name string) (*apiv2.Co
 	}
 
 	return convertConstraint(project.Payload)
+}
+
+// CreateAutomationAccount method creates a new automation account
+func (r *TestClient) CreateAutomationAccount(name, group string) (*apiv1.ServiceAccount, error) {
+	params := &mainserviceaccounts.CreateMainServiceAccountParams{Body: &models.ServiceAccount{Name: name, Group: group}}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	r.test.Logf("Creating AutomationAccount %q in group %q...", name, group)
+
+	sa, err := r.client.Mainserviceaccounts.CreateMainServiceAccount(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertServiceAccount(sa.Payload)
+}
+
+// GetAutomationAccount returns automation account for given ID
+func (r *TestClient) GetAutomationAccount(saID string) (*apiv1.ServiceAccount, error) {
+	params := &mainserviceaccounts.ListMainServiceAccountsParams{}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	saList, err := r.client.Mainserviceaccounts.ListMainServiceAccounts(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, sa := range saList.Payload {
+		if sa.ID == saID {
+			return convertServiceAccount(sa)
+		}
+	}
+
+	return nil, fmt.Errorf("automation account %s not found", saID)
+}
+
+// AddTokenToAutomationAccount creates a new token for automation account
+func (r *TestClient) AddTokenToAutomationAccount(name, saID string) (*apiv1.ServiceAccountToken, error) {
+	r.test.Logf("Adding token %s to ServiceAccount %s...", name, saID)
+
+	params := &tokens.AddTokenToMainServiceAccountParams{ServiceAccountID: saID, Body: &models.ServiceAccountToken{Name: name}}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+	token, err := r.client.Tokens.AddTokenToMainServiceAccount(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	r.test.Log("token added successfully")
+
+	return convertServiceAccountToken(token.Payload)
 }
 
 func convertConstraint(constraint *models.Constraint) (*apiv2.Constraint, error) {
