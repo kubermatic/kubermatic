@@ -184,21 +184,24 @@ func (r *clusterReconciler) setAnnotation(ctx context.Context, cluster *kubermat
 
 func (r *clusterReconciler) ensureDatasource(ctx context.Context, cluster *kubermaticv1.Cluster, expected grafanasdk.Datasource) error {
 	ds, err := r.grafanaClient.GetDatasourceByUID(ctx, expected.UID)
-	if errors.As(err, &grafanasdk.ErrNotFound{}) {
-		status, err := r.grafanaClient.CreateDatasource(ctx, expected)
-		if err != nil {
-			return fmt.Errorf("unable to add datasource: %w (status: %s, message: %s)",
-				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-		}
-		if status.ID == nil {
+	if err != nil {
+		if errors.As(err, &grafanasdk.ErrNotFound{}) {
+			status, err := r.grafanaClient.CreateDatasource(ctx, expected)
+			if err != nil {
+				return fmt.Errorf("unable to add datasource: %w (status: %s, message: %s)",
+					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			}
+			if status.ID != nil {
+				return nil
+			}
 			// possibly already exists with such name
-			var err error
 			ds, err = r.grafanaClient.GetDatasourceByName(ctx, expected.Name)
 			if err != nil {
 				return fmt.Errorf("unable to get datasource by name %s", expected.Name)
 			}
 		}
 	}
+	expected.ID = ds.ID
 	if !reflect.DeepEqual(ds, expected) {
 		if status, err := r.grafanaClient.UpdateDatasource(ctx, expected); err != nil {
 			return fmt.Errorf("unable to update datasource: %w (status: %s, message: %s)",
