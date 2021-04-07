@@ -42,7 +42,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-type userProjectBindingReconciler struct {
+type userGrafanaReconciler struct {
 	ctrlruntimeclient.Client
 	grafanaClient *grafanasdk.Client
 	httpClient    *http.Client
@@ -55,7 +55,7 @@ type userProjectBindingReconciler struct {
 	grafanaHeader string
 }
 
-func newUserProjectBindingReconciler(
+func newUserGrafanaReconciler(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
@@ -69,7 +69,7 @@ func newUserProjectBindingReconciler(
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
-	reconciler := &userProjectBindingReconciler{
+	reconciler := &userGrafanaReconciler{
 		Client:        client,
 		grafanaClient: grafanaClient,
 		httpClient:    httpClient,
@@ -97,7 +97,7 @@ func newUserProjectBindingReconciler(
 	return err
 }
 
-func (r *userProjectBindingReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
@@ -154,7 +154,7 @@ func (r *userProjectBindingReconciler) Reconcile(ctx context.Context, request re
 	return reconcile.Result{}, nil
 }
 
-func (r *userProjectBindingReconciler) getOrgByProjectID(ctx context.Context, projectID string) (grafanasdk.Org, error) {
+func (r *userGrafanaReconciler) getOrgByProjectID(ctx context.Context, projectID string) (grafanasdk.Org, error) {
 	project := &kubermaticv1.Project{}
 	if err := r.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
 		return grafanasdk.Org{}, fmt.Errorf("failed to get project: %w", err)
@@ -171,7 +171,7 @@ func (r *userProjectBindingReconciler) getOrgByProjectID(ctx context.Context, pr
 	return r.grafanaClient.GetOrgById(ctx, uint(id))
 }
 
-func (r *userProjectBindingReconciler) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
+func (r *userGrafanaReconciler) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
 	org, err := r.getOrgByProjectID(ctx, userProjectBinding.Spec.ProjectID)
 	if err != nil {
 		return err
@@ -195,7 +195,7 @@ func (r *userProjectBindingReconciler) handleDeletion(ctx context.Context, userP
 	return nil
 }
 
-func (r *userProjectBindingReconciler) getGrafanaOrgUser(ctx context.Context, orgID uint, email string) (*grafanasdk.OrgUser, error) {
+func (r *userGrafanaReconciler) getGrafanaOrgUser(ctx context.Context, orgID uint, email string) (*grafanasdk.OrgUser, error) {
 	users, err := r.grafanaClient.GetOrgUsers(ctx, orgID)
 	if err != nil {
 		return nil, err
@@ -209,7 +209,7 @@ func (r *userProjectBindingReconciler) getGrafanaOrgUser(ctx context.Context, or
 	return nil, nil
 }
 
-func (r *userProjectBindingReconciler) addGrafanaOrgUser(ctx context.Context, orgID uint, email, role string) (*grafanasdk.OrgUser, error) {
+func (r *userGrafanaReconciler) addGrafanaOrgUser(ctx context.Context, orgID uint, email, role string) (*grafanasdk.OrgUser, error) {
 	req, err := http.NewRequest("GET", r.grafanaURL+"/api/user", nil)
 	if err != nil {
 		return nil, err

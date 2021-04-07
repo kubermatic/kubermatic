@@ -86,10 +86,10 @@ func Add(
 	}
 	httpClient := &http.Client{Timeout: 15 * time.Second}
 	grafanaClient := grafanasdk.NewClient(grafanaURL, string(auth), httpClient)
-	if err := newProjectReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient); err != nil {
+	if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient); err != nil {
 		return fmt.Errorf("failed to create mla project controller: %v", err)
 	}
-	if err := newUserProjectBindingReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader); err != nil {
+	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader); err != nil {
 		return fmt.Errorf("failed to create mla userprojectbinding controller: %v", err)
 	}
 	return nil

@@ -36,7 +36,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func newTestUserProjectBindingReconciler(t *testing.T, objects []ctrlruntimeclient.Object, handler http.Handler) (*userProjectBindingReconciler, *httptest.Server) {
+func newTestUserProjectBindingReconciler(t *testing.T, objects []ctrlruntimeclient.Object, handler http.Handler) (*userGrafanaReconciler, *httptest.Server) {
 	dynamicClient := ctrlruntimefakeclient.
 		NewClientBuilder().
 		WithObjects(objects...).
@@ -45,7 +45,7 @@ func newTestUserProjectBindingReconciler(t *testing.T, objects []ctrlruntimeclie
 
 	grafanaClient := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
 
-	reconciler := userProjectBindingReconciler{
+	reconciler := userGrafanaReconciler{
 		Client:        dynamicClient,
 		grafanaClient: grafanaClient,
 		log:           kubermaticlog.Logger,

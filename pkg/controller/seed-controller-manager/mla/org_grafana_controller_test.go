@@ -50,7 +50,7 @@ type request struct {
 	response string
 }
 
-func newTestProjectReconciler(t *testing.T, objects []ctrlruntimeclient.Object, handler http.Handler) (*projectReconciler, *httptest.Server) {
+func newTestProjectReconciler(t *testing.T, objects []ctrlruntimeclient.Object, handler http.Handler) (*orgGrafanaReconciler, *httptest.Server) {
 	dynamicClient := ctrlruntimefakeclient.
 		NewClientBuilder().
 		WithObjects(objects...).
@@ -59,7 +59,7 @@ func newTestProjectReconciler(t *testing.T, objects []ctrlruntimeclient.Object, 
 
 	grafanaClient := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
 
-	reconciler := projectReconciler{
+	reconciler := orgGrafanaReconciler{
 		Client:        dynamicClient,
 		grafanaClient: grafanaClient,
 		log:           kubermaticlog.Logger,
