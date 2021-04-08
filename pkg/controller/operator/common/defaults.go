@@ -213,13 +213,6 @@ var (
 			semver.MustParse("v1.20.2"),
 		},
 		Updates: []operatorv1alpha1.Update{
-			{
-				// Auto-upgrade unsupported clusters
-				From:      "1.15.*",
-				To:        "1.16.*",
-				Automatic: pointer.BoolPtr(true),
-			},
-
 			// ======= 1.16 =======
 			{
 				// Allow to change to any patch version
@@ -235,7 +228,9 @@ var (
 			{
 				// Allow to next minor release
 				From: "1.16.*",
-				To:   "1.17.*",
+				To:   "1.17.16",
+				// Add automatic update for deprecated version
+				Automatic: pointer.BoolPtr(true),
 			},
 
 			// ======= 1.17 =======
