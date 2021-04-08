@@ -141,11 +141,13 @@ echodate "Successfully built and loaded all images"
 # prepare to run kubermatic-installer
 KUBERMATIC_CONFIG="$(mktemp)"
 IMAGE_PULL_SECRET_INLINE="$(echo "$IMAGE_PULL_SECRET_DATA" | base64 --decode | jq --compact-output --monochrome-output '.')"
+KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
 
 cp hack/ci/testdata/kubermatic.yaml $KUBERMATIC_CONFIG
 
 sed -i "s;__SERVICE_ACCOUNT_KEY__;$SERVICE_ACCOUNT_KEY;g" $KUBERMATIC_CONFIG
 sed -i "s;__IMAGE_PULL_SECRET__;$IMAGE_PULL_SECRET_INLINE;g" $KUBERMATIC_CONFIG
+sed -i "s;__KUBERMATIC_DOMAIN__;$KUBERMATIC_DOMAIN;g" $KUBERMATIC_CONFIG
 
 HELM_VALUES_FILE="$(mktemp)"
 cat <<EOF >$HELM_VALUES_FILE
