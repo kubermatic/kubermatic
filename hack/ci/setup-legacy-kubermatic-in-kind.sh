@@ -152,12 +152,13 @@ echodate "Deploying Kubermatic using Helm..."
 beforeDeployment=$(nowms)
 
 SEED_KUBECONFIG="$(cat $KUBECONFIG | sed 's/127.0.0.1.*/kubernetes.default.svc.cluster.local./' | base64 -w0)"
+KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
 
 # we always override the quay repositories so we don't have to care if the
 # Helm chart is made for CE or EE
 retry 3 kubectl create ns kubermatic
 retry 3 helm3 --namespace kubermatic install --atomic --timeout 5m \
-  --set=kubermatic.domain=ci.kubermatic.io \
+  --set=kubermatic.domain="$KUBERMATIC_DOMAIN" \
   --set=kubermatic.isMaster=true \
   --set=kubermatic.imagePullSecretData="$IMAGE_PULL_SECRET_DATA" \
   --set-string=kubermatic.controller.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
