@@ -23,6 +23,7 @@ fi
 
 export KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 export KUBERMATIC_EDITION="${KUBERMATIC_EDITION:-ce}"
+export KIND_NODE_VERSION="${KIND_CLUSTER_NAME:-v1.18.2}"
 
 start_docker_daemon
 
