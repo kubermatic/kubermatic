@@ -19,11 +19,15 @@ package mla
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
+	"github.com/grafana/grafana/pkg/models"
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
@@ -35,11 +39,22 @@ import (
 const (
 	ControllerName = "kubermatic_mla_controller"
 	mlaFinalizer   = "kubermatic.io/mla"
+	defaultOrgID   = 1
+)
+
+var (
+	// groupToRole map kubermatic groups to grafana roles
+	groupToRole = map[string]models.RoleType{
+		rbac.OwnerGroupNamePrefix:  models.ROLE_ADMIN,
+		rbac.EditorGroupNamePrefix: models.ROLE_EDITOR,
+		rbac.ViewerGroupNamePrefix: models.ROLE_VIEWER,
+	}
 )
 
 // Add creates a new MLA controller that is responsible for
 // managing Monitoring, Logging and Alerting for user clusters.
-// * project controller - create/update Grafana organizations based on Kubermatic Projects
+// * project controller - create/update/delete Grafana organizations based on Kubermatic Projects
+// * userprojectbinding controller - create/update/delete Grafana Users to organizations based on Kubermatic UserProjectBindings
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
@@ -69,9 +84,13 @@ func Add(
 	if !ok {
 		return fmt.Errorf("Grafana Secret %q does not contain auth", grafanaSecret)
 	}
-	grafanaClient := grafanasdk.NewClient(grafanaURL, string(auth), grafanasdk.DefaultHTTPClient)
-	if err := newProjectReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient); err != nil {
+	httpClient := &http.Client{Timeout: 15 * time.Second}
+	grafanaClient := grafanasdk.NewClient(grafanaURL, string(auth), httpClient)
+	if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient); err != nil {
 		return fmt.Errorf("failed to create mla project controller: %v", err)
+	}
+	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader); err != nil {
+		return fmt.Errorf("failed to create mla userprojectbinding controller: %v", err)
 	}
 	return nil
 }
