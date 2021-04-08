@@ -19,7 +19,7 @@ metadata:
   namespace: kubermatic
 spec:
   ingress:
-    domain: ci.kubermatic.io
+    domain: '__KUBERMATIC_DOMAIN__'
     disable: true
   imagePullSecret: '__IMAGE_PULL_SECRET__'
   userCluster:
