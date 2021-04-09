@@ -22,19 +22,21 @@ import (
 	"fmt"
 	"reflect"
 
+	"go.uber.org/zap"
+
+	grafanasdk "github.com/kubermatic/grafanasdk"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	grafanasdk "github.com/kubermatic/grafanasdk"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
-
-	"go.uber.org/zap"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -50,8 +52,8 @@ const (
 	lokiType                          = "loki"
 )
 
-// clusterReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
-type clusterReconciler struct {
+// datasourceGrafanaReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
+type datasourceGrafanaReconciler struct {
 	ctrlruntimeclient.Client
 	grafanaClient *grafanasdk.Client
 
@@ -61,7 +63,7 @@ type clusterReconciler struct {
 	versions   kubermatic.Versions
 }
 
-func newClusterReconciler(
+func newDatasourceGrafanaReconciler(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
 	numWorkers int,
@@ -72,7 +74,7 @@ func newClusterReconciler(
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
-	reconciler := &clusterReconciler{
+	reconciler := &datasourceGrafanaReconciler{
 		Client:        client,
 		grafanaClient: grafanaClient,
 
@@ -99,7 +101,7 @@ func newClusterReconciler(
 	return err
 }
 
-func (r *clusterReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
@@ -107,39 +109,62 @@ func (r *clusterReconciler) Reconcile(ctx context.Context, request reconcile.Req
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
+	// Add a wrapping here so we can emit an event on error
+	result, err := kubermaticv1helper.ClusterReconcileWrapper(
+		ctx,
+		r.Client,
+		r.workerName,
+		cluster,
+		r.versions,
+		kubermaticv1.ClusterConditionMLAControllerReconcilingSuccess,
+		func() (*reconcile.Result, error) {
+			return r.reconcile(ctx, cluster)
+		},
+	)
+	if err != nil {
+		r.log.Errorw("Failed to reconcile cluster", "cluster", cluster.Name, zap.Error(err))
+		r.recorder.Event(cluster, corev1.EventTypeWarning, "ReconcilingError", err.Error())
+	}
+	if result == nil {
+		result = &reconcile.Result{}
+	}
+	return *result, err
+}
+
+func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 
 	if !cluster.DeletionTimestamp.IsZero() {
 		if err := r.handleDeletion(ctx, cluster); err != nil {
-			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
+			return nil, fmt.Errorf("handling deletion: %w", err)
 		}
-		return reconcile.Result{}, nil
+		return nil, nil
 	}
 
 	if !kubernetes.HasFinalizer(cluster, mlaFinalizer) {
 		kubernetes.AddFinalizer(cluster, mlaFinalizer)
 		if err := r.Update(ctx, cluster); err != nil {
-			return reconcile.Result{}, fmt.Errorf("updating finalizers: %w", err)
+			return nil, fmt.Errorf("updating finalizers: %w", err)
 		}
 	}
 	if err := r.ensureConfigMaps(ctx, cluster); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to reconcile ConfigMaps in namespace %s: %w", cluster.Status.NamespaceName, err)
+		return nil, fmt.Errorf("failed to reconcile ConfigMaps in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 
 	if err := r.ensureDeployments(ctx, cluster); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", cluster.Status.NamespaceName, err)
+		return nil, fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 	if err := r.ensureServices(ctx, cluster); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to reconcile Services in namespace %s: %w", "mla", err)
+		return nil, fmt.Errorf("failed to reconcile Services in namespace %s: %w", "mla", err)
 	}
 
 	projectID, ok := cluster.GetLabels()[kubermaticapiv1.ProjectIDLabelKey]
 	if !ok {
-		return reconcile.Result{}, fmt.Errorf("unable to get project name from label")
+		return nil, fmt.Errorf("unable to get project name from label")
 	}
 
 	org, err := getOrgByProjectID(ctx, r.Client, r.grafanaClient, projectID)
 	if err != nil {
-		return reconcile.Result{}, err
+		return nil, err
 	}
 
 	lokiDS := grafanasdk.Datasource{
@@ -151,7 +176,7 @@ func (r *clusterReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local", cluster.Status.NamespaceName),
 	}
 	if err := r.ensureDatasource(ctx, cluster, lokiDS); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Loki Datasources: %w", err)
+		return nil, fmt.Errorf("failed to ensure Grafana Loki Datasources: %w", err)
 	}
 
 	prometheusDS := grafanasdk.Datasource{
@@ -163,13 +188,13 @@ func (r *clusterReconciler) Reconcile(ctx context.Context, request reconcile.Req
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local/api/prom", cluster.Status.NamespaceName),
 	}
 	if err := r.ensureDatasource(ctx, cluster, prometheusDS); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Prometheus Datasources: %w", err)
+		return nil, fmt.Errorf("failed to ensure Grafana Prometheus Datasources: %w", err)
 	}
 
-	return reconcile.Result{}, nil
+	return nil, nil
 }
 
-func (r *clusterReconciler) setAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster, key, value string) error {
+func (r *datasourceGrafanaReconciler) setAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster, key, value string) error {
 	annotations := cluster.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}
@@ -182,7 +207,7 @@ func (r *clusterReconciler) setAnnotation(ctx context.Context, cluster *kubermat
 	return nil
 }
 
-func (r *clusterReconciler) ensureDatasource(ctx context.Context, cluster *kubermaticv1.Cluster, expected grafanasdk.Datasource) error {
+func (r *datasourceGrafanaReconciler) ensureDatasource(ctx context.Context, cluster *kubermaticv1.Cluster, expected grafanasdk.Datasource) error {
 	ds, err := r.grafanaClient.GetDatasourceByUID(ctx, expected.UID)
 	if err != nil {
 		if errors.As(err, &grafanasdk.ErrNotFound{}) {
@@ -211,7 +236,7 @@ func (r *clusterReconciler) ensureDatasource(ctx context.Context, cluster *kuber
 	return nil
 
 }
-func (r *clusterReconciler) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *datasourceGrafanaReconciler) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster) error {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		GatewayDeploymentCreator(),
 	}
@@ -221,7 +246,7 @@ func (r *clusterReconciler) ensureDeployments(ctx context.Context, c *kubermatic
 	return nil
 }
 
-func (r *clusterReconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *datasourceGrafanaReconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
 		GatewayConfigMapCreator(c),
 	}
@@ -231,7 +256,7 @@ func (r *clusterReconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv
 	return nil
 }
 
-func (r *clusterReconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *datasourceGrafanaReconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster) error {
 	creators := []reconciling.NamedServiceCreatorGetter{
 		GatewayAlertServiceCreator(),
 		GatewayInternalServiceCreator(),
@@ -240,7 +265,7 @@ func (r *clusterReconciler) ensureServices(ctx context.Context, c *kubermaticv1.
 	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
-func (r *clusterReconciler) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+func (r *datasourceGrafanaReconciler) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	projectID, ok := cluster.GetLabels()[kubermaticapiv1.ProjectIDLabelKey]
 	if !ok {
 		return fmt.Errorf("unable to get project name from label")
