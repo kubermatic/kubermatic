@@ -221,8 +221,13 @@ func getFlags(data *resources.TemplateData) ([]string, error) {
 		"--use-service-account-credentials",
 	}
 
-	featureGates := []string{"RotateKubeletClientCertificate=true",
-		"RotateKubeletServerCertificate=true"}
+	featureGates := []string{"RotateKubeletServerCertificate=true"}
+
+	// starting with k8s 1.21, this is always true and cannot be toggled anymore
+	if data.Cluster().Spec.Version.Minor() < 21 {
+		featureGates = append(featureGates, "RotateKubeletClientCertificate=true")
+	}
+
 	featureGates = append(featureGates, data.GetCSIMigrationFeatureGates()...)
 
 	flags = append(flags, "--feature-gates")
