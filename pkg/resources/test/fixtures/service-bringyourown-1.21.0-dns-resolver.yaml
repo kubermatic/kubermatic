@@ -1,0 +1,15 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  name: dns-resolver
+spec:
+  ports:
+  - name: dns
+    port: 53
+    protocol: UDP
+    targetPort: 53
+  selector:
+    app: dns-resolver
+status:
+  loadBalancer: {}
