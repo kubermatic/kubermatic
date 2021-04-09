@@ -303,6 +303,10 @@ func TestLoadFiles(t *testing.T) {
 							ServiceAccount: &kubermaticv1.ServiceAccountSettings{
 								TokenVolumeProjectionEnabled: true,
 							},
+							MLA: &kubermaticv1.MLASettings{
+								MonitoringEnabled: true,
+								LoggingEnabled:    false,
+							},
 						},
 						Address: kubermaticv1.ClusterAddress{
 							ExternalName: "jh8j81chn.europe-west3-c.dev.kubermatic.io",

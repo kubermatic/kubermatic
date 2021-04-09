@@ -350,6 +350,7 @@ func PatchEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	newInternalCluster.Spec.OPAIntegration = patchedCluster.Spec.OPAIntegration
 	newInternalCluster.Spec.PodNodeSelectorAdmissionPluginConfig = patchedCluster.Spec.PodNodeSelectorAdmissionPluginConfig
 	newInternalCluster.Spec.ServiceAccount = patchedCluster.Spec.ServiceAccount
+	newInternalCluster.Spec.MLA = patchedCluster.Spec.MLA
 
 	incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfoGetter, clusterProvider, newInternalCluster, projectID)
 	if err != nil {
@@ -835,6 +836,7 @@ func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, fil
 			OPAIntegration:                       internalCluster.Spec.OPAIntegration,
 			PodNodeSelectorAdmissionPluginConfig: internalCluster.Spec.PodNodeSelectorAdmissionPluginConfig,
 			ServiceAccount:                       internalCluster.Spec.ServiceAccount,
+			MLA:                                  internalCluster.Spec.MLA,
 		},
 		Status: apiv1.ClusterStatus{
 			Version: internalCluster.Spec.Version,

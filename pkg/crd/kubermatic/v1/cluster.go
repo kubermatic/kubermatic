@@ -155,6 +155,9 @@ type ClusterSpec struct {
 
 	// ServiceAccount contains service account related settings for the kube-apiserver of user cluster.
 	ServiceAccount *ServiceAccountSettings `json:"serviceAccount,omitempty"`
+
+	//MLA contains monitoring, logging and alerting related settings for the user cluster.
+	MLA *MLASettings `json:"mla,omitempty"`
 }
 
 const (
@@ -345,6 +348,13 @@ type ServiceAccountSettings struct {
 	// APIAudiences are the Identifiers of the API
 	// If this is not specified, it will be set to a single element list containing the issuer URL
 	APIAudiences []string `json:"apiAudiences,omitempty"`
+}
+
+type MLASettings struct {
+	// MonitoringEnabled is the flag for enabling monitoring in user cluster.
+	MonitoringEnabled bool `json:"monitoringEnabled,omitempty"`
+	// LoggingEnabled is the flag for enabling logging in user cluster.
+	LoggingEnabled bool `json:"loggingEnabled,omitempty"`
 }
 
 type ComponentSettings struct {
