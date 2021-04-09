@@ -51,6 +51,7 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter
 		OPAIntegration:                       apiCluster.Spec.OPAIntegration,
 		PodNodeSelectorAdmissionPluginConfig: apiCluster.Spec.PodNodeSelectorAdmissionPluginConfig,
 		ServiceAccount:                       apiCluster.Spec.ServiceAccount,
+		MLA:                                  apiCluster.Spec.MLA,
 	}
 
 	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
