@@ -299,7 +299,7 @@ func TestManageClusterByAdmin(t *testing.T) {
 	}{
 		{
 			name:       "create cluster on DigitalOcean",
-			dc:         "prow-build-cluster",
+			dc:         "kubermatic",
 			location:   "do-fra1",
 			version:    "v1.15.6",
 			credential: "e2e-digitalocean",

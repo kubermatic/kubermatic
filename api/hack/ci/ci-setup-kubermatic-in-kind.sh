@@ -44,7 +44,7 @@ export ADDITIONAL_HELM_ARGS="${ADDITIONAL_HELM_ARGS:-}"
 export PATH=$PATH:/usr/local/go/bin
 
 # This is just used as a const
-export SEED_NAME=prow-build-cluster
+export SEED_NAME=kubermatic
 
 if [[ -z ${JOB_NAME} ]]; then
 	echo "This script should only be running in a CI environment."
