@@ -1336,7 +1336,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: quay.io/kubermatic/build:go-1.16-node-14-0
+      - image: quay.io/kubermatic/build:go-1.16-node-14-kind-0.8-0
         imagePullPolicy: Always
         command:
         - make
