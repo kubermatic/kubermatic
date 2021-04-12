@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"reflect"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -33,14 +32,13 @@ type credential struct {
 	credential, username, password, tenant, tenantID, domain string
 }
 
-func auth(ctx context.Context, request OpenstackReq, userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) (*provider.UserInfo, *credential, error) {
-	req := reflect.ValueOf(request)
+func auth(ctx context.Context, req OpenstackReq, userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) (*provider.UserInfo, *credential, error) {
 	var cred credential
 	userInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, nil, common.KubernetesErrorToHTTPError(err)
 	}
-	cred.credential, cred.username, cred.password, cred.domain, cred.tenant, cred.tenantID = req.FieldByName("Credential").String(), req.FieldByName("Username").String(), req.FieldByName("Password").String(), req.FieldByName("Domain").String(), req.FieldByName("Tenant").String(), req.FieldByName("TenantId").String()
+	cred.credential, cred.username, cred.password, cred.domain, cred.tenant, cred.tenantID = req.Credential, req.Username, req.Password, req.Domain, req.Tenant, req.TenantID
 	cred, err = getCredentials(userInfo, cred, presetsProvider)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error getting OpenStack credentials: %v", err)
@@ -80,19 +78,19 @@ func OpenstackSizeWithClusterCredentialsEndpoint(projectProvider provider.Projec
 
 func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(OpenstackTenantReq)
+		reqTenant, ok := request.(OpenstackTenantReq)
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackTenantReq, got = %T", request)
 		}
-		reqq := OpenstackReq{
-			req.Username, req.Password, req.Domain, "", "", req.DatacenterName, req.Credential,
+		req := OpenstackReq{
+			reqTenant.Username, reqTenant.Password, reqTenant.Domain, "", "", reqTenant.DatacenterName, reqTenant.Credential,
 		}
-		userInfo, cred, err := auth(ctx, reqq, userInfoGetter, presetsProvider)
+		userInfo, cred, err := auth(ctx, req, userInfoGetter, presetsProvider)
 		if err != nil {
 			return nil, err
 		}
 
-		return providercommon.GetOpenstackTenants(userInfo, seedsGetter, cred.username, cred.password, cred.domain, "", "", req.DatacenterName)
+		return providercommon.GetOpenstackTenants(userInfo, seedsGetter, cred.username, cred.password, cred.domain, "", "", reqTenant.DatacenterName)
 	}
 }
 
