@@ -35,7 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-var reStandardSize = regexp.MustCompile("(^cx)")
+var reStandardSize = regexp.MustCompile("(^cx|^cpx)")
 var reDedicatedSize = regexp.MustCompile("(^ccx)")
 
 func HetznerSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
