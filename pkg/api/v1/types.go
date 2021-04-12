@@ -669,6 +669,16 @@ type AlibabaZone struct {
 	ID string `json:"id"`
 }
 
+// AlibabaVSwitchList represents an array of Alibaba vSwitches.
+// swagger:model AlibabaVSwitchList
+type AlibabaVSwitchList []AlibabaVSwitch
+
+// AlibabaVSwitch represents a object of Alibaba vSwitch.
+// swagger:model AlibabaVSwitch
+type AlibabaVSwitch struct {
+	ID string `json:"id"`
+}
+
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {

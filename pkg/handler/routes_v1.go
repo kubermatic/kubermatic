@@ -224,6 +224,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAlibabaZones())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/alibaba/vswitches").
+		Handler(r.listAlibabaVSwitches())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets/credentials").
 		Handler(r.listCredentials())
 
@@ -1320,6 +1324,28 @@ func (r Routing) listAlibabaZones() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(provider.AlibabaZonesEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeAlibabaReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/alibaba/vswitches alibaba listAlibabaVSwitches
+//
+// Lists available Alibaba vSwitches.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AlibabaVSwitchList
+func (r Routing) listAlibabaVSwitches() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AlibabaVSwitchesEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAlibabaReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,

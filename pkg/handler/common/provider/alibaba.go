@@ -195,10 +195,10 @@ func AlibabaZonesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGet
 		return nil, err
 	}
 
-	return ListAlibabaZones(ctx, accessKeyID, accessKeySecret, region)
+	return ListAlibabaZones(accessKeyID, accessKeySecret, region)
 }
 
-func ListAlibabaZones(ctx context.Context, accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaZoneList, error) {
+func ListAlibabaZones(accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaZoneList, error) {
 	zones := apiv1.AlibabaZoneList{}
 
 	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
@@ -222,4 +222,66 @@ func ListAlibabaZones(ctx context.Context, accessKeyID string, accessKeySecret s
 	}
 
 	return zones, nil
+}
+
+func ListAlibabaVSwitches(accessKeyID string, accessKeySecret string, region string) (apiv1.AlibabaVSwitchList, error) {
+	vSwitches := apiv1.AlibabaVSwitchList{}
+
+	client, err := ecs.NewClientWithAccessKey(region, accessKeyID, accessKeySecret)
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to create client: %v", err))
+	}
+
+	requestVSwitches := ecs.CreateDescribeVSwitchesRequest()
+	requestVSwitches.Scheme = requestScheme
+
+	responseVswitches, err := client.DescribeVSwitches(requestVSwitches)
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to list vSwitches: %v", err))
+	}
+
+	for _, vSwitch := range responseVswitches.VSwitches.VSwitch {
+		vs := apiv1.AlibabaVSwitch{
+			ID: vSwitch.VSwitchId,
+		}
+		vSwitches = append(vSwitches, vs)
+	}
+
+	return vSwitches, nil
+}
+
+func AlibabaVswitchesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID, region string) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+
+	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
+	if err != nil {
+		return nil, err
+	}
+	if cluster.Spec.Cloud.Alibaba == nil {
+		return nil, errors.NewNotFound("cloud spec for %s", clusterID)
+	}
+
+	datacenterName := cluster.Spec.Cloud.DatacenterName
+
+	assertedClusterProvider, ok := clusterProvider.(*kubernetesprovider.ClusterProvider)
+	if !ok {
+		return nil, errors.New(http.StatusInternalServerError, "failed to assert clusterProvider")
+	}
+
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
+	}
+
+	secretKeySelector := provider.SecretKeySelectorValueFuncFactory(ctx, assertedClusterProvider.GetSeedClusterAdminRuntimeClient())
+	accessKeyID, accessKeySecret, err := alibaba.GetCredentialsForCluster(cluster.Spec.Cloud, secretKeySelector, datacenter.Spec.Alibaba)
+	if err != nil {
+		return nil, err
+	}
+
+	return ListAlibabaVSwitches(accessKeyID, accessKeySecret, region)
 }
