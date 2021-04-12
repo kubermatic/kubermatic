@@ -762,6 +762,9 @@ type ClusterSpec struct {
 	// Enabling it causes gatekeeper and its resources to be deployed on the user cluster.
 	// By default it is disabled.
 	OPAIntegration *kubermaticv1.OPAIntegrationSettings `json:"opaIntegration,omitempty"`
+
+	//MLA contains monitoring, logging and alerting related settings for the user cluster.
+	MLA *kubermaticv1.MLASettings `json:"mla,omitempty"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
@@ -781,6 +784,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		PodNodeSelectorAdmissionPluginConfig map[string]string                      `json:"podNodeSelectorAdmissionPluginConfig,omitempty"`
 		ServiceAccount                       *kubermaticv1.ServiceAccountSettings   `json:"serviceAccount,omitempty"`
 		OPAIntegration                       *kubermaticv1.OPAIntegrationSettings   `json:"opaIntegration,omitempty"`
+		MLA                                  *kubermaticv1.MLASettings              `json:"mla,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -810,6 +814,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		PodNodeSelectorAdmissionPluginConfig: cs.PodNodeSelectorAdmissionPluginConfig,
 		ServiceAccount:                       cs.ServiceAccount,
 		OPAIntegration:                       cs.OPAIntegration,
+		MLA:                                  cs.MLA,
 	})
 
 	return ret, err

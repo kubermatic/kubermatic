@@ -163,9 +163,42 @@ func TestCreateConstraintTemplates(t *testing.T) {
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
-			Name:             "scenario 3: admin cannot create invalid constraint template",
+			Name:             "scenario 3: admin cannot create invalid constraint template - name",
 			CTtoCreate:       test.GenDefaultConstraintTemplate("invalid"),
 			ExpectedResponse: `{"error":{"code":400,"message":"create ct validation failed: template's name invalid is not equal to the lowercase of CRD's Kind: labelconstraint"}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			Name: "scenario 4: admin cannot create invalid constraint template - no targets list",
+			CTtoCreate: func() apiv2.ConstraintTemplate {
+				ct := test.GenDefaultConstraintTemplate("labelconstraint")
+				ct.Spec.Targets = nil
+				return ct
+			}(),
+			ExpectedResponse: `{"error":{"code":400,"message":"create ct validation failed: template's target list is empty"}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			Name: "scenario 5: admin cannot create invalid constraint template - no rego",
+			CTtoCreate: func() apiv2.ConstraintTemplate {
+				ct := test.GenDefaultConstraintTemplate("labelconstraint")
+				ct.Spec.Targets[0].Rego = ""
+				return ct
+			}(),
+			ExpectedResponse: `{"error":{"code":400,"message":"create ct validation failed: template's rego is empty"}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			Name: "scenario 6: admin cannot create invalid constraint template - no target",
+			CTtoCreate: func() apiv2.ConstraintTemplate {
+				ct := test.GenDefaultConstraintTemplate("labelconstraint")
+				ct.Spec.Targets[0].Target = ""
+				return ct
+			}(),
+			ExpectedResponse: `{"error":{"code":400,"message":"create ct validation failed: template's target is empty"}}`,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
@@ -255,6 +288,15 @@ func TestPatchConstraintTemplates(t *testing.T) {
 			CTName:           "doesnotexist",
 			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8s.io \"doesnotexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenTestSeed(), test.GenConstraintTemplate("labelconstraint")},
+		},
+		{
+			Name:             "scenario 6: cannot patch invalid constraint template - rego missing",
+			RawPatch:         `{"name":"labelconstraint","spec":{"crd":{"spec":{"names":{"kind":"labelconstraint","shortNames":["lc"]}}},"targets":[{"target":"admission.k8s.gatekeeper.sh","rego":""}]}}`,
+			CTName:           "labelconstraint",
+			ExpectedResponse: `{"error":{"code":400,"message":"patched ct validation failed: template's rego is empty"}}`,
+			HTTPStatus:       http.StatusBadRequest,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 			ExistingObjects:  []ctrlruntimeclient.Object{test.GenTestSeed(), test.GenConstraintTemplate("labelconstraint")},
 		},

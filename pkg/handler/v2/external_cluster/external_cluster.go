@@ -76,7 +76,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		newCluster := genExternalCluster(req.Body.Name)
+		newCluster := genExternalCluster(req.Body.Name, project.Name)
 
 		kuberneteshelper.AddFinalizer(newCluster, apiv1.ExternalClusterKubeconfigCleanupFinalizer)
 
@@ -586,9 +586,12 @@ func (req listEventsReq) Validate() error {
 	return nil
 }
 
-func genExternalCluster(name string) *kubermaticapiv1.ExternalCluster {
+func genExternalCluster(name, projectID string) *kubermaticapiv1.ExternalCluster {
 	return &kubermaticapiv1.ExternalCluster{
-		ObjectMeta: metav1.ObjectMeta{Name: rand.String(10)},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   rand.String(10),
+			Labels: map[string]string{kubermaticapiv1.ProjectIDLabelKey: projectID},
+		},
 		Spec: kubermaticapiv1.ExternalClusterSpec{
 			HumanReadableName: name,
 		},

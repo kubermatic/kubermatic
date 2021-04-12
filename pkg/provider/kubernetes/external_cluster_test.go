@@ -46,7 +46,7 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 		{
 			name:            "test: create a new secret",
 			existingObjects: []ctrlruntimeclient.Object{},
-			externalCluster: genExternalCluster("test"),
+			externalCluster: genExternalCluster("test", "projectID"),
 			kubeconfig:      defaultKubeconfig,
 			expectedSecret: &corev1.Secret{
 				TypeMeta: metav1.TypeMeta{
@@ -55,8 +55,9 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					ResourceVersion: "1",
-					Name:            genExternalCluster("test").GetKubeconfigSecretName(),
+					Name:            genExternalCluster("test", "projectID").GetKubeconfigSecretName(),
 					Namespace:       resources.KubermaticNamespace,
+					Labels:          map[string]string{kubermaticapiv1.ProjectIDLabelKey: "projectID"},
 				},
 				Data: map[string][]byte{resources.ExternalClusterKubeconfig: []byte(defaultKubeconfig)},
 				Type: corev1.SecretTypeOpaque,
@@ -72,14 +73,14 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 					},
 					ObjectMeta: metav1.ObjectMeta{
 						ResourceVersion: "1",
-						Name:            genExternalCluster("test").GetKubeconfigSecretName(),
+						Name:            genExternalCluster("test", "projectID").GetKubeconfigSecretName(),
 						Namespace:       resources.KubermaticNamespace,
 					},
 					Data: map[string][]byte{resources.ExternalClusterKubeconfig: []byte("abc")},
 					Type: corev1.SecretTypeOpaque,
 				},
 			},
-			externalCluster: genExternalCluster("test"),
+			externalCluster: genExternalCluster("test", "projectID"),
 			kubeconfig:      defaultKubeconfig,
 			expectedSecret: &corev1.Secret{
 				TypeMeta: metav1.TypeMeta{
@@ -88,8 +89,9 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 				},
 				ObjectMeta: metav1.ObjectMeta{
 					ResourceVersion: "2",
-					Name:            genExternalCluster("test").GetKubeconfigSecretName(),
+					Name:            genExternalCluster("test", "projectID").GetKubeconfigSecretName(),
 					Namespace:       resources.KubermaticNamespace,
+					Labels:          map[string]string{kubermaticapiv1.ProjectIDLabelKey: "projectID"},
 				},
 				Data: map[string][]byte{resources.ExternalClusterKubeconfig: []byte(defaultKubeconfig)},
 				Type: corev1.SecretTypeOpaque,
@@ -130,9 +132,12 @@ func TestCreateOrUpdateKubeconfigSecretForCluster(t *testing.T) {
 	}
 }
 
-func genExternalCluster(name string) *kubermaticapiv1.ExternalCluster {
+func genExternalCluster(name, projectID string) *kubermaticapiv1.ExternalCluster {
 	return &kubermaticapiv1.ExternalCluster{
-		ObjectMeta: metav1.ObjectMeta{Name: name},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   name,
+			Labels: map[string]string{kubermaticapiv1.ProjectIDLabelKey: projectID},
+		},
 		Spec: kubermaticapiv1.ExternalClusterSpec{
 			HumanReadableName: name,
 		},
