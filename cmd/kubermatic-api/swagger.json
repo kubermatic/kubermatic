@@ -17561,6 +17561,20 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "OpaOptions": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "x-go-name": "Enabled"
+        },
+        "enforced": {
+          "type": "boolean",
+          "x-go-name": "Enforced"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "OpenstackAvailabilityZone": {
       "type": "object",
       "title": "OpenstackAvailabilityZone is the object representing a openstack availability zone.",
@@ -18839,6 +18853,9 @@
         },
         "machineDeploymentVMResourceQuota": {
           "$ref": "#/definitions/MachineDeploymentVMResourceQuota"
+        },
+        "opaOptions": {
+          "$ref": "#/definitions/OpaOptions"
         },
         "restrictProjectCreation": {
           "type": "boolean",
