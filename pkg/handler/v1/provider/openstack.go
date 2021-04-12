@@ -33,7 +33,7 @@ type credential struct {
 	credential, username, password, tenant, tenantID, domain string
 }
 
-func auth(ctx context.Context, request interface{}, userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) (*provider.UserInfo, *credential, error) {
+func auth(ctx context.Context, request OpenstackReq, userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) (*provider.UserInfo, *credential, error) {
 	req := reflect.ValueOf(request)
 	var cred credential
 	userInfo, err := userInfoGetter(ctx, "")
@@ -84,10 +84,14 @@ func OpenstackTenantEndpoint(seedsGetter provider.SeedsGetter, presetsProvider p
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackTenantReq, got = %T", request)
 		}
-		userInfo, cred, err := auth(ctx, req, userInfoGetter, presetsProvider)
+		reqq := OpenstackReq{
+			req.Username, req.Password, req.Domain, "", "", req.DatacenterName, req.Credential,
+		}
+		userInfo, cred, err := auth(ctx, reqq, userInfoGetter, presetsProvider)
 		if err != nil {
 			return nil, err
 		}
+
 		return providercommon.GetOpenstackTenants(userInfo, seedsGetter, cred.username, cred.password, cred.domain, "", "", req.DatacenterName)
 	}
 }
@@ -147,7 +151,7 @@ func OpenstackSubnetsEndpoint(seedsGetter provider.SeedsGetter, presetsProvider 
 		if !ok {
 			return nil, fmt.Errorf("incorrect type of request, expected = OpenstackSubnetReq, got = %T", request)
 		}
-		userInfo, cred, err := auth(ctx, req, userInfoGetter, presetsProvider)
+		userInfo, cred, err := auth(ctx, req.OpenstackReq, userInfoGetter, presetsProvider)
 		if err != nil {
 			return nil, err
 		}
@@ -186,18 +190,6 @@ func OpenstackAvailabilityZoneWithClusterCredentialsEndpoint(projectProvider pro
 		req := request.(OpenstackNoCredentialsReq)
 		return providercommon.OpenstackAvailabilityZoneWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
 	}
-}
-
-// OpenstackReq represent a request for openstack
-// swagger:parameters listOpenstackSizes listOpenstackNetworks listOpenstackSecurityGroups listOpenstackAvailabilityZones
-type OpenstackReq struct {
-	OpenstackTenantReq
-	// in: header
-	// Tenant OpenStack tenant name
-	Tenant string
-	// in: header
-	// TenantID OpenStack tenant ID
-	TenantID string
 }
 
 func DecodeOpenstackReq(_ context.Context, r *http.Request) (interface{}, error) {
@@ -288,7 +280,33 @@ type OpenstackTenantReq struct {
 	// Domain OpenStack domain name
 	Domain string
 	// in: header
-	// 	centerName Openstack datacenter na
+	// DatacenterName Openstack datacenter name
+	DatacenterName string
+	// in: header
+	// Credential predefined Kubermatic credential name from the presets
+	Credential string
+}
+
+// OpenstackReq represent a request for openstack
+// swagger:parameters listOpenstackSizes listOpenstackNetworks listOpenstackSecurityGroups listOpenstackAvailabilityZones
+type OpenstackReq struct {
+	// in: header
+	// Username OpenStack user name
+	Username string
+	// in: header
+	// Password OpenStack user password
+	Password string
+	// in: header
+	// Domain OpenStack domain name
+	Domain string
+	// in: header
+	// Tenant OpenStack tenant name
+	Tenant string
+	// in: header
+	// TenantID OpenStack tenant ID
+	TenantID string
+	// in: header
+	// DatacenterName Openstack datacenter name
 	DatacenterName string
 	// in: header
 	// Credential predefined Kubermatic credential name from the presets
@@ -310,7 +328,6 @@ func getCredentials(userInfo *provider.UserInfo, cred credential, presetProvider
 	if len(credentialName) > 0 {
 		preset, err := presetProvider.GetPreset(userInfo, credentialName)
 		if err != nil {
-			//
 			var dummy credential
 			return dummy, fmt.Errorf("can not get preset %s for the user %s", credentialName, userInfo.Email)
 		}
