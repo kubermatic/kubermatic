@@ -25,7 +25,6 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
@@ -93,9 +92,7 @@ func newDatasourceGrafanaReconciler(
 		return err
 	}
 
-	debugPredicate := predicate.ByLabel(kubermaticv1.WorkerNameLabelKey, workerName)
-
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}, debugPredicate); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Clusters: %v", err)
 	}
 	return err
@@ -192,19 +189,6 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 	}
 
 	return nil, nil
-}
-
-func (r *datasourceGrafanaReconciler) setAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster, key, value string) error {
-	annotations := cluster.GetAnnotations()
-	if annotations == nil {
-		annotations = map[string]string{}
-	}
-	annotations[key] = value
-	cluster.SetAnnotations(annotations)
-	if err := r.Update(ctx, cluster); err != nil {
-		return fmt.Errorf("updating Cluster: %w", err)
-	}
-	return nil
 }
 
 func (r *datasourceGrafanaReconciler) ensureDatasource(ctx context.Context, cluster *kubermaticv1.Cluster, expected grafanasdk.Datasource) error {

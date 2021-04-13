@@ -176,7 +176,7 @@ func GatewayConfigMapCreator(c *kubermaticv1.Cluster) reconciling.NamedConfigMap
 func GatewayAlertServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return "mla-gateway-alert", func(s *corev1.Service) (*corev1.Service, error) {
-			s.Spec.Type = corev1.ServiceTypeLoadBalancer
+			s.Spec.Type = corev1.ServiceTypeClusterIP
 			s.Spec.Ports = []corev1.ServicePort{
 				{
 					Name:       "http-alert",

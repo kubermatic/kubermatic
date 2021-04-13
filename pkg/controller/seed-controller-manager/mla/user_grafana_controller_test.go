@@ -18,8 +18,10 @@ package mla
 
 import (
 	"context"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -36,7 +38,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
-func newTestUserProjectBindingReconciler(t *testing.T, objects []ctrlruntimeclient.Object, handler http.Handler) (*userGrafanaReconciler, *httptest.Server) {
+func newTestUserGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Object, handler http.Handler) (*userGrafanaReconciler, *httptest.Server) {
 	dynamicClient := ctrlruntimefakeclient.
 		NewClientBuilder().
 		WithObjects(objects...).
@@ -57,7 +59,7 @@ func newTestUserProjectBindingReconciler(t *testing.T, objects []ctrlruntimeclie
 	return &reconciler, ts
 }
 
-func TestUserProjectBindingReconcile(t *testing.T) {
+func TestUserGrafanaReconcile(t *testing.T) {
 	testCases := []struct {
 		name         string
 		requestName  string
@@ -94,40 +96,29 @@ func TestUserProjectBindingReconcile(t *testing.T) {
 			hasFinalizer: true,
 			requests: []request{
 				{
-					name:     "delete user from default org",
-					code:     200,
-					method:   "DELETE",
-					path:     "/api/orgs/1/users/1",
-					response: `{"message":"org user deleted"}`,
-				},
-				{
-					name:     "add org user",
-					code:     200,
-					method:   "POST",
-					path:     "/api/orgs/1/users",
-					response: `{"message": "User added to organization"}`,
-					body:     `{"loginOrEmail":"user@email.com","role":"Admin"}`,
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "get org users",
-					code:     200,
-					method:   "GET",
-					path:     "/api/orgs/1/users",
-					response: `[]`,
-				},
-				{
-					name:     "get org by id",
-					code:     200,
-					method:   "GET",
-					path:     "/api/orgs/1",
-					response: `{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`,
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "create OAuth user",
-					code:     200,
-					method:   "GET",
-					path:     "/api/user",
-					response: `{"id":1}`,
+					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "delete user from default org",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "add org user",
+					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Admin"}`)),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -158,26 +149,19 @@ func TestUserProjectBindingReconcile(t *testing.T) {
 			hasFinalizer: true,
 			requests: []request{
 				{
-					name:     "get org users",
-					code:     200,
-					method:   "GET",
-					path:     "/api/orgs/1/users",
-					response: `[{"orgId":1,"userId":1,"email":"user@email.com","login":"admin","role":"Viewer"}]`,
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
-					name:     "get org by id",
-					code:     200,
-					method:   "GET",
-					path:     "/api/orgs/1",
-					response: `{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`,
+					name:     "get org users",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`[{"orgId":1,"userId":1,"email":"user@email.com","login":"admin","role":"Viewer"}]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "update org user",
-					code:     200,
-					method:   "PATCH",
-					path:     "/api/orgs/1/users/1",
-					response: `{"message": "User updated"}`,
-					body:     `{"loginOrEmail":"user@email.com","role":"Admin"}`,
+					request:  httptest.NewRequest(http.MethodPatch, "/api/orgs/1/users/1", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Admin"}`)),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User updated"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -209,25 +193,19 @@ func TestUserProjectBindingReconcile(t *testing.T) {
 			hasFinalizer: false,
 			requests: []request{
 				{
-					name:     "get org users",
-					code:     200,
-					method:   "GET",
-					path:     "/api/orgs/1/users",
-					response: `[{"orgId":1,"userId":1,"email":"user@email.com","login":"admin","role":"Viewer"}]`,
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
-					name:     "get org by id",
-					code:     200,
-					method:   "GET",
-					path:     "/api/orgs/1",
-					response: `{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`,
+					name:     "get org users",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`[{"orgId":1,"userId":1,"email":"user@email.com","login":"admin","role":"Viewer"}]`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete org user",
-					code:     200,
-					method:   "DELETE",
-					path:     "/api/orgs/1/users/1",
-					response: `{"message": "User deleted"}`,
+					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -237,8 +215,8 @@ func TestUserProjectBindingReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
-			r, assertExpectation := buildTestServer(t, tc.requests)
-			controller, server := newTestUserProjectBindingReconciler(t, tc.objects, r)
+			r, assertExpectation := buildTestServer(t, tc.requests...)
+			controller, server := newTestUserGrafanaReconciler(t, tc.objects, r)
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
 			_, err := controller.Reconcile(ctx, request)
 			if err != nil && !tc.err {
