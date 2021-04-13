@@ -133,6 +133,8 @@ http {
 }
 `
 
+const gatewayName = "mla-gateway"
+
 type configTemplateData struct {
 	Namespace string
 	TenantID  string
@@ -154,7 +156,7 @@ func renderTemplate(tpl string, data interface{}) (string, error) {
 
 func GatewayConfigMapCreator(c *kubermaticv1.Cluster) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
-		return "mla-gateway", func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
+		return gatewayName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				configData := configTemplateData{
 					Namespace: "mla",
@@ -192,7 +194,7 @@ func GatewayAlertServiceCreator() reconciling.NamedServiceCreatorGetter {
 
 func GatewayInternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
-		return "mla-gateway", func(s *corev1.Service) (*corev1.Service, error) {
+		return gatewayName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
 			s.Spec.Ports = []corev1.ServicePort{
 				{
@@ -226,8 +228,7 @@ func GatewayExternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 
 func GatewayDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return "mla-gateway", func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
-			d.SetName("mla-gateway")
+		return gatewayName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -306,7 +307,7 @@ func GatewayDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "mla-gateway",
+								Name: gatewayName,
 							},
 						},
 					},

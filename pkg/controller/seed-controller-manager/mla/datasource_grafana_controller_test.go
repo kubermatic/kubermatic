@@ -216,7 +216,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"name":"Prometheus Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":2, "isDefault":false, "jsonData":null, "secureJsonData":null}`)), StatusCode: http.StatusOK},
 				},
 				{
-					name:     "udpate prometheus datasource",
+					name:     "update prometheus datasource",
 					request:  httptest.NewRequest(http.MethodPut, "/api/datasources/2", strings.NewReader(`{"name":"Prometheus New Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":2, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource updated", "id": 2}`)), StatusCode: http.StatusOK},
 				},

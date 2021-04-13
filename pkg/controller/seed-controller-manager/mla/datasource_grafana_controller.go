@@ -45,10 +45,8 @@ import (
 )
 
 const (
-	lokiDatasourceAnnotationKey       = "mla.k8s.io/loki"
-	prometheusDatasourceAnnotationKey = "mla.k8s.io/prometheus"
-	prometheusType                    = "prometheus"
-	lokiType                          = "loki"
+	prometheusType = "prometheus"
+	lokiType       = "loki"
 )
 
 // datasourceGrafanaReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.

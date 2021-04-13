@@ -255,7 +255,8 @@ func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bo
 		w.WriteHeader(req.response.StatusCode)
 		if req.response.Body != nil {
 			defer req.response.Body.Close()
-			io.Copy(w, req.response.Body)
+			_, err := io.Copy(w, req.response.Body)
+			assert.Nil(t, err)
 		}
 	})
 	return r, assertExpectation
