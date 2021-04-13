@@ -211,6 +211,8 @@ var (
 			semver.MustParse("v1.19.8"),
 			// Kubernetes 1.20
 			semver.MustParse("v1.20.2"),
+			// Kubernetes 1.21
+			semver.MustParse("v1.21.0"),
 		},
 		Updates: []operatorv1alpha1.Update{
 			{
@@ -293,6 +295,18 @@ var (
 				// Allow to change to any patch version
 				From: "1.20.*",
 				To:   "1.20.*",
+			},
+			{
+				// Allow to next minor release
+				From: "1.20.*",
+				To:   "1.21.*",
+			},
+
+			// ======= 1.21 =======
+			{
+				// Allow to change to any patch version
+				From: "1.21.*",
+				To:   "1.21.*",
 			},
 		},
 	}

@@ -25,6 +25,7 @@ rules:
   - kubelet-config-1.18
   - kubelet-config-1.19
   - kubelet-config-1.20
+  - kubelet-config-1.21
   - kube-proxy
   - kubeadm-config
   resources:

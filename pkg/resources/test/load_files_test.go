@@ -158,6 +158,9 @@ func TestLoadFiles(t *testing.T) {
 		{
 			Version: semver.MustParse("1.20.0"),
 		},
+		{
+			Version: semver.MustParse("1.21.0"),
+		},
 	}
 
 	clouds := map[string]kubermaticv1.CloudSpec{
