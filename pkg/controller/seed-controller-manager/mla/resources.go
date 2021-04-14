@@ -30,6 +30,7 @@ import (
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -133,7 +134,11 @@ http {
 }
 `
 
-const gatewayName = "mla-gateway"
+const (
+	gatewayName         = "mla-gateway"
+	gatewayAlertName    = "mla-gateway-alert"
+	gatewayExternalName = "mla-gateway-ext"
+)
 
 type configTemplateData struct {
 	Namespace string
@@ -159,7 +164,7 @@ func GatewayConfigMapCreator(c *kubermaticv1.Cluster) reconciling.NamedConfigMap
 		return gatewayName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				configData := configTemplateData{
-					Namespace: "mla",
+					Namespace: resources.MLANamespace,
 					TenantID:  c.Name,
 				}
 				config, err := renderTemplate(nginxConfig, configData)
@@ -177,16 +182,18 @@ func GatewayConfigMapCreator(c *kubermaticv1.Cluster) reconciling.NamedConfigMap
 
 func GatewayAlertServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
-		return "mla-gateway-alert", func(s *corev1.Service) (*corev1.Service, error) {
+		return gatewayAlertName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
-			s.Spec.Ports = []corev1.ServicePort{
-				{
-					Name:       "http-alert",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       80,
-					TargetPort: intstr.FromString("http-alert"),
-				},
+
+			if len(s.Spec.Ports) == 0 {
+				s.Spec.Ports = make([]corev1.ServicePort, 1)
 			}
+
+			s.Spec.Ports[0].Name = "http-alert"
+			s.Spec.Ports[0].Protocol = corev1.ProtocolTCP
+			s.Spec.Ports[0].Port = 80
+			s.Spec.Ports[0].TargetPort = intstr.FromString("http-alert")
+
 			return s, nil
 		}
 	}
@@ -196,14 +203,16 @@ func GatewayInternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return gatewayName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
-			s.Spec.Ports = []corev1.ServicePort{
-				{
-					Name:       "http-int",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       80,
-					TargetPort: intstr.FromString("http-int"),
-				},
+
+			if len(s.Spec.Ports) == 0 {
+				s.Spec.Ports = make([]corev1.ServicePort, 1)
 			}
+
+			s.Spec.Ports[0].Name = "http-int"
+			s.Spec.Ports[0].Protocol = corev1.ProtocolTCP
+			s.Spec.Ports[0].Port = 80
+			s.Spec.Ports[0].TargetPort = intstr.FromString("http-int")
+
 			return s, nil
 		}
 	}
@@ -211,16 +220,17 @@ func GatewayInternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 
 func GatewayExternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
-		return "mla-gateway-ext", func(s *corev1.Service) (*corev1.Service, error) {
+		return gatewayExternalName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
-			s.Spec.Ports = []corev1.ServicePort{
-				{
-					Name:       "http-ext",
-					Protocol:   corev1.ProtocolTCP,
-					Port:       80,
-					TargetPort: intstr.FromString("http-ext"),
-				},
+			if len(s.Spec.Ports) == 0 {
+				s.Spec.Ports = make([]corev1.ServicePort, 1)
 			}
+
+			s.Spec.Ports[0].Name = "http-ext"
+			s.Spec.Ports[0].Protocol = corev1.ProtocolTCP
+			s.Spec.Ports[0].Port = 80
+			s.Spec.Ports[0].TargetPort = intstr.FromString("http-ext")
+
 			return s, nil
 		}
 	}

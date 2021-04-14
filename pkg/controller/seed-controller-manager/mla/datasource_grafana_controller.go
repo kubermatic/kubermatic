@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"time"
 
 	"go.uber.org/zap"
 
@@ -34,6 +35,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
+	apiErrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -104,6 +106,12 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
+
+	if cluster.Status.NamespaceName == "" {
+		log.Debug("Skipping cluster reconciling because it has no namespace yet")
+		return reconcile.Result{RequeueAfter: 5 * time.Second}, nil
+	}
+
 	// Add a wrapping here so we can emit an event on error
 	result, err := kubermaticv1helper.ClusterReconcileWrapper(
 		ctx,
@@ -127,8 +135,12 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 }
 
 func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
+	// disabled by default
+	if cluster.Spec.MLA == nil {
+		cluster.Spec.MLA = &kubermaticapiv1.MLASettings{}
+	}
 
-	if !cluster.DeletionTimestamp.IsZero() {
+	if !cluster.DeletionTimestamp.IsZero() || (!cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled) {
 		if err := r.handleDeletion(ctx, cluster); err != nil {
 			return nil, fmt.Errorf("handling deletion: %w", err)
 		}
@@ -170,7 +182,7 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local", cluster.Status.NamespaceName),
 	}
-	if err := r.ensureDatasource(ctx, cluster, lokiDS); err != nil {
+	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.LoggingEnabled, lokiDS); err != nil {
 		return nil, fmt.Errorf("failed to ensure Grafana Loki Datasources: %w", err)
 	}
 
@@ -182,36 +194,47 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local/api/prom", cluster.Status.NamespaceName),
 	}
-	if err := r.ensureDatasource(ctx, cluster, prometheusDS); err != nil {
+	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.MonitoringEnabled, prometheusDS); err != nil {
 		return nil, fmt.Errorf("failed to ensure Grafana Prometheus Datasources: %w", err)
 	}
 
 	return nil, nil
 }
 
-func (r *datasourceGrafanaReconciler) ensureDatasource(ctx context.Context, cluster *kubermaticv1.Cluster, expected grafanasdk.Datasource) error {
-	ds, err := r.grafanaClient.GetDatasourceByUID(ctx, expected.UID)
-	if err != nil {
-		if errors.As(err, &grafanasdk.ErrNotFound{}) {
-			status, err := r.grafanaClient.CreateDatasource(ctx, expected)
-			if err != nil {
-				return fmt.Errorf("unable to add datasource: %w (status: %s, message: %s)",
-					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-			}
-			if status.ID != nil {
-				return nil
-			}
-			// possibly already exists with such name
-			ds, err = r.grafanaClient.GetDatasourceByName(ctx, expected.Name)
-			if err != nil {
-				return fmt.Errorf("unable to get datasource by name %s", expected.Name)
+func (r *datasourceGrafanaReconciler) reconcileDatasource(ctx context.Context, enabled bool, expected grafanasdk.Datasource) error {
+	if enabled {
+		ds, err := r.grafanaClient.GetDatasourceByUID(ctx, expected.UID)
+		if err != nil {
+			if errors.As(err, &grafanasdk.ErrNotFound{}) {
+				status, err := r.grafanaClient.CreateDatasource(ctx, expected)
+				if err != nil {
+					return fmt.Errorf("unable to add datasource: %w (status: %s, message: %s)",
+						err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+				}
+				if status.ID != nil {
+					return nil
+				}
+				// possibly already exists with such name
+				ds, err = r.grafanaClient.GetDatasourceByName(ctx, expected.Name)
+				if err != nil {
+					return fmt.Errorf("unable to get datasource by name %s", expected.Name)
+				}
 			}
 		}
-	}
-	expected.ID = ds.ID
-	if !reflect.DeepEqual(ds, expected) {
-		if status, err := r.grafanaClient.UpdateDatasource(ctx, expected); err != nil {
-			return fmt.Errorf("unable to update datasource: %w (status: %s, message: %s)",
+		expected.ID = ds.ID
+		if !reflect.DeepEqual(ds, expected) {
+			if status, err := r.grafanaClient.UpdateDatasource(ctx, expected); err != nil {
+				return fmt.Errorf("unable to update datasource: %w (status: %s, message: %s)",
+					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			}
+		}
+	} else {
+		if status, err := r.grafanaClient.SwitchActualUserContext(ctx, expected.OrgID); err != nil {
+			return fmt.Errorf("unable to switch context to org %d: %w (status: %s, message: %s)",
+				expected.OrgID, err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+		}
+		if status, err := r.grafanaClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil {
+			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 	}
@@ -270,9 +293,18 @@ func (r *datasourceGrafanaReconciler) handleDeletion(ctx context.Context, cluste
 			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
 
+	if cluster.DeletionTimestamp.IsZero() {
+		for _, resource := range ResourcesOnDeletion(cluster.Status.NamespaceName) {
+			if err := r.Client.Delete(ctx, resource); err != nil && !apiErrors.IsNotFound(err) {
+				return fmt.Errorf("failed to ensure user cluster prometheus is removed/not present: %v", err)
+			}
+		}
+	}
+
 	kubernetes.RemoveFinalizer(cluster, mlaFinalizer)
 	if err := r.Update(ctx, cluster); err != nil {
 		return fmt.Errorf("updating Cluster: %w", err)
 	}
+
 	return nil
 }
