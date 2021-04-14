@@ -191,71 +191,33 @@ var (
 	}
 
 	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
-		Default: semver.MustParse("v1.19.8"),
+		Default: semver.MustParse("v1.19.9"),
 		Versions: []*semver.Version{
-			// Kubernetes 1.17
-			semver.MustParse("v1.17.9"),
-			semver.MustParse("v1.17.11"),
-			semver.MustParse("v1.17.12"),
-			semver.MustParse("v1.17.13"),
-			semver.MustParse("v1.17.16"),
 			// Kubernetes 1.18
 			semver.MustParse("v1.18.6"),
 			semver.MustParse("v1.18.8"),
 			semver.MustParse("v1.18.10"),
 			semver.MustParse("v1.18.14"),
+			semver.MustParse("v1.18.17"),
 			// Kubernetes 1.19
 			semver.MustParse("v1.19.0"),
 			semver.MustParse("v1.19.2"),
 			semver.MustParse("v1.19.3"),
 			semver.MustParse("v1.19.8"),
+			semver.MustParse("v1.19.9"),
 			// Kubernetes 1.20
 			semver.MustParse("v1.20.2"),
+			semver.MustParse("v1.20.5"),
 			// Kubernetes 1.21
 			semver.MustParse("v1.21.0"),
 		},
 		Updates: []operatorv1alpha1.Update{
-			{
-				// Auto-upgrade unsupported clusters
-				From:      "1.15.*",
-				To:        "1.16.*",
-				Automatic: pointer.BoolPtr(true),
-			},
-
-			// ======= 1.16 =======
-			{
-				// Allow to change to any patch version
-				From: "1.16.*",
-				To:   "1.16.*",
-			},
-			{
-				// CVE-2019-11253, CVE-2020-8559
-				From:      "<= 1.16.12, >= 1.16.0",
-				To:        "1.16.13",
-				Automatic: pointer.BoolPtr(true),
-			},
-			{
-				// Allow to next minor release
-				From: "1.16.*",
-				To:   "1.17.*",
-			},
-
 			// ======= 1.17 =======
 			{
-				// Allow to change to any patch version
-				From: "1.17.*",
-				To:   "1.17.*",
-			},
-			{
-				// CVE-2020-8559
-				From:      "<= 1.17.8, >= 1.17.0",
-				To:        "1.17.9",
+				// Auto-upgrade unsupported clusters
+				From:      "1.17.*",
+				To:        "1.18.17",
 				Automatic: pointer.BoolPtr(true),
-			},
-			{
-				// Allow to next minor release
-				From: "1.17.*",
-				To:   "1.18.*",
 			},
 
 			// ======= 1.18 =======
