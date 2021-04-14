@@ -184,6 +184,7 @@ func GatewayAlertServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return gatewayAlertName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
+			s.Spec.Selector = map[string]string{common.NameLabel: "mla"}
 
 			if len(s.Spec.Ports) == 0 {
 				s.Spec.Ports = make([]corev1.ServicePort, 1)
@@ -203,6 +204,7 @@ func GatewayInternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return gatewayName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
+			s.Spec.Selector = map[string]string{common.NameLabel: "mla"}
 
 			if len(s.Spec.Ports) == 0 {
 				s.Spec.Ports = make([]corev1.ServicePort, 1)
@@ -222,6 +224,8 @@ func GatewayExternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return gatewayExternalName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
+			s.Spec.Selector = map[string]string{common.NameLabel: "mla"}
+
 			if len(s.Spec.Ports) == 0 {
 				s.Spec.Ports = make([]corev1.ServicePort, 1)
 			}
