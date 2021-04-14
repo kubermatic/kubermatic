@@ -34,6 +34,7 @@ import (
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -415,30 +416,41 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				t.Fatalf("unable to get cluster: %v", err)
 			}
 			assert.Equal(t, tc.hasFinalizer, kubernetes.HasFinalizer(cluster, mlaFinalizer))
+
+			cm := &corev1.ConfigMap{}
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway", Namespace: cluster.Status.NamespaceName}}
+			err = controller.Get(ctx, request.NamespacedName, cm)
 			if tc.hasResources {
-				cm := &corev1.ConfigMap{}
-				request := reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway", Namespace: cluster.Status.NamespaceName}}
-				if err := controller.Get(ctx, request.NamespacedName, cm); err != nil {
-					t.Fatalf("unable to get configmap: %v", err)
-				}
-				dp := &appsv1.Deployment{}
-				request = reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway", Namespace: cluster.Status.NamespaceName}}
-				if err := controller.Get(ctx, request.NamespacedName, dp); err != nil {
-					t.Fatalf("unable to get deployment: %v", err)
-				}
-
-				svc := &corev1.Service{}
-				request = reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway-alert", Namespace: cluster.Status.NamespaceName}}
-				if err := controller.Get(ctx, request.NamespacedName, svc); err != nil {
-					t.Fatalf("unable to get alert service: %v", err)
-				}
-
-				request = reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway-ext", Namespace: cluster.Status.NamespaceName}}
-				if err := controller.Get(ctx, request.NamespacedName, svc); err != nil {
-					t.Fatalf("unable to get external service: %v", err)
-				}
-
+				assert.Nil(t, err)
+			} else {
+				assert.True(t, errors.IsNotFound(err))
 			}
+			dp := &appsv1.Deployment{}
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway", Namespace: cluster.Status.NamespaceName}}
+			err = controller.Get(ctx, request.NamespacedName, dp)
+			if tc.hasResources {
+				assert.Nil(t, err)
+			} else {
+				assert.True(t, errors.IsNotFound(err))
+			}
+
+			svc := &corev1.Service{}
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway-alert", Namespace: cluster.Status.NamespaceName}}
+			err = controller.Get(ctx, request.NamespacedName, svc)
+			if tc.hasResources {
+				assert.Nil(t, err)
+			} else {
+				assert.True(t, errors.IsNotFound(err))
+			}
+
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway-ext", Namespace: cluster.Status.NamespaceName}}
+			err = controller.Get(ctx, request.NamespacedName, svc)
+			if tc.hasResources {
+				assert.Nil(t, err)
+			} else {
+				assert.True(t, errors.IsNotFound(err))
+			}
+
 			assertExpectation()
 			server.Close()
 		})
