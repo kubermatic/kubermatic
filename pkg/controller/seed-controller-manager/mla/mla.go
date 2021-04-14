@@ -54,9 +54,9 @@ var (
 
 // Add creates a new MLA controller that is responsible for
 // managing Monitoring, Logging and Alerting for user clusters.
-// * project controller - create/update/delete Grafana organizations based on Kubermatic Projects
-// * userprojectbinding controller - create/update/delete Grafana Users to organizations based on Kubermatic UserProjectBindings
-// * cluster controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
+// * org grafana controller - create/update/delete Grafana organizations based on Kubermatic Projects
+// * user grafana controller - create/update/delete Grafana Users to organizations based on Kubermatic UserProjectBindings
+// * datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
