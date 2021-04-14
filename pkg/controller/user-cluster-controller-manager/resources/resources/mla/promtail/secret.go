@@ -45,7 +45,7 @@ func SecretCreator(config Config) reconciling.NamedSecretCreatorGetter {
 				return nil, err
 			}
 			secret.Data["promtail.yaml"] = configBuf.Bytes()
-			secret.Labels = resources.BaseAppLabels(resources.PromtailSecretName, nil)
+			secret.Labels = resources.BaseAppLabels(appName, nil)
 			return secret, nil
 		}
 	}
