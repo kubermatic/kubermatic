@@ -140,7 +140,8 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 		cluster.Spec.MLA = &kubermaticapiv1.MLASettings{}
 	}
 
-	if !cluster.DeletionTimestamp.IsZero() || (!cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled) {
+	mlaDisabled := !cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled
+	if !cluster.DeletionTimestamp.IsZero() || mlaDisabled {
 		if err := r.handleDeletion(ctx, cluster); err != nil {
 			return nil, fmt.Errorf("handling deletion: %w", err)
 		}
@@ -296,7 +297,7 @@ func (r *datasourceGrafanaReconciler) handleDeletion(ctx context.Context, cluste
 	if cluster.DeletionTimestamp.IsZero() {
 		for _, resource := range ResourcesOnDeletion(cluster.Status.NamespaceName) {
 			if err := r.Client.Delete(ctx, resource); err != nil && !apiErrors.IsNotFound(err) {
-				return fmt.Errorf("failed to ensure user cluster prometheus is removed/not present: %v", err)
+				return fmt.Errorf("failed to delete %s: %v", resource.GetName(), err)
 			}
 		}
 	}

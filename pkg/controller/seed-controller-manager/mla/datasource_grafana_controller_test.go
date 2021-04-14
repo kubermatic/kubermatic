@@ -231,6 +231,171 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 				},
 			},
 		},
+		{
+			name:         "MLA disabled for cluster",
+			requestName:  "clusterUID",
+			hasFinalizer: false,
+			hasResources: false,
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "projectUID",
+						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "projectName",
+					},
+				},
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: "projectUID"},
+						Name:   "clusterUID",
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						HumanReadableName: "Super Cluster",
+					},
+					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
+				},
+			},
+			requests: []request{
+				{
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "switch user context",
+					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "delete loki datasource",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/datasources/uid/loki-clusterUID", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "delete prometheus datasource",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/datasources/uid/prometheus-clusterUID", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
+				},
+			},
+		},
+		{
+			name:         "MLA Logging disabled for cluster",
+			requestName:  "clusterUID",
+			hasFinalizer: true,
+			hasResources: true,
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "projectUID",
+						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "projectName",
+					},
+				},
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: "projectUID"},
+						Name:   "clusterUID",
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						HumanReadableName: "Super Cluster",
+						MLA: &kubermaticv1.MLASettings{
+							MonitoringEnabled: true,
+							LoggingEnabled:    false,
+						},
+					},
+					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
+				},
+			},
+			requests: []request{
+				{
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "switch user context",
+					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "delete loki datasource",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/datasources/uid/loki-clusterUID", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "get datasource by uid",
+					request:  httptest.NewRequest(http.MethodGet, "/api/datasources/uid/prometheus-clusterUID", nil),
+					response: &http.Response{StatusCode: http.StatusNotFound},
+				},
+				{
+					name:     "create prometheus datasource",
+					request:  httptest.NewRequest(http.MethodPost, "/api/datasources", strings.NewReader(`{"name":"Prometheus Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 2}`)), StatusCode: http.StatusOK},
+				},
+			},
+		},
+		{
+			name:         "MLA Monitoring disabled for cluster",
+			requestName:  "clusterUID",
+			hasFinalizer: true,
+			hasResources: true,
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:        "projectUID",
+						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "projectName",
+					},
+				},
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: "projectUID"},
+						Name:   "clusterUID",
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						HumanReadableName: "Super Cluster",
+						MLA: &kubermaticv1.MLASettings{
+							MonitoringEnabled: false,
+							LoggingEnabled:    true,
+						},
+					},
+					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
+				},
+			},
+			requests: []request{
+				{
+					name:     "get org by id",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "get datasource by uid",
+					request:  httptest.NewRequest(http.MethodGet, "/api/datasources/uid/loki-clusterUID", nil),
+					response: &http.Response{StatusCode: http.StatusNotFound},
+				},
+				{
+					name:     "create loki datasource",
+					request:  httptest.NewRequest(http.MethodPost, "/api/datasources", strings.NewReader(`{"name":"Loki Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 1}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "switch user context",
+					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "delete prometheus datasource",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/datasources/uid/prometheus-clusterUID", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
+				},
+			},
+		},
 	}
 	for idx := range testCases {
 		tc := testCases[idx]
