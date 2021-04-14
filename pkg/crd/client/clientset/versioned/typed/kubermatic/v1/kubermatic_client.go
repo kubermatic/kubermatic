@@ -12,6 +12,7 @@ type KubermaticV1Interface interface {
 	RESTClient() rest.Interface
 	AddonsGetter
 	AddonConfigsGetter
+	AlertmanagersGetter
 	ClustersGetter
 	ConstraintsGetter
 	ConstraintTemplatesGetter
@@ -36,6 +37,10 @@ func (c *KubermaticV1Client) Addons(namespace string) AddonInterface {
 
 func (c *KubermaticV1Client) AddonConfigs() AddonConfigInterface {
 	return newAddonConfigs(c)
+}
+
+func (c *KubermaticV1Client) Alertmanagers(namespace string) AlertmanagerInterface {
+	return newAlertmanagers(c, namespace)
 }
 
 func (c *KubermaticV1Client) Clusters() ClusterInterface {
