@@ -26,7 +26,7 @@ import (
 func ClusterRoleCreator() reconciling.NamedClusterRoleCreatorGetter {
 	return func() (string, reconciling.ClusterRoleCreator) {
 		return resources.PromtailClusterRoleName, func(cr *rbacv1.ClusterRole) (*rbacv1.ClusterRole, error) {
-			cr.Labels = resources.BaseAppLabels(resources.PromtailClusterRoleName, nil)
+			cr.Labels = resources.BaseAppLabels(appName, nil)
 
 			cr.Rules = []rbacv1.PolicyRule{
 				{
