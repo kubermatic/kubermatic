@@ -511,8 +511,7 @@ type HetznerCloudSpec struct {
 	// Network is the pre-existing Hetzner network in which the machines are running.
 	// While machines can be in multiple networks, a single one must be chosen for the
 	// HCloud CCM to work.
-	// If this is empty, the network configured on the datacenter will be used.
-	Network string `json:"network,omitempty"`
+	Network string `json:"network"`
 }
 
 // AzureCloudSpec specifies access credentials to Azure cloud.

@@ -16346,7 +16346,7 @@
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
         "network": {
-          "description": "Network is the pre-existing Hetzner network in which the machines are running.\nWhile machines can be in multiple networks, a single one must be chosen for the\nHCloud CCM to work.\nIf this is empty, the network configured on the datacenter will be used.",
+          "description": "Network is the pre-existing Hetzner network in which the machines are running.\nWhile machines can be in multiple networks, a single one must be chosen for the\nHCloud CCM to work.",
           "type": "string",
           "x-go-name": "Network"
         },
