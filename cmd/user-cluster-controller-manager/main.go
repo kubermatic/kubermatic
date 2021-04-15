@@ -81,7 +81,7 @@ type controllerRunOptions struct {
 	opaWebhookTimeout     int
 	useSSHKeyAgent        bool
 	caBundleFile          string
-	mlaGatewayPort        int
+	mlaGatewayURL         string
 	userClusterLogging    bool
 	userClusterMonitoring bool
 }
@@ -115,7 +115,7 @@ func main() {
 	flag.IntVar(&runOp.opaWebhookTimeout, "opa-webhook-timeout", 3, "Timeout for OPA Integration validating webhook, in seconds")
 	flag.BoolVar(&runOp.useSSHKeyAgent, "enable-ssh-key-agent", false, "Enable UserSSHKeyAgent integration in user cluster")
 	flag.StringVar(&runOp.caBundleFile, "ca-bundle", "", "The path to the cluster's CA bundle (PEM-encoded).")
-	flag.IntVar(&runOp.mlaGatewayPort, "mla-gateway-port", 0, "The port of MLA(Monitoring, Logging, and Alerting) gateway.")
+	flag.StringVar(&runOp.mlaGatewayURL, "mla-gateway-url", "", "The URL of MLA (Monitoring, Logging, and Alerting) gateway endpoint.")
 	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
 	flag.BoolVar(&runOp.userClusterMonitoring, "user-cluster-monitoring", false, "Enable monitoring in user cluster.")
 	flag.Parse()
@@ -149,8 +149,8 @@ func main() {
 		log.Fatal("-ca-bundle must be set")
 	}
 	if runOp.userClusterLogging || runOp.userClusterMonitoring {
-		if runOp.mlaGatewayPort == 0 {
-			log.Fatal("-mla-gateway-port must be set when enabling user cluster logging or monitoring")
+		if runOp.mlaGatewayURL == "" {
+			log.Fatal("-mla-gateway-url must be set when enabling user cluster logging or monitoring")
 		}
 	}
 
@@ -239,9 +239,9 @@ func main() {
 		runOp.opaWebhookTimeout,
 		caBundle,
 		usercluster.UserClusterMLA{
-			Logging:        runOp.userClusterLogging,
-			Monitoring:     runOp.userClusterMonitoring,
-			MLAGatewayPort: runOp.mlaGatewayPort,
+			Logging:       runOp.userClusterLogging,
+			Monitoring:    runOp.userClusterMonitoring,
+			MLAGatewayURL: runOp.mlaGatewayURL,
 		},
 		log,
 	); err != nil {

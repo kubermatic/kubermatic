@@ -270,7 +270,7 @@ func (r *datasourceGrafanaReconciler) ensureServices(ctx context.Context, c *kub
 	creators := []reconciling.NamedServiceCreatorGetter{
 		GatewayAlertServiceCreator(),
 		GatewayInternalServiceCreator(),
-		GatewayExternalServiceCreator(),
+		GatewayExternalServiceCreator(c),
 	}
 	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }

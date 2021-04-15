@@ -58,9 +58,9 @@ const (
 )
 
 type UserClusterMLA struct {
-	Logging        bool
-	Monitoring     bool
-	MLAGatewayPort int
+	Logging       bool
+	Monitoring    bool
+	MLAGatewayURL string
 }
 
 // Add creates a new user cluster controller.

@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	appsv1 "k8s.io/api/apps/v1"
@@ -137,7 +138,7 @@ http {
 const (
 	gatewayName         = "mla-gateway"
 	gatewayAlertName    = "mla-gateway-alert"
-	gatewayExternalName = "mla-gateway-ext"
+	gatewayExternalName = resources.MLAGatewayExternalServiceName
 )
 
 type configTemplateData struct {
@@ -220,11 +221,38 @@ func GatewayInternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 	}
 }
 
-func GatewayExternalServiceCreator() reconciling.NamedServiceCreatorGetter {
+func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return gatewayExternalName, func(s *corev1.Service) (*corev1.Service, error) {
-			s.Spec.Type = corev1.ServiceTypeClusterIP
+			if s.Annotations == nil {
+				s.Annotations = map[string]string{}
+			}
 			s.Spec.Selector = map[string]string{common.NameLabel: "mla"}
+
+			switch c.Spec.ExposeStrategy {
+			case kubermaticv1.ExposeStrategyNodePort:
+				// Exposes MLA GW via ModePort.
+				s.Spec.Type = corev1.ServiceTypeNodePort
+				s.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = "true"
+				delete(s.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
+			case kubermaticv1.ExposeStrategyLoadBalancer:
+				// When using exposeStrategy==LoadBalancer, only one LB service is used to expose multiple user cluster
+				// -related services (APIServer, OpenVPN, MLAGw). NodePortProxy in namespaced mode is used to redirect
+				// the traffic to the right service.
+				s.Spec.Type = corev1.ServiceTypeNodePort
+				s.Annotations[nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey] = "true"
+				delete(s.Annotations, nodeportproxy.DefaultExposeAnnotationKey)
+			case kubermaticv1.ExposeStrategyTunneling:
+				// Exposes MLA GW via SNI.
+				s.Spec.Type = corev1.ServiceTypeClusterIP
+				s.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = nodeportproxy.SNIType.String()
+				// Maps SNI host with the port name of this service.
+				s.Annotations[nodeportproxy.PortHostMappingAnnotationKey] =
+					fmt.Sprintf(`{"http-ext": %q}`, resources.MLAGatewaySNIPrefix+c.Address.ExternalName)
+				delete(s.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
+			default:
+				return nil, fmt.Errorf("unsupported expose strategy: %q", c.Spec.ExposeStrategy)
+			}
 
 			if len(s.Spec.Ports) == 0 {
 				s.Spec.Ports = make([]corev1.ServicePort, 1)

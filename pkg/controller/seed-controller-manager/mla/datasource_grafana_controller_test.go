@@ -97,6 +97,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						HumanReadableName: "Super Cluster",
 						MLA:               &kubermaticv1.MLASettings{LoggingEnabled: true, MonitoringEnabled: true},
+						ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
@@ -152,6 +153,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						HumanReadableName: "Super Cluster",
 						MLA:               &kubermaticv1.MLASettings{LoggingEnabled: true, MonitoringEnabled: true},
+						ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
@@ -202,6 +204,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						HumanReadableName: "New Super Cluster",
 						MLA:               &kubermaticv1.MLASettings{LoggingEnabled: true, MonitoringEnabled: true},
+						ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
@@ -309,6 +312,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 							MonitoringEnabled: true,
 							LoggingEnabled:    false,
 						},
+						ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
@@ -367,6 +371,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 							MonitoringEnabled: false,
 							LoggingEnabled:    true,
 						},
+						ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
