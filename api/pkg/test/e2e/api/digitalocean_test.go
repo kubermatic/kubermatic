@@ -51,7 +51,7 @@ func TestCreateUpdateDOCluster(t *testing.T) {
 	}{
 		{
 			name:       "create cluster on DigitalOcean",
-			dc:         "prow-build-cluster",
+			dc:         "kubermatic",
 			location:   "do-fra1",
 			version:    "v1.15.6",
 			credential: "e2e-digitalocean",
@@ -185,7 +185,7 @@ func TestDeleteClusterBeforeIsUp(t *testing.T) {
 	}{
 		{
 			name:       "delete cluster before is up",
-			dc:         "prow-build-cluster",
+			dc:         "kubermatic",
 			location:   "do-fra1",
 			version:    "v1.15.6",
 			credential: "e2e-digitalocean",
@@ -241,7 +241,7 @@ func TestGetClusterKubeconfig(t *testing.T) {
 	}{
 		{
 			name:         "kubeconfig contains token",
-			dc:           "prow-build-cluster",
+			dc:           "kubermatic",
 			location:     "do-fra1",
 			version:      "v1.15.6",
 			credential:   "e2e-digitalocean",

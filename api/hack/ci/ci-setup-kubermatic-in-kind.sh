@@ -26,6 +26,7 @@
 export KUBERMATIC_VERSION="${KUBERMATIC_VERSION:-$(git rev-parse HEAD)}"
 export KUBERMATIC_SCHEME="http"
 export KUBERMATIC_HOST="localhost:8080"
+export KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
 # If set to `true`, the script will just use `latest`. Used e.G. in the UI tests.
 export KUBERMATIC_SKIP_BUILDING="${KUBERMATIC_SKIP_BUILDING:-false}"
 # If set to `true`, the script will use the Kubermatic Operator instead of the
@@ -43,7 +44,7 @@ export ADDITIONAL_HELM_ARGS="${ADDITIONAL_HELM_ARGS:-}"
 export PATH=$PATH:/usr/local/go/bin
 
 # This is just used as a const
-export SEED_NAME=prow-build-cluster
+export SEED_NAME=kubermatic
 
 if [[ -z ${JOB_NAME} ]]; then
 	echo "This script should only be running in a CI environment."
@@ -401,6 +402,7 @@ if [[ "${KUBERMATIC_USE_OPERATOR}" = "false" ]]; then
   # we always override the quay repositories so we don't have to care if the
   # Helm chart is made for CE or EE
   retry 3 helm upgrade --install --force --wait --timeout 300 \
+    --set=kubermatic.domain="$KUBERMATIC_DOMAIN" \
     --set=kubermatic.isMaster=true \
     --set=kubermatic.imagePullSecretData=$IMAGE_PULL_SECRET_DATA \
     --set-string=kubermatic.controller.image.repository="quay.io/kubermatic/kubermatic$REPOSUFFIX" \
@@ -471,7 +473,7 @@ metadata:
   namespace: kubermatic
 spec:
   ingress:
-    domain: ci.kubermatic.io
+    domain: "$KUBERMATIC_DOMAIN"
     disable: true
   imagePullSecret: |
 $(echo "$IMAGE_PULL_SECRET_DATA" | base64 -d | sed 's/^/    /')
