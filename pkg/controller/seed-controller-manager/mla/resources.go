@@ -240,7 +240,12 @@ func GatewayExternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 	}
 }
 
-func GatewayDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
+const (
+	image   = "nginxinc/nginx-unprivileged"
+	version = "1.19-alpine"
+)
+
+func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return gatewayName, func(d *appsv1.Deployment) (*appsv1.Deployment, error) {
 			d.Spec.Replicas = pointer.Int32Ptr(1)
@@ -249,6 +254,7 @@ func GatewayDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 					common.NameLabel: "mla",
 				},
 			}
+			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
 			d.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
 				FSGroup:      pointer.Int64Ptr(1001),
 				RunAsGroup:   pointer.Int64Ptr(2001),
@@ -259,7 +265,7 @@ func GatewayDeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 			d.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:            "nginx",
-					Image:           "docker.io/nginxinc/nginx-unprivileged:1.19-alpine",
+					Image:           data.ImageRegistry(resources.RegistryDocker) + "/" + image + ":" + version,
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Ports: []corev1.ContainerPort{
 						{

@@ -416,5 +416,6 @@ func createMLAController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.grafanaURL,
 		ctrlCtx.runOptions.grafanaHeaderName,
 		ctrlCtx.runOptions.grafanaSecret,
+		ctrlCtx.runOptions.overwriteRegistry,
 	)
 }

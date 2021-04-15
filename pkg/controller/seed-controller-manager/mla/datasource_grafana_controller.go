@@ -60,6 +60,7 @@ type datasourceGrafanaReconciler struct {
 	workerName string
 	recorder   record.EventRecorder
 	versions   kubermatic.Versions
+	data       *resources.TemplateData
 }
 
 func newDatasourceGrafanaReconciler(
@@ -69,9 +70,12 @@ func newDatasourceGrafanaReconciler(
 	workerName string,
 	versions kubermatic.Versions,
 	grafanaClient *grafanasdk.Client,
+	overwriteRegistry string,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
+
+	data := resources.NewTemplateDataBuilder().WithOverwriteRegistry(overwriteRegistry).Build()
 
 	reconciler := &datasourceGrafanaReconciler{
 		Client:        client,
@@ -81,6 +85,7 @@ func newDatasourceGrafanaReconciler(
 		workerName: workerName,
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		versions:   versions,
+		data:       data,
 	}
 
 	ctrlOptions := controller.Options{
@@ -158,7 +163,7 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 		return nil, fmt.Errorf("failed to reconcile ConfigMaps in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 
-	if err := r.ensureDeployments(ctx, cluster); err != nil {
+	if err := r.ensureDeployments(ctx, cluster, r.data); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 	if err := r.ensureServices(ctx, cluster); err != nil {
@@ -242,9 +247,9 @@ func (r *datasourceGrafanaReconciler) reconcileDatasource(ctx context.Context, e
 	return nil
 
 }
-func (r *datasourceGrafanaReconciler) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster) error {
+func (r *datasourceGrafanaReconciler) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
-		GatewayDeploymentCreator(),
+		GatewayDeploymentCreator(data),
 	}
 	if err := reconciling.ReconcileDeployments(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return err
