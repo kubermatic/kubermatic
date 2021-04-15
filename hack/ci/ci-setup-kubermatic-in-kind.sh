@@ -252,6 +252,7 @@ echodate "Successfully built and loaded all images"
 
 # prepare to run kubermatic-installer
 KUBERMATIC_CONFIG="$(mktemp)"
+KUBERMATIC_DOMAIN="${KUBERMATIC_DOMAIN:-ci.kubermatic.io}"
 cat <<EOF >$KUBERMATIC_CONFIG
 apiVersion: operator.kubermatic.io/v1alpha1
 kind: KubermaticConfiguration
@@ -260,7 +261,7 @@ metadata:
   namespace: kubermatic
 spec:
   ingress:
-    domain: ci.kubermatic.io
+    domain: "$KUBERMATIC_DOMAIN"
     disable: true
   imagePullSecret: |
 $(echo "$IMAGE_PULL_SECRET_DATA" | base64 -d | sed 's/^/    /')
