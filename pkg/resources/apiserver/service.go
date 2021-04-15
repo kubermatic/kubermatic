@@ -86,6 +86,7 @@ func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy, externalURL stri
 			se.Spec.Ports[0].Port = 443
 			if exposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 				se.Spec.Ports[0].TargetPort = intstr.FromInt(resources.APIServerSecurePort)
+				se.Spec.Ports[0].NodePort = 0 // allows switching from other expose strategies
 			} else {
 				// We assign the target port the same value as the NodePort port.
 				// The reason is that we need  both access the apiserver using

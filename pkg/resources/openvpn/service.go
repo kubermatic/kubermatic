@@ -66,6 +66,10 @@ func ServiceCreator(exposeStrategy kubermaticv1.ExposeStrategy) reconciling.Name
 			se.Spec.Ports[0].Protocol = corev1.ProtocolTCP
 			se.Spec.Ports[0].TargetPort = intstr.FromInt(1194)
 
+			if exposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+				se.Spec.Ports[0].NodePort = 0 // allows switching from other expose strategies
+			}
+
 			return se, nil
 		}
 	}
