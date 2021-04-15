@@ -508,13 +508,6 @@ func GenTestSeed() *kubermaticv1.Seed {
 						HyperkubeImage:     "hyperkube-image",
 					},
 				},
-				"hetzner-dc": {
-					Location: "Frankfurt",
-					Country:  "Germany",
-					Spec: kubermaticv1.DatacenterSpec{
-						Hetzner: &kubermaticv1.DatacenterSpecHetzner{},
-					},
-				},
 			},
 		}}
 }
