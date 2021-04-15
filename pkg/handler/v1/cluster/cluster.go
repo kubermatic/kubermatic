@@ -213,10 +213,6 @@ func (r CreateReq) Validate(clusterType kubermaticv1.ClusterType, updateManager 
 		return fmt.Errorf("disabled cluster type %s", r.Body.Cluster.Type)
 	}
 
-	if r.Body.Cluster.Spec.Cloud.Hetzner != nil && r.Body.Cluster.Spec.Cloud.Hetzner.Network == "" {
-		return fmt.Errorf("invalid cluster: hetzner cluster network not specified")
-	}
-
 	if r.Body.Cluster.Spec.Version.Version == nil {
 		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
 	}
