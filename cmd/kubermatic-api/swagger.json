@@ -6431,6 +6431,32 @@
         }
       }
     },
+    "/api/v1/providers/alibaba/vswitches": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "alibaba"
+        ],
+        "summary": "Lists available Alibaba vSwitches.",
+        "operationId": "listAlibabaVSwitches",
+        "responses": {
+          "200": {
+            "description": "AlibabaVSwitchList",
+            "schema": {
+              "$ref": "#/definitions/AlibabaVSwitchList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/alibaba/zones": {
       "get": {
         "produces": [
@@ -10792,6 +10818,53 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/alibaba/vswitches": {
+      "get": {
+        "description": "Lists available Alibaba vSwitches",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "alibaba"
+        ],
+        "operationId": "listAlibabaVSwitchesNoCredentialsV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "name": "Region",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AlibabaVSwitchList",
+            "schema": {
+              "$ref": "#/definitions/AlibabaVSwitchList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/alibaba/zones": {
       "get": {
         "description": "Lists available Alibaba Instance Types",
@@ -14284,6 +14357,25 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "AlibabaVSwitch": {
+      "type": "object",
+      "title": "AlibabaVSwitch represents a object of Alibaba vSwitch.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "AlibabaVSwitchList": {
+      "type": "array",
+      "title": "AlibabaVSwitchList represents an array of Alibaba vSwitches.",
+      "items": {
+        "$ref": "#/definitions/AlibabaVSwitch"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
     "AlibabaZone": {
       "type": "object",
       "title": "AlibabaZone represents a object of Alibaba zone.",
@@ -16254,7 +16346,7 @@
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
         "network": {
-          "description": "Network is the pre-existing Hetzner network in which the machines are running.\nWhile machines can be in multiple networks, a single one must be chosen for the\nHCloud CCM to work.\nIf this is empty, the network configured on the datacenter will be used.",
+          "description": "Network is the pre-existing Hetzner network in which the machines are running.\nWhile machines can be in multiple networks, a single one must be chosen for the\nHCloud CCM to work.",
           "type": "string",
           "x-go-name": "Network"
         },

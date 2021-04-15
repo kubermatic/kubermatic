@@ -64,7 +64,8 @@ func (s *hetznerScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec 
 				Cloud: &apimodels.CloudSpec{
 					DatacenterName: "hetzner-nbg1",
 					Hetzner: &apimodels.HetznerCloudSpec{
-						Token: secrets.Hetzner.Token,
+						Token:   secrets.Hetzner.Token,
+						Network: "kubermatic-e2e",
 					},
 				},
 				Version: s.version.String(),

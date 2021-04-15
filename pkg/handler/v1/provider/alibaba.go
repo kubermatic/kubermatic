@@ -156,7 +156,32 @@ func AlibabaZonesEndpoint(presetsProvider provider.PresetProvider, userInfoGette
 				accessKeySecret = credentials.AccessKeySecret
 			}
 		}
-		return providercommon.ListAlibabaZones(ctx, accessKeyID, accessKeySecret, req.Region)
+		return providercommon.ListAlibabaZones(accessKeyID, accessKeySecret, req.Region)
+	}
+}
+
+func AlibabaVSwitchesEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AlibabaReq)
+
+		accessKeyID := req.AccessKeyID
+		accessKeySecret := req.AccessKeySecret
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if len(req.Credential) > 0 {
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.Alibaba; credentials != nil {
+				accessKeyID = credentials.AccessKeyID
+				accessKeySecret = credentials.AccessKeySecret
+			}
+		}
+		return providercommon.ListAlibabaVSwitches(accessKeyID, accessKeySecret, req.Region)
 	}
 }
 

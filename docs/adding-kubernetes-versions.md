@@ -38,12 +38,12 @@ Once new Docker images are ready, KKP can be updated as well.
   minor (just copy an existing job and adjust accordingly). Make sure to change the Docker
   image tag for the e2e images to use the new tag you just created with the new test binaries.
 - Update the CSI addon manifests (`addon/csi/*.yaml`) to include the new minor version.
-- Update the OpenStack CCM manifest (`pkg/resources/cloudcontroller/openstack.go`) to
-  include the new minor version.
-  - The latest OpenStack CCM version can be found in the 
-  [`kubernetes/cloud-provider-openstack` repository](https://github.com/kubernetes/cloud-provider-openstack).
 - Ensure a kubelet ConfigMap for the new minor exists in `addons/kubelet-configmap/kubelet-configmap.yaml`.
 - Update `addons/rbac/allow-kubeadm-join-configmap.yaml` to include the new ConfigMap.
+- Update the OpenStack CCM manifest (`pkg/resources/cloudcontroller/openstack.go`) to
+  include the new minor version.
+  - The latest OpenStack CCM version can be found in the
+  [`kubernetes/cloud-provider-openstack` repository](https://github.com/kubernetes/cloud-provider-openstack).
 - The conformance-tests runner (`cmd/conformance-tests/runner.go`) has a list of
   exclusion filters to skip tests that cannot work in the CI environment. Make sure to
   update said list, or else you will be greeted by lots of NodePort Service related
