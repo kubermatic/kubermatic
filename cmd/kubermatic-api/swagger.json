@@ -6505,6 +6505,44 @@
         }
       }
     },
+    "/api/v1/providers/anexia/vlans": {
+      "get": {
+        "description": "Lists vlans from anexia",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "anexia"
+        ],
+        "operationId": "listAnexiaVlans",
+        "parameters": [
+          {
+            "type": "string",
+            "name": "Token",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "Credential",
+            "in": "header"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AnexiaVlanList",
+            "schema": {
+              "$ref": "#/definitions/AnexiaVlanList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v1/providers/aws/sizes": {
       "get": {
         "produces": [
@@ -10912,6 +10950,48 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/anexia/vlans": {
+      "get": {
+        "description": "Lists vlans from Anexia",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "anexia"
+        ],
+        "operationId": "listAnexiaVlansNoCredentialsV2",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AnexiaVlanList",
+            "schema": {
+              "$ref": "#/definitions/AnexiaVlanList"
+            }
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/providers/aws/sizes": {
       "get": {
         "description": "Lists available AWS sizes",
@@ -14448,6 +14528,25 @@
           "type": "string",
           "x-go-name": "VlanID"
         }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "AnexiaVlan": {
+      "type": "object",
+      "title": "AnexiaVlan represents a object of Anexia Vlan.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "AnexiaVlanList": {
+      "type": "array",
+      "title": "AnexiaVlanList represents an array of Anexia Vlans.",
+      "items": {
+        "$ref": "#/definitions/AnexiaVlan"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
