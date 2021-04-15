@@ -865,11 +865,6 @@ func ValidateClusterSpec(clusterType kubermaticv1.ClusterType, updateManager com
 	if clusterType != kubermaticv1.ClusterTypeAll && clusterType != apiv1.ToInternalClusterType(body.Cluster.Type) {
 		return fmt.Errorf("disabled cluster type %s", body.Cluster.Type)
 	}
-
-	if body.Cluster.Spec.Cloud.Hetzner != nil && body.Cluster.Spec.Cloud.Hetzner.Network == "" {
-		return fmt.Errorf("invalid cluster: hetzner cluster network not specified")
-	}
-
 	if body.Cluster.Spec.Version.Version == nil {
 		return fmt.Errorf("invalid cluster: invalid cloud spec \"Version\" is required but was not specified")
 	}

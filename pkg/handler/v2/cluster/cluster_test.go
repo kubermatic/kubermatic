@@ -249,18 +249,6 @@ func TestCreateClusterEndpoint(t *testing.T) {
 			ProjectToSync:   test.GenDefaultProject().Name,
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
-		// scenario 15
-		{
-			Name:             "scenario 15: a hetzner cluster with unspecified network",
-			Body:             `{"cluster":{"name":"keen-snyder","spec":{"version":"1.15.0","cloud":{"hetzner":{"token":"dummy_token"},"dc":"hetzner-dc"}}}}`,
-			ExpectedResponse: `{"error":{"code":400,"message":"invalid cluster: hetzner cluster network not specified"}}`,
-			HTTPStatus:       http.StatusBadRequest,
-			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
-			),
-			ProjectToSync:   test.GenDefaultProject().Name,
-			ExistingAPIUser: test.GenDefaultAPIUser(),
-		},
 	}
 
 	for _, tc := range testcases {
