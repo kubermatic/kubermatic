@@ -679,6 +679,16 @@ type AlibabaVSwitch struct {
 	ID string `json:"id"`
 }
 
+// AnexiaVlanList represents an array of Anexia Vlans.
+// swagger:model AnexiaVlanList
+type AnexiaVlanList []AnexiaVlan
+
+// AnexiaVlan represents a object of Anexia Vlan.
+// swagger:model AnexiaVlan
+type AnexiaVlan struct {
+	ID string `json:"id"`
+}
+
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {

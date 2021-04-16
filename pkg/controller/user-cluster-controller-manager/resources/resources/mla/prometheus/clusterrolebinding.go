@@ -26,7 +26,7 @@ import (
 func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGetter {
 	return func() (string, reconciling.ClusterRoleBindingCreator) {
 		return resources.UserClusterPrometheusClusterRoleBindingName, func(crb *rbacv1.ClusterRoleBinding) (*rbacv1.ClusterRoleBinding, error) {
-			crb.Labels = resources.BaseAppLabels(resources.UserClusterPrometheusClusterRoleBindingName, nil)
+			crb.Labels = resources.BaseAppLabels(appName, nil)
 
 			crb.RoleRef = rbacv1.RoleRef{
 				Name:     resources.UserClusterPrometheusClusterRoleName,

@@ -85,10 +85,14 @@ func getAgentPodSpec(agentIP net.IP, versions kubermatic.Versions) corev1.PodSpe
 		InitContainers: getInitContainers(agentIP, versions),
 		Containers:     getContainers(versions),
 		//TODO(youssefazrak) needed?
-		PriorityClassName: "system-cluster-critical",
-		DNSPolicy:         corev1.DNSClusterFirst,
-		HostNetwork:       true,
-		Volumes:           getVolumes(),
+		PriorityClassName:             "system-cluster-critical",
+		DNSPolicy:                     corev1.DNSClusterFirst,
+		HostNetwork:                   true,
+		Volumes:                       getVolumes(),
+		RestartPolicy:                 corev1.RestartPolicyAlways,
+		TerminationGracePeriodSeconds: utilpointer.Int64Ptr(30),
+		SecurityContext:               &corev1.PodSecurityContext{},
+		SchedulerName:                 corev1.DefaultSchedulerName,
 	}
 }
 
