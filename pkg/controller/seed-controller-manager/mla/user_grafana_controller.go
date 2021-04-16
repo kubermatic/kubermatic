@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"go.uber.org/zap"
 
@@ -31,7 +30,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -120,7 +118,7 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 		}
 	}
 
-	org, err := r.getOrgByProjectID(ctx, userProjectBinding.Spec.ProjectID)
+	org, err := getOrgByProjectID(ctx, r.Client, r.grafanaClient, userProjectBinding.Spec.ProjectID)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -154,25 +152,8 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 	return reconcile.Result{}, nil
 }
 
-func (r *userGrafanaReconciler) getOrgByProjectID(ctx context.Context, projectID string) (grafanasdk.Org, error) {
-	project := &kubermaticv1.Project{}
-	if err := r.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
-		return grafanasdk.Org{}, fmt.Errorf("failed to get project: %w", err)
-	}
-
-	orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
-	if !ok {
-		return grafanasdk.Org{}, fmt.Errorf("project should have grafana org annotation set")
-	}
-	id, err := strconv.ParseUint(orgID, 10, 32)
-	if err != nil {
-		return grafanasdk.Org{}, err
-	}
-	return r.grafanaClient.GetOrgById(ctx, uint(id))
-}
-
 func (r *userGrafanaReconciler) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
-	org, err := r.getOrgByProjectID(ctx, userProjectBinding.Spec.ProjectID)
+	org, err := getOrgByProjectID(ctx, r.Client, r.grafanaClient, userProjectBinding.Spec.ProjectID)
 	if err != nil {
 		return err
 	}
