@@ -267,6 +267,10 @@ func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedSer
 			s.Spec.Ports[0].Port = 80
 			s.Spec.Ports[0].TargetPort = intstr.FromString(extPortName)
 
+			if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+				s.Spec.Ports[0].NodePort = 0 // allows switching from other expose strategies
+			}
+
 			return s, nil
 		}
 	}
