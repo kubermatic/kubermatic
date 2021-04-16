@@ -139,6 +139,10 @@ const (
 	gatewayName         = "mla-gateway"
 	gatewayAlertName    = "mla-gateway-alert"
 	gatewayExternalName = resources.MLAGatewayExternalServiceName
+
+	extPortName   = "http-ext"
+	intPortName   = "http-int"
+	alertPortName = "http-alert"
 )
 
 type configTemplateData struct {
@@ -185,16 +189,16 @@ func GatewayAlertServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return gatewayAlertName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
-			s.Spec.Selector = map[string]string{common.NameLabel: "mla"}
+			s.Spec.Selector = map[string]string{common.NameLabel: gatewayName}
 
 			if len(s.Spec.Ports) == 0 {
 				s.Spec.Ports = make([]corev1.ServicePort, 1)
 			}
 
-			s.Spec.Ports[0].Name = "http-alert"
+			s.Spec.Ports[0].Name = alertPortName
 			s.Spec.Ports[0].Protocol = corev1.ProtocolTCP
 			s.Spec.Ports[0].Port = 80
-			s.Spec.Ports[0].TargetPort = intstr.FromString("http-alert")
+			s.Spec.Ports[0].TargetPort = intstr.FromString(alertPortName)
 
 			return s, nil
 		}
@@ -205,16 +209,16 @@ func GatewayInternalServiceCreator() reconciling.NamedServiceCreatorGetter {
 	return func() (string, reconciling.ServiceCreator) {
 		return gatewayName, func(s *corev1.Service) (*corev1.Service, error) {
 			s.Spec.Type = corev1.ServiceTypeClusterIP
-			s.Spec.Selector = map[string]string{common.NameLabel: "mla"}
+			s.Spec.Selector = map[string]string{common.NameLabel: gatewayName}
 
 			if len(s.Spec.Ports) == 0 {
 				s.Spec.Ports = make([]corev1.ServicePort, 1)
 			}
 
-			s.Spec.Ports[0].Name = "http-int"
+			s.Spec.Ports[0].Name = intPortName
 			s.Spec.Ports[0].Protocol = corev1.ProtocolTCP
 			s.Spec.Ports[0].Port = 80
-			s.Spec.Ports[0].TargetPort = intstr.FromString("http-int")
+			s.Spec.Ports[0].TargetPort = intstr.FromString(intPortName)
 
 			return s, nil
 		}
@@ -227,13 +231,13 @@ func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedSer
 			if s.Annotations == nil {
 				s.Annotations = map[string]string{}
 			}
-			s.Spec.Selector = map[string]string{common.NameLabel: "mla"}
+			s.Spec.Selector = map[string]string{common.NameLabel: gatewayName}
 
 			switch c.Spec.ExposeStrategy {
 			case kubermaticv1.ExposeStrategyNodePort:
 				// Exposes MLA GW via ModePort.
 				s.Spec.Type = corev1.ServiceTypeNodePort
-				s.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = "true"
+				s.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = nodeportproxy.NodePortType.String()
 				delete(s.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			case kubermaticv1.ExposeStrategyLoadBalancer:
 				// When using exposeStrategy==LoadBalancer, only one LB service is used to expose multiple user cluster
@@ -248,7 +252,7 @@ func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedSer
 				s.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = nodeportproxy.SNIType.String()
 				// Maps SNI host with the port name of this service.
 				s.Annotations[nodeportproxy.PortHostMappingAnnotationKey] =
-					fmt.Sprintf(`{"http-ext": %q}`, resources.MLAGatewaySNIPrefix+c.Address.ExternalName)
+					fmt.Sprintf(`{%q: %q}`, extPortName, resources.MLAGatewaySNIPrefix+c.Address.ExternalName)
 				delete(s.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
 			default:
 				return nil, fmt.Errorf("unsupported expose strategy: %q", c.Spec.ExposeStrategy)
@@ -258,10 +262,10 @@ func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedSer
 				s.Spec.Ports = make([]corev1.ServicePort, 1)
 			}
 
-			s.Spec.Ports[0].Name = "http-ext"
+			s.Spec.Ports[0].Name = extPortName
 			s.Spec.Ports[0].Protocol = corev1.ProtocolTCP
 			s.Spec.Ports[0].Port = 80
-			s.Spec.Ports[0].TargetPort = intstr.FromString("http-ext")
+			s.Spec.Ports[0].TargetPort = intstr.FromString(extPortName)
 
 			return s, nil
 		}
@@ -279,7 +283,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			d.Spec.Replicas = pointer.Int32Ptr(1)
 			d.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					common.NameLabel: "mla",
+					common.NameLabel: gatewayName,
 				},
 			}
 			d.Spec.Template.Spec.ImagePullSecrets = []corev1.LocalObjectReference{{Name: resources.ImagePullSecretName}}
@@ -297,17 +301,17 @@ func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 					ImagePullPolicy: corev1.PullIfNotPresent,
 					Ports: []corev1.ContainerPort{
 						{
-							Name:          "http-ext",
+							Name:          extPortName,
 							ContainerPort: 8080,
 							Protocol:      corev1.ProtocolTCP,
 						},
 						{
-							Name:          "http-int",
+							Name:          intPortName,
 							ContainerPort: 8081,
 							Protocol:      corev1.ProtocolTCP,
 						},
 						{
-							Name:          "http-alert",
+							Name:          alertPortName,
 							ContainerPort: 8082,
 							Protocol:      corev1.ProtocolTCP,
 						},
@@ -316,7 +320,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 						Handler: corev1.Handler{
 							HTTPGet: &corev1.HTTPGetAction{
 								Path:   "/",
-								Port:   intstr.FromString("http-int"),
+								Port:   intstr.FromString(intPortName),
 								Scheme: corev1.URISchemeHTTP,
 							},
 						},

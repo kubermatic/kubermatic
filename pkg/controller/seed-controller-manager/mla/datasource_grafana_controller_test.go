@@ -18,6 +18,7 @@ package mla
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -32,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -65,14 +67,15 @@ func newTestDatasourceGrafanaReconciler(t *testing.T, objects []ctrlruntimeclien
 
 func TestDatasourceGrafanaReconcile(t *testing.T) {
 	testCases := []struct {
-		name         string
-		requestName  string
-		objects      []ctrlruntimeclient.Object
-		handlerFunc  http.HandlerFunc
-		requests     []request
-		err          bool
-		hasFinalizer bool
-		hasResources bool
+		name                    string
+		requestName             string
+		objects                 []ctrlruntimeclient.Object
+		handlerFunc             http.HandlerFunc
+		requests                []request
+		err                     bool
+		hasFinalizer            bool
+		hasResources            bool
+		expectExposeAnnotations map[string]string
 	}{
 		{
 			name:         "create datasource for cluster",
@@ -101,6 +104,9 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
+			},
+			expectExposeAnnotations: map[string]string{
+				nodeportproxy.DefaultExposeAnnotationKey: nodeportproxy.NodePortType.String(),
 			},
 			requests: []request{
 				{
@@ -134,6 +140,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			name:         "delete datasource",
 			requestName:  "clusterUID",
 			hasFinalizer: false,
+			hasResources: false,
 			objects: []ctrlruntimeclient.Object{
 				&kubermaticv1.Project{
 					ObjectMeta: metav1.ObjectMeta{
@@ -204,10 +211,13 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						HumanReadableName: "New Super Cluster",
 						MLA:               &kubermaticv1.MLASettings{LoggingEnabled: true, MonitoringEnabled: true},
-						ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
+						ExposeStrategy:    kubermaticv1.ExposeStrategyLoadBalancer,
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
+			},
+			expectExposeAnnotations: map[string]string{
+				nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey: "true",
 			},
 			requests: []request{
 				{
@@ -312,10 +322,17 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 							MonitoringEnabled: true,
 							LoggingEnabled:    false,
 						},
-						ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
+						ExposeStrategy: kubermaticv1.ExposeStrategyTunneling,
+					},
+					Address: kubermaticv1.ClusterAddress{
+						ExternalName: "abcd.test.kubermatic.io",
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
+			},
+			expectExposeAnnotations: map[string]string{
+				nodeportproxy.DefaultExposeAnnotationKey:   nodeportproxy.SNIType.String(),
+				nodeportproxy.PortHostMappingAnnotationKey: fmt.Sprintf(`{%q: %q}`, extPortName, resources.MLAGatewaySNIPrefix+"abcd.test.kubermatic.io"),
 			},
 			requests: []request{
 				{
@@ -375,6 +392,9 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
+			},
+			expectExposeAnnotations: map[string]string{
+				nodeportproxy.DefaultExposeAnnotationKey: nodeportproxy.NodePortType.String(),
 			},
 			requests: []request{
 				{
@@ -454,6 +474,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			err = controller.Get(ctx, request.NamespacedName, svc)
 			if tc.hasResources {
 				assert.Nil(t, err)
+				assert.EqualValues(t, svc.Annotations, tc.expectExposeAnnotations)
 			} else {
 				assert.True(t, errors.IsNotFound(err))
 			}
