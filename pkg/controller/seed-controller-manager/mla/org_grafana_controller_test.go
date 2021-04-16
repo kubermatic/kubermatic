@@ -239,18 +239,23 @@ func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bo
 		if req.request.ContentLength > 0 {
 			defer r.Body.Close()
 			defer req.request.Body.Close()
-			decoder := json.NewDecoder(r.Body)
-			reqMap := map[string]interface{}{}
-			if err := decoder.Decode(&reqMap); err != nil {
-				t.Fatalf("%s: unmarshal request failed: %v", req.name, err)
+			if req.request.Header.Get("Content-Type") == "application/json" {
+				decoder := json.NewDecoder(r.Body)
+				reqMap := map[string]interface{}{}
+				if err := decoder.Decode(&reqMap); err != nil {
+					t.Fatalf("%s: unmarshal request failed: %v", req.name, err)
+				}
+				tcMap := map[string]interface{}{}
+				decoder = json.NewDecoder(req.request.Body)
+				if err := decoder.Decode(&tcMap); err != nil {
+					t.Fatalf("%s: unmarshal expected map failed: %v", req.name, err)
+				}
+				expectedBody, err := ioutil.ReadAll(req.request.Body)
+				assert.Nil(t, err)
+				body, err := ioutil.ReadAll(r.Body)
+				assert.Nil(t, err)
+				assert.Equal(t, expectedBody, body)
 			}
-			tcMap := map[string]interface{}{}
-			decoder = json.NewDecoder(req.request.Body)
-			if err := decoder.Decode(&tcMap); err != nil {
-				t.Fatalf("%s: unmarshal expected map failed: %v", req.name, err)
-			}
-
-			assert.Equal(t, reqMap, tcMap)
 		}
 		w.WriteHeader(req.response.StatusCode)
 		if req.response.Body != nil {

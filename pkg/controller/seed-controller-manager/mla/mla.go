@@ -98,6 +98,9 @@ func Add(
 	if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, overwriteRegistry); err != nil {
 		return fmt.Errorf("failed to create mla cluster controller: %v", err)
 	}
+	if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, httpClient); err != nil {
+		return fmt.Errorf("failed to create mla alertmanager configuration controller: %v", err)
+	}
 	return nil
 }
 
