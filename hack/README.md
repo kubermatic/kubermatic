@@ -149,6 +149,10 @@ TBD
 
 TBD
 
+## update-kubermatic-ca-bundle.sh
+
+Takes the newest CA bundle from Mozilla and updates it in the Kubermatic Operator chart.
+
 ## update-kubermatic-chart.sh
 
 TBD
