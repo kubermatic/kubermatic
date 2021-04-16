@@ -39,11 +39,16 @@ func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.
 	if err != nil {
 		return nil, nil, common.KubernetesErrorToHTTPError(err)
 	}
+	// default credentials in case present credentials are nil
+	cred = credentials{
+		username: req.Username,
+		password: req.Password,
+		domain:   req.Domain,
+		tenant:   req.Tenant,
+		tenantID: req.TenantID,
+	}
 	if presetName := req.Credential; len(presetName) > 0 {
-		presetCred, err := getPresetCredentials(userInfo, presetName, presetsProvider)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error getting OpenStack credentials: %v", err)
-		}
+		presetCred := getPresetCredentials(userInfo, presetName, presetsProvider)
 		if presetCred != nil {
 			cred = credentials{
 				username: presetCred.Username,
@@ -52,17 +57,10 @@ func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.
 				tenant:   presetCred.Tenant,
 				tenantID: presetCred.TenantID,
 			}
-			return userInfo, &cred, err
+			return userInfo, &cred, nil
 		}
 	}
-	cred = credentials{
-		username: req.Username,
-		password: req.Password,
-		domain:   req.Domain,
-		tenant:   req.Tenant,
-		tenantID: req.TenantID,
-	}
-	return userInfo, &cred, err
+	return userInfo, &cred, nil
 }
 
 func OpenstackSizeEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter, settingsProvider provider.SettingsProvider) endpoint.Endpoint {
@@ -340,13 +338,12 @@ func DecodeOpenstackTenantReq(_ context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-func getPresetCredentials(userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider) (*v1.Openstack, error) {
+func getPresetCredentials(userInfo *provider.UserInfo, presetName string, presetProvider provider.PresetProvider) *v1.Openstack {
 	preset, err := presetProvider.GetPreset(userInfo, presetName)
-	if err != nil {
-		return nil, fmt.Errorf("can not get preset %s for the user %s", presetName, userInfo.Email)
+	if err == nil {
+		if credentials := preset.Spec.Openstack; credentials != nil {
+			return credentials
+		}
 	}
-	if credentials := preset.Spec.Openstack; credentials != nil {
-		return credentials, nil
-	}
-	return nil, nil
+	return nil
 }
