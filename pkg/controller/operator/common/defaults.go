@@ -190,6 +190,8 @@ var (
 	DefaultKubernetesVersioning = operatorv1alpha1.KubermaticVersioningConfiguration{
 		Default: semver.MustParse("v1.19.3"),
 		Versions: []*semver.Version{
+			// Kubernetes 1.16
+			semver.MustParse("v1.16.13"),
 			// Kubernetes 1.17
 			semver.MustParse("v1.17.9"),
 			semver.MustParse("v1.17.11"),
@@ -212,16 +214,11 @@ var (
 			{
 				// Auto-upgrade unsupported clusters
 				From:      "1.15.*",
-				To:        "1.16.*",
+				To:        "1.16.13",
 				Automatic: pointer.BoolPtr(true),
 			},
 
 			// ======= 1.16 =======
-			{
-				// Allow to change to any patch version
-				From: "1.16.*",
-				To:   "1.16.*",
-			},
 			{
 				// CVE-2019-11253, CVE-2020-8559
 				From:      "<= 1.16.12, >= 1.16.0",
@@ -231,7 +228,8 @@ var (
 			{
 				// Allow to next minor release
 				From: "1.16.*",
-				To:   "1.17.*",
+				To:   "1.17.16",
+				Automatic: pointer.BoolPtr(true),
 			},
 
 			// ======= 1.17 =======
