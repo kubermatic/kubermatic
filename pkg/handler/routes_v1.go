@@ -228,6 +228,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAlibabaVSwitches())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/anexia/vlans").
+		Handler(r.listAnexiaVlans())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets/credentials").
 		Handler(r.listCredentials())
 
@@ -1347,6 +1351,28 @@ func (r Routing) listAlibabaVSwitches() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AlibabaVSwitchesEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAlibabaReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/anexia/vlans anexia listAnexiaVlans
+//
+// Lists vlans from anexia
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AnexiaVlanList
+func (r Routing) listAnexiaVlans() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AnexiaVlanEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeAnexiaReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
