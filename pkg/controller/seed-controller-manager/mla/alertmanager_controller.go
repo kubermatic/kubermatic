@@ -71,7 +71,7 @@ func newDefaultMLAGatewayURLGetter() *defaultMLAGatewayURLGetter {
 }
 
 func (d *defaultMLAGatewayURLGetter) mlaGatewayURL(cluster *kubermaticv1.Cluster) string {
-	return fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local", cluster.Status.NamespaceName)
+	return fmt.Sprintf("http://mla-gateway-alert.%s.svc.cluster.local", cluster.Status.NamespaceName)
 }
 
 type alertmanagerReconciler struct {
