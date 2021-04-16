@@ -26,7 +26,6 @@ import (
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -142,7 +141,7 @@ func (r *datasourceGrafanaReconciler) Reconcile(ctx context.Context, request rec
 func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// disabled by default
 	if cluster.Spec.MLA == nil {
-		cluster.Spec.MLA = &kubermaticapiv1.MLASettings{}
+		cluster.Spec.MLA = &kubermaticv1.MLASettings{}
 	}
 
 	mlaDisabled := !cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled
@@ -170,7 +169,7 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 		return nil, fmt.Errorf("failed to reconcile Services in namespace %s: %w", "mla", err)
 	}
 
-	projectID, ok := cluster.GetLabels()[kubermaticapiv1.ProjectIDLabelKey]
+	projectID, ok := cluster.GetLabels()[kubermaticv1.ProjectIDLabelKey]
 	if !ok {
 		return nil, fmt.Errorf("unable to get project name from label")
 	}
@@ -277,7 +276,7 @@ func (r *datasourceGrafanaReconciler) ensureServices(ctx context.Context, c *kub
 }
 
 func (r *datasourceGrafanaReconciler) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	projectID, ok := cluster.GetLabels()[kubermaticapiv1.ProjectIDLabelKey]
+	projectID, ok := cluster.GetLabels()[kubermaticv1.ProjectIDLabelKey]
 	if !ok {
 		return fmt.Errorf("unable to get project name from label")
 	}
