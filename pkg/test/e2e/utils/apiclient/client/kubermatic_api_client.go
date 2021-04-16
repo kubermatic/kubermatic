@@ -13,6 +13,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/addon"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/admin"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/alibaba"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/anexia"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/aws"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/azure"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constrainttemplates"
@@ -82,6 +83,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Addon = addon.New(transport, formats)
 	cli.Admin = admin.New(transport, formats)
 	cli.Alibaba = alibaba.New(transport, formats)
+	cli.Anexia = anexia.New(transport, formats)
 	cli.Aws = aws.New(transport, formats)
 	cli.Azure = azure.New(transport, formats)
 	cli.Constrainttemplates = constrainttemplates.New(transport, formats)
@@ -154,6 +156,8 @@ type KubermaticAPI struct {
 
 	Alibaba alibaba.ClientService
 
+	Anexia anexia.ClientService
+
 	Aws aws.ClientService
 
 	Azure azure.ClientService
@@ -207,6 +211,7 @@ func (c *KubermaticAPI) SetTransport(transport runtime.ClientTransport) {
 	c.Addon.SetTransport(transport)
 	c.Admin.SetTransport(transport)
 	c.Alibaba.SetTransport(transport)
+	c.Anexia.SetTransport(transport)
 	c.Aws.SetTransport(transport)
 	c.Azure.SetTransport(transport)
 	c.Constrainttemplates.SetTransport(transport)
