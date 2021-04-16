@@ -32,6 +32,7 @@ import (
 const (
 	imageName = "grafana/promtail"
 	tag       = "2.1.0"
+	appName   = "mla-promtail"
 
 	configVolumeName         = "config"
 	configVolumeMountPath    = "/etc/promtail"
@@ -57,7 +58,7 @@ var (
 func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 	return func() (string, reconciling.DaemonSetCreator) {
 		return resources.PromtailDaemonSetName, func(ds *appsv1.DaemonSet) (*appsv1.DaemonSet, error) {
-			ds.Labels = resources.BaseAppLabels(resources.PromtailDaemonSetName, nil)
+			ds.Labels = resources.BaseAppLabels(appName, nil)
 
 			ds.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: controllerLabels,
