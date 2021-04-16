@@ -32,6 +32,7 @@ import (
 const (
 	imageName = "prometheus/prometheus"
 	tag       = "v2.26.0"
+	appName   = "mla-prometheus"
 
 	configVolumeName  = "config-volume"
 	configPath        = "/etc/config"
@@ -54,7 +55,7 @@ var (
 func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
 		return resources.UserClusterPrometheusDeploymentName, func(deployment *appsv1.Deployment) (*appsv1.Deployment, error) {
-			deployment.Labels = resources.BaseAppLabels(resources.UserClusterPrometheusDeploymentName, nil)
+			deployment.Labels = resources.BaseAppLabels(appName, nil)
 
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: controllerLabels,

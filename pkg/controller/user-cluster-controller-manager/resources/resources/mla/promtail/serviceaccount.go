@@ -26,7 +26,7 @@ import (
 func ServiceAccountCreator() reconciling.NamedServiceAccountCreatorGetter {
 	return func() (string, reconciling.ServiceAccountCreator) {
 		return resources.PromtailServiceAccountName, func(sa *corev1.ServiceAccount) (*corev1.ServiceAccount, error) {
-			sa.Labels = resources.BaseAppLabels(resources.PromtailServiceAccountName, nil)
+			sa.Labels = resources.BaseAppLabels(appName, nil)
 			return sa, nil
 		}
 	}

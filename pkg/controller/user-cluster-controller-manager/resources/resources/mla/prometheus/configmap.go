@@ -45,7 +45,7 @@ func ConfigMapCreator(config Config) reconciling.NamedConfigMapCreatorGetter {
 				return nil, err
 			}
 			configMap.Data["prometheus.yaml"] = configBuf.String()
-			configMap.Labels = resources.BaseAppLabels(resources.UserClusterPrometheusConfigMapName, nil)
+			configMap.Labels = resources.BaseAppLabels(appName, nil)
 			return configMap, nil
 		}
 	}
