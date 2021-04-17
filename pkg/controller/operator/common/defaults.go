@@ -226,9 +226,9 @@ var (
 				Automatic: pointer.BoolPtr(true),
 			},
 			{
-				// Allow to next minor release
-				From: "1.16.*",
-				To:   "1.17.16",
+				// Auto-upgrade unsupported clusters
+				From:      "1.16.*",
+				To:        "1.17.16",
 				Automatic: pointer.BoolPtr(true),
 			},
 
