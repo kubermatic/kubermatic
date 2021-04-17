@@ -64,12 +64,13 @@ func newTestAlertmanagerReconciler(objects []ctrlruntimeclient.Object, handler h
 		httpClient:          ts.Client(),
 		log:                 kubermaticlog.Logger,
 		recorder:            record.NewFakeRecorder(10),
-		mlaGatewayURLGetter: newFakeMLAGatewayURLGetter(*ts),
+		mlaGatewayURLGetter: newFakeMLAGatewayURLGetter(ts),
 	}
 	return &reconciler, ts
 }
 
 func TestAlertmanagerReconcile(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name         string
 		requestName  string
@@ -193,8 +194,6 @@ func TestAlertmanagerReconcile(t *testing.T) {
 
 	for _, testcase := range testCases {
 		t.Run(testcase.name, func(t *testing.T) {
-			t.Parallel()
-
 			ctx := context.Background()
 			r, assertExpectation := buildTestServer(t, testcase.requests...)
 			reconciler, server := newTestAlertmanagerReconciler(testcase.objects, r)
@@ -267,10 +266,10 @@ alertmanager_config: |
 }
 
 type fakeMLAGatewayURLGetter struct {
-	httptest.Server
+	*httptest.Server
 }
 
-func newFakeMLAGatewayURLGetter(server httptest.Server) *fakeMLAGatewayURLGetter {
+func newFakeMLAGatewayURLGetter(server *httptest.Server) *fakeMLAGatewayURLGetter {
 	return &fakeMLAGatewayURLGetter{
 		Server: server,
 	}
