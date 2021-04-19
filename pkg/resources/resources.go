@@ -588,8 +588,9 @@ const (
 	UserClusterPrometheusClusterRoleBindingName = "system:kubermatic:mla:prometheus"
 	UserClusterPrometheusDeploymentName         = "prometheus"
 
-	DefaultAlertmanagerName     = "alertmanager"
-	AlertmanagerConfigSecretKey = "alertmanager.yaml"
+	AlertmanagerName                    = "alertmanager"
+	DefaultAlertmanagerConfigSecretName = "alertmanager"
+	AlertmanagerConfigSecretKey         = "alertmanager.yaml"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certificate and private key

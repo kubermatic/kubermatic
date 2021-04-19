@@ -138,24 +138,24 @@ func newAlertmanagerReconciler(
 	}
 	enqueueClusterForSecret := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		ctx := context.Background()
-		alertmangerList := &kubermaticv1.AlertmanagerList{}
-		if err := client.List(ctx, alertmangerList, ctrlruntimeclient.InNamespace(a.GetNamespace())); err != nil {
-			log.Errorw("Failed to list alertmanager object", zap.Error(err))
-			utilruntime.HandleError(fmt.Errorf("failed to list alertmanager objects: %w", err))
+		alertmanager := &kubermaticv1.Alertmanager{}
+		if err := client.Get(ctx, types.NamespacedName{
+			Name:      resources.AlertmanagerName,
+			Namespace: a.GetNamespace(),
+		}, alertmanager); err != nil {
+			log.Errorw("Failed to get alertmanager object", zap.Error(err))
+			utilruntime.HandleError(fmt.Errorf("failed to get alertmanager object: %w", err))
 		}
-		for _, alertmanager := range alertmangerList.Items {
-			if a.GetName() == alertmanager.Spec.ConfigSecret.Name {
-				clusterList := &kubermaticv1.ClusterList{}
-				if err := client.List(context.Background(), clusterList); err != nil {
-					log.Errorw("Failed to list clusters", zap.Error(err))
-					utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
+		if alertmanager.Spec.ConfigSecret.Name == a.GetName() {
+			clusterList := &kubermaticv1.ClusterList{}
+			if err := client.List(context.Background(), clusterList); err != nil {
+				log.Errorw("Failed to list clusters", zap.Error(err))
+				utilruntime.HandleError(fmt.Errorf("failed to list Clusters: %w", err))
+			}
+			for _, cluster := range clusterList.Items {
+				if cluster.Status.NamespaceName == a.GetNamespace() {
+					return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
 				}
-				for _, cluster := range clusterList.Items {
-					if cluster.Status.NamespaceName == a.GetNamespace() {
-						return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cluster.Name}}}
-					}
-				}
-
 			}
 		}
 		return []reconcile.Request{}
@@ -277,17 +277,14 @@ func (r *alertmanagerReconciler) cleanUpAlertmanagerConfiguration(cluster *kuber
 }
 
 func (r *alertmanagerReconciler) cleanUpAlertmanagerObjects(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	// Currently, we need to clean up the `Secret` of Alertmanager configuration before we clean up `Alertmanager` object.
-	// In the future, when we implement the Alertmanager api endpoint, we can set owner reference to the secret when it
-	// is created, so `Secret` will be GCed when `Alertmanager` object is deleted.
 	alertmanager := &kubermaticv1.Alertmanager{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      resources.DefaultAlertmanagerName,
+			Name:      resources.AlertmanagerName,
 			Namespace: cluster.Status.NamespaceName,
 		},
 	}
 	if err := r.Get(ctx, types.NamespacedName{
-		Name:      resources.DefaultAlertmanagerName,
+		Name:      resources.AlertmanagerName,
 		Namespace: cluster.Status.NamespaceName,
 	}, alertmanager); err != nil {
 		return ctrlruntimeclient.IgnoreNotFound(err)
@@ -341,27 +338,27 @@ func (r *alertmanagerReconciler) getAlertmanagerConfigForCluster(ctx context.Con
 	configuration := []byte(defaultConfig)
 	alertmanager := &kubermaticv1.Alertmanager{}
 	if err := r.Get(ctx, types.NamespacedName{
-		Name:      resources.DefaultAlertmanagerName,
+		Name:      resources.AlertmanagerName,
 		Namespace: cluster.Status.NamespaceName,
-	}, alertmanager); err != nil {
-		if errors.IsNotFound(err) {
-			return configuration, nil
-		}
+	}, alertmanager); err != nil && !errors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get alertmanager: %w", err)
 	}
-	// If Alertmanager object is found, we try to get configuration from config secret.
-	secret := &corev1.Secret{}
+
 	if alertmanager.Spec.ConfigSecret.Name == "" {
-		alertmanager.Spec.ConfigSecret.Name = "alertmanager"
-		if err := r.Update(ctx, alertmanager); err != nil {
-			return nil, fmt.Errorf("failed to update alertmanager object: %w", err)
+		if _, err := controllerruntime.CreateOrUpdate(ctx, r.Client, alertmanager, func() error {
+			alertmanager.Spec.ConfigSecret.Name = resources.DefaultAlertmanagerConfigSecretName
+			return nil
+		}); err != nil {
+			return nil, fmt.Errorf("failed to create or update alertmanager object: %w", err)
 		}
 	}
+
+	secret := &corev1.Secret{}
 	if err := r.Get(ctx, types.NamespacedName{
 		Name:      alertmanager.Spec.ConfigSecret.Name,
 		Namespace: cluster.Status.NamespaceName,
 	}, secret); err != nil && !errors.IsNotFound(err) {
-		return nil, fmt.Errorf("failed to get alertmanger config secret: %w", err)
+		return nil, fmt.Errorf("failed to get alertmanager config secret: %w", err)
 	}
 
 	if secret.Data == nil || len(secret.Data[resources.AlertmanagerConfigSecretKey]) == 0 {
