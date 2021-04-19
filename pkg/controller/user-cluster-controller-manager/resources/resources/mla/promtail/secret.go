@@ -21,6 +21,7 @@ import (
 	"html/template"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -371,3 +372,16 @@ scrape_configs:
         target_label: __path__
 `
 )
+
+func ClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return resources.PromtailCertificatesSecretName,
+			certificates.GetECDSAClientCertificateCreator(
+				resources.PromtailCertificatesSecretName,
+				resources.PromtailCertificateCommonName,
+				[]string{},
+				resources.PromtailClientCertSecretKey,
+				resources.PromtailClientKeySecretKey,
+				func() (*resources.ECDSAKeyPair, error) { return ca, nil })
+	}
+}

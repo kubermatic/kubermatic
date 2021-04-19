@@ -66,6 +66,10 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get openVPN CA cert: %v", err)
 	}
+	mlaGatewayCACert, err := r.mlaGatewayCA(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to get MLA Gateway CA cert: %v", err)
+	}
 	userSSHKeys, err := r.userSSHKeys(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get userSSHKeys: %v", err)
@@ -76,10 +80,11 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	data := reconcileData{
-		caCert:        caCert,
-		openVPNCACert: openVPNCACert,
-		userSSHKeys:   userSSHKeys,
-		cloudConfig:   cloudConfig,
+		caCert:           caCert,
+		openVPNCACert:    openVPNCACert,
+		mlaGatewayCACert: mlaGatewayCACert,
+		userSSHKeys:      userSSHKeys,
+		cloudConfig:      cloudConfig,
 	}
 
 	// Must be first because of openshift
@@ -614,11 +619,20 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 
+	if r.userClusterMLA.Monitoring {
+		creators = []reconciling.NamedSecretCreatorGetter{
+			userclusterprometheus.ClientCertificateCreator(data.mlaGatewayCACert),
+		}
+		if err := reconciling.ReconcileSecrets(ctx, creators, resources.MLANamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.MLANamespace, err)
+		}
+	}
 	if r.userClusterMLA.Logging {
 		creators = []reconciling.NamedSecretCreatorGetter{
 			promtail.SecretCreator(promtail.Config{
 				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/loki/api/v1/push",
 			}),
+			promtail.ClientCertificateCreator(data.mlaGatewayCACert),
 		}
 		if err := reconciling.ReconcileSecrets(ctx, creators, resources.MLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.MLANamespace, err)
@@ -726,10 +740,11 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 }
 
 type reconcileData struct {
-	caCert        *triple.KeyPair
-	openVPNCACert *resources.ECDSAKeyPair
-	userSSHKeys   map[string][]byte
-	cloudConfig   []byte
+	caCert           *triple.KeyPair
+	openVPNCACert    *resources.ECDSAKeyPair
+	mlaGatewayCACert *resources.ECDSAKeyPair
+	userSSHKeys      map[string][]byte
+	cloudConfig      []byte
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {

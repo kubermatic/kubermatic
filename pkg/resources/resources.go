@@ -602,6 +602,18 @@ const (
 	MLAGatewayCertificatesSecretName = "mla-gateway-certificates"
 	MLAGatewayKeySecretKey           = "gateway.key"
 	MLAGatewayCertSecretKey          = "gateway.crt"
+
+	// PrometheusCertificatesSecretName is the name for the secret containing the promtail client certificates
+	PrometheusCertificatesSecretName = "prometheus-certificates"
+	PrometheusCertificateCommonName  = "prometheus"
+	PrometheusClientKeySecretKey     = "client.key"
+	PrometheusClientCertSecretKey    = "client.crt"
+
+	// PromtailCertificatesSecretName is the name for the secret containing the promtail client certificates
+	PromtailCertificatesSecretName = "promtail-certificates"
+	PromtailCertificateCommonName  = "promtail"
+	PromtailClientKeySecretKey     = "client.key"
+	PromtailClientCertSecretKey    = "client.crt"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certificate and private key
