@@ -221,7 +221,7 @@ func (r *alertmanagerReconciler) reconcile(ctx context.Context, cluster *kuberma
 	}
 
 	if err := r.ensureAlertmanagerConfiguration(ctx, cluster); err != nil {
-		return nil, fmt.Errorf("failed to create alertmanager conifguration: %v", err)
+		return nil, fmt.Errorf("failed to create alertmanager configuration: %v", err)
 	}
 	return nil, nil
 }
@@ -243,7 +243,7 @@ func (r *alertmanagerReconciler) cleanUpAlertmanagerConfiguration(cluster *kuber
 		if err != nil {
 			return fmt.Errorf("status code: %d,error: %v", resp.StatusCode, err)
 		}
-		return fmt.Errorf("status code: %d, respose body: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("status code: %d, response body: %s", resp.StatusCode, string(body))
 	}
 	return nil
 }
@@ -318,7 +318,7 @@ func (r *alertmanagerReconciler) ensureAlertmanagerConfiguration(ctx context.Con
 		if err != nil {
 			return fmt.Errorf("status code: %d,error: %v", resp.StatusCode, err)
 		}
-		return fmt.Errorf("status code: %d, respose body: %s", resp.StatusCode, string(body))
+		return fmt.Errorf("status code: %d, response body: %s", resp.StatusCode, string(body))
 	}
 	return nil
 }
