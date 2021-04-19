@@ -57,7 +57,7 @@ var (
 // * org grafana controller - create/update/delete Grafana organizations based on Kubermatic Projects
 // * user grafana controller - create/update/delete Grafana Users to organizations based on Kubermatic UserProjectBindings
 // * datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
-// * alertmanager configuartion controller - manage alertmanager configuration based on Kubermatic Clusters
+// * alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
