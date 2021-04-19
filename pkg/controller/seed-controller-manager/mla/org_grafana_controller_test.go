@@ -237,6 +237,7 @@ func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bo
 			assert.Failf(t, "unexpected request", "%v", r)
 		}
 		req := requests[counter]
+		t.Logf("checking request: %s", req.name)
 		assert.Equal(t, req.request.URL.Path, r.URL.Path)
 		assert.Equal(t, req.request.Method, r.Method)
 		if req.request.ContentLength > 0 {
