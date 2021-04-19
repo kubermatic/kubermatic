@@ -30,6 +30,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -78,10 +79,10 @@ func TestAlertmanagerReconcile(t *testing.T) {
 		requests     []request
 		expectedErr  bool
 		hasFinalizer bool
-		cleanup      bool
+		hasResources bool
 	}{
 		{
-			name:        "create default alertmanager configuration when no config secret is created",
+			name:        "create default alertmanager configuration when no alertmanager is created",
 			requestName: "cluster-1",
 			objects: []ctrlruntimeclient.Object{
 				generateCluster("cluster-1", true, false),
@@ -96,6 +97,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 				},
 			},
 			hasFinalizer: true,
+			hasResources: false,
 		},
 		{
 			name:        "update alertmanager configuration based on the config secret",
@@ -108,12 +110,12 @@ func TestAlertmanagerReconcile(t *testing.T) {
 						Namespace: "cluster-cluster-2",
 					},
 					Data: map[string][]byte{
-						alertmanagerConfigSecretKey: []byte(generateAlertmanagerConfig("test-user")),
+						resources.AlertmanagerConfigSecretKey: []byte(generateAlertmanagerConfig("test-user")),
 					},
 				},
 				&kubermaticv1.Alertmanager{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      alertmanagerName,
+						Name:      resources.DefaultAlertmanagerName,
 						Namespace: "cluster-cluster-2",
 					},
 					Spec: kubermaticv1.AlertmanagerSpec{
@@ -133,6 +135,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 				},
 			},
 			hasFinalizer: true,
+			hasResources: true,
 		},
 		{
 			name:        "clean up alertmanager configuration when monitoring is disabled",
@@ -145,12 +148,12 @@ func TestAlertmanagerReconcile(t *testing.T) {
 						Namespace: "cluster-cluster-3",
 					},
 					Data: map[string][]byte{
-						alertmanagerConfigSecretKey: []byte(generateAlertmanagerConfig("test-user")),
+						resources.AlertmanagerConfigSecretKey: []byte(generateAlertmanagerConfig("test-user")),
 					},
 				},
 				&kubermaticv1.Alertmanager{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      alertmanagerName,
+						Name:      resources.DefaultAlertmanagerName,
 						Namespace: "cluster-cluster-3",
 					},
 					Spec: kubermaticv1.AlertmanagerSpec{
@@ -170,7 +173,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 				},
 			},
 			hasFinalizer: false,
-			cleanup:      true,
+			hasResources: false,
 		},
 		{
 			name:        "clean up alertmanager configuration when cluster is removed",
@@ -188,7 +191,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 				},
 			},
 			hasFinalizer: false,
-			cleanup:      true,
+			hasResources: false,
 		},
 	}
 
@@ -212,10 +215,10 @@ func TestAlertmanagerReconcile(t *testing.T) {
 
 			alertmanager := &kubermaticv1.Alertmanager{}
 			err = reconciler.Get(ctx, types.NamespacedName{
-				Name:      alertmanagerName,
+				Name:      resources.DefaultAlertmanagerName,
 				Namespace: cluster.Status.NamespaceName,
 			}, alertmanager)
-			if testcase.cleanup {
+			if !testcase.hasResources {
 				assert.True(t, errors.IsNotFound(err))
 				secret := &corev1.Secret{}
 				err = reconciler.Get(ctx, types.NamespacedName{
