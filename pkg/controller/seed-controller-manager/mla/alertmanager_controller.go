@@ -116,7 +116,7 @@ func newAlertmanagerReconciler(
 		return err
 	}
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch Alertmanager: %v", err)
+		return fmt.Errorf("failed to watch Cluster: %v", err)
 	}
 
 	enqueueClusterForAlertmanager := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
