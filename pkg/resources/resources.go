@@ -592,6 +592,16 @@ const (
 	MLAGatewayExternalServiceName = "mla-gateway-ext"
 	// MLAGatewaySNIPrefix is the URL prefix which identifies the MLA Gateway endpoint in the external URL if SNI expose strategy is used
 	MLAGatewaySNIPrefix = "mla."
+
+	// MLAGatewayCASecretName is the name for the secret containing the MLA Gateway CA certificates
+	MLAGatewayCASecretName = "mla-gateway-ca"
+	MLAGatewayCACertKey    = CACertSecretKey
+	MLAGatewayCAKeyKey     = CAKeySecretKey
+
+	// MLAGatewayCertificatesSecretName is the name for the secret containing the MLA Gateway certificates
+	MLAGatewayCertificatesSecretName = "mla-gateway-certificates"
+	MLAGatewayKeySecretKey           = "gateway.key"
+	MLAGatewayCertSecretKey          = "gateway.crt"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certificate and private key
@@ -901,6 +911,11 @@ func GetClusterFrontProxyCA(ctx context.Context, namespace string, client ctrlru
 // GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister
 func GetOpenVPNCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
 	return getECDSAClusterCAFromLister(ctx, namespace, OpenVPNCASecretName, client)
+}
+
+// GetMLAGatewayCA returns the MLA Gateway CA of the cluster from the lister
+func GetMLAGatewayCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
+	return getECDSAClusterCAFromLister(ctx, namespace, MLAGatewayCASecretName, client)
 }
 
 // ClusterIPForService returns the cluster ip for the given service

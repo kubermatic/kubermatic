@@ -19,6 +19,7 @@ package mla
 import (
 	"bytes"
 	"context"
+	"crypto/x509"
 	"fmt"
 	"strconv"
 	"strings"
@@ -31,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -39,6 +41,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/utils/pointer"
 )
 
@@ -396,4 +399,79 @@ func getOrgByProjectID(ctx context.Context, client ctrlruntimeclient.Client, gra
 		return grafanasdk.Org{}, err
 	}
 	return grafanaClient.GetOrgById(ctx, uint(id))
+}
+
+// CACreator returns a function to create the ECDSA-based CA to be used for MLA.
+func CACreator() reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return resources.MLAGatewayCASecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
+			}
+
+			if data, exists := se.Data[resources.MLAGatewayCACertKey]; exists {
+				certs, err := certutil.ParseCertsPEM(data)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse certificate %s from existing secret %s: %v",
+						resources.MLAGatewayCACertKey, resources.MLAGatewayCASecretName, err)
+				}
+				if !resources.CertWillExpireSoon(certs[0]) {
+					return se, nil
+				}
+			}
+
+			cert, key, err := certificates.GetECDSACACertAndKey()
+			if err != nil {
+				return nil, fmt.Errorf("failed to generate MLA CA: %v", err)
+			}
+			se.Data[resources.MLAGatewayCACertKey] = cert
+			se.Data[resources.MLAGatewayCAKeyKey] = key
+
+			return se, nil
+		}
+	}
+}
+
+type tlsServerCertCreatorData interface {
+	GetMLAGatewayCA() (*resources.ECDSAKeyPair, error)
+}
+
+// GatewayCertificateCreator returns a function to create/update a secret with the MLA gateway TLS certificate.
+func GatewayCertificateCreator(data tlsServerCertCreatorData) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return resources.MLAGatewayCertificatesSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
+			}
+
+			ca, err := data.GetMLAGatewayCA()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get MLA Gateway ca: %v", err)
+			}
+			altNames := certutil.AltNames{}
+			if b, exists := se.Data[resources.MLAGatewayCertSecretKey]; exists {
+				certs, err := certutil.ParseCertsPEM(b)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.MLAGatewayCertSecretKey, err)
+				}
+				if resources.IsServerCertificateValidForAllOf(certs[0], gatewayName, altNames, ca.Cert) {
+					return se, nil
+				}
+			}
+			config := certutil.Config{
+				CommonName: gatewayName,
+				AltNames:   altNames,
+				Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			}
+			cert, key, err := certificates.GetSignedECDSACertAndKey(certificates.Duration365d, config, ca.Cert, ca.Key)
+			if err != nil {
+				return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
+			}
+
+			se.Data[resources.MLAGatewayCertSecretKey] = cert
+			se.Data[resources.MLAGatewayKeySecretKey] = key
+
+			return se, nil
+		}
+	}
 }

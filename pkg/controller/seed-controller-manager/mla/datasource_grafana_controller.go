@@ -55,11 +55,11 @@ type datasourceGrafanaReconciler struct {
 	ctrlruntimeclient.Client
 	grafanaClient *grafanasdk.Client
 
-	log        *zap.SugaredLogger
-	workerName string
-	recorder   record.EventRecorder
-	versions   kubermatic.Versions
-	data       *resources.TemplateData
+	log               *zap.SugaredLogger
+	workerName        string
+	recorder          record.EventRecorder
+	versions          kubermatic.Versions
+	overwriteRegistry string
 }
 
 func newDatasourceGrafanaReconciler(
@@ -74,17 +74,15 @@ func newDatasourceGrafanaReconciler(
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
-	data := resources.NewTemplateDataBuilder().WithOverwriteRegistry(overwriteRegistry).Build()
-
 	reconciler := &datasourceGrafanaReconciler{
 		Client:        client,
 		grafanaClient: grafanaClient,
 
-		log:        log,
-		workerName: workerName,
-		recorder:   mgr.GetEventRecorderFor(ControllerName),
-		versions:   versions,
-		data:       data,
+		log:               log,
+		workerName:        workerName,
+		recorder:          mgr.GetEventRecorderFor(ControllerName),
+		versions:          versions,
+		overwriteRegistry: overwriteRegistry,
 	}
 
 	ctrlOptions := controller.Options{
@@ -158,11 +156,21 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 			return nil, fmt.Errorf("updating finalizers: %w", err)
 		}
 	}
+
+	data := resources.NewTemplateDataBuilder().
+		WithContext(ctx).
+		WithClient(r.Client).
+		WithCluster(cluster).
+		WithOverwriteRegistry(r.overwriteRegistry).
+		Build()
+
 	if err := r.ensureConfigMaps(ctx, cluster); err != nil {
 		return nil, fmt.Errorf("failed to reconcile ConfigMaps in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
-
-	if err := r.ensureDeployments(ctx, cluster, r.data); err != nil {
+	if err := r.ensureSecrets(ctx, cluster, data); err != nil {
+		return nil, fmt.Errorf("failed to reconcile Secrets in namespace %s: %w", cluster.Status.NamespaceName, err)
+	}
+	if err := r.ensureDeployments(ctx, cluster, data); err != nil {
 		return nil, fmt.Errorf("failed to reconcile Deployments in namespace %s: %w", cluster.Status.NamespaceName, err)
 	}
 	if err := r.ensureServices(ctx, cluster); err != nil {
@@ -262,6 +270,17 @@ func (r *datasourceGrafanaReconciler) ensureConfigMaps(ctx context.Context, c *k
 	}
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)
+	}
+	return nil
+}
+
+func (r *datasourceGrafanaReconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
+	creators := []reconciling.NamedSecretCreatorGetter{
+		CACreator(),
+		GatewayCertificateCreator(data),
+	}
+	if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
+		return fmt.Errorf("failed to ensure that the Secrets exist: %v", err)
 	}
 	return nil
 }

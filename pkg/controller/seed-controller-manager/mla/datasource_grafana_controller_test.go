@@ -60,7 +60,6 @@ func newTestDatasourceGrafanaReconciler(t *testing.T, objects []ctrlruntimeclien
 		grafanaClient: grafanaClient,
 		log:           kubermaticlog.Logger,
 		recorder:      record.NewFakeRecorder(10),
-		data:          resources.NewTemplateDataBuilder().Build(),
 	}
 	return &reconciler, ts
 }
