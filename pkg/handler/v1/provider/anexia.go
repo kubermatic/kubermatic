@@ -53,6 +53,40 @@ func AnexiaVlanEndpoint(presetsProvider provider.PresetProvider, userInfoGetter 
 	}
 }
 
+func AnexiaTemplateEndpoint(presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(AnexiaTemplateReq)
+
+		token := req.Token
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if len(req.Credential) > 0 {
+			preset, err := presetsProvider.GetPreset(userInfo, req.Credential)
+			if err != nil {
+				return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("can not get preset %s for user %s", req.Credential, userInfo.Email))
+			}
+			if credentials := preset.Spec.Anexia; credentials != nil {
+				token = credentials.Token
+			}
+		}
+
+		return providercommon.ListAnexiaTemplates(ctx, token, req.Location)
+	}
+}
+
+// AnexiaTemplateReq represent a request for Anexia template resources
+// swagger:parameters listAnexiaTemplates
+type AnexiaTemplateReq struct {
+	AnexiaReq
+
+	// in: header
+	// Location Anexia location ID
+	Location string
+}
+
 // AnexiaReq represent a request for Anexia resources
 // swagger:parameters listAnexiaVlans
 type AnexiaReq struct {
@@ -69,5 +103,14 @@ func DecodeAnexiaReq(_ context.Context, r *http.Request) (interface{}, error) {
 
 	req.Token = r.Header.Get("Token")
 	req.Credential = r.Header.Get("Credential")
+	return req, nil
+}
+
+func DecodeAnexiaTemplateReq(_ context.Context, r *http.Request) (interface{}, error) {
+	var req AnexiaTemplateReq
+
+	req.Token = r.Header.Get("Token")
+	req.Credential = r.Header.Get("Credential")
+	req.Location = r.Header.Get("Location")
 	return req, nil
 }
