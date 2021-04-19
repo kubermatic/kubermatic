@@ -34,7 +34,7 @@ type Alertmanager struct {
 type AlertmanagerSpec struct {
 	// ConfigSecret refers to the Secret in the same namespace as the Alertmanager object,
 	// which contains configuration for this Alertmanager.
-	ConfigSecret corev1.LocalObjectReference `json:"configSecret,omitempty"`
+	ConfigSecret corev1.LocalObjectReference `json:"configSecret"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
