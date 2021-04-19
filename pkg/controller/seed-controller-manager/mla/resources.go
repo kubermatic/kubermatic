@@ -235,7 +235,7 @@ func GatewayExternalServiceCreator(c *kubermaticv1.Cluster) reconciling.NamedSer
 
 			switch c.Spec.ExposeStrategy {
 			case kubermaticv1.ExposeStrategyNodePort:
-				// Exposes MLA GW via ModePort.
+				// Exposes MLA GW via NodePort.
 				s.Spec.Type = corev1.ServiceTypeNodePort
 				s.Annotations[nodeportproxy.DefaultExposeAnnotationKey] = nodeportproxy.NodePortType.String()
 				delete(s.Annotations, nodeportproxy.NodePortProxyExposeNamespacedAnnotationKey)
