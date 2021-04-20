@@ -18,6 +18,7 @@ package vsphere
 
 import (
 	"context"
+	"crypto/tls"
 	"errors"
 	"fmt"
 	"net/url"
@@ -32,6 +33,8 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/httpcautil"
+
 	kruntime "k8s.io/apimachinery/pkg/util/runtime"
 )
 
@@ -83,6 +86,11 @@ func newSession(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, use
 	client, err := govmomi.NewClient(ctx, u, dc.AllowInsecure)
 	if err != nil {
 		return nil, err
+	}
+
+	// inject our global set of CA certificates
+	client.DefaultTransport().TLSClientConfig = &tls.Config{
+		RootCAs: httpcautil.CABundle,
 	}
 
 	user := url.UserPassword(username, password)
