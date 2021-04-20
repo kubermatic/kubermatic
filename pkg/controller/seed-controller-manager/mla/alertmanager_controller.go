@@ -408,6 +408,9 @@ func (r *alertmanagerReconciler) getCurrentAlertmanagerConfig(alertmanagerURL st
 	}
 	defer resp.Body.Close()
 	// https://cortexmetrics.io/docs/api/#get-alertmanager-configuration
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, nil
+	}
 	if resp.StatusCode != http.StatusOK {
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
