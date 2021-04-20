@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/util/httpcautil"
 
 	"k8s.io/klog"
 )
@@ -467,6 +468,11 @@ func getAuthClient(username, password, domain, tenant, tenantID, authURL string)
 	if err != nil {
 		return nil, err
 	}
+	if client != nil {
+		// use the provider util's HTTP client to benefit, among other things, from its CA bundle
+		client.HTTPClient = httpcautil.HTTPClientConfig.New(httpcautil.HTTPClientConfig{})
+	}
+
 	return client, nil
 }
 
