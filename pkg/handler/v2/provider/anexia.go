@@ -36,8 +36,15 @@ func AnexiaVlansWithClusterCredentialsEndpoint(projectProvider provider.ProjectP
 	}
 }
 
+func AnexiaTemplatesWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, seedsGetter provider.SeedsGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(anexiaNoCredentialReq)
+		return providercommon.AnexiaTemplatesWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
+	}
+}
+
 // anexiaNoCredentialReq represent a request for Anexia resources
-// swagger:parameters listAnexiaVlansNoCredentialsV2
+// swagger:parameters listAnexiaVlansNoCredentialsV2 listAnexiaTemplatesNoCredentialsV2
 type anexiaNoCredentialReq struct {
 	cluster.GetClusterReq
 }

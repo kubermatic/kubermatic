@@ -420,6 +420,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/providers/anexia/vlans").
 		Handler(r.listAnexiaVlansNoCredentials())
 
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/providers/anexia/templates").
+		Handler(r.listAnexiaTemplatesNoCredentials())
+
 	// Defines a set of kubernetes-dashboard-specific endpoints
 	mux.PathPrefix("/projects/{project_id}/clusters/{cluster_id}/dashboard/proxy").
 		Handler(r.kubernetesDashboardProxy())
@@ -2893,6 +2897,30 @@ func (r Routing) listAnexiaVlansNoCredentials() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(provider.AnexiaVlansWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		provider.DecodeAnexiaNoCredentialReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/providers/anexia/templates anexia listAnexiaTemplatesNoCredentialsV2
+//
+// Lists templates from Anexia
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AnexiaTemplateList
+func (r Routing) listAnexiaTemplatesNoCredentials() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(provider.AnexiaTemplatesWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.seedsGetter)),
 		provider.DecodeAnexiaNoCredentialReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
