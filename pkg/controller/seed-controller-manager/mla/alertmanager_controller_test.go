@@ -83,13 +83,13 @@ func TestAlertmanagerReconcile(t *testing.T) {
 	}{
 		{
 			name:        "create default alertmanager configuration when no alertmanager is created",
-			requestName: "cluster",
+			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("cluster", true, false),
+				generateCluster("test", true, false),
 			},
 			requests: []request{
 				{
-					name: "cluster",
+					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
 						alertmanagerConfigEndpoint,
 						bytes.NewBuffer([]byte(defaultConfig))),
@@ -100,37 +100,23 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			hasResources: true,
 		},
 		{
-			name:        "create alertmanager configuration if config secret is not found",
-			requestName: "cluster",
+			name:        "create default alertmanager configuration if alertmanager is found but config secret is not set",
+			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("cluster", true, false),
-				&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "config-secret",
-						Namespace: "cluster-cluster-2",
-					},
-					Data: map[string][]byte{
-						resources.AlertmanagerConfigSecretKey: []byte(generateAlertmanagerConfig("test-user")),
-					},
-				},
+				generateCluster("test", true, false),
 				&kubermaticv1.Alertmanager{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resources.AlertmanagerName,
-						Namespace: "cluster-cluster-2",
-					},
-					Spec: kubermaticv1.AlertmanagerSpec{
-						ConfigSecret: corev1.LocalObjectReference{
-							Name: "config-secret",
-						},
+						Namespace: "cluster-test",
 					},
 				},
 			},
 			requests: []request{
 				{
-					name: "update",
+					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
 						alertmanagerConfigEndpoint,
-						bytes.NewBuffer([]byte(generateAlertmanagerConfig("test-user")))),
+						bytes.NewBuffer([]byte(defaultConfig))),
 					response: &http.Response{StatusCode: http.StatusCreated},
 				},
 			},
@@ -138,23 +124,14 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			hasResources: true,
 		},
 		{
-			name:        "update alertmanager configuration based on the config secret",
-			requestName: "cluster-2",
+			name:        "create default alertmanager configuration if config secret is set but not found",
+			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("cluster-2", true, false),
-				&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      "config-secret",
-						Namespace: "cluster-cluster-2",
-					},
-					Data: map[string][]byte{
-						resources.AlertmanagerConfigSecretKey: []byte(generateAlertmanagerConfig("test-user")),
-					},
-				},
+				generateCluster("test", true, false),
 				&kubermaticv1.Alertmanager{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resources.AlertmanagerName,
-						Namespace: "cluster-cluster-2",
+						Namespace: "cluster-test",
 					},
 					Spec: kubermaticv1.AlertmanagerSpec{
 						ConfigSecret: corev1.LocalObjectReference{
@@ -165,7 +142,45 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			},
 			requests: []request{
 				{
-					name: "update",
+					name: "post",
+					request: httptest.NewRequest(http.MethodPost,
+						alertmanagerConfigEndpoint,
+						bytes.NewBuffer([]byte(defaultConfig))),
+					response: &http.Response{StatusCode: http.StatusCreated},
+				},
+			},
+			hasFinalizer: true,
+			hasResources: true,
+		},
+		{
+			name:        "create alertmanager configuration based on the config secret",
+			requestName: "test",
+			objects: []ctrlruntimeclient.Object{
+				generateCluster("test", true, false),
+				&corev1.Secret{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "config-secret",
+						Namespace: "cluster-test",
+					},
+					Data: map[string][]byte{
+						resources.AlertmanagerConfigSecretKey: []byte(generateAlertmanagerConfig("test-user")),
+					},
+				},
+				&kubermaticv1.Alertmanager{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      resources.AlertmanagerName,
+						Namespace: "cluster-test",
+					},
+					Spec: kubermaticv1.AlertmanagerSpec{
+						ConfigSecret: corev1.LocalObjectReference{
+							Name: "config-secret",
+						},
+					},
+				},
+			},
+			requests: []request{
+				{
+					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
 						alertmanagerConfigEndpoint,
 						bytes.NewBuffer([]byte(generateAlertmanagerConfig("test-user")))),
@@ -177,13 +192,13 @@ func TestAlertmanagerReconcile(t *testing.T) {
 		},
 		{
 			name:        "clean up alertmanager configuration when monitoring is disabled",
-			requestName: "cluster-3",
+			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("cluster-3", false, false),
+				generateCluster("test", false, false),
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "config-secret",
-						Namespace: "cluster-cluster-3",
+						Namespace: "cluster-test",
 					},
 					Data: map[string][]byte{
 						resources.AlertmanagerConfigSecretKey: []byte(generateAlertmanagerConfig("test-user")),
@@ -192,7 +207,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 				&kubermaticv1.Alertmanager{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resources.AlertmanagerName,
-						Namespace: "cluster-cluster-3",
+						Namespace: "cluster-test",
 					},
 					Spec: kubermaticv1.AlertmanagerSpec{
 						ConfigSecret: corev1.LocalObjectReference{
@@ -203,7 +218,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			},
 			requests: []request{
 				{
-					name: "clean-up",
+					name: "delete",
 					request: httptest.NewRequest(http.MethodDelete,
 						alertmanagerConfigEndpoint,
 						nil),
@@ -215,13 +230,13 @@ func TestAlertmanagerReconcile(t *testing.T) {
 		},
 		{
 			name:        "clean up alertmanager configuration when cluster is removed",
-			requestName: "cluster-4",
+			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("cluster-4", false, true),
+				generateCluster("test", false, true),
 			},
 			requests: []request{
 				{
-					name: "clean-up",
+					name: "delete",
 					request: httptest.NewRequest(http.MethodDelete,
 						alertmanagerConfigEndpoint,
 						nil),
@@ -256,16 +271,20 @@ func TestAlertmanagerReconcile(t *testing.T) {
 				Name:      resources.AlertmanagerName,
 				Namespace: cluster.Status.NamespaceName,
 			}, alertmanager)
-			if !testcase.hasResources {
-				assert.True(t, errors.IsNotFound(err))
+			if testcase.hasResources {
+				assert.Nil(t, err)
 				secret := &corev1.Secret{}
 				err = reconciler.Get(ctx, types.NamespacedName{
-					Name:      "config-secret",
+					Name:      alertmanager.Spec.ConfigSecret.Name,
 					Namespace: cluster.Status.NamespaceName,
 				}, secret)
-				assert.True(t, errors.IsNotFound(err))
-			} else {
 				assert.Nil(t, err)
+			} else {
+				assert.True(t, errors.IsNotFound(err))
+				secretList := &corev1.SecretList{}
+				err = reconciler.List(ctx, secretList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
+				assert.Nil(t, err)
+				assert.Len(t, secretList.Items, 0)
 			}
 			assertExpectation()
 			server.Close()

@@ -336,11 +336,17 @@ func (r *alertmanagerReconciler) ensureAlertmanagerConfiguration(ctx context.Con
 
 func (r *alertmanagerReconciler) getAlertmanagerConfigForCluster(ctx context.Context, cluster *kubermaticv1.Cluster) ([]byte, error) {
 	configuration := []byte(defaultConfig)
-	alertmanager := &kubermaticv1.Alertmanager{}
-	if err := r.Get(ctx, types.NamespacedName{
+	alertNamespacedName := types.NamespacedName{
 		Name:      resources.AlertmanagerName,
 		Namespace: cluster.Status.NamespaceName,
-	}, alertmanager); err != nil && !errors.IsNotFound(err) {
+	}
+	alertmanager := &kubermaticv1.Alertmanager{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      alertNamespacedName.Name,
+			Namespace: alertNamespacedName.Namespace,
+		},
+	}
+	if err := r.Get(ctx, alertNamespacedName, alertmanager); err != nil && !errors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get alertmanager: %w", err)
 	}
 
@@ -353,11 +359,17 @@ func (r *alertmanagerReconciler) getAlertmanagerConfigForCluster(ctx context.Con
 		}
 	}
 
-	secret := &corev1.Secret{}
-	if err := r.Get(ctx, types.NamespacedName{
+	secretNamespacedName := types.NamespacedName{
 		Name:      alertmanager.Spec.ConfigSecret.Name,
 		Namespace: cluster.Status.NamespaceName,
-	}, secret); err != nil && !errors.IsNotFound(err) {
+	}
+	secret := &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretNamespacedName.Name,
+			Namespace: secretNamespacedName.Namespace,
+		},
+	}
+	if err := r.Get(ctx, secretNamespacedName, secret); err != nil && !errors.IsNotFound(err) {
 		return nil, fmt.Errorf("failed to get alertmanager config secret: %w", err)
 	}
 
