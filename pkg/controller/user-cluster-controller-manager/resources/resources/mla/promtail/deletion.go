@@ -40,6 +40,12 @@ func ResourcesOnDeletion() []ctrlruntimeclient.Object {
 				Namespace: resources.MLANamespace,
 			},
 		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.PromtailCertificatesSecretName,
+				Namespace: resources.MLANamespace,
+			},
+		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.PromtailServiceAccountName,

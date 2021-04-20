@@ -401,8 +401,8 @@ func getOrgByProjectID(ctx context.Context, client ctrlruntimeclient.Client, gra
 	return grafanaClient.GetOrgById(ctx, uint(id))
 }
 
-// CACreator returns a function to create the ECDSA-based CA to be used for MLA.
-func CACreator() reconciling.NamedSecretCreatorGetter {
+// GatewayCACreator returns a function to create the ECDSA-based CA to be used for MLA Gateway.
+func GatewayCACreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.MLAGatewayCASecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {

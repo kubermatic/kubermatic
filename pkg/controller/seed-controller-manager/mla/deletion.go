@@ -17,6 +17,8 @@ limitations under the License.
 package mla
 
 import (
+	"k8c.io/kubermatic/v2/pkg/resources"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -52,6 +54,18 @@ func ResourcesOnDeletion(clusterNamespace string) []ctrlruntimeclient.Object {
 		&corev1.Service{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      gatewayAlertName,
+				Namespace: clusterNamespace,
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.MLAGatewayCASecretName,
+				Namespace: clusterNamespace,
+			},
+		},
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      resources.MLAGatewayCertificatesSecretName,
 				Namespace: clusterNamespace,
 			},
 		},
