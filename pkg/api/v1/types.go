@@ -689,6 +689,16 @@ type AnexiaVlan struct {
 	ID string `json:"id"`
 }
 
+// AnexiaTemplateList represents an array of Anexia templates.
+// swagger:model AnexiaTemplateList
+type AnexiaTemplateList []AnexiaTemplate
+
+// AnexiaTemplate represents a object of Anexia template.
+// swagger:model AnexiaTemplate
+type AnexiaTemplate struct {
+	ID string `json:"id"`
+}
+
 // MasterVersion describes a version of the master components
 // swagger:model MasterVersion
 type MasterVersion struct {

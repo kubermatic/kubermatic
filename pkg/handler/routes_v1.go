@@ -232,6 +232,10 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.listAnexiaVlans())
 
 	mux.Methods(http.MethodGet).
+		Path("/providers/anexia/templates").
+		Handler(r.listAnexiaTemplates())
+
+	mux.Methods(http.MethodGet).
 		Path("/providers/{provider_name}/presets/credentials").
 		Handler(r.listCredentials())
 
@@ -1373,6 +1377,28 @@ func (r Routing) listAnexiaVlans() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(provider.AnexiaVlanEndpoint(r.presetsProvider, r.userInfoGetter)),
 		provider.DecodeAnexiaReq,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v1/providers/anexia/templates anexia listAnexiaTemplates
+//
+// Lists templates from anexia
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: AnexiaTemplateList
+func (r Routing) listAnexiaTemplates() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(provider.AnexiaTemplateEndpoint(r.presetsProvider, r.userInfoGetter)),
+		provider.DecodeAnexiaTemplateReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)
