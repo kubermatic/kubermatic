@@ -59,17 +59,6 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, errors.New(http.StatusForbidden, "the Service Account is not allowed to create a project")
 		}
 
-		if kubernetes.IsMainServiceAccount(user.Spec.Email) {
-			userOwnerEmail, ok := user.Annotations[kubernetes.ServiceAccountAnnotationOwner]
-			if !ok {
-				return nil, errors.New(http.StatusInternalServerError, "missing owner annotation for main service account")
-			}
-			user, err = userProvider.UserByEmail(userOwnerEmail)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-		}
-
 		if err := checkProjectRestriction(user, settings); err != nil {
 			return nil, err
 		}

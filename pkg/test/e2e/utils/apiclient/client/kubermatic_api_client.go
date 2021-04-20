@@ -22,7 +22,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/digitalocean"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/hetzner"
-	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/mainserviceaccounts"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/metric"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/openstack"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/operations"
@@ -92,7 +91,6 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Digitalocean = digitalocean.New(transport, formats)
 	cli.Gcp = gcp.New(transport, formats)
 	cli.Hetzner = hetzner.New(transport, formats)
-	cli.Mainserviceaccounts = mainserviceaccounts.New(transport, formats)
 	cli.Metric = metric.New(transport, formats)
 	cli.Openstack = openstack.New(transport, formats)
 	cli.Operations = operations.New(transport, formats)
@@ -174,8 +172,6 @@ type KubermaticAPI struct {
 
 	Hetzner hetzner.ClientService
 
-	Mainserviceaccounts mainserviceaccounts.ClientService
-
 	Metric metric.ClientService
 
 	Openstack openstack.ClientService
@@ -220,7 +216,6 @@ func (c *KubermaticAPI) SetTransport(transport runtime.ClientTransport) {
 	c.Digitalocean.SetTransport(transport)
 	c.Gcp.SetTransport(transport)
 	c.Hetzner.SetTransport(transport)
-	c.Mainserviceaccounts.SetTransport(transport)
 	c.Metric.SetTransport(transport)
 	c.Openstack.SetTransport(transport)
 	c.Operations.SetTransport(transport)
