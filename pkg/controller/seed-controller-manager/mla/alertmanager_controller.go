@@ -53,6 +53,7 @@ const (
 	alertmanagerFinalizer      = "kubermatic.io/alertmanager"
 	alertmanagerConfigEndpoint = "/api/v1/alerts"
 	defaultConfig              = `
+template_files: {}
 alertmanager_config: |
   route:
     receiver: 'null'
@@ -145,6 +146,9 @@ func newAlertmanagerReconciler(
 			Name:      resources.AlertmanagerName,
 			Namespace: a.GetNamespace(),
 		}, alertmanager); err != nil {
+			if errors.IsNotFound(err) {
+				return []reconcile.Request{}
+			}
 			log.Errorw("Failed to get alertmanager object", zap.Error(err))
 			utilruntime.HandleError(fmt.Errorf("failed to get alertmanager object: %w", err))
 		}
@@ -327,7 +331,7 @@ func (r *alertmanagerReconciler) ensureAlertmanagerConfiguration(ctx context.Con
 	}
 
 	req, err := http.NewRequest(http.MethodPost,
-		r.mlaGatewayURLGetter.mlaGatewayURL(cluster)+alertmanagerConfigEndpoint,
+		alertmanagerURL,
 		bytes.NewBuffer(config))
 	if err != nil {
 		return err

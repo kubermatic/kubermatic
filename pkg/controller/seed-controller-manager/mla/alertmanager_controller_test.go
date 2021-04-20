@@ -89,6 +89,11 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			},
 			requests: []request{
 				{
+					name:     "get",
+					request:  httptest.NewRequest(http.MethodGet, alertmanagerConfigEndpoint, nil),
+					response: &http.Response{StatusCode: http.StatusNotFound},
+				},
+				{
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
 						alertmanagerConfigEndpoint,
@@ -112,6 +117,11 @@ func TestAlertmanagerReconcile(t *testing.T) {
 				},
 			},
 			requests: []request{
+				{
+					name:     "get",
+					request:  httptest.NewRequest(http.MethodGet, alertmanagerConfigEndpoint, nil),
+					response: &http.Response{StatusCode: http.StatusNotFound},
+				},
 				{
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
@@ -141,6 +151,11 @@ func TestAlertmanagerReconcile(t *testing.T) {
 				},
 			},
 			requests: []request{
+				{
+					name:     "get",
+					request:  httptest.NewRequest(http.MethodGet, alertmanagerConfigEndpoint, nil),
+					response: &http.Response{StatusCode: http.StatusNotFound},
+				},
 				{
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
@@ -179,6 +194,11 @@ func TestAlertmanagerReconcile(t *testing.T) {
 				},
 			},
 			requests: []request{
+				{
+					name:     "get",
+					request:  httptest.NewRequest(http.MethodGet, alertmanagerConfigEndpoint, nil),
+					response: &http.Response{StatusCode: http.StatusNotFound},
+				},
 				{
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
