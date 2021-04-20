@@ -525,12 +525,6 @@ type ServiceAccountProvider interface {
 	GetProjectServiceAccount(userInfo *UserInfo, name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
 	UpdateProjectServiceAccount(userInfo *UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
 	DeleteProjectServiceAccount(userInfo *UserInfo, name string) error
-
-	ListMainServiceAccounts(userInfo *UserInfo, options *ServiceAccountListOptions) ([]*kubermaticv1.User, error)
-	CreateMainServiceAccount(userInfo *UserInfo, name, group string) (*kubermaticv1.User, error)
-	GetMainServiceAccount(userInfo *UserInfo, name string, options *ServiceAccountGetOptions) (*kubermaticv1.User, error)
-	UpdateMainServiceAccount(userInfo *UserInfo, serviceAccount *kubermaticv1.User) (*kubermaticv1.User, error)
-	DeleteMainServiceAccount(userInfo *UserInfo, serviceAccount *kubermaticv1.User) error
 }
 
 // PrivilegedServiceAccountProvider declares the set of methods for interacting with kubermatic service account
