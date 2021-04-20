@@ -22,9 +22,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"time"
 
 	"go.uber.org/zap"
+	"gopkg.in/yaml.v2"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
@@ -311,6 +313,19 @@ func (r *alertmanagerReconciler) ensureAlertmanagerConfiguration(ctx context.Con
 	if err != nil {
 		return fmt.Errorf("failed to get alertmanager config: %w", err)
 	}
+	alertmanagerURL := r.mlaGatewayURLGetter.mlaGatewayURL(cluster) + alertmanagerConfigEndpoint
+	currentConfig, err := r.getCurrentAlertmanagerConfig(alertmanagerURL)
+	if err != nil {
+		return err
+	}
+	expectedConfig := map[string]interface{}{}
+	if err := yaml.Unmarshal(config, &expectedConfig); err != nil {
+		return fmt.Errorf("unable to unmarshal expected config: %w", err)
+	}
+	if reflect.DeepEqual(currentConfig, expectedConfig) {
+		return nil
+	}
+
 	req, err := http.NewRequest(http.MethodPost,
 		r.mlaGatewayURLGetter.mlaGatewayURL(cluster)+alertmanagerConfigEndpoint,
 		bytes.NewBuffer(config))
@@ -384,4 +399,26 @@ func (r *alertmanagerReconciler) getAlertmanagerConfigForCluster(ctx context.Con
 		}
 	}
 	return secret.Data[resources.AlertmanagerConfigSecretKey], nil
+}
+
+func (r *alertmanagerReconciler) getCurrentAlertmanagerConfig(alertmanagerURL string) (map[string]interface{}, error) {
+	resp, err := r.httpClient.Get(alertmanagerURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	// https://cortexmetrics.io/docs/api/#get-alertmanager-configuration
+	if resp.StatusCode != http.StatusOK {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("status code: %d,error: %w", resp.StatusCode, err)
+		}
+		return nil, fmt.Errorf("status code: %d, response body: %s", resp.StatusCode, string(body))
+	}
+	config := map[string]interface{}{}
+	decoder := yaml.NewDecoder(resp.Body)
+	if err := decoder.Decode(&config); err != nil {
+		return nil, fmt.Errorf("unable to decode response body: %w", err)
+	}
+	return config, nil
 }
