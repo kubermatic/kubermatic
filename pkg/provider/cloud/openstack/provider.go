@@ -470,7 +470,7 @@ func getAuthClient(username, password, domain, tenant, tenantID, authURL string)
 	}
 	if client != nil {
 		// use the provider util's HTTP client to benefit, among other things, from its CA bundle
-		client.HTTPClient = httpcautil.HTTPClientConfig.New(httpcautil.HTTPClientConfig{})
+		client.HTTPClient = httpcautil.HTTPClientConfig{}.New()
 	}
 
 	return client, nil
