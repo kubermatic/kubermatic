@@ -38,19 +38,21 @@ func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.
 	if err != nil {
 		return nil, nil, common.KubernetesErrorToHTTPError(err)
 	}
-	if presetName := req.Credential; len(presetName) > 0 {
-		cred, err = getPresetCredentials(userInfo, presetName, presetsProvider)
-		if err != nil {
-			return nil, nil, fmt.Errorf("error getting OpenStack credentials: %v", err)
-		}
-	} else {
-		cred = &credentials{
+	// No preset is used
+	presetName := req.Credential
+	if presetName == "" {
+		return userInfo, &credentials{
 			username: req.Username,
 			password: req.Password,
 			domain:   req.Domain,
 			tenant:   req.Tenant,
 			tenantID: req.TenantID,
-		}
+		}, nil
+	}
+	// Preset is used
+	cred, err = getPresetCredentials(userInfo, presetName, presetsProvider)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error getting preset credentials for OpenStack: %v", err)
 	}
 	return userInfo, cred, nil
 }
