@@ -18,6 +18,7 @@ package validation
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
@@ -150,7 +151,8 @@ func ValidateCloudChange(newSpec, oldSpec kubermaticv1.CloudSpec) error {
 }
 
 // ValidateUpdateCluster validates if the cluster update is allowed
-func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter, clusterProvider *kubernetesprovider.ClusterProvider) error {
+func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermaticv1.Cluster, dc *kubermaticv1.Datacenter,
+	clusterProvider *kubernetesprovider.ClusterProvider, caBundle *x509.CertPool) error {
 	if err := ValidateCloudChange(newCluster.Spec.Cloud, oldCluster.Spec.Cloud); err != nil {
 		return err
 	}
@@ -203,7 +205,7 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, clusterProvider.GetSeedClusterAdminRuntimeClient())
-	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc)
+	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle)
 	if err != nil {
 		return err
 	}

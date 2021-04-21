@@ -17,6 +17,7 @@ limitations under the License.
 package v2
 
 import (
+	"crypto/x509"
 	"os"
 
 	httptransport "github.com/go-kit/kit/transport/http"
@@ -81,6 +82,7 @@ type Routing struct {
 	constraintProvider                    provider.ConstraintProvider
 	privilegedConstraintProvider          provider.PrivilegedConstraintProvider
 	versions                              kubermatic.Versions
+	caBundle                              *x509.CertPool
 }
 
 // NewV2Routing creates a new Routing.
@@ -128,6 +130,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		constraintProvider:                    routingParams.ConstraintProvider,
 		privilegedConstraintProvider:          routingParams.PrivilegedConstraintProvider,
 		versions:                              routingParams.Versions,
+		caBundle:                              routingParams.CABundle,
 	}
 }
 
