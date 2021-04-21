@@ -18,13 +18,10 @@ package certificates
 
 import (
 	"context"
-	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"net/http"
-	"time"
 
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -33,15 +30,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-)
-
-const defaultClientTimeout = 15 * time.Second
-
-var (
-	// GlobalCABundle is set globally once by the main() function
-	// and is used to overwrite the default set of CA certificates
-	// loaded from the host system/pod
-	GlobalCABundle *CABundle
 )
 
 // CABundleConfigMapCreator returns a ConfigMapCreatorGetter that
@@ -103,19 +91,6 @@ func NewCABundleFromBytes(bytes []byte) (*CABundle, error) {
 	}, nil
 }
 
-// SetGlobalCABundleFile reads a PEM-encoded file and replaces the current
-// global CABundle with a new one. The file must contain at least one
-// valid certificate.
-func SetGlobalCABundleFile(filename string) error {
-	bundle, err := NewCABundleFromFile(filename)
-	if err != nil {
-		return err
-	}
-
-	GlobalCABundle = bundle
-	return nil
-}
-
 // NewFakeCABundle returns a CA bundle that contains a single certificate
 // that cannot validate anything.
 func NewFakeCABundle() *CABundle {
@@ -149,7 +124,7 @@ func (b *CABundle) String() string {
 	return string(b.bytes)
 }
 
-func GetGlobalCABundle(ctx context.Context, client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration) (*corev1.ConfigMap, error) {
+func GlobalCABundle(ctx context.Context, client ctrlruntimeclient.Client, config *operatorv1alpha1.KubermaticConfiguration) (*corev1.ConfigMap, error) {
 	caBundle := &corev1.ConfigMap{}
 	key := types.NamespacedName{Name: config.Spec.CABundle.Name, Namespace: config.Namespace}
 
@@ -180,27 +155,4 @@ func ValidateCABundle(bundle string) error {
 	}
 
 	return nil
-}
-
-type HTTPClientConfig struct {
-	// Timeout used by the client
-	Timeout time.Duration
-}
-
-// New return a custom HTTP client that uses the global CA bundle
-func (c HTTPClientConfig) New() http.Client {
-	timeout := c.Timeout
-	// Enforce a global timeout
-	if timeout <= 0 {
-		timeout = defaultClientTimeout
-	}
-
-	return http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				RootCAs: GlobalCABundle.pool,
-			},
-		},
-		Timeout: timeout,
-	}
 }

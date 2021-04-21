@@ -128,11 +128,6 @@ func newServerRunOptions() (serverRunOptions, error) {
 		return s, fmt.Errorf("failed to read CA bundle file '%s': %v", caBundleFile, err)
 	}
 
-	err = certificates.SetGlobalCABundleFile(caBundleFile)
-	if err != nil {
-		return s, fmt.Errorf("failed setting global CA bundle file '%s': %v", caBundleFile, err)
-	}
-
 	s.caBundle = cabundle
 	s.versions = kubermatic.NewDefaultVersions()
 

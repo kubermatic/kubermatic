@@ -18,6 +18,7 @@ package provider
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 
@@ -31,21 +32,28 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func VsphereNetworksWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func VsphereNetworksWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter,
+	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(vSphereNoCredentialsReq)
-		return providercommon.VsphereNetworksWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
+		return providercommon.VsphereNetworksWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider,
+			privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID, caBundle)
 	}
 }
 
-func VsphereFoldersWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func VsphereFoldersWithClusterCredentialsEndpoint(projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter,
+	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(vSphereNoCredentialsReq)
-		return providercommon.VsphereFoldersWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID)
+		return providercommon.VsphereFoldersWithClusterCredentialsEndpoint(ctx, userInfoGetter, projectProvider,
+			privilegedProjectProvider, seedsGetter, req.ProjectID, req.ClusterID, caBundle)
 	}
 }
 
-func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetsProvider provider.PresetProvider,
+	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(vSphereDatastoresReq)
 		if !ok {
@@ -69,7 +77,7 @@ func VsphereDatastoreEndpoint(seedsGetter provider.SeedsGetter, presetsProvider 
 			}
 		}
 
-		return providercommon.GetVsphereDatastoreList(userInfo, seedsGetter, username, password, req.DatacenterName)
+		return providercommon.GetVsphereDatastoreList(userInfo, seedsGetter, username, password, req.DatacenterName, caBundle)
 	}
 }
 

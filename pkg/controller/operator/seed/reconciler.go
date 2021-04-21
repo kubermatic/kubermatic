@@ -224,7 +224,7 @@ func (r *Reconciler) reconcileResources(ctx context.Context, cfg *operatorv1alph
 		return fmt.Errorf("failed to apply default values to Seed:  %v", err)
 	}
 
-	caBundle, err := certificates.GetGlobalCABundle(ctx, r.masterClient, cfg)
+	caBundle, err := certificates.GlobalCABundle(ctx, r.masterClient, cfg)
 	if err != nil {
 		return fmt.Errorf("failed to get CA bundle ConfigMap: %v", err)
 	}
