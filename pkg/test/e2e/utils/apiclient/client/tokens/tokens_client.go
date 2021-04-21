@@ -25,61 +25,17 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
-	AddTokenToMainServiceAccount(params *AddTokenToMainServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenToMainServiceAccountCreated, error)
-
 	AddTokenToServiceAccount(params *AddTokenToServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenToServiceAccountCreated, error)
-
-	DeleteMainServiceAccountToken(params *DeleteMainServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMainServiceAccountTokenOK, error)
 
 	DeleteServiceAccountToken(params *DeleteServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteServiceAccountTokenOK, error)
 
-	ListMainServiceAccountTokens(params *ListMainServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListMainServiceAccountTokensOK, error)
-
 	ListServiceAccountTokens(params *ListServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListServiceAccountTokensOK, error)
 
-	PatchMainServiceAccountToken(params *PatchMainServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*PatchMainServiceAccountTokenOK, error)
-
 	PatchServiceAccountToken(params *PatchServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*PatchServiceAccountTokenOK, error)
-
-	UpdateMainServiceAccountToken(params *UpdateMainServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateMainServiceAccountTokenOK, error)
 
 	UpdateServiceAccountToken(params *UpdateServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateServiceAccountTokenOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
-}
-
-/*
-  AddTokenToMainServiceAccount Generates a token for the given main service account
-*/
-func (a *Client) AddTokenToMainServiceAccount(params *AddTokenToMainServiceAccountParams, authInfo runtime.ClientAuthInfoWriter) (*AddTokenToMainServiceAccountCreated, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewAddTokenToMainServiceAccountParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "addTokenToMainServiceAccount",
-		Method:             "POST",
-		PathPattern:        "/api/v2/serviceaccounts/{serviceaccount_id}/tokens",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &AddTokenToMainServiceAccountReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*AddTokenToMainServiceAccountCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*AddTokenToMainServiceAccountDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
@@ -113,40 +69,6 @@ func (a *Client) AddTokenToServiceAccount(params *AddTokenToServiceAccountParams
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*AddTokenToServiceAccountDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  DeleteMainServiceAccountToken Deletes the token
-*/
-func (a *Client) DeleteMainServiceAccountToken(params *DeleteMainServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteMainServiceAccountTokenOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewDeleteMainServiceAccountTokenParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "deleteMainServiceAccountToken",
-		Method:             "DELETE",
-		PathPattern:        "/api/v2/serviceaccounts/{serviceaccount_id}/tokens/{token_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &DeleteMainServiceAccountTokenReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*DeleteMainServiceAccountTokenOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*DeleteMainServiceAccountTokenDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -185,40 +107,6 @@ func (a *Client) DeleteServiceAccountToken(params *DeleteServiceAccountTokenPara
 }
 
 /*
-  ListMainServiceAccountTokens List tokens for the given main service account
-*/
-func (a *Client) ListMainServiceAccountTokens(params *ListMainServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListMainServiceAccountTokensOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewListMainServiceAccountTokensParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "listMainServiceAccountTokens",
-		Method:             "GET",
-		PathPattern:        "/api/v2/serviceaccounts/{serviceaccount_id}/tokens",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &ListMainServiceAccountTokensReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*ListMainServiceAccountTokensOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*ListMainServiceAccountTokensDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
   ListServiceAccountTokens List tokens for the given service account
 */
 func (a *Client) ListServiceAccountTokens(params *ListServiceAccountTokensParams, authInfo runtime.ClientAuthInfoWriter) (*ListServiceAccountTokensOK, error) {
@@ -253,40 +141,6 @@ func (a *Client) ListServiceAccountTokens(params *ListServiceAccountTokensParams
 }
 
 /*
-  PatchMainServiceAccountToken Patches the token name
-*/
-func (a *Client) PatchMainServiceAccountToken(params *PatchMainServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*PatchMainServiceAccountTokenOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewPatchMainServiceAccountTokenParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "patchMainServiceAccountToken",
-		Method:             "PATCH",
-		PathPattern:        "/api/v2/serviceaccounts/{serviceaccount_id}/tokens/{token_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &PatchMainServiceAccountTokenReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*PatchMainServiceAccountTokenOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*PatchMainServiceAccountTokenDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
   PatchServiceAccountToken Patches the token name
 */
 func (a *Client) PatchServiceAccountToken(params *PatchServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*PatchServiceAccountTokenOK, error) {
@@ -317,40 +171,6 @@ func (a *Client) PatchServiceAccountToken(params *PatchServiceAccountTokenParams
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PatchServiceAccountTokenDefault)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  UpdateMainServiceAccountToken Updates and regenerates the token
-*/
-func (a *Client) UpdateMainServiceAccountToken(params *UpdateMainServiceAccountTokenParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateMainServiceAccountTokenOK, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewUpdateMainServiceAccountTokenParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "updateMainServiceAccountToken",
-		Method:             "PUT",
-		PathPattern:        "/api/v2/serviceaccounts/{serviceaccount_id}/tokens/{token_id}",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &UpdateMainServiceAccountTokenReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*UpdateMainServiceAccountTokenOK)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*UpdateMainServiceAccountTokenDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
