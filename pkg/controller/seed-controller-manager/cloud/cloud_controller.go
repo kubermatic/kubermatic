@@ -93,7 +93,7 @@ func Add(
 		seedGetter: seedGetter,
 		workerName: workerName,
 		versions:   versions,
-		caBundle: caBundle,
+		caBundle:   caBundle,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
