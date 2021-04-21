@@ -29,6 +29,9 @@ import (
 
 type Config struct {
 	MLAGatewayURL string
+	TLSCertFile   string
+	TLSKeyFile    string
+	TLSCACertFile string
 }
 
 func SecretCreator(config Config) reconciling.NamedSecretCreatorGetter {
@@ -60,7 +63,10 @@ server:
 
 client:
   url: {{ .MLAGatewayURL }}
-  
+  tls_config:
+    cert_file: {{ .TLSCertFile }}
+    key_file: {{ .TLSKeyFile }}
+    ca_file: {{ .TLSCACertFile }}
 
 positions:
   filename: /run/promtail/positions.yaml

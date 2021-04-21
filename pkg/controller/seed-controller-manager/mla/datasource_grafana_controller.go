@@ -277,7 +277,7 @@ func (r *datasourceGrafanaReconciler) ensureConfigMaps(ctx context.Context, c *k
 func (r *datasourceGrafanaReconciler) ensureSecrets(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := []reconciling.NamedSecretCreatorGetter{
 		GatewayCACreator(),
-		GatewayCertificateCreator(data),
+		GatewayCertificateCreator(data, c),
 	}
 	if err := reconciling.ReconcileSecrets(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the Secrets exist: %v", err)

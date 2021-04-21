@@ -42,7 +42,7 @@ func ResourcesOnDeletion() []ctrlruntimeclient.Object {
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      resources.PrometheusCertificatesSecretName,
+				Name:      resources.UserClusterPrometheusCertificatesSecretName,
 				Namespace: resources.MLANamespace,
 			},
 		},

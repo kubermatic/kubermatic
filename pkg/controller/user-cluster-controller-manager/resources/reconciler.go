@@ -576,6 +576,9 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		creators = []reconciling.NamedConfigMapCreatorGetter{
 			userclusterprometheus.ConfigMapCreator(userclusterprometheus.Config{
 				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/api/v1/push",
+				TLSCertFile:   fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientCertSecretKey),
+				TLSKeyFile:    fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientKeySecretKey),
+				TLSCACertFile: fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.MLAGatewayCACertKey),
 			}),
 		}
 		if err := reconciling.ReconcileConfigMaps(ctx, creators, resources.MLANamespace, r.Client); err != nil {
@@ -631,6 +634,9 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		creators = []reconciling.NamedSecretCreatorGetter{
 			promtail.SecretCreator(promtail.Config{
 				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/loki/api/v1/push",
+				TLSCertFile:   fmt.Sprintf("%s/%s", resources.PromtailClientCertMountPath, resources.PromtailClientCertSecretKey),
+				TLSKeyFile:    fmt.Sprintf("%s/%s", resources.PromtailClientCertMountPath, resources.PromtailClientKeySecretKey),
+				TLSCACertFile: fmt.Sprintf("%s/%s", resources.PromtailClientCertMountPath, resources.MLAGatewayCACertKey),
 			}),
 			promtail.ClientCertificateCreator(data.mlaGatewayCACert),
 		}

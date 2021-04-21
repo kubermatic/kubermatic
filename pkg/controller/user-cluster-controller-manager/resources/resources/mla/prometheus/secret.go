@@ -25,13 +25,13 @@ import (
 
 func ClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
-		return resources.PrometheusCertificatesSecretName,
+		return resources.UserClusterPrometheusCertificatesSecretName,
 			certificates.GetECDSAClientCertificateCreator(
-				resources.PrometheusCertificatesSecretName,
-				resources.PrometheusCertificateCommonName,
+				resources.UserClusterPrometheusCertificatesSecretName,
+				resources.UserClusterPrometheusCertificateCommonName,
 				[]string{},
-				resources.PrometheusClientCertSecretKey,
-				resources.PrometheusClientKeySecretKey,
+				resources.UserClusterPrometheusClientCertSecretKey,
+				resources.UserClusterPrometheusClientKeySecretKey,
 				func() (*resources.ECDSAKeyPair, error) { return ca, nil })
 	}
 }

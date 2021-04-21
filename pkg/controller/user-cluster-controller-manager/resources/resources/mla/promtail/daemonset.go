@@ -36,6 +36,7 @@ const (
 
 	configVolumeName         = "config"
 	configVolumeMountPath    = "/etc/promtail"
+	certificatesVolumeName   = "certificates"
 	runVolumeName            = "run"
 	runVolumeMountPath       = "/run/promtail"
 	containerVolumeName      = "containers"
@@ -82,6 +83,10 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 						{
 							Name:      configVolumeName,
 							MountPath: configVolumeMountPath,
+						},
+						{
+							Name:      certificatesVolumeName,
+							MountPath: resources.PromtailClientCertMountPath,
 						},
 						{
 							Name:      runVolumeName,
@@ -154,6 +159,15 @@ func DaemonSetCreator() reconciling.NamedDaemonSetCreatorGetter {
 					VolumeSource: corev1.VolumeSource{
 						Secret: &corev1.SecretVolumeSource{
 							SecretName: resources.PromtailSecretName,
+						},
+					},
+				},
+				{
+					Name: certificatesVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  resources.PromtailCertificatesSecretName,
+							DefaultMode: pointer.Int32Ptr(0400),
 						},
 					},
 				},

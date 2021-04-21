@@ -591,7 +591,7 @@ const (
 	// MLAGatewayExternalServiceName is the name for the MLA Gateway external service
 	MLAGatewayExternalServiceName = "mla-gateway-ext"
 	// MLAGatewaySNIPrefix is the URL prefix which identifies the MLA Gateway endpoint in the external URL if SNI expose strategy is used
-	MLAGatewaySNIPrefix = "mla."
+	MLAGatewaySNIPrefix = "mla-gateway."
 
 	// MLAGatewayCASecretName is the name for the secret containing the MLA Gateway CA certificates
 	MLAGatewayCASecretName = "mla-gateway-ca"
@@ -603,17 +603,19 @@ const (
 	MLAGatewayKeySecretKey           = "gateway.key"
 	MLAGatewayCertSecretKey          = "gateway.crt"
 
-	// PrometheusCertificatesSecretName is the name for the secret containing the promtail client certificates
-	PrometheusCertificatesSecretName = "prometheus-certificates"
-	PrometheusCertificateCommonName  = "prometheus"
-	PrometheusClientKeySecretKey     = "client.key"
-	PrometheusClientCertSecretKey    = "client.crt"
+	// UserClusterPrometheusCertificatesSecretName is the name for the secret containing the Prometheus client certificates
+	UserClusterPrometheusCertificatesSecretName = "prometheus-certificates"
+	UserClusterPrometheusCertificateCommonName  = "prometheus"
+	UserClusterPrometheusClientKeySecretKey     = "client.key"
+	UserClusterPrometheusClientCertSecretKey    = "client.crt"
+	UserClusterPrometheusClientCertMountPath    = "/etc/ssl/mla"
 
 	// PromtailCertificatesSecretName is the name for the secret containing the promtail client certificates
 	PromtailCertificatesSecretName = "promtail-certificates"
 	PromtailCertificateCommonName  = "promtail"
 	PromtailClientKeySecretKey     = "client.key"
 	PromtailClientCertSecretKey    = "client.crt"
+	PromtailClientCertMountPath    = "/etc/ssl/mla"
 )
 
 // ECDSAKeyPair is a ECDSA x509 certificate and private key
