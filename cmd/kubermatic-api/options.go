@@ -28,7 +28,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/serviceaccount"
-	"k8c.io/kubermatic/v2/pkg/util/httpcautil"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 	"k8c.io/kubermatic/v2/pkg/watcher"
 
@@ -129,9 +128,9 @@ func newServerRunOptions() (serverRunOptions, error) {
 		return s, fmt.Errorf("failed to read CA bundle file '%s': %v", caBundleFile, err)
 	}
 
-	err = httpcautil.SetCABundleFile(caBundleFile)
+	err = certificates.SetGlobalCABundleFile(caBundleFile)
 	if err != nil {
-		return s, fmt.Errorf("failed setting provider CA bundle file '%s': %v", caBundleFile, err)
+		return s, fmt.Errorf("failed setting global CA bundle file '%s': %v", caBundleFile, err)
 	}
 
 	s.caBundle = cabundle

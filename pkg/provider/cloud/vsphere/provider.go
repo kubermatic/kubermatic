@@ -33,7 +33,7 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-	"k8c.io/kubermatic/v2/pkg/util/httpcautil"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 
 	kruntime "k8s.io/apimachinery/pkg/util/runtime"
 )
@@ -88,9 +88,11 @@ func newSession(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, use
 		return nil, err
 	}
 
-	// inject our global set of CA certificates
-	client.DefaultTransport().TLSClientConfig = &tls.Config{
-		RootCAs: httpcautil.CABundle,
+	// inject our global set of CA certificates if present
+	if certificates.GlobalCABundle != nil {
+		client.DefaultTransport().TLSClientConfig = &tls.Config{
+			RootCAs: certificates.GlobalCABundle.CertPool(),
+		}
 	}
 
 	user := url.UserPassword(username, password)
