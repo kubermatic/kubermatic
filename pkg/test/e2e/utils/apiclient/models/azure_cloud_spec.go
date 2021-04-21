@@ -46,6 +46,9 @@ type AzureCloudSpec struct {
 	// v net name
 	VNetName string `json:"vnet,omitempty"`
 
+	// v net resource group
+	VNetResourceGroup string `json:"vnetResourceGroup,omitempty"`
+
 	// credentials reference
 	CredentialsReference GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 }

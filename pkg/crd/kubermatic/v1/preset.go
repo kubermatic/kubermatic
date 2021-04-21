@@ -249,11 +249,12 @@ type Azure struct {
 	ClientID       string `json:"clientId"`
 	ClientSecret   string `json:"clientSecret"`
 
-	ResourceGroup  string `json:"resourceGroup,omitempty"`
-	VNetName       string `json:"vnet,omitempty"`
-	SubnetName     string `json:"subnet,omitempty"`
-	RouteTableName string `json:"routeTable,omitempty"`
-	SecurityGroup  string `json:"securityGroup,omitempty"`
+	ResourceGroup     string `json:"resourceGroup,omitempty"`
+	VNetResourceGroup string `json:"vnetResourceGroup,omitempty"`
+	VNetName          string `json:"vnet,omitempty"`
+	SubnetName        string `json:"subnet,omitempty"`
+	RouteTableName    string `json:"routeTable,omitempty"`
+	SecurityGroup     string `json:"securityGroup,omitempty"`
 }
 
 func (s Azure) IsValid() bool {
