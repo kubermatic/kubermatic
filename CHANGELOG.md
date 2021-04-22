@@ -40,7 +40,6 @@
 - Service Accounts V2 [#6679](https://github.com/kubermatic/kubermatic/issues/6679) 
 - Add Kubernetes 1.19.8 [#6682](https://github.com/kubermatic/kubermatic/issues/6682) 
 - Service Accounts V2 [#6687](https://github.com/kubermatic/kubermatic/issues/6687) 
-- Upate machine-controller to v1.27.1 [#6695](https://github.com/kubermatic/kubermatic/issues/6695) 
 - Service Accounts V2 [#6700](https://github.com/kubermatic/kubermatic/issues/6700) 
 - Upgraded Gatekeeper from 3.1.0-beta-9 to 3.1.3. NOTICE: this change also moves the Gatekeeper deployment from the Seed to the User clusters. This means that the user clusters will need some additional resources to run the Gatekeeper Pods. Admins please refer to the upgrade guidelines in the documentation. [#6706](https://github.com/kubermatic/kubermatic/issues/6706) 
 - Changed default gatekeeper webhook timeout to 3 sec [#6709](https://github.com/kubermatic/kubermatic/issues/6709) 
@@ -59,13 +58,13 @@
 - Installer does not listen on port 8080 anymore [#6788](https://github.com/kubermatic/kubermatic/issues/6788) 
 - Service Accounts V2 [#6789](https://github.com/kubermatic/kubermatic/issues/6789) 
 - Node-local-dns is now using UDP for external queries [#6796](https://github.com/kubermatic/kubermatic/issues/6796) 
-- Fixes cases where GET and LIST endpoints for Kubermatic Constraints failed or didnt return all results because there were no related synced Gatekeeper Constraints on the user cluster by just taking the Status from the Gatekeeper Constraints and setting the Synced status to false if the Gatekeeper Constraint is missing. [#6800](https://github.com/kubermatic/kubermatic/issues/6800) 
+- Fixes cases where GET and LIST endpoints for Kubermatic Constraints failed or didn't return all results because there were no related synced Gatekeeper Constraints on the user cluster by just taking the Status from the Gatekeeper Constraints and setting the Synced status to false if the Gatekeeper Constraint is missing. [#6800](https://github.com/kubermatic/kubermatic/issues/6800) 
 - Service Accounts V2 [#6836](https://github.com/kubermatic/kubermatic/issues/6836) 
 - Added validation for Kubermatic Constraint Template API. [#6841](https://github.com/kubermatic/kubermatic/issues/6841) 
 - Fetch the provisioning cloud-init over the api-server  [#6843](https://github.com/kubermatic/kubermatic/issues/6843) 
 - Expose MLA options in cluster CRD and API Object [#6850](https://github.com/kubermatic/kubermatic/issues/6850) 
 - Adds `FELIX_IGNORELOOSERPF=true` to `calico-node` container env to allow running on nodes with `net.ipv4.conf.*.rp_filter = 2` set. [#6865](https://github.com/kubermatic/kubermatic/issues/6865) 
-- Hetzner AMD Cloud Server (CPX) now selectable when creating a user cluster [#6872](https://github.com/kubermatic/kubermatic/issues/6872) ([ewallat](https://github.com/ewallat))
+- Hetzner AMD Cloud Server (CPX) now selectable when creating a user cluster [#6872](https://github.com/kubermatic/kubermatic/issues/6872)
 - When creating Hetzner Clusters, specifying the network is now mandatory. [#6878](https://github.com/kubermatic/kubermatic/issues/6878) 
 - When creating Hetzner Clusters, specifying the network is now mandatory. [#6878](https://github.com/kubermatic/kubermatic/issues/6878) 
 - Drop Kubernetes 1.17 support and update default versions. [#6885](https://github.com/kubermatic/kubermatic/issues/6885) 
@@ -73,7 +72,7 @@
 
 ### Bugfixes
 
-- Fixed a bug in OPA-integration where deleting a Constraint Template in the seed cluster, when the user cluster Constraint Template is already deleted caused the deletion to get stuck.Fixed a bug in OPA-integration where creating a cluster with OPA-integration enabled didnt trigger the Constraint Template reconcile loop. [#6580](https://github.com/kubermatic/kubermatic/issues/6580) 
+- Fixed a bug in OPA-integration where deleting a Constraint Template in the seed cluster, when the user cluster Constraint Template is already deleted caused the deletion to get stuck.Fixed a bug in OPA-integration where creating a cluster with OPA-integration enabled didn't trigger the Constraint Template reconcile loop. [#6580](https://github.com/kubermatic/kubermatic/issues/6580) 
 - Fixed a bug with kubermatic constraints delete getting stuck when corresponding user cluster constraint is missing [#6598](https://github.com/kubermatic/kubermatic/issues/6598) 
 - add GPU support for Azure provider [#6605](https://github.com/kubermatic/kubermatic/issues/6605) 
 - Fixed bug with changing the theme based on the color scheme if enforced_theme was set. [#3163](https://github.com/kubermatic/dashboard/issues/3163) 
@@ -98,6 +97,7 @@
 - OpenVPN image to version v2.5.0-r1. [#6697](https://github.com/kubermatic/kubermatic/issues/6697) 
 - CSI drivers [#6594](https://github.com/kubermatic/kubermatic/issues/6594) 
 - Hetzner CSI, move to `csi` addon [#6615](https://github.com/kubermatic/kubermatic/issues/6615) 
+- machine-controller to v1.27.1 [#6695](https://github.com/kubermatic/kubermatic/issues/6695) 
 
 ### Dashboard
 
