@@ -18,6 +18,7 @@ package cloud
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"reflect"
 	"time"
@@ -73,6 +74,7 @@ type Reconciler struct {
 	seedGetter provider.SeedGetter
 	workerName string
 	versions   kubermatic.Versions
+	caBundle   *x509.CertPool
 }
 
 func Add(
@@ -82,6 +84,7 @@ func Add(
 	seedGetter provider.SeedGetter,
 	workerName string,
 	versions kubermatic.Versions,
+	caBundle *x509.CertPool,
 ) error {
 	reconciler := &Reconciler{
 		Client:     mgr.GetClient(),
@@ -90,6 +93,7 @@ func Add(
 		seedGetter: seedGetter,
 		workerName: workerName,
 		versions:   versions,
+		caBundle:   caBundle,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -143,7 +147,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if !found {
 		return nil, fmt.Errorf("couldn't find datacenter %q for cluster %q", cluster.Spec.Cloud.DatacenterName, cluster.Name)
 	}
-	prov, err := cloud.Provider(datacenter.DeepCopy(), r.getGlobalSecretKeySelectorValue)
+	prov, err := cloud.Provider(datacenter.DeepCopy(), r.getGlobalSecretKeySelectorValue, r.caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cloud provider: %v", err)
 	}
