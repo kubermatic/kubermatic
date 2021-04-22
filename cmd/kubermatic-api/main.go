@@ -423,6 +423,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ConstraintProvider:                    prov.constraintProvider,
 		PrivilegedConstraintProvider:          prov.privilegedConstraintProvider,
 		Versions:                              options.versions,
+		CABundle:                              options.caBundle.CertPool(),
 	}
 
 	r := handler.NewRouting(routingParams)

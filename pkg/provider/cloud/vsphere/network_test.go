@@ -22,6 +22,8 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
+
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 )
 
 func TestGetPossibleVMNetworks(t *testing.T) {
@@ -50,7 +52,7 @@ func TestGetPossibleVMNetworks(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			networkInfos, err := GetNetworks(getTestDC(), vSphereUsername, vSpherePassword)
+			networkInfos, err := GetNetworks(getTestDC(), vSphereUsername, vSpherePassword, certificates.NewFakeCABundle().CertPool())
 			if err != nil {
 				t.Fatal(err)
 			}

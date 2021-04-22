@@ -17,6 +17,7 @@ limitations under the License.
 package cluster
 
 import (
+	"crypto/x509"
 	"errors"
 	"fmt"
 
@@ -29,7 +30,7 @@ import (
 )
 
 // Spec builds ClusterSpec kubermatic Custom Resource from API Cluster
-func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (*kubermaticv1.ClusterSpec, error) {
+func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*kubermaticv1.ClusterSpec, error) {
 	var userSSHKeysAgentEnabled = true
 
 	if apiCluster.Spec.EnableUserSSHKeyAgent != nil {
@@ -61,7 +62,7 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter
 	if providerName == "" {
 		return nil, errors.New("cluster has no cloudprovider")
 	}
-	cloudProvider, err := cloud.Provider(dc, secretKeyGetter)
+	cloudProvider, err := cloud.Provider(dc, secretKeyGetter, caBundle)
 	if err != nil {
 		return nil, err
 	}
