@@ -2,6 +2,8 @@
 
 versions:
 - type: kubernetes
+  version: 1.16.13
+- type: kubernetes
   version: 1.17.9
 - type: kubernetes
   version: 1.17.11
