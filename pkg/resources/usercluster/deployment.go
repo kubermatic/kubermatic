@@ -60,6 +60,7 @@ type userclusterControllerData interface {
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
 	GetOpenVPNServerPort() (int32, error)
+	GetMLAGatewayPort() (int32, error)
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
 	GetKubernetesCloudProviderName() string
@@ -147,6 +148,19 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 
 			if data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds != nil {
 				args = append(args, "-opa-webhook-timeout", fmt.Sprint(*data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds))
+			}
+
+			if data.Cluster().Spec.MLA != nil && (data.Cluster().Spec.MLA.MonitoringEnabled || data.Cluster().Spec.MLA.LoggingEnabled) {
+				mlaGatewayPort, err := data.GetMLAGatewayPort()
+				if err != nil {
+					return nil, err
+				}
+				mlaEndpoint := fmt.Sprintf("%s:%d", data.Cluster().Address.ExternalName, mlaGatewayPort)
+				if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+					mlaEndpoint = resources.MLAGatewaySNIPrefix + mlaEndpoint
+				}
+				// FIXME: http will be replaced with https in a follow-up change
+				args = append(args, "-mla-gateway-url", "http://"+mlaEndpoint)
 			}
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())

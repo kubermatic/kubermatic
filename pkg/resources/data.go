@@ -439,7 +439,7 @@ func (d *TemplateData) GetPodTemplateLabels(appName string, volumes []corev1.Vol
 	return GetPodTemplateLabels(d.ctx, d.client, appName, d.cluster.Name, d.cluster.Status.NamespaceName, volumes, additionalLabels)
 }
 
-// GetApiserverExternalNodePort returns the nodeport of the external apiserver service
+// GetOpenVPNServerPort returns the nodeport of the external apiserver service
 func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 	// When using tunneling expose strategy the port is fixed
 	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
@@ -449,6 +449,21 @@ func (d *TemplateData) GetOpenVPNServerPort() (int32, error) {
 	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: OpenVPNServerServiceName}
 	if err := d.client.Get(d.ctx, key, service); err != nil {
 		return 0, fmt.Errorf("failed to get NodePort for openvpn server service: %v", err)
+	}
+
+	return service.Spec.Ports[0].NodePort, nil
+}
+
+// GetMLAGatewayPort returns the NodePort of the external MLA Gateway service
+func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
+	// When using tunneling expose strategy the port is fixed and equal to apiserver port
+	if d.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+		return d.Cluster().Address.Port, nil
+	}
+	service := &corev1.Service{}
+	key := types.NamespacedName{Namespace: d.cluster.Status.NamespaceName, Name: MLAGatewayExternalServiceName}
+	if err := d.client.Get(d.ctx, key, service); err != nil {
+		return 0, fmt.Errorf("failed to get NodePort for MLA Gateway service: %v", err)
 	}
 
 	return service.Spec.Ports[0].NodePort, nil

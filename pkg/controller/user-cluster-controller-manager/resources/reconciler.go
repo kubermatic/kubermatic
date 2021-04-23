@@ -570,7 +570,7 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 	if r.userClusterMLA.Monitoring {
 		creators = []reconciling.NamedConfigMapCreatorGetter{
 			userclusterprometheus.ConfigMapCreator(userclusterprometheus.Config{
-				MLAGatewayURL: fmt.Sprintf("http://%s:%d/api/v1/push", r.clusterURL.Hostname(), r.userClusterMLA.MLAGatewayPort),
+				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/api/v1/push",
 			}),
 		}
 		if err := reconciling.ReconcileConfigMaps(ctx, creators, resources.MLANamespace, r.Client); err != nil {
@@ -617,7 +617,7 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 	if r.userClusterMLA.Logging {
 		creators = []reconciling.NamedSecretCreatorGetter{
 			promtail.SecretCreator(promtail.Config{
-				MLAGatewayURL: fmt.Sprintf("http://%s:%d/loki/api/v1/push", r.clusterURL.Hostname(), r.userClusterMLA.MLAGatewayPort),
+				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/loki/api/v1/push",
 			}),
 		}
 		if err := reconciling.ReconcileSecrets(ctx, creators, resources.MLANamespace, r.Client); err != nil {
