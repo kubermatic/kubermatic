@@ -62,6 +62,11 @@ type ListAWSSizesParams struct {
 
 	/*Region*/
 	Region *string
+	/*Architecture
+	  architecture query parameter. Supports: arm64 and x64 types.
+
+	*/
+	Architecture *string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -112,6 +117,17 @@ func (o *ListAWSSizesParams) SetRegion(region *string) {
 	o.Region = region
 }
 
+// WithArchitecture adds the architecture to the list a w s sizes params
+func (o *ListAWSSizesParams) WithArchitecture(architecture *string) *ListAWSSizesParams {
+	o.SetArchitecture(architecture)
+	return o
+}
+
+// SetArchitecture adds the architecture to the list a w s sizes params
+func (o *ListAWSSizesParams) SetArchitecture(architecture *string) {
+	o.Architecture = architecture
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *ListAWSSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -125,6 +141,22 @@ func (o *ListAWSSizesParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		// header param Region
 		if err := r.SetHeaderParam("Region", *o.Region); err != nil {
 			return err
+		}
+
+	}
+
+	if o.Architecture != nil {
+
+		// query param architecture
+		var qrArchitecture string
+		if o.Architecture != nil {
+			qrArchitecture = *o.Architecture
+		}
+		qArchitecture := qrArchitecture
+		if qArchitecture != "" {
+			if err := r.SetQueryParam("architecture", qArchitecture); err != nil {
+				return err
+			}
 		}
 
 	}
