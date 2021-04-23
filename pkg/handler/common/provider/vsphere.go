@@ -18,6 +18,7 @@ package provider
 
 import (
 	"context"
+	"crypto/x509"
 	"fmt"
 	"net/http"
 
@@ -31,7 +32,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
-func VsphereNetworksWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
+func VsphereNetworksWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	seedsGetter provider.SeedsGetter, projectID, clusterID string, caBundle *x509.CertPool) (interface{}, error) {
 
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
@@ -64,17 +67,17 @@ func VsphereNetworksWithClusterCredentialsEndpoint(ctx context.Context, userInfo
 	if err != nil {
 		return nil, err
 	}
-	return GetVsphereNetworks(userInfo, seedsGetter, username, password, datacenterName)
+	return GetVsphereNetworks(userInfo, seedsGetter, username, password, datacenterName, caBundle)
 
 }
 
-func GetVsphereNetworks(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password, datacenterName string) ([]apiv1.VSphereNetwork, error) {
+func GetVsphereNetworks(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password, datacenterName string, caBundle *x509.CertPool) ([]apiv1.VSphereNetwork, error) {
 	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
 
-	networks, err := vsphere.GetNetworks(datacenter.Spec.VSphere, username, password)
+	networks, err := vsphere.GetNetworks(datacenter.Spec.VSphere, username, password, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -92,7 +95,9 @@ func GetVsphereNetworks(userInfo *provider.UserInfo, seedsGetter provider.SeedsG
 	return apiNetworks, nil
 }
 
-func VsphereFoldersWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID, clusterID string) (interface{}, error) {
+func VsphereFoldersWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter,
+	projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	seedsGetter provider.SeedsGetter, projectID, clusterID string, caBundle *x509.CertPool) (interface{}, error) {
 
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
@@ -124,17 +129,17 @@ func VsphereFoldersWithClusterCredentialsEndpoint(ctx context.Context, userInfoG
 	if err != nil {
 		return nil, err
 	}
-	return GetVsphereFolders(userInfo, seedsGetter, username, password, datacenterName)
+	return GetVsphereFolders(userInfo, seedsGetter, username, password, datacenterName, caBundle)
 
 }
 
-func GetVsphereFolders(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password, datacenterName string) ([]apiv1.VSphereFolder, error) {
+func GetVsphereFolders(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password, datacenterName string, caBundle *x509.CertPool) ([]apiv1.VSphereFolder, error) {
 	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
 
-	folders, err := vsphere.GetVMFolders(datacenter.Spec.VSphere, username, password)
+	folders, err := vsphere.GetVMFolders(datacenter.Spec.VSphere, username, password, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get folders: %v", err)
 	}
@@ -147,13 +152,14 @@ func GetVsphereFolders(userInfo *provider.UserInfo, seedsGetter provider.SeedsGe
 	return apiFolders, nil
 }
 
-func GetVsphereDatastoreList(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password, datacenterName string) (*apiv1.VSphereDatastoreList, error) {
+func GetVsphereDatastoreList(userInfo *provider.UserInfo, seedsGetter provider.SeedsGetter, username, password,
+	datacenterName string, caBundle *x509.CertPool) (*apiv1.VSphereDatastoreList, error) {
 	_, datacenter, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, datacenterName)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find Datacenter %q: %v", datacenterName, err)
 	}
 
-	datastores, err := vsphere.GetDatastoreList(datacenter.Spec.VSphere, username, password)
+	datastores, err := vsphere.GetDatastoreList(datacenter.Spec.VSphere, username, password, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get datastore list: %v", err)
 	}

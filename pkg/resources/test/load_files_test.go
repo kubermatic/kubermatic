@@ -608,6 +608,20 @@ func TestLoadFiles(t *testing.T) {
 									ClusterIP: "192.0.2.14",
 								},
 							},
+							&corev1.Service{
+								ObjectMeta: metav1.ObjectMeta{
+									Name:      resources.MLAGatewayExternalServiceName,
+									Namespace: cluster.Status.NamespaceName,
+								},
+								Spec: corev1.ServiceSpec{
+									Ports: []corev1.ServicePort{
+										{
+											NodePort: 30005,
+										},
+									},
+									ClusterIP: "192.0.2.15",
+								},
+							},
 						).
 						Build()
 

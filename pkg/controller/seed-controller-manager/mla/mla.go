@@ -38,9 +38,11 @@ import (
 )
 
 const (
-	ControllerName = "kubermatic_mla_controller"
-	mlaFinalizer   = "kubermatic.io/mla"
-	defaultOrgID   = 1
+	ControllerName     = "kubermatic_mla_controller"
+	mlaFinalizer       = "kubermatic.io/mla"
+	defaultOrgID       = 1
+	grafanaUserKey     = "admin-user"
+	grafanaPasswordKey = "admin-password"
 )
 
 var (
@@ -84,12 +86,16 @@ func Add(
 	if err := client.Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
 		return fmt.Errorf("failed to get Grafana Secret: %v", err)
 	}
-	auth, ok := secret.Data["auth"]
+	adminName, ok := secret.Data[grafanaUserKey]
 	if !ok {
-		return fmt.Errorf("Grafana Secret %q does not contain auth", grafanaSecret)
+		return fmt.Errorf("Grafana Secret %q does not contain %s key", grafanaSecret, grafanaUserKey)
+	}
+	adminPass, ok := secret.Data[grafanaPasswordKey]
+	if !ok {
+		return fmt.Errorf("Grafana Secret %q does not contain %s key", grafanaSecret, grafanaPasswordKey)
 	}
 	httpClient := &http.Client{Timeout: 15 * time.Second}
-	grafanaClient := grafanasdk.NewClient(grafanaURL, string(auth), httpClient)
+	grafanaClient := grafanasdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", adminName, adminPass), httpClient)
 	if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient); err != nil {
 		return fmt.Errorf("failed to create mla project controller: %v", err)
 	}

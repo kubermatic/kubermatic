@@ -34,6 +34,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/gcp"
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func GCPSizeWithClusterCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, projectID, clusterID, zone string) (interface{}, error) {
@@ -169,7 +171,8 @@ func GCPDiskTypesWithClusterCredentialsEndpoint(ctx context.Context, userInfoGet
 
 func ListGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDiskTypeList, error) {
 	diskTypes := apiv1.GCPDiskTypeList{}
-
+	// TODO: There are some issues at the moment with local-ssd and pd-balanced, that's why it is disabled at the moment.
+	excludedDiskTypes := sets.NewString("local-ssd", "pd-balanced")
 	computeService, project, err := gcp.ConnectToComputeService(sa)
 	if err != nil {
 		return diskTypes, err
@@ -178,8 +181,7 @@ func ListGCPDiskTypes(ctx context.Context, sa string, zone string) (apiv1.GCPDis
 	req := computeService.DiskTypes.List(project, zone)
 	err = req.Pages(ctx, func(page *compute.DiskTypeList) error {
 		for _, diskType := range page.Items {
-			if diskType.Name != "local-ssd" {
-				// TODO: There are some issues at the moment with local-ssd, that's why it is disabled at the moment.
+			if !excludedDiskTypes.Has(diskType.Name) {
 				dt := apiv1.GCPDiskType{
 					Name:        diskType.Name,
 					Description: diskType.Description,

@@ -36,7 +36,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/preset"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
-	"k8c.io/kubermatic/v2/pkg/handler/v2/serviceaccount"
 )
 
 // RegisterV2 declares all router paths for v2
@@ -475,36 +474,6 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/providers/{provider_name}/presets").
 		Handler(r.updatePreset())
 
-	// Define a set of endpoints for service accounts management
-	mux.Methods(http.MethodPost).
-		Path("/serviceaccounts").
-		Handler(r.createMainServiceAccount())
-	mux.Methods(http.MethodGet).
-		Path("/serviceaccounts").
-		Handler(r.listMainServiceAccounts())
-	mux.Methods(http.MethodPut).
-		Path("/serviceaccounts/{serviceaccount_id}").
-		Handler(r.updateMainServiceAccount())
-	mux.Methods(http.MethodDelete).
-		Path("/serviceaccounts/{serviceaccount_id}").
-		Handler(r.deleteMainServiceAccount())
-
-	// Defines set of HTTP endpoints for tokens of the given service account
-	mux.Methods(http.MethodPost).
-		Path("/serviceaccounts/{serviceaccount_id}/tokens").
-		Handler(r.addTokenToMainServiceAccount())
-	mux.Methods(http.MethodGet).
-		Path("/serviceaccounts/{serviceaccount_id}/tokens").
-		Handler(r.listMainServiceAccountTokens())
-	mux.Methods(http.MethodPut).
-		Path("/serviceaccounts/{serviceaccount_id}/tokens/{token_id}").
-		Handler(r.updateMainServiceAccountToken())
-	mux.Methods(http.MethodPatch).
-		Path("/serviceaccounts/{serviceaccount_id}/tokens/{token_id}").
-		Handler(r.patchMainServiceAccountToken())
-	mux.Methods(http.MethodDelete).
-		Path("/serviceaccounts/{serviceaccount_id}/tokens/{token_id}").
-		Handler(r.deleteMainServiceAccountToken())
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -529,7 +498,8 @@ func (r Routing) createCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.presetsProvider, r.exposeStrategy, r.userInfoGetter, r.settingsProvider, r.updateManager)),
+		)(cluster.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter,
+			r.presetsProvider, r.exposeStrategy, r.userInfoGetter, r.settingsProvider, r.updateManager, r.caBundle)),
 		cluster.DecodeCreateReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
@@ -632,7 +602,7 @@ func (r Routing) patchCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.PatchEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(cluster.PatchEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.caBundle)),
 		cluster.DecodePatchReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2560,7 +2530,8 @@ func (r Routing) listOpenstackSizesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.OpenstackSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.settingsProvider)),
+		)(provider.OpenstackSizeWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider,
+			r.seedsGetter, r.userInfoGetter, r.settingsProvider, r.caBundle)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2584,7 +2555,8 @@ func (r Routing) listOpenstackTenantsNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.OpenstackTenantWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.OpenstackTenantWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter,
+			r.userInfoGetter, r.caBundle)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2608,7 +2580,8 @@ func (r Routing) listOpenstackNetworksNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.OpenstackNetworkWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.OpenstackNetworkWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter,
+			r.userInfoGetter, r.caBundle)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2632,7 +2605,8 @@ func (r Routing) listOpenstackSecurityGroupsNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.OpenstackSecurityGroupWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.OpenstackSecurityGroupWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider,
+			r.seedsGetter, r.userInfoGetter, r.caBundle)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2656,7 +2630,8 @@ func (r Routing) listOpenstackSubnetsNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.OpenstackSubnetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.OpenstackSubnetsWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter,
+			r.userInfoGetter, r.caBundle)),
 		provider.DecodeOpenstackSubnetNoCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2680,7 +2655,8 @@ func (r Routing) listOpenstackAvailabilityZonesNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.OpenstackAvailabilityZoneWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.OpenstackAvailabilityZoneWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter,
+			r.userInfoGetter, r.caBundle)),
 		provider.DecodeOpenstackNoCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2752,7 +2728,7 @@ func (r Routing) listVSphereNetworksNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.VsphereNetworksWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.VsphereNetworksWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.caBundle)),
 		provider.DecodeVSphereNoCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -2776,7 +2752,7 @@ func (r Routing) listVSphereFoldersNoCredentials() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(provider.VsphereFoldersWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		)(provider.VsphereFoldersWithClusterCredentialsEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter, r.caBundle)),
 		provider.DecodeVSphereNoCredentialsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3056,7 +3032,7 @@ func (r Routing) listVSphereDatastores() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(provider.VsphereDatastoreEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter)),
+		)(provider.VsphereDatastoreEndpoint(r.seedsGetter, r.presetsProvider, r.userInfoGetter, r.caBundle)),
 		provider.DecodeVSphereDatastoresReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3212,238 +3188,6 @@ func (r Routing) updatePreset() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(preset.UpdatePreset(r.presetsProvider, r.userInfoGetter)),
 		preset.DecodeUpdatePreset,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route POST /api/v2/serviceaccounts mainserviceaccounts createMainServiceAccount
-//
-//     Creates the given service account
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       201: ServiceAccount
-//       401: empty
-//       403: empty
-func (r Routing) createMainServiceAccount() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.CreateEndpoint(r.serviceAccountProvider, r.userInfoGetter)),
-		serviceaccount.DecodeAddReq,
-		handler.SetStatusCreatedHeader(handler.EncodeJSON),
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/serviceaccounts mainserviceaccounts listMainServiceAccounts
-//
-//     List main service accounts
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: []ServiceAccount
-//       401: empty
-//       403: empty
-func (r Routing) listMainServiceAccounts() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.ListEndpoint(r.serviceAccountProvider, r.userInfoGetter)),
-		common.DecodeEmptyReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route PUT /api/V2/serviceaccounts/{serviceaccount_id} mainserviceaccounts updateMainServiceAccount
-//
-//     Updates main service account
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: ServiceAccount
-//       401: empty
-//       403: empty
-func (r Routing) updateMainServiceAccount() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.UpdateEndpoint(r.serviceAccountProvider, r.userInfoGetter)),
-		serviceaccount.DecodeUpdateReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route DELETE /api/v2/serviceaccounts/{serviceaccount_id} mainserviceaccounts deleteMainServiceAccount
-//
-//     Deletes main service account
-//
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
-func (r Routing) deleteMainServiceAccount() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.DeleteEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountProvider, r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
-		serviceaccount.DecodeDeleteReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route POST /api/v2/serviceaccounts/{serviceaccount_id}/tokens tokens addTokenToMainServiceAccount
-//
-//     Generates a token for the given main service account
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       201: ServiceAccountToken
-//       401: empty
-//       403: empty
-func (r Routing) addTokenToMainServiceAccount() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.CreateTokenEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
-		serviceaccount.DecodeAddTokenReq,
-		handler.SetStatusCreatedHeader(handler.EncodeJSON),
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/serviceaccounts/{serviceaccount_id}/tokens tokens listMainServiceAccountTokens
-//
-//     List tokens for the given main service account
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: []PublicServiceAccountToken
-//       401: empty
-//       403: empty
-func (r Routing) listMainServiceAccountTokens() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.ListTokenEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.userInfoGetter)),
-		serviceaccount.DecodeTokenReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route PUT /api/v2/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens updateMainServiceAccountToken
-//
-//     Updates and regenerates the token
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: ServiceAccountToken
-//       401: empty
-//       403: empty
-func (r Routing) updateMainServiceAccountToken() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.UpdateTokenEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
-		serviceaccount.DecodeUpdateTokenReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route PATCH /api/v2/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens patchMainServiceAccountToken
-//
-//     Patches the token name
-//
-//     Consumes:
-//     - application/json
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: PublicServiceAccountToken
-//       401: empty
-//       403: empty
-func (r Routing) patchMainServiceAccountToken() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.PatchTokenEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountTokenProvider, r.saTokenAuthenticator, r.saTokenGenerator, r.userInfoGetter)),
-		serviceaccount.DecodePatchTokenReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route DELETE /api/v2/serviceaccounts/{serviceaccount_id}/tokens/{token_id} tokens deleteMainServiceAccountToken
-//
-//     Deletes the token
-//
-//     Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: empty
-//       401: empty
-//       403: empty
-func (r Routing) deleteMainServiceAccountToken() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-		)(serviceaccount.DeleteTokenEndpoint(r.serviceAccountProvider, r.privilegedServiceAccountTokenProvider, r.userInfoGetter)),
-		serviceaccount.DecodeDeleteTokenReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

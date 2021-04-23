@@ -17,6 +17,7 @@ limitations under the License.
 package cloud
 
 import (
+	"crypto/x509"
 	"errors"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/anexia"
 
@@ -36,7 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/vsphere"
 )
 
-func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc) (provider.CloudProvider, error) {
+func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (provider.CloudProvider, error) {
 	if datacenter.Spec.Digitalocean != nil {
 		return digitalocean.NewCloudProvider(secretKeyGetter), nil
 	}
@@ -50,7 +51,7 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 		return azure.New(datacenter, secretKeyGetter)
 	}
 	if datacenter.Spec.Openstack != nil {
-		return openstack.NewCloudProvider(datacenter, secretKeyGetter)
+		return openstack.NewCloudProvider(datacenter, secretKeyGetter, caBundle)
 	}
 	if datacenter.Spec.Packet != nil {
 		return packet.NewCloudProvider(secretKeyGetter), nil
@@ -59,7 +60,7 @@ func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 		return hetzner.NewCloudProvider(secretKeyGetter), nil
 	}
 	if datacenter.Spec.VSphere != nil {
-		return vsphere.NewCloudProvider(datacenter, secretKeyGetter)
+		return vsphere.NewCloudProvider(datacenter, secretKeyGetter, caBundle)
 	}
 	if datacenter.Spec.GCP != nil {
 		return gcp.NewCloudProvider(secretKeyGetter), nil
