@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -222,18 +223,16 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 }
 
 func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bool) {
-	counter := 0
+	var counter int64 = -1
 	assertExpectation := func() bool {
-		return assert.Equal(t, len(requests), counter)
+		return assert.Equal(t, len(requests), int(counter+1))
 	}
 	r := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			counter++
-		}()
-		if counter >= len(requests) {
+		c := atomic.AddInt64(&counter, 1)
+		if int(c) >= len(requests) {
 			assert.Failf(t, "unexpected request", "%v", r)
 		}
-		req := requests[counter]
+		req := requests[c]
 		assert.Equal(t, req.request.URL.Path, r.URL.Path)
 		assert.Equal(t, req.request.Method, r.Method)
 		if req.request.ContentLength > 0 {
