@@ -223,14 +223,12 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 }
 
 func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bool) {
-	var counter int64
+	var counter int64 = -1
 	assertExpectation := func() bool {
-		return assert.Equal(t, len(requests), int(counter))
+		return assert.Equal(t, len(requests), int(counter+1))
 	}
 	r := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			atomic.AddInt64(&counter, 1)
-		}()
+		atomic.AddInt64(&counter, 1)
 		c := atomic.LoadInt64(&counter)
 		if int(c) >= len(requests) {
 			assert.Failf(t, "unexpected request", "%v", r)
