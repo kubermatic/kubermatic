@@ -127,6 +127,7 @@ func createCloudController(ctrlCtx *controllerContext) error {
 		ctrlCtx.seedGetter,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.versions,
+		ctrlCtx.runOptions.caBundle.CertPool(),
 	); err != nil {
 		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
 	}
