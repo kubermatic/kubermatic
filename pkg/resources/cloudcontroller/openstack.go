@@ -137,6 +137,8 @@ func getOSFlags(data *resources.TemplateData) []string {
 	return flags
 }
 
+const latestCCMVersion = "1.20.2"
+
 func getOSVersion(version semver.Semver) (string, error) {
 	if version.Minor() < 17 {
 		return "", fmt.Errorf("Kubernetes version %s is not supported", version.String())
@@ -150,9 +152,11 @@ func getOSVersion(version semver.Semver) (string, error) {
 	case 19:
 		return "1.19.2", nil
 	case 20:
-		return "1.20.0", nil
+		return latestCCMVersion, nil
+	case 21:
+		return latestCCMVersion, nil
 	default:
-		return "1.19.2", nil
+		return latestCCMVersion, nil
 	}
 }
 
