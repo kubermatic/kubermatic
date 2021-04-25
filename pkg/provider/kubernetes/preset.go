@@ -390,6 +390,7 @@ func (m *PresetsProvider) setAzureCredentials(userInfo *provider.UserInfo, prese
 	cloud.Azure.SubscriptionID = credentials.SubscriptionID
 
 	cloud.Azure.ResourceGroup = credentials.ResourceGroup
+	cloud.Azure.VNetResourceGroup = credentials.VNetResourceGroup
 	cloud.Azure.RouteTableName = credentials.RouteTableName
 	cloud.Azure.SecurityGroup = credentials.SecurityGroup
 	cloud.Azure.SubnetName = credentials.SubnetName
