@@ -73,6 +73,7 @@
 - machine-controller to v1.27.1 [#6695](https://github.com/kubermatic/kubermatic/issues/6695) 
 - OpenVPN image to version v2.5.0-r1. [#6697](https://github.com/kubermatic/kubermatic/issues/6697) 
 - Velero to 1.5.3. [#6701](https://github.com/kubermatic/kubermatic/issues/6701) 
+- Update cert-manager to 1.2.0 [#6739](https://github.com/kubermatic/kubermatic/issues/6739)
 
 ### Dashboard
 
