@@ -66,10 +66,6 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get openVPN CA cert: %v", err)
 	}
-	mlaGatewayCACert, err := r.mlaGatewayCA(ctx)
-	if err != nil {
-		return fmt.Errorf("failed to get MLA Gateway CA cert: %v", err)
-	}
 	userSSHKeys, err := r.userSSHKeys(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to get userSSHKeys: %v", err)
@@ -80,11 +76,17 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	}
 
 	data := reconcileData{
-		caCert:           caCert,
-		openVPNCACert:    openVPNCACert,
-		mlaGatewayCACert: mlaGatewayCACert,
-		userSSHKeys:      userSSHKeys,
-		cloudConfig:      cloudConfig,
+		caCert:        caCert,
+		openVPNCACert: openVPNCACert,
+		userSSHKeys:   userSSHKeys,
+		cloudConfig:   cloudConfig,
+	}
+
+	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {
+		data.mlaGatewayCACert, err = r.mlaGatewayCA(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get MLA Gateway CA cert: %v", err)
+		}
 	}
 
 	// Must be first because of openshift
