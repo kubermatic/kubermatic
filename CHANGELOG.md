@@ -38,8 +38,7 @@
 - OpenShift support is removed.  [#6539](https://github.com/kubermatic/kubermatic/issues/6539) 
 - OpenStack: Add support for "use-octavia" setting in Cluster Openstack cloud specs [#6565](https://github.com/kubermatic/kubermatic/issues/6565) 
 - Add support for Hetzner CCM [#6588](https://github.com/kubermatic/kubermatic/issues/6588) 
-- Increase default gatekeeper webhook timeout from 2 to 10 seconds, and added option in cluster settings to configure it. [#6590](https://github.com/kubermatic/kubermatic/issues/6590) 
-- Change default gatekeeper webhook timeout to 3 sec [#6709](https://github.com/kubermatic/kubermatic/issues/6709) 
+- Change default gatekeeper webhook timeout to 3 sec, and add option in cluster settings to configure it. [#6709](https://github.com/kubermatic/kubermatic/issues/6709) 
 - Add support in Openstack datacenters to explicitly enable certain flavor types. [#6612](https://github.com/kubermatic/kubermatic/issues/6612) 
 - Provide the possibility of configuring leader election parameters for user cluster components. [#6641](https://github.com/kubermatic/kubermatic/issues/6641) 
 - Remove unused deprecated `certs` chart [#6656](https://github.com/kubermatic/kubermatic/issues/6656) 
@@ -73,6 +72,7 @@
 
 ### Updates
 
+- *cert-manager to 1.2.0 [#6739](https://github.com/kubermatic/kubermatic/issues/6739)
 - controller-runtime 0.8.1 [#6450](https://github.com/kubermatic/kubermatic/issues/6450) 
 - CSI drivers [#6594](https://github.com/kubermatic/kubermatic/issues/6594) 
 - Hetzner CSI, move to `csi` addon [#6615](https://github.com/kubermatic/kubermatic/issues/6615) 
@@ -90,7 +90,6 @@
 - machine-controller to v1.27.1 [#6695](https://github.com/kubermatic/kubermatic/issues/6695) 
 - OpenVPN image to version v2.5.0-r1. [#6697](https://github.com/kubermatic/kubermatic/issues/6697) 
 - Velero to 1.5.3. [#6701](https://github.com/kubermatic/kubermatic/issues/6701) 
-- *cert-manager to 1.2.0 [#6739](https://github.com/kubermatic/kubermatic/issues/6739)
 
 ### Dashboard
 
