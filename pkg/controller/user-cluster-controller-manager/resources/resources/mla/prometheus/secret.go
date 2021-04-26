@@ -17,9 +17,8 @@ limitations under the License.
 package prometheus
 
 import (
-	"k8c.io/kubermatic/v2/pkg/resources/certificates"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 )
 
