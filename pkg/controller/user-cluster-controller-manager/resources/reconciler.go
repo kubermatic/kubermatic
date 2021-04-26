@@ -245,8 +245,8 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		)
 	}
 	if len(creators) != 0 {
-		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.MLANamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", resources.MLANamespace, err)
+		if err := reconciling.ReconcileServiceAccounts(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile ServiceAccounts in the namespace %s: %v", resources.UserClusterMLANamespace, err)
 		}
 	}
 
@@ -573,8 +573,8 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/api/v1/push",
 			}),
 		}
-		if err := reconciling.ReconcileConfigMaps(ctx, creators, resources.MLANamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.MLANamespace, err)
+		if err := reconciling.ReconcileConfigMaps(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.UserClusterMLANamespace, err)
 		}
 	}
 	return nil
@@ -620,8 +620,8 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/loki/api/v1/push",
 			}),
 		}
-		if err := reconciling.ReconcileSecrets(ctx, creators, resources.MLANamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.MLANamespace, err)
+		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.UserClusterMLANamespace, err)
 		}
 	}
 
@@ -649,7 +649,7 @@ func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
 		dsCreators = []reconciling.NamedDaemonSetCreatorGetter{
 			promtail.DaemonSetCreator(),
 		}
-		if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, resources.MLANamespace, r.Client); err != nil {
+		if err := reconciling.ReconcileDaemonSets(ctx, dsCreators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile the DaemonSet: %v", err)
 		}
 	}
@@ -707,8 +707,8 @@ func (r *reconciler) reconcileDeployments(ctx context.Context) error {
 		creators := []reconciling.NamedDeploymentCreatorGetter{
 			userclusterprometheus.DeploymentCreator(),
 		}
-		if err := reconciling.ReconcileDeployments(ctx, creators, resources.MLANamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", resources.MLANamespace, err)
+		if err := reconciling.ReconcileDeployments(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Deployments in namespace %s: %v", resources.UserClusterMLANamespace, err)
 		}
 	}
 

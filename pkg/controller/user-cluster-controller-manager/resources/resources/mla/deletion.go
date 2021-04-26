@@ -28,7 +28,7 @@ func ResourcesOnDeletion() []ctrlruntimeclient.Object {
 	return []ctrlruntimeclient.Object{
 		&corev1.Namespace{
 			ObjectMeta: metav1.ObjectMeta{
-				Name: resources.MLANamespace,
+				Name: resources.UserClusterMLANamespace,
 			},
 		},
 	}
