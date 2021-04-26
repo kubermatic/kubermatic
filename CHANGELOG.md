@@ -4,6 +4,7 @@
 
 ### Misc
 
+- *Overhaul CA handling, allow to configure a global CA bundle for every component. The OIDC CA ile has been removed, manual updates can be necessary. [#6538](https://github.com/kubermatic/kubermatic/issues/6538) ([xrstf](https://github.com/xrstf))
 - New etcd backup and restore controllers [#5668](https://github.com/kubermatic/kubermatic/issues/5668) 
 - Add `kubermatic-seed` stack target to the Installer [#6435](https://github.com/kubermatic/kubermatic/issues/6435) 
 - Add an endpoint to list Vsphere datastores: GET /api/v2/providers/vsphere/datastores [#6442](https://github.com/kubermatic/kubermatic/issues/6442) 
@@ -22,12 +23,12 @@
 - OpenStack: Add support for "use-octavia" setting in Cluster Openstack cloud specs [#6565](https://github.com/kubermatic/kubermatic/issues/6565) 
 - Add support for Hetzner CCM [#6588](https://github.com/kubermatic/kubermatic/issues/6588) 
 - Increase default gatekeeper webhook timeout from 2 to 10 seconds, and added option in cluster settings to configure it. [#6590](https://github.com/kubermatic/kubermatic/issues/6590) 
+- Change default gatekeeper webhook timeout to 3 sec [#6709](https://github.com/kubermatic/kubermatic/issues/6709) 
 - Add support in Openstack datacenters to explicitly enable certain flavor types. [#6612](https://github.com/kubermatic/kubermatic/issues/6612) 
 - Provide the possibility of configuring leader election parameters for user cluster components. [#6641](https://github.com/kubermatic/kubermatic/issues/6641) 
 - Remove unused deprecated `certs` chart [#6656](https://github.com/kubermatic/kubermatic/issues/6656) 
 - Add `registry_mirrors` to Seed node settings [#6667](https://github.com/kubermatic/kubermatic/issues/6667) 
 - Upgrad Gatekeeper from 3.1.0-beta-9 to 3.1.3. NOTICE: this change also moves the Gatekeeper deployment from the Seed to the User clusters. This means that the user clusters will need some additional resources to run the Gatekeeper Pods. Admins please refer to the upgrade guidelines in the documentation. [#6706](https://github.com/kubermatic/kubermatic/issues/6706) 
-- Change default gatekeeper webhook timeout to 3 sec [#6709](https://github.com/kubermatic/kubermatic/issues/6709) 
 - Add spot instances as an option for the aws machines in the API  [#6726](https://github.com/kubermatic/kubermatic/issues/6726) 
 - Add Multus-CNI to accessible addons. [#6731](https://github.com/kubermatic/kubermatic/issues/6731) 
 - Allow to disable the s3-credentials Secret in the Minio chart [#6760](https://github.com/kubermatic/kubermatic/issues/6760) 
@@ -73,7 +74,7 @@
 - machine-controller to v1.27.1 [#6695](https://github.com/kubermatic/kubermatic/issues/6695) 
 - OpenVPN image to version v2.5.0-r1. [#6697](https://github.com/kubermatic/kubermatic/issues/6697) 
 - Velero to 1.5.3. [#6701](https://github.com/kubermatic/kubermatic/issues/6701) 
-- cert-manager to 1.2.0 [#6739](https://github.com/kubermatic/kubermatic/issues/6739)
+- *cert-manager to 1.2.0 [#6739](https://github.com/kubermatic/kubermatic/issues/6739)
 
 ### Dashboard
 
