@@ -2,6 +2,22 @@
 
 ## [v2.17.0](https://github.com/kubermatic/kubermatic)
 
+### Supported Kubernetes Versions
+
+* 1.18.6
+* 1.18.8
+* 1.18.10
+* 1.18.14
+* 1.18.17
+* 1.19.0
+* 1.19.2
+* 1.19.3
+* 1.19.8
+* 1.19.9
+* 1.20.2
+* 1.20.5
+* 1.21.0
+
 ### Misc
 
 - *Overhaul CA handling, allow to configure a global CA bundle for every component. The OIDC CA ile has been removed, manual updates can be necessary. [#6538](https://github.com/kubermatic/kubermatic/issues/6538) ([xrstf](https://github.com/xrstf))
@@ -101,22 +117,6 @@
 ### Bugfixes
 
 - Fix bug with changing the theme based on the color scheme if enforced_theme was set. [#3163](https://github.com/kubermatic/dashboard/issues/3163)
-
-### Supported Kubernetes Versions
-
-* 1.18.6
-* 1.18.8
-* 1.18.10
-* 1.18.14
-* 1.18.17
-* 1.19.0
-* 1.19.2
-* 1.19.3
-* 1.19.8
-* 1.19.9
-* 1.20.2
-* 1.20.5
-* 1.21.0
 
 # Kubermatic 2.16
 
