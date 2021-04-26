@@ -596,6 +596,14 @@ const (
 	AlertmanagerName                    = "alertmanager"
 	DefaultAlertmanagerConfigSecretName = "alertmanager"
 	AlertmanagerConfigSecretKey         = "alertmanager.yaml"
+	DefaultAlertmanagerConfig           = `
+template_files: {}
+alertmanager_config: |
+  route:
+    receiver: 'null'
+  receivers:
+    - name: 'null'
+`
 )
 
 // ECDSAKeyPair is a ECDSA x509 certificate and private key

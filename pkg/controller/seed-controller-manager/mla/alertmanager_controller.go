@@ -52,14 +52,6 @@ import (
 const (
 	alertmanagerFinalizer      = "kubermatic.io/alertmanager"
 	alertmanagerConfigEndpoint = "/api/v1/alerts"
-	defaultConfig              = `
-template_files: {}
-alertmanager_config: |
-  route:
-    receiver: 'null'
-  receivers:
-    - name: 'null'
-`
 )
 
 type mlaGatewayURLGetter interface {
@@ -354,7 +346,7 @@ func (r *alertmanagerReconciler) ensureAlertmanagerConfiguration(ctx context.Con
 }
 
 func (r *alertmanagerReconciler) getAlertmanagerConfigForCluster(ctx context.Context, cluster *kubermaticv1.Cluster) ([]byte, error) {
-	configuration := []byte(defaultConfig)
+	configuration := []byte(resources.DefaultAlertmanagerConfig)
 	alertNamespacedName := types.NamespacedName{
 		Name:      resources.AlertmanagerName,
 		Namespace: cluster.Status.NamespaceName,
