@@ -18,9 +18,18 @@
 * 1.20.5
 * 1.21.0
 
+### Highlights
+
+- Add support for Kubernetes 1.21 [#6778](https://github.com/kubermatic/kubermatic/issues/6778)
+- [ACTION REQUIRED] Overhaul CA handling, allow to configure a global CA bundle for every component. The OIDC CA file has been removed, manual updates can be necessary. [#6538](https://github.com/kubermatic/kubermatic/issues/6538) 
+
+### Breaking Changes
+
+- Update cert-manager to 1.2.0 [#6739](https://github.com/kubermatic/kubermatic/issues/6739)
+- Helm Chart installations are not supported any longer at KKP 2.17, hence KKP 2.16 chart-based installations have to be imperatively migrated. 
+
 ### Misc
 
-- *Overhaul CA handling, allow to configure a global CA bundle for every component. The OIDC CA ile has been removed, manual updates can be necessary. [#6538](https://github.com/kubermatic/kubermatic/issues/6538) ([xrstf](https://github.com/xrstf))
 - New etcd backup and restore controllers [#5668](https://github.com/kubermatic/kubermatic/issues/5668) 
 - Add `kubermatic-seed` stack target to the Installer [#6435](https://github.com/kubermatic/kubermatic/issues/6435) 
 - Add an endpoint to list Vsphere datastores: GET /api/v2/providers/vsphere/datastores [#6442](https://github.com/kubermatic/kubermatic/issues/6442) 
@@ -38,7 +47,7 @@
 - OpenShift support is removed.  [#6539](https://github.com/kubermatic/kubermatic/issues/6539) 
 - OpenStack: Add support for "use-octavia" setting in Cluster Openstack cloud specs [#6565](https://github.com/kubermatic/kubermatic/issues/6565) 
 - Add support for Hetzner CCM [#6588](https://github.com/kubermatic/kubermatic/issues/6588) 
-- Change default gatekeeper webhook timeout to 3 sec, and add option in cluster settings to configure it. [#6709](https://github.com/kubermatic/kubermatic/issues/6709) 
+- Change default gatekeeper webhook timeout to 3 sec, and added option in cluster settings to configure it. [#6709](https://github.com/kubermatic/kubermatic/issues/6709) 
 - Add support in Openstack datacenters to explicitly enable certain flavor types. [#6612](https://github.com/kubermatic/kubermatic/issues/6612) 
 - Provide the possibility of configuring leader election parameters for user cluster components. [#6641](https://github.com/kubermatic/kubermatic/issues/6641) 
 - Remove unused deprecated `certs` chart [#6656](https://github.com/kubermatic/kubermatic/issues/6656) 
@@ -54,7 +63,7 @@
 - Fetch the provisioning cloud-init over the api-server  [#6843](https://github.com/kubermatic/kubermatic/issues/6843) 
 - Add `FELIX_IGNORELOOSERPF=true` to `calico-node` container env to allow running on nodes with `net.ipv4.conf.*.rp_filter = 2` set. [#6865](https://github.com/kubermatic/kubermatic/issues/6865) 
 - Hetzner AMD Cloud Server (CPX) now selectable when creating a user cluster [#6872](https://github.com/kubermatic/kubermatic/issues/6872)
-- Add GPU support for Azure provider [#6605](https://github.com/kubermatic/kubermatic/issues/6605) ([zreigz](https://github.com/zreigz))
+- Add GPU support for Azure provider [#6605](https://github.com/kubermatic/kubermatic/issues/6605) 
 
 ### Bugfixes
 
@@ -72,7 +81,6 @@
 
 ### Updates
 
-- *cert-manager to 1.2.0 [#6739](https://github.com/kubermatic/kubermatic/issues/6739)
 - controller-runtime 0.8.1 [#6450](https://github.com/kubermatic/kubermatic/issues/6450) 
 - CSI drivers [#6594](https://github.com/kubermatic/kubermatic/issues/6594) 
 - Hetzner CSI, move to `csi` addon [#6615](https://github.com/kubermatic/kubermatic/issues/6615) 
