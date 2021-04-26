@@ -18,12 +18,10 @@
 - Add support for "use-octavia" setting in Openstack provider specs. It defaults to "true" but leaves the possibility to set it to "false" if your provider doesn't support Octavia yet but Neutron LBaaSv2
  [#6529](https://github.com/kubermatic/kubermatic/issues/6529) 
 - Add components override field to set nodeportrange for apiserver [#6533](https://github.com/kubermatic/kubermatic/issues/6533) 
-- Extend Kubermatic Constraint Template spec with a selector which enables cluster filtering for EE Kubermatic.  [#6534](https://github.com/kubermatic/kubermatic/issues/6534) 
 - Overhaul CA handling, allow to configure a global CA bundle for every component. The OIDC CA ile has been removed, manual updates can be necessary. [#6538](https://github.com/kubermatic/kubermatic/issues/6538) 
 - OpenShift support is removed.  [#6539](https://github.com/kubermatic/kubermatic/issues/6539) 
 - Fix issue with gatekeeper not recognizing the AdmissionReview v1 version by changing the webhook to use v1beta1 [#6550](https://github.com/kubermatic/kubermatic/issues/6550) 
 - OpenStack: Add support for "use-octavia" setting in Cluster Openstack cloud specs [#6565](https://github.com/kubermatic/kubermatic/issues/6565) 
-- Kubermatic Constraint Templates now support cluster filtering to allow users to manage the CT's and policies across different clusters more easily. The feature is available for Kubermatic EE.  [#6567](https://github.com/kubermatic/kubermatic/issues/6567) 
 - Fix KAS service port in Tunneling agent configuration. [#6569](https://github.com/kubermatic/kubermatic/issues/6569) 
 - Add support for Hetzner CCM [#6588](https://github.com/kubermatic/kubermatic/issues/6588) 
 - Increase default gatekeeper webhook timeout from 2 to 10 seconds, and added option in cluster settings to configure it. [#6590](https://github.com/kubermatic/kubermatic/issues/6590) 
@@ -99,10 +97,6 @@
 - Allow custom links to be placed in the help and support panel [#3141](https://github.com/kubermatic/dashboard/issues/3141) 
 - Add support for OPA to UI [#3147](https://github.com/kubermatic/dashboard/issues/3147)
 - Add network to Hetzner [#3158](https://github.com/kubermatic/dashboard/issues/3158)
-- Add validation for service account token names. [#3265](https://github.com/kubermatic/dashboard/issues/3265) 
-- Do not delete custom links after pressing enter key. [#3266](https://github.com/kubermatic/dashboard/issues/3266) 
-- Set default VM template based on the available operating systems. [#3268](https://github.com/kubermatic/dashboard/issues/3268) 
-- Add GPU support for Azure provider [#6605](https://github.com/kubermatic/kubermatic/issues/6605) 
 - Add `enable` and `enforce` OPA options to Admin Settings [#3206](https://github.com/kubermatic/dashboard/issues/3206)
 
 ### Bugfixes
