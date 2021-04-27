@@ -592,6 +592,18 @@ const (
 	MLAGatewayExternalServiceName = "mla-gateway-ext"
 	// MLAGatewaySNIPrefix is the URL prefix which identifies the MLA Gateway endpoint in the external URL if SNI expose strategy is used
 	MLAGatewaySNIPrefix = "mla."
+
+	AlertmanagerName                    = "alertmanager"
+	DefaultAlertmanagerConfigSecretName = "alertmanager"
+	AlertmanagerConfigSecretKey         = "alertmanager.yaml"
+	DefaultAlertmanagerConfig           = `
+template_files: {}
+alertmanager_config: |
+  route:
+    receiver: 'null'
+  receivers:
+    - name: 'null'
+`
 )
 
 // ECDSAKeyPair is a ECDSA x509 certificate and private key

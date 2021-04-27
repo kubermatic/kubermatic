@@ -6,6 +6,8 @@ type AddonExpansion interface{}
 
 type AddonConfigExpansion interface{}
 
+type AlertmanagerExpansion interface{}
+
 type ClusterExpansion interface{}
 
 type ConstraintExpansion interface{}

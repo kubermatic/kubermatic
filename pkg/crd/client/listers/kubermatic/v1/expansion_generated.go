@@ -14,6 +14,14 @@ type AddonNamespaceListerExpansion interface{}
 // AddonConfigLister.
 type AddonConfigListerExpansion interface{}
 
+// AlertmanagerListerExpansion allows custom methods to be added to
+// AlertmanagerLister.
+type AlertmanagerListerExpansion interface{}
+
+// AlertmanagerNamespaceListerExpansion allows custom methods to be added to
+// AlertmanagerNamespaceLister.
+type AlertmanagerNamespaceListerExpansion interface{}
+
 // ClusterListerExpansion allows custom methods to be added to
 // ClusterLister.
 type ClusterListerExpansion interface{}

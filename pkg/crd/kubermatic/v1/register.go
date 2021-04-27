@@ -83,6 +83,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&ConstraintTemplateList{},
 		&Constraint{},
 		&ConstraintList{},
+		&Alertmanager{},
+		&AlertmanagerList{},
 	)
 
 	metav1.AddToGroupVersion(scheme, SchemeGroupVersion)
