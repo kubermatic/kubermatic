@@ -168,9 +168,11 @@ func (r *userGrafanaReconciler) handleDeletion(ctx context.Context, userProjectB
 		}
 	}
 
-	kubernetes.RemoveFinalizer(userProjectBinding, mlaFinalizer)
-	if err := r.Update(ctx, userProjectBinding); err != nil {
-		return fmt.Errorf("updating UserProjectBinding: %w", err)
+	if kubernetes.HasFinalizer(userProjectBinding, mlaFinalizer) {
+		kubernetes.RemoveFinalizer(userProjectBinding, mlaFinalizer)
+		if err := r.Update(ctx, userProjectBinding); err != nil {
+			return fmt.Errorf("updating UserProjectBinding: %w", err)
+		}
 	}
 
 	return nil

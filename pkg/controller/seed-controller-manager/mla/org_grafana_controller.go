@@ -136,9 +136,11 @@ func (r *orgGrafanaReconciler) handleDeletion(ctx context.Context, project *kube
 			return err
 		}
 	}
-	kubernetes.RemoveFinalizer(project, mlaFinalizer)
-	if err := r.Update(ctx, project); err != nil {
-		return fmt.Errorf("updating Project: %w", err)
+	if kubernetes.HasFinalizer(project, mlaFinalizer) {
+		kubernetes.RemoveFinalizer(project, mlaFinalizer)
+		if err := r.Update(ctx, project); err != nil {
+			return fmt.Errorf("updating Project: %w", err)
+		}
 	}
 	return nil
 }
