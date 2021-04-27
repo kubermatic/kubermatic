@@ -17,12 +17,11 @@ limitations under the License.
 package alertmanager_test
 
 import (
-	"encoding/base64"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -152,12 +151,12 @@ func TestGetEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatus, resp.Code, resp.Body.String())
 			}
 			if resp.Code == http.StatusOK {
-				bytes, err := json.Marshal(tc.ExpectedResponse)
+				b, err := json.Marshal(tc.ExpectedResponse)
 				if err != nil {
 					t.Fatalf("failed to marshall expected response %v", err)
 				}
 
-				test.CompareWithResult(t, resp, string(bytes))
+				test.CompareWithResult(t, resp, string(b))
 			}
 
 		})
@@ -170,7 +169,7 @@ func TestCreateEndpoint(t *testing.T) {
 		Name                      string
 		ProjectID                 string
 		ClusterID                 string
-		Body                      string
+		Body                      []byte
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
 		ExistingAlertmanager      *kubermaticv1.Alertmanager
 		ExistingConfigSecret      *corev1.Secret
@@ -186,7 +185,7 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			Body: fmt.Sprintf(`{"spec":{"config":"%s"}}`, base64.StdEncoding.EncodeToString([]byte(testAlertmanagerConfig))),
+			Body: generateRequestBody([]byte(testAlertmanagerConfig)),
 			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
 				testAlertmanagerConfigSecretName),
 			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
@@ -208,7 +207,7 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			Body: fmt.Sprintf(`{"spec":{"config":"%s"}}`, base64.StdEncoding.EncodeToString([]byte("bad-request"))),
+			Body: generateRequestBody([]byte("bad-request")),
 			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
 				testAlertmanagerConfigSecretName),
 			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
@@ -225,7 +224,7 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			Body:               fmt.Sprintf(`{"spec":{"config":"%s"}}`, base64.StdEncoding.EncodeToString([]byte(testAlertmanagerConfig))),
+			Body:               generateRequestBody([]byte(testAlertmanagerConfig)),
 			ExistingAPIUser:    test.GenDefaultAPIUser(),
 			ExpectedHTTPStatus: http.StatusInternalServerError,
 		},
@@ -239,7 +238,7 @@ func TestCreateEndpoint(t *testing.T) {
 			),
 			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
 				testAlertmanagerConfigSecretName),
-			Body:               fmt.Sprintf(`{"spec":{"config":"%s"}}`, base64.StdEncoding.EncodeToString([]byte(testAlertmanagerConfig))),
+			Body:               generateRequestBody([]byte(testAlertmanagerConfig)),
 			ExistingAPIUser:    test.GenDefaultAPIUser(),
 			ExpectedHTTPStatus: http.StatusInternalServerError,
 		},
@@ -257,7 +256,7 @@ func TestCreateEndpoint(t *testing.T) {
 			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
 				test.GenDefaultCluster().Status.NamespaceName,
 				[]byte("test")),
-			Body:               fmt.Sprintf(`{"spec":{"config":"%s"}}`, base64.StdEncoding.EncodeToString([]byte(testAlertmanagerConfig))),
+			Body:               generateRequestBody([]byte(testAlertmanagerConfig)),
 			ExistingAPIUser:    test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatus: http.StatusForbidden,
 		},
@@ -265,7 +264,7 @@ func TestCreateEndpoint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, requestURL(tc.ProjectID, tc.ClusterID), strings.NewReader(tc.Body))
+			req := httptest.NewRequest(http.MethodPost, requestURL(tc.ProjectID, tc.ClusterID), bytes.NewBuffer(tc.Body))
 			resp := httptest.NewRecorder()
 			var kubermaticObjs []ctrlruntimeclient.Object
 			kubermaticObjs = append(kubermaticObjs, tc.ExistingKubermaticObjects...)
@@ -287,12 +286,12 @@ func TestCreateEndpoint(t *testing.T) {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatus, resp.Code, resp.Body.String())
 			}
 			if resp.Code == http.StatusCreated {
-				bytes, err := json.Marshal(tc.ExpectedResponse)
+				b, err := json.Marshal(tc.ExpectedResponse)
 				if err != nil {
 					t.Fatalf("failed to marshall expected response %v", err)
 				}
 
-				test.CompareWithResult(t, resp, string(bytes))
+				test.CompareWithResult(t, resp, string(b))
 			}
 		})
 	}
@@ -398,4 +397,14 @@ func TestDeleteEndpoint(t *testing.T) {
 
 func requestURL(projectID, clusterID string) string {
 	return fmt.Sprintf("/api/v2/projects/%s/clusters/%s/alertmanager/config", projectID, clusterID)
+}
+
+func generateRequestBody(config []byte) []byte {
+	alertmanager := apiv2.Alertmanager{
+		Spec: apiv2.AlertmanagerSpec{
+			Config: config,
+		},
+	}
+	res, _ := json.Marshal(&alertmanager)
+	return res
 }
