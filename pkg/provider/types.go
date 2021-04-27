@@ -843,3 +843,15 @@ type PrivilegedConstraintProvider interface {
 	// is unsafe in a sense that it uses privileged account to update the resource
 	UpdateUnsecured(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
+
+// AlertmanagerProvider declares the set of method for interacting with alertmanagers
+type AlertmanagerProvider interface {
+	// Get gets the given alertmanager and the config secret
+	Get(cluster *kubermaticv1.Cluster, userInfo *UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
+
+	// Create creates the given alertmanager and the config secret
+	Create(alertmanager *kubermaticv1.Alertmanager, configSecret *corev1.Secret, userInfo *UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
+
+	// Delete deletes the given alertmanager
+	Delete(cluster *kubermaticv1.Cluster, userInfo *UserInfo) error
+}

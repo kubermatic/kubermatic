@@ -82,6 +82,7 @@ func NewTestRouting(
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
 	constraintProvider provider.ConstraintProvider,
 	privilegedConstraintProvider provider.PrivilegedConstraintProvider,
+	alertmanagerProviderGetter provider.AlertmanagerProviderGetter,
 	kubermaticVersions kubermatic.Versions) http.Handler {
 
 	updateManager := version.New(versions, updates)
@@ -127,6 +128,7 @@ func NewTestRouting(
 		ConstraintTemplateProvider:            constraintTemplateProvider,
 		ConstraintProvider:                    constraintProvider,
 		PrivilegedConstraintProvider:          privilegedConstraintProvider,
+		AlertmanagerProviderGetter:            alertmanagerProviderGetter,
 		Versions:                              kubermaticVersions,
 		CABundle:                              certificates.NewFakeCABundle().CertPool(),
 	}

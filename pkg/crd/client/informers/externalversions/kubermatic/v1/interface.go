@@ -12,6 +12,8 @@ type Interface interface {
 	Addons() AddonInformer
 	// AddonConfigs returns a AddonConfigInformer.
 	AddonConfigs() AddonConfigInformer
+	// Alertmanagers returns a AlertmanagerInformer.
+	Alertmanagers() AlertmanagerInformer
 	// Clusters returns a ClusterInformer.
 	Clusters() ClusterInformer
 	// Constraints returns a ConstraintInformer.
@@ -55,6 +57,11 @@ func (v *version) Addons() AddonInformer {
 // AddonConfigs returns a AddonConfigInformer.
 func (v *version) AddonConfigs() AddonConfigInformer {
 	return &addonConfigInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// Alertmanagers returns a AlertmanagerInformer.
+func (v *version) Alertmanagers() AlertmanagerInformer {
+	return &alertmanagerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Clusters returns a ClusterInformer.

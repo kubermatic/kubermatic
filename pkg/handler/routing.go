@@ -172,6 +172,7 @@ type RoutingParams struct {
 	ConstraintTemplateProvider            provider.ConstraintTemplateProvider
 	ConstraintProvider                    provider.ConstraintProvider
 	PrivilegedConstraintProvider          provider.PrivilegedConstraintProvider
+	AlertmanagerProviderGetter            provider.AlertmanagerProviderGetter
 	Versions                              kubermatic.Versions
 	CABundle                              *x509.CertPool
 }

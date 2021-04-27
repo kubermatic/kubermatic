@@ -275,6 +275,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 
 	addonProviderGetter := kubernetesprovider.AddonProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, options.accessibleAddons)
 
+	alertmanagerProviderGetter := kubernetesprovider.AlertmanagerProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
+
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create settings watcher due to %v", err)
@@ -316,6 +318,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		constraintTemplateProvider:            constraintTemplateProvider,
 		constraintProvider:                    constraintProvider,
 		privilegedConstraintProvider:          constraintProvider,
+		alertmanagerProviderGetter:            alertmanagerProviderGetter,
 	}, nil
 }
 
@@ -422,6 +425,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ConstraintTemplateProvider:            prov.constraintTemplateProvider,
 		ConstraintProvider:                    prov.constraintProvider,
 		PrivilegedConstraintProvider:          prov.privilegedConstraintProvider,
+		AlertmanagerProviderGetter:            prov.alertmanagerProviderGetter,
 		Versions:                              options.versions,
 		CABundle:                              options.caBundle.CertPool(),
 	}

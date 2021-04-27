@@ -58,8 +58,11 @@ type SeedClientGetter = func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client,
 // ClusterProviderGetter is used to get a clusterProvider
 type ClusterProviderGetter = func(seed *kubermaticv1.Seed) (ClusterProvider, error)
 
-// AddonProviderGetterr is used to get an AddonProvider
+// AddonProviderGetter is used to get an AddonProvider
 type AddonProviderGetter = func(seed *kubermaticv1.Seed) (AddonProvider, error)
+
+// AlertmanagerProviderGetter is used to get an AlertmanagerProvider
+type AlertmanagerProviderGetter = func(seed *kubermaticv1.Seed) (AlertmanagerProvider, error)
 
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName string, namespace string) (SeedGetter, error) {

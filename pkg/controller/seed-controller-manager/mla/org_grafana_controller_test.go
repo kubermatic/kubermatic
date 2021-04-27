@@ -17,17 +17,21 @@ limitations under the License.
 package mla
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v2"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -222,35 +226,21 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 }
 
 func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bool) {
-	counter := 0
+	var counter int64 = -1
 	assertExpectation := func() bool {
-		return assert.Equal(t, len(requests), counter)
+		return assert.Equal(t, len(requests), int(counter+1))
 	}
 	r := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		defer func() {
-			counter++
-		}()
-		if counter >= len(requests) {
+		c := atomic.AddInt64(&counter, 1)
+		if int(c) >= len(requests) {
 			assert.Failf(t, "unexpected request", "%v", r)
 		}
-		req := requests[counter]
+		req := requests[c]
+		t.Logf("checking request: %s", req.name)
 		assert.Equal(t, req.request.URL.Path, r.URL.Path)
 		assert.Equal(t, req.request.Method, r.Method)
 		if req.request.ContentLength > 0 {
-			defer r.Body.Close()
-			defer req.request.Body.Close()
-			decoder := json.NewDecoder(r.Body)
-			reqMap := map[string]interface{}{}
-			if err := decoder.Decode(&reqMap); err != nil {
-				t.Fatalf("%s: unmarshal request failed: %v", req.name, err)
-			}
-			tcMap := map[string]interface{}{}
-			decoder = json.NewDecoder(req.request.Body)
-			if err := decoder.Decode(&tcMap); err != nil {
-				t.Fatalf("%s: unmarshal expected map failed: %v", req.name, err)
-			}
-
-			assert.Equal(t, reqMap, tcMap)
+			assert.True(t, bodyEqual(t, req.request, r))
 		}
 		w.WriteHeader(req.response.StatusCode)
 		if req.response.Body != nil {
@@ -260,4 +250,41 @@ func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bo
 		}
 	})
 	return r, assertExpectation
+}
+
+func bodyEqual(t *testing.T, expectedRequest, request *http.Request) bool {
+	defer expectedRequest.Body.Close()
+	defer request.Body.Close()
+	expectedBody, err := ioutil.ReadAll(expectedRequest.Body)
+	assert.Nil(t, err)
+	body, err := ioutil.ReadAll(request.Body)
+	assert.Nil(t, err)
+	if bytes.Equal(expectedBody, body) {
+		return true
+	}
+	return jsonEqual(expectedBody, body) || yamlEqual(expectedBody, body)
+}
+
+func jsonEqual(expectedBody, body []byte) bool {
+	expectedBodyMap := map[string]interface{}{}
+	bodyMap := map[string]interface{}{}
+	if err := json.Unmarshal(expectedBody, &expectedBodyMap); err != nil {
+		return false
+	}
+	if err := json.Unmarshal(body, &bodyMap); err != nil {
+		return false
+	}
+	return reflect.DeepEqual(expectedBodyMap, bodyMap)
+}
+
+func yamlEqual(expectedBody, body []byte) bool {
+	expectedBodyMap := map[string]interface{}{}
+	bodyMap := map[string]interface{}{}
+	if err := yaml.Unmarshal(expectedBody, &expectedBodyMap); err != nil {
+		return false
+	}
+	if err := yaml.Unmarshal(body, &bodyMap); err != nil {
+		return false
+	}
+	return reflect.DeepEqual(expectedBodyMap, bodyMap)
 }

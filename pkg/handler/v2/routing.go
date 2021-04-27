@@ -22,6 +22,7 @@ import (
 
 	httptransport "github.com/go-kit/kit/transport/http"
 	prometheusapi "github.com/prometheus/client_golang/api"
+
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -32,10 +33,11 @@ import (
 	"github.com/go-kit/kit/log"
 	"go.uber.org/zap"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
-	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // Routing represents an object which binds endpoints to http handlers.
@@ -81,6 +83,7 @@ type Routing struct {
 	constraintTemplateProvider            provider.ConstraintTemplateProvider
 	constraintProvider                    provider.ConstraintProvider
 	privilegedConstraintProvider          provider.PrivilegedConstraintProvider
+	alertmanagerProviderGetter            provider.AlertmanagerProviderGetter
 	versions                              kubermatic.Versions
 	caBundle                              *x509.CertPool
 }
@@ -129,6 +132,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		constraintTemplateProvider:            routingParams.ConstraintTemplateProvider,
 		constraintProvider:                    routingParams.ConstraintProvider,
 		privilegedConstraintProvider:          routingParams.PrivilegedConstraintProvider,
+		alertmanagerProviderGetter:            routingParams.AlertmanagerProviderGetter,
 		versions:                              routingParams.Versions,
 		caBundle:                              routingParams.CABundle,
 	}

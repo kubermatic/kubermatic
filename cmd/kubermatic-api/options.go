@@ -173,4 +173,5 @@ type providers struct {
 	constraintTemplateProvider            provider.ConstraintTemplateProvider
 	constraintProvider                    provider.ConstraintProvider
 	privilegedConstraintProvider          provider.PrivilegedConstraintProvider
+	alertmanagerProviderGetter            provider.AlertmanagerProviderGetter
 }

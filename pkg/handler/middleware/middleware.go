@@ -68,6 +68,9 @@ const (
 	// PrivilegedAddonProviderContextKey key under which the current PrivilegedAddonProvider is kept in the ctx
 	PrivilegedAddonProviderContextKey kubermaticcontext.Key = "privileged-addon-provider"
 
+	// AlertmanagerProviderContextKey key under which the current AlertmanagerProvider is kept in the ctx
+	AlertmanagerProviderContextKey kubermaticcontext.Key = "alertmanager_provider"
+
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
@@ -378,4 +381,46 @@ func SetSeedsGetter(seedsGetter provider.SeedsGetter) transporthttp.RequestFunc 
 	return func(ctx context.Context, r *http.Request) context.Context {
 		return context.WithValue(ctx, SeedsGetterContextKey, seedsGetter)
 	}
+}
+
+// Alertmanagers is a middleware that injects the current AlertmanagerProvider into the ctx
+func Alertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+
+			addonProvider, err := getAlertmanagerProvider(clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, AlertmanagerProviderContextKey, addonProvider)
+			return next(ctx, request)
+		}
+	}
+}
+func getAlertmanagerProvider(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AlertmanagerProvider, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, err
+	}
+
+	if clusterID != "" {
+		for _, seed := range seeds {
+			clusterProvider, err := clusterProviderGetter(seed)
+			if err != nil {
+				return nil, k8cerrors.NewNotFound("cluster-provider", clusterID)
+			}
+			if clusterProvider.IsCluster(clusterID) {
+				seedName = seed.Name
+				break
+			}
+		}
+	}
+
+	seed, found := seeds[seedName]
+	if !found {
+		return nil, fmt.Errorf("couldn't find seed %q", seedName)
+	}
+
+	return alertmanagerProviderGetter(seed)
 }
