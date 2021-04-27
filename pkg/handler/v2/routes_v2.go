@@ -23,12 +23,11 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
 
-	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
-
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/addon"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	constrainttemplate "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"

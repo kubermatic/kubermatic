@@ -21,14 +21,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"k8s.io/apimachinery/pkg/api/meta"
-
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
