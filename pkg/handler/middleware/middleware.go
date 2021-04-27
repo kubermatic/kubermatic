@@ -389,15 +389,16 @@ func Alertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertma
 		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 			seedCluster := request.(seedClusterGetter).GetSeedCluster()
 
-			addonProvider, err := getAlertmanagerProvider(clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			alertmanagerProvider, err := getAlertmanagerProvider(clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
 			if err != nil {
 				return nil, err
 			}
-			ctx = context.WithValue(ctx, AlertmanagerProviderContextKey, addonProvider)
+			ctx = context.WithValue(ctx, AlertmanagerProviderContextKey, alertmanagerProvider)
 			return next(ctx, request)
 		}
 	}
 }
+
 func getAlertmanagerProvider(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AlertmanagerProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
