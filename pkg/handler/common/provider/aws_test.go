@@ -17,28 +17,67 @@ limitations under the License.
 package provider_test
 
 import (
-	"reflect"
+	"strings"
 	"testing"
-
-	"k8s.io/apimachinery/pkg/util/diff"
 
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/common/provider"
 )
 
-func TestAWSSize(t *testing.T) {
+func TestAWSSizeARMFiltering(t *testing.T) {
 	tests := []struct {
-		name          string
-		region        string
-		resourceQuota v1.MachineDeploymentVMResourceQuota
-		expectedNames []string
+		name                 string
+		region               string
+		resourceQuota        v1.MachineDeploymentVMResourceQuota
+		unexpectedNamePrefix []string
 	}{
 		{
 			name:          "test ARM filtering",
 			region:        "eu-central-1",
 			resourceQuota: genDefaultMachineDeploymentVMResourceQuota(),
-			// t4g.small is a instance with ARM which is filtered out here
-			expectedNames: []string{"t3a.small", "t3.small"},
+			// Instance List for ARM:
+			// a1.2xlarge
+			// a1.4xlarge
+			// a1.large
+			// a1.medium
+			// a1.metal
+			// a1.xlarge
+			// c6g.12xlarge
+			// c6g.16xlarge
+			// c6g.2xlarge
+			// c6g.4xlarge
+			// c6g.8xlarge
+			// c6g.large
+			// c6g.medium
+			// c6g.metal
+			// c6g.xlarge
+			// m6g.12xlarge
+			// m6g.16xlarge
+			// m6g.2xlarge
+			// m6g.4xlarge
+			// m6g.8xlarge
+			// m6g.large
+			// m6g.medium
+			// m6g.metal
+			// m6g.xlarge
+			// r6g.12xlarge
+			// r6g.16xlarge
+			// r6g.2xlarge
+			// r6g.4xlarge
+			// r6g.8xlarge
+			// r6g.large
+			// r6g.medium
+			// r6g.metal
+			// r6g.xlarge
+			// t4g.2xlarge
+			// t4g.large
+			// t4g.medium
+			// t4g.micro
+			// t4g.nano
+			// t4g.small
+			// t4g.xlarge
+			// ARM instances on AWS are marked with these prefixes
+			unexpectedNamePrefix: []string{"t4g", "c6g", "r6g", "m6g", "a1"},
 		},
 	}
 
@@ -49,13 +88,12 @@ func TestAWSSize(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			var resultNames []string
 			for _, size := range awsSizeList {
-				resultNames = append(resultNames, size.Name)
-			}
-
-			if !reflect.DeepEqual(resultNames, test.expectedNames) {
-				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(resultNames, test.expectedNames))
+				for _, prefix := range test.unexpectedNamePrefix {
+					if strings.HasPrefix(size.Name, prefix) {
+						t.Fatalf("Resulting list has an ARM instance %s with unexpected prefix %s", size.Name, prefix)
+					}
+				}
 			}
 		})
 	}
@@ -63,10 +101,10 @@ func TestAWSSize(t *testing.T) {
 
 func genDefaultMachineDeploymentVMResourceQuota() v1.MachineDeploymentVMResourceQuota {
 	return v1.MachineDeploymentVMResourceQuota{
-		MinCPU:    2,
-		MaxCPU:    2,
-		MinRAM:    2,
-		MaxRAM:    2,
-		EnableGPU: false,
+		MinCPU:    0,
+		MaxCPU:    20,
+		MinRAM:    0,
+		MaxRAM:    64,
+		EnableGPU: true,
 	}
 }
