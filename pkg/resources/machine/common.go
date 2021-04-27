@@ -125,6 +125,7 @@ func getAzureProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc *
 	config := azure.RawConfig{
 		Location:          providerconfig.ConfigVarString{Value: dc.Spec.Azure.Location},
 		ResourceGroup:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.ResourceGroup},
+		VNetResourceGroup: providerconfig.ConfigVarString{Value: c.Spec.Cloud.Azure.VNetResourceGroup},
 		VMSize:            providerconfig.ConfigVarString{Value: nodeSpec.Cloud.Azure.Size},
 		OSDiskSize:        nodeSpec.Cloud.Azure.OSDiskSize,
 		DataDiskSize:      nodeSpec.Cloud.Azure.DataDiskSize,
