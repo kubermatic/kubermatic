@@ -309,9 +309,11 @@ func (r *datasourceGrafanaReconciler) handleDeletion(ctx context.Context, cluste
 		}
 	}
 
-	kubernetes.RemoveFinalizer(cluster, mlaFinalizer)
-	if err := r.Update(ctx, cluster); err != nil {
-		return fmt.Errorf("updating Cluster: %w", err)
+	if kubernetes.HasFinalizer(cluster, mlaFinalizer) {
+		kubernetes.RemoveFinalizer(cluster, mlaFinalizer)
+		if err := r.Update(ctx, cluster); err != nil {
+			return fmt.Errorf("updating Cluster: %w", err)
+		}
 	}
 
 	return nil
