@@ -20,6 +20,10 @@ func (c *FakeKubermaticV1) AddonConfigs() v1.AddonConfigInterface {
 	return &FakeAddonConfigs{c}
 }
 
+func (c *FakeKubermaticV1) Alertmanagers(namespace string) v1.AlertmanagerInterface {
+	return &FakeAlertmanagers{c, namespace}
+}
+
 func (c *FakeKubermaticV1) Clusters() v1.ClusterInterface {
 	return &FakeClusters{c}
 }
