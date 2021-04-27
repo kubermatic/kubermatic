@@ -417,6 +417,7 @@ func PrivilegedConstraints(clusterProviderGetter provider.ClusterProviderGetter,
 		}
 	}
 }
+
 func getConstraintProvider(clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.ConstraintProvider, error) {
 	seeds, err := seedsGetter()
 	if err != nil {
