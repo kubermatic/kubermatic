@@ -37,6 +37,8 @@ type ClientService interface {
 
 	BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleV2OK, error)
 
+	CreateAlertmanager(params *CreateAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*CreateAlertmanagerCreated, error)
+
 	CreateCluster(params *CreateClusterParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterCreated, error)
 
 	CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterRoleCreated, error)
@@ -58,6 +60,8 @@ type ClientService interface {
 	CreateRole(params *CreateRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateRoleCreated, error)
 
 	CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.ClientAuthInfoWriter) (*CreateSSHKeyCreated, error)
+
+	DeleteAlertmanager(params *DeleteAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAlertmanagerOK, error)
 
 	DeleteCluster(params *DeleteClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterOK, error)
 
@@ -88,6 +92,8 @@ type ClientService interface {
 	DetachSSHKeyFromCluster(params *DetachSSHKeyFromClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DetachSSHKeyFromClusterOK, error)
 
 	DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*DetachSSHKeyFromClusterV2OK, error)
+
+	GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*GetAlertmanagerOK, error)
 
 	GetCluster(params *GetClusterParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterOK, error)
 
@@ -447,6 +453,40 @@ func (a *Client) BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runti
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*BindUserToRoleV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  CreateAlertmanager Creates an alertmanager for the given cluster
+*/
+func (a *Client) CreateAlertmanager(params *CreateAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*CreateAlertmanagerCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateAlertmanagerParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "createAlertmanager",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateAlertmanagerReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateAlertmanagerCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateAlertmanagerDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -823,6 +863,40 @@ func (a *Client) CreateSSHKey(params *CreateSSHKeyParams, authInfo runtime.Clien
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateSSHKeyDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteAlertmanager deletes the alertmanager for the specified cluster
+*/
+func (a *Client) DeleteAlertmanager(params *DeleteAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteAlertmanagerOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteAlertmanagerParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteAlertmanager",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteAlertmanagerReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteAlertmanagerOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteAlertmanagerDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -1335,6 +1409,40 @@ func (a *Client) DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Para
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DetachSSHKeyFromClusterV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetAlertmanager gets the alertmanager for the specified cluster
+*/
+func (a *Client) GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*GetAlertmanagerOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetAlertmanagerParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getAlertmanager",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetAlertmanagerReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetAlertmanagerOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetAlertmanagerDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -101,7 +101,7 @@ func (p *AlertmanagerProvider) Create(expectedAlertmanager *kubermaticv1.Alertma
 	}
 
 	if alertmanager.Spec.ConfigSecret.Name == "" {
-		return nil, nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to find alertmanager configuration"))
+		return nil, nil, utilerrors.New(http.StatusInternalServerError, "failed to find alertmanager configuration")
 	}
 	secret := &corev1.Secret{}
 	if err := impersonationClient.Get(ctx, types.NamespacedName{
@@ -133,7 +133,7 @@ func (p *AlertmanagerProvider) Delete(cluster *kubermaticv1.Cluster, userInfo *p
 		return utilerrors.New(http.StatusInternalServerError, fmt.Errorf("failed to get alertmanager: %w", err).Error())
 	}
 	if alertmanager.Spec.ConfigSecret.Name == "" {
-		return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to find alertmanager configuration"))
+		return utilerrors.New(http.StatusInternalServerError, "failed to find alertmanager configuration")
 	}
 	secret := &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
