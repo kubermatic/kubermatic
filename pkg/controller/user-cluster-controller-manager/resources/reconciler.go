@@ -628,8 +628,8 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		creators = []reconciling.NamedSecretCreatorGetter{
 			userclusterprometheus.ClientCertificateCreator(data.mlaGatewayCACert),
 		}
-		if err := reconciling.ReconcileSecrets(ctx, creators, resources.MLANamespace, r.Client); err != nil {
-			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.MLANamespace, err)
+		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.UserClusterMLANamespace, err)
 		}
 	}
 	if r.userClusterMLA.Logging {
