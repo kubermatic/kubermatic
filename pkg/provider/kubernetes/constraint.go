@@ -23,6 +23,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,6 +43,24 @@ func NewConstraintProvider(createSeedImpersonatedClient impersonationClient, cli
 		clientPrivileged:             client,
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
 	}, nil
+}
+
+func ConstraintProviderFactory(mapper meta.RESTMapper, seedKubeconfigGetter provider.SeedKubeconfigGetter) provider.ConstraintProviderGetter {
+	return func(seed *kubermaticv1.Seed) (provider.ConstraintProvider, error) {
+		cfg, err := seedKubeconfigGetter(seed)
+		if err != nil {
+			return nil, err
+		}
+		defaultImpersonationClientForSeed := NewImpersonationClient(cfg, mapper)
+		clientPrivileged, err := ctrlruntimeclient.New(cfg, ctrlruntimeclient.Options{Mapper: mapper})
+		if err != nil {
+			return nil, err
+		}
+		return NewConstraintProvider(
+			defaultImpersonationClientForSeed.CreateImpersonatedClient,
+			clientPrivileged,
+		)
+	}
 }
 
 // List gets all constraints
