@@ -164,12 +164,12 @@ func renderTemplate(tpl string, data interface{}) (string, error) {
 	return strings.TrimSpace(output.String()), nil
 }
 
-func GatewayConfigMapCreator(c *kubermaticv1.Cluster) reconciling.NamedConfigMapCreatorGetter {
+func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string) reconciling.NamedConfigMapCreatorGetter {
 	return func() (string, reconciling.ConfigMapCreator) {
 		return gatewayName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				configData := configTemplateData{
-					Namespace: resources.MLANamespace,
+					Namespace: mlaNamespace,
 					TenantID:  c.Name,
 				}
 				config, err := renderTemplate(nginxConfig, configData)

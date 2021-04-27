@@ -24,7 +24,7 @@ import (
 )
 
 func NamespaceCreator() (string, reconciling.NamespaceCreator) {
-	return resources.MLANamespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
+	return resources.UserClusterMLANamespace, func(ns *corev1.Namespace) (*corev1.Namespace, error) {
 		return ns, nil
 	}
 }

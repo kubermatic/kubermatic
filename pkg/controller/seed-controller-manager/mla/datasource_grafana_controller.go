@@ -54,6 +54,7 @@ const (
 type datasourceGrafanaReconciler struct {
 	ctrlruntimeclient.Client
 	grafanaClient *grafanasdk.Client
+	mlaNamespace  string
 
 	log        *zap.SugaredLogger
 	workerName string
@@ -69,6 +70,7 @@ func newDatasourceGrafanaReconciler(
 	workerName string,
 	versions kubermatic.Versions,
 	grafanaClient *grafanasdk.Client,
+	mlaNamespace string,
 	overwriteRegistry string,
 ) error {
 	log = log.Named(ControllerName)
@@ -79,6 +81,7 @@ func newDatasourceGrafanaReconciler(
 	reconciler := &datasourceGrafanaReconciler{
 		Client:        client,
 		grafanaClient: grafanaClient,
+		mlaNamespace:  mlaNamespace,
 
 		log:        log,
 		workerName: workerName,
@@ -258,7 +261,7 @@ func (r *datasourceGrafanaReconciler) ensureDeployments(ctx context.Context, c *
 
 func (r *datasourceGrafanaReconciler) ensureConfigMaps(ctx context.Context, c *kubermaticv1.Cluster) error {
 	creators := []reconciling.NamedConfigMapCreatorGetter{
-		GatewayConfigMapCreator(c),
+		GatewayConfigMapCreator(c, r.mlaNamespace),
 	}
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c))); err != nil {
 		return fmt.Errorf("failed to ensure that the ConfigMap exists: %v", err)

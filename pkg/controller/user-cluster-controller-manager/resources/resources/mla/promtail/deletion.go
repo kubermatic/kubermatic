@@ -31,19 +31,19 @@ func ResourcesOnDeletion() []ctrlruntimeclient.Object {
 		&appsv1.DaemonSet{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.PromtailDaemonSetName,
-				Namespace: resources.MLANamespace,
+				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.PromtailSecretName,
-				Namespace: resources.MLANamespace,
+				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&corev1.ServiceAccount{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.PromtailServiceAccountName,
-				Namespace: resources.MLANamespace,
+				Namespace: resources.UserClusterMLANamespace,
 			},
 		},
 		&rbacv1.ClusterRole{
