@@ -575,7 +575,7 @@ const (
 )
 
 const (
-	MLANamespace                   = "mla-system"
+	UserClusterMLANamespace        = "mla-system"
 	PromtailServiceAccountName     = "promtail"
 	PromtailClusterRoleName        = "system:kubermatic:mla:promtail"
 	PromtailClusterRoleBindingName = "system:kubermatic:mla:promtail"
