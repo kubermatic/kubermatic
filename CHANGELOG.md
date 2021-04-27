@@ -1,6 +1,6 @@
 # Kubermatic 2.17
 
-## [v2.17.0](https://github.com/kubermatic/kubermatic)
+## [v2.17.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.17.0-beta.0)
 
 ### Supported Kubernetes Versions
 
