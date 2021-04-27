@@ -83,9 +83,8 @@ func (p *AlertmanagerProvider) Get(cluster *kubermaticv1.Cluster, userInfo *prov
 	return alertmanager, configSecret, nil
 }
 
-// Create creates an Alertmanager object and corresponding config Secret. It can be the case that the Alertmanager
-// and Secret are already created by alertmanager configuration controller, in this case, Create will only update
-// those objects.
+// Create only updates an Alertmanager object and corresponding config Secret since Alertmanager and Secret will
+// be created by alertmanager configuration controller.
 func (p *AlertmanagerProvider) Create(expectedAlertmanager *kubermaticv1.Alertmanager, expectedSecret *corev1.Secret, userInfo *provider.UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
@@ -118,8 +117,8 @@ func (p *AlertmanagerProvider) Create(expectedAlertmanager *kubermaticv1.Alertma
 	return alertmanager, secret, nil
 }
 
-// Delete resets corresponding config Secret of Alertmanager object to the default config. Note that Delete will not
-// remove Alertmanager object, it will only reset the config secret to the default configuration by removing the config secret.
+// Delete resets corresponding config Secret of Alertmanager object to the default config. Note that Delete will not remove
+// Alertmanager object, it will only delete the config secret, and alertmanager controller will create default config secret.
 func (p *AlertmanagerProvider) Delete(cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo) error {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
