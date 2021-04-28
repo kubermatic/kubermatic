@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	ec2 "github.com/cristim/ec2-instances-info"
 
@@ -244,6 +245,11 @@ func AWSSizes(region string, quota kubermaticv1.MachineDeploymentVMResourceQuota
 			continue
 		}
 
+		// We do not support ARM, so we filter them out here
+		if isARM64Architecture(i.PhysicalProcessor) {
+			continue
+		}
+
 		sizes = append(sizes, apiv1.AWSSize{
 			Name:       i.InstanceType,
 			PrettyName: i.PrettyName,
@@ -255,6 +261,11 @@ func AWSSizes(region string, quota kubermaticv1.MachineDeploymentVMResourceQuota
 	}
 
 	return filterAWSByQuota(sizes, quota), nil
+}
+
+func isARM64Architecture(physicalProcessor string) bool {
+	// right now there is only one Arm-based processors: Graviton2
+	return strings.Contains(physicalProcessor, "Graviton")
 }
 
 func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.AWSSizeList {

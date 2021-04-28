@@ -37,7 +37,7 @@ func ClusterRoleBindingCreator() reconciling.NamedClusterRoleBindingCreatorGette
 				{
 					Kind:      rbacv1.ServiceAccountKind,
 					Name:      resources.UserClusterPrometheusServiceAccountName,
-					Namespace: resources.MLANamespace,
+					Namespace: resources.UserClusterMLANamespace,
 				},
 			}
 			return crb, nil
