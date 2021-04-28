@@ -31,9 +31,8 @@ This section covers the process to create a new Kubermatic release. Reflects the
    (i.e. copy the content, data, etc. files and adjust accordingly)
 1. Adjust postsubmit jobs in the infra repo to start running for
    the new release branch
-1. Tagging
-    - Tag the release in `dashboard` repo
-    - Ensure it's built and pushed successfully
+1. Release dashboard artifacts following its [release document](https://github.com/kubermatic/dashboard/blob/master/docs/manuals/release.md)
+1. Release kkp artifacts:
     - Tag the matching release in `kubermatic` repo
     - Ensure it's built and pushed successfully
 1. Documentation:
