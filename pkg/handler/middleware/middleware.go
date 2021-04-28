@@ -68,6 +68,12 @@ const (
 	// PrivilegedAddonProviderContextKey key under which the current PrivilegedAddonProvider is kept in the ctx
 	PrivilegedAddonProviderContextKey kubermaticcontext.Key = "privileged-addon-provider"
 
+	// ConstraintProviderContextKey key under which the current ConstraintProvider is kept in the ctx
+	ConstraintProviderContextKey kubermaticcontext.Key = "constraint-provider"
+
+	// PrivilegedConstraintProviderContextKey key under which the current PrivilegedConstraintProvider is kept in the ctx
+	PrivilegedConstraintProviderContextKey kubermaticcontext.Key = "privileged-constraint-provider"
+
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
@@ -378,4 +384,63 @@ func SetSeedsGetter(seedsGetter provider.SeedsGetter) transporthttp.RequestFunc 
 	return func(ctx context.Context, r *http.Request) context.Context {
 		return context.WithValue(ctx, SeedsGetterContextKey, seedsGetter)
 	}
+}
+
+// Constraints is a middleware that injects the current ConstraintProvider into the ctx
+func Constraints(clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+
+			constraintProvider, err := getConstraintProvider(clusterProviderGetter, constraintProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, ConstraintProviderContextKey, constraintProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+// PrivilegedConstraints is a middleware that injects the current PrivilegedConstraintProvider into the ctx
+func PrivilegedConstraints(clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+			constraintProvider, err := getConstraintProvider(clusterProviderGetter, constraintProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			if err != nil {
+				return nil, err
+			}
+			privilegedConstraintProvider := constraintProvider.(provider.PrivilegedConstraintProvider)
+			ctx = context.WithValue(ctx, PrivilegedConstraintProviderContextKey, privilegedConstraintProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+func getConstraintProvider(clusterProviderGetter provider.ClusterProviderGetter, constraintProviderGetter provider.ConstraintProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.ConstraintProvider, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, err
+	}
+
+	if clusterID != "" {
+		for _, seed := range seeds {
+			clusterProvider, err := clusterProviderGetter(seed)
+			if err != nil {
+				return nil, k8cerrors.NewNotFound("cluster-provider", clusterID)
+			}
+			if clusterProvider.IsCluster(clusterID) {
+				seedName = seed.Name
+				break
+			}
+		}
+	}
+
+	seed, found := seeds[seedName]
+	if !found {
+		return nil, fmt.Errorf("couldn't find seed %q", seedName)
+	}
+
+	return constraintProviderGetter(seed)
 }

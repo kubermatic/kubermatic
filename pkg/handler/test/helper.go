@@ -31,12 +31,12 @@ import (
 	"time"
 
 	ver "github.com/Masterminds/semver/v3"
-	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 	prometheusapi "github.com/prometheus/client_golang/api"
 	"k8s.io/utils/pointer"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -184,8 +184,7 @@ type newRoutingFunc func(
 	externalClusterProvider provider.ExternalClusterProvider,
 	privilegedExternalClusterProvider provider.PrivilegedExternalClusterProvider,
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
-	constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider,
+	constraintProviderGetter provider.ConstraintProviderGetter,
 	kubermaticVersions kubermatic.Versions,
 ) http.Handler
 
@@ -345,9 +344,12 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
-	fakeConstraintProvider := &FakeConstraintProvider{
-		Provider:   constraintProvider,
-		FakeClient: fakeClient,
+	constraintProviders := map[string]provider.ConstraintProvider{"us-central1": constraintProvider}
+	constraintProviderGetter := func(seed *kubermaticv1.Seed) (provider.ConstraintProvider, error) {
+		if constraint, exists := constraintProviders[seed.Name]; exists {
+			return constraint, nil
+		}
+		return nil, fmt.Errorf("can not find constraintprovider for cluster %q", seed.Name)
 	}
 
 	eventRecorderProvider := kubernetes.NewEventRecorder()
@@ -402,8 +404,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeExternalClusterProvider,
 		externalClusterProvider,
 		fakeConstraintTemplateProvider,
-		fakeConstraintProvider,
-		constraintProvider,
+		constraintProviderGetter,
 		kubermaticVersions,
 	)
 
