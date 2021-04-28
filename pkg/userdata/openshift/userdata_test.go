@@ -120,7 +120,6 @@ func TestUserdataGeneration(t *testing.T) {
 				ExternalCloudProvider: false,
 				HTTPProxy:             "",
 				NoProxy:               "",
-				InsecureRegistries:    []string{},
 				PauseImage:            "",
 			}
 
