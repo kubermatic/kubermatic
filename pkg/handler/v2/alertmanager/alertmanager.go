@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -43,17 +43,12 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(getAlertmanagerReq)
-		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+
+		c, userInfo, alertmanagerProvider, err := getClusterUserInfoAlertmanagerProvider(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
-			return nil, err
+			return nil, nil
 		}
 
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, err
-		}
-
-		alertmanagerProvider := ctx.Value(middleware.AlertmanagerProviderContextKey).(provider.AlertmanagerProvider)
 		alertmanager, config, err := alertmanagerProvider.Get(c, userInfo)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -71,19 +66,12 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 			return nil, utilerrors.NewBadRequest(fmt.Errorf("invalid alertmanager configuration: %w", err).Error())
 		}
 
-		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		c, userInfo, alertmanagerProvider, err := getClusterUserInfoAlertmanagerProvider(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
-			return nil, err
-		}
-
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, err
+			return nil, nil
 		}
 
 		alertmanager, configSecret := convertAPIToInternalAlertmanager(c, &req.Body)
-
-		alertmanagerProvider := ctx.Value(middleware.AlertmanagerProviderContextKey).(provider.AlertmanagerProvider)
 		al, config, err := alertmanagerProvider.Create(alertmanager, configSecret, userInfo)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -97,17 +85,11 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(deleteAlertmanagerReq)
 
-		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		c, userInfo, alertmanagerProvider, err := getClusterUserInfoAlertmanagerProvider(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
-			return nil, err
+			return nil, nil
 		}
 
-		userInfo, err := userInfoGetter(ctx, req.ProjectID)
-		if err != nil {
-			return nil, err
-		}
-
-		alertmanagerProvider := ctx.Value(middleware.AlertmanagerProviderContextKey).(provider.AlertmanagerProvider)
 		if err := alertmanagerProvider.Delete(c, userInfo); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -214,4 +196,19 @@ func convertInternalToAPIAlertmanager(alertmanager *kubermaticv1.Alertmanager, c
 			Config: configSecret.Data[resources.AlertmanagerConfigSecretKey],
 		},
 	}
+}
+
+func getClusterUserInfoAlertmanagerProvider(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, ProjectID, ClusterID string) (*kubermaticv1.Cluster, *provider.UserInfo, provider.AlertmanagerProvider, error) {
+	c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, ProjectID, ClusterID, nil)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	userInfo, err := userInfoGetter(ctx, ProjectID)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	alertmanagerProvider := ctx.Value(middleware.AlertmanagerProviderContextKey).(provider.AlertmanagerProvider)
+	return c, userInfo, alertmanagerProvider, nil
 }

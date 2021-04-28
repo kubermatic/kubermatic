@@ -589,7 +589,6 @@ func shouldSkipRBACRoleForClusterNamespaceResource(projectName string, cluster *
 
 // shouldSkipRBACRoleForClusterNamespaceNamedResource will tell you if you should skip the generation of Role/Rolebinding of a named resource or not,
 // because for some groupPrefixes we actually don't create Role
-//
 // note that this method returns generated role if is not meant to be skipped
 func shouldSkipRBACRoleForClusterNamespaceNamedResource(projectName string, cluster *kubermaticv1.Cluster, resourceName, policyAPIGroups, policyResource, kind, groupPrefix string) (bool, *rbacv1.Role, error) {
 	generatedRole, err := generateRBACRoleForClusterNamespaceNamedResource(
@@ -600,7 +599,6 @@ func shouldSkipRBACRoleForClusterNamespaceNamedResource(projectName string, clus
 		kind,
 		resourceName,
 	)
-
 	if err != nil {
 		return false, generatedRole, err
 	}
