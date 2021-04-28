@@ -184,8 +184,7 @@ type newRoutingFunc func(
 	externalClusterProvider provider.ExternalClusterProvider,
 	privilegedExternalClusterProvider provider.PrivilegedExternalClusterProvider,
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
-	constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider,
+	constraintProviderGetter provider.ConstraintProviderGetter,
 	alertmanagerProviderGetter provider.AlertmanagerProviderGetter,
 	kubermaticVersions kubermatic.Versions,
 ) http.Handler
@@ -346,9 +345,12 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
-	fakeConstraintProvider := &FakeConstraintProvider{
-		Provider:   constraintProvider,
-		FakeClient: fakeClient,
+	constraintProviders := map[string]provider.ConstraintProvider{"us-central1": constraintProvider}
+	constraintProviderGetter := func(seed *kubermaticv1.Seed) (provider.ConstraintProvider, error) {
+		if constraint, exists := constraintProviders[seed.Name]; exists {
+			return constraint, nil
+		}
+		return nil, fmt.Errorf("can not find constraintprovider for cluster %q", seed.Name)
 	}
 
 	alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient)
@@ -412,8 +414,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeExternalClusterProvider,
 		externalClusterProvider,
 		fakeConstraintTemplateProvider,
-		fakeConstraintProvider,
-		constraintProvider,
+		constraintProviderGetter,
 		alertmanagerProviderGetter,
 		kubermaticVersions,
 	)

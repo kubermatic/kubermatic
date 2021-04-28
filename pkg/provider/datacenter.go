@@ -61,6 +61,9 @@ type ClusterProviderGetter = func(seed *kubermaticv1.Seed) (ClusterProvider, err
 // AddonProviderGetter is used to get an AddonProvider
 type AddonProviderGetter = func(seed *kubermaticv1.Seed) (AddonProvider, error)
 
+// ConstraintProviderGetter is used to get a ConstraintProvider
+type ConstraintProviderGetter = func(seed *kubermaticv1.Seed) (ConstraintProvider, error)
+
 // AlertmanagerProviderGetter is used to get an AlertmanagerProvider
 type AlertmanagerProviderGetter = func(seed *kubermaticv1.Seed) (AlertmanagerProvider, error)
 
