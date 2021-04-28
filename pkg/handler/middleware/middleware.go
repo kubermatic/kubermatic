@@ -77,7 +77,6 @@ const (
 	// AlertmanagerProviderContextKey key under which the current AlertmanagerProvider is kept in the ctx
 	AlertmanagerProviderContextKey kubermaticcontext.Key = "alertmanager_provider"
 
-
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
