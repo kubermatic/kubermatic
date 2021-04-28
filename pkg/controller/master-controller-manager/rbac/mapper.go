@@ -44,6 +44,8 @@ const (
 	saSecretsNamespaceName = "kubermatic"
 
 	defaultAlertmanagerConfigSecretName = "alertmanager"
+
+	secretV1Kind = "Secret"
 )
 
 // AllGroupsPrefixes holds a list of groups with prefixes that we will generate RBAC Roles/Binding for.
@@ -566,7 +568,6 @@ func generateVerbsForNamespacedResource(groupName, resourceKind, namespace strin
 	// special case - only the owners of a project can create secrets in "saSecretsNamespaceName" namespace
 	//
 	if namespace == saSecretsNamespaceName {
-		secretV1Kind := "Secret"
 		if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind {
 			return []string{"create"}, nil
 		} else if resourceKind == secretV1Kind {
@@ -584,7 +585,6 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 	// special case - only the owners of a project can manipulate secrets in "ssaSecretsNamespaceNam" namespace
 	//
 	if namespace == saSecretsNamespaceName {
-		secretV1Kind := "Secret"
 		if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind {
 			return []string{"get", "update", "delete"}, nil
 		} else if resourceKind == secretV1Kind {
@@ -597,7 +597,7 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 }
 
 func generateVerbsForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, kind string) ([]string, error) {
-	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && (kind == kubermaticv1.AddonKindName || kind == kubermaticv1.AlertmanagerKindName || kind == "Secret") {
+	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && (kind == kubermaticv1.AddonKindName || kind == kubermaticv1.AlertmanagerKindName || kind == secretV1Kind) {
 		return []string{"get", "list"}, nil
 	}
 
