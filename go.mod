@@ -47,7 +47,7 @@ require (
 	github.com/iancoleman/strcase v0.1.2
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jetstack/cert-manager v1.1.0
-	github.com/kubermatic/machine-controller v1.23.1
+	github.com/kubermatic/machine-controller v1.24.4
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/nelsam/hel v0.0.0-20200611165952-2d829bae0c66 // indirect
