@@ -54,7 +54,7 @@ const (
 )
 
 func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
-	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider) endpoint.Endpoint {
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(listConstraintsReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -68,6 +68,8 @@ func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provid
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+
+		constraintProvider := ctx.Value(middleware.ConstraintProviderContextKey).(provider.ConstraintProvider)
 
 		constraintList, err := constraintProvider.List(clus)
 		if err != nil {
@@ -181,7 +183,7 @@ func DecodeListConstraintsReq(c context.Context, r *http.Request) (interface{}, 
 }
 
 func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
-	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider) endpoint.Endpoint {
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(constraintReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
@@ -196,6 +198,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
+		constraintProvider := ctx.Value(middleware.ConstraintProviderContextKey).(provider.ConstraintProvider)
 		constraint, err := constraintProvider.Get(clus, req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -228,8 +231,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 }
 
 func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
-	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider) endpoint.Endpoint {
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(constraintReq)
 
@@ -237,6 +239,8 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		if err != nil {
 			return nil, err
 		}
+		constraintProvider := ctx.Value(middleware.ConstraintProviderContextKey).(provider.ConstraintProvider)
+		privilegedConstraintProvider := ctx.Value(middleware.PrivilegedConstraintProviderContextKey).(provider.PrivilegedConstraintProvider)
 		err = deleteConstraint(ctx, userInfoGetter, constraintProvider, privilegedConstraintProvider, clus, req.ProjectID, req.Name)
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -289,8 +293,7 @@ func DecodeConstraintReq(c context.Context, r *http.Request) (interface{}, error
 }
 
 func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
-	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
 	constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createConstraintReq)
@@ -307,6 +310,8 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 		constraint := convertAPIToInternalConstraint(req.Body.Name, clus.Status.NamespaceName, req.Body.Spec)
 
+		constraintProvider := ctx.Value(middleware.ConstraintProviderContextKey).(provider.ConstraintProvider)
+		privilegedConstraintProvider := ctx.Value(middleware.PrivilegedConstraintProviderContextKey).(provider.PrivilegedConstraintProvider)
 		ct, err := createConstraint(ctx, userInfoGetter, constraintProvider, privilegedConstraintProvider, req.ProjectID, constraint)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -370,8 +375,7 @@ func (req *createConstraintReq) ValidateCreateConstraintReq(constraintTemplatePr
 }
 
 func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
-	privilegedProjectProvider provider.PrivilegedProjectProvider, constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider) endpoint.Endpoint {
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchConstraintReq)
 
@@ -379,6 +383,9 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		if err != nil {
 			return nil, err
 		}
+
+		constraintProvider := ctx.Value(middleware.ConstraintProviderContextKey).(provider.ConstraintProvider)
+		privilegedConstraintProvider := ctx.Value(middleware.PrivilegedConstraintProviderContextKey).(provider.PrivilegedConstraintProvider)
 
 		// get Constraint
 		originalConstraint, err := constraintProvider.Get(clus, req.Name)

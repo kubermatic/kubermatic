@@ -61,6 +61,9 @@ type ClusterProviderGetter = func(seed *kubermaticv1.Seed) (ClusterProvider, err
 // AddonProviderGetterr is used to get an AddonProvider
 type AddonProviderGetter = func(seed *kubermaticv1.Seed) (AddonProvider, error)
 
+// ConstraintProviderGetter is used to get a ConstraintProvider
+type ConstraintProviderGetter = func(seed *kubermaticv1.Seed) (ConstraintProvider, error)
+
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName string, namespace string) (SeedGetter, error) {
 	return func() (*kubermaticv1.Seed, error) {
