@@ -46,7 +46,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 
 		c, userInfo, alertmanagerProvider, err := getClusterUserInfoAlertmanagerProvider(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
-			return nil, nil
+			return nil, err
 		}
 
 		alertmanager, config, err := alertmanagerProvider.Get(c, userInfo)
@@ -68,7 +68,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 		c, userInfo, alertmanagerProvider, err := getClusterUserInfoAlertmanagerProvider(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
-			return nil, nil
+			return nil, err
 		}
 
 		alertmanager, configSecret := convertAPIToInternalAlertmanager(c, &req.Body)
@@ -87,7 +87,7 @@ func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 
 		c, userInfo, alertmanagerProvider, err := getClusterUserInfoAlertmanagerProvider(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
-			return nil, nil
+			return nil, err
 		}
 
 		if err := alertmanagerProvider.Delete(c, userInfo); err != nil {
