@@ -198,13 +198,13 @@ func convertInternalToAPIAlertmanager(alertmanager *kubermaticv1.Alertmanager, c
 	}
 }
 
-func getClusterUserInfoAlertmanagerProvider(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, ProjectID, ClusterID string) (*kubermaticv1.Cluster, *provider.UserInfo, provider.AlertmanagerProvider, error) {
-	c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, ProjectID, ClusterID, nil)
+func getClusterUserInfoAlertmanagerProvider(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (*kubermaticv1.Cluster, *provider.UserInfo, provider.AlertmanagerProvider, error) {
+	c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	userInfo, err := userInfoGetter(ctx, ProjectID)
+	userInfo, err := userInfoGetter(ctx, projectID)
 	if err != nil {
 		return nil, nil, nil, err
 	}
