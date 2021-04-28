@@ -66,7 +66,7 @@ func newDefaultMLAGatewayURLGetter() *defaultMLAGatewayURLGetter {
 }
 
 func (d *defaultMLAGatewayURLGetter) mlaGatewayURL(cluster *kubermaticv1.Cluster) string {
-	return fmt.Sprintf("http://mla-gateway-alert.%s.svc.cluster.local", cluster.Status.NamespaceName)
+	return fmt.Sprintf("http://%s.%s.svc.cluster.local", gatewayAlertName, cluster.Status.NamespaceName)
 }
 
 type alertmanagerReconciler struct {
@@ -207,7 +207,7 @@ func (r *alertmanagerReconciler) reconcile(ctx context.Context, cluster *kuberma
 		// If this cluster is being deleted, we only clean up the Alertmanager configuration, we don't need to clean up
 		// `Alertmanager` and `Secret` objects because they are in cluster namespace, and they will be garbage-collected
 		// by Kubernetes itself.
-		if err := r.cleanUpAlertmanagerConfiguration(cluster); err != nil {
+		if err := r.cleanUpAlertmanagerConfiguration(ctx, cluster); err != nil {
 			return nil, fmt.Errorf("failed to delete alertmanager conifugration: %w", err)
 		}
 		if kubernetes.HasFinalizer(cluster, alertmanagerFinalizer) {
@@ -224,7 +224,7 @@ func (r *alertmanagerReconciler) reconcile(ctx context.Context, cluster *kuberma
 	// or disabled based on the monitoring flag.
 	if !monitoringEnabled {
 		// If monitoring is disabled, we clean up `Alertmanager` and `Secret` objects, and also Alertmanager configuration.
-		if err := r.cleanUpAlertmanagerConfiguration(cluster); err != nil {
+		if err := r.cleanUpAlertmanagerConfiguration(ctx, cluster); err != nil {
 			return nil, fmt.Errorf("failed to delete alertmanager conifugration: %w", err)
 		}
 		if err := r.cleanUpAlertmanagerObjects(ctx, cluster); err != nil {
@@ -252,7 +252,17 @@ func (r *alertmanagerReconciler) reconcile(ctx context.Context, cluster *kuberma
 	return nil, nil
 }
 
-func (r *alertmanagerReconciler) cleanUpAlertmanagerConfiguration(cluster *kubermaticv1.Cluster) error {
+func (r *alertmanagerReconciler) cleanUpAlertmanagerConfiguration(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	// TODO: Note that it can be the case that mla gateway service is deleted before controller cleans alertmanager
+	// configuration up. For fixing that controller needs to send requests to cortex alertmanager endpoints with
+	// X-Scope-OrgID header directly.
+	service := &corev1.Service{}
+	if err := r.Get(ctx, types.NamespacedName{
+		Name:      gatewayAlertName,
+		Namespace: cluster.Status.NamespaceName,
+	}, service); err != nil {
+		return ctrlruntimeclient.IgnoreNotFound(err)
+	}
 	req, err := http.NewRequest(http.MethodDelete,
 		r.mlaGatewayURLGetter.mlaGatewayURL(cluster)+alertmanagerConfigEndpoint, nil)
 	if err != nil {

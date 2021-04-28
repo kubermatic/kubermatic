@@ -224,6 +224,12 @@ func TestAlertmanagerReconcile(t *testing.T) {
 						resources.AlertmanagerConfigSecretKey: []byte(generateAlertmanagerConfig("test-user")),
 					},
 				},
+				&corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      gatewayAlertName,
+						Namespace: "cluster-test",
+					},
+				},
 				&kubermaticv1.Alertmanager{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resources.AlertmanagerName,
@@ -253,6 +259,12 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
 				generateCluster("test", false, true),
+				&corev1.Service{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      gatewayAlertName,
+						Namespace: "cluster-test",
+					},
+				},
 			},
 			requests: []request{
 				{
