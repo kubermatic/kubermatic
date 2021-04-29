@@ -59,12 +59,12 @@ type userclusterControllerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
-	Seed() *kubermaticv1.Seed
 	GetOpenVPNServerPort() (int32, error)
 	GetMLAGatewayPort() (int32, error)
 	KubermaticAPIImage() string
 	KubermaticDockerTag() string
 	GetKubernetesCloudProviderName() string
+	UserClusterMLAEnabled() bool
 }
 
 // DeploymentCreator returns the function to create and update the user cluster controller deployment
@@ -149,7 +149,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-opa-webhook-timeout", fmt.Sprint(*data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds))
 			}
 
-			if data.Seed().Spec.MLA != nil && data.Seed().Spec.MLA.UserClusterMLAEnabled && data.Cluster().Spec.MLA != nil {
+			if data.UserClusterMLAEnabled() && data.Cluster().Spec.MLA != nil {
 				args = append(args, fmt.Sprintf("-user-cluster-monitoring=%t", data.Cluster().Spec.MLA.MonitoringEnabled))
 				args = append(args, fmt.Sprintf("-user-cluster-logging=%t", data.Cluster().Spec.MLA.LoggingEnabled))
 

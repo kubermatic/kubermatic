@@ -677,6 +677,7 @@ func TestLoadFiles(t *testing.T) {
 						WithBackupPeriod(20 * time.Minute).
 						WithMonitoringScrapeAnnotationPrefix("kubermatic_io_monitoring").
 						WithInClusterPrometheusScrapingConfigsFile(promTmpFilePath).
+						WithUserClusterMLAEnabled(true).
 						WithCABundle(caBundle).
 						WithOIDCIssuerURL("https://dev.kubermatic.io/dex").
 						WithOIDCIssuerClientID("kubermaticIssuer").
