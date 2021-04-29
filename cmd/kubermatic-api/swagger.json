@@ -9080,8 +9080,8 @@
           }
         }
       },
-      "post": {
-        "description": "Creates an alertmanager for the given cluster",
+      "put": {
+        "description": "Updates an alertmanager configuration for the given cluster",
         "consumes": [
           "application/json"
         ],
@@ -9091,33 +9091,9 @@
         "tags": [
           "project"
         ],
-        "operationId": "createAlertmanager",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "ProjectID",
-            "name": "project_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "ClusterID",
-            "name": "cluster_id",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Alertmanager"
-            }
-          }
-        ],
+        "operationId": "updateAlertmanager",
         "responses": {
-          "201": {
+          "200": {
             "description": "Alertmanager",
             "schema": {
               "$ref": "#/definitions/Alertmanager"

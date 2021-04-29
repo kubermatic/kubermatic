@@ -849,8 +849,8 @@ type AlertmanagerProvider interface {
 	// Get gets the given alertmanager and the config secret
 	Get(cluster *kubermaticv1.Cluster, userInfo *UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
 
-	// Create creates the given alertmanager and the config secret
-	Create(alertmanager *kubermaticv1.Alertmanager, configSecret *corev1.Secret, userInfo *UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
+	// Update updates the given alertmanager and the config secret
+	Update(alertmanager *kubermaticv1.Alertmanager, configSecret *corev1.Secret, userInfo *UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
 
 	// Delete deletes the given alertmanager
 	Delete(cluster *kubermaticv1.Cluster, userInfo *UserInfo) error

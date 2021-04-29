@@ -156,7 +156,7 @@ func TestGetEndpoint(t *testing.T) {
 	}
 }
 
-func TestCreateEndpoint(t *testing.T) {
+func TestUpdateEndpoint(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		Name                      string
@@ -170,7 +170,7 @@ func TestCreateEndpoint(t *testing.T) {
 		ExpectedHTTPStatus        int
 	}{
 		{
-			Name:      "scenario 1: create alertmanager",
+			Name:      "scenario 1: update alertmanager",
 			ProjectID: test.GenDefaultProject().Name,
 			ClusterID: test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
@@ -184,7 +184,7 @@ func TestCreateEndpoint(t *testing.T) {
 				test.GenDefaultCluster().Status.NamespaceName,
 				[]byte("test")),
 			ExistingAPIUser:    test.GenDefaultAPIUser(),
-			ExpectedHTTPStatus: http.StatusCreated,
+			ExpectedHTTPStatus: http.StatusOK,
 			ExpectedResponse: apiv2.Alertmanager{
 				Spec: apiv2.AlertmanagerSpec{
 					Config: []byte(testAlertmanagerConfig),
@@ -192,7 +192,7 @@ func TestCreateEndpoint(t *testing.T) {
 			},
 		},
 		{
-			Name:      "scenario 2: create alertmanager with invalid request",
+			Name:      "scenario 2: update alertmanager with invalid request",
 			ProjectID: test.GenDefaultProject().Name,
 			ClusterID: test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
@@ -235,7 +235,7 @@ func TestCreateEndpoint(t *testing.T) {
 			ExpectedHTTPStatus: http.StatusInternalServerError,
 		},
 		{
-			Name:      "scenario 5: user john can not create alertmanager that belongs to bob's cluster",
+			Name:      "scenario 5: user john can not update alertmanager that belongs to bob's cluster",
 			ProjectID: test.GenDefaultProject().Name,
 			ClusterID: test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
@@ -256,7 +256,7 @@ func TestCreateEndpoint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, requestURL(tc.ProjectID, tc.ClusterID), bytes.NewBuffer(tc.Body))
+			req := httptest.NewRequest(http.MethodPut, requestURL(tc.ProjectID, tc.ClusterID), bytes.NewBuffer(tc.Body))
 			resp := httptest.NewRecorder()
 			var kubernetesObjs []ctrlruntimeclient.Object
 			if tc.ExistingConfigSecret != nil {
@@ -272,7 +272,7 @@ func TestCreateEndpoint(t *testing.T) {
 			if resp.Code != tc.ExpectedHTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatus, resp.Code, resp.Body.String())
 			}
-			if resp.Code == http.StatusCreated {
+			if resp.Code == http.StatusOK {
 				b, err := json.Marshal(tc.ExpectedResponse)
 				if err != nil {
 					t.Fatalf("failed to marshall expected response %v", err)

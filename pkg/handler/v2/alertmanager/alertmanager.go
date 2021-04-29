@@ -57,12 +57,12 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 	}
 }
 
-func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(createAlertmanagerReq)
+		req := request.(updateAlertmanagerReq)
 
-		if err := req.validateCreateAlertmanagerReq(); err != nil {
+		if err := req.validateUpdateAlertmanagerReq(); err != nil {
 			return nil, utilerrors.NewBadRequest(fmt.Errorf("invalid alertmanager configuration: %w", err).Error())
 		}
 
@@ -72,7 +72,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		}
 
 		alertmanager, configSecret := convertAPIToInternalAlertmanager(c, &req.Body)
-		al, config, err := alertmanagerProvider.Create(alertmanager, configSecret, userInfo)
+		al, config, err := alertmanagerProvider.Update(alertmanager, configSecret, userInfo)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -103,16 +103,16 @@ type getAlertmanagerReq struct {
 	cluster.GetClusterReq
 }
 
-// createAlertmanagerReq defines HTTP request for creating alertmanager
+// updateAlertmanagerReq defines HTTP request for creating alertmanager
 // swagger:parameters createAlertmanager
-type createAlertmanagerReq struct {
+type updateAlertmanagerReq struct {
 	cluster.GetClusterReq
 	// in: body
 	// required: true
 	Body apiv2.Alertmanager
 }
 
-func (req *createAlertmanagerReq) validateCreateAlertmanagerReq() error {
+func (req *updateAlertmanagerReq) validateUpdateAlertmanagerReq() error {
 	bodyMap := map[string]interface{}{}
 	if err := yaml.Unmarshal(req.Body.Spec.Config, &bodyMap); err != nil {
 		return fmt.Errorf("can not unmarshal yaml configuration: %w", err)
@@ -139,7 +139,7 @@ func DecodeGetAlertmanagerReq(c context.Context, r *http.Request) (interface{}, 
 }
 
 func DecodeCreateAlertmanagerReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req createAlertmanagerReq
+	var req updateAlertmanagerReq
 
 	cr, err := cluster.DecodeGetClusterReq(c, r)
 	if err != nil {

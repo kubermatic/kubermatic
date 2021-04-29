@@ -37,8 +37,6 @@ type ClientService interface {
 
 	BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*BindUserToRoleV2OK, error)
 
-	CreateAlertmanager(params *CreateAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*CreateAlertmanagerCreated, error)
-
 	CreateCluster(params *CreateClusterParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterCreated, error)
 
 	CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterRoleCreated, error)
@@ -240,6 +238,8 @@ type ClientService interface {
 	UnbindUserFromRoleBinding(params *UnbindUserFromRoleBindingParams, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingOK, error)
 
 	UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2Params, authInfo runtime.ClientAuthInfoWriter) (*UnbindUserFromRoleBindingV2OK, error)
+
+	UpdateAlertmanager(params *UpdateAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAlertmanagerOK, error)
 
 	UpdateExternalCluster(params *UpdateExternalClusterParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateExternalClusterOK, error)
 
@@ -453,40 +453,6 @@ func (a *Client) BindUserToRoleV2(params *BindUserToRoleV2Params, authInfo runti
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*BindUserToRoleV2Default)
-	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
-}
-
-/*
-  CreateAlertmanager Creates an alertmanager for the given cluster
-*/
-func (a *Client) CreateAlertmanager(params *CreateAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*CreateAlertmanagerCreated, error) {
-	// TODO: Validate the params before sending
-	if params == nil {
-		params = NewCreateAlertmanagerParams()
-	}
-
-	result, err := a.transport.Submit(&runtime.ClientOperation{
-		ID:                 "createAlertmanager",
-		Method:             "POST",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config",
-		ProducesMediaTypes: []string{"application/json"},
-		ConsumesMediaTypes: []string{"application/json"},
-		Schemes:            []string{"https"},
-		Params:             params,
-		Reader:             &CreateAlertmanagerReader{formats: a.formats},
-		AuthInfo:           authInfo,
-		Context:            params.Context,
-		Client:             params.HTTPClient,
-	})
-	if err != nil {
-		return nil, err
-	}
-	success, ok := result.(*CreateAlertmanagerCreated)
-	if ok {
-		return success, nil
-	}
-	// unexpected success response
-	unexpectedSuccess := result.(*CreateAlertmanagerDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -3935,6 +3901,40 @@ func (a *Client) UnbindUserFromRoleBindingV2(params *UnbindUserFromRoleBindingV2
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*UnbindUserFromRoleBindingV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  UpdateAlertmanager Updates an alertmanager configuration for the given cluster
+*/
+func (a *Client) UpdateAlertmanager(params *UpdateAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*UpdateAlertmanagerOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewUpdateAlertmanagerParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "updateAlertmanager",
+		Method:             "PUT",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &UpdateAlertmanagerReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*UpdateAlertmanagerOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*UpdateAlertmanagerDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

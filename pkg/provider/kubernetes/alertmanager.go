@@ -83,9 +83,9 @@ func (p *AlertmanagerProvider) Get(cluster *kubermaticv1.Cluster, userInfo *prov
 	return alertmanager, configSecret, nil
 }
 
-// Create only updates an Alertmanager object and corresponding config Secret since Alertmanager and Secret will
+// Update updates an Alertmanager object and corresponding config Secret since Alertmanager and Secret will
 // be created by alertmanager configuration controller.
-func (p *AlertmanagerProvider) Create(expectedAlertmanager *kubermaticv1.Alertmanager, expectedSecret *corev1.Secret, userInfo *provider.UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
+func (p *AlertmanagerProvider) Update(expectedAlertmanager *kubermaticv1.Alertmanager, expectedSecret *corev1.Secret, userInfo *provider.UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, nil, err

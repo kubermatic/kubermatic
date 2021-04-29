@@ -327,9 +327,9 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/alertmanager/config").
 		Handler(r.getAlertmanager())
 
-	mux.Methods(http.MethodPost).
+	mux.Methods(http.MethodPut).
 		Path("/projects/{project_id}/clusters/{cluster_id}/alertmanager/config").
-		Handler(r.createAlertmanager())
+		Handler(r.updateAlertmanager())
 
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clusters/{cluster_id}/alertmanager/config").
@@ -3243,9 +3243,9 @@ func (r Routing) getAlertmanager() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config project createAlertmanager
+// swagger:route PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config project updateAlertmanager
 //
-//     Creates an alertmanager for the given cluster
+//     Updates an alertmanager configuration for the given cluster
 //
 //     Consumes:
 //     - application/json
@@ -3255,10 +3255,10 @@ func (r Routing) getAlertmanager() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: Alertmanager
+//       200: Alertmanager
 //       401: empty
 //       403: empty
-func (r Routing) createAlertmanager() http.Handler {
+func (r Routing) updateAlertmanager() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
@@ -3266,9 +3266,9 @@ func (r Routing) createAlertmanager() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Alertmanagers(r.clusterProviderGetter, r.alertmanagerProviderGetter, r.seedsGetter),
-		)(alertmanager.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		)(alertmanager.UpdateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		alertmanager.DecodeCreateAlertmanagerReq,
-		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
