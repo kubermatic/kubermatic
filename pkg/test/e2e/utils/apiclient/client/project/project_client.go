@@ -1345,7 +1345,7 @@ func (a *Client) DetachSSHKeyFromClusterV2(params *DetachSSHKeyFromClusterV2Para
 }
 
 /*
-  GetAlertmanager gets the alertmanager for the specified cluster
+  GetAlertmanager gets the alertmanager configuration for the specified cluster
 */
 func (a *Client) GetAlertmanager(params *GetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*GetAlertmanagerOK, error) {
 	// TODO: Validate the params before sending
@@ -3599,7 +3599,7 @@ func (a *Client) PatchRole(params *PatchRoleParams, authInfo runtime.ClientAuthI
 }
 
 /*
-  ResetAlertmanager deletes the alertmanager for the specified cluster
+  ResetAlertmanager resets the alertmanager configuration to default for the specified cluster
 */
 func (a *Client) ResetAlertmanager(params *ResetAlertmanagerParams, authInfo runtime.ClientAuthInfoWriter) (*ResetAlertmanagerOK, error) {
 	// TODO: Validate the params before sending

@@ -9041,7 +9041,7 @@
         "tags": [
           "project"
         ],
-        "summary": "Gets the alertmanager for the specified cluster.",
+        "summary": "Gets the alertmanager configuration for the specified cluster.",
         "operationId": "getAlertmanager",
         "parameters": [
           {
@@ -9144,7 +9144,7 @@
         "tags": [
           "project"
         ],
-        "summary": "Deletes the alertmanager for the specified cluster.",
+        "summary": "Resets the alertmanager configuration to default for the specified cluster.",
         "operationId": "resetAlertmanager",
         "parameters": [
           {

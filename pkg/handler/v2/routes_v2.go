@@ -3217,7 +3217,7 @@ func (r Routing) updatePreset() http.Handler {
 
 // swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config project getAlertmanager
 //
-//     Gets the alertmanager for the specified cluster.
+//     Gets the alertmanager configuration for the specified cluster.
 //
 //
 //     Produces:
@@ -3275,7 +3275,7 @@ func (r Routing) updateAlertmanager() http.Handler {
 
 // swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config project resetAlertmanager
 //
-//     Deletes the alertmanager for the specified cluster.
+//     Resets the alertmanager configuration to default for the specified cluster.
 //
 //
 //     Produces:
