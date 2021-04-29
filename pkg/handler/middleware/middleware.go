@@ -74,6 +74,9 @@ const (
 	// PrivilegedConstraintProviderContextKey key under which the current PrivilegedConstraintProvider is kept in the ctx
 	PrivilegedConstraintProviderContextKey kubermaticcontext.Key = "privileged-constraint-provider"
 
+	// AlertmanagerProviderContextKey key under which the current AlertmanagerProvider is kept in the ctx
+	AlertmanagerProviderContextKey kubermaticcontext.Key = "alertmanager_provider"
+
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
@@ -443,4 +446,47 @@ func getConstraintProvider(clusterProviderGetter provider.ClusterProviderGetter,
 	}
 
 	return constraintProviderGetter(seed)
+}
+
+// Alertmanagers is a middleware that injects the current AlertmanagerProvider into the ctx
+func Alertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+
+			alertmanagerProvider, err := getAlertmanagerProvider(clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			if err != nil {
+				return nil, err
+			}
+			ctx = context.WithValue(ctx, AlertmanagerProviderContextKey, alertmanagerProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+func getAlertmanagerProvider(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter, seedName, clusterID string) (provider.AlertmanagerProvider, error) {
+	seeds, err := seedsGetter()
+	if err != nil {
+		return nil, err
+	}
+
+	if clusterID != "" {
+		for _, seed := range seeds {
+			clusterProvider, err := clusterProviderGetter(seed)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			if clusterProvider.IsCluster(clusterID) {
+				seedName = seed.Name
+				break
+			}
+		}
+	}
+
+	seed, found := seeds[seedName]
+	if !found {
+		return nil, fmt.Errorf("couldn't find seed %q", seedName)
+	}
+
+	return alertmanagerProviderGetter(seed)
 }
