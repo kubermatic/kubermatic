@@ -2124,6 +2124,8 @@ type SeedSpec struct {
 	ProxySettings *kubermaticv1.ProxySettings `json:"proxy_settings,omitempty"`
 	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
 	ExposeStrategy kubermaticv1.ExposeStrategy `json:"expose_strategy,omitempty"`
+	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
+	MLA *kubermaticv1.SeedMLASettings `json:"mla,omitempty"`
 }
 
 // swagger:model SeedNamesList

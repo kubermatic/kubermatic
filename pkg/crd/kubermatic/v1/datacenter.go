@@ -89,6 +89,8 @@ type SeedSpec struct {
 	ProxySettings *ProxySettings `json:"proxy_settings,omitempty"`
 	// Optional: ExposeStrategy explicitly sets the expose strategy for this seed cluster, if not set, the default provided by the master is used.
 	ExposeStrategy ExposeStrategy `json:"expose_strategy,omitempty"`
+	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
+	MLA *SeedMLASettings `json:"mla,omitempty"`
 }
 
 type NodeportProxyConfig struct {
@@ -405,4 +407,10 @@ type NodeSettings struct {
 	// Optional: The hyperkube image to use. Currently only Flatcar
 	// makes use of this option.
 	HyperkubeImage string `json:"hyperkube_image,omitempty"`
+}
+
+// SeedMLASettings allow configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
+type SeedMLASettings struct {
+	// Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
+	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled,omitempty"`
 }

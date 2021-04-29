@@ -59,6 +59,7 @@ type userclusterControllerData interface {
 	GetPodTemplateLabels(string, []corev1.Volume, map[string]string) (map[string]string, error)
 	ImageRegistry(string) string
 	Cluster() *kubermaticv1.Cluster
+	Seed() *kubermaticv1.Seed
 	GetOpenVPNServerPort() (int32, error)
 	GetMLAGatewayPort() (int32, error)
 	KubermaticAPIImage() string
@@ -132,8 +133,6 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-owner-email", data.Cluster().Status.UserEmail,
 				fmt.Sprintf("-enable-ssh-key-agent=%t", data.Cluster().Spec.EnableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
-				fmt.Sprintf("-user-cluster-monitoring=%t", data.Cluster().Spec.MLA != nil && data.Cluster().Spec.MLA.MonitoringEnabled),
-				fmt.Sprintf("-user-cluster-logging=%t", data.Cluster().Spec.MLA != nil && data.Cluster().Spec.MLA.LoggingEnabled),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 			}, getNetworkArgs(data)...)
 
@@ -150,17 +149,22 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				args = append(args, "-opa-webhook-timeout", fmt.Sprint(*data.Cluster().Spec.OPAIntegration.WebhookTimeoutSeconds))
 			}
 
-			if data.Cluster().Spec.MLA != nil && (data.Cluster().Spec.MLA.MonitoringEnabled || data.Cluster().Spec.MLA.LoggingEnabled) {
-				mlaGatewayPort, err := data.GetMLAGatewayPort()
-				if err != nil {
-					return nil, err
+			if data.Seed().Spec.MLA != nil && data.Seed().Spec.MLA.UserClusterMLAEnabled && data.Cluster().Spec.MLA != nil {
+				args = append(args, fmt.Sprintf("-user-cluster-monitoring=%t", data.Cluster().Spec.MLA.MonitoringEnabled))
+				args = append(args, fmt.Sprintf("-user-cluster-logging=%t", data.Cluster().Spec.MLA.LoggingEnabled))
+
+				if data.Cluster().Spec.MLA.MonitoringEnabled || data.Cluster().Spec.MLA.LoggingEnabled {
+					mlaGatewayPort, err := data.GetMLAGatewayPort()
+					if err != nil {
+						return nil, err
+					}
+					mlaEndpoint := fmt.Sprintf("%s:%d", data.Cluster().Address.ExternalName, mlaGatewayPort)
+					if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
+						mlaEndpoint = resources.MLAGatewaySNIPrefix + mlaEndpoint
+					}
+					// FIXME: http will be replaced with https in a follow-up change
+					args = append(args, "-mla-gateway-url", "http://"+mlaEndpoint)
 				}
-				mlaEndpoint := fmt.Sprintf("%s:%d", data.Cluster().Address.ExternalName, mlaGatewayPort)
-				if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
-					mlaEndpoint = resources.MLAGatewaySNIPrefix + mlaEndpoint
-				}
-				// FIXME: http will be replaced with https in a follow-up change
-				args = append(args, "-mla-gateway-url", "http://"+mlaEndpoint)
 			}
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())
