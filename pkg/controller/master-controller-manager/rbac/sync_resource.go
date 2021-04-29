@@ -670,11 +670,12 @@ func (c *resourcesController) ensureRBACRoleForClusterAlertmanagers(ctx context.
 	}
 
 	for _, groupPrefix := range AllGroupsPrefixes {
-		skip, generatedRole, err := shouldSkipRBACRoleForClusterNamespaceResource(
+		skip, generatedRole, err := shouldSkipRBACRoleForClusterNamespaceNamedResource(
 			projectName,
 			cluster,
-			kubermaticv1.AlertmanagerResourceName,
+			alertmanagerName,
 			kubermaticv1.GroupName,
+			kubermaticv1.AlertmanagerResourceName,
 			kubermaticv1.AlertmanagerKindName,
 			groupPrefix)
 		if err != nil {
@@ -722,11 +723,12 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagers(ctx c
 	}
 
 	for _, groupPrefix := range AllGroupsPrefixes {
-		skip, _, err := shouldSkipRBACRoleForClusterNamespaceResource(
+		skip, _, err := shouldSkipRBACRoleForClusterNamespaceNamedResource(
 			projectName,
 			cluster,
-			kubermaticv1.AlertmanagerResourceName,
+			alertmanagerName,
 			kubermaticv1.GroupName,
+			kubermaticv1.AlertmanagerResourceName,
 			kubermaticv1.AlertmanagerKindName,
 			groupPrefix)
 		if err != nil {
@@ -737,10 +739,11 @@ func (c *resourcesController) ensureRBACRoleBindingForClusterAlertmanagers(ctx c
 			continue
 		}
 
-		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceResource(
+		generatedRoleBinding := generateRBACRoleBindingForClusterNamespaceNamedResource(
 			cluster,
 			GenerateActualGroupNameFor(projectName, groupPrefix),
 			kubermaticv1.AlertmanagerKindName,
+			alertmanagerName,
 		)
 
 		var sharedExistingRoleBinding rbacv1.RoleBinding

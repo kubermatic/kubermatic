@@ -43,6 +43,7 @@ const (
 const (
 	saSecretsNamespaceName = "kubermatic"
 
+	alertmanagerName                    = "alertmanager"
 	defaultAlertmanagerConfigSecretName = "alertmanager"
 
 	secretV1Kind = "Secret"
@@ -388,7 +389,7 @@ func generateRBACRoleBindingForClusterNamespaceResource(cluster *kubermaticv1.Cl
 // generateRBACRoleForClusterNamespaceNamedResource generates per-cluster Role of named resource for the given cluster in the cluster namespace
 // Note that for some groups we don't want to generate Role in that case a nil will be returned
 func generateRBACRoleForClusterNamespaceNamedResource(cluster *kubermaticv1.Cluster, groupName, policyAPIGroups, policyResource, kind, resourceName string) (*rbacv1.Role, error) {
-	verbs, err := generateVerbsForClusterNamespaceResource(cluster, groupName, kind)
+	verbs, err := generateVerbsForClusterNamespaceNamedResource(cluster, groupName, kind, resourceName)
 	if err != nil {
 		return nil, err
 	}
@@ -597,7 +598,7 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 }
 
 func generateVerbsForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, kind string) ([]string, error) {
-	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && (kind == kubermaticv1.AddonKindName || kind == kubermaticv1.AlertmanagerKindName || kind == secretV1Kind) {
+	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && kind == kubermaticv1.AddonKindName {
 		return []string{"get", "list"}, nil
 	}
 
@@ -607,4 +608,25 @@ func generateVerbsForClusterNamespaceResource(cluster *kubermaticv1.Cluster, gro
 
 	// unknown group passed
 	return nil, fmt.Errorf("unable to generate verbs for cluster namespace resource cluster = %s, group = %s, kind = %s", cluster.Name, groupName, kind)
+}
+
+func generateVerbsForClusterNamespaceNamedResource(cluster *kubermaticv1.Cluster, groupName, kind, name string) ([]string, error) {
+	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) {
+		if (kind == kubermaticv1.AlertmanagerKindName && name == alertmanagerName) ||
+			(kind == secretV1Kind && name == defaultAlertmanagerConfigSecretName) {
+			return []string{"get"}, nil
+		}
+	}
+
+	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) || strings.HasPrefix(groupName, EditorGroupNamePrefix) {
+		if kind == kubermaticv1.AlertmanagerKindName && name == alertmanagerName {
+			return []string{"get", "update"}, nil
+		}
+		if kind == secretV1Kind && name == defaultAlertmanagerConfigSecretName {
+			return []string{"get", "update", "delete"}, nil
+		}
+	}
+
+	// unknown group passed
+	return nil, fmt.Errorf("unable to generate verbs for cluster namespace resource cluster = %s, group = %s, kind = %s, name = %s", cluster.Name, groupName, kind, name)
 }
