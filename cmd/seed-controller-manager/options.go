@@ -167,7 +167,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.IntVar(&c.addonEnforceInterval, "addon-enforce-interval", 5, "Check and ensure default usercluster addons are deployed every interval in minutes. Set to 0 to disable.")
 	flag.StringVar(&caBundleFile, "ca-bundle", "", "File containing the PEM-encoded CA bundle for all userclusters")
 	flag.Var(&c.tunnelingAgentIP, "tunneling-agent-ip", "The address used by the tunneling agents.")
-	flag.BoolVar(&c.enableUserClusterMLA, "enable-user-cluster-mla", false, "Enable user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.")
+	flag.BoolVar(&c.enableUserClusterMLA, "enable-user-cluster-mla", false, "Enables user cluster MLA (Monitoring, Logging & Alerting) stack in the seed.")
 	flag.StringVar(&c.mlaNamespace, "mla-namespace", "mla", "The namespace in which the user cluster MLA stack is running.")
 	flag.StringVar(&c.grafanaURL, "grafana-url", "http://grafana.mla.svc.cluster.local", "The URL of Grafana instance which in running for MLA stack.")
 	flag.StringVar(&c.grafanaHeaderName, "grafana-header-name", "X-WEBAUTH-USER", "Grafana Auth Proxy HTTP Header that will contain the username or email")
