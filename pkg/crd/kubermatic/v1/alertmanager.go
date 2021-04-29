@@ -21,6 +21,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	// AlertmanagerResourceName represents "Resource" defined in Kubernetes
+	AlertmanagerResourceName = "alertmanagers"
+
+	// AlertmanagerKindName represents "Kind" defined in Kubernetes
+	AlertmanagerKindName = "Alertmanager"
+)
+
 //+genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 

@@ -80,6 +80,7 @@ type Routing struct {
 	privilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
 	constraintTemplateProvider            provider.ConstraintTemplateProvider
 	constraintProviderGetter              provider.ConstraintProviderGetter
+	alertmanagerProviderGetter            provider.AlertmanagerProviderGetter
 	versions                              kubermatic.Versions
 	caBundle                              *x509.CertPool
 }
@@ -127,6 +128,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		privilegedExternalClusterProvider:     routingParams.PrivilegedExternalClusterProvider,
 		constraintTemplateProvider:            routingParams.ConstraintTemplateProvider,
 		constraintProviderGetter:              routingParams.ConstraintProviderGetter,
+		alertmanagerProviderGetter:            routingParams.AlertmanagerProviderGetter,
 		versions:                              routingParams.Versions,
 		caBundle:                              routingParams.CABundle,
 	}
