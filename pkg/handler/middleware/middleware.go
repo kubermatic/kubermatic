@@ -474,7 +474,7 @@ func getAlertmanagerProvider(clusterProviderGetter provider.ClusterProviderGette
 		for _, seed := range seeds {
 			clusterProvider, err := clusterProviderGetter(seed)
 			if err != nil {
-				return nil, k8cerrors.NewNotFound("cluster-provider", clusterID)
+				return nil, common.KubernetesErrorToHTTPError(err)
 			}
 			if clusterProvider.IsCluster(clusterID) {
 				seedName = seed.Name

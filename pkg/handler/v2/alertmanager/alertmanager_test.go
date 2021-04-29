@@ -26,7 +26,6 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 
@@ -57,7 +56,6 @@ func TestGetEndpoint(t *testing.T) {
 		ProjectID                 string
 		ClusterID                 string
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
-		ExistingAlertmanager      *kubermaticv1.Alertmanager
 		ExistingConfigSecret      *corev1.Secret
 		ExistingAPIUser           *apiv1.User
 		ExpectedResponse          apiv2.Alertmanager
@@ -70,9 +68,9 @@ func TestGetEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
 			),
-			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
-				testAlertmanagerConfigSecretName),
 			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
 				test.GenDefaultCluster().Status.NamespaceName,
 				[]byte(testAlertmanagerConfig)),
@@ -102,9 +100,9 @@ func TestGetEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
 			),
-			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
-				testAlertmanagerConfigSecretName),
 			ExistingAPIUser:    test.GenDefaultAPIUser(),
 			ExpectedHTTPStatus: http.StatusNotFound,
 		},
@@ -116,9 +114,9 @@ func TestGetEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
 			),
-			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
-				testAlertmanagerConfigSecretName),
 			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
 				test.GenDefaultCluster().Status.NamespaceName,
 				[]byte(testAlertmanagerConfig)),
@@ -131,17 +129,12 @@ func TestGetEndpoint(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, requestURL(tc.ProjectID, tc.ClusterID), nil)
 			resp := httptest.NewRecorder()
-			var kubermaticObjs []ctrlruntimeclient.Object
-			kubermaticObjs = append(kubermaticObjs, tc.ExistingKubermaticObjects...)
-			if tc.ExistingAlertmanager != nil {
-				kubermaticObjs = append(kubermaticObjs, tc.ExistingAlertmanager)
-			}
 			var kubernetesObjs []ctrlruntimeclient.Object
 			if tc.ExistingConfigSecret != nil {
 				kubernetesObjs = append(kubernetesObjs, tc.ExistingConfigSecret)
 			}
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, kubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -171,7 +164,6 @@ func TestCreateEndpoint(t *testing.T) {
 		ClusterID                 string
 		Body                      []byte
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
-		ExistingAlertmanager      *kubermaticv1.Alertmanager
 		ExistingConfigSecret      *corev1.Secret
 		ExistingAPIUser           *apiv1.User
 		ExpectedResponse          apiv2.Alertmanager
@@ -184,10 +176,10 @@ func TestCreateEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
 			),
 			Body: generateRequestBody([]byte(testAlertmanagerConfig)),
-			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
-				testAlertmanagerConfigSecretName),
 			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
 				test.GenDefaultCluster().Status.NamespaceName,
 				[]byte("test")),
@@ -206,10 +198,10 @@ func TestCreateEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
 			),
 			Body: generateRequestBody([]byte("bad-request")),
-			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
-				testAlertmanagerConfigSecretName),
 			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
 				test.GenDefaultCluster().Status.NamespaceName,
 				[]byte("test")),
@@ -235,24 +227,24 @@ func TestCreateEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
 			),
-			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
-				testAlertmanagerConfigSecretName),
 			Body:               generateRequestBody([]byte(testAlertmanagerConfig)),
 			ExistingAPIUser:    test.GenDefaultAPIUser(),
 			ExpectedHTTPStatus: http.StatusInternalServerError,
 		},
 		{
-			Name:      "scenario 5: user john can not get alertmanager that belongs to bob's cluster",
+			Name:      "scenario 5: user john can not create alertmanager that belongs to bob's cluster",
 			ProjectID: test.GenDefaultProject().Name,
 			ClusterID: test.GenDefaultCluster().Name,
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
 			),
-			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
-				testAlertmanagerConfigSecretName),
 			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
 				test.GenDefaultCluster().Status.NamespaceName,
 				[]byte("test")),
@@ -266,17 +258,12 @@ func TestCreateEndpoint(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodPost, requestURL(tc.ProjectID, tc.ClusterID), bytes.NewBuffer(tc.Body))
 			resp := httptest.NewRecorder()
-			var kubermaticObjs []ctrlruntimeclient.Object
-			kubermaticObjs = append(kubermaticObjs, tc.ExistingKubermaticObjects...)
-			if tc.ExistingAlertmanager != nil {
-				kubermaticObjs = append(kubermaticObjs, tc.ExistingAlertmanager)
-			}
 			var kubernetesObjs []ctrlruntimeclient.Object
 			if tc.ExistingConfigSecret != nil {
 				kubernetesObjs = append(kubernetesObjs, tc.ExistingConfigSecret)
 			}
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, kubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
@@ -304,7 +291,6 @@ func TestDeleteEndpoint(t *testing.T) {
 		ProjectID                 string
 		ClusterID                 string
 		ExistingKubermaticObjects []ctrlruntimeclient.Object
-		ExistingAlertmanager      *kubermaticv1.Alertmanager
 		ExistingConfigSecret      *corev1.Secret
 		ExistingAPIUser           *apiv1.User
 		ExpectedHTTPStatus        int
@@ -316,9 +302,9 @@ func TestDeleteEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
 			),
-			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
-				testAlertmanagerConfigSecretName),
 			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
 				test.GenDefaultCluster().Status.NamespaceName,
 				[]byte(testAlertmanagerConfig)),
@@ -343,9 +329,9 @@ func TestDeleteEndpoint(t *testing.T) {
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
 			),
-			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
-				testAlertmanagerConfigSecretName),
 			ExistingAPIUser:    test.GenDefaultAPIUser(),
 			ExpectedHTTPStatus: http.StatusNotFound,
 		},
@@ -357,9 +343,9 @@ func TestDeleteEndpoint(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 				test.GenAdminUser("John", "john@acme.com", false),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
 			),
-			ExistingAlertmanager: test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
-				testAlertmanagerConfigSecretName),
 			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
 				test.GenDefaultCluster().Status.NamespaceName,
 				[]byte(testAlertmanagerConfig)),
@@ -372,17 +358,12 @@ func TestDeleteEndpoint(t *testing.T) {
 		t.Run(tc.Name, func(t *testing.T) {
 			req := httptest.NewRequest(http.MethodDelete, requestURL(tc.ProjectID, tc.ClusterID), nil)
 			resp := httptest.NewRecorder()
-			var kubermaticObjs []ctrlruntimeclient.Object
-			kubermaticObjs = append(kubermaticObjs, tc.ExistingKubermaticObjects...)
-			if tc.ExistingAlertmanager != nil {
-				kubermaticObjs = append(kubermaticObjs, tc.ExistingAlertmanager)
-			}
 			var kubernetesObjs []ctrlruntimeclient.Object
 			if tc.ExistingConfigSecret != nil {
 				kubernetesObjs = append(kubernetesObjs, tc.ExistingConfigSecret)
 			}
 
-			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, kubermaticObjs, nil, nil, hack.NewTestRouting)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, kubernetesObjs, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
 			if err != nil {
 				t.Fatalf("failed to create test endpoint due to %v", err)
 			}
