@@ -667,6 +667,9 @@ func TestLoadFiles(t *testing.T) {
 								ProxySettings: &kubermaticv1.ProxySettings{
 									HTTPProxy: kubermaticv1.NewProxyValue("http://my-corp"),
 								},
+								MLA: &kubermaticv1.SeedMLASettings{
+									UserClusterMLAEnabled: true,
+								},
 							},
 						}).
 						WithNodeAccessNetwork("192.0.2.0/24").
