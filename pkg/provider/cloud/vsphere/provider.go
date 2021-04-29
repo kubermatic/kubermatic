@@ -29,6 +29,9 @@ import (
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
+	"github.com/vmware/govmomi/session"
+	"github.com/vmware/govmomi/vim25"
+	"github.com/vmware/govmomi/vim25/soap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -85,14 +88,21 @@ func newSession(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, use
 		return nil, err
 	}
 
-	client, err := govmomi.NewClient(ctx, u, dc.AllowInsecure)
+	// creating the govmoni Client in roundabout way because we need to set the proper CA bundle: reference https://github.com/vmware/govmomi/issues/1200
+	soapClient := soap.NewClient(u, dc.AllowInsecure)
+	// set our CA bundle
+	soapClient.DefaultTransport().TLSClientConfig = &tls.Config{
+		RootCAs: caBundle,
+	}
+
+	vim25Client, err := vim25.NewClient(ctx, soapClient)
 	if err != nil {
 		return nil, err
 	}
 
-	// inject the CA bundle
-	client.DefaultTransport().TLSClientConfig = &tls.Config{
-		RootCAs: caBundle,
+	client := &govmomi.Client{
+		Client:         vim25Client,
+		SessionManager: session.NewManager(vim25Client),
 	}
 
 	user := url.UserPassword(username, password)
@@ -100,12 +110,8 @@ func newSession(ctx context.Context, dc *kubermaticv1.DatacenterSpecVSphere, use
 		user = url.UserPassword(dc.InfraManagementUser.Username, dc.InfraManagementUser.Password)
 	}
 
-	// If already logged with credentials provided with the URL and we got the
-	// same credentials skip login.
-	if u.User == nil || *u.User != *user {
-		if err = client.Login(ctx, user); err != nil {
-			return nil, fmt.Errorf("failed to login: %v", err)
-		}
+	if err = client.Login(ctx, user); err != nil {
+		return nil, fmt.Errorf("failed to login: %v", err)
 	}
 
 	finder := find.NewFinder(client.Client, true)
