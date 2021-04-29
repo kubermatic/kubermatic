@@ -852,6 +852,6 @@ type AlertmanagerProvider interface {
 	// Update updates the given alertmanager and the config secret
 	Update(alertmanager *kubermaticv1.Alertmanager, configSecret *corev1.Secret, userInfo *UserInfo) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
 
-	// Delete deletes the given alertmanager
-	Delete(cluster *kubermaticv1.Cluster, userInfo *UserInfo) error
+	// Reset resets the given alertmanager to default
+	Reset(cluster *kubermaticv1.Cluster, userInfo *UserInfo) error
 }

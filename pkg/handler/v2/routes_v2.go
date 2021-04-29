@@ -333,7 +333,7 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clusters/{cluster_id}/alertmanager/config").
-		Handler(r.deleteAlertmanager())
+		Handler(r.resetAlertmanager())
 
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
@@ -3267,13 +3267,13 @@ func (r Routing) updateAlertmanager() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Alertmanagers(r.clusterProviderGetter, r.alertmanagerProviderGetter, r.seedsGetter),
 		)(alertmanager.UpdateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
-		alertmanager.DecodeCreateAlertmanagerReq,
+		alertmanager.DecodeUpdateAlertmanagerReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config project deleteAlertmanager
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config project resetAlertmanager
 //
 //     Deletes the alertmanager for the specified cluster.
 //
@@ -3286,7 +3286,7 @@ func (r Routing) updateAlertmanager() http.Handler {
 //       200: empty
 //       401: empty
 //       403: empty
-func (r Routing) deleteAlertmanager() http.Handler {
+func (r Routing) resetAlertmanager() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
@@ -3294,8 +3294,8 @@ func (r Routing) deleteAlertmanager() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Alertmanagers(r.clusterProviderGetter, r.alertmanagerProviderGetter, r.seedsGetter),
-		)(alertmanager.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
-		alertmanager.DecodeDeleteAlertmanagerReq,
+		)(alertmanager.ResetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		alertmanager.DecodeResetAlertmanagerReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

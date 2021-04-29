@@ -117,9 +117,9 @@ func (p *AlertmanagerProvider) Update(expectedAlertmanager *kubermaticv1.Alertma
 	return alertmanager, secret, nil
 }
 
-// Delete resets corresponding config Secret of Alertmanager object to the default config. Note that Delete will not remove
+// Reset resets corresponding config Secret of Alertmanager object to the default config. This will not remove
 // Alertmanager object, it will only delete the config secret, and alertmanager controller will create default config secret.
-func (p *AlertmanagerProvider) Delete(cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo) error {
+func (p *AlertmanagerProvider) Reset(cluster *kubermaticv1.Cluster, userInfo *provider.UserInfo) error {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
 	if err != nil {
 		return err

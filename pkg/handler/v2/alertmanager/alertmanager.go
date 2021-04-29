@@ -80,17 +80,17 @@ func UpdateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 	}
 }
 
-func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+func ResetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
 	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(deleteAlertmanagerReq)
+		req := request.(resetAlertmanagerReq)
 
 		c, userInfo, alertmanagerProvider, err := getClusterUserInfoAlertmanagerProvider(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
 		if err != nil {
 			return nil, err
 		}
 
-		if err := alertmanagerProvider.Delete(c, userInfo); err != nil {
+		if err := alertmanagerProvider.Reset(c, userInfo); err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 		return nil, nil
@@ -104,7 +104,7 @@ type getAlertmanagerReq struct {
 }
 
 // updateAlertmanagerReq defines HTTP request for creating alertmanager
-// swagger:parameters createAlertmanager
+// swagger:parameters updateAlertmanager
 type updateAlertmanagerReq struct {
 	cluster.GetClusterReq
 	// in: body
@@ -120,9 +120,9 @@ func (req *updateAlertmanagerReq) validateUpdateAlertmanagerReq() error {
 	return nil
 }
 
-// deleteAlertmanagerReq defines HTTP request for deleting alertmanager
-// swagger:parameters deleteAlertmanager
-type deleteAlertmanagerReq struct {
+// resetAlertmanagerReq defines HTTP request for deleting alertmanager
+// swagger:parameters resetAlertmanager
+type resetAlertmanagerReq struct {
 	cluster.GetClusterReq
 }
 
@@ -138,7 +138,7 @@ func DecodeGetAlertmanagerReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
-func DecodeCreateAlertmanagerReq(c context.Context, r *http.Request) (interface{}, error) {
+func DecodeUpdateAlertmanagerReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req updateAlertmanagerReq
 
 	cr, err := cluster.DecodeGetClusterReq(c, r)
@@ -154,8 +154,8 @@ func DecodeCreateAlertmanagerReq(c context.Context, r *http.Request) (interface{
 	return req, nil
 }
 
-func DecodeDeleteAlertmanagerReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req deleteAlertmanagerReq
+func DecodeResetAlertmanagerReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req resetAlertmanagerReq
 
 	cr, err := cluster.DecodeGetClusterReq(c, r)
 	if err != nil {

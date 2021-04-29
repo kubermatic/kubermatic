@@ -114,7 +114,7 @@ func TestGetAlertmanager(t *testing.T) {
 	}
 }
 
-func TestCreateAlertmanager(t *testing.T) {
+func TestUpdateAlertmanager(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		name                 string
@@ -186,7 +186,7 @@ func TestCreateAlertmanager(t *testing.T) {
 
 			alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient)
 
-			alertmanager, configSecret, err := alertmanagerProvider.Create(tc.expectedAlertmanager, tc.expectedConfigSecret, tc.userInfo)
+			alertmanager, configSecret, err := alertmanagerProvider.Update(tc.expectedAlertmanager, tc.expectedConfigSecret, tc.userInfo)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)
@@ -205,7 +205,7 @@ func TestCreateAlertmanager(t *testing.T) {
 	}
 }
 
-func TestDeleteAlertmanager(t *testing.T) {
+func TestResetAlertmanager(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
 		name                 string
@@ -217,7 +217,7 @@ func TestDeleteAlertmanager(t *testing.T) {
 		expectedError        string
 	}{
 		{
-			name: "scenario 1, delete alertmanager will only delete the config secret",
+			name: "scenario 1, reset alertmanager will only delete the config secret",
 			existingObjects: []ctrlruntimeclient.Object{
 				generateAlertmanager(testAlertmanagerNamespace, testAlertmanagerConfigSecretName, "1"),
 				generateConfigSecret(testAlertmanagerConfigSecretName, testAlertmanagerNamespace, "1"),
@@ -268,7 +268,7 @@ func TestDeleteAlertmanager(t *testing.T) {
 
 			alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient)
 
-			err := alertmanagerProvider.Delete(tc.cluster, tc.userInfo)
+			err := alertmanagerProvider.Reset(tc.cluster, tc.userInfo)
 			if len(tc.expectedError) == 0 {
 				if err != nil {
 					t.Fatal(err)

@@ -9092,6 +9092,30 @@
           "project"
         ],
         "operationId": "updateAlertmanager",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Alertmanager"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Alertmanager",
@@ -9121,7 +9145,7 @@
           "project"
         ],
         "summary": "Deletes the alertmanager for the specified cluster.",
-        "operationId": "deleteAlertmanager",
+        "operationId": "resetAlertmanager",
         "parameters": [
           {
             "type": "string",
