@@ -37,7 +37,7 @@ const (
 	EtcdLauncherServiceAccountName = "etcd-launcher"
 )
 
-// syncProjectResource generates RBAC Role and Binding for a resource that belongs to a project.
+// syncClusterScopedProjectResource generates RBAC Role and Binding for a cluster-scoped resource that belongs to a project.
 // in order to support multiple cluster this code doesn't retrieve the project from the kube-api server
 // instead it assumes that all required information is stored in OwnerReferences or in Labels (for cluster resources)
 //
@@ -45,19 +45,15 @@ const (
 // the project resources live only on master cluster and cluster resources are on master and seed clusters
 // we cannot use OwnerReferences for cluster resources because they are on clusters that don't have corresponding
 // project resource and will be automatically gc'ed
-func (c *resourcesController) syncProjectResource(ctx context.Context, key ctrlruntimeclient.ObjectKey) error {
-	obj := c.objectType.DeepCopyObject().(ctrlruntimeclient.Object)
-	if err := c.client.Get(ctx, key, obj); err != nil {
-		if kerrors.IsNotFound(err) {
-			return nil
-		}
-
-		return err
-	}
-
+func (c *resourcesController) syncClusterScopedProjectResource(ctx context.Context, obj ctrlruntimeclient.Object) error {
 	metaObject, err := meta.Accessor(obj)
 	if err != nil {
 		return fmt.Errorf("failed to get object meta: %+v", err)
+	}
+
+	// just handle cluster-scoped resources
+	if len(metaObject.GetNamespace()) != 0 {
+		return nil
 	}
 
 	gvk := obj.GetObjectKind().GroupVersionKind()
@@ -66,72 +62,48 @@ func (c *resourcesController) syncProjectResource(ctx context.Context, key ctrlr
 		return err
 	}
 
-	projectName := ""
-	for _, owner := range metaObject.GetOwnerReferences() {
-		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
-			len(owner.Name) > 0 && len(owner.UID) > 0 {
-			projectName = owner.Name
-			break
-		}
-	}
-	if len(projectName) == 0 {
-		projectName = metaObject.GetLabels()[kubermaticv1.ProjectIDLabelKey]
+	projectName, err := getProjectName(metaObject, rmapping)
+	if err != nil {
+		return err
 	}
 
-	if len(projectName) == 0 {
-		return fmt.Errorf("unable to find owning project for the object name = %s, gvr = %s", metaObject.GetName(), rmapping)
+	if err := ensureClusterRBACRoleForNamedResource(ctx, c.client, projectName, rmapping.Resource.Resource, gvk.Kind, metaObject); err != nil {
+		return fmt.Errorf("failed to sync RBAC ClusterRole for %s resource for %s cluster provider, due to = %v", rmapping, c.providerName, err)
+	}
+	if err := ensureClusterRBACRoleBindingForNamedResource(ctx, c.client, projectName, rmapping.Resource.Resource, gvk.Kind, metaObject); err != nil {
+		return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider, due to = %v", rmapping, c.providerName, err)
+	}
+	return nil
+}
+
+// syncNamespaceScopedProjectResource generates RBAC Role and Binding for a namespace-scoped resource that belongs to a project.
+// in order to support multiple cluster this code doesn't retrieve the project from the kube-api server
+// instead it assumes that all required information is stored in OwnerReferences or in Labels (for cluster resources)
+//
+// note:
+// the project resources live only on master cluster and cluster resources are on master and seed clusters
+// we cannot use OwnerReferences for cluster resources because they are on clusters that don't have corresponding
+// project resource and will be automatically gc'ed
+func (c *resourcesController) syncNamespaceScopedProjectResource(ctx context.Context, obj ctrlruntimeclient.Object) error {
+	metaObject, err := meta.Accessor(obj)
+	if err != nil {
+		return fmt.Errorf("failed to get object meta: %+v", err)
 	}
 
+	// just handle namespaced resources
 	if len(metaObject.GetNamespace()) == 0 {
-		if err := ensureClusterRBACRoleForNamedResource(ctx, c.client, projectName, rmapping.Resource.Resource, gvk.Kind, metaObject); err != nil {
-			return fmt.Errorf("failed to sync RBAC ClusterRole for %s resource for %s cluster provider, due to = %v", rmapping, c.providerName, err)
-		}
-		if err := ensureClusterRBACRoleBindingForNamedResource(ctx, c.client, projectName, rmapping.Resource.Resource, gvk.Kind, metaObject); err != nil {
-			return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider, due to = %v", rmapping, c.providerName, err)
-		}
-		if gvk.Kind == kubermaticv1.ClusterKindName {
-			if err := c.ensureRBACRoleForClusterAddons(ctx, projectName, metaObject); err != nil {
-				return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
-			}
-			if err := c.ensureRBACRoleBindingForClusterAddons(ctx, projectName, metaObject); err != nil {
-				return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
-			}
-			if err := ensureClusterRBACRoleBindingForEtcdLauncher(ctx, c.client, projectName, metaObject); err != nil {
-				return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
-			}
-			if err := c.ensureRBACRoleForEtcdRestores(ctx, metaObject, kubermaticv1.EtcdRestoreResourceName, kubermaticv1.GroupName, kubermaticv1.EtcdRestoreKindName); err != nil {
-				return fmt.Errorf("failed to sync etcd restore RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
-			}
-			if err := c.ensureRBACRoleBindingForEtcdRestores(ctx, metaObject, kubermaticv1.EtcdRestoreKindName); err != nil {
-				return fmt.Errorf("failed to sync etcd restore RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
-			}
-			if err := c.ensureRBACRoleForEtcdRestores(ctx, metaObject, "secrets", "", "Secret"); err != nil {
-				return fmt.Errorf("failed to sync etcd restore RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
-			}
-			if err := c.ensureRBACRoleBindingForEtcdRestores(ctx, metaObject, "Secret"); err != nil {
-				return fmt.Errorf("failed to sync etcd restore RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
-			}
-			if err := c.ensureRBACRoleForClusterAlertmanagers(ctx, projectName, metaObject); err != nil {
-				return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
-			}
-			if err := c.ensureRBACRoleBindingForClusterAlertmanagers(ctx, projectName, metaObject); err != nil {
-				return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
-			}
-			if err := c.ensureRBACRoleForClusterAlertmanagerConfigSecrets(ctx, projectName, metaObject); err != nil {
-				return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
-			}
-			if err := c.ensureRBACRoleBindingForClusterAlertmanagerConfigSecrets(ctx, projectName, metaObject); err != nil {
-				return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
-			}
-			if err := c.ensureRBACRoleForClusterConstraints(ctx, projectName, metaObject); err != nil {
-				return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
-			}
-			if err := c.ensureRBACRoleBindingForClusterConstraints(ctx, projectName, metaObject); err != nil {
-				return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
-			}
-		}
-
 		return nil
+	}
+
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return err
+	}
+
+	projectName, err := getProjectName(metaObject, rmapping)
+	if err != nil {
+		return err
 	}
 
 	err = c.ensureRBACRoleForNamedResource(ctx,
@@ -155,6 +127,98 @@ func (c *resourcesController) syncProjectResource(ctx context.Context, key ctrlr
 	}
 
 	return nil
+}
+
+// syncNamespaceScopedProjectResource generates RBAC Role and Binding for resource that belongs to a Cluster.
+// in order to support multiple cluster this code doesn't retrieve the project from the kube-api server
+// instead it assumes that all required information is stored in OwnerReferences or in Labels (for cluster resources)
+//
+// note:
+// the project resources live only on master cluster and cluster resources are on master and seed clusters
+// we cannot use OwnerReferences for cluster resources because they are on clusters that don't have corresponding
+// project resource and will be automatically gc'ed
+func (c *resourcesController) syncClusterResource(ctx context.Context, obj ctrlruntimeclient.Object) error {
+	metaObject, err := meta.Accessor(obj)
+	if err != nil {
+		return fmt.Errorf("failed to get object meta: %+v", err)
+	}
+
+	gvk := obj.GetObjectKind().GroupVersionKind()
+	// handle only clusters
+	if gvk.Kind != kubermaticv1.ClusterKindName {
+		return nil
+	}
+
+	rmapping, err := c.restMapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+	if err != nil {
+		return err
+	}
+
+	projectName, err := getProjectName(metaObject, rmapping)
+	if err != nil {
+		return err
+	}
+
+	if err := c.ensureRBACRoleForClusterAddons(ctx, projectName, metaObject); err != nil {
+		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+	}
+	if err := c.ensureRBACRoleBindingForClusterAddons(ctx, projectName, metaObject); err != nil {
+		return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+	}
+	if err := ensureClusterRBACRoleBindingForEtcdLauncher(ctx, c.client, projectName, metaObject); err != nil {
+		return fmt.Errorf("failed to sync RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
+	}
+	if err := c.ensureRBACRoleForEtcdRestores(ctx, metaObject, kubermaticv1.EtcdRestoreResourceName, kubermaticv1.GroupName, kubermaticv1.EtcdRestoreKindName); err != nil {
+		return fmt.Errorf("failed to sync etcd restore RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+	}
+	if err := c.ensureRBACRoleBindingForEtcdRestores(ctx, metaObject, kubermaticv1.EtcdRestoreKindName); err != nil {
+		return fmt.Errorf("failed to sync etcd restore RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
+	}
+	if err := c.ensureRBACRoleForEtcdRestores(ctx, metaObject, "secrets", "", "Secret"); err != nil {
+		return fmt.Errorf("failed to sync etcd restore RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+	}
+	if err := c.ensureRBACRoleBindingForEtcdRestores(ctx, metaObject, "Secret"); err != nil {
+		return fmt.Errorf("failed to sync etcd restore RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
+	}
+	if err := c.ensureRBACRoleForClusterAlertmanagers(ctx, projectName, metaObject); err != nil {
+		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+	}
+	if err := c.ensureRBACRoleBindingForClusterAlertmanagers(ctx, projectName, metaObject); err != nil {
+		return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+	}
+	if err := c.ensureRBACRoleForClusterAlertmanagerConfigSecrets(ctx, projectName, metaObject); err != nil {
+		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+	}
+	if err := c.ensureRBACRoleBindingForClusterAlertmanagerConfigSecrets(ctx, projectName, metaObject); err != nil {
+		return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+	}
+	if err := c.ensureRBACRoleForClusterConstraints(ctx, projectName, metaObject); err != nil {
+		return fmt.Errorf("failed to sync RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+	}
+	if err := c.ensureRBACRoleBindingForClusterConstraints(ctx, projectName, metaObject); err != nil {
+		return fmt.Errorf("failed to sync RBAC RoleBinding for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
+	}
+
+	return nil
+}
+
+func getProjectName(metaObject metav1.Object, rmapping *meta.RESTMapping) (string, error) {
+	projectName := ""
+	for _, owner := range metaObject.GetOwnerReferences() {
+		if owner.APIVersion == kubermaticv1.SchemeGroupVersion.String() && owner.Kind == kubermaticv1.ProjectKindName &&
+			len(owner.Name) > 0 && len(owner.UID) > 0 {
+			projectName = owner.Name
+			break
+		}
+	}
+	if len(projectName) == 0 {
+		projectName = metaObject.GetLabels()[kubermaticv1.ProjectIDLabelKey]
+	}
+
+	if len(projectName) == 0 {
+		return "", fmt.Errorf("unable to find owning project for the object name = %s, gvr = %s", metaObject.GetName(), rmapping)
+	}
+	return projectName, nil
 }
 
 func ensureClusterRBACRoleForNamedResource(ctx context.Context, cli ctrlruntimeclient.Client, projectName string, objectResource string, objectKind string, object metav1.Object) error {

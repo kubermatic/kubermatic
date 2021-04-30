@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func TestSyncProjectResourcesClusterWide(t *testing.T) {
@@ -719,8 +720,10 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
-			key := ctrlruntimeclient.ObjectKey{Name: objmeta.GetName(), Namespace: objmeta.GetNamespace()}
-			err = target.syncProjectResource(ctx, key)
+			_, err = target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
+				Namespace: objmeta.GetNamespace(),
+				Name:      objmeta.GetName(),
+			}})
 
 			// validate
 			if err != nil && !test.expectError {
@@ -893,8 +896,10 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
-			key := ctrlruntimeclient.ObjectKey{Name: objmeta.GetName(), Namespace: objmeta.GetNamespace()}
-			err = target.syncProjectResource(ctx, key)
+			_, err = target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
+				Namespace: objmeta.GetNamespace(),
+				Name:      objmeta.GetName(),
+			}})
 
 			// validate
 			if !test.expectError {
