@@ -19,6 +19,7 @@ package rbac
 import (
 	"context"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -1876,6 +1877,306 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 						}
 					}
 					t.Fatalf("expected ClusterRole %q not found in cluster", expectedClusterRole.Name)
+				}
+			}
+		})
+	}
+}
+
+func TestSyncClusterConstraintsRBAC(t *testing.T) {
+	tests := []struct {
+		name                 string
+		dependantToSync      ctrlruntimeclient.Object
+		expectedRoles        []*rbacv1.Role
+		existingRoles        []*rbacv1.Role
+		expectedRoleBindings []*rbacv1.RoleBinding
+		existingRoleBindings []*rbacv1.RoleBinding
+		expectError          bool
+	}{
+		// scenario 1
+		{
+			name: "scenario 1: a proper set of RBAC Role/Binding is generated for constraints",
+
+			dependantToSync: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "clusterid",
+					Labels: map[string]string{"project-id": "my-first-project"},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-clusterid",
+				},
+			},
+
+			expectedRoles: []*rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Verbs:     []string{"get", "list", "create", "update", "delete"},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:editors",
+						Namespace: "cluster-clusterid",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Verbs:     []string{"get", "list", "create", "update", "delete"},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:viewers",
+						Namespace: "cluster-clusterid",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Verbs:     []string{"get", "list"},
+						},
+					},
+				},
+			},
+
+			expectedRoleBindings: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:constraint:owners",
+						Namespace:       "cluster-clusterid",
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-my-first-project",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:constraint:owners",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:constraint:editors",
+						Namespace:       "cluster-clusterid",
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "editors-my-first-project",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:constraint:editors",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:constraint:viewers",
+						Namespace:       "cluster-clusterid",
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-my-first-project",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:constraint:viewers",
+					},
+				},
+			},
+		},
+		// scenario 2
+		{
+			name: "scenario 2: a mis-configured set of RBAC Role/Binding is updated for constraints",
+
+			dependantToSync: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "clusterid",
+					Labels: map[string]string{"project-id": "my-first-project"},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-clusterid",
+				},
+			},
+
+			expectedRoles: []*rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Verbs:     []string{"get", "list", "create", "update", "delete"},
+						},
+					},
+				},
+			},
+
+			existingRoles: []*rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Verbs:     []string{"get", "update", "delete"},
+						},
+					},
+				},
+			},
+
+			expectedRoleBindings: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:constraint:owners",
+						Namespace:       "cluster-clusterid",
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-my-first-project",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:constraint:owners",
+					},
+				},
+			},
+			existingRoleBindings: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:constraint:owners",
+						Namespace:       "cluster-clusterid",
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "editors-my-first-project",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:constraint:owners",
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			ctx := context.Background()
+
+			objs := []ctrlruntimeclient.Object{test.dependantToSync}
+			for _, existingRole := range test.existingRoles {
+				objs = append(objs, existingRole)
+			}
+
+			for _, existingRoleBinding := range test.existingRoleBindings {
+				objs = append(objs, existingRoleBinding)
+			}
+
+			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
+			// act
+			target := resourcesController{
+				client:     fakeMasterClusterClient,
+				restMapper: getFakeRestMapper(t),
+				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+			}
+			objmeta, err := meta.Accessor(test.dependantToSync)
+			assert.NoError(t, err)
+			_, err = target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
+				Namespace: objmeta.GetNamespace(),
+				Name:      objmeta.GetName(),
+			}})
+
+			// validate
+			if !test.expectError {
+				assert.NoError(t, err)
+			}
+			if test.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			{
+				var roles rbacv1.RoleList
+				err = fakeMasterClusterClient.List(context.Background(), &roles)
+				assert.NoError(t, err)
+
+			expectedRolesLoop:
+				for _, expectedRole := range test.expectedRoles {
+					// double-iterating over both slices might not be the most efficient way
+					// but it spares the trouble of converting pointers to values
+					// and then sorting everything for the comparison.
+
+					for _, existingRole := range roles.Items {
+						if strings.EqualFold(expectedRole.Name, existingRole.Name) && reflect.DeepEqual(expectedRole.Rules, existingRole.Rules) {
+							continue expectedRolesLoop
+
+						}
+					}
+					t.Fatalf("expected Role %q not found in cluster", expectedRole.Name)
+				}
+			}
+
+			{
+				var roleBindings rbacv1.RoleBindingList
+				err = fakeMasterClusterClient.List(context.Background(), &roleBindings)
+				assert.NoError(t, err)
+
+			expectedRoleBindingsLoop:
+				for _, expectedRoleBinding := range test.expectedRoleBindings {
+					// double-iterating over both slices might not be the most efficient way
+					// but it spares the trouble of converting pointers to values
+					// and then sorting everything for the comparison.
+
+					for _, existingRoleBinding := range roleBindings.Items {
+						if strings.EqualFold(expectedRoleBinding.Name, existingRoleBinding.Name) &&
+							reflect.DeepEqual(expectedRoleBinding.RoleRef, existingRoleBinding.RoleRef) &&
+							reflect.DeepEqual(expectedRoleBinding.Subjects, existingRoleBinding.Subjects) {
+							continue expectedRoleBindingsLoop
+						}
+					}
+					t.Fatalf("expected RoleBinding %q not found in cluster", expectedRoleBinding.Name)
 				}
 			}
 		})
