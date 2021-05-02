@@ -95,12 +95,18 @@ type fakeDataProvider struct {
 	caPair *triple.KeyPair
 }
 
-func (fake *fakeDataProvider) Cluster() *kubermaticv1.Cluster             { return &kubermaticv1.Cluster{} }
-func (fake *fakeDataProvider) ExternalIP() (*net.IP, error)               { return nil, nil }
-func (fake *fakeDataProvider) GetClusterRef() metav1.OwnerReference       { return metav1.OwnerReference{} }
-func (fake *fakeDataProvider) GetFrontProxyCA() (*triple.KeyPair, error)  { return nil, nil }
-func (fake *fakeDataProvider) GetRootCA() (*triple.KeyPair, error)        { return fake.caPair, nil }
-func (fake *fakeDataProvider) GetOpenVPNCA() (*ECDSAKeyPair, error)       { return &ECDSAKeyPair{}, nil }
+func (fake *fakeDataProvider) Cluster() *kubermaticv1.Cluster { return &kubermaticv1.Cluster{} }
+
+func (fake *fakeDataProvider) ExternalIP() (*net.IP, error) { return nil, nil }
+
+func (fake *fakeDataProvider) GetClusterRef() metav1.OwnerReference { return metav1.OwnerReference{} }
+
+func (fake *fakeDataProvider) GetFrontProxyCA() (*triple.KeyPair, error) { return nil, nil }
+
+func (fake *fakeDataProvider) GetRootCA() (*triple.KeyPair, error) { return fake.caPair, nil }
+
+func (fake *fakeDataProvider) GetOpenVPNCA() (*ECDSAKeyPair, error) { return &ECDSAKeyPair{}, nil }
+
 func (fake *fakeDataProvider) InClusterApiserverAddress() (string, error) { return "", nil }
 
 func checkKubeConfigRegeneration(t *testing.T, orgs []string) {

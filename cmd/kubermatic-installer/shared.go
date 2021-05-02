@@ -25,8 +25,10 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
+
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/util/yamled"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/util/yaml"
 )

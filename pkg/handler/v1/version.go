@@ -20,6 +20,7 @@ import (
 	"context"
 
 	"github.com/go-kit/kit/endpoint"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 )

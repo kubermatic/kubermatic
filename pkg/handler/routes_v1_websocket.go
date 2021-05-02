@@ -22,6 +22,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/gorilla/mux"
+	"github.com/gorilla/websocket"
+
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	wsh "k8c.io/kubermatic/v2/pkg/handler/websocket"
@@ -29,9 +32,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/errors"
 	"k8c.io/kubermatic/v2/pkg/util/hash"
 	"k8c.io/kubermatic/v2/pkg/watcher"
-
-	"github.com/gorilla/mux"
-	"github.com/gorilla/websocket"
 )
 
 var upgrader = websocket.Upgrader{

@@ -41,8 +41,6 @@ package handler
 import (
 	"net/http"
 
-	admissionplugin "k8c.io/kubermatic/v2/pkg/handler/v1/admission-plugin"
-
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
@@ -50,6 +48,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	v1 "k8c.io/kubermatic/v2/pkg/handler/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/addon"
+	admissionplugin "k8c.io/kubermatic/v2/pkg/handler/v1/admission-plugin"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/cluster"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/dc"

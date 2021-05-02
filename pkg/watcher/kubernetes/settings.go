@@ -19,11 +19,12 @@ package kubernetes
 import (
 	"reflect"
 
+	"code.cloudfoundry.org/go-pubsub"
+
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
-	"code.cloudfoundry.org/go-pubsub"
 	"k8s.io/apimachinery/pkg/watch"
 )
 

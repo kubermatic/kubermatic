@@ -18,11 +18,13 @@ package etcd
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/robfig/cron"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"time"
 
 	corev1 "k8s.io/api/core/v1"
 )

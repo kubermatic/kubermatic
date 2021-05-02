@@ -22,11 +22,11 @@ import (
 
 	"github.com/go-test/deep"
 
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-
-	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 )
 
 func TestExtractExposeType(t *testing.T) {

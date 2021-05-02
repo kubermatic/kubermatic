@@ -21,6 +21,8 @@ import (
 	"regexp"
 	"strconv"
 
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -28,8 +30,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog"
-
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 )
 
 const (

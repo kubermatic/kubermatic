@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	"github.com/go-logr/zapr"
-
 	"go.uber.org/zap"
 
 	"k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/scheme"

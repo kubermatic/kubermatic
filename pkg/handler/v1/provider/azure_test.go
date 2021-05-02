@@ -227,6 +227,7 @@ func (s *mockSizeClientImpl) ListVMSize(ctx context.Context, location string) ([
 func (s *mockSizeClientImpl) ListSecurityGroups(_ context.Context, _ string) ([]network.SecurityGroup, error) {
 	return nil, nil
 }
+
 func (s *mockSizeClientImpl) ListResourceGroups(_ context.Context) ([]resources.Group, error) {
 	return nil, nil
 }

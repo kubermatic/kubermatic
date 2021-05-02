@@ -22,10 +22,6 @@ import (
 	"fmt"
 	"net/http"
 
-	corev1 "k8s.io/api/core/v1"
-
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -36,6 +32,9 @@ import (
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
+
+	corev1 "k8s.io/api/core/v1"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 // ListSeedsEndpoint returns seed list

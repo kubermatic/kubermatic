@@ -25,7 +25,6 @@ import (
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -40,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/utils/pointer"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const nginxConfig = `worker_processes  1;

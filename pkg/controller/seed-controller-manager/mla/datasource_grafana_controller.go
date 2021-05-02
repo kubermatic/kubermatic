@@ -249,6 +249,7 @@ func (r *datasourceGrafanaReconciler) reconcileDatasource(ctx context.Context, e
 	return nil
 
 }
+
 func (r *datasourceGrafanaReconciler) ensureDeployments(ctx context.Context, c *kubermaticv1.Cluster, data *resources.TemplateData) error {
 	creators := []reconciling.NamedDeploymentCreatorGetter{
 		GatewayDeploymentCreator(data),

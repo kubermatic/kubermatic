@@ -19,9 +19,8 @@ package machine_test
 import (
 	"testing"
 
-	"k8c.io/kubermatic/v2/pkg/machine"
-
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/machine"
 )
 
 func TestCredentialEndpoint(t *testing.T) {

@@ -22,10 +22,10 @@ import (
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
 
-	"k8s.io/apimachinery/pkg/util/rand"
-
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
+
+	"k8s.io/apimachinery/pkg/util/rand"
 )
 
 var _ = ginkgo.Describe("The Tunneling strategy", func() {

@@ -19,12 +19,12 @@ package websocket
 import (
 	"encoding/json"
 
+	"github.com/gorilla/websocket"
+
 	api "k8c.io/kubermatic/v2/pkg/api/v1"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/watcher"
-
-	"github.com/gorilla/websocket"
 )
 
 func WriteSettings(providers watcher.Providers, ws *websocket.Conn) {
