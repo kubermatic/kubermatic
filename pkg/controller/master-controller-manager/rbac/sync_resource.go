@@ -111,7 +111,7 @@ func (c *resourcesController) syncProjectResource(ctx context.Context, key ctrlr
 			if err := c.ensureRBACRoleBindingForEtcdLauncher(ctx, metaObject, "Secret"); err != nil {
 				return fmt.Errorf("failed to sync etcd restore RBAC ClusterRoleBinding for %s resource for %s cluster provider: %v", rmapping, c.providerName, err)
 			}
-			if err := c.ensureRBACRoleForEtcdLauncher(ctx, metaObject, "statefulset", "", "StatefulSet"); err != nil {
+			if err := c.ensureRBACRoleForEtcdLauncher(ctx, metaObject, "statefulsets", "apps", "StatefulSet"); err != nil {
 				return fmt.Errorf("failed to sync etcd launcher RBAC Role for %s resource for %s cluster provider in namespace %s, due to = %v", rmapping, c.providerName, metaObject.GetNamespace(), err)
 			}
 			if err := c.ensureRBACRoleBindingForEtcdLauncher(ctx, metaObject, "StatefulSet"); err != nil {
