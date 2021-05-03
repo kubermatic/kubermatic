@@ -95,6 +95,9 @@ const (
 	// when the backup delete job is deleted, the corresponding etcdbackupconfig.status.currentBackups entry is also removed
 	succeededJobRetentionTime = 1 * time.Minute
 	failedJobRetentionTime    = 10 * time.Minute
+
+	// maximum number of simultaneously running backup delete jobs per BackupConfig
+	maxSimultaneousDeleteJobsPerConfig = 3
 )
 
 // Reconciler stores necessary components that are required to create etcd backups
@@ -493,8 +496,12 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 		keepCount = 0
 	}
 	kept := 0
+	runningDeleteJobsCount := 0
 	for i := len(backupConfig.Status.CurrentBackups) - 1; i >= 0; i-- {
 		backup := &backupConfig.Status.CurrentBackups[i]
+		if backup.DeletePhase == kubermaticv1.BackupStatusPhaseRunning {
+			runningDeleteJobsCount++
+		}
 		if backup.BackupPhase == kubermaticv1.BackupStatusPhaseFailed && backup.DeletePhase == "" {
 			backupsToDelete = append(backupsToDelete, backup)
 		} else if backup.BackupPhase == kubermaticv1.BackupStatusPhaseCompleted {
@@ -507,10 +514,13 @@ func (r *Reconciler) startPendingBackupDeleteJobs(ctx context.Context, backupCon
 
 	modified := false
 	for _, backup := range backupsToDelete {
-		if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
-			return nil, err
+		if runningDeleteJobsCount < maxSimultaneousDeleteJobsPerConfig {
+			if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
+				return nil, err
+			}
+			runningDeleteJobsCount++
+			modified = true
 		}
-		modified = true
 	}
 
 	if modified {
@@ -542,6 +552,13 @@ func (r *Reconciler) createBackupDeleteJob(ctx context.Context, backupConfig *ku
 func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupConfig *kubermaticv1.EtcdBackupConfig, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	var returnReconcile *reconcile.Result
 
+	// structs with the backup status and the DeleteMessage to set in case we restart the delete job
+	type DeleteJobToRestart struct {
+		backup        *kubermaticv1.BackupStatus
+		deleteMessage string
+	}
+	var deleteJobsToRestart []DeleteJobToRestart
+	runningDeleteJobsCount := 0
 	for i := range backupConfig.Status.CurrentBackups {
 		backup := &backupConfig.Status.CurrentBackups[i]
 		if backup.DeletePhase == kubermaticv1.BackupStatusPhaseRunning {
@@ -551,12 +568,9 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 				if !kerrors.IsNotFound(err) {
 					return nil, errors.Wrapf(err, "error getting delete job for backup %s", backup.BackupName)
 				}
-				// job not found. Apparently deleted externally.
+				// job not found. Apparently deleted, either externally or by us in a previous cycle.
 				// recreate it. We want to see a finished delete job.
-				if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
-					return nil, err
-				}
-				backup.DeleteMessage = "job deleted externally, restarted"
+				deleteJobsToRestart = append(deleteJobsToRestart, DeleteJobToRestart{backup, "job was deleted, restarted it"})
 			} else {
 				if cond := getJobConditionIfTrue(job, batchv1.JobComplete); cond != nil {
 					backup.DeletePhase = kubermaticv1.BackupStatusPhaseCompleted
@@ -571,16 +585,24 @@ func (r *Reconciler) updateRunningBackupDeleteJobs(ctx context.Context, backupCo
 					if err := r.Delete(ctx, job, ctrlruntimeclient.PropagationPolicy(metav1.DeletePropagationBackground)); err != nil && !kerrors.IsNotFound(err) {
 						return nil, errors.Wrapf(err, "backup %s: failed to delete failed delete job %s", backup.BackupName, backup.JobName)
 					}
-					if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, backup); err != nil {
-						return nil, err
-					}
-					backup.DeleteMessage = fmt.Sprintf("Job failed: %s. Restarted.", cond.Message)
-					returnReconcile = minReconcile(returnReconcile, &reconcile.Result{RequeueAfter: assumedJobRuntime})
+					deleteJobsToRestart = append(deleteJobsToRestart, DeleteJobToRestart{backup, fmt.Sprintf("Job failed: %s. Restarted.", cond.Message)})
 				} else {
 					// job still running
+					runningDeleteJobsCount++
 					returnReconcile = minReconcile(returnReconcile, &reconcile.Result{RequeueAfter: assumedJobRuntime})
 				}
 			}
+		}
+	}
+
+	for _, deleteJobToRestart := range deleteJobsToRestart {
+		if runningDeleteJobsCount < maxSimultaneousDeleteJobsPerConfig {
+			if err := r.createBackupDeleteJob(ctx, backupConfig, cluster, deleteJobToRestart.backup); err != nil {
+				return nil, err
+			}
+			deleteJobToRestart.backup.DeleteMessage = deleteJobToRestart.deleteMessage
+			runningDeleteJobsCount++
+			returnReconcile = minReconcile(returnReconcile, &reconcile.Result{RequeueAfter: assumedJobRuntime})
 		}
 	}
 
@@ -916,6 +938,7 @@ func (r *Reconciler) backupDeleteJob(backupConfig *kubermaticv1.EtcdBackupConfig
 
 	job := r.jobBase(backupConfig, cluster, backupStatus.DeleteJobName)
 	job.Spec.Template.Spec.Containers = []corev1.Container{*deleteContainer}
+	job.Spec.ActiveDeadlineSeconds = resources.Int64(4 * 60)
 	job.Spec.Template.Spec.Volumes = []corev1.Volume{
 		{
 			Name: "ca-bundle",

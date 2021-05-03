@@ -18,6 +18,7 @@ package etcdbackup
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -212,6 +213,22 @@ func genClusterRootCaSecret() *corev1.Secret {
 			"ca.key": kubermaticv1.NewBytes("LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBd05mMVp0UlBKN3FoeC9TNWtIUTJSdWZzY05WYzlodFFhZFIvenowYlZ6bVkvQTJTCk1ZTkd5SzdiSDdyVG1CVDRGbDdTVmJhcUNDMldpc0ZSMFRFbDRFK1dxaUMwKzU1MFc0VzExcGhwQTFIclRzZkYKMzdVZkROSzhjT1E4VXlWVWNqN0YvVFJDWmUyRXZ0WkUvM0tRLy9wSHAvdHF3Z0lzNzlDbXFLdDhBNXphWGt5VwpsamRjdmNiQ1l5VEhXN09sYVREb2laOUdkbTdWRERCbzA2NGIrWGZwLzFuL2dqbWZsK01hNys5VVBLNm45dm9rCkljZkNGNHJDb0FnNUxNWjZWeEp3Wk1XRDc4bXA5ZmtaN1BlblVhekhuK2VYSnJCdDJ4dHR1WXN2WSt3UFA5Mm4KcmN5ZnlPUnZGUDFNTzIxSXIrSmorMTN3T1ZoTUNPR3Z0eGFNUlFJREFRQUJBb0lCQUhzR0NvOFVLSDh1NStDWgpOZng2dHRtYlFWSm1PMHpoOWZYZDA3K1F1eTExR0N6TU41U1FyQXFBeWxlK3B4Z2hZSGRjL0pBajNPc2tzaUpJCjIvbzVnWEZOTk0vSjE4dWh0WmRoZ0xTclBHc2F5cVBTZkdDUHVvUkN1R2JJbzlkalBERTU3TEx3c044M25IVG0KV3RRZjhYTHI1dVM2VnN2MytWVHdaakc2WEg0c2FIcUZ0OE10Ni9taDR0UFViQ2VPaHdCZXlNUUQwOXhrM3k4ZAoyMmVoV1QwMTRWSXBTMklBVFdGKzJkTW13Y1pEOGQ3S2hLeDA4UUE0dlZHUGIrQWxWMVJ3eitkODVkQkwzSkpPClVkWndRamw2VEhaVS9hbmMyT2hDRjFsQXEvWTFKZmFPZWJXbFZvOFRVaE9HL0JpQzd2ZjRvTGs1SVRxYkhIZVQKVExMWUxhMENnWUVBeUZGdCtpNHN1TzFPQnNaSHZ2WnhxNUtSV3NWNXBpRUpzZlNqOEJ0cW5uazkxSjVBZG81aApFYi8rY0lKaXdqQm1wYjk0cTRTYXQ0eHY2ck9Bc3NpZGlCZlhjQWVaTTNFa05QdzhYNHZFdWFiSWdES2svaEkzCm1ubG1ZblVvbG5vUXpOYWg3QUczVkR6eTJNODFrNkpzUjJ5cXZuR3hMSEQ3SjU4dEVSRGF5SWNDZ1lFQTluS2wKY2JGQjJEeWVUU0VyWWtVeGJZMlRnTEhVUnBreWxtVldDK0VGT0NLYXJaTU1UOWpLT1VYRlFpdVFMVzFkVDE2Sgp2QVh0QnhVMDIyeXN2cGo3Z3BUblhzZXlsZTkzVTVFa3RBZ1NIRmh0ejFscGx2eWRBaWUvQUtkYU9EbUJQOEZsCm5RVHc2cWNHM3JLRkJrOE9KZlBpRDE2OW5tMW5RZEx4eE8razA5TUNnWUVBdlJVSDcxL0lmU0lhUlpEQnhrSlAKbDNqNDFTcVRvam1MTWp2T3h1VEtKaDRoTytISXpWK2x4cUJvcG9DY2dkbzMrZm9iQ0NOWit5bUh0bzJMVExiSwo0OXhGVWcwS0VpR1k0SjY2eWlGZkp6S0VEV1pBa1VaV3ord0p0YVFMRk1iUnR0aGQ3U3pOaEtrblBYbVJnL0tMCnJIdXBTNng3Wll5YnRaR3RjMjlxWkY4Q2dZQXJKcW5IUFdVdENuZ2hReVNJZ1ZzRk5wdlVGYzc0U1l5cy9yTlIKUXlZWnpSMU9OUWdiMXZhWmpwamFYQ3hUZCttMW92VDA0Z2k5aTc0RWlZTzVuNm15RklacWR3YlM3K254ek9FagpVS0p6S2h5WUNLelBUZzNqdWJmYzBuQ2VsWnNHNGNMNytraUFuWnc3VkFDc3VSemVFbFRMb2lnTFhGYVBGUE5XCkt5dXVGd0tCZ1FDd3V4RGFRMGduaXkxaUF3T1A1WU94cGw3bXBibFNROGxJaDQrRnJlQTdVWFhGQ3BSamdWdWoKMVdTRS9mSGs2WEZRT3pvcVFibFpYZ0hTREJ4SlF3cTlhUllueXQ5czFSK0FQVzFlVVJLSE9ra1FjYjVNK0QzbQovYkRkRWRUOGlsTFFTWGlWcEVKdDExay9zK3h4ZC9kMFdNL1RNV1VHOVZEVjhmWHVqNmkxWVE9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo="),
 		},
 	}
+}
+
+func genBackupStatusList(n int, gen func(i int) kubermaticv1.BackupStatus) []kubermaticv1.BackupStatus {
+	var result []kubermaticv1.BackupStatus
+	for i := 0; i < n; i++ {
+		result = append(result, gen(i))
+	}
+	return result
+}
+
+func genJobList(n int, gen func(i int) batchv1.Job) []batchv1.Job {
+	var result []batchv1.Job
+	for i := 0; i < n; i++ {
+		result = append(result, gen(i))
+	}
+	return result
 }
 
 func TestEnsurePendingBackupIsScheduled(t *testing.T) {
@@ -853,6 +870,42 @@ func TestStartPendingBackupDeleteJobs(t *testing.T) {
 			expectedReconcile: nil,
 			expectedJobs:      nil,
 		},
+		{
+			name:        "not more than maxSimultaneousDeleteJobsPerConfig delete jobs are started",
+			currentTime: time.Unix(400, 0).UTC(),
+			keep:        1,
+			existingBackups: genBackupStatusList(maxSimultaneousDeleteJobsPerConfig+2, func(i int) kubermaticv1.BackupStatus {
+				return kubermaticv1.BackupStatus{
+					ScheduledTime:      &metav1.Time{Time: time.Unix(60+int64(i)*60, 0).UTC()},
+					BackupName:         fmt.Sprintf("testbackup-%v", i),
+					JobName:            fmt.Sprintf("testcluster-backup-testbackup-%v-create", i),
+					BackupFinishedTime: &metav1.Time{Time: time.Unix(90+int64(i)*60, 0).UTC()},
+					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
+					BackupMessage:      "job completed",
+					DeleteJobName:      fmt.Sprintf("testcluster-backup-testbackup-%v-delete", i),
+				}
+			}),
+			existingJobs: []batchv1.Job{},
+			expectedBackups: genBackupStatusList(maxSimultaneousDeleteJobsPerConfig+2, func(i int) kubermaticv1.BackupStatus {
+				result := kubermaticv1.BackupStatus{
+					ScheduledTime:      &metav1.Time{Time: time.Unix(60+int64(i)*60, 0).UTC()},
+					BackupName:         fmt.Sprintf("testbackup-%v", i),
+					JobName:            fmt.Sprintf("testcluster-backup-testbackup-%v-create", i),
+					BackupFinishedTime: &metav1.Time{Time: time.Unix(90+int64(i)*60, 0).UTC()},
+					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
+					BackupMessage:      "job completed",
+					DeleteJobName:      fmt.Sprintf("testcluster-backup-testbackup-%v-delete", i),
+				}
+				if i > 0 && i <= maxSimultaneousDeleteJobsPerConfig {
+					result.DeletePhase = kubermaticv1.BackupStatusPhaseRunning
+				}
+				return result
+			}),
+			expectedReconcile: &reconcile.Result{RequeueAfter: assumedJobRuntime},
+			expectedJobs: genJobList(maxSimultaneousDeleteJobsPerConfig, func(i int) batchv1.Job {
+				return *genBackupDeleteJob(fmt.Sprintf("testbackup-%v", i+1), fmt.Sprintf("testcluster-backup-testbackup-%v-delete", i+1))
+			}),
+		},
 	}
 	for _, tc := range testCases {
 		tc := tc
@@ -1076,6 +1129,47 @@ func TestUpdateRunningBackupDeleteJobs(t *testing.T) {
 				},
 			},
 			expectedReconcile: &reconcile.Result{RequeueAfter: succeededJobRetentionTime},
+		},
+		{
+			name:        "not more than maxSimultaneousDeleteJobsPerConfig delete jobs are restarted",
+			currentTime: time.Unix(170, 0).UTC(),
+			existingBackups: genBackupStatusList(maxSimultaneousDeleteJobsPerConfig+2, func(i int) kubermaticv1.BackupStatus {
+				return kubermaticv1.BackupStatus{
+					ScheduledTime:      &metav1.Time{Time: time.Unix(60+int64(i)*60, 0).UTC()},
+					BackupName:         fmt.Sprintf("testbackup-%v", i),
+					JobName:            fmt.Sprintf("testcluster-backup-%v-create", i),
+					BackupFinishedTime: &metav1.Time{Time: time.Unix(150+int64(i)*60, 0).UTC()},
+					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
+					BackupMessage:      "job completed",
+					DeleteJobName:      fmt.Sprintf("testcluster-backup-%v-delete", i),
+					DeletePhase:        kubermaticv1.BackupStatusPhaseRunning,
+				}
+			}),
+			existingJobs: genJobList(maxSimultaneousDeleteJobsPerConfig+1, func(i int) batchv1.Job {
+				// 0th job is missing, the others have failed
+				i++
+				return *jobAddCondition(genBackupDeleteJob(fmt.Sprintf("testbackup-%v", i), fmt.Sprintf("testcluster-backup-%v-delete", i)),
+					batchv1.JobFailed, corev1.ConditionTrue, time.Unix(100+int64(i)*60, 0).UTC(), "job timed out")
+			}),
+			expectedBackups: genBackupStatusList(maxSimultaneousDeleteJobsPerConfig+2, func(i int) kubermaticv1.BackupStatus {
+				result := kubermaticv1.BackupStatus{
+					ScheduledTime:      &metav1.Time{Time: time.Unix(60+int64(i)*60, 0).UTC()},
+					BackupName:         fmt.Sprintf("testbackup-%v", i),
+					JobName:            fmt.Sprintf("testcluster-backup-%v-create", i),
+					BackupFinishedTime: &metav1.Time{Time: time.Unix(150+int64(i)*60, 0).UTC()},
+					BackupPhase:        kubermaticv1.BackupStatusPhaseCompleted,
+					BackupMessage:      "job completed",
+					DeleteJobName:      fmt.Sprintf("testcluster-backup-%v-delete", i),
+					DeletePhase:        kubermaticv1.BackupStatusPhaseRunning,
+				}
+				if i == 0 {
+					result.DeleteMessage = "job was deleted, restarted it"
+				} else if i < maxSimultaneousDeleteJobsPerConfig {
+					result.DeleteMessage = "Job failed: job timed out. Restarted."
+				}
+				return result
+			}),
+			expectedReconcile: &reconcile.Result{RequeueAfter: assumedJobRuntime},
 		},
 	}
 	for _, tc := range testCases {
