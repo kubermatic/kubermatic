@@ -27,6 +27,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/addon"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	constrainttemplate "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"
@@ -320,6 +321,19 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clusters/{cluster_id}/addons/{addon_id}").
 		Handler(r.deleteAddon())
+
+	// Defines a set of HTTP endpoints for managing alertmanager
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/alertmanager/config").
+		Handler(r.getAlertmanager())
+
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/clusters/{cluster_id}/alertmanager/config").
+		Handler(r.updateAlertmanager())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/clusters/{cluster_id}/alertmanager/config").
+		Handler(r.resetAlertmanager())
 
 	// Defines a set of HTTP endpoints for various cloud providers
 	// Note that these endpoints don't require credentials as opposed to the ones defined under /providers/*
@@ -1306,7 +1320,8 @@ func (r Routing) listConstraints() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(constraint.ListEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintProvider)),
+			middleware.Constraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
+		)(constraint.ListEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		constraint.DecodeListConstraintsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1333,7 +1348,8 @@ func (r Routing) getConstraint() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(constraint.GetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintProvider)),
+			middleware.Constraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
+		)(constraint.GetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		constraint.DecodeConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1360,7 +1376,9 @@ func (r Routing) deleteConstraint() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(constraint.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintProvider, r.privilegedConstraintProvider)),
+			middleware.Constraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
+			middleware.PrivilegedConstraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
+		)(constraint.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		constraint.DecodeConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1387,7 +1405,9 @@ func (r Routing) createConstraint() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(constraint.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintProvider, r.privilegedConstraintProvider, r.constraintTemplateProvider)),
+			middleware.Constraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
+			middleware.PrivilegedConstraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
+		)(constraint.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintTemplateProvider)),
 		constraint.DecodeCreateConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1414,7 +1434,9 @@ func (r Routing) patchConstraint() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(constraint.PatchEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintProvider, r.privilegedConstraintProvider)),
+			middleware.Constraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
+			middleware.PrivilegedConstraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
+		)(constraint.PatchEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		constraint.DecodePatchConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3188,6 +3210,92 @@ func (r Routing) updatePreset() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(preset.UpdatePreset(r.presetsProvider, r.userInfoGetter)),
 		preset.DecodeUpdatePreset,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config project getAlertmanager
+//
+//     Gets the alertmanager configuration for the specified cluster.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Alertmanager
+//       401: empty
+//       403: empty
+func (r Routing) getAlertmanager() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.Alertmanagers(r.clusterProviderGetter, r.alertmanagerProviderGetter, r.seedsGetter),
+		)(alertmanager.GetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		alertmanager.DecodeGetAlertmanagerReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config project updateAlertmanager
+//
+//     Updates an alertmanager configuration for the given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Alertmanager
+//       401: empty
+//       403: empty
+func (r Routing) updateAlertmanager() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.Alertmanagers(r.clusterProviderGetter, r.alertmanagerProviderGetter, r.seedsGetter),
+		)(alertmanager.UpdateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		alertmanager.DecodeUpdateAlertmanagerReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/alertmanager/config project resetAlertmanager
+//
+//     Resets the alertmanager configuration to default for the specified cluster.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) resetAlertmanager() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.Alertmanagers(r.clusterProviderGetter, r.alertmanagerProviderGetter, r.seedsGetter),
+		)(alertmanager.ResetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		alertmanager.DecodeResetAlertmanagerReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

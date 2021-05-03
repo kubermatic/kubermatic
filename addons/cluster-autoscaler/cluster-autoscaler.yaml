@@ -103,6 +103,7 @@ rules:
     - cluster.k8s.io
     resources:
     - machinedeployments
+    - machinedeployments/scale
     - machines
     - machinesets
     verbs:

@@ -31,12 +31,11 @@ import (
 	"time"
 
 	ver "github.com/Masterminds/semver/v3"
-	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 	prometheusapi "github.com/prometheus/client_golang/api"
-	"k8s.io/utils/pointer"
 
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	k8cuserclusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
@@ -70,6 +69,7 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	restclient "k8s.io/client-go/rest"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -184,8 +184,8 @@ type newRoutingFunc func(
 	externalClusterProvider provider.ExternalClusterProvider,
 	privilegedExternalClusterProvider provider.PrivilegedExternalClusterProvider,
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
-	constraintProvider provider.ConstraintProvider,
-	privilegedConstraintProvider provider.PrivilegedConstraintProvider,
+	constraintProviderGetter provider.ConstraintProviderGetter,
+	alertmanagerProviderGetter provider.AlertmanagerProviderGetter,
 	kubermaticVersions kubermatic.Versions,
 ) http.Handler
 
@@ -345,9 +345,21 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 	if err != nil {
 		return nil, nil, err
 	}
-	fakeConstraintProvider := &FakeConstraintProvider{
-		Provider:   constraintProvider,
-		FakeClient: fakeClient,
+	constraintProviders := map[string]provider.ConstraintProvider{"us-central1": constraintProvider}
+	constraintProviderGetter := func(seed *kubermaticv1.Seed) (provider.ConstraintProvider, error) {
+		if constraint, exists := constraintProviders[seed.Name]; exists {
+			return constraint, nil
+		}
+		return nil, fmt.Errorf("can not find constraintprovider for cluster %q", seed.Name)
+	}
+
+	alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient)
+	alertmanagerProviders := map[string]provider.AlertmanagerProvider{"us-central1": alertmanagerProvider}
+	alertmanagerProviderGetter := func(seed *kubermaticv1.Seed) (provider.AlertmanagerProvider, error) {
+		if alertmanager, exists := alertmanagerProviders[seed.Name]; exists {
+			return alertmanager, nil
+		}
+		return nil, fmt.Errorf("can not find alertmanagerprovider for cluster %q", seed.Name)
 	}
 
 	eventRecorderProvider := kubernetes.NewEventRecorder()
@@ -402,8 +414,8 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeExternalClusterProvider,
 		externalClusterProvider,
 		fakeConstraintTemplateProvider,
-		fakeConstraintProvider,
-		constraintProvider,
+		constraintProviderGetter,
+		alertmanagerProviderGetter,
 		kubermaticVersions,
 	)
 
@@ -1511,6 +1523,31 @@ func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
 				},
 			},
 			Synced: pointer.BoolPtr(true),
+		},
+	}
+}
+func GenAlertmanager(namespace, configSecretName string) *kubermaticv1.Alertmanager {
+	return &kubermaticv1.Alertmanager{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      resources.AlertmanagerName,
+			Namespace: namespace,
+		},
+		Spec: kubermaticv1.AlertmanagerSpec{
+			ConfigSecret: corev1.LocalObjectReference{
+				Name: configSecretName,
+			},
+		},
+	}
+}
+
+func GenAlertmanagerConfigSecret(name, namespace string, config []byte) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: namespace,
+		},
+		Data: map[string][]byte{
+			resources.AlertmanagerConfigSecretKey: config,
 		},
 	}
 }

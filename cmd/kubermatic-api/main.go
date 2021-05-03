@@ -261,10 +261,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		return providers{}, fmt.Errorf("failed to create constraint template provider due to %v", err)
 	}
 
-	constraintProvider, err := kubernetesprovider.NewConstraintProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
-	if err != nil {
-		return providers{}, fmt.Errorf("failed to create constraint provider due to %v", err)
-	}
+	constraintProviderGetter := kubernetesprovider.ConstraintProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
 	kubeMasterInformerFactory.Start(wait.NeverStop)
 	kubeMasterInformerFactory.WaitForCacheSync(wait.NeverStop)
@@ -274,6 +271,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 	eventRecorderProvider := kubernetesprovider.NewEventRecorder()
 
 	addonProviderGetter := kubernetesprovider.AddonProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, options.accessibleAddons)
+
+	alertmanagerProviderGetter := kubernetesprovider.AlertmanagerProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
 	if err != nil {
@@ -314,8 +313,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		externalClusterProvider:               externalClusterProvider,
 		privilegedExternalClusterProvider:     externalClusterProvider,
 		constraintTemplateProvider:            constraintTemplateProvider,
-		constraintProvider:                    constraintProvider,
-		privilegedConstraintProvider:          constraintProvider,
+		constraintProviderGetter:              constraintProviderGetter,
+		alertmanagerProviderGetter:            alertmanagerProviderGetter,
 	}, nil
 }
 
@@ -420,8 +419,8 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ExternalClusterProvider:               prov.externalClusterProvider,
 		PrivilegedExternalClusterProvider:     prov.privilegedExternalClusterProvider,
 		ConstraintTemplateProvider:            prov.constraintTemplateProvider,
-		ConstraintProvider:                    prov.constraintProvider,
-		PrivilegedConstraintProvider:          prov.privilegedConstraintProvider,
+		ConstraintProviderGetter:              prov.constraintProviderGetter,
+		AlertmanagerProviderGetter:            prov.alertmanagerProviderGetter,
 		Versions:                              options.versions,
 		CABundle:                              options.caBundle.CertPool(),
 	}
