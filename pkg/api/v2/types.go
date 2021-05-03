@@ -135,3 +135,14 @@ type PresetProvider struct {
 	Name    crdapiv1.ProviderType `json:"name"`
 	Enabled bool                  `json:"enabled"`
 }
+
+// Alertmanager represents an Alertmanager Configuration
+// swagger:model Alertmanager
+type Alertmanager struct {
+	Spec AlertmanagerSpec `json:"spec"`
+}
+
+type AlertmanagerSpec struct {
+	// Config contains the alertmanager configuration in YAML
+	Config []byte `json:"config"`
+}
