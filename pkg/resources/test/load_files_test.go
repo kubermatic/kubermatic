@@ -281,6 +281,7 @@ func TestLoadFiles(t *testing.T) {
 							},
 						},
 						Spec: kubermaticv1.ClusterSpec{
+							Features:       features,
 							ExposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,
 							Cloud:          cloudspec,
 							Version:        *ksemver.NewSemverOrDie(ver.Version.String()),
