@@ -40,11 +40,7 @@ source hack/ci/setup-kind-cluster.sh
 echodate "Setting up Kubermatic in kind on revision ${KUBERMATIC_VERSION}"
 
 beforeKubermaticSetup=$(nowms)
-if [ -n "${USE_LEGACY_HELM_CHART:-}" ]; then
-  source hack/ci/setup-legacy-kubermatic-in-kind.sh
-else
-  source hack/ci/setup-kubermatic-in-kind.sh
-fi
+source hack/ci/setup-kubermatic-in-kind.sh
 pushElapsed kind_kubermatic_setup_duration_milliseconds $beforeKubermaticSetup
 
 echodate "Running conformance tests"
