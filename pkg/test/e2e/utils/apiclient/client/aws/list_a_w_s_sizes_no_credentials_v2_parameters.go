@@ -60,6 +60,11 @@ for the list a w s sizes no credentials v2 operation typically these are written
 */
 type ListAWSSizesNoCredentialsV2Params struct {
 
+	/*Architecture
+	  architecture query parameter. Supports: arm64 and x64 types.
+
+	*/
+	Architecture *string
 	/*ClusterID*/
 	ClusterID string
 	/*ProjectID*/
@@ -103,6 +108,17 @@ func (o *ListAWSSizesNoCredentialsV2Params) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithArchitecture adds the architecture to the list a w s sizes no credentials v2 params
+func (o *ListAWSSizesNoCredentialsV2Params) WithArchitecture(architecture *string) *ListAWSSizesNoCredentialsV2Params {
+	o.SetArchitecture(architecture)
+	return o
+}
+
+// SetArchitecture adds the architecture to the list a w s sizes no credentials v2 params
+func (o *ListAWSSizesNoCredentialsV2Params) SetArchitecture(architecture *string) {
+	o.Architecture = architecture
+}
+
 // WithClusterID adds the clusterID to the list a w s sizes no credentials v2 params
 func (o *ListAWSSizesNoCredentialsV2Params) WithClusterID(clusterID string) *ListAWSSizesNoCredentialsV2Params {
 	o.SetClusterID(clusterID)
@@ -132,6 +148,22 @@ func (o *ListAWSSizesNoCredentialsV2Params) WriteToRequest(r runtime.ClientReque
 		return err
 	}
 	var res []error
+
+	if o.Architecture != nil {
+
+		// query param architecture
+		var qrArchitecture string
+		if o.Architecture != nil {
+			qrArchitecture = *o.Architecture
+		}
+		qArchitecture := qrArchitecture
+		if qArchitecture != "" {
+			if err := r.SetQueryParam("architecture", qArchitecture); err != nil {
+				return err
+			}
+		}
+
+	}
 
 	// path param cluster_id
 	if err := r.SetPathParam("cluster_id", o.ClusterID); err != nil {

@@ -15,6 +15,9 @@ import (
 // swagger:model AWSSize
 type AWSSize struct {
 
+	// architecture
+	Architecture string `json:"architecture,omitempty"`
+
 	// g p us
 	GPUs int64 `json:"gpus,omitempty"`
 

@@ -28,12 +28,14 @@ func TestAWSSizeARMFiltering(t *testing.T) {
 	tests := []struct {
 		name                 string
 		region               string
+		architecture         string
 		resourceQuota        v1.MachineDeploymentVMResourceQuota
 		unexpectedNamePrefix []string
 	}{
 		{
 			name:          "test ARM filtering",
 			region:        "eu-central-1",
+			architecture:  "x64",
 			resourceQuota: genDefaultMachineDeploymentVMResourceQuota(),
 			// Instance List for ARM:
 			// a1.2xlarge
@@ -83,7 +85,7 @@ func TestAWSSizeARMFiltering(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			awsSizeList, err := provider.AWSSizes(test.region, test.resourceQuota)
+			awsSizeList, err := provider.AWSSizes(test.region, test.architecture, test.resourceQuota)
 			if err != nil {
 				t.Fatal(err)
 			}
