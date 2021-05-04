@@ -88,6 +88,7 @@ type Reconciler struct {
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
 	inClusterPrometheusScrapingConfigsFile           string
 	monitoringScrapeAnnotationPrefix                 string
+	userClusterMLAEnabled                            bool
 	dockerPullConfigJSON                             []byte
 	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
@@ -125,6 +126,7 @@ func Add(
 	inClusterPrometheusDisableDefaultRules bool,
 	inClusterPrometheusDisableDefaultScrapingConfigs bool,
 	inClusterPrometheusScrapingConfigsFile string,
+	userClusterMLAEnabled bool,
 	dockerPullConfigJSON []byte,
 	nodeLocalDNSCacheEnabled bool,
 	concurrentClusterUpdates int,
@@ -160,6 +162,7 @@ func Add(
 		inClusterPrometheusDisableDefaultScrapingConfigs: inClusterPrometheusDisableDefaultScrapingConfigs,
 		inClusterPrometheusScrapingConfigsFile:           inClusterPrometheusScrapingConfigsFile,
 		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
+		userClusterMLAEnabled:                            userClusterMLAEnabled,
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
 		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,

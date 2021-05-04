@@ -18712,6 +18712,9 @@
           "type": "string",
           "x-go-name": "Location"
         },
+        "mla": {
+          "$ref": "#/definitions/SeedMLASettings"
+        },
         "name": {
           "description": "Name represents human readable name for the resource",
           "type": "string",
@@ -18727,6 +18730,18 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "SeedMLASettings": {
+      "type": "object",
+      "title": "SeedMLASettings allow configuring seed level MLA (Monitoring, Logging \u0026 Alerting) stack settings.",
+      "properties": {
+        "user_cluster_mla_enabled": {
+          "description": "Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging \u0026 Alerting) stack is enabled in the seed.",
+          "type": "boolean",
+          "x-go-name": "UserClusterMLAEnabled"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "SeedNamesList": {
       "type": "array",
@@ -18762,6 +18777,9 @@
           "description": "Optional: Detailed location of the cluster, like \"Hamburg\" or \"Datacenter 7\".\nFor informational purposes in the Kubermatic dashboard only.",
           "type": "string",
           "x-go-name": "Location"
+        },
+        "mla": {
+          "$ref": "#/definitions/SeedMLASettings"
         },
         "proxy_settings": {
           "$ref": "#/definitions/ProxySettings"

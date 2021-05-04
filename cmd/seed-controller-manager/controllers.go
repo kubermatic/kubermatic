@@ -157,6 +157,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultRules,
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
+		userClusterMLAEnabled(ctrlCtx),
 		ctrlCtx.dockerPullConfigJSON,
 		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
 		ctrlCtx.runOptions.concurrentClusterUpdate,
@@ -404,7 +405,7 @@ func createInitialMachineDeploymentController(ctrlCtx *controllerContext) error 
 }
 
 func createMLAController(ctrlCtx *controllerContext) error {
-	if !ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) {
+	if !userClusterMLAEnabled(ctrlCtx) {
 		return nil
 	}
 	return mla.Add(
@@ -420,4 +421,8 @@ func createMLAController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.grafanaSecret,
 		ctrlCtx.runOptions.overwriteRegistry,
 	)
+}
+
+func userClusterMLAEnabled(ctrlCtx *controllerContext) bool {
+	return ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) && ctrlCtx.runOptions.enableUserClusterMLA
 }

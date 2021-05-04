@@ -43,6 +43,9 @@ type Seed struct {
 	// kubeconfig
 	Kubeconfig *ObjectReference `json:"kubeconfig,omitempty"`
 
+	// mla
+	Mla *SeedMLASettings `json:"mla,omitempty"`
+
 	// proxy settings
 	ProxySettings *ProxySettings `json:"proxy_settings,omitempty"`
 }
@@ -60,6 +63,10 @@ func (m *Seed) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateKubeconfig(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMla(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -121,6 +128,24 @@ func (m *Seed) validateKubeconfig(formats strfmt.Registry) error {
 		if err := m.Kubeconfig.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("kubeconfig")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Seed) validateMla(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Mla) { // not required
+		return nil
+	}
+
+	if m.Mla != nil {
+		if err := m.Mla.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("mla")
 			}
 			return err
 		}
