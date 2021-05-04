@@ -34,10 +34,11 @@ const (
 	tag       = "v2.26.0"
 	appName   = "mla-prometheus"
 
-	configVolumeName  = "config-volume"
-	configPath        = "/etc/config"
-	storageVolumeName = "storage-volume"
-	storagePath       = "/data"
+	configVolumeName       = "config-volume"
+	configPath             = "/etc/config"
+	storageVolumeName      = "storage-volume"
+	storagePath            = "/data"
+	certificatesVolumeName = "certificates"
 
 	prometheusNameKey     = "app.kubernetes.io/name"
 	prometheusInstanceKey = "app.kubernetes.io/instance"
@@ -94,6 +95,10 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 							MountPath: configPath,
 						},
 						{
+							Name:      certificatesVolumeName,
+							MountPath: resources.UserClusterPrometheusClientCertMountPath,
+						},
+						{
 							Name:      storageVolumeName,
 							MountPath: storagePath,
 							SubPath:   "",
@@ -137,6 +142,15 @@ func DeploymentCreator() reconciling.NamedDeploymentCreatorGetter {
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: resources.UserClusterPrometheusConfigMapName,
 							},
+						},
+					},
+				},
+				{
+					Name: certificatesVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  resources.UserClusterPrometheusCertificatesSecretName,
+							DefaultMode: pointer.Int32Ptr(0400),
 						},
 					},
 				},

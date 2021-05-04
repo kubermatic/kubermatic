@@ -243,6 +243,10 @@ func (r *reconciler) openVPNCA(ctx context.Context) (*resources.ECDSAKeyPair, er
 	return resources.GetOpenVPNCA(ctx, r.namespace, r.seedClient)
 }
 
+func (r *reconciler) mlaGatewayCA(ctx context.Context) (*resources.ECDSAKeyPair, error) {
+	return resources.GetMLAGatewayCA(ctx, r.namespace, r.seedClient)
+}
+
 func (r *reconciler) userSSHKeys(ctx context.Context) (map[string][]byte, error) {
 	secret := &corev1.Secret{}
 	if err := r.seedClient.Get(

@@ -60,7 +60,6 @@ func newTestDatasourceGrafanaReconciler(t *testing.T, objects []ctrlruntimeclien
 		grafanaClient: grafanaClient,
 		log:           kubermaticlog.Logger,
 		recorder:      record.NewFakeRecorder(10),
-		data:          resources.NewTemplateDataBuilder().Build(),
 	}
 	return &reconciler, ts
 }
@@ -445,15 +444,16 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			assert.Equal(t, tc.hasFinalizer, kubernetes.HasFinalizer(cluster, mlaFinalizer))
 
 			cm := &corev1.ConfigMap{}
-			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway", Namespace: cluster.Status.NamespaceName}}
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: gatewayName, Namespace: cluster.Status.NamespaceName}}
 			err = controller.Get(ctx, request.NamespacedName, cm)
 			if tc.hasResources {
 				assert.Nil(t, err)
 			} else {
 				assert.True(t, errors.IsNotFound(err))
 			}
+
 			dp := &appsv1.Deployment{}
-			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway", Namespace: cluster.Status.NamespaceName}}
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: gatewayName, Namespace: cluster.Status.NamespaceName}}
 			err = controller.Get(ctx, request.NamespacedName, dp)
 			if tc.hasResources {
 				assert.Nil(t, err)
@@ -462,19 +462,41 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			}
 
 			svc := &corev1.Service{}
-			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway-alert", Namespace: cluster.Status.NamespaceName}}
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: gatewayName, Namespace: cluster.Status.NamespaceName}}
 			err = controller.Get(ctx, request.NamespacedName, svc)
 			if tc.hasResources {
 				assert.Nil(t, err)
 			} else {
 				assert.True(t, errors.IsNotFound(err))
 			}
-
-			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: "mla-gateway-ext", Namespace: cluster.Status.NamespaceName}}
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: gatewayAlertName, Namespace: cluster.Status.NamespaceName}}
 			err = controller.Get(ctx, request.NamespacedName, svc)
 			if tc.hasResources {
 				assert.Nil(t, err)
-				assert.EqualValues(t, svc.Annotations, tc.expectExposeAnnotations)
+			} else {
+				assert.True(t, errors.IsNotFound(err))
+			}
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: gatewayExternalName, Namespace: cluster.Status.NamespaceName}}
+			err = controller.Get(ctx, request.NamespacedName, svc)
+			if tc.hasResources {
+				assert.Nil(t, err)
+				assert.EqualValues(t, tc.expectExposeAnnotations, svc.Annotations)
+			} else {
+				assert.True(t, errors.IsNotFound(err))
+			}
+
+			secret := &corev1.Secret{}
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: resources.MLAGatewayCASecretName, Namespace: cluster.Status.NamespaceName}}
+			err = controller.Get(ctx, request.NamespacedName, secret)
+			if tc.hasResources {
+				assert.Nil(t, err)
+			} else {
+				assert.True(t, errors.IsNotFound(err))
+			}
+			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: resources.MLAGatewayCertificatesSecretName, Namespace: cluster.Status.NamespaceName}}
+			err = controller.Get(ctx, request.NamespacedName, secret)
+			if tc.hasResources {
+				assert.Nil(t, err)
 			} else {
 				assert.True(t, errors.IsNotFound(err))
 			}

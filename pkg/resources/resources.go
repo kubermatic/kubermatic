@@ -591,7 +591,31 @@ const (
 	// MLAGatewayExternalServiceName is the name for the MLA Gateway external service
 	MLAGatewayExternalServiceName = "mla-gateway-ext"
 	// MLAGatewaySNIPrefix is the URL prefix which identifies the MLA Gateway endpoint in the external URL if SNI expose strategy is used
-	MLAGatewaySNIPrefix = "mla."
+	MLAGatewaySNIPrefix = "mla-gateway."
+
+	// MLAGatewayCASecretName is the name for the secret containing the MLA Gateway CA certificates
+	MLAGatewayCASecretName = "mla-gateway-ca"
+	MLAGatewayCACertKey    = CACertSecretKey
+	MLAGatewayCAKeyKey     = CAKeySecretKey
+
+	// MLAGatewayCertificatesSecretName is the name for the secret containing the MLA Gateway certificates
+	MLAGatewayCertificatesSecretName = "mla-gateway-certificates"
+	MLAGatewayKeySecretKey           = "gateway.key"
+	MLAGatewayCertSecretKey          = "gateway.crt"
+
+	// UserClusterPrometheusCertificatesSecretName is the name for the secret containing the Prometheus client certificates
+	UserClusterPrometheusCertificatesSecretName = "prometheus-certificates"
+	UserClusterPrometheusCertificateCommonName  = "prometheus"
+	UserClusterPrometheusClientKeySecretKey     = "client.key"
+	UserClusterPrometheusClientCertSecretKey    = "client.crt"
+	UserClusterPrometheusClientCertMountPath    = "/etc/ssl/mla"
+
+	// PromtailCertificatesSecretName is the name for the secret containing the promtail client certificates
+	PromtailCertificatesSecretName = "promtail-certificates"
+	PromtailCertificateCommonName  = "promtail"
+	PromtailClientKeySecretKey     = "client.key"
+	PromtailClientCertSecretKey    = "client.crt"
+	PromtailClientCertMountPath    = "/etc/ssl/mla"
 
 	AlertmanagerName                    = "alertmanager"
 	DefaultAlertmanagerConfigSecretName = "alertmanager"
@@ -913,6 +937,11 @@ func GetClusterFrontProxyCA(ctx context.Context, namespace string, client ctrlru
 // GetOpenVPNCA returns the OpenVPN CA of the cluster from the lister
 func GetOpenVPNCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
 	return getECDSAClusterCAFromLister(ctx, namespace, OpenVPNCASecretName, client)
+}
+
+// GetMLAGatewayCA returns the MLA Gateway CA of the cluster from the lister
+func GetMLAGatewayCA(ctx context.Context, namespace string, client ctrlruntimeclient.Client) (*ECDSAKeyPair, error) {
+	return getECDSAClusterCAFromLister(ctx, namespace, MLAGatewayCASecretName, client)
 }
 
 // ClusterIPForService returns the cluster ip for the given service

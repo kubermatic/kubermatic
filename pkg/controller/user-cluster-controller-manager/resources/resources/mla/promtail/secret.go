@@ -21,6 +21,7 @@ import (
 	"html/template"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -28,6 +29,9 @@ import (
 
 type Config struct {
 	MLAGatewayURL string
+	TLSCertFile   string
+	TLSKeyFile    string
+	TLSCACertFile string
 }
 
 func SecretCreator(config Config) reconciling.NamedSecretCreatorGetter {
@@ -59,7 +63,10 @@ server:
 
 client:
   url: {{ .MLAGatewayURL }}
-  
+  tls_config:
+    cert_file: {{ .TLSCertFile }}
+    key_file: {{ .TLSKeyFile }}
+    ca_file: {{ .TLSCACertFile }}
 
 positions:
   filename: /run/promtail/positions.yaml
@@ -371,3 +378,16 @@ scrape_configs:
         target_label: __path__
 `
 )
+
+func ClientCertificateCreator(ca *resources.ECDSAKeyPair) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return resources.PromtailCertificatesSecretName,
+			certificates.GetECDSAClientCertificateCreator(
+				resources.PromtailCertificatesSecretName,
+				resources.PromtailCertificateCommonName,
+				[]string{},
+				resources.PromtailClientCertSecretKey,
+				resources.PromtailClientKeySecretKey,
+				func() (*resources.ECDSAKeyPair, error) { return ca, nil })
+	}
+}
