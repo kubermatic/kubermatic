@@ -162,8 +162,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 					if data.Cluster().Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling {
 						mlaEndpoint = resources.MLAGatewaySNIPrefix + mlaEndpoint
 					}
-					// FIXME: http will be replaced with https in a follow-up change
-					args = append(args, "-mla-gateway-url", "http://"+mlaEndpoint)
+					args = append(args, "-mla-gateway-url", "https://"+mlaEndpoint)
 				}
 			}
 

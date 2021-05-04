@@ -19,6 +19,7 @@ package mla
 import (
 	"bytes"
 	"context"
+	"crypto/x509"
 	"fmt"
 	"strconv"
 	"strings"
@@ -31,6 +32,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
@@ -39,6 +41,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/utils/pointer"
 )
 
@@ -69,8 +72,14 @@ http {
 
   # write path - exposed to user clusters
   server {
-	listen             8080;
-	proxy_set_header X-Scope-OrgID {{ .TenantID}};
+	listen                  8080 ssl;
+	proxy_set_header        X-Scope-OrgID {{ .TenantID }};
+
+	ssl_certificate         {{ .SSLCertFile }};
+	ssl_certificate_key     {{ .SSLKeyFile }};
+	ssl_verify_client       on;
+	ssl_client_certificate  {{ .SSLCACertFile }};
+	ssl_protocols           TLSv1.3;
 
 	# Loki Config
 	location = /loki/api/v1/push {
@@ -143,11 +152,21 @@ const (
 	extPortName   = "http-ext"
 	intPortName   = "http-int"
 	alertPortName = "http-alert"
+
+	configVolumeName         = "config"
+	configVolumePath         = "/etc/nginx"
+	certificatesVolumeName   = "gw-certificates"
+	certificatesVolumePath   = "/etc/ssl/mla-gateway"
+	caCertificatesVolumeName = "ca-certificates"
+	caCertificatesVolumePath = "/etc/ssl/mla-gateway-ca"
 )
 
 type configTemplateData struct {
-	Namespace string
-	TenantID  string
+	Namespace     string
+	TenantID      string
+	SSLCertFile   string
+	SSLKeyFile    string
+	SSLCACertFile string
 }
 
 func renderTemplate(tpl string, data interface{}) (string, error) {
@@ -169,8 +188,11 @@ func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string) recon
 		return gatewayName, func(cm *corev1.ConfigMap) (*corev1.ConfigMap, error) {
 			if cm.Data == nil {
 				configData := configTemplateData{
-					Namespace: mlaNamespace,
-					TenantID:  c.Name,
+					Namespace:     mlaNamespace,
+					TenantID:      c.Name,
+					SSLCertFile:   fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayCertSecretKey),
+					SSLKeyFile:    fmt.Sprintf("%s/%s", certificatesVolumePath, resources.MLAGatewayKeySecretKey),
+					SSLCACertFile: fmt.Sprintf("%s/%s", caCertificatesVolumePath, resources.MLAGatewayCACertKey),
 				}
 				config, err := renderTemplate(nginxConfig, configData)
 				if err != nil {
@@ -343,8 +365,16 @@ func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 					},
 					VolumeMounts: []corev1.VolumeMount{
 						{
-							Name:      "config",
-							MountPath: "/etc/nginx",
+							Name:      configVolumeName,
+							MountPath: configVolumePath,
+						},
+						{
+							Name:      certificatesVolumeName,
+							MountPath: certificatesVolumePath,
+						},
+						{
+							Name:      caCertificatesVolumeName,
+							MountPath: caCertificatesVolumePath,
 						},
 						{
 							Name:      "tmp",
@@ -359,12 +389,36 @@ func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			}
 			d.Spec.Template.Spec.Volumes = []corev1.Volume{
 				{
-					Name: "config",
+					Name: configVolumeName,
 					VolumeSource: corev1.VolumeSource{
 						ConfigMap: &corev1.ConfigMapVolumeSource{
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: gatewayName,
 							},
+						},
+					},
+				},
+				{
+					Name: certificatesVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName:  resources.MLAGatewayCertificatesSecretName,
+							DefaultMode: pointer.Int32Ptr(0400),
+						},
+					},
+				},
+				{
+					Name: caCertificatesVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						Secret: &corev1.SecretVolumeSource{
+							SecretName: resources.MLAGatewayCASecretName,
+							Items: []corev1.KeyToPath{
+								{
+									Key:  resources.MLAGatewayCACertKey,
+									Path: resources.MLAGatewayCACertKey,
+								},
+							},
+							DefaultMode: pointer.Int32Ptr(0400),
 						},
 					},
 				},
@@ -396,4 +450,81 @@ func getOrgByProjectID(ctx context.Context, client ctrlruntimeclient.Client, gra
 		return grafanasdk.Org{}, err
 	}
 	return grafanaClient.GetOrgById(ctx, uint(id))
+}
+
+// GatewayCACreator returns a function to create the ECDSA-based CA to be used for MLA Gateway.
+func GatewayCACreator() reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return resources.MLAGatewayCASecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
+			}
+
+			if data, exists := se.Data[resources.MLAGatewayCACertKey]; exists {
+				certs, err := certutil.ParseCertsPEM(data)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse certificate %s from existing secret %s: %v",
+						resources.MLAGatewayCACertKey, resources.MLAGatewayCASecretName, err)
+				}
+				if !resources.CertWillExpireSoon(certs[0]) {
+					return se, nil
+				}
+			}
+
+			cert, key, err := certificates.GetECDSACACertAndKey()
+			if err != nil {
+				return nil, fmt.Errorf("failed to generate MLA CA: %v", err)
+			}
+			se.Data[resources.MLAGatewayCACertKey] = cert
+			se.Data[resources.MLAGatewayCAKeyKey] = key
+
+			return se, nil
+		}
+	}
+}
+
+// GatewayCertificateCreator returns a function to create/update a secret with the MLA gateway TLS certificate.
+func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func() (*resources.ECDSAKeyPair, error)) reconciling.NamedSecretCreatorGetter {
+	return func() (string, reconciling.SecretCreator) {
+		return resources.MLAGatewayCertificatesSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
+			if se.Data == nil {
+				se.Data = map[string][]byte{}
+			}
+
+			ca, err := mlaGatewayCAGetter()
+			if err != nil {
+				return nil, fmt.Errorf("failed to get MLA Gateway ca: %v", err)
+			}
+			commonName := resources.MLAGatewaySNIPrefix + c.Address.ExternalName
+			altNames := certutil.AltNames{
+				DNSNames: []string{
+					commonName,
+					c.Address.ExternalName, // required for NodePort expose strategy
+				},
+			}
+			if b, exists := se.Data[resources.MLAGatewayCertSecretKey]; exists {
+				certs, err := certutil.ParseCertsPEM(b)
+				if err != nil {
+					return nil, fmt.Errorf("failed to parse certificate (key=%s) from existing secret: %v", resources.MLAGatewayCertSecretKey, err)
+				}
+				if resources.IsServerCertificateValidForAllOf(certs[0], commonName, altNames, ca.Cert) {
+					return se, nil
+				}
+			}
+			config := certutil.Config{
+				CommonName: commonName,
+				AltNames:   altNames,
+				Usages:     []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			}
+			cert, key, err := certificates.GetSignedECDSACertAndKey(certificates.Duration365d, config, ca.Cert, ca.Key)
+			if err != nil {
+				return nil, fmt.Errorf("unable to sign the server certificate: %v", err)
+			}
+
+			se.Data[resources.MLAGatewayCertSecretKey] = cert
+			se.Data[resources.MLAGatewayKeySecretKey] = key
+
+			return se, nil
+		}
+	}
 }

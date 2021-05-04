@@ -82,6 +82,13 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 		cloudConfig:   cloudConfig,
 	}
 
+	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {
+		data.mlaGatewayCACert, err = r.mlaGatewayCA(ctx)
+		if err != nil {
+			return fmt.Errorf("failed to get MLA Gateway CA cert: %v", err)
+		}
+	}
+
 	// Must be first because of openshift
 	if err := r.ensureAPIServices(ctx, data); err != nil {
 		return err
@@ -571,6 +578,9 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		creators = []reconciling.NamedConfigMapCreatorGetter{
 			userclusterprometheus.ConfigMapCreator(userclusterprometheus.Config{
 				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/api/v1/push",
+				TLSCertFile:   fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientCertSecretKey),
+				TLSKeyFile:    fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.UserClusterPrometheusClientKeySecretKey),
+				TLSCACertFile: fmt.Sprintf("%s/%s", resources.UserClusterPrometheusClientCertMountPath, resources.MLAGatewayCACertKey),
 			}),
 		}
 		if err := reconciling.ReconcileConfigMaps(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
@@ -614,11 +624,23 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 		}
 	}
 
+	if r.userClusterMLA.Monitoring {
+		creators = []reconciling.NamedSecretCreatorGetter{
+			userclusterprometheus.ClientCertificateCreator(data.mlaGatewayCACert),
+		}
+		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
+			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.UserClusterMLANamespace, err)
+		}
+	}
 	if r.userClusterMLA.Logging {
 		creators = []reconciling.NamedSecretCreatorGetter{
 			promtail.SecretCreator(promtail.Config{
 				MLAGatewayURL: r.userClusterMLA.MLAGatewayURL + "/loki/api/v1/push",
+				TLSCertFile:   fmt.Sprintf("%s/%s", resources.PromtailClientCertMountPath, resources.PromtailClientCertSecretKey),
+				TLSKeyFile:    fmt.Sprintf("%s/%s", resources.PromtailClientCertMountPath, resources.PromtailClientKeySecretKey),
+				TLSCACertFile: fmt.Sprintf("%s/%s", resources.PromtailClientCertMountPath, resources.MLAGatewayCACertKey),
 			}),
+			promtail.ClientCertificateCreator(data.mlaGatewayCACert),
 		}
 		if err := reconciling.ReconcileSecrets(ctx, creators, resources.UserClusterMLANamespace, r.Client); err != nil {
 			return fmt.Errorf("failed to reconcile Secrets in namespace %s: %v", resources.UserClusterMLANamespace, err)
@@ -726,10 +748,11 @@ func (r *reconciler) reconcilePodDisruptionBudgets(ctx context.Context) error {
 }
 
 type reconcileData struct {
-	caCert        *triple.KeyPair
-	openVPNCACert *resources.ECDSAKeyPair
-	userSSHKeys   map[string][]byte
-	cloudConfig   []byte
+	caCert           *triple.KeyPair
+	openVPNCACert    *resources.ECDSAKeyPair
+	mlaGatewayCACert *resources.ECDSAKeyPair
+	userSSHKeys      map[string][]byte
+	cloudConfig      []byte
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {

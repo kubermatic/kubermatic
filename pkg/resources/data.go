@@ -445,6 +445,11 @@ func (d *TemplateData) GetOpenVPNCA() (*ECDSAKeyPair, error) {
 	return GetOpenVPNCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
 }
 
+// GetMLAGatewayCA returns the root CA for the MLA Gateway
+func (d *TemplateData) GetMLAGatewayCA() (*ECDSAKeyPair, error) {
+	return GetMLAGatewayCA(d.ctx, d.cluster.Status.NamespaceName, d.client)
+}
+
 // GetPodTemplateLabels returns a set of labels for a Pod including the revisions of depending secrets and configmaps.
 // This will force pods being restarted as soon as one of the secrets/configmaps get updated.
 func (d *TemplateData) GetPodTemplateLabels(appName string, volumes []corev1.Volume, additionalLabels map[string]string) (map[string]string, error) {

@@ -28,6 +28,9 @@ import (
 
 type Config struct {
 	MLAGatewayURL string
+	TLSCertFile   string
+	TLSKeyFile    string
+	TLSCACertFile string
 }
 
 func ConfigMapCreator(config Config) reconciling.NamedConfigMapCreatorGetter {
@@ -59,6 +62,10 @@ global:
   scrape_timeout: 10s
 remote_write:
 - url: {{ .MLAGatewayURL }}
+  tls_config:
+    cert_file: {{ .TLSCertFile }}
+    key_file: {{ .TLSKeyFile }}
+    ca_file: {{ .TLSCACertFile }}
 rule_files:
 - /etc/config/recording_rules.yml
 - /etc/config/alerting_rules.yml
