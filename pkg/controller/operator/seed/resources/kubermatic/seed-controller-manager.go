@@ -111,6 +111,10 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				args = append(args, fmt.Sprintf("-monitoring-scrape-annotation-prefix=%s", cfg.Spec.UserCluster.Monitoring.ScrapeAnnotationPrefix))
 			}
 
+			if seed.Spec.MLA != nil && seed.Spec.MLA.UserClusterMLAEnabled {
+				args = append(args, "-enable-user-cluster-mla")
+			}
+
 			if cfg.Spec.SeedController.DebugLog {
 				args = append(args, "-v=4", "-log-debug=true")
 			} else {

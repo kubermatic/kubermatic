@@ -242,6 +242,8 @@ spec:
   # Optional: Detailed location of the cluster, like "Hamburg" or "Datacenter 7".
   # For informational purposes in the Kubermatic dashboard only.
   location: ""
+  # Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
+  mla: null
   # NodeportProxy can be used to configure the NodePort proxy service that is
   # responsible for making user-cluster control planes accessible from the outside.
   nodeport_proxy:
