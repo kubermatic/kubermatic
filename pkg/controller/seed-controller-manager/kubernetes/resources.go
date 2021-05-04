@@ -183,6 +183,7 @@ func (r *Reconciler) getClusterTemplateData(ctx context.Context, cluster *kuberm
 		WithInClusterPrometheusDefaultRulesDisabled(r.inClusterPrometheusDisableDefaultRules).
 		WithInClusterPrometheusDefaultScrapingConfigsDisabled(r.inClusterPrometheusDisableDefaultScrapingConfigs).
 		WithInClusterPrometheusScrapingConfigsFile(r.inClusterPrometheusScrapingConfigsFile).
+		WithUserClusterMLAEnabled(r.userClusterMLAEnabled).
 		WithCABundle(r.caBundle).
 		WithOIDCIssuerURL(r.oidcIssuerURL).
 		WithOIDCIssuerClientID(r.oidcIssuerClientID).

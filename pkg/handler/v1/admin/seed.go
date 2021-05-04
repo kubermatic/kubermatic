@@ -229,6 +229,7 @@ func convertSeedSpec(seedSpec kubermaticv1.SeedSpec, seedName string) apiv1.Seed
 		SeedDNSOverwrite: seedSpec.SeedDNSOverwrite,
 		ProxySettings:    seedSpec.ProxySettings,
 		ExposeStrategy:   seedSpec.ExposeStrategy,
+		MLA:              seedSpec.MLA,
 	}
 	if seedSpec.Datacenters != nil {
 		resultSeedSpec.SeedDatacenters = make(map[string]apiv1.Datacenter)

@@ -81,6 +81,8 @@ type TemplateData struct {
 	inClusterPrometheusDisableDefaultRules           bool
 	inClusterPrometheusDisableDefaultScrapingConfigs bool
 	inClusterPrometheusScrapingConfigsFile           string
+
+	userClusterMLAEnabled bool
 }
 
 type TemplateDataBuilder struct {
@@ -158,6 +160,11 @@ func (td *TemplateDataBuilder) WithInClusterPrometheusDefaultScrapingConfigsDisa
 
 func (td *TemplateDataBuilder) WithInClusterPrometheusScrapingConfigsFile(file string) *TemplateDataBuilder {
 	td.data.inClusterPrometheusScrapingConfigsFile = file
+	return td
+}
+
+func (td *TemplateDataBuilder) WithUserClusterMLAEnabled(enabled bool) *TemplateDataBuilder {
+	td.data.userClusterMLAEnabled = enabled
 	return td
 }
 
@@ -362,6 +369,11 @@ func (d *TemplateData) InClusterPrometheusDisableDefaultScrapingConfigs() bool {
 // InClusterPrometheusScrapingConfigsFile returns inClusterPrometheusScrapingConfigsFile
 func (d *TemplateData) InClusterPrometheusScrapingConfigsFile() string {
 	return d.inClusterPrometheusScrapingConfigsFile
+}
+
+// UserClusterMLAEnabled returns userClusterMLAEnabled
+func (d *TemplateData) UserClusterMLAEnabled() bool {
+	return d.userClusterMLAEnabled
 }
 
 // NodeAccessNetwork returns the node access network
