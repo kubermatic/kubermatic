@@ -70,12 +70,12 @@ func TestSync(t *testing.T) {
 					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
-					WithEndpointsSubset().
+					EndpointsSubsetBuilder().
 					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
 					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
 					WithReadyAddressIP("172.16.0.1").
 					WithReadyAddressIP("172.16.0.2").
-					DoneWithEndpointSubset().Build(),
+					BuildEndpointSubset().Build(),
 			},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
 				"test/my-nodeport-https": makeCluster(t, "test/my-nodeport-https", 8443, "172.16.0.1", "172.16.0.2"),
@@ -95,11 +95,11 @@ func TestSync(t *testing.T) {
 					WithServicePort("http", 80, 32001, intstr.FromString("http"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-nodeport", Namespace: "test"}).
-					WithEndpointsSubset().
+					EndpointsSubsetBuilder().
 					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
 					WithReadyAddressIP("172.16.0.1").
 					WithNotReadyAddressIP("172.16.0.2").
-					DoneWithEndpointSubset().Build(),
+					BuildEndpointSubset().Build(),
 			},
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
 				"test/my-nodeport-http": makeCluster(t, "test/my-nodeport-http", 8080, "172.16.0.1"),
@@ -145,12 +145,12 @@ func TestSync(t *testing.T) {
 					WithServicePort("https", 8080, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
-					WithEndpointsSubset().
+					EndpointsSubsetBuilder().
 					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
 					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
 					WithReadyAddressIP("172.16.0.1").
 					WithReadyAddressIP("172.16.0.2").
-					DoneWithEndpointSubset().Build(),
+					BuildEndpointSubset().Build(),
 			},
 			sniListenerPort: 443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
@@ -171,13 +171,13 @@ func TestSync(t *testing.T) {
 					WithServicePort("admin", 6443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
-					WithEndpointsSubset().
+					EndpointsSubsetBuilder().
 					WithEndpointPort("http", 8080, corev1.ProtocolTCP).
 					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
 					WithEndpointPort("admin", 6443, corev1.ProtocolTCP).
 					WithReadyAddressIP("172.16.0.1").
 					WithReadyAddressIP("172.16.0.2").
-					DoneWithEndpointSubset().Build(),
+					BuildEndpointSubset().Build(),
 			},
 			sniListenerPort: 443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
@@ -199,10 +199,10 @@ func TestSync(t *testing.T) {
 					WithServicePort("https", 8080, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-cluster-ip", Namespace: "test"}).
-					WithEndpointsSubset().
+					EndpointsSubsetBuilder().
 					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
 					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+					BuildEndpointSubset().Build(),
 			},
 			// 0 deactivates the SNI listener
 			sniListenerPort:  0,
@@ -219,10 +219,10 @@ func TestSync(t *testing.T) {
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "newer-service", Namespace: "test"}).
-					WithEndpointsSubset().
+					EndpointsSubsetBuilder().
 					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
 					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+					BuildEndpointSubset().Build(),
 				test.NewServiceBuilder(test.NamespacedName{Name: "older-service", Namespace: "test"}).
 					WithCreationTimestamp(timeRef).
 					WithAnnotation(nodeportproxy.DefaultExposeAnnotationKey, "SNI").
@@ -230,10 +230,10 @@ func TestSync(t *testing.T) {
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "older-service", Namespace: "test"}).
-					WithEndpointsSubset().
+					EndpointsSubsetBuilder().
 					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
 					WithReadyAddressIP("172.16.0.2").
-					DoneWithEndpointSubset().Build(),
+					BuildEndpointSubset().Build(),
 			},
 			sniListenerPort: 443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
@@ -254,10 +254,10 @@ func TestSync(t *testing.T) {
 					WithServicePort("", 1025, 0, intstr.FromString(""), corev1.ProtocolUDP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "udp-service", Namespace: "test"}).
-					WithEndpointsSubset().
+					EndpointsSubsetBuilder().
 					WithEndpointPort("https", 1025, corev1.ProtocolUDP).
 					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+					BuildEndpointSubset().Build(),
 			},
 			sniListenerPort:  443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{},
@@ -272,10 +272,10 @@ func TestSync(t *testing.T) {
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
-					WithEndpointsSubset().
+					EndpointsSubsetBuilder().
 					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
 					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+					BuildEndpointSubset().Build(),
 			},
 			tunnelingListenerPort: 443,
 			expectedClusters: map[string]*envoyclusterv3.Cluster{
@@ -295,10 +295,10 @@ func TestSync(t *testing.T) {
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
-					WithEndpointsSubset().
+					EndpointsSubsetBuilder().
 					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
 					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+					BuildEndpointSubset().Build(),
 			},
 			tunnelingListenerPort: 8080,
 			sniListenerPort:       8443,
@@ -320,10 +320,10 @@ func TestSync(t *testing.T) {
 					WithServicePort("https", 443, 0, intstr.FromString("https"), corev1.ProtocolTCP).
 					Build(),
 				test.NewEndpointsBuilder(test.NamespacedName{Name: "my-service", Namespace: "test"}).
-					WithEndpointsSubset().
+					EndpointsSubsetBuilder().
 					WithEndpointPort("https", 8443, corev1.ProtocolTCP).
 					WithReadyAddressIP("172.16.0.1").
-					DoneWithEndpointSubset().Build(),
+					BuildEndpointSubset().Build(),
 			},
 			tunnelingListenerPort: 8080,
 			sniListenerPort:       8443,

@@ -126,12 +126,17 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 				Port:   intstr.FromInt(10259),
 			}
 
+			version, err := data.GetControlPlaneComponentVersion(dep, resources.SchedulerDeploymentName)
+			if err != nil {
+				return nil, err
+			}
+
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				*openvpnSidecar,
 				{
 					Name:    resources.SchedulerDeploymentName,
-					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-scheduler:v" + data.Cluster().Spec.Version.String(),
+					Image:   data.ImageRegistry(resources.RegistryK8SGCR) + "/kube-scheduler:v" + version.String(),
 					Command: []string{"/usr/local/bin/kube-scheduler"},
 					Args:    flags,
 					Env: []corev1.EnvVar{
