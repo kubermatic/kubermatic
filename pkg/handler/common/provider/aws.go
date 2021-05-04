@@ -274,7 +274,6 @@ func isARM64Architecture(physicalProcessor string) bool {
 }
 
 func isValidArchitecture(architecture, processorType string) bool {
-
 	if architecture == handlercommon.ARM64Architecture {
 		return isARM64Architecture(processorType)
 	}
