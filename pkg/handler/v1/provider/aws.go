@@ -26,6 +26,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -82,12 +83,25 @@ type AWSSizeReq struct {
 	// in: header
 	// name: Region
 	Region string
+
+	// architecture query parameter. Supports: arm64 and x64 types.
+	// in: query
+	Architecture string `json:"architecture,omitempty"`
 }
 
 // DecodeAWSSizesReq decodes the base type for a AWS special endpoint request
 func DecodeAWSSizesReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req AWSSizeReq
 	req.Region = r.Header.Get("Region")
+
+	req.Architecture = r.URL.Query().Get("architecture")
+	if len(req.Architecture) > 0 {
+		if req.Architecture == handlercommon.ARM64Architecture || req.Architecture == handlercommon.X64Architecture {
+			return req, nil
+		}
+		return nil, fmt.Errorf("wrong query parameter, unsupported architecture: %s", req.Architecture)
+	}
+
 	return req, nil
 }
 
@@ -169,7 +183,7 @@ func AWSSizeEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoi
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		return providercommon.AWSSizes(req.Region, settings.Spec.MachineDeploymentVMResourceQuota)
+		return providercommon.AWSSizes(req.Region, req.Architecture, settings.Spec.MachineDeploymentVMResourceQuota)
 	}
 }
 
@@ -177,7 +191,7 @@ func AWSSizeEndpoint(settingsProvider provider.SettingsProvider) endpoint.Endpoi
 func AWSSizeNoCredentialsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
-		return providercommon.AWSSizeNoCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, settingsProvider, req.ProjectID, req.ClusterID)
+		return providercommon.AWSSizeNoCredentialsEndpoint(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, seedsGetter, settingsProvider, req.ProjectID, req.ClusterID, "")
 	}
 }
 

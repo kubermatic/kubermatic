@@ -95,7 +95,7 @@ func AWSSubnetNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider
 	return SetDefaultSubnet(machineDeployments, subnetList)
 }
 
-func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID string) (interface{}, error) {
+func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, settingsProvider provider.SettingsProvider, projectID, clusterID, architecture string) (interface{}, error) {
 	cluster, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, &provider.ClusterGetOptions{CheckInitStatus: true})
 	if err != nil {
 		return nil, err
@@ -122,7 +122,7 @@ func AWSSizeNoCredentialsEndpoint(ctx context.Context, userInfoGetter provider.U
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return AWSSizes(dc.Spec.AWS.Region, settings.Spec.MachineDeploymentVMResourceQuota)
+	return AWSSizes(dc.Spec.AWS.Region, architecture, settings.Spec.MachineDeploymentVMResourceQuota)
 }
 
 func ListAWSSubnets(accessKeyID, secretAccessKey, vpcID string, datacenter *kubermaticv1.Datacenter) (apiv1.AWSSubnetList, error) {
@@ -228,7 +228,7 @@ func SetDefaultSubnet(machineDeployments *clusterv1alpha1.MachineDeploymentList,
 	return subnets, nil
 }
 
-func AWSSizes(region string, quota kubermaticv1.MachineDeploymentVMResourceQuota) (apiv1.AWSSizeList, error) {
+func AWSSizes(region, architecture string, quota kubermaticv1.MachineDeploymentVMResourceQuota) (apiv1.AWSSizeList, error) {
 	if data == nil {
 		return nil, fmt.Errorf("AWS instance type data not initialized")
 	}
@@ -245,18 +245,23 @@ func AWSSizes(region string, quota kubermaticv1.MachineDeploymentVMResourceQuota
 			continue
 		}
 
-		// We do not support ARM, so we filter them out here
-		if isARM64Architecture(i.PhysicalProcessor) {
+		if !isValidArchitecture(architecture, i.PhysicalProcessor) {
 			continue
 		}
 
+		machineArchitecture := handlercommon.X64Architecture
+		if isARM64Architecture(i.PhysicalProcessor) {
+			machineArchitecture = handlercommon.ARM64Architecture
+		}
+
 		sizes = append(sizes, apiv1.AWSSize{
-			Name:       i.InstanceType,
-			PrettyName: i.PrettyName,
-			Memory:     i.Memory,
-			VCPUs:      i.VCPU,
-			GPUs:       i.GPU,
-			Price:      price,
+			Name:         i.InstanceType,
+			PrettyName:   i.PrettyName,
+			Memory:       i.Memory,
+			VCPUs:        i.VCPU,
+			GPUs:         i.GPU,
+			Price:        price,
+			Architecture: machineArchitecture,
 		})
 	}
 
@@ -266,6 +271,17 @@ func AWSSizes(region string, quota kubermaticv1.MachineDeploymentVMResourceQuota
 func isARM64Architecture(physicalProcessor string) bool {
 	// right now there is only one Arm-based processors: Graviton2
 	return strings.Contains(physicalProcessor, "Graviton")
+}
+
+func isValidArchitecture(architecture, processorType string) bool {
+	if architecture == handlercommon.ARM64Architecture {
+		return isARM64Architecture(processorType)
+	}
+	if architecture == handlercommon.X64Architecture {
+		return !isARM64Architecture(processorType)
+	}
+	// otherwise don't filter out
+	return true
 }
 
 func filterAWSByQuota(instances apiv1.AWSSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.AWSSizeList {

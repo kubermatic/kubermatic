@@ -118,12 +118,13 @@ type DatacenterMeta struct {
 // AWSSize represents a object of AWS size.
 // swagger:model AWSSize
 type AWSSize struct {
-	Name       string  `json:"name"`
-	PrettyName string  `json:"pretty_name"`
-	Memory     float32 `json:"memory"`
-	VCPUs      int     `json:"vcpus"`
-	GPUs       int     `json:"gpus"`
-	Price      float64 `json:"price"`
+	Name         string  `json:"name"`
+	PrettyName   string  `json:"pretty_name"`
+	Memory       float32 `json:"memory"`
+	VCPUs        int     `json:"vcpus"`
+	GPUs         int     `json:"gpus"`
+	Price        float64 `json:"price"`
+	Architecture string  `json:"architecture"`
 }
 
 // AWSSizeList represents an array of AWS sizes.
