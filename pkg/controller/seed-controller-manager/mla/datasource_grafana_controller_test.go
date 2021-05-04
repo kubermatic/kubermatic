@@ -528,6 +528,7 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.requestName}}
 			_, err := controller.Reconcile(ctx, request)
 			if err != nil && !tc.err {
+				t.Log(err)
 				assert.Nil(t, err)
 			}
 			assert.Equal(t, tc.err, err != nil)

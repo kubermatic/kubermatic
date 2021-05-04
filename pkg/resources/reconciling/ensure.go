@@ -19,12 +19,14 @@ package reconciling
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	v1 "k8s.io/api/apps/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilerror "k8s.io/apimachinery/pkg/util/errors"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -58,6 +60,38 @@ func createWithName(rawcreate ObjectCreator, name string) ObjectCreator {
 		obj.(metav1.Object).SetName(name)
 		return obj, nil
 	}
+}
+
+// EnsureObject is specification of the object to ensure.
+type EnsureObject struct {
+	Name             types.NamespacedName
+	Creator          ObjectCreator
+	EmptyObj         ctrlruntimeclient.Object
+	RequiresRecreate bool
+}
+
+// EnsureNamedObjectsConcurrent calls `EnsureNamedObject` for each specifiecation concurrently and returns aggregated errors if any occurred.
+func EnsureNamedObjectsConcurrent(ctx context.Context, client ctrlruntimeclient.Client, objs []EnsureObject) error {
+	var wg sync.WaitGroup
+	errChan := make(chan error, len(objs))
+	for _, obj := range objs {
+		wg.Add(1)
+		go func(obj EnsureObject) {
+			defer wg.Done()
+			err := EnsureNamedObject(ctx, obj.Name, obj.Creator, client, obj.EmptyObj, obj.RequiresRecreate)
+			if err != nil {
+				errChan <- fmt.Errorf("ensure %+v: %v", obj.Name, err)
+			}
+		}(obj)
+	}
+
+	wg.Wait()
+	close(errChan)
+	errs := make([]error, 0)
+	for err := range errChan {
+		errs = append(errs, err)
+	}
+	return utilerror.NewAggregate(errs)
 }
 
 // EnsureNamedObject will generate the Object with the passed create function & create or update it in Kubernetes if necessary.
