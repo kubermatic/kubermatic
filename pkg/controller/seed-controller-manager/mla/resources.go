@@ -483,19 +483,15 @@ func GatewayCACreator() reconciling.NamedSecretCreatorGetter {
 	}
 }
 
-type tlsServerCertCreatorData interface {
-	GetMLAGatewayCA() (*resources.ECDSAKeyPair, error)
-}
-
 // GatewayCertificateCreator returns a function to create/update a secret with the MLA gateway TLS certificate.
-func GatewayCertificateCreator(data tlsServerCertCreatorData, c *kubermaticv1.Cluster) reconciling.NamedSecretCreatorGetter {
+func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func() (*resources.ECDSAKeyPair, error)) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.MLAGatewayCertificatesSecretName, func(se *corev1.Secret) (*corev1.Secret, error) {
 			if se.Data == nil {
 				se.Data = map[string][]byte{}
 			}
 
-			ca, err := data.GetMLAGatewayCA()
+			ca, err := mlaGatewayCAGetter()
 			if err != nil {
 				return nil, fmt.Errorf("failed to get MLA Gateway ca: %v", err)
 			}
