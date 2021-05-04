@@ -90,7 +90,6 @@ scrape_configs:
   scheme: https
   tls_config:
     ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    insecure_skip_verify: true
 - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
   job_name: kubernetes-nodes
   kubernetes_sd_configs:
@@ -108,7 +107,6 @@ scrape_configs:
   scheme: https
   tls_config:
     ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    insecure_skip_verify: true
 - bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
   job_name: kubernetes-nodes-cadvisor
   kubernetes_sd_configs:
@@ -126,7 +124,6 @@ scrape_configs:
   scheme: https
   tls_config:
     ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-    insecure_skip_verify: true
 - job_name: kubernetes-service-endpoints
   kubernetes_sd_configs:
   - role: endpoints
