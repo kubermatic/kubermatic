@@ -21,12 +21,12 @@ import (
 	"fmt"
 
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8s.io/apimachinery/pkg/types"
 
 	appsv1 "k8s.io/api/apps/v1"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )

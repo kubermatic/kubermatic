@@ -20,10 +20,11 @@ import (
 	"context"
 	"fmt"
 
+	"go.uber.org/zap"
+
 	"k8c.io/kubermatic/v2/pkg/semver"
 	apimodels "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 
-	"go.uber.org/zap"
 	utilpointer "k8s.io/utils/pointer"
 )
 

@@ -23,8 +23,6 @@ import (
 	"testing"
 
 	"github.com/go-test/deep"
-	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -34,6 +32,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
 	utilpointer "k8s.io/utils/pointer"
+	controllerruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	controllerruntimefake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
 func TestDefaultPodSpec(t *testing.T) {

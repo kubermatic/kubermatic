@@ -17,10 +17,10 @@ limitations under the License.
 package kubernetesdashboard
 
 import (
-	corev1 "k8s.io/api/core/v1"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
+	corev1 "k8s.io/api/core/v1"
 )
 
 // KeyHolderSecretCreator  creates key holder secret for the Kubernetes Dashboard

@@ -19,10 +19,9 @@ package scheduler
 import (
 	"fmt"
 
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/vpnsidecar"
 
 	appsv1 "k8s.io/api/apps/v1"

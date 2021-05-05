@@ -25,6 +25,8 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
+	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 	"github.com/sirupsen/logrus"
 
 	"k8c.io/kubermatic/v2/pkg/install/helm"
@@ -32,9 +34,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/install/util"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/log"
-
-	certmanagerv1alpha2 "github.com/jetstack/cert-manager/pkg/apis/certmanager/v1alpha2"
-	certmanagermetav1 "github.com/jetstack/cert-manager/pkg/apis/meta/v1"
 
 	v1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"

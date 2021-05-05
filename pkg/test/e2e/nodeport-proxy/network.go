@@ -23,12 +23,12 @@ import (
 	"strings"
 	"time"
 
+	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/utils/pointer"
-
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 )
 
 const (

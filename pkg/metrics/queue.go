@@ -17,9 +17,9 @@ limitations under the License.
 package metrics
 
 import (
-	"k8s.io/client-go/util/workqueue"
-
 	"github.com/prometheus/client_golang/prometheus"
+
+	"k8s.io/client-go/util/workqueue"
 )
 
 // Copied from https://github.com/kubernetes/kubernetes/blob/master/pkg/util/workqueue/prometheus/prometheus.go
@@ -164,7 +164,10 @@ func (prometheusMetricsProvider) NewDeprecatedRetriesMetric(queue string) workqu
 
 type noopMetric struct{}
 
-func (noopMetric) Inc()            {}
-func (noopMetric) Dec()            {}
-func (noopMetric) Set(float64)     {}
+func (noopMetric) Inc() {}
+
+func (noopMetric) Dec() {}
+
+func (noopMetric) Set(float64) {}
+
 func (noopMetric) Observe(float64) {}

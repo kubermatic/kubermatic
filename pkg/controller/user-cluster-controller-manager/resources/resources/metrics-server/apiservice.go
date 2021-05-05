@@ -19,9 +19,9 @@ package metricsserver
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	apiregistrationv1beta1 "k8s.io/kube-aggregator/pkg/apis/apiregistration/v1beta1"
 )
 
 const (

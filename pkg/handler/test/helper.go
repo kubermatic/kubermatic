@@ -1526,6 +1526,7 @@ func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
 		},
 	}
 }
+
 func GenAlertmanager(namespace, configSecretName string) *kubermaticv1.Alertmanager {
 	return &kubermaticv1.Alertmanager{
 		ObjectMeta: metav1.ObjectMeta{

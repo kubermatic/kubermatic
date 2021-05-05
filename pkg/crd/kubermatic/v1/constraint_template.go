@@ -18,6 +18,7 @@ package v1
 
 import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

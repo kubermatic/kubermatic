@@ -19,10 +19,11 @@ package kubernetes
 import (
 	"testing"
 
+	"code.cloudfoundry.org/go-pubsub"
+
 	kubermaticfakeclentset "k8c.io/kubermatic/v2/pkg/crd/client/clientset/versioned/fake"
 	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
-	"code.cloudfoundry.org/go-pubsub"
 	"k8s.io/client-go/kubernetes/scheme"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )

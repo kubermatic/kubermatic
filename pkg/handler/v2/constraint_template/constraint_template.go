@@ -27,13 +27,14 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/util/errors"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func ListEndpoint(constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {

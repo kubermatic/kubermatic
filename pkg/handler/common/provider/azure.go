@@ -156,6 +156,7 @@ func (s *azureClientSetImpl) ListResourceGroups(ctx context.Context) ([]resource
 	return resourceGroups.Values(), nil
 
 }
+
 func (s *azureClientSetImpl) ListSubnets(ctx context.Context, resourceGroupName, virtualNetworkName string) ([]network.Subnet, error) {
 	subnets, err := s.subnetsClient.List(ctx, resourceGroupName, virtualNetworkName)
 	if err != nil {

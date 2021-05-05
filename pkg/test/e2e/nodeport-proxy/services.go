@@ -24,14 +24,14 @@ import (
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
 
+	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
+
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
-	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 )
 
 // Based on:

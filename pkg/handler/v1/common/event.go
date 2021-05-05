@@ -19,12 +19,12 @@ package common
 import (
 	"context"
 
+	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
-
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 )
 
 // FilterEventsByType filters Kubernetes Events based on their type. Empty type string will return all of them.

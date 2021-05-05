@@ -19,11 +19,11 @@ package cloud
 import (
 	"crypto/x509"
 	"errors"
-	"k8c.io/kubermatic/v2/pkg/provider/cloud/anexia"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/alibaba"
+	"k8c.io/kubermatic/v2/pkg/provider/cloud/anexia"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/aws"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/azure"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/bringyourown"

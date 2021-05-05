@@ -21,7 +21,6 @@ import (
 	"encoding/csv"
 
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 

@@ -23,6 +23,8 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/coreos/locksmith/pkg/timeutil"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -30,7 +32,6 @@ import (
 	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources"
 
-	"github.com/coreos/locksmith/pkg/timeutil"
 	"k8s.io/apimachinery/pkg/api/equality"
 	utilerror "k8s.io/apimachinery/pkg/util/errors"
 )

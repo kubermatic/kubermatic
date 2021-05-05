@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"

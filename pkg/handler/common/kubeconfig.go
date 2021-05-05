@@ -27,14 +27,14 @@ import (
 	"strings"
 
 	"github.com/gorilla/securecookie"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/auth"
-	kcerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kcerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/client-go/tools/clientcmd"

@@ -24,9 +24,9 @@ import (
 	"go.uber.org/zap"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	"k8s.io/apimachinery/pkg/types"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	utilpointer "k8s.io/utils/pointer"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
@@ -40,6 +40,7 @@ func exampleCluster(settings *kubermaticv1.ComponentSettings) *kubermaticv1.Clus
 	}
 	return cluster
 }
+
 func exampleSettings(reconciling *bool, replicas bool) *kubermaticv1.ComponentSettings {
 	settings := &kubermaticv1.ComponentSettings{
 		Apiserver: kubermaticv1.APIServerSettings{EndpointReconcilingDisabled: reconciling},
