@@ -222,6 +222,10 @@ func (r *datasourceGrafanaReconciler) reconcileDatasource(ctx context.Context, e
 		ds, err := r.grafanaClient.GetDatasourceByUID(ctx, expected.UID)
 		if err != nil {
 			if errors.As(err, &grafanasdk.ErrNotFound{}) {
+				if status, err := r.grafanaClient.SwitchActualUserContext(ctx, expected.OrgID); err != nil {
+					return fmt.Errorf("unable to switch context to org %d: %w (status: %s, message: %s)",
+						expected.OrgID, err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+				}
 				status, err := r.grafanaClient.CreateDatasource(ctx, expected)
 				if err != nil {
 					return fmt.Errorf("unable to add datasource: %w (status: %s, message: %s)",
@@ -239,6 +243,10 @@ func (r *datasourceGrafanaReconciler) reconcileDatasource(ctx context.Context, e
 		}
 		expected.ID = ds.ID
 		if !reflect.DeepEqual(ds, expected) {
+			if status, err := r.grafanaClient.SwitchActualUserContext(ctx, expected.OrgID); err != nil {
+				return fmt.Errorf("unable to switch context to org %d: %w (status: %s, message: %s)",
+					expected.OrgID, err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			}
 			if status, err := r.grafanaClient.UpdateDatasource(ctx, expected); err != nil {
 				return fmt.Errorf("unable to update datasource: %w (status: %s, message: %s)",
 					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
