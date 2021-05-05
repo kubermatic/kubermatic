@@ -17,10 +17,10 @@ limitations under the License.
 package v1
 
 import (
+	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

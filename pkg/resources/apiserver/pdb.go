@@ -19,10 +19,10 @@ package apiserver
 import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8s.io/apimachinery/pkg/util/intstr"
 
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // PodDisruptionBudgetCreator returns a func to create/update the apiserver PodDisruptionBudget

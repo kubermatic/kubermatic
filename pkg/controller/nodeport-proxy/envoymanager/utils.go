@@ -24,11 +24,11 @@ import (
 
 	"github.com/pkg/errors"
 
+	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
-
-	"k8c.io/kubermatic/v2/pkg/resources/nodeportproxy"
 )
 
 // SortServicesByCreationTimestamp sorts the Service slice in descending order

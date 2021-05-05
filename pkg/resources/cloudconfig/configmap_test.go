@@ -21,13 +21,14 @@ import (
 
 	"github.com/go-test/deep"
 	"gopkg.in/gcfg.v1"
-	"k8s.io/utils/pointer"
 
 	openstack "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/openstack/types"
 	vsphere "github.com/kubermatic/machine-controller/pkg/cloudprovider/provider/vsphere/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
+
+	"k8s.io/utils/pointer"
 )
 
 func TestVSphereCloudConfig(t *testing.T) {

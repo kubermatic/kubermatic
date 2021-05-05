@@ -28,7 +28,6 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"k8s.io/utils/pointer"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -44,6 +43,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 )
 
 const (

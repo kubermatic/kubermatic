@@ -21,9 +21,9 @@ import (
 	"fmt"
 	"net/http"
 
-	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-
 	"github.com/gorilla/mux"
+
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 )
 
 func DecodeEmptyReq(c context.Context, r *http.Request) (interface{}, error) {

@@ -20,12 +20,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/vmware/govmomi/simulator"
+
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
-
-	"github.com/vmware/govmomi/simulator"
 )
 
 func TestGetCredentialsForCluster(t *testing.T) {

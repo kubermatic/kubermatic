@@ -23,9 +23,8 @@ import (
 	"net/http"
 	"sync"
 
-	"k8s.io/apimachinery/pkg/types"
-
 	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"

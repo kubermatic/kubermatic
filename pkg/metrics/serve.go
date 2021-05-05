@@ -20,9 +20,9 @@ import (
 	"net/http"
 	"sync"
 
-	"k8c.io/kubermatic/v2/pkg/log"
-
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	"k8c.io/kubermatic/v2/pkg/log"
 )
 
 var once = &sync.Once{}

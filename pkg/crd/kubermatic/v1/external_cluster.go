@@ -20,6 +20,7 @@ import (
 	"fmt"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 

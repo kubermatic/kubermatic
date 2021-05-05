@@ -20,9 +20,9 @@ import (
 	"net/url"
 	"time"
 
-	"k8s.io/client-go/tools/metrics"
-
 	"github.com/prometheus/client_golang/prometheus"
+
+	"k8s.io/client-go/tools/metrics"
 )
 
 // Copied from https://github.com/kubernetes/kubernetes/blob/master/pkg/client/metrics/prometheus/prometheus.go

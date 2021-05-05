@@ -27,8 +27,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/kubestatemetrics"
 	"k8c.io/kubermatic/v2/pkg/resources/prometheus"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
-	"k8s.io/apimachinery/pkg/api/resource"
 
+	"k8s.io/apimachinery/pkg/api/resource"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 

@@ -220,6 +220,7 @@ func store(c *cli.Context) error {
 		c.Bool("create-bucket"),
 	)
 }
+
 func deleteOldRevisions(c *cli.Context) error {
 	uploader, err := getUploaderFromCtx(c)
 	if err != nil {
@@ -232,6 +233,7 @@ func deleteOldRevisions(c *cli.Context) error {
 		c.Int("max-revisions"),
 	)
 }
+
 func deleteAll(c *cli.Context) error {
 	uploader, err := getUploaderFromCtx(c)
 	if err != nil {

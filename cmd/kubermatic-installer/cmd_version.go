@@ -106,8 +106,10 @@ func VersionAction(logger *logrus.Logger, versions kubermaticversion.Versions) c
 // HelmCharts is used to sort Helm charts by their name.
 type HelmCharts []helm.Chart
 
-func (a HelmCharts) Len() int           { return len(a) }
-func (a HelmCharts) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a HelmCharts) Len() int { return len(a) }
+
+func (a HelmCharts) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
+
 func (a HelmCharts) Less(i, j int) bool { return a[i].Name < a[j].Name }
 
 func loadCharts(chartDirectory string) ([]helm.Chart, error) {
