@@ -77,7 +77,7 @@ type CloudProvider interface {
 }
 
 // ClusterUpdater defines a function to persist an update to a cluster
-type ClusterUpdater func(string, func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error)
+type ClusterUpdater func(string, func(*kubermaticv1.Cluster), bool) (*kubermaticv1.Cluster, error)
 
 // ClusterListOptions allows to set filters that will be applied to filter the result.
 type ClusterListOptions struct {

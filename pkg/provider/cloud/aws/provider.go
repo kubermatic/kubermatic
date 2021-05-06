@@ -110,7 +110,7 @@ func (a *AmazonEC2) MigrateToMultiAZ(cluster *kubermaticv1.Cluster, clusterUpdat
 
 		newCluster, err := clusterUpdater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = *getRoleOut.Role.Arn
-		})
+		}, true)
 		if err != nil {
 			return err
 		}
@@ -443,7 +443,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.AWS.VPCID = *vpc.VpcId
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -460,7 +460,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, securityGroupCleanupFinalizer)
 			cluster.Spec.Cloud.AWS.SecurityGroupID = securityGroupID
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -475,7 +475,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, controlPlaneRoleCleanupFinalizer)
 			cluster.Spec.Cloud.AWS.ControlPlaneRoleARN = *controlPlaneRole.RoleName
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -490,7 +490,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, instanceProfileCleanupFinalizer)
 			cluster.Spec.Cloud.AWS.InstanceProfileName = *workerInstanceProfile.InstanceProfileName
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -503,7 +503,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.AWS.RouteTableID = *routeTable.RouteTableId
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -515,7 +515,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, tagCleanupFinalizer)
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -529,7 +529,7 @@ func (a *AmazonEC2) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 				cluster.Annotations = map[string]string{}
 			}
 			cluster.Annotations[regionAnnotationKey] = a.dc.Region
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -593,7 +593,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 		}
 		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, securityGroupCleanupFinalizer)
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -620,7 +620,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 
 		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, instanceProfileCleanupFinalizer)
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -633,7 +633,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 		}
 		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, controlPlaneRoleCleanupFinalizer)
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -645,7 +645,7 @@ func (a *AmazonEC2) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, updater 
 		}
 		cluster, err = updater(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, tagCleanupFinalizer)
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}

@@ -160,7 +160,7 @@ func (v *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.AddFinalizer(cluster, folderCleanupFinalizer)
 			cluster.Spec.Cloud.VSphere.Folder = clusterFolder
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}
@@ -286,7 +286,7 @@ func (v *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update pr
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			kuberneteshelper.RemoveFinalizer(cluster, folderCleanupFinalizer)
-		})
+		}, false)
 		if err != nil {
 			return nil, err
 		}

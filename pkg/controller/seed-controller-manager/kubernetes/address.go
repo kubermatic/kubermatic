@@ -34,7 +34,7 @@ func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cl
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Address.AdminToken = kubernetes.GenerateToken()
-		})
+		}, false)
 		if err != nil {
 			return err
 		}
@@ -60,7 +60,7 @@ func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cl
 			for _, modifier := range modifiers {
 				modifier(c)
 			}
-		}); err != nil {
+		}, false); err != nil {
 			return err
 		}
 	}

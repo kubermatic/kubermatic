@@ -44,10 +44,12 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 	}
 
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer) {
-		if err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(c, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer)
-		}); err != nil {
+		res, err := r.AddFinalizers(ctx, cluster, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer)
+		if err != nil {
 			return nil, err
+		}
+		if !res.IsZero() {
+			return res, nil
 		}
 	}
 
@@ -61,6 +63,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		return nil, err
 	}
 
+	var finalizers []string
 	if cluster.Status.ExtendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
 		// Controlling of user-cluster resources
 		reachable, err := r.clusterIsReachable(ctx, cluster)
@@ -75,32 +78,20 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		// Only add the node deletion finalizer when the cluster is actually running
 		// Otherwise we fail to delete the nodes and are stuck in a loop
 		if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
-			err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-				kuberneteshelper.AddFinalizer(c, kubermaticapiv1.NodeDeletionFinalizer)
-			})
-			if err != nil {
-				return nil, err
-			}
+			finalizers = append(finalizers, kubermaticapiv1.NodeDeletionFinalizer)
 		}
 
 	}
 
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.KubermaticConstraintCleanupFinalizer) {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(c, kubermaticapiv1.KubermaticConstraintCleanupFinalizer)
-		})
-		if err != nil {
-			return nil, err
-		}
+		finalizers = append(finalizers, kubermaticapiv1.KubermaticConstraintCleanupFinalizer)
+	}
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer) {
+		finalizers = append(finalizers, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer)
 	}
 
-	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer) {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(c, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer)
-		})
-		if err != nil {
-			return nil, err
-		}
+	if len(finalizers) > 0 {
+		return r.AddFinalizers(ctx, cluster, finalizers...)
 	}
 
 	return &reconcile.Result{}, nil
@@ -148,7 +139,7 @@ func (r *Reconciler) ensureClusterNetworkDefaults(ctx context.Context, cluster *
 		for _, modify := range modifiers {
 			modify(c)
 		}
-	})
+	}, false)
 }
 
 // ensureEtcdLauncherFeatureFlag will apply seed controller etcdLauncher setting on the cluster level
@@ -163,5 +154,5 @@ func (r *Reconciler) ensureEtcdLauncherFeatureFlag(ctx context.Context, cluster 
 				c.Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] = true
 			}
 		}
-	})
+	}, false)
 }
