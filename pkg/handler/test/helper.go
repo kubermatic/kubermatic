@@ -353,7 +353,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find constraintprovider for cluster %q", seed.Name)
 	}
 
-	alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient)
+	alertmanagerProvider := kubernetes.NewAlertmanagerProvider(fakeImpersonationClient, fakeClient)
 	alertmanagerProviders := map[string]provider.AlertmanagerProvider{"us-central1": alertmanagerProvider}
 	alertmanagerProviderGetter := func(seed *kubermaticv1.Seed) (provider.AlertmanagerProvider, error) {
 		if alertmanager, exists := alertmanagerProviders[seed.Name]; exists {
