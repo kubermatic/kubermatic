@@ -247,6 +247,7 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings) []st
 		"-health-probe-address", "0.0.0.0:8085",
 		"-metrics-address", "0.0.0.0:8080",
 		"-ca-bundle", "/etc/kubernetes/pki/ca-bundle/ca-bundle.pem",
+		"-node-csr-approver", "true",
 	}
 
 	if nodeSettings != nil {
