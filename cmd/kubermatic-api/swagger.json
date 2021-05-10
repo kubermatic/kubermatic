@@ -17061,6 +17061,28 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "MlaOptions": {
+      "type": "object",
+      "properties": {
+        "loggingEnabled": {
+          "type": "boolean",
+          "x-go-name": "LoggingEnabled"
+        },
+        "loggingEnforced": {
+          "type": "boolean",
+          "x-go-name": "LoggingEnforced"
+        },
+        "monitoringEnabled": {
+          "type": "boolean",
+          "x-go-name": "MonitoringEnabled"
+        },
+        "monitoringEnforced": {
+          "type": "boolean",
+          "x-go-name": "MonitoringEnforced"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "Names": {
       "type": "object",
       "properties": {
@@ -18960,6 +18982,9 @@
         },
         "machineDeploymentVMResourceQuota": {
           "$ref": "#/definitions/MachineDeploymentVMResourceQuota"
+        },
+        "mlaOptions": {
+          "$ref": "#/definitions/MlaOptions"
         },
         "opaOptions": {
           "$ref": "#/definitions/OpaOptions"
