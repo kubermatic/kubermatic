@@ -56,10 +56,8 @@ func TestVSphereCA(t *testing.T) {
 				if !strings.Contains(err.Error(), test.errMsgContains) {
 					t.Fatalf("expected err msg %q to contain %q", err.Error(), test.errMsgContains)
 				}
-			} else {
-				if err != nil {
-					t.Fatal(err)
-				}
+			} else if err != nil {
+				t.Fatal(err)
 			}
 		})
 	}
