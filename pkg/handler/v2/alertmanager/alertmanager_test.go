@@ -123,6 +123,28 @@ func TestGetEndpoint(t *testing.T) {
 			ExistingAPIUser:    test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatus: http.StatusForbidden,
 		},
+		{
+			Name:      "scenario 5: admin user john can get alertmanager that belongs to bob's cluster",
+			ProjectID: test.GenDefaultProject().Name,
+			ClusterID: test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
+				test.GenAdminUser("John", "john@acme.com", true),
+			),
+			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
+				test.GenDefaultCluster().Status.NamespaceName,
+				[]byte(testAlertmanagerConfig)),
+			ExistingAPIUser:    test.GenAPIUser("John", "john@acme.com"),
+			ExpectedHTTPStatus: http.StatusOK,
+			ExpectedResponse: apiv2.Alertmanager{
+				Spec: apiv2.AlertmanagerSpec{
+					Config: []byte(testAlertmanagerConfig),
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -252,6 +274,29 @@ func TestUpdateEndpoint(t *testing.T) {
 			ExistingAPIUser:    test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatus: http.StatusForbidden,
 		},
+		{
+			Name:      "scenario 6: admin user john can update alertmanager that belongs to bob's cluster",
+			ProjectID: test.GenDefaultProject().Name,
+			ClusterID: test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
+				test.GenAdminUser("John", "john@acme.com", true),
+			),
+			Body: generateRequestBody([]byte(testAlertmanagerConfig)),
+			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
+				test.GenDefaultCluster().Status.NamespaceName,
+				[]byte("test")),
+			ExistingAPIUser:    test.GenAPIUser("John", "john@acme.com"),
+			ExpectedHTTPStatus: http.StatusOK,
+			ExpectedResponse: apiv2.Alertmanager{
+				Spec: apiv2.AlertmanagerSpec{
+					Config: []byte(testAlertmanagerConfig),
+				},
+			},
+		},
 	}
 
 	for _, tc := range testCases {
@@ -351,6 +396,23 @@ func TestDeleteEndpoint(t *testing.T) {
 				[]byte(testAlertmanagerConfig)),
 			ExistingAPIUser:    test.GenAPIUser("John", "john@acme.com"),
 			ExpectedHTTPStatus: http.StatusForbidden,
+		},
+		{
+			Name:      "scenario 5: admin user john can delete alertmanager that belongs to bob's cluster",
+			ProjectID: test.GenDefaultProject().Name,
+			ClusterID: test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenAlertmanager(test.GenDefaultCluster().Status.NamespaceName,
+					testAlertmanagerConfigSecretName),
+				test.GenAdminUser("John", "john@acme.com", true),
+			),
+			ExistingConfigSecret: test.GenAlertmanagerConfigSecret(testAlertmanagerConfigSecretName,
+				test.GenDefaultCluster().Status.NamespaceName,
+				[]byte(testAlertmanagerConfig)),
+			ExistingAPIUser:    test.GenAPIUser("John", "john@acme.com"),
+			ExpectedHTTPStatus: http.StatusOK,
 		},
 	}
 

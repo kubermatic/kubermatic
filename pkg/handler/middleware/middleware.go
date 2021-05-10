@@ -75,7 +75,10 @@ const (
 	PrivilegedConstraintProviderContextKey kubermaticcontext.Key = "privileged-constraint-provider"
 
 	// AlertmanagerProviderContextKey key under which the current AlertmanagerProvider is kept in the ctx
-	AlertmanagerProviderContextKey kubermaticcontext.Key = "alertmanager_provider"
+	AlertmanagerProviderContextKey kubermaticcontext.Key = "alertmanager-provider"
+
+	// PrivilegedAlertmanagerProviderContextKey key under which the current PrivilegedAlertmanagerProvider is kept in the ctx
+	PrivilegedAlertmanagerProviderContextKey kubermaticcontext.Key = "privileged-alertmanager-provider"
 
 	UserCRContextKey                            = kubermaticcontext.UserCRContextKey
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
@@ -459,6 +462,22 @@ func Alertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertma
 				return nil, err
 			}
 			ctx = context.WithValue(ctx, AlertmanagerProviderContextKey, alertmanagerProvider)
+			return next(ctx, request)
+		}
+	}
+}
+
+// PrivilegedAlertmanagers is a middleware that injects the current PrivilegedAlertmanagerProvider into the ctx
+func PrivilegedAlertmanagers(clusterProviderGetter provider.ClusterProviderGetter, alertmanagerProviderGetter provider.AlertmanagerProviderGetter, seedsGetter provider.SeedsGetter) endpoint.Middleware {
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+			seedCluster := request.(seedClusterGetter).GetSeedCluster()
+			alertmanagerProvider, err := getAlertmanagerProvider(clusterProviderGetter, alertmanagerProviderGetter, seedsGetter, seedCluster.SeedName, seedCluster.ClusterID)
+			if err != nil {
+				return nil, err
+			}
+			privilegedAlertmanagerProvider := alertmanagerProvider.(provider.PrivilegedAlertmanagerProvider)
+			ctx = context.WithValue(ctx, PrivilegedAlertmanagerProviderContextKey, privilegedAlertmanagerProvider)
 			return next(ctx, request)
 		}
 	}

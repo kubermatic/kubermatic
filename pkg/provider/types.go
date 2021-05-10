@@ -854,3 +854,24 @@ type AlertmanagerProvider interface {
 	// Reset resets the given alertmanager to default
 	Reset(cluster *kubermaticv1.Cluster, userInfo *UserInfo) error
 }
+
+// PrivilegedAlertmanagerProvider declares the set of method for interacting with alertmanagers using a privileged client
+type PrivilegedAlertmanagerProvider interface {
+	// GetUnsecured gets the given alertmanager and the config secret using a privileged client
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	GetUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
+
+	// UpdateUnsecured updates the given alertmanager and the config secret using a privileged client
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	UpdateUnsecured(alertmanager *kubermaticv1.Alertmanager, configSecret *corev1.Secret) (*kubermaticv1.Alertmanager, *corev1.Secret, error)
+
+	// ResetUnsecured resets the given alertmanager to default using a privileged client
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to reset the resource
+	ResetUnsecured(cluster *kubermaticv1.Cluster) error
+}
