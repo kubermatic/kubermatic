@@ -13587,6 +13587,47 @@
           }
         }
       }
+    },
+    "/api/v2/seeds/{seed_name}/settings": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "seed"
+        ],
+        "summary": "Gets the seed settings.",
+        "operationId": "getSeedSettings",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "seed_name",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SeedSettings",
+            "schema": {
+              "$ref": "#/definitions/SeedSettings"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
@@ -18754,12 +18795,12 @@
       "title": "SeedMLASettings allow configuring seed level MLA (Monitoring, Logging \u0026 Alerting) stack settings.",
       "properties": {
         "user_cluster_mla_enabled": {
-          "description": "Optional: UserClusterMLAEnabled controls whether the user cluster MLA (Monitoring, Logging \u0026 Alerting) stack is enabled in the seed.",
+          "description": "UserClusterMLAEnabled defines whether the user cluster MLA (Monitoring, Logging \u0026 Alerting) stack is enabled in the seed.",
           "type": "boolean",
           "x-go-name": "UserClusterMLAEnabled"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "SeedNamesList": {
       "type": "array",
@@ -18767,6 +18808,16 @@
         "type": "string"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "SeedSettings": {
+      "description": "SeedSettings represents settings for a Seed cluster",
+      "type": "object",
+      "properties": {
+        "mla": {
+          "$ref": "#/definitions/SeedMLASettings"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "SeedSpec": {
       "description": "The spec for a seed data",

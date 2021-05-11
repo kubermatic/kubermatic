@@ -37,6 +37,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/preset"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
 )
 
 // RegisterV2 declares all router paths for v2
@@ -487,6 +488,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPut).
 		Path("/providers/{provider_name}/presets").
 		Handler(r.updatePreset())
+
+	mux.Methods(http.MethodGet).
+		Path("/seeds/{seed_name}/settings").
+		Handler(r.getSeedSettings())
 
 }
 
@@ -3299,6 +3304,30 @@ func (r Routing) resetAlertmanager() http.Handler {
 			middleware.PrivilegedAlertmanagers(r.clusterProviderGetter, r.alertmanagerProviderGetter, r.seedsGetter),
 		)(alertmanager.ResetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		alertmanager.DecodeResetAlertmanagerReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/seeds/{seed_name}/settings seed getSeedSettings
+//
+//     Gets the seed settings.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: SeedSettings
+//       401: empty
+//       403: empty
+func (r Routing) getSeedSettings() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(seedsettings.GetSeedSettingsEndpoint(r.seedsGetter)),
+		seedsettings.DecodeGetSeedSettingsReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
