@@ -54,17 +54,20 @@ type Reconciler struct {
 	log                *zap.SugaredLogger
 	authorizedKeysPath []string
 	events             chan event.GenericEvent
+	secretName         string
 }
 
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
-	authorizedKeysPaths []string) error {
+	authorizedKeysPaths []string,
+	secretName string) error {
 	reconciler := &Reconciler{
 		Client:             mgr.GetClient(),
 		log:                log,
 		authorizedKeysPath: authorizedKeysPaths,
 		events:             make(chan event.GenericEvent),
+		secretName:         secretName,
 	}
 
 	c, err := controller.New(operatorName, mgr, controller.Options{Reconciler: reconciler})
@@ -72,7 +75,7 @@ func Add(
 		return fmt.Errorf("failed creating a new runtime controller: %v", err)
 	}
 
-	namePredicate := predicateutil.ByName(resources.UserSSHKeys)
+	namePredicate := predicateutil.ByName(reconciler.secretName)
 	namespacePredicate := predicateutil.ByNamespace(metav1.NamespaceSystem)
 	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, namePredicate, namespacePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for secrets: %v", err)
@@ -87,7 +90,7 @@ func Add(
 			{
 				NamespacedName: types.NamespacedName{
 					Namespace: metav1.NamespaceSystem,
-					Name:      resources.UserSSHKeys,
+					Name:      reconciler.secretName,
 				},
 			},
 		}
@@ -153,12 +156,12 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 
 func (r *Reconciler) fetchUserSSHKeySecret(ctx context.Context, namespace string) (*corev1.Secret, error) {
 	secret := &corev1.Secret{}
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: resources.UserSSHKeys, Namespace: namespace}, secret); err != nil {
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: r.secretName, Namespace: namespace}, secret); err != nil {
 		if kubeapierrors.IsNotFound(err) {
 			r.log.Debugw("Secret is not found", "secret", secret.Name)
 			return nil, nil
 		}
-		r.log.Errorw("Cannot get secret", "secret", resources.UserSSHKeys)
+		r.log.Errorw("Cannot get secret", "secret", r.secretName)
 		return nil, err
 	}
 

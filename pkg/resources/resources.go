@@ -532,6 +532,7 @@ const (
 	AnexiaToken = "token"
 
 	UserSSHKeys = "usersshkeys"
+	VaultSignedCA = "vaultsignedca"
 )
 
 const (
