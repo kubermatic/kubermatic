@@ -51,7 +51,7 @@ func TestGetSeedSettingsEndpoint(t *testing.T) {
 			existingAPIUser:    test.GenDefaultAPIUser(),
 			expectedHTTPStatus: http.StatusOK,
 			expectedResponse: apiv2.SeedSettings{
-				MLA: apiv2.SeedMLASettings{
+				MLA: apiv2.MLA{
 					UserClusterMLAEnabled: false,
 				},
 			},
@@ -66,7 +66,7 @@ func TestGetSeedSettingsEndpoint(t *testing.T) {
 			existingAPIUser:    test.GenDefaultAPIUser(),
 			expectedHTTPStatus: http.StatusOK,
 			expectedResponse: apiv2.SeedSettings{
-				MLA: apiv2.SeedMLASettings{
+				MLA: apiv2.MLA{
 					UserClusterMLAEnabled: true,
 				},
 			},
