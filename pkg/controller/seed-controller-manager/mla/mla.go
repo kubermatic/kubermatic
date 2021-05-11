@@ -72,6 +72,7 @@ func Add(
 	grafanaHeader string,
 	grafanaSecret string,
 	overwriteRegistry string,
+	cortexAlertmanagerURL string,
 ) error {
 
 	split := strings.Split(grafanaSecret, "/")
@@ -108,7 +109,7 @@ func Add(
 	if err := newDatasourceGrafanaReconciler(mgr, log, 1, workerName, versions, grafanaClient, mlaNamespace, overwriteRegistry); err != nil {
 		return fmt.Errorf("failed to create mla cluster controller: %v", err)
 	}
-	if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, httpClient); err != nil {
+	if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, httpClient, cortexAlertmanagerURL); err != nil {
 		return fmt.Errorf("failed to create mla alertmanager configuration controller: %v", err)
 	}
 	return nil

@@ -124,34 +124,15 @@ http {
 	  proxy_pass       http://cortex-query-frontend.{{ .Namespace}}.svc.cluster.local:8080$request_uri;
 	}
   }
-
-  # public read and write path - used for alertmanager only
-  server {
-	listen             8082;
-	proxy_set_header   X-Scope-OrgID {{ .TenantID}};
-
-	# Alertmanager Config
-	location ~ /api/prom/alertmanager.* {
-	  proxy_pass      http://cortex-alertmanager.{{ .Namespace}}.svc.cluster.local:8080$request_uri;
-	}
-	location ~ /api/v1/alerts {
-	  proxy_pass      http://cortex-alertmanager.{{ .Namespace}}.svc.cluster.local:8080$request_uri;
-	}
-	location ~ /multitenant_alertmanager/status {
-	  proxy_pass      http://cortex-alertmanager.{{ .Namespace}}.svc.cluster.local:8080$request_uri;
-	}
-  }
 }
 `
 
 const (
 	gatewayName         = "mla-gateway"
-	gatewayAlertName    = "mla-gateway-alert"
 	gatewayExternalName = resources.MLAGatewayExternalServiceName
 
-	extPortName   = "http-ext"
-	intPortName   = "http-int"
-	alertPortName = "http-alert"
+	extPortName = "http-ext"
+	intPortName = "http-int"
 
 	configVolumeName         = "config"
 	configVolumePath         = "/etc/nginx"
@@ -203,26 +184,6 @@ func GatewayConfigMapCreator(c *kubermaticv1.Cluster, mlaNamespace string) recon
 					"nginx.conf": config}
 			}
 			return cm, nil
-		}
-	}
-}
-
-func GatewayAlertServiceCreator() reconciling.NamedServiceCreatorGetter {
-	return func() (string, reconciling.ServiceCreator) {
-		return gatewayAlertName, func(s *corev1.Service) (*corev1.Service, error) {
-			s.Spec.Type = corev1.ServiceTypeClusterIP
-			s.Spec.Selector = map[string]string{common.NameLabel: gatewayName}
-
-			if len(s.Spec.Ports) == 0 {
-				s.Spec.Ports = make([]corev1.ServicePort, 1)
-			}
-
-			s.Spec.Ports[0].Name = alertPortName
-			s.Spec.Ports[0].Protocol = corev1.ProtocolTCP
-			s.Spec.Ports[0].Port = 80
-			s.Spec.Ports[0].TargetPort = intstr.FromString(alertPortName)
-
-			return s, nil
 		}
 	}
 }
@@ -334,11 +295,6 @@ func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 						{
 							Name:          intPortName,
 							ContainerPort: 8081,
-							Protocol:      corev1.ProtocolTCP,
-						},
-						{
-							Name:          alertPortName,
-							ContainerPort: 8082,
 							Protocol:      corev1.ProtocolTCP,
 						},
 					},
