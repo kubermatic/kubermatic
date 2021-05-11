@@ -48,7 +48,7 @@ const (
 var (
 	// groupToRole map kubermatic groups to grafana roles
 	groupToRole = map[string]models.RoleType{
-		rbac.OwnerGroupNamePrefix:  models.ROLE_ADMIN,
+		rbac.OwnerGroupNamePrefix:  models.ROLE_EDITOR, // we assign the editor (not admin) role to project owners, to make sure they cannot edit datasources in Grafana
 		rbac.EditorGroupNamePrefix: models.ROLE_EDITOR,
 		rbac.ViewerGroupNamePrefix: models.ROLE_VIEWER,
 	}
