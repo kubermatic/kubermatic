@@ -15,7 +15,7 @@ import (
 // swagger:model MLA
 type MLA struct {
 
-	// UserClusterMLAEnabled defines whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
+	// whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed
 	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled,omitempty"`
 }
 

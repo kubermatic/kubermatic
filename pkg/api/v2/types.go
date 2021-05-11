@@ -150,11 +150,11 @@ type AlertmanagerSpec struct {
 // SeedSettings represents settings for a Seed cluster
 // swagger:model SeedSettings
 type SeedSettings struct {
-	// MLA contains the Seed level MLA (Monitoring, Logging, and Alerting) stack settings
+	// the Seed level MLA (Monitoring, Logging, and Alerting) stack settings
 	MLA MLA `json:"mla"`
 }
 
 type MLA struct {
-	// UserClusterMLAEnabled defines whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed.
+	// whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed
 	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled"`
 }

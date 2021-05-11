@@ -16908,7 +16908,7 @@
       "type": "object",
       "properties": {
         "user_cluster_mla_enabled": {
-          "description": "UserClusterMLAEnabled defines whether the user cluster MLA (Monitoring, Logging \u0026 Alerting) stack is enabled in the seed.",
+          "description": "whether the user cluster MLA (Monitoring, Logging \u0026 Alerting) stack is enabled in the seed",
           "type": "boolean",
           "x-go-name": "UserClusterMLAEnabled"
         }
