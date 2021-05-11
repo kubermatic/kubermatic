@@ -51,12 +51,6 @@ func ResourcesOnDeletion(clusterNamespace string) []ctrlruntimeclient.Object {
 				Namespace: clusterNamespace,
 			},
 		},
-		&corev1.Service{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      gatewayAlertName,
-				Namespace: clusterNamespace,
-			},
-		},
 		&corev1.Secret{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      resources.MLAGatewayCASecretName,

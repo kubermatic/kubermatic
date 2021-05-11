@@ -499,13 +499,6 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			} else {
 				assert.True(t, errors.IsNotFound(err))
 			}
-			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: gatewayAlertName, Namespace: cluster.Status.NamespaceName}}
-			err = controller.Get(ctx, request.NamespacedName, svc)
-			if tc.hasResources {
-				assert.Nil(t, err)
-			} else {
-				assert.True(t, errors.IsNotFound(err))
-			}
 			request = reconcile.Request{NamespacedName: types.NamespacedName{Name: gatewayExternalName, Namespace: cluster.Status.NamespaceName}}
 			err = controller.Get(ctx, request.NamespacedName, svc)
 			if tc.hasResources {

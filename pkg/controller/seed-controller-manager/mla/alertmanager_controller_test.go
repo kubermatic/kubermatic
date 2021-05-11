@@ -61,11 +61,11 @@ func newTestAlertmanagerReconciler(objects []ctrlruntimeclient.Object, handler h
 	ts := httptest.NewServer(handler)
 
 	reconciler := alertmanagerReconciler{
-		Client:              fakeClient,
-		httpClient:          ts.Client(),
-		log:                 kubermaticlog.Logger,
-		recorder:            record.NewFakeRecorder(10),
-		mlaGatewayURLGetter: newFakeMLAGatewayURLGetter(ts),
+		Client:                fakeClient,
+		httpClient:            ts.Client(),
+		log:                   kubermaticlog.Logger,
+		recorder:              record.NewFakeRecorder(10),
+		cortexAlertmanagerURL: ts.URL,
 	}
 	return &reconciler, ts
 }
@@ -224,12 +224,6 @@ func TestAlertmanagerReconcile(t *testing.T) {
 						resources.AlertmanagerConfigSecretKey: []byte(generateAlertmanagerConfig("test-user")),
 					},
 				},
-				&corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      gatewayAlertName,
-						Namespace: "cluster-test",
-					},
-				},
 				&kubermaticv1.Alertmanager{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resources.AlertmanagerName,
@@ -259,12 +253,6 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
 				generateCluster("test", false, true),
-				&corev1.Service{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:      gatewayAlertName,
-						Namespace: "cluster-test",
-					},
-				},
 			},
 			requests: []request{
 				{
@@ -355,18 +343,4 @@ alertmanager_config: |
       email_configs:
       - to: '%s@example.org'
 `, name, name)
-}
-
-type fakeMLAGatewayURLGetter struct {
-	*httptest.Server
-}
-
-func newFakeMLAGatewayURLGetter(server *httptest.Server) *fakeMLAGatewayURLGetter {
-	return &fakeMLAGatewayURLGetter{
-		Server: server,
-	}
-}
-
-func (f *fakeMLAGatewayURLGetter) mlaGatewayURL(cluster *kubermaticv1.Cluster) string {
-	return f.URL
 }

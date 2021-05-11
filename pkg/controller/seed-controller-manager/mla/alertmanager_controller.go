@@ -50,24 +50,10 @@ import (
 )
 
 const (
-	alertmanagerFinalizer      = "kubermatic.io/alertmanager"
-	alertmanagerConfigEndpoint = "/api/v1/alerts"
+	alertmanagerFinalizer        = "kubermatic.io/alertmanager"
+	alertmanagerConfigEndpoint   = "/api/v1/alerts"
+	alertmanagerTenantHeaderName = "X-Scope-OrgID"
 )
-
-type mlaGatewayURLGetter interface {
-	mlaGatewayURL(cluster *kubermaticv1.Cluster) string
-}
-
-type defaultMLAGatewayURLGetter struct {
-}
-
-func newDefaultMLAGatewayURLGetter() *defaultMLAGatewayURLGetter {
-	return &defaultMLAGatewayURLGetter{}
-}
-
-func (d *defaultMLAGatewayURLGetter) mlaGatewayURL(cluster *kubermaticv1.Cluster) string {
-	return fmt.Sprintf("http://%s.%s.svc.cluster.local", gatewayAlertName, cluster.Status.NamespaceName)
-}
 
 type alertmanagerReconciler struct {
 	ctrlruntimeclient.Client
@@ -78,7 +64,7 @@ type alertmanagerReconciler struct {
 	recorder   record.EventRecorder
 	versions   kubermatic.Versions
 
-	mlaGatewayURLGetter mlaGatewayURLGetter
+	cortexAlertmanagerURL string
 }
 
 func newAlertmanagerReconciler(
@@ -88,6 +74,7 @@ func newAlertmanagerReconciler(
 	workerName string,
 	versions kubermatic.Versions,
 	httpClient *http.Client,
+	cortexAlertmanagerURL string,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
@@ -96,11 +83,11 @@ func newAlertmanagerReconciler(
 		Client:     client,
 		httpClient: httpClient,
 
-		log:                 log,
-		workerName:          workerName,
-		recorder:            mgr.GetEventRecorderFor(ControllerName),
-		versions:            versions,
-		mlaGatewayURLGetter: newDefaultMLAGatewayURLGetter(),
+		log:                   log,
+		workerName:            workerName,
+		recorder:              mgr.GetEventRecorderFor(ControllerName),
+		versions:              versions,
+		cortexAlertmanagerURL: cortexAlertmanagerURL,
 	}
 
 	ctrlOptions := controller.Options{
@@ -207,7 +194,7 @@ func (r *alertmanagerReconciler) reconcile(ctx context.Context, cluster *kuberma
 		// If this cluster is being deleted, we only clean up the Alertmanager configuration, we don't need to clean up
 		// `Alertmanager` and `Secret` objects because they are in cluster namespace, and they will be garbage-collected
 		// by Kubernetes itself.
-		if err := r.cleanUpAlertmanagerConfiguration(ctx, cluster); err != nil {
+		if err := r.cleanUpAlertmanagerConfiguration(cluster); err != nil {
 			return nil, fmt.Errorf("failed to delete alertmanager conifugration: %w", err)
 		}
 		if kubernetes.HasFinalizer(cluster, alertmanagerFinalizer) {
@@ -224,7 +211,7 @@ func (r *alertmanagerReconciler) reconcile(ctx context.Context, cluster *kuberma
 	// or disabled based on the monitoring flag.
 	if !monitoringEnabled {
 		// If monitoring is disabled, we clean up `Alertmanager` and `Secret` objects, and also Alertmanager configuration.
-		if err := r.cleanUpAlertmanagerConfiguration(ctx, cluster); err != nil {
+		if err := r.cleanUpAlertmanagerConfiguration(cluster); err != nil {
 			return nil, fmt.Errorf("failed to delete alertmanager conifugration: %w", err)
 		}
 		if err := r.cleanUpAlertmanagerObjects(ctx, cluster); err != nil {
@@ -252,22 +239,13 @@ func (r *alertmanagerReconciler) reconcile(ctx context.Context, cluster *kuberma
 	return nil, nil
 }
 
-func (r *alertmanagerReconciler) cleanUpAlertmanagerConfiguration(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	// TODO: Note that it can be the case that mla gateway service is deleted before controller cleans alertmanager
-	// configuration up. For fixing that controller needs to send requests to cortex alertmanager endpoints with
-	// X-Scope-OrgID header directly.
-	service := &corev1.Service{}
-	if err := r.Get(ctx, types.NamespacedName{
-		Name:      gatewayAlertName,
-		Namespace: cluster.Status.NamespaceName,
-	}, service); err != nil {
-		return ctrlruntimeclient.IgnoreNotFound(err)
-	}
+func (r *alertmanagerReconciler) cleanUpAlertmanagerConfiguration(cluster *kubermaticv1.Cluster) error {
 	req, err := http.NewRequest(http.MethodDelete,
-		r.mlaGatewayURLGetter.mlaGatewayURL(cluster)+alertmanagerConfigEndpoint, nil)
+		r.cortexAlertmanagerURL+alertmanagerConfigEndpoint, nil)
 	if err != nil {
 		return err
 	}
+	req.Header.Add(alertmanagerTenantHeaderName, cluster.Name)
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return err
@@ -319,8 +297,8 @@ func (r *alertmanagerReconciler) ensureAlertmanagerConfiguration(ctx context.Con
 	if err != nil {
 		return fmt.Errorf("failed to get alertmanager config: %w", err)
 	}
-	alertmanagerURL := r.mlaGatewayURLGetter.mlaGatewayURL(cluster) + alertmanagerConfigEndpoint
-	currentConfig, err := r.getCurrentAlertmanagerConfig(alertmanagerURL)
+	alertmanagerURL := r.cortexAlertmanagerURL + alertmanagerConfigEndpoint
+	currentConfig, err := r.getCurrentAlertmanagerConfig(alertmanagerURL, cluster)
 	if err != nil {
 		return err
 	}
@@ -338,6 +316,7 @@ func (r *alertmanagerReconciler) ensureAlertmanagerConfiguration(ctx context.Con
 	if err != nil {
 		return err
 	}
+	req.Header.Add(alertmanagerTenantHeaderName, cluster.Name)
 
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
@@ -407,8 +386,13 @@ func (r *alertmanagerReconciler) getAlertmanagerConfigForCluster(ctx context.Con
 	return secret.Data[resources.AlertmanagerConfigSecretKey], nil
 }
 
-func (r *alertmanagerReconciler) getCurrentAlertmanagerConfig(alertmanagerURL string) (map[string]interface{}, error) {
-	resp, err := r.httpClient.Get(alertmanagerURL)
+func (r *alertmanagerReconciler) getCurrentAlertmanagerConfig(alertmanagerURL string, cluster *kubermaticv1.Cluster) (map[string]interface{}, error) {
+	req, err := http.NewRequest(http.MethodGet, alertmanagerURL, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add(alertmanagerTenantHeaderName, cluster.Name)
+	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}

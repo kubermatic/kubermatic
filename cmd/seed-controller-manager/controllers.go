@@ -420,6 +420,7 @@ func createMLAController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.grafanaHeaderName,
 		ctrlCtx.runOptions.grafanaSecret,
 		ctrlCtx.runOptions.overwriteRegistry,
+		ctrlCtx.runOptions.cortexAlertmanagerURL,
 	)
 }
 
