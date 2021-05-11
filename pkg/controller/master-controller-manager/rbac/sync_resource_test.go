@@ -19,9 +19,9 @@ package rbac
 import (
 	"context"
 	"reflect"
-	"strings"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
@@ -1952,9 +1952,8 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 			expectedRoleBindings: []*rbacv1.RoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:constraint:owners",
-						Namespace:       "cluster-clusterid",
-						ResourceVersion: "1",
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -1971,9 +1970,8 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:constraint:editors",
-						Namespace:       "cluster-clusterid",
-						ResourceVersion: "1",
+						Name:      "kubermatic:constraint:editors",
+						Namespace: "cluster-clusterid",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -1990,9 +1988,8 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:constraint:viewers",
-						Namespace:       "cluster-clusterid",
-						ResourceVersion: "1",
+						Name:      "kubermatic:constraint:viewers",
+						Namespace: "cluster-clusterid",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -2025,6 +2022,10 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 
 			expectedRoles: []*rbacv1.Role{
 				{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Role",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:constraint:owners",
 						Namespace: "cluster-clusterid",
@@ -2057,10 +2058,13 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 
 			expectedRoleBindings: []*rbacv1.RoleBinding{
 				{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "RoleBinding",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:constraint:owners",
-						Namespace:       "cluster-clusterid",
-						ResourceVersion: "1",
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -2079,9 +2083,8 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 			existingRoleBindings: []*rbacv1.RoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:            "kubermatic:constraint:owners",
-						Namespace:       "cluster-clusterid",
-						ResourceVersion: "1",
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
 					},
 					Subjects: []rbacv1.Subject{
 						{
@@ -2137,48 +2140,46 @@ func TestSyncClusterConstraintsRBAC(t *testing.T) {
 				return
 			}
 
-			{
-				var roles rbacv1.RoleList
-				err = fakeMasterClusterClient.List(context.Background(), &roles)
-				assert.NoError(t, err)
+			var roles rbacv1.RoleList
+			err = fakeMasterClusterClient.List(context.Background(), &roles)
+			assert.NoError(t, err)
 
-			expectedRolesLoop:
-				for _, expectedRole := range test.expectedRoles {
-					// double-iterating over both slices might not be the most efficient way
-					// but it spares the trouble of converting pointers to values
-					// and then sorting everything for the comparison.
+			roleMap := make(map[string]rbacv1.Role)
+			for _, role := range roles.Items {
+				role.ResourceVersion = ""
+				roleMap[role.Name] = role
+			}
 
-					for _, existingRole := range roles.Items {
-						if strings.EqualFold(expectedRole.Name, existingRole.Name) && reflect.DeepEqual(expectedRole.Rules, existingRole.Rules) {
-							continue expectedRolesLoop
-
-						}
-					}
-					t.Fatalf("expected Role %q not found in cluster", expectedRole.Name)
+			for _, expectedRole := range test.expectedRoles {
+				resultRole, ok := roleMap[expectedRole.Name]
+				if !ok {
+					t.Errorf("expected role %s not in resulting roles", expectedRole.Name)
+				}
+				if diff := deep.Equal(resultRole, *expectedRole); diff != nil {
+					t.Errorf("Got unexpected role. Diff to expected: %v", diff)
 				}
 			}
 
-			{
-				var roleBindings rbacv1.RoleBindingList
-				err = fakeMasterClusterClient.List(context.Background(), &roleBindings)
-				assert.NoError(t, err)
+			var roleBindings rbacv1.RoleBindingList
+			err = fakeMasterClusterClient.List(context.Background(), &roleBindings)
+			assert.NoError(t, err)
 
-			expectedRoleBindingsLoop:
-				for _, expectedRoleBinding := range test.expectedRoleBindings {
-					// double-iterating over both slices might not be the most efficient way
-					// but it spares the trouble of converting pointers to values
-					// and then sorting everything for the comparison.
+			roleBindingMap := make(map[string]rbacv1.RoleBinding)
+			for _, roleBinding := range roleBindings.Items {
+				roleBinding.ResourceVersion = ""
+				roleBindingMap[roleBinding.Name] = roleBinding
+			}
 
-					for _, existingRoleBinding := range roleBindings.Items {
-						if strings.EqualFold(expectedRoleBinding.Name, existingRoleBinding.Name) &&
-							reflect.DeepEqual(expectedRoleBinding.RoleRef, existingRoleBinding.RoleRef) &&
-							reflect.DeepEqual(expectedRoleBinding.Subjects, existingRoleBinding.Subjects) {
-							continue expectedRoleBindingsLoop
-						}
-					}
-					t.Fatalf("expected RoleBinding %q not found in cluster", expectedRoleBinding.Name)
+			for _, expectedRoleBinding := range test.expectedRoleBindings {
+				resultRoleBinding, ok := roleBindingMap[expectedRoleBinding.Name]
+				if !ok {
+					t.Errorf("expected rolebinding %s not in resulting roles", expectedRoleBinding.Name)
+				}
+				if diff := deep.Equal(resultRoleBinding, *expectedRoleBinding); diff != nil {
+					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
 				}
 			}
+
 		})
 	}
 }
