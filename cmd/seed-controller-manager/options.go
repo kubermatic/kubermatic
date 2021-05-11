@@ -101,11 +101,12 @@ type controllerRunOptions struct {
 	featureGates features.FeatureGate
 
 	// MLA configuration
-	enableUserClusterMLA bool
-	mlaNamespace         string
-	grafanaURL           string
-	grafanaHeaderName    string
-	grafanaSecret        string
+	enableUserClusterMLA  bool
+	mlaNamespace          string
+	grafanaURL            string
+	grafanaHeaderName     string
+	grafanaSecret         string
+	cortexAlertmanagerURL string
 }
 
 func newControllerRunOptions() (controllerRunOptions, error) {
@@ -172,6 +173,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.grafanaURL, "grafana-url", "http://grafana.mla.svc.cluster.local", "The URL of Grafana instance which in running for MLA stack.")
 	flag.StringVar(&c.grafanaHeaderName, "grafana-header-name", "X-Forwarded-Email", "Grafana Auth Proxy HTTP Header that will contain the username or email")
 	flag.StringVar(&c.grafanaSecret, "grafana-secret-name", "mla/grafana", "Grafana secret name in format namespace/secretname, that contains basic auth info")
+	flag.StringVar(&c.cortexAlertmanagerURL, "cortex-alertmanager-url", "http://cortex-alertmanager.mla.svc.cluster.local:8080", "The URL of cortex alertmanager which is running for MLA stack.")
 	c.admissionWebhook.AddFlags(flag.CommandLine, true)
 	addFlags(flag.CommandLine)
 	flag.Parse()

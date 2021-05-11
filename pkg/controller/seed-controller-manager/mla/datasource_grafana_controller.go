@@ -299,7 +299,6 @@ func (r *datasourceGrafanaReconciler) ensureSecrets(ctx context.Context, c *kube
 
 func (r *datasourceGrafanaReconciler) ensureServices(ctx context.Context, c *kubermaticv1.Cluster) error {
 	creators := []reconciling.NamedServiceCreatorGetter{
-		GatewayAlertServiceCreator(),
 		GatewayInternalServiceCreator(),
 		GatewayExternalServiceCreator(c),
 	}
