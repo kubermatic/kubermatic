@@ -25,9 +25,45 @@ type Client struct {
 
 // ClientService is the interface for Client methods
 type ClientService interface {
+	GetSeedSettings(params *GetSeedSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetSeedSettingsOK, error)
+
 	ListSeedNames(params *ListSeedNamesParams, authInfo runtime.ClientAuthInfoWriter) (*ListSeedNamesOK, error)
 
 	SetTransport(transport runtime.ClientTransport)
+}
+
+/*
+  GetSeedSettings gets the seed settings
+*/
+func (a *Client) GetSeedSettings(params *GetSeedSettingsParams, authInfo runtime.ClientAuthInfoWriter) (*GetSeedSettingsOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetSeedSettingsParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getSeedSettings",
+		Method:             "GET",
+		PathPattern:        "/api/v2/seeds/{seed_name}/settings",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetSeedSettingsReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetSeedSettingsOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetSeedSettingsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
 /*
