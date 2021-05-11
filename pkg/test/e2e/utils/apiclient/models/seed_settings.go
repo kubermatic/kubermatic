@@ -17,7 +17,7 @@ import (
 type SeedSettings struct {
 
 	// mla
-	Mla *SeedMLASettings `json:"mla,omitempty"`
+	Mla *MLA `json:"mla,omitempty"`
 }
 
 // Validate validates this seed settings
