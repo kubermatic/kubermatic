@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"time"
 
@@ -53,8 +54,10 @@ const (
 // datasourceGrafanaReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
 type datasourceGrafanaReconciler struct {
 	ctrlruntimeclient.Client
-	grafanaClient *grafanasdk.Client
-	mlaNamespace  string
+	httpClient   *http.Client
+	grafanaURL   string
+	grafanaAuth  string
+	mlaNamespace string
 
 	log               *zap.SugaredLogger
 	workerName        string
@@ -69,7 +72,9 @@ func newDatasourceGrafanaReconciler(
 	numWorkers int,
 	workerName string,
 	versions kubermatic.Versions,
-	grafanaClient *grafanasdk.Client,
+	httpClient *http.Client,
+	grafanaURL string,
+	grafanaAuth string,
 	mlaNamespace string,
 	overwriteRegistry string,
 ) error {
@@ -77,9 +82,8 @@ func newDatasourceGrafanaReconciler(
 	client := mgr.GetClient()
 
 	reconciler := &datasourceGrafanaReconciler{
-		Client:        client,
-		grafanaClient: grafanaClient,
-		mlaNamespace:  mlaNamespace,
+		Client:       client,
+		mlaNamespace: mlaNamespace,
 
 		log:               log,
 		workerName:        workerName,
@@ -144,10 +148,22 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 	if cluster.Spec.MLA == nil {
 		cluster.Spec.MLA = &kubermaticv1.MLASettings{}
 	}
+	grafanaClient := grafanasdk.NewClient(r.grafanaURL, r.grafanaAuth, r.httpClient)
+	projectID, ok := cluster.GetLabels()[kubermaticv1.ProjectIDLabelKey]
+	if !ok {
+		return nil, fmt.Errorf("unable to get project name from label")
+	}
+
+	org, err := getOrgByProjectID(ctx, r.Client, grafanaClient, projectID)
+	if err != nil {
+		return nil, err
+	}
+	// set header from the very beginning so all other calls will be within this organization
+	grafanaClient.SetOrgIDHeader(org.ID)
 
 	mlaDisabled := !cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled
 	if !cluster.DeletionTimestamp.IsZero() || mlaDisabled {
-		if err := r.handleDeletion(ctx, cluster); err != nil {
+		if err := r.handleDeletion(ctx, grafanaClient, cluster); err != nil {
 			return nil, fmt.Errorf("handling deletion: %w", err)
 		}
 		return nil, nil
@@ -180,16 +196,6 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 		return nil, fmt.Errorf("failed to reconcile Services in namespace %s: %w", "mla", err)
 	}
 
-	projectID, ok := cluster.GetLabels()[kubermaticv1.ProjectIDLabelKey]
-	if !ok {
-		return nil, fmt.Errorf("unable to get project name from label")
-	}
-
-	org, err := getOrgByProjectID(ctx, r.Client, r.grafanaClient, projectID)
-	if err != nil {
-		return nil, err
-	}
-
 	lokiDS := grafanasdk.Datasource{
 		OrgID:  org.ID,
 		UID:    getDatasourceUIDForCluster(lokiType, cluster),
@@ -198,7 +204,7 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local", cluster.Status.NamespaceName),
 	}
-	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.LoggingEnabled, lokiDS); err != nil {
+	if err := r.reconcileDatasource(ctx, grafanaClient, cluster.Spec.MLA.LoggingEnabled, lokiDS); err != nil {
 		return nil, fmt.Errorf("failed to ensure Grafana Loki Datasources: %w", err)
 	}
 
@@ -210,23 +216,19 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 		Access: "proxy",
 		URL:    fmt.Sprintf("http://mla-gateway.%s.svc.cluster.local/api/prom", cluster.Status.NamespaceName),
 	}
-	if err := r.reconcileDatasource(ctx, cluster.Spec.MLA.MonitoringEnabled, prometheusDS); err != nil {
+	if err := r.reconcileDatasource(ctx, grafanaClient, cluster.Spec.MLA.MonitoringEnabled, prometheusDS); err != nil {
 		return nil, fmt.Errorf("failed to ensure Grafana Prometheus Datasources: %w", err)
 	}
 
 	return nil, nil
 }
 
-func (r *datasourceGrafanaReconciler) reconcileDatasource(ctx context.Context, enabled bool, expected grafanasdk.Datasource) error {
+func (r *datasourceGrafanaReconciler) reconcileDatasource(ctx context.Context, grafanaClient *grafanasdk.Client, enabled bool, expected grafanasdk.Datasource) error {
 	if enabled {
-		ds, err := r.grafanaClient.GetDatasourceByUID(ctx, expected.UID)
+		ds, err := grafanaClient.GetDatasourceByUID(ctx, expected.UID)
 		if err != nil {
 			if errors.As(err, &grafanasdk.ErrNotFound{}) {
-				if status, err := r.grafanaClient.SwitchActualUserContext(ctx, expected.OrgID); err != nil {
-					return fmt.Errorf("unable to switch context to org %d: %w (status: %s, message: %s)",
-						expected.OrgID, err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-				}
-				status, err := r.grafanaClient.CreateDatasource(ctx, expected)
+				status, err := grafanaClient.CreateDatasource(ctx, expected)
 				if err != nil {
 					return fmt.Errorf("unable to add datasource: %w (status: %s, message: %s)",
 						err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
@@ -235,7 +237,7 @@ func (r *datasourceGrafanaReconciler) reconcileDatasource(ctx context.Context, e
 					return nil
 				}
 				// possibly already exists with such name
-				ds, err = r.grafanaClient.GetDatasourceByName(ctx, expected.Name)
+				ds, err = grafanaClient.GetDatasourceByName(ctx, expected.Name)
 				if err != nil {
 					return fmt.Errorf("unable to get datasource by name %s", expected.Name)
 				}
@@ -243,21 +245,13 @@ func (r *datasourceGrafanaReconciler) reconcileDatasource(ctx context.Context, e
 		}
 		expected.ID = ds.ID
 		if !reflect.DeepEqual(ds, expected) {
-			if status, err := r.grafanaClient.SwitchActualUserContext(ctx, expected.OrgID); err != nil {
-				return fmt.Errorf("unable to switch context to org %d: %w (status: %s, message: %s)",
-					expected.OrgID, err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-			}
-			if status, err := r.grafanaClient.UpdateDatasource(ctx, expected); err != nil {
+			if status, err := grafanaClient.UpdateDatasource(ctx, expected); err != nil {
 				return fmt.Errorf("unable to update datasource: %w (status: %s, message: %s)",
 					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 			}
 		}
 	} else {
-		if status, err := r.grafanaClient.SwitchActualUserContext(ctx, expected.OrgID); err != nil {
-			return fmt.Errorf("unable to switch context to org %d: %w (status: %s, message: %s)",
-				expected.OrgID, err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-		}
-		if status, err := r.grafanaClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil {
+		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil {
 			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
@@ -305,25 +299,12 @@ func (r *datasourceGrafanaReconciler) ensureServices(ctx context.Context, c *kub
 	return reconciling.ReconcileServices(ctx, creators, c.Status.NamespaceName, r.Client, reconciling.OwnerRefWrapper(resources.GetClusterRef(c)))
 }
 
-func (r *datasourceGrafanaReconciler) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	projectID, ok := cluster.GetLabels()[kubermaticv1.ProjectIDLabelKey]
-	if !ok {
-		return fmt.Errorf("unable to get project name from label")
-	}
-
-	org, err := getOrgByProjectID(ctx, r.Client, r.grafanaClient, projectID)
-	if err != nil {
-		return err
-	}
-	if status, err := r.grafanaClient.SwitchActualUserContext(ctx, org.ID); err != nil {
-		return fmt.Errorf("unable to switch context to org %d: %w (status: %s, message: %s)",
-			org.ID, err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-	}
-	if status, err := r.grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(lokiType, cluster)); err != nil {
+func (r *datasourceGrafanaReconciler) handleDeletion(ctx context.Context, grafanaClient *grafanasdk.Client, cluster *kubermaticv1.Cluster) error {
+	if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(lokiType, cluster)); err != nil {
 		return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
-	if status, err := r.grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(prometheusType, cluster)); err != nil {
+	if status, err := grafanaClient.DeleteDatasourceByUID(ctx, getDatasourceUIDForCluster(prometheusType, cluster)); err != nil {
 		return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
 			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}

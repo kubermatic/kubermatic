@@ -28,7 +28,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -53,13 +52,13 @@ func newTestDatasourceGrafanaReconciler(t *testing.T, objects []ctrlruntimeclien
 		Build()
 	ts := httptest.NewServer(handler)
 
-	grafanaClient := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
-
 	reconciler := datasourceGrafanaReconciler{
-		Client:        dynamicClient,
-		grafanaClient: grafanaClient,
-		log:           kubermaticlog.Logger,
-		recorder:      record.NewFakeRecorder(10),
+		Client:      dynamicClient,
+		grafanaURL:  ts.URL,
+		httpClient:  ts.Client(),
+		grafanaAuth: "admin:admin",
+		log:         kubermaticlog.Logger,
+		recorder:    record.NewFakeRecorder(10),
 	}
 	return &reconciler, ts
 }
@@ -119,11 +118,6 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					response: &http.Response{StatusCode: http.StatusNotFound},
 				},
 				{
-					name:     "switch user context",
-					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
-				},
-				{
 					name:     "create loki datasource",
 					request:  httptest.NewRequest(http.MethodPost, "/api/datasources", strings.NewReader(`{"name":"Loki Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 1}`)), StatusCode: http.StatusOK},
@@ -132,11 +126,6 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					name:     "get datasource by uid",
 					request:  httptest.NewRequest(http.MethodGet, "/api/datasources/uid/prometheus-clusterUID", nil),
 					response: &http.Response{StatusCode: http.StatusNotFound},
-				},
-				{
-					name:     "switch user context",
-					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "create prometheus datasource",
@@ -179,11 +168,6 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
-				},
-				{
-					name:     "switch user context",
-					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete loki datasource",
@@ -240,11 +224,6 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"name":"Loki Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":1, "isDefault":false, "jsonData":null, "secureJsonData":null}`)), StatusCode: http.StatusOK},
 				},
 				{
-					name:     "switch user context",
-					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
-				},
-				{
 					name:     "update loki datasource",
 					request:  httptest.NewRequest(http.MethodPut, "/api/datasources/1", strings.NewReader(`{"name":"Loki New Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":1, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource updated", "id": 1}`)), StatusCode: http.StatusOK},
@@ -253,11 +232,6 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					name:     "get prometheus datasource by uid",
 					request:  httptest.NewRequest(http.MethodGet, "/api/datasources/uid/prometheus-clusterUID", nil),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"name":"Prometheus Super Cluster", "orgId":1,  "type":"prometheus", "uid":"prometheus-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local/api/prom", "access":"proxy", "id":2, "isDefault":false, "jsonData":null, "secureJsonData":null}`)), StatusCode: http.StatusOK},
-				},
-				{
-					name:     "switch user context",
-					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "update prometheus datasource",
@@ -297,11 +271,6 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					name:     "get org by id",
 					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
-				},
-				{
-					name:     "switch user context",
-					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete loki datasource",
@@ -360,11 +329,6 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName-projectUID","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
 				},
 				{
-					name:     "switch user context",
-					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
-				},
-				{
 					name:     "delete loki datasource",
 					request:  httptest.NewRequest(http.MethodDelete, "/api/datasources/uid/loki-clusterUID", nil),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource deleted"}`)), StatusCode: http.StatusOK},
@@ -373,11 +337,6 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					name:     "get datasource by uid",
 					request:  httptest.NewRequest(http.MethodGet, "/api/datasources/uid/prometheus-clusterUID", nil),
 					response: &http.Response{StatusCode: http.StatusNotFound},
-				},
-				{
-					name:     "switch user context",
-					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "create prometheus datasource",
@@ -432,19 +391,9 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					response: &http.Response{StatusCode: http.StatusNotFound},
 				},
 				{
-					name:     "switch user context",
-					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
-				},
-				{
 					name:     "create loki datasource",
 					request:  httptest.NewRequest(http.MethodPost, "/api/datasources", strings.NewReader(`{"name":"Loki Super Cluster", "orgId":1,  "type":"loki", "uid":"loki-clusterUID", "url":"http://mla-gateway.cluster-clusterUID.svc.cluster.local", "access":"proxy", "id":0, "isDefault":false, "jsonData":null, "secureJsonData":null}`)),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "datasource created", "id": 1}`)), StatusCode: http.StatusOK},
-				},
-				{
-					name:     "switch user context",
-					request:  httptest.NewRequest(http.MethodPost, "/api/user/using/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"context switched"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete prometheus datasource",
