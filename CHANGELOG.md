@@ -127,6 +127,18 @@
 
 # Kubermatic 2.16
 
+## [v2.16.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.9)
+
+### Misc
+
+- Adds `FELIX_IGNORELOOSERPF=true` to `calico-node` container env to allow running on nodes with `net.ipv4.conf.*.rp_filter = 2` set. [#6855](https://github.com/kubermatic/kubermatic/issues/6855) ([moelsayed](https://github.com/moelsayed))
+- Fix default version configuration to have automatic upgrade from Kubernetes 1.16 to 1.17. [#6899](https://github.com/kubermatic/kubermatic/issues/6899) ([emmanuel-kubermatic](https://github.com/emmanuel-kubermatic))
+- Fix OpenStack crashing with Kubernetes 1.20 and 1.21. [#6924](https://github.com/kubermatic/kubermatic/issues/6924) ([irozzo-1A](https://github.com/irozzo-1A))
+- Update machine-controller to 1.24.4. Fixed double instance creation in us-east1 AWS [#6962](https://github.com/kubermatic/kubermatic/issues/6962) ([kron4eg](https://github.com/kron4eg))
+
+
+
+
 ## [v2.16.8](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.8)
 
 ### Misc
@@ -401,6 +413,19 @@ as well as the [2.16 upgrade notes](https://docs.kubermatic.com/kubermatic/v2.16
 
 
 # Kubermatic 2.15
+
+## [v2.15.12](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.12)
+
+### Misc
+
+- Adds `FELIX_IGNORELOOSERPF=true` to `calico-node` container env to allow running on nodes with `net.ipv4.conf.*.rp_filter = 2` set. [#6864](https://github.com/kubermatic/kubermatic/issues/6864) ([moelsayed](https://github.com/moelsayed))
+- Update machine-controller to 1.19.1. Fixed double instance creation in us-east1 AWS [#6969](https://github.com/kubermatic/kubermatic/issues/6969) ([kron4eg](https://github.com/kron4eg))
+
+### UI
+
+- Rename every occurrence of "Node Deployment" in the UI to "Machine Deployment" [#3282](https://github.com/kubermatic/dashboard/issues/3282) ([cedi](https://github.com/cedi))
+
+
 
 ## [v2.15.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.15.11)
 
