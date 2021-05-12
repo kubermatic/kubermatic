@@ -85,8 +85,6 @@ spec:
               fieldPath: metadata.namespace
         - name: TOKEN
           value: de-test-01
-        - name: ETCD_CLUSTER_SIZE
-          value: "3"
         - name: ENABLE_CORRUPTION_CHECK
           value: "false"
         - name: ETCDCTL_API
