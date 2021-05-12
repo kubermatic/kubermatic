@@ -30,16 +30,17 @@ import (
 )
 
 type DeployOptions struct {
-	HelmClient                   helm.Client
-	HelmValues                   *yamled.Document
-	KubeClient                   ctrlruntimeclient.Client
-	StorageClassProvider         string
-	KubermaticConfiguration      *operatorv1alpha1.KubermaticConfiguration
-	RawKubermaticConfiguration   *unstructured.Unstructured
-	ForceHelmReleaseUpgrade      bool
-	ChartsDirectory              string
-	Logger                       *logrus.Entry
-	EnableCertManagerV2Migration bool
+	HelmClient                        helm.Client
+	HelmValues                        *yamled.Document
+	KubeClient                        ctrlruntimeclient.Client
+	StorageClassProvider              string
+	KubermaticConfiguration           *operatorv1alpha1.KubermaticConfiguration
+	RawKubermaticConfiguration        *unstructured.Unstructured
+	ForceHelmReleaseUpgrade           bool
+	ChartsDirectory                   string
+	Logger                            *logrus.Entry
+	EnableCertManagerV2Migration      bool
+	EnableOpenstackCSIDriverMigration bool
 }
 
 type Stack interface {
