@@ -55,6 +55,10 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter
 		MLA:                                  apiCluster.Spec.MLA,
 	}
 
+	if apiCluster.Spec.ClusterNetwork != nil {
+		spec.ClusterNetwork = *apiCluster.Spec.ClusterNetwork
+	}
+
 	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
 	if err != nil {
 		return nil, fmt.Errorf("invalid cloud spec: %v", err)

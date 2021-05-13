@@ -94,6 +94,12 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			ExposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,
+			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
+				Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.193.0.0/20"}},
+				DNSDomain: "cluster.local",
+				ProxyMode: resources.IPVSProxyMode,
+			},
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "my-dc",
 			},
@@ -171,10 +177,6 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 			}, nil
 		},
 		caBundle: caBundle,
-	}
-
-	if err := r.ensureClusterNetworkDefaults(ctx, testCluster); err != nil {
-		t.Fatalf("failed to sync initial network default: %v", err)
 	}
 
 	if err := r.ensureResourcesAreDeployed(ctx, testCluster); err != nil {

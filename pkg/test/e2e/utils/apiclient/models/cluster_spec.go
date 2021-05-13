@@ -53,6 +53,9 @@ type ClusterSpec struct {
 	// cloud
 	Cloud *CloudSpec `json:"cloud,omitempty"`
 
+	// cluster network
+	ClusterNetwork *ClusterNetworkingConfig `json:"clusterNetwork,omitempty"`
+
 	// mla
 	Mla *MLASettings `json:"mla,omitempty"`
 
@@ -85,6 +88,10 @@ func (m *ClusterSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateCloud(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateClusterNetwork(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -167,6 +174,24 @@ func (m *ClusterSpec) validateCloud(formats strfmt.Registry) error {
 		if err := m.Cloud.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
 				return ve.ValidateName("cloud")
+			}
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *ClusterSpec) validateClusterNetwork(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ClusterNetwork) { // not required
+		return nil
+	}
+
+	if m.ClusterNetwork != nil {
+		if err := m.ClusterNetwork.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("clusterNetwork")
 			}
 			return err
 		}
