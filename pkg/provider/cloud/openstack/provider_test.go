@@ -366,7 +366,7 @@ type fakeClusterUpdater struct {
 	c *kubermaticv1.Cluster
 }
 
-func (f *fakeClusterUpdater) update(_ string, updateFn func(c *kubermaticv1.Cluster), _ bool) (*kubermaticv1.Cluster, error) {
+func (f *fakeClusterUpdater) update(_ string, updateFn func(c *kubermaticv1.Cluster), _ ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
 	updateFn(f.c)
 	return f.c, nil
 }
