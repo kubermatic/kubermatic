@@ -22,6 +22,7 @@ import (
 
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog"
@@ -115,7 +116,26 @@ func newResourcesControllers(ctx context.Context, metrics *Metrics, mgr manager.
 }
 
 func (c *resourcesController) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
-	err := c.syncProjectResource(ctx, req.NamespacedName)
+	obj := c.objectType.DeepCopyObject().(ctrlruntimeclient.Object)
+	if err := c.client.Get(ctx, req.NamespacedName, obj); err != nil {
+		if kerrors.IsNotFound(err) {
+			return reconcile.Result{}, nil
+		}
+
+		return reconcile.Result{}, err
+	}
+
+	err := c.syncClusterScopedProjectResource(ctx, obj)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	err = c.syncNamespaceScopedProjectResource(ctx, obj)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
+	err = c.syncClusterResource(ctx, obj)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
