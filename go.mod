@@ -77,6 +77,7 @@ require (
 	golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392
 	golang.org/x/oauth2 v0.0.0-20201109201403-9fd604954f58
 	golang.org/x/tools v0.0.0-20201202200335-bef1c476418a
+	gomodules.xyz/jsonpatch/v2 v2.1.0
 	google.golang.org/api v0.36.0
 	google.golang.org/grpc v1.33.2
 	gopkg.in/fsnotify.v1 v1.4.7

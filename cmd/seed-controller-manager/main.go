@@ -176,7 +176,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		// Setup the admission handler for kubermatic Seed CRDs
 		h.SetupWebhookWithManager(mgr)
 		// Setup the validation admission handler for kubermatic Cluster CRDs
-		clustervalidation.NewAdmissionHandler(mgr.GetClient(), options.featureGates).SetupWebhookWithManager(mgr)
+		clustervalidation.NewAdmissionHandler(options.featureGates).SetupWebhookWithManager(mgr)
 		// Setup the mutation admission handler for kubermatic Cluster CRDs
 		clustermutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
 	}
