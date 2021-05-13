@@ -105,9 +105,7 @@ func Add(
 	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader); err != nil {
 		return fmt.Errorf("failed to create mla userprojectbinding controller: %v", err)
 	}
-	// FIXME: Grafana API uses a global user context switches to manage datasources,
-	// single worker is needed for the datasource reconciler until this is fixed fixed in the grafanasdk
-	if err := newDatasourceGrafanaReconciler(mgr, log, 1, workerName, versions, httpClient, grafanaURL, grafanaAuth, mlaNamespace, overwriteRegistry); err != nil {
+	if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, httpClient, grafanaURL, grafanaAuth, mlaNamespace, overwriteRegistry); err != nil {
 		return fmt.Errorf("failed to create mla cluster controller: %v", err)
 	}
 	if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, httpClient, cortexAlertmanagerURL); err != nil {

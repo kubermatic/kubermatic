@@ -84,6 +84,9 @@ func newDatasourceGrafanaReconciler(
 	reconciler := &datasourceGrafanaReconciler{
 		Client:       client,
 		mlaNamespace: mlaNamespace,
+		httpClient:   httpClient,
+		grafanaURL:   grafanaURL,
+		grafanaAuth:  grafanaAuth,
 
 		log:               log,
 		workerName:        workerName,
@@ -250,11 +253,9 @@ func (r *datasourceGrafanaReconciler) reconcileDatasource(ctx context.Context, g
 					err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 			}
 		}
-	} else {
-		if status, err := grafanaClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil {
-			return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
-				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-		}
+	} else if status, err := grafanaClient.DeleteDatasourceByUID(ctx, expected.UID); err != nil {
+		return fmt.Errorf("unable to delete datasource: %w (status: %s, message: %s)",
+			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
 	return nil
 
