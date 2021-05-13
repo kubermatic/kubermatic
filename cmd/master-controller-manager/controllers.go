@@ -87,7 +87,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		return fmt.Errorf("failed to create master constraint template controller: %v", err)
 	}
 	if err := masterconstraintsyncercontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create master constraint template controller: %v", err)
+		return fmt.Errorf("failed to create master constraint syncer controller: %v", err)
 	}
 	if err := projectsync.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create projectsync controller: %v", err)
