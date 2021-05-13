@@ -14,11 +14,13 @@
 
 {{ if .Cluster.Features.Has "externalCloudProvider" }}
 {{ if eq .Cluster.CloudProviderName "openstack" }}
+{{ if eq .AddonCluster "seed" }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: csi-cinder-controller-sa
-  namespace: kube-system
+  namespace: {{ .Cluster.Namespace }}
+{{ end }}
 
 ---
 # external attacher
