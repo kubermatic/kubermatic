@@ -1,0 +1,147 @@
+/*
+Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
+package masterconstraintsyncercontroller
+
+import (
+	"context"
+	"reflect"
+	"testing"
+	"time"
+
+	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+
+	"k8c.io/kubermatic/v2/pkg/handler/test"
+	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
+	"k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/record"
+	"k8s.io/utils/diff"
+	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+)
+
+const (
+	constraintName = "constraint"
+	kind           = "RequiredLabel"
+)
+
+func TestReconcile(t *testing.T) {
+
+	testCases := []struct {
+		name                 string
+		namespacedName       types.NamespacedName
+		expectedConstraint   *kubermaticv1.Constraint
+		expectedGetErrStatus metav1.StatusReason
+		masterClient         ctrlruntimeclient.Client
+		seedClient           ctrlruntimeclient.Client
+	}{
+		{
+			name: "scenario 1: sync constraint to seed cluster",
+			namespacedName: types.NamespacedName{
+				Namespace: "namespace",
+				Name:      constraintName,
+			},
+			expectedConstraint: genConstraint(constraintName, "namespace", kind, false),
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraint(constraintName, "namespace", kind, false), test.GenTestSeed()).
+				Build(),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				Build(),
+		},
+		{
+			name: "scenario 2: cleanup gatekeeper constraint on seed cluster when master constraint is being terminated",
+			namespacedName: types.NamespacedName{
+				Namespace: "namespace",
+				Name:      constraintName,
+			},
+			expectedGetErrStatus: metav1.StatusReasonNotFound,
+			masterClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraint(constraintName, "namespace", kind, true), test.GenTestSeed()).
+				Build(),
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(genConstraint(constraintName, "namespace", kind, false)).
+				Build(),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			r := &reconciler{
+				log:          kubermaticlog.Logger,
+				recorder:     &record.FakeRecorder{},
+				masterClient: tc.masterClient,
+				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
+					return tc.seedClient, nil
+				},
+			}
+
+			request := reconcile.Request{NamespacedName: tc.namespacedName}
+			if _, err := r.Reconcile(ctx, request); err != nil {
+				t.Fatalf("reconciling failed: %v", err)
+			}
+
+			constraint := &kubermaticv1.Constraint{}
+			err := tc.seedClient.Get(ctx, types.NamespacedName{Name: constraintName}, constraint)
+			if tc.expectedGetErrStatus != "" {
+				if err == nil {
+					t.Fatalf("expected error status %s, instead got ct: %v", tc.expectedGetErrStatus, constraint)
+				}
+
+				if tc.expectedGetErrStatus != errors.ReasonForError(err) {
+					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, errors.ReasonForError(err))
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("failed to get constraint: %v", err)
+			}
+
+			if !reflect.DeepEqual(constraint.Spec, tc.expectedConstraint.Spec) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedConstraint))
+			}
+
+			if !reflect.DeepEqual(constraint.Name, tc.expectedConstraint.Name) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedConstraint))
+			}
+		})
+	}
+}
+
+func genConstraint(name, namespace, kind string, delete bool) *kubermaticv1.Constraint {
+	constraint := test.GenConstraint(name, namespace, kind)
+	if delete {
+		deleteTime := metav1.NewTime(time.Now())
+		constraint.DeletionTimestamp = &deleteTime
+		constraint.Finalizers = append(constraint.Finalizers, v1.GatekeeperSeedConstraintCleanupFinalizer)
+	}
+
+	return constraint
+}
