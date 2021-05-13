@@ -183,6 +183,12 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	}
 
 	if _, err := prov.InitializeCloudProvider(cluster, r.updateCluster); err != nil {
+		if kerrors.IsConflict(err) {
+			// In case of conflict we just re-enqueue the item for later
+			// processing without returning an error.
+			r.log.Infow("failed to add finalizer to cluster", "error", err)
+			return &reconcile.Result{Requeue: true}, nil
+		}
 		return nil, fmt.Errorf("failed cloud provider init: %v", err)
 	}
 
@@ -243,7 +249,7 @@ func (r *Reconciler) migrateAWSMultiAZ(ctx context.Context, cluster *kubermaticv
 	return nil
 }
 
-func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster)) (*kubermaticv1.Cluster, error) {
+func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster), options ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(context.Background(), types.NamespacedName{Name: name}, cluster); err != nil {
 		return nil, err
@@ -253,7 +259,14 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 	if reflect.DeepEqual(oldCluster, cluster) {
 		return cluster, nil
 	}
-	return cluster, r.Patch(context.Background(), cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+	opts := (&provider.UpdaterOptions{}).Apply(options...)
+	var patch ctrlruntimeclient.Patch
+	if opts.OptimisticLock {
+		patch = ctrlruntimeclient.MergeFromWithOptions(oldCluster, ctrlruntimeclient.MergeFromWithOptimisticLock{})
+	} else {
+		patch = ctrlruntimeclient.MergeFrom(oldCluster)
+	}
+	return cluster, r.Patch(context.Background(), cluster, patch)
 }
 
 func (r *Reconciler) getGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
