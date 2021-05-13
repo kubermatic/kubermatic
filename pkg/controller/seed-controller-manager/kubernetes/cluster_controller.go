@@ -29,6 +29,7 @@ import (
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -38,7 +39,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
-	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
@@ -217,7 +218,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, request.NamespacedName, cluster); err != nil {
-		if kubeapierrors.IsNotFound(err) {
+		if kerrors.IsNotFound(err) {
 			log.Debug("Could not find cluster")
 			return reconcile.Result{}, nil
 		}
@@ -260,7 +261,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 	// synchronize cluster.status.health for Kubernetes clusters
 	if err := r.syncHealth(ctx, cluster); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to sync health: %w", err)
 	}
 
 	if cluster.DeletionTimestamp != nil {
@@ -284,7 +285,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 		if updateErr != nil {
 			return nil, fmt.Errorf("failed to set the cluster error: %v", updateErr)
 		}
-		return nil, err
+		return nil, fmt.Errorf("failed to reconcile cluster: %w", err)
 	}
 
 	if err := r.clearClusterError(ctx, cluster); err != nil {
@@ -294,13 +295,29 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	return res, nil
 }
 
-func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster)) error {
+func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster), opts ...ctrlruntimeclient.MergeFromOption) error {
 	oldCluster := cluster.DeepCopy()
 	modify(cluster)
 	if reflect.DeepEqual(oldCluster, cluster) {
 		return nil
 	}
-	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster))
+
+	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...))
+}
+
+func (r *Reconciler) AddFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster, finalizers ...string) (*reconcile.Result, error) {
+	if err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
+		kuberneteshelper.AddFinalizer(c, finalizers...)
+	}, ctrlruntimeclient.MergeFromWithOptimisticLock{}); err != nil {
+		if !kerrors.IsConflict(err) {
+			return nil, fmt.Errorf("failed to add finalizers %v: %w", finalizers, err)
+		}
+		// In case of conflict we just re-enqueue the item for later
+		// processing without returning an error.
+		r.log.Infow("failed to add finalizers", "error", err, "finalizers", finalizers)
+		return &reconcile.Result{Requeue: true}, nil
+	}
+	return &reconcile.Result{}, nil
 }
 
 func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermaticv1.Cluster, reason kubermaticv1.ClusterStatusError, message string) error {
