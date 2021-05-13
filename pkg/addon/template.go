@@ -65,6 +65,7 @@ type TemplateData struct {
 	Cluster        ClusterData
 	Credentials    Credentials
 	Variables      map[string]interface{}
+	AddonCluster   string
 }
 
 func NewTemplateData(
@@ -74,6 +75,7 @@ func NewTemplateData(
 	dnsClusterIP string,
 	dnsResolverIP string,
 	variables map[string]interface{},
+	addonCluster string,
 ) (*TemplateData, error) {
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
@@ -88,6 +90,7 @@ func NewTemplateData(
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
 		Variables:      variables,
 		Credentials:    credentials,
+		AddonCluster:   addonCluster,
 		Cluster: ClusterData{
 			Type:                 ClusterTypeKubernetes,
 			Name:                 cluster.Name,

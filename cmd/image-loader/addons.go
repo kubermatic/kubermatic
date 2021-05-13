@@ -35,7 +35,7 @@ import (
 func getImagesFromAddons(log *zap.SugaredLogger, addonsPath string, cluster *kubermaticv1.Cluster) ([]string, error) {
 	credentials := resources.Credentials{}
 
-	addonData, err := addonutil.NewTemplateData(cluster, credentials, "", "", "", nil)
+	addonData, err := addonutil.NewTemplateData(cluster, credentials, "", "", "", nil, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create addon template data: %v", err)
 	}

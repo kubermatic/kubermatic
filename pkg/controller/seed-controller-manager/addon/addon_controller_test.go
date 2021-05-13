@@ -212,7 +212,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(ctx, log, addon, cluster)
+	manifests, err := controller.getAddonManifests(ctx, log, addon, cluster, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -230,7 +230,7 @@ func TestController_getAddonKubeDNStManifests(t *testing.T) {
 	}
 
 	cluster = setupTestCluster("172.25.0.0/16")
-	manifests, err = controller.getAddonManifests(ctx, log, addon, cluster)
+	manifests, err = controller.getAddonManifests(ctx, log, addon, cluster, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,7 +267,7 @@ func TestController_getAddonDeploymentManifests(t *testing.T) {
 		overwriteRegistry:  "bar.io",
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(context.Background(), log, addon, cluster)
+	manifests, err := controller.getAddonManifests(context.Background(), log, addon, cluster, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -305,7 +305,7 @@ func TestController_getAddonDeploymentManifestsDefault(t *testing.T) {
 		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(context.Background(), log, addon, cluster)
+	manifests, err := controller.getAddonManifests(context.Background(), log, addon, cluster, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -349,7 +349,7 @@ func TestController_getAddonManifests(t *testing.T) {
 		kubernetesAddonDir: addonDir,
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	manifests, err := controller.getAddonManifests(context.Background(), log, addon, cluster)
+	manifests, err := controller.getAddonManifests(context.Background(), log, addon, cluster, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -418,7 +418,7 @@ func TestHugeManifest(t *testing.T) {
 		kubernetesAddonDir: "./testdata",
 		KubeconfigProvider: &fakeKubeconfigProvider{},
 	}
-	if _, _, _, err := r.setupManifestInteraction(context.Background(), log, addon, cluster); err != nil {
-		t.Fatalf("failed to setup manifest interaction: %v", err)
+	if mi := r.setupManifestInteraction(context.Background(), log, addon, cluster); mi.err != nil {
+		t.Fatalf("failed to setup manifest interaction: %v", mi.err)
 	}
 }

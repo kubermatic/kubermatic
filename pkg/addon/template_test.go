@@ -88,7 +88,7 @@ func testRenderAddonsForOrchestrator(t *testing.T, orchestrator string) {
 
 	for _, cluster := range clusters {
 		for _, addon := range addons {
-			data, err := NewTemplateData(&cluster, credentials, "kubeconfig", "1.2.3.4", "5.6.7.8", variables)
+			data, err := NewTemplateData(&cluster, credentials, "kubeconfig", "1.2.3.4", "5.6.7.8", variables, "")
 			if err != nil {
 				t.Fatalf("Rendering %s addon %s for cluster %s failed: %v", orchestrator, addon.Name, cluster.Name, err)
 			}
@@ -117,7 +117,7 @@ func TestNewTemplateData(t *testing.T) {
 
 	credentials := resources.Credentials{}
 
-	templateData, err := NewTemplateData(&cluster, credentials, "", "", "", nil)
+	templateData, err := NewTemplateData(&cluster, credentials, "", "", "", nil, "")
 	if err != nil {
 		t.Fatalf("Failed to create template data: %v", err)
 	}
