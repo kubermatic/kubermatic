@@ -298,24 +298,20 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	return res, nil
 }
 
-func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster), optimisticLock bool) error {
+func (r *Reconciler) updateCluster(ctx context.Context, cluster *kubermaticv1.Cluster, modify func(*kubermaticv1.Cluster), opts ...ctrlruntimeclient.MergeFromOption) error {
 	oldCluster := cluster.DeepCopy()
 	modify(cluster)
 	if reflect.DeepEqual(oldCluster, cluster) {
 		return nil
 	}
-	var options []ctrlruntimeclient.MergeFromOption
-	if optimisticLock {
-		options = append(options, ctrlruntimeclient.MergeFromWithOptimisticLock{})
-	}
 
-	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, options...))
+	return r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, opts...))
 }
 
 func (r *Reconciler) AddFinalizers(ctx context.Context, cluster *kubermaticv1.Cluster, finalizers ...string) (*reconcile.Result, error) {
 	if err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 		kuberneteshelper.AddFinalizer(c, finalizers...)
-	}, true); err != nil {
+	}, ctrlruntimeclient.MergeFromWithOptimisticLock{}); err != nil {
 		if !kerrors.IsConflict(err) {
 			return nil, fmt.Errorf("failed to add finalizers %v: %w", finalizers, err)
 		}
@@ -332,7 +328,7 @@ func (r *Reconciler) updateClusterError(ctx context.Context, cluster *kubermatic
 		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.ErrorMessage = &message
 			c.Status.ErrorReason = &reason
-		}, false)
+		})
 		if err != nil {
 			return fmt.Errorf("failed to set error status on cluster to: errorReason=%q errorMessage=%q. Could not update cluster: %v", reason, message, err)
 		}
@@ -346,7 +342,7 @@ func (r *Reconciler) clearClusterError(ctx context.Context, cluster *kubermaticv
 		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.ErrorMessage = nil
 			c.Status.ErrorReason = nil
-		}, false)
+		})
 		if err != nil {
 			return err
 		}

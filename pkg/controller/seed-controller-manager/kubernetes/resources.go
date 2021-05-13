@@ -202,7 +202,7 @@ func (r *Reconciler) ensureNamespaceExists(ctx context.Context, cluster *kuberma
 	if cluster.Status.NamespaceName == "" {
 		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.NamespaceName = fmt.Sprintf("cluster-%s", c.Name)
-		}, false)
+		})
 		if err != nil {
 			return err
 		}

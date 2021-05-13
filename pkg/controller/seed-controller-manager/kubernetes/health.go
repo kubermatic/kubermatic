@@ -76,7 +76,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 	if cluster.Status.ExtendedHealth != *extendedHealth {
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
 			c.Status.ExtendedHealth = *extendedHealth
-		}, false)
+		})
 	}
 
 	if err != nil {
@@ -94,7 +94,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 				"",
 				"Etcd Cluster has been initialized successfully",
 			)
-		}, false); err != nil {
+		}); err != nil {
 			return fmt.Errorf("failed to sec cluster %s condition: %v", kubermaticv1.ClusterConditionEtcdClusterInitialized, err)
 		}
 	}
@@ -109,7 +109,7 @@ func (r *Reconciler) syncHealth(ctx context.Context, cluster *kubermaticv1.Clust
 				"",
 				"Cluster has been initialized successfully",
 			)
-		}, false)
+		})
 	}
 
 	return err
