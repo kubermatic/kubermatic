@@ -22,6 +22,7 @@ aliases:
     - xmudrii
     - xrstf
     - youssefazrak
+    - mfranczy
 
   sig-networking:
     - irozzo-1A
@@ -41,3 +42,7 @@ aliases:
     - floreks
     - kgroschoff
     - maciaszczykm
+
+  sig-virtualization:
+    - mfranczy
+    - moadqassem
