@@ -19,6 +19,7 @@ package addon
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -33,6 +34,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/semver"
 
+	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -113,6 +115,22 @@ spec:
     k8s-app: kube-dns
   clusterIP: {{ .Cluster.Network.DNSClusterIP }}
   clusterCIDR: "{{ first .Cluster.Network.PodCIDRBlocks }}"
+`
+	testManifestForSeed = `{{ if eq .AddonCluster "seed" }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: csi-cinder-controller-service
+  namespace: {{ .Cluster.Namespace }}
+  labels:
+    app: csi-cinder-controllerplugin
+spec:
+  selector:
+    app: csi-cinder-controllerplugin
+  ports:
+    - name: dummy
+      port: 12345
+{{ end }}
 `
 )
 
@@ -410,6 +428,16 @@ func TestController_getApplyCommand(t *testing.T) {
 	}
 }
 
+func TestController_getApplyCommandNoKubeConfig(t *testing.T) {
+	controller := &Reconciler{}
+	cmd := controller.getApplyCommand(context.Background(), "", "/opt/manifest.yaml", labels.SelectorFromSet(map[string]string{"foo": "bar"}))
+	expected := "kubectl apply --prune -f /opt/manifest.yaml -l foo=bar"
+	got := strings.Join(cmd.Args, " ")
+	if got != expected {
+		t.Fatalf("invalid apply command returned. Expected \n%s, Got \n%s", expected, got)
+	}
+}
+
 func TestHugeManifest(t *testing.T) {
 	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
 	cluster := setupTestCluster("10.240.16.0/20")
@@ -420,5 +448,55 @@ func TestHugeManifest(t *testing.T) {
 	}
 	if mi := r.setupManifestInteraction(context.Background(), log, addon, cluster); mi.err != nil {
 		t.Fatalf("failed to setup manifest interaction: %v", mi.err)
+	}
+}
+
+func TestController_getAddonCSICinderServiceSeed(t *testing.T) {
+	cluster := setupTestCluster("10.240.16.0/20")
+	clusterNS := "cluster-7xkdhv595z"
+	cluster.Status.NamespaceName = clusterNS
+	addon := setupTestAddon("kube-dns")
+
+	addonDir, err := ioutil.TempDir("/tmp", "kubermatic-tests-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(addonDir)
+
+	if err := os.Mkdir(path.Join(addonDir, addon.Spec.Name), 0777); err != nil {
+		t.Fatal(err)
+	}
+	if err := ioutil.WriteFile(path.Join(addonDir, addon.Spec.Name, "testManifest.yaml"), []byte(testManifestForSeed), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	log := kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar()
+	ctx := context.Background()
+
+	controller := &Reconciler{
+		kubernetesAddonDir: addonDir,
+		KubeconfigProvider: &fakeKubeconfigProvider{},
+	}
+	manifests, err := controller.getAddonManifests(ctx, log, addon, cluster, templateAddonForSeedCluster)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(manifests) != 1 {
+		t.Fatalf("invalid number of manifests returned. Expected 1, Got %d", len(manifests))
+	}
+	svc := v1.Service{}
+	if err := json.Unmarshal(manifests[0].Raw, &svc); err != nil {
+		t.Fatalf("failed to unmarshal raw service: %v", err)
+	}
+	if svc.Namespace != cluster.Status.NamespaceName || svc.Namespace != clusterNS {
+		t.Fatalf("svc.Namespace[%v] != cluster.Status.NamespaceName[%v] != clusterNS[%v]", svc.Namespace, cluster.Status.NamespaceName, clusterNS)
+	}
+
+	manifests, err = controller.getAddonManifests(ctx, log, addon, cluster, templateAddonForUserCluster)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(manifests) != 0 {
+		t.Fatalf("invalid number of manifests returned. Expected 0, Got %d", len(manifests))
 	}
 }
