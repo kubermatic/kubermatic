@@ -46,11 +46,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraint on the master cluster to the seed clusters.
-	controllerName       = "master_constraint_syncer_controller"
-	constraintAPIVersion = "constraints.gatekeeper.sh/v1beta1"
-	spec                 = "spec"
-	parametersField      = "parameters"
-	matchField           = "match"
+	controllerName = "master_constraint_syncer_controller"
 )
 
 type reconciler struct {
