@@ -57,7 +57,7 @@ func (p *packet) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update p
 	if cluster.Spec.Cloud.Packet.BillingCycle == "" {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Packet.BillingCycle = defaultBillingCycle
-		}, false)
+		})
 		if err != nil {
 			return nil, err
 		}

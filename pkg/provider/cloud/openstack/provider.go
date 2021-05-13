@@ -202,7 +202,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	if len(finalizers) > 0 {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Finalizers = append(cluster.Finalizers, finalizers...)
-		}, true)
+		}, provider.UpdaterOptionOptimisticLock)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add finalizers: %w", err)
 		}
@@ -216,7 +216,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
 			// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
-		}, false)
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to update cluster floating IP pool: %v", err)
 		}
@@ -229,7 +229,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.SecurityGroups = secGroupName
-		}, false)
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to add security group cleanup finalizer: %v", err)
 		}
@@ -242,7 +242,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 		}
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.Network = network.Name
-		}, false)
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to add network cleanup finalizer: %v", err)
 		}
@@ -261,7 +261,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.SubnetID = subnet.ID
-		}, false)
+		})
 		if err != nil {
 			return nil, fmt.Errorf("failed to add subnet cleanup finalizer: %v", err)
 		}
@@ -276,7 +276,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 			}
 			cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 				cluster.Spec.Cloud.Openstack.RouterID = router.ID
-			}, false)
+			})
 			if err != nil {
 				return nil, fmt.Errorf("failed to add router cleanup finalizer: %v", err)
 			}
@@ -284,7 +284,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 			// A router already exists -> Reuse it but don't clean it up
 			cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 				cluster.Spec.Cloud.Openstack.RouterID = routerID
-			}, false)
+			})
 			if err != nil {
 				return nil, fmt.Errorf("failed to add router ID to cluster: %v", err)
 			}
@@ -367,7 +367,7 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 			RouterCleanupFinalizer,
 			OldNetworkCleanupFinalizer,
 		)
-	}, true)
+	}, provider.UpdaterOptionOptimisticLock)
 	if err != nil {
 		return nil, err
 	}

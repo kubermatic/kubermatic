@@ -194,7 +194,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 
 	if _, err := r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 		c.Status.ExtendedHealth.CloudProviderInfrastructure = kubermaticv1.HealthStatusUp
-	}, false); err != nil {
+	}); err != nil {
 		return nil, fmt.Errorf("failed to set cluster health: %v", err)
 	}
 
@@ -223,7 +223,7 @@ func (r *Reconciler) migrateICMP(ctx context.Context, log *zap.SugaredLogger, cl
 	var err error
 	if cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 		c.Status.CloudMigrationRevision = icmpMigrationRevision
-	}, false); err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to update cluster %q after successfully executing its cloudProvider migration: %v",
 			cluster.Name, err)
 	}
@@ -241,7 +241,7 @@ func (r *Reconciler) migrateAWSMultiAZ(ctx context.Context, cluster *kubermaticv
 	var err error
 	if cluster, err = r.updateCluster(cluster.Name, func(c *kubermaticv1.Cluster) {
 		c.Status.CloudMigrationRevision = awsHarcodedAZMigrationRevision
-	}, false); err != nil {
+	}); err != nil {
 		return fmt.Errorf("failed to update cluster %q after successfully executing its cloudProvider migration: %v",
 			cluster.Name, err)
 	}
@@ -249,8 +249,7 @@ func (r *Reconciler) migrateAWSMultiAZ(ctx context.Context, cluster *kubermaticv
 	return nil
 }
 
-func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster), optimisticLock bool) (*kubermaticv1.Cluster, error) {
-	var mergeOpts []ctrlruntimeclient.MergeFromOption
+func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluster), options ...provider.UpdaterOption) (*kubermaticv1.Cluster, error) {
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(context.Background(), types.NamespacedName{Name: name}, cluster); err != nil {
 		return nil, err
@@ -260,10 +259,14 @@ func (r *Reconciler) updateCluster(name string, modify func(*kubermaticv1.Cluste
 	if reflect.DeepEqual(oldCluster, cluster) {
 		return cluster, nil
 	}
-	if optimisticLock {
-		mergeOpts = append(mergeOpts, ctrlruntimeclient.MergeFromWithOptimisticLock{})
+	opts := (&provider.UpdaterOptions{}).Apply(options...)
+	var patch ctrlruntimeclient.Patch
+	if opts.OptimisticLock {
+		patch = ctrlruntimeclient.MergeFromWithOptions(oldCluster, ctrlruntimeclient.MergeFromWithOptimisticLock{})
+	} else {
+		patch = ctrlruntimeclient.MergeFrom(oldCluster)
 	}
-	return cluster, r.Patch(context.Background(), cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, mergeOpts...))
+	return cluster, r.Patch(context.Background(), cluster, patch)
 }
 
 func (r *Reconciler) getGlobalSecretKeySelectorValue(configVar *providerconfig.GlobalSecretKeySelector, key string) (string, error) {
