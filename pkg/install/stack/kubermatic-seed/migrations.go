@@ -24,6 +24,7 @@ import (
 
 	"k8c.io/kubermatic/v2/pkg/cluster/client"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1helper "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/install/stack"
 
 	storagev1 "k8s.io/api/storage/v1"
@@ -49,6 +50,11 @@ func migrateOpenStackCSIDrivers(ctx context.Context, logger *logrus.Entry, kubeC
 	for _, cluster := range clusters.Items {
 		if cluster.Spec.Cloud.Openstack == nil {
 			// at this point we are only looking for openstack clusters
+			continue
+		}
+
+		if idx, _ := kubermaticv1helper.GetClusterCondition(&cluster, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess); idx != -1 {
+			// cluster succesefully reconciled addons, no need to migrate CSIDriver
 			continue
 		}
 
