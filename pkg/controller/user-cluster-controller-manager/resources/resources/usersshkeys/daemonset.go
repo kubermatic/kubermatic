@@ -68,6 +68,10 @@ func DaemonSetCreator(versions kubermatic.Versions) reconciling.NamedDaemonSetCr
 							Name:      "home",
 							MountPath: "/home",
 						},
+						{
+							Name: "ssh",
+							MountPath: "/etc/ssh",
+						},
 					},
 				},
 			}
@@ -98,6 +102,15 @@ func DaemonSetCreator(versions kubermatic.Versions) reconciling.NamedDaemonSetCr
 					VolumeSource: corev1.VolumeSource{
 						HostPath: &corev1.HostPathVolumeSource{
 							Path: "/home",
+							Type: &hostPathType,
+						},
+					},
+				},
+				{
+					Name: "ssh",
+					VolumeSource: corev1.VolumeSource{
+						HostPath: &corev1.HostPathVolumeSource{
+							Path: "/etc/ssh",
 							Type: &hostPathType,
 						},
 					},

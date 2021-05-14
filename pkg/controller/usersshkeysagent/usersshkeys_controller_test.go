@@ -74,7 +74,7 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 			name: "Test updating authorized_keys file from reconcile",
 			reconciler: Reconciler{
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				authorizedKeysPath: []string{
+				mountPaths: []string{
 					authorizedKeysPath,
 				},
 			},
@@ -84,7 +84,7 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 			name: "Test ssh dir file mode",
 			reconciler: Reconciler{
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				authorizedKeysPath: []string{
+				mountPaths: []string{
 					authorizedKeysPath,
 				},
 			},
@@ -123,7 +123,7 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 				t.Fatalf("failed to run reconcile: %v", err)
 			}
 
-			for _, path := range tc.reconciler.authorizedKeysPath {
+			for _, path := range tc.reconciler.mountPaths {
 				key, err := readAuthorizedKeysFile(path)
 				if err != nil {
 					t.Fatal(err)

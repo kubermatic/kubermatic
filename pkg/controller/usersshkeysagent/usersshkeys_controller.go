@@ -51,23 +51,23 @@ const (
 
 type Reconciler struct {
 	ctrlruntimeclient.Client
-	log                *zap.SugaredLogger
-	authorizedKeysPath []string
-	events             chan event.GenericEvent
-	secretName         string
+	log        *zap.SugaredLogger
+	mountPaths []string
+	events     chan event.GenericEvent
+	secretName string
 }
 
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
-	authorizedKeysPaths []string,
+	mountPaths []string,
 	secretName string) error {
 	reconciler := &Reconciler{
-		Client:             mgr.GetClient(),
-		log:                log,
-		authorizedKeysPath: authorizedKeysPaths,
-		events:             make(chan event.GenericEvent),
-		secretName:         secretName,
+		Client:     mgr.GetClient(),
+		log:        log,
+		mountPaths: mountPaths,
+		events:     make(chan event.GenericEvent),
+		secretName: secretName,
 	}
 
 	c, err := controller.New(operatorName, mgr, controller.Options{Reconciler: reconciler})
@@ -81,7 +81,7 @@ func Add(
 		return fmt.Errorf("failed to create watcher for secrets: %v", err)
 	}
 
-	if err := reconciler.watchAuthorizedKeys(context.TODO(), authorizedKeysPaths); err != nil {
+	if err := reconciler.watchAuthorizedKeys(context.TODO(), mountPaths); err != nil {
 		return fmt.Errorf("failed to watch authorized_keys files: %v", err)
 	}
 
@@ -111,7 +111,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to fetch user ssh keys: %v", err)
 	}
 
-	if err := r.updateAuthorizedKeys(secret.Data); err != nil {
+	if err := r.updateKeys(secret.Data); err != nil {
 		r.log.Errorw("Failed reconciling user ssh key secret", zap.Error(err))
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile user ssh keys: %v", err)
 	}
@@ -168,15 +168,17 @@ func (r *Reconciler) fetchUserSSHKeySecret(ctx context.Context, namespace string
 	return secret, nil
 }
 
-func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
+func (r *Reconciler) updateKeys(sshKeys map[string][]byte) error {
 	expectedUserSSHKeys, err := createBuffer(sshKeys)
 	if err != nil {
 		return fmt.Errorf("failed creating user ssh keys buffer: %v", err)
 	}
 
-	for _, path := range r.authorizedKeysPath {
-		if err := updateOwnAndPermissions(path); err != nil {
-			return fmt.Errorf("failed updating permissions %s: %v", path, err)
+	for _, path := range r.mountPaths {
+		if r.secretName == resources.UserSSHKeys {
+			if err := updateOwnAndPermissions(path); err != nil {
+				return fmt.Errorf("failed updating permissions %s: %v", path, err)
+			}
 		}
 
 		actualUserSSHKeys, err := ioutil.ReadFile(path)
