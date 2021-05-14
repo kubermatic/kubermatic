@@ -27,6 +27,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -38,7 +39,7 @@ import (
 )
 
 // CreateEndpoint defines an HTTP endpoint that creates a new project in the system
-func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, userProvider provider.UserProvider) endpoint.Endpoint {
+func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, settingsProvider provider.SettingsProvider, memberMapper provider.ProjectMemberMapper, memberProvider provider.ProjectMemberProvider, privilegedMemberProvider provider.PrivilegedProjectMemberProvider, userProvider provider.UserProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		projectRq, ok := request.(projectReq)
 		if !ok {
@@ -55,9 +56,6 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		}
 
 		user := ctx.Value(middleware.UserCRContextKey).(*kubermaticapiv1.User)
-		if kubernetes.IsProjectServiceAccount(user.Spec.Email) {
-			return nil, errors.New(http.StatusForbidden, "the Service Account is not allowed to create a project")
-		}
 
 		if err := checkProjectRestriction(user, settings); err != nil {
 			return nil, err
@@ -67,7 +65,12 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 			return nil, err
 		}
 
-		kubermaticProject, err := projectProvider.New(user, projectRq.Body.Name, projectRq.Body.Labels)
+		userEmail := user.Spec.Email
+		if kubernetes.IsProjectServiceAccount(userEmail) {
+			return createProjectByServiceAccount(userEmail, projectRq, memberMapper, userProvider, privilegedMemberProvider, projectProvider)
+		}
+
+		kubermaticProject, err := projectProvider.New([]*kubermaticapiv1.User{user}, projectRq.Body.Name, projectRq.Body.Labels)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -83,6 +86,58 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 
 		return common.ConvertInternalProjectToExternal(kubermaticProject, owners, 0), nil
 	}
+}
+
+func createProjectByServiceAccount(saEmail string, projectReq projectReq, memberMapper provider.ProjectMemberMapper, userProvider provider.UserProvider, memberProvider provider.PrivilegedProjectMemberProvider, projectProvider provider.ProjectProvider) (*apiv1.Project, error) {
+	var humanUserOwnerList []*kubermaticapiv1.User
+	bindings, err := memberMapper.MappingsFor(saEmail)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if len(bindings) == 0 {
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("no bindings for service account user %s", saEmail))
+	}
+	saBinding := bindings[0]
+	if !strings.HasPrefix(saBinding.Spec.Group, rbac.ProjectManagerGroupNamePrefix) {
+		return nil, errors.New(http.StatusForbidden, "the Service Account is not allowed to create a project")
+	}
+	if len(projectReq.Body.Users) == 0 {
+		return nil, errors.New(http.StatusBadRequest, "expected user emails")
+	}
+
+	for _, userEmail := range projectReq.Body.Users {
+		if kubernetes.IsProjectServiceAccount(userEmail) {
+			return nil, errors.New(http.StatusBadRequest, "user email list should contain only human users")
+		}
+		humanUserOwner, err := userProvider.UserByEmail(userEmail)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		humanUserOwnerList = append(humanUserOwnerList, humanUserOwner)
+	}
+
+	kubermaticProject, err := projectProvider.New(humanUserOwnerList, projectReq.Body.Name, projectReq.Body.Labels)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	generatedGroupName := rbac.GenerateActualGroupNameFor(kubermaticProject.Name, rbac.ProjectManagerGroupNamePrefix)
+
+	_, err = memberProvider.CreateUnsecuredForServiceAccount(kubermaticProject, saEmail, generatedGroupName)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	var owners []apiv1.User
+	for _, owner := range humanUserOwnerList {
+		owners = append(owners, apiv1.User{
+			ObjectMeta: apiv1.ObjectMeta{
+				Name: owner.Spec.Name,
+			},
+			Email: owner.Spec.Email,
+		})
+	}
+
+	return common.ConvertInternalProjectToExternal(kubermaticProject, owners, 0), nil
 }
 
 func checkProjectRestriction(user *kubermaticapiv1.User, settings *kubermaticapiv1.KubermaticSetting) error {
@@ -410,6 +465,8 @@ type projectReq struct {
 	Body struct {
 		Name   string            `json:"name"`
 		Labels map[string]string `json:"labels,omitempty"`
+		// human user email list for the service account in projectmanagers group
+		Users []string `json:"users,omitempty"`
 	}
 }
 

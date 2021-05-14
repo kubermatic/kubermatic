@@ -1037,6 +1037,14 @@
                 "name": {
                   "type": "string",
                   "x-go-name": "Name"
+                },
+                "users": {
+                  "description": "human user email list for the service account in projectmanagers group",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "x-go-name": "Users"
                 }
               }
             }
