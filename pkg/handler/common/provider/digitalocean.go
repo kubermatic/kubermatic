@@ -85,7 +85,10 @@ func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentV
 		return apiv1.DigitaloceanSizeList{}, fmt.Errorf("failed to list sizes: %v", err)
 	}
 
-	sizeList := apiv1.DigitaloceanSizeList{}
+	sizeList := apiv1.DigitaloceanSizeList{
+		Standard:  []apiv1.DigitaloceanSize{},
+		Optimized: []apiv1.DigitaloceanSize{},
+	}
 	// currently there are 3 types of sizes: 1) starting with s, 2) starting with c and 3) the old ones
 	// type 3 isn't listed in the pricing anymore and only will be available for legacy issues until July 1st, 2018
 	// therefore we might not want to log all cases that aren't starting with s or c
@@ -113,7 +116,10 @@ func DigitaloceanSize(ctx context.Context, quota kubermaticv1.MachineDeploymentV
 }
 
 func filterDigitalOceanByQuota(instances apiv1.DigitaloceanSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.DigitaloceanSizeList {
-	filteredRecords := apiv1.DigitaloceanSizeList{}
+	filteredRecords := apiv1.DigitaloceanSizeList{
+		Standard:  []apiv1.DigitaloceanSize{},
+		Optimized: []apiv1.DigitaloceanSize{},
+	}
 
 	for _, r := range instances.Optimized {
 		keep := true

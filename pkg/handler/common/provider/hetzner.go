@@ -108,7 +108,10 @@ func HetznerSize(ctx context.Context, quota kubermaticv1.MachineDeploymentVMReso
 }
 
 func filterHetznerByQuota(instances apiv1.HetznerSizeList, quota kubermaticv1.MachineDeploymentVMResourceQuota) apiv1.HetznerSizeList {
-	filteredRecords := apiv1.HetznerSizeList{}
+	filteredRecords := apiv1.HetznerSizeList{
+		Standard:  []apiv1.HetznerSize{},
+		Dedicated: []apiv1.HetznerSize{},
+	}
 
 	// Range over the records and apply all the filters to each record.
 	// If the record passes all the filters, add it to the final slice.
