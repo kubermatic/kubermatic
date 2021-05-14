@@ -20,12 +20,5 @@ build:
 	GOOS=$(GOOS) CGO_ENABLED=0 go build -o ./_build/user-ssh-keys-agent
 
 .PHONY: docker
-docker: build configure-buildx
+docker: build
 	docker buildx build --platform linux/arm64,linux/amd64 --push -t $(DOCKER_REPO)/user-ssh-keys-agent:$(TAG) .
-
-.PHONY: configure-buildx
-configure-buildx:
-	docker buildx create --use --name multiarch
-	docker buildx inspect multiarch --bootstrap
-	docker run --privileged --rm tonistiigi/binfmt --install all
-
