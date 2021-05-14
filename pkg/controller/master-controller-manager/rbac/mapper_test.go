@@ -49,10 +49,16 @@ func TestGenerateVerbsForNamedResources(t *testing.T) {
 			expectedVerbs: []string{"get"},
 			resourceKind:  "",
 		},
+		{
+			name:          "scenario 4: projectmanagers of a project can manage any named resource",
+			groupName:     "projectmanagers-projectID",
+			expectedVerbs: []string{"get", "update", "delete"},
+			resourceKind:  "",
+		},
 
 		// test for Project named resource
 		{
-			name:          "scenario 4: editors of a project cannot delete the project",
+			name:          "scenario 5: editors of a project cannot delete the project",
 			groupName:     "editors-projectID",
 			expectedVerbs: []string{"get", "update"},
 			resourceKind:  "Project",
@@ -60,33 +66,39 @@ func TestGenerateVerbsForNamedResources(t *testing.T) {
 
 		// tests for UserProjectBinding named resource
 		{
-			name:          "scenario 5: owners of a project can interact with UserProjectBinding named resource",
+			name:          "scenario 6: owners of a project can interact with UserProjectBinding named resource",
 			groupName:     "owners-projectID",
 			expectedVerbs: []string{"get", "update", "delete"},
 			resourceKind:  "UserProjectBinding",
 		},
 		{
-			name:          "scenario 6: editors of a project cannot interact with UserProjectBinding named resource",
+			name:          "scenario 7: editors of a project cannot interact with UserProjectBinding named resource",
 			groupName:     "editors-projectID",
 			expectedVerbs: []string{},
 			resourceKind:  "UserProjectBinding",
 		},
 		{
-			name:          "scenario 7: viewers of a project cannot interact with UserProjectBinding named resource",
+			name:          "scenario 8: viewers of a project cannot interact with UserProjectBinding named resource",
 			groupName:     "viewers-projectID",
 			expectedVerbs: []string{},
 			resourceKind:  "UserProjectBinding",
 		},
 		{
-			name:          "scenario 8: viewers of a project cannot interact with ServiceAccount (User) named resource",
+			name:          "scenario 9: viewers of a project cannot interact with ServiceAccount (User) named resource",
 			groupName:     "viewers-projectID",
 			expectedVerbs: []string{},
 			resourceKind:  "User",
 		},
 		{
-			name:          "scenario 8: editors of a project cannot interact with ServiceAccount (User) named resource",
+			name:          "scenario 10: editors of a project cannot interact with ServiceAccount (User) named resource",
 			groupName:     "editors-projectID",
 			expectedVerbs: []string{},
+			resourceKind:  "User",
+		},
+		{
+			name:          "scenario 11: projectmanagers of a project can interact with ServiceAccount (User) named resource",
+			groupName:     "projectmanagers-projectID",
+			expectedVerbs: []string{"get", "update", "delete"},
 			resourceKind:  "User",
 		},
 	}
@@ -171,6 +183,18 @@ func TestGenerateVerbsForResources(t *testing.T) {
 			groupName:     "viewers-projectID",
 			expectedVerbs: []string{},
 			resourceKind:  "User",
+		},
+		{
+			name:          "scenario 11: the projectmanagers can create ServiceAccounts (aka. User) resources",
+			groupName:     "projectmanagers-projectID",
+			expectedVerbs: []string{"create"},
+			resourceKind:  "User",
+		},
+		{
+			name:          "scenario 12: the projectmanagers can create UserProjectBinding resources",
+			groupName:     "projectmanagers-projectID",
+			expectedVerbs: []string{"create"},
+			resourceKind:  "UserProjectBinding",
 		},
 	}
 
