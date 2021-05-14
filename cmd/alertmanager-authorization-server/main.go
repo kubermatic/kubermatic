@@ -41,7 +41,7 @@ import (
 
 func (a *authorizationServer) parse() {
 	flag.StringVar(&a.listenAddress, "address", ":50051", "the address to listen on")
-	flag.StringVar(&a.authHeaderName, "auth-header-name", "X-Forwarded-Email", "alertmanager authorization server http Header that will contain the email")
+	flag.StringVar(&a.authHeaderName, "auth-header-name", "X-Forwarded-Email", "alertmanager authorization server http header that will contain the email")
 	flag.StringVar(&a.orgIDHeaderName, "org-id-header-name", "X-Scope-OrgID", "the header that alertmanager uses for multi-tenancy support")
 	flag.Parse()
 }
