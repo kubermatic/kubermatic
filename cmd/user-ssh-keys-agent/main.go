@@ -69,7 +69,7 @@ func main() {
 		log.Fatalw("Failed registering user ssh key controller", zap.Error(err))
 	}
 
-	vaultCAMountPath := []string{fmt.Sprintf("/etc/ssh/%s.pem", resources.VaultCAKeyName)}
+	vaultCAMountPath := []string{fmt.Sprintf("/etc/ssh/%s", resources.VaultCAKeyName)}
 	if err := usersshkeys.Add(mgr, log, vaultCAMountPath, resources.VaultSignedCA); err != nil {
 		log.Fatalw("Failed registering user ssh key controller", zap.Error(err))
 	}

@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"syscall"
@@ -30,8 +31,6 @@ import (
 	"gopkg.in/fsnotify.v1"
 
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/resources"
-
 	corev1 "k8s.io/api/core/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -146,6 +145,9 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 	}()
 
 	for _, path := range paths {
+		if err := createFileIfNotExists(path); err != nil {
+			return fmt.Errorf("failed creating non-existent file for watcher: %v", err)
+		}
 		if err := watcher.Add(path); err != nil {
 			return fmt.Errorf("failed adding a new path to the files watcher: %v", err)
 		}
@@ -175,10 +177,8 @@ func (r *Reconciler) updateKeys(sshKeys map[string][]byte) error {
 	}
 
 	for _, path := range r.mountPaths {
-		if r.secretName == resources.UserSSHKeys {
-			if err := updateOwnAndPermissions(path); err != nil {
-				return fmt.Errorf("failed updating permissions %s: %v", path, err)
-			}
+		if err := updateOwnAndPermissions(path); err != nil {
+			return fmt.Errorf("failed updating permissions %s: %v", path, err)
 		}
 
 		actualUserSSHKeys, err := ioutil.ReadFile(path)
@@ -220,31 +220,40 @@ func createBuffer(data map[string][]byte) (*bytes.Buffer, error) {
 	return buffer, nil
 }
 
+func ChownR(path string, uid, gid int) error {
+	return filepath.Walk(path, func(name string, info os.FileInfo, err error) error {
+		if err == nil {
+			err = os.Chown(name, uid, gid)
+		}
+		return err
+	})
+}
+
+func createFileIfNotExists(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		_, err := os.Create(path)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func updateOwnAndPermissions(path string) error {
-	sshPath := strings.TrimSuffix(path, "/authorized_keys")
-	if err := os.Chmod(sshPath, os.FileMode(0700)); err != nil {
-		return fmt.Errorf("failed to change permission on file: %v", err)
-	}
+	paths := strings.Split(path, "/")
 
-	if err := os.Chmod(path, os.FileMode(0600)); err != nil {
-		return fmt.Errorf("failed to change permission on file: %v", err)
-	}
-
-	userHome := strings.TrimSuffix(sshPath, "/.ssh")
-	fileInfo, err := os.Stat(userHome)
+	fileDir := strings.Join(paths[:len(paths)-1], "/")
+	fileInfo, err := os.Stat(fileDir)
 	if err != nil {
-		return fmt.Errorf("failed describing the authorized_keys file in path %s: %v", userHome, err)
+		return fmt.Errorf("failed describing the directory in path %s: %v", fileDir, err)
 	}
 
 	uid := fileInfo.Sys().(*syscall.Stat_t).Uid
 	gid := fileInfo.Sys().(*syscall.Stat_t).Gid
 
-	if err := os.Chown(path, int(uid), int(gid)); err != nil {
+	if err := ChownR(path, int(uid), int(gid)); err != nil {
 		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
-	}
-
-	if err := os.Chown(sshPath, int(uid), int(gid)); err != nil {
-		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", sshPath, err)
 	}
 
 	return nil
