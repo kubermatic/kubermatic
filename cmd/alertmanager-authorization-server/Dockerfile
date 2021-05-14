@@ -15,4 +15,4 @@
 FROM alpine:3.13
 LABEL maintainer="support@kubermatic.com"
 
-COPY ./_build/alertmanager-authorization-proxy /
+COPY ./_build/alertmanager-authorization-server /

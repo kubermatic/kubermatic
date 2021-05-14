@@ -41,7 +41,7 @@ import (
 
 func (a *authorizationServer) parse() {
 	flag.StringVar(&a.listenAddress, "address", ":50051", "the address to listen on")
-	flag.StringVar(&a.authHeaderName, "auth-header-name", "X-Forwarded-Email", "alertmanager authorization proxy http Header that will contain the email")
+	flag.StringVar(&a.authHeaderName, "auth-header-name", "X-Forwarded-Email", "alertmanager authorization server http Header that will contain the email")
 	flag.StringVar(&a.orgIDHeaderName, "org-id-header-name", "X-Scope-OrgID", "the header that alertmanager uses for multi-tenancy support")
 	flag.Parse()
 }
@@ -165,14 +165,14 @@ func main() {
 
 	lis, err := net.Listen("tcp", s.listenAddress)
 	if err != nil {
-		log.Fatalw("alertmanager authorization proxy failed to listen", zap.Error(err))
+		log.Fatalw("alertmanager authorization server failed to listen", zap.Error(err))
 	}
 
 	grpcServer := grpc.NewServer()
 	authv3.RegisterAuthorizationServer(grpcServer, &s)
 
 	if err = grpcServer.Serve(lis); err != nil {
-		log.Fatalw("alertmanager authorization proxy failed to serve requests", zap.Error(err))
+		log.Fatalw("alertmanager authorization server failed to serve requests", zap.Error(err))
 	}
 }
 
