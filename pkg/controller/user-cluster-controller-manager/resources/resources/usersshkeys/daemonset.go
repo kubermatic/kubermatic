@@ -69,7 +69,7 @@ func DaemonSetCreator(versions kubermatic.Versions) reconciling.NamedDaemonSetCr
 							MountPath: "/home",
 						},
 						{
-							Name: "ssh",
+							Name:      "ssh",
 							MountPath: "/etc/ssh",
 						},
 					},
