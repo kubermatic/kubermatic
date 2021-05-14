@@ -5,6 +5,7 @@ type TemplateData struct {
 	Cluster        ClusterData
 	Credentials    Credentials
 	Variables      map[string]interface{}
+	AddonCluster   string
 }
 
 // ClusterData contains data related to the user cluster
