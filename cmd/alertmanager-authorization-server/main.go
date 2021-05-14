@@ -73,7 +73,7 @@ func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 		}, nil
 	}
 
-	// parse projectID from tbe original request path
+	// parse projectID from the original request path
 	projectID := ""
 	arr := strings.Split(req.Attributes.Request.Http.Path, "/")
 	if len(arr) > 1 {
