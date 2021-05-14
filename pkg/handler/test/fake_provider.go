@@ -58,7 +58,7 @@ func NewFakePrivilegedProjectProvider() *FakePrivilegedProjectProvider {
 	return &FakePrivilegedProjectProvider{}
 }
 
-func (f *FakeProjectProvider) New(user *kubermaticapiv1.User, name string, labels map[string]string) (*kubermaticapiv1.Project, error) {
+func (f *FakeProjectProvider) New(user []*kubermaticapiv1.User, name string, labels map[string]string) (*kubermaticapiv1.Project, error) {
 	return nil, errors.New("not implemented")
 }
 

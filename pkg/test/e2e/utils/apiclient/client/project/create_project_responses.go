@@ -181,6 +181,9 @@ type CreateProjectBody struct {
 
 	// name
 	Name string `json:"name,omitempty"`
+
+	// human user email list for the service account in projectmanagers group
+	Users []string `json:"users"`
 }
 
 // Validate validates this create project body
