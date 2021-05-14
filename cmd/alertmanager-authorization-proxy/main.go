@@ -165,14 +165,14 @@ func main() {
 
 	lis, err := net.Listen("tcp", s.listenAddress)
 	if err != nil {
-		log.Errorw("alertmanager authorization proxy failed to listen", zap.Error(err))
+		log.Fatalw("alertmanager authorization proxy failed to listen", zap.Error(err))
 	}
 
 	grpcServer := grpc.NewServer()
 	authv3.RegisterAuthorizationServer(grpcServer, &s)
 
 	if err = grpcServer.Serve(lis); err != nil {
-		log.Errorw("alertmanager authorization proxy failed to serve requests", zap.Error(err))
+		log.Fatalw("alertmanager authorization proxy failed to serve requests", zap.Error(err))
 	}
 }
 
