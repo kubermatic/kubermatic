@@ -21,4 +21,4 @@ build:
 
 .PHONY: docker
 docker: build
-	docker buildx build --platform linux/arm64,linux/amd64 --push -t $(DOCKER_REPO)/user-ssh-keys-agent:$(TAG) .
+	docker build -t $(DOCKER_REPO)/user-ssh-keys-agent:$(TAG) .
