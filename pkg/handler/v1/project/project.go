@@ -103,7 +103,7 @@ func createProjectByServiceAccount(saEmail string, projectReq projectReq, member
 		return nil, errors.New(http.StatusForbidden, "the Service Account is not allowed to create a project")
 	}
 	if len(projectReq.Body.Users) == 0 {
-		return nil, errors.New(http.StatusBadRequest, "expected user emails")
+		return nil, errors.New(http.StatusBadRequest, "owner user email list required for project creation by Service Account")
 	}
 
 	for _, userEmail := range projectReq.Body.Users {
