@@ -209,6 +209,21 @@ func (p *ProjectMemberProvider) CreateUnsecured(project *kubermaticapiv1.Project
 	return binding, nil
 }
 
+// CreateUnsecuredForServiceAccount creates a binding for the given service account and the given project
+// This function is unsafe in a sense that it uses privileged account to create the resource
+func (p *ProjectMemberProvider) CreateUnsecuredForServiceAccount(project *kubermaticapiv1.Project, memberEmail, group string) (*kubermaticapiv1.UserProjectBinding, error) {
+	if p.isServiceAccountFunc(memberEmail) && !strings.HasPrefix(group, rbac.ProjectManagerGroupNamePrefix) {
+		return nil, kerrors.NewBadRequest(fmt.Sprintf("cannot add the given member %s to the project %s because the email indicates a service account", memberEmail, project.Spec.Name))
+	}
+
+	binding := genBinding(project, memberEmail, group)
+
+	if err := p.clientPrivileged.Create(context.Background(), binding); err != nil {
+		return nil, err
+	}
+	return binding, nil
+}
+
 // DeleteUnsecured deletes the given binding
 // Note:
 // Use List to get binding for the specific member of the given project
