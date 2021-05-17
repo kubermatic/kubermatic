@@ -54,15 +54,6 @@ if [ "$KUBERMATIC_EDITION" != "ce" ]; then
   REPOSUFFIX="-$KUBERMATIC_EDITION"
 fi
 
-# configure buildx
-cleanup() {
-  docker buildx rm multiarch
-}
-docker buildx create --use --name multiarch
-trap "cleanup" EXIT SIGINT
-docker buildx inspect multiarch --bootstrap
-docker run --privileged --rm tonistiigi/binfmt --install all
-
 # build Docker images
 PRIMARY_TAG="${1}"
 make docker-build TAGS="${PRIMARY_TAG}"
@@ -88,7 +79,7 @@ for TAG in "$@"; do
   docker tag "${DOCKER_REPO}/nodeport-proxy:${PRIMARY_TAG}" "${DOCKER_REPO}/nodeport-proxy:${TAG}"
   docker tag "${DOCKER_REPO}/kubeletdnat-controller:${PRIMARY_TAG}" "${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
   docker tag "${DOCKER_REPO}/addons:${PRIMARY_TAG}" "${DOCKER_REPO}/addons:${TAG}"
-  docker buildx imagetools create -t "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}"
+  docker tag "${DOCKER_REPO}/user-ssh-keys-agent:${PRIMARY_TAG}" "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
   docker tag "${DOCKER_REPO}/etcd-launcher:${PRIMARY_TAG}" "${DOCKER_REPO}/etcd-launcher:${TAG}"
 
   echodate "Pushing images"
@@ -96,6 +87,7 @@ for TAG in "$@"; do
   docker push "${DOCKER_REPO}/nodeport-proxy:${TAG}"
   docker push "${DOCKER_REPO}/kubeletdnat-controller:${TAG}"
   docker push "${DOCKER_REPO}/addons:${TAG}"
+  docker push "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}"
   docker push "${DOCKER_REPO}/etcd-launcher:${TAG}"
 
   if [ "$KUBERMATIC_EDITION" == "ee" ]; then
