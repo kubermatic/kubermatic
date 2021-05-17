@@ -108,7 +108,7 @@ func (c *projectController) ensureProjectIsInActivePhase(ctx context.Context, pr
 
 // ensureProjectOwner makes sure that the owner of the project is assign to "owners" group
 func (c *projectController) ensureProjectOwner(ctx context.Context, project *kubermaticv1.Project) error {
-	var sharedOwnerPtr *kubermaticv1.User
+	var sharedOwnerPtrList []*kubermaticv1.User
 	for _, ref := range project.OwnerReferences {
 		if ref.Kind == kubermaticv1.UserKindName {
 			var sharedOwner kubermaticv1.User
@@ -116,26 +116,45 @@ func (c *projectController) ensureProjectOwner(ctx context.Context, project *kub
 			if err := c.client.Get(ctx, key, &sharedOwner); err != nil {
 				return err
 			}
-			sharedOwnerPtr = &sharedOwner
+			sharedOwnerPtrList = append(sharedOwnerPtrList, sharedOwner.DeepCopy())
 		}
 	}
-	if sharedOwnerPtr == nil {
+	if len(sharedOwnerPtrList) == 0 {
 		return fmt.Errorf("the given project %s doesn't have associated owner/user", project.Name)
 	}
-	owner := sharedOwnerPtr.DeepCopy()
 
 	var bindings kubermaticv1.UserProjectBindingList
 	if err := c.client.List(ctx, &bindings); err != nil {
 		return err
 	}
 
-	for _, binding := range bindings.Items {
-		if binding.Spec.ProjectID == project.Name && strings.EqualFold(binding.Spec.UserEmail, owner.Spec.Email) &&
-			binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
-			return nil
+	projectOwnerMap := map[string]bool{}
+
+	for _, owner := range sharedOwnerPtrList {
+		for _, binding := range bindings.Items {
+			if binding.Spec.ProjectID == project.Name && strings.EqualFold(binding.Spec.UserEmail, owner.Spec.Email) &&
+				binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
+				projectOwnerMap[owner.Spec.Email] = true
+			}
+
 		}
 	}
-	ownerBinding := &kubermaticv1.UserProjectBinding{
+
+	for _, owner := range sharedOwnerPtrList {
+		// create a new binding for the owner when doesn't exist
+		if !projectOwnerMap[owner.Spec.Email] {
+			ownerBinding := genOwnerBinding(owner.Spec.Email, project)
+			if err := c.client.Create(ctx, ownerBinding); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func genOwnerBinding(ownerEmail string, project *kubermaticv1.Project) *kubermaticv1.UserProjectBinding {
+	return &kubermaticv1.UserProjectBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			OwnerReferences: []metav1.OwnerReference{
 				{
@@ -149,13 +168,11 @@ func (c *projectController) ensureProjectOwner(ctx context.Context, project *kub
 			Finalizers: []string{CleanupFinalizerName},
 		},
 		Spec: kubermaticv1.UserProjectBindingSpec{
-			UserEmail: owner.Spec.Email,
+			UserEmail: ownerEmail,
 			ProjectID: project.Name,
 			Group:     GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix),
 		},
 	}
-
-	return c.client.Create(ctx, ownerBinding)
 }
 
 func (c *projectController) ensureClusterRBACRoleForResources(ctx context.Context) error {
