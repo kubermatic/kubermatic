@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"log"
 	"net"
 	"strings"
 
@@ -42,13 +41,6 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (a *authorizationServer) parse() {
-	flag.StringVar(&a.listenAddress, "address", ":50051", "the address to listen on")
-	flag.StringVar(&a.authHeaderName, "auth-header-name", "x-forwarded-email", "alertmanager authorization server http header that will contain the email")
-	flag.StringVar(&a.orgIDHeaderName, "org-id-header-name", "X-Scope-OrgID", "the header that alertmanager uses for multi-tenancy support")
-	flag.Parse()
-}
-
 type authorizationServer struct {
 	listenAddress   string
 	authHeaderName  string
@@ -59,17 +51,16 @@ type authorizationServer struct {
 }
 
 func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckRequest) (*authv3.CheckResponse, error) {
-	log.Println(">>> Authorization Check")
+	a.log.Debug(">>> Authorization Check")
 
 	b, err := json.MarshalIndent(req.Attributes.Request.Http.Headers, "", "  ")
 	if err == nil {
-		log.Println("Inbound Headers: ")
-		log.Println(string(b))
+		a.log.Debug("Inbound Headers: ")
+		a.log.Debug(string(b))
 	}
 	userEmail, ok := req.Attributes.Request.Http.Headers[a.authHeaderName]
 	if !ok {
 		a.log.Debug("missing user id passed from OAuth proxy")
-		log.Println("missing user id passed from OAuth proxy")
 		return &authv3.CheckResponse{
 			Status: &status.Status{
 				Code: int32(code.Code_UNAUTHENTICATED),
@@ -92,7 +83,6 @@ func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 	}
 	if clusterID == "" {
 		a.log.Debug("cluster ID cannot be parsed")
-		log.Println("cluster ID cannot be parsed")
 		return &authv3.CheckResponse{
 			Status: &status.Status{
 				Code: int32(code.Code_NOT_FOUND),
@@ -176,25 +166,29 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 
 	for _, member := range allMembers.Items {
 		if strings.EqualFold(member.Spec.UserEmail, userEmail) && member.Spec.ProjectID == projectID {
-			a.log.Debugf("user %q authorized for project: %s\n", userEmail, projectID)
-			log.Printf("user %q is authorized for project: %s, cluster %s\n", userEmail, projectID, clusterID)
+			a.log.Debugf("user %q authorized for project: %s", userEmail, projectID)
 			return true, nil
 		}
 	}
-	a.log.Debugf("user %q is not authorized for project: %s, cluster %s\n", userEmail, projectID, clusterID)
-	log.Printf("user %q is NOT authorized for project: %s, cluster %s\n", userEmail, projectID, clusterID)
+	a.log.Debugf("user %q is NOT authorized for project: %s, cluster %s", userEmail, projectID, clusterID)
 	return false, nil
 }
 
-func createLogger() *zap.SugaredLogger {
-	logOpts := kubermaticlog.NewDefaultOptions()
-	logOpts.AddFlags(flag.CommandLine)
-	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
-	return rawLog.Sugar()
+func (a *authorizationServer) addFlags() {
+	flag.StringVar(&a.listenAddress, "address", ":50051", "the address to listen on")
+	flag.StringVar(&a.authHeaderName, "auth-header-name", "x-forwarded-email", "alertmanager authorization server http header that will contain the email")
+	flag.StringVar(&a.orgIDHeaderName, "org-id-header-name", "X-Scope-OrgID", "the header that alertmanager uses for multi-tenancy support")
 }
 
 func main() {
-	log := createLogger()
+	logOpts := kubermaticlog.NewDefaultOptions()
+	logOpts.AddFlags(flag.CommandLine)
+	s := authorizationServer{}
+	s.addFlags()
+	flag.Parse()
+
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
+	log := rawLog.Sugar()
 	cfg, err := ctrlruntime.GetConfig()
 	if err != nil {
 		log.Fatalw("failed to get kubeconfig", zap.Error(err))
@@ -203,8 +197,6 @@ func main() {
 	if err != nil {
 		log.Panicw("failed to get client", zap.Error(err))
 	}
-	s := authorizationServer{}
-	s.parse()
 	s.client = client
 	s.log = log
 
@@ -212,10 +204,8 @@ func main() {
 	if err != nil {
 		log.Fatalw("alertmanager authorization server failed to listen", zap.Error(err))
 	}
-
 	grpcServer := grpc.NewServer()
 	authv3.RegisterAuthorizationServer(grpcServer, &s)
-
 	if err = grpcServer.Serve(lis); err != nil {
 		log.Fatalw("alertmanager authorization server failed to serve requests", zap.Error(err))
 	}
