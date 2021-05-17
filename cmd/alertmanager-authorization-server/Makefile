@@ -28,7 +28,7 @@ clean:
 	rm -rf ./_build
 
 .PHONY: docker-build
-docker-build:
+docker-build: clean
 	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o ./_build/alertmanager-authorization-server k8c.io/kubermatic/v2/cmd/alertmanager-authorization-server
 	docker build -t $(DOCKER_REPO)/alertmanager-authorization-server:$(TAG) .
 
