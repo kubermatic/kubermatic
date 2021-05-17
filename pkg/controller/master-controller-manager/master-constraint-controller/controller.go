@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package masterconstraintsyncercontroller
+package masterconstraintsynchronizer
 
 import (
 	"context"
@@ -47,7 +47,7 @@ import (
 
 const (
 	// This controller syncs the kubermatic constraint on the master cluster to the seed clusters.
-	controllerName = "master_constraint_syncer_controller"
+	controllerName = "master_constraint_syncing_controller"
 )
 
 type reconciler struct {
@@ -98,7 +98,7 @@ func Add(ctx context.Context,
 	return nil
 }
 
-// Reconcile reconciles the kubermatic constraint on the master cluster to all seed clusters
+// Reconcile reconciles the kubermatic constraints in the master cluster and syncs them to all seeds
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("resource", request)
 	log.Debug("Reconciling")

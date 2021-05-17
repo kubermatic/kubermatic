@@ -19,4 +19,4 @@ Package masterconstraintsyncercontroller contains a controller that is responsib
 kubermatic constraint are synced from master to the seed clusters.
 
 */
-package masterconstraintsyncercontroller
+package masterconstraintsynchronizer
