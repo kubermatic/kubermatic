@@ -18,8 +18,10 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 
@@ -27,21 +29,22 @@ import (
 	"google.golang.org/genproto/googleapis/rpc/code"
 	"google.golang.org/genproto/googleapis/rpc/status"
 	"google.golang.org/grpc"
+	"k8s.io/apimachinery/pkg/types"
+	ctrlruntime "sigs.k8s.io/controller-runtime"
 
 	coreV3 "github.com/envoyproxy/go-control-plane/envoy/config/core/v3"
 	authv3 "github.com/envoyproxy/go-control-plane/envoy/service/auth/v3"
 	typeV3 "github.com/envoyproxy/go-control-plane/envoy/type/v3"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
-	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func (a *authorizationServer) parse() {
 	flag.StringVar(&a.listenAddress, "address", ":50051", "the address to listen on")
-	flag.StringVar(&a.authHeaderName, "auth-header-name", "X-Forwarded-Email", "alertmanager authorization server http header that will contain the email")
+	flag.StringVar(&a.authHeaderName, "auth-header-name", "x-forwarded-email", "alertmanager authorization server http header that will contain the email")
 	flag.StringVar(&a.orgIDHeaderName, "org-id-header-name", "X-Scope-OrgID", "the header that alertmanager uses for multi-tenancy support")
 	flag.Parse()
 }
@@ -56,9 +59,17 @@ type authorizationServer struct {
 }
 
 func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckRequest) (*authv3.CheckResponse, error) {
+	log.Println(">>> Authorization Check")
+
+	b, err := json.MarshalIndent(req.Attributes.Request.Http.Headers, "", "  ")
+	if err == nil {
+		log.Println("Inbound Headers: ")
+		log.Println(string(b))
+	}
 	userEmail, ok := req.Attributes.Request.Http.Headers[a.authHeaderName]
 	if !ok {
 		a.log.Debug("missing user id passed from OAuth proxy")
+		log.Println("missing user id passed from OAuth proxy")
 		return &authv3.CheckResponse{
 			Status: &status.Status{
 				Code: int32(code.Code_UNAUTHENTICATED),
@@ -73,14 +84,15 @@ func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 		}, nil
 	}
 
-	// parse projectID from the original request path
-	projectID := ""
+	// parse cluster ID from the original request path
+	clusterID := ""
 	arr := strings.Split(req.Attributes.Request.Http.Path, "/")
 	if len(arr) > 1 {
-		projectID = arr[1]
+		clusterID = arr[1]
 	}
-	if projectID == "" {
-		a.log.Debug("ordID cannot be parsed")
+	if clusterID == "" {
+		a.log.Debug("cluster ID cannot be parsed")
+		log.Println("cluster ID cannot be parsed")
 		return &authv3.CheckResponse{
 			Status: &status.Status{
 				Code: int32(code.Code_NOT_FOUND),
@@ -95,8 +107,8 @@ func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 		}, nil
 	}
 
-	allMembers := &kubermaticapiv1.UserProjectBindingList{}
-	if err := a.client.List(ctx, allMembers); err != nil {
+	authorized, err := a.authorize(ctx, userEmail, clusterID)
+	if err != nil {
 		return &authv3.CheckResponse{
 			Status: &status.Status{
 				Code: int32(code.Code_INTERNAL),
@@ -108,30 +120,26 @@ func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 					},
 				},
 			},
-		}, fmt.Errorf("listing userProjectBinding: %w", err)
+		}, err
 	}
-
-	for _, member := range allMembers.Items {
-		if strings.EqualFold(member.Spec.UserEmail, userEmail) && member.Spec.ProjectID == projectID {
-			a.log.Debugf("user %q authorized for project: %s\n", userEmail, projectID)
-			return &authv3.CheckResponse{
-				Status: &status.Status{
-					Code: int32(code.Code_OK),
-				},
-				HttpResponse: &authv3.CheckResponse_OkResponse{
-					OkResponse: &authv3.OkHttpResponse{
-						Headers: []*coreV3.HeaderValueOption{
-							{
-								Header: &coreV3.HeaderValue{
-									Key:   a.orgIDHeaderName,
-									Value: projectID,
-								},
+	if authorized {
+		return &authv3.CheckResponse{
+			Status: &status.Status{
+				Code: int32(code.Code_OK),
+			},
+			HttpResponse: &authv3.CheckResponse_OkResponse{
+				OkResponse: &authv3.OkHttpResponse{
+					Headers: []*coreV3.HeaderValueOption{
+						{
+							Header: &coreV3.HeaderValue{
+								Key:   a.orgIDHeaderName,
+								Value: clusterID,
 							},
 						},
 					},
 				},
-			}, nil
-		}
+			},
+		}, nil
 	}
 
 	return &authv3.CheckResponse{
@@ -146,6 +154,43 @@ func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 			},
 		},
 	}, nil
+}
+
+func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterID string) (authorized bool, err error) {
+	cluster := &kubermaticv1.Cluster{}
+	if err := a.client.Get(ctx, types.NamespacedName{
+		Name: clusterID,
+	}, cluster); err != nil {
+		return false, fmt.Errorf("getting cluster: %w", err)
+	}
+
+	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
+	if len(projectID) == 0 {
+		return false, fmt.Errorf("cluster %s is missing '%s' label", cluster.Name, kubermaticv1.ProjectIDLabelKey)
+	}
+
+	allMembers := &kubermaticv1.UserProjectBindingList{}
+	if err := a.client.List(ctx, allMembers); err != nil {
+		return false, fmt.Errorf("listing userProjectBinding: %w", err)
+	}
+
+	for _, member := range allMembers.Items {
+		if strings.EqualFold(member.Spec.UserEmail, userEmail) && member.Spec.ProjectID == projectID {
+			a.log.Debugf("user %q authorized for project: %s\n", userEmail, projectID)
+			log.Printf("user %q is authorized for project: %s, cluster %s\n", userEmail, projectID, clusterID)
+			return true, nil
+		}
+	}
+	a.log.Debugf("user %q is not authorized for project: %s, cluster %s\n", userEmail, projectID, clusterID)
+	log.Printf("user %q is NOT authorized for project: %s, cluster %s\n", userEmail, projectID, clusterID)
+	return false, nil
+}
+
+func createLogger() *zap.SugaredLogger {
+	logOpts := kubermaticlog.NewDefaultOptions()
+	logOpts.AddFlags(flag.CommandLine)
+	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
+	return rawLog.Sugar()
 }
 
 func main() {
@@ -174,10 +219,4 @@ func main() {
 	if err = grpcServer.Serve(lis); err != nil {
 		log.Fatalw("alertmanager authorization server failed to serve requests", zap.Error(err))
 	}
-}
-
-func createLogger() *zap.SugaredLogger {
-	logOpts := kubermaticlog.NewDefaultOptions()
-	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
-	return rawLog.Sugar()
 }
