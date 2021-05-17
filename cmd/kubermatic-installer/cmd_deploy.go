@@ -91,6 +91,10 @@ var (
 		Name:  "migrate-cert-manager",
 		Usage: "enable the migration for cert-manager CRDs from v1alpha2 to v1",
 	}
+	migrateOpenstackCSIdriversFlag = cli.BoolFlag{
+		Name:  "migrate-openstack-csidrivers",
+		Usage: "(kubermatic-seed STACK only) enable the data migration of CSIDriver of openstack user-clusters",
+	}
 )
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
@@ -109,6 +113,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			deployHelmBinaryFlag,
 			deployStorageClassFlag,
 			enableCertManagerV2MigrationFlag,
+			migrateOpenstackCSIdriversFlag,
 		},
 	}
 }
@@ -151,16 +156,12 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 
 		var kubermaticStack stack.Stack
 		stackName := ctx.Args().First()
+
 		switch stackName {
 		case "kubermatic-seed":
 			kubermaticStack = kubermaticseed.NewStack()
-
-		case "kubermatic-master":
-			fallthrough
-
-		case "":
+		case "kubermatic-master", "":
 			kubermaticStack = kubermaticmaster.NewStack()
-
 		default:
 			return fmt.Errorf("unknown stack %q specified", stackName)
 		}
@@ -253,16 +254,17 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 		}
 
 		opt := stack.DeployOptions{
-			HelmClient:                   helmClient,
-			KubeClient:                   kubeClient,
-			HelmValues:                   helmValues,
-			KubermaticConfiguration:      kubermaticConfig,
-			RawKubermaticConfiguration:   rawKubermaticConfig,
-			Logger:                       subLogger,
-			StorageClassProvider:         ctx.String(deployStorageClassFlag.Name),
-			ForceHelmReleaseUpgrade:      ctx.Bool(deployForceFlag.Name),
-			ChartsDirectory:              ctx.GlobalString(chartsDirectoryFlag.Name),
-			EnableCertManagerV2Migration: ctx.Bool(enableCertManagerV2MigrationFlag.Name),
+			HelmClient:                        helmClient,
+			KubeClient:                        kubeClient,
+			HelmValues:                        helmValues,
+			KubermaticConfiguration:           kubermaticConfig,
+			RawKubermaticConfiguration:        rawKubermaticConfig,
+			Logger:                            subLogger,
+			StorageClassProvider:              ctx.String(deployStorageClassFlag.Name),
+			ForceHelmReleaseUpgrade:           ctx.Bool(deployForceFlag.Name),
+			ChartsDirectory:                   ctx.GlobalString(chartsDirectoryFlag.Name),
+			EnableCertManagerV2Migration:      ctx.Bool(enableCertManagerV2MigrationFlag.Name),
+			EnableOpenstackCSIDriverMigration: ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
 		}
 
 		logger.Infof("🧩 Deploying %s…", kubermaticStack.Name())
