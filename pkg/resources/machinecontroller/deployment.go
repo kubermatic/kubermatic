@@ -66,6 +66,8 @@ type machinecontrollerData interface {
 	NodeLocalDNSCacheEnabled() bool
 	Seed() *kubermaticv1.Seed
 	GetCSIMigrationFeatureGates() []string
+	MachineControllerImageTag() string
+	MachineControllerImageRepository() string
 }
 
 // DeploymentCreator returns the function to create and update the machine controller deployment
@@ -133,10 +135,20 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 			}
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
+
+			repository := data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller"
+			if r := data.MachineControllerImageRepository(); r != "" {
+				repository = r
+			}
+			tag := Tag
+			if t := data.MachineControllerImageTag(); t != "" {
+				tag = t
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
-					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + Tag,
+					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
 					Args:    getFlags(clusterDNSIP, data.DC().Node),
 					Env: append(envVars, corev1.EnvVar{

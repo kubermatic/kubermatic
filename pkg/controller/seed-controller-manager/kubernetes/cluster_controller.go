@@ -95,6 +95,8 @@ type Reconciler struct {
 	kubermaticImage                                  string
 	etcdLauncherImage                                string
 	dnatControllerImage                              string
+	machineControllerImageTag                        string
+	machineControllerImageRepository                 string
 	concurrentClusterUpdates                         int
 	etcdBackupRestoreController                      bool
 	backupSchedule                                   time.Duration
@@ -139,6 +141,8 @@ func Add(
 	kubermaticImage string,
 	etcdLauncherImage string,
 	dnatControllerImage string,
+	machineControllerImageTag string,
+	machineControllerImageRepository string,
 
 	tunnelingAgentIP string,
 	caBundle *certificates.CABundle,
@@ -169,6 +173,8 @@ func Add(
 		kubermaticImage:                                  kubermaticImage,
 		etcdLauncherImage:                                etcdLauncherImage,
 		dnatControllerImage:                              dnatControllerImage,
+		machineControllerImageTag:                        machineControllerImageTag,
+		machineControllerImageRepository:                 machineControllerImageRepository,
 		concurrentClusterUpdates:                         concurrentClusterUpdates,
 		etcdBackupRestoreController:                      etcdBackupRestoreController,
 		backupSchedule:                                   backupSchedule,

@@ -107,6 +107,10 @@ type controllerRunOptions struct {
 	grafanaHeaderName     string
 	grafanaSecret         string
 	cortexAlertmanagerURL string
+
+	// Machine Controller configuration
+	machineControllerImageTag        string
+	machineControllerImageRepository string
 }
 
 func newControllerRunOptions() (controllerRunOptions, error) {
@@ -174,6 +178,8 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.grafanaHeaderName, "grafana-header-name", "X-Forwarded-Email", "Grafana Auth Proxy HTTP Header that will contain the username or email")
 	flag.StringVar(&c.grafanaSecret, "grafana-secret-name", "mla/grafana", "Grafana secret name in format namespace/secretname, that contains basic auth info")
 	flag.StringVar(&c.cortexAlertmanagerURL, "cortex-alertmanager-url", "http://cortex-alertmanager.mla.svc.cluster.local:8080", "The URL of cortex alertmanager which is running for MLA stack.")
+	flag.StringVar(&c.machineControllerImageTag, "machine-controller-image-tag", "", "The Machine Controller image tag.")
+	flag.StringVar(&c.machineControllerImageRepository, "machine-controller-image-repository", "", "The Machine Controller image repository.")
 	c.admissionWebhook.AddFlags(flag.CommandLine, true)
 	addFlags(flag.CommandLine)
 	flag.Parse()
