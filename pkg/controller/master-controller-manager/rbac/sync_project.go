@@ -114,7 +114,10 @@ func (c *projectController) ensureProjectOwner(ctx context.Context, project *kub
 			var sharedOwner kubermaticv1.User
 			key := types.NamespacedName{Name: ref.Name}
 			if err := c.client.Get(ctx, key, &sharedOwner); err != nil {
-				return err
+				if !kerrors.IsNotFound(err) {
+					return err
+				}
+				continue
 			}
 			sharedOwnerPtrList = append(sharedOwnerPtrList, sharedOwner.DeepCopy())
 		}
@@ -128,13 +131,13 @@ func (c *projectController) ensureProjectOwner(ctx context.Context, project *kub
 		return err
 	}
 
-	projectOwnerMap := map[string]bool{}
+	projectOwnerMap := sets.NewString()
 
 	for _, owner := range sharedOwnerPtrList {
 		for _, binding := range bindings.Items {
 			if binding.Spec.ProjectID == project.Name && strings.EqualFold(binding.Spec.UserEmail, owner.Spec.Email) &&
 				binding.Spec.Group == GenerateActualGroupNameFor(project.Name, OwnerGroupNamePrefix) {
-				projectOwnerMap[owner.Spec.Email] = true
+				projectOwnerMap.Insert(owner.Spec.Email)
 			}
 
 		}
@@ -142,7 +145,7 @@ func (c *projectController) ensureProjectOwner(ctx context.Context, project *kub
 
 	for _, owner := range sharedOwnerPtrList {
 		// create a new binding for the owner when doesn't exist
-		if !projectOwnerMap[owner.Spec.Email] {
+		if !projectOwnerMap.Has(owner.Spec.Email) {
 			ownerBinding := genOwnerBinding(owner.Spec.Email, project)
 			if err := c.client.Create(ctx, ownerBinding); err != nil {
 				return err
