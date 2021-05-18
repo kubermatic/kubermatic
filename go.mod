@@ -79,6 +79,7 @@ require (
 	golang.org/x/tools v0.0.0-20201202200335-bef1c476418a
 	gomodules.xyz/jsonpatch/v2 v2.1.0
 	google.golang.org/api v0.36.0
+	google.golang.org/genproto v0.0.0-20201203001206-6486ece9c497
 	google.golang.org/grpc v1.33.2
 	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/gcfg.v1 v1.2.3
