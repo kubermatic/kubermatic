@@ -106,10 +106,10 @@ func Add(
 	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader, mlaEnabled); err != nil {
 		return fmt.Errorf("failed to create mla userprojectbinding controller: %v", err)
 	}
-	if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, httpClient, grafanaURL, grafanaAuth, mlaNamespace, overwriteRegistry); err != nil {
+	if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, httpClient, grafanaURL, grafanaAuth, mlaNamespace, overwriteRegistry, mlaEnabled); err != nil {
 		return fmt.Errorf("failed to create mla cluster controller: %v", err)
 	}
-	if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, httpClient, cortexAlertmanagerURL); err != nil {
+	if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, httpClient, cortexAlertmanagerURL, mlaEnabled); err != nil {
 		return fmt.Errorf("failed to create mla alertmanager configuration controller: %v", err)
 	}
 	return nil

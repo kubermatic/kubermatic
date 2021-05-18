@@ -64,6 +64,7 @@ type datasourceGrafanaReconciler struct {
 	recorder          record.EventRecorder
 	versions          kubermatic.Versions
 	overwriteRegistry string
+	mlaEnabled        bool
 }
 
 func newDatasourceGrafanaReconciler(
@@ -77,6 +78,7 @@ func newDatasourceGrafanaReconciler(
 	grafanaAuth string,
 	mlaNamespace string,
 	overwriteRegistry string,
+	mlaEnabled bool,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
@@ -93,6 +95,7 @@ func newDatasourceGrafanaReconciler(
 		recorder:          mgr.GetEventRecorderFor(ControllerName),
 		versions:          versions,
 		overwriteRegistry: overwriteRegistry,
+		mlaEnabled:        mlaEnabled,
 	}
 
 	ctrlOptions := controller.Options{
@@ -164,7 +167,7 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 	// set header from the very beginning so all other calls will be within this organization
 	grafanaClient.SetOrgIDHeader(org.ID)
 
-	mlaDisabled := !cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled
+	mlaDisabled := !r.mlaEnabled || (!cluster.Spec.MLA.LoggingEnabled && !cluster.Spec.MLA.MonitoringEnabled)
 	if !cluster.DeletionTimestamp.IsZero() || mlaDisabled {
 		if err := r.handleDeletion(ctx, grafanaClient, cluster); err != nil {
 			return nil, fmt.Errorf("handling deletion: %w", err)

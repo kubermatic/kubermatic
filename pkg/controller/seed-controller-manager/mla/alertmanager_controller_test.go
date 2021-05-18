@@ -66,6 +66,7 @@ func newTestAlertmanagerReconciler(objects []ctrlruntimeclient.Object, handler h
 		log:                   kubermaticlog.Logger,
 		recorder:              record.NewFakeRecorder(10),
 		cortexAlertmanagerURL: ts.URL,
+		mlaEnabled:            true,
 	}
 	return &reconciler, ts
 }
