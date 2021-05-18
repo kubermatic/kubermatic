@@ -22,7 +22,7 @@ set -euo pipefail
 cd $(dirname $0)/..
 
 REPOSITORY=quay.io/kubermatic/alertmanager-authorization-server
-TAG=0.1.1
+TAG=0.1.0
 
 GOOS=linux GOARCH=amd64 make alertmanager-authorization-server
 
