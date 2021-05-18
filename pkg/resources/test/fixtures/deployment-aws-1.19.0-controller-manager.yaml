@@ -172,8 +172,11 @@ spec:
         - mountPath: /etc/kubernetes/kubeconfig
           name: controllermanager-kubeconfig
           readOnly: true
-        - mountPath: /etc/ssl/certs
+        - mountPath: /etc/ssl
           name: ca-certs
+          readOnly: true
+        - mountPath: /etc/pki
+          name: pki
           readOnly: true
         - mountPath: /usr/share/ca-certificates
           name: usr-share-ca-certificates
@@ -221,9 +224,13 @@ spec:
         secret:
           secretName: controllermanager-kubeconfig
       - hostPath:
-          path: /etc/ssl/certs
+          path: /etc/ssl
           type: DirectoryOrCreate
         name: ca-certs
+      - hostPath:
+          path: /etc/pki
+          type: DirectoryOrCreate
+        name: pki
       - hostPath:
           path: /usr/share/ca-certificates
           type: DirectoryOrCreate
