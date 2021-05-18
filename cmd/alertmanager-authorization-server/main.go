@@ -115,7 +115,7 @@ func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 	t := time.Now()
 	a.log.Debugf("request: %s,time now: %s", req.Attributes.Request.Http.Path, t.String())
 	authorized, err := a.authorize(ctx, userEmail, clusterID)
-	a.log.Debugf("request: %s,time to do authorization: %s", req.Attributes.Request.Http.Path, time.Now().Sub(t))
+	a.log.Debugf("request: %s,time to do authorization: %s", req.Attributes.Request.Http.Path, time.Since(t))
 	if err != nil {
 		return &authv3.CheckResponse{
 			Status: &status.Status{
