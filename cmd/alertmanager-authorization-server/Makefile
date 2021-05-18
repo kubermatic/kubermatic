@@ -14,7 +14,6 @@
 
 DOCKER_REPO ?= "quay.io/kubermatic"
 GOOS ?= $(shell go env GOOS)
-TAG ?= 0.1.0
 
 .PHONY: alertmanager-authz-server
 alertmanager-authz-server:

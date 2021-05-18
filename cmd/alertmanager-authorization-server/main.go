@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 	"google.golang.org/genproto/googleapis/rpc/code"
@@ -36,10 +37,24 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
+	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/client/apiutil"
 )
+
+var (
+	scheme = runtime.NewScheme()
+)
+
+func init() {
+	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+	utilruntime.Must(kubermaticv1.AddToScheme(scheme))
+}
 
 type authorizationServer struct {
 	listenAddress   string
@@ -97,7 +112,10 @@ func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 		}, nil
 	}
 
+	t := time.Now()
+	a.log.Debugf("request: %s,time now: %s", req.Attributes.Request.Http.Path, t.String())
 	authorized, err := a.authorize(ctx, userEmail, clusterID)
+	a.log.Debugf("request: %s,time to do authorization: %s", req.Attributes.Request.Http.Path, time.Now().Sub(t))
 	if err != nil {
 		return &authv3.CheckResponse{
 			Status: &status.Status{
@@ -147,6 +165,13 @@ func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 }
 
 func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterID string) (authorized bool, err error) {
+	isAdmin, err := a.isAdminUser(ctx, userEmail)
+	if err != nil {
+		return false, fmt.Errorf("checking if user is admin: %w", err)
+	}
+	if isAdmin {
+		return true, nil
+	}
 	cluster := &kubermaticv1.Cluster{}
 	if err := a.client.Get(ctx, types.NamespacedName{
 		Name: clusterID,
@@ -174,6 +199,21 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 	return false, nil
 }
 
+func (a *authorizationServer) isAdminUser(ctx context.Context, userEmail string) (bool, error) {
+	users := &kubermaticv1.UserList{}
+	if err := a.client.List(ctx, users); err != nil {
+		return false, fmt.Errorf("listing user: %w", err)
+	}
+
+	for _, user := range users.Items {
+		if strings.EqualFold(user.Spec.Email, userEmail) && user.Spec.IsAdmin {
+			a.log.Debugf("user %q authorized as an admin", userEmail)
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
 func (a *authorizationServer) addFlags() {
 	flag.StringVar(&a.listenAddress, "address", ":50051", "the address to listen on")
 	flag.StringVar(&a.authHeaderName, "auth-header-name", "x-forwarded-email", "alertmanager authorization server http header that will contain the email")
@@ -197,7 +237,34 @@ func main() {
 	if err != nil {
 		log.Panicw("failed to get client", zap.Error(err))
 	}
-	s.client = client
+	mapper, err := apiutil.NewDynamicRESTMapper(cfg)
+	if err != nil {
+		log.Fatalw("failed to create rest mapper", zap.Error(err))
+	}
+	cache, err := ctrlcache.New(cfg, ctrlcache.Options{
+		Scheme: scheme,
+		Mapper: mapper,
+	})
+	if err != nil {
+		log.Fatalw("failed to create cache", zap.Error(err))
+	}
+	ctx := context.Background()
+	go func() {
+		if err := cache.Start(ctx); err != nil {
+			log.Fatalw("failed to start cache", zap.Error(err))
+		}
+	}()
+	if !cache.WaitForCacheSync(ctx) {
+		log.Fatalw("cache is outdated")
+	}
+	cachedClient, err := ctrlruntimeclient.NewDelegatingClient(ctrlruntimeclient.NewDelegatingClientInput{
+		CacheReader: cache,
+		Client:      client,
+	})
+	if err != nil {
+		log.Fatalw("failed to create cached client", zap.Error(err))
+	}
+	s.client = cachedClient
 	s.log = log
 
 	lis, err := net.Listen("tcp", s.listenAddress)
