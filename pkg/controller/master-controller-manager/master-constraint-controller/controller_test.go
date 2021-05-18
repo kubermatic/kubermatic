@@ -97,9 +97,7 @@ func TestReconcile(t *testing.T) {
 				log:          kubermaticlog.Logger,
 				recorder:     &record.FakeRecorder{},
 				masterClient: tc.masterClient,
-				seedClientGetter: func(seed *kubermaticv1.Seed) (ctrlruntimeclient.Client, error) {
-					return tc.seedClient, nil
-				},
+				seedClients:  map[string]ctrlruntimeclient.Client{"first": tc.seedClient},
 			}
 
 			request := reconcile.Request{NamespacedName: tc.namespacedName}

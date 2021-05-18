@@ -55,6 +55,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	)
 	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
 	userSSHKeysSynchronizerFactory := userSSHKeysSynchronizerFactoryCreator(ctrlCtx)
+	masterconstraintSynchronizerFactory := masterconstraintSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		kubermaticlog.Logger,
@@ -64,7 +65,9 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		ctrlCtx.seedKubeconfigGetter,
 		rbacControllerFactory,
 		projectLabelSynchronizerFactory,
-		userSSHKeysSynchronizerFactory); err != nil {
+		userSSHKeysSynchronizerFactory,
+		masterconstraintSynchronizerFactory,
+	); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
 	}
@@ -85,9 +88,6 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	}
 	if err := masterconstrainttemplatecontroller.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create master constraint template controller: %v", err)
-	}
-	if err := masterconstraintsynchronizer.Add(ctrlCtx.ctx, ctrlCtx.mgr, ctrlCtx.log, ctrlCtx.namespace, ctrlCtx.seedKubeconfigGetter); err != nil {
-		return fmt.Errorf("failed to create master constraints synchronisation controller: %v", err)
 	}
 	if err := projectsync.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create projectsync controller: %v", err)
@@ -141,6 +141,18 @@ func userSSHKeysSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontr
 			ctrlCtx.log,
 			ctrlCtx.workerName,
 			ctrlCtx.workerCount,
+		)
+	}
+}
+
+func masterconstraintSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return masterconstraintsynchronizer.ControllerName, masterconstraintsynchronizer.Add(
+			ctrlCtx.ctx,
+			ctrlCtx.mgr,
+			ctrlCtx.namespace,
+			seedManagerMap,
+			ctrlCtx.log,
 		)
 	}
 }
