@@ -38,7 +38,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlcache "sigs.k8s.io/controller-runtime/pkg/cache"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -50,7 +49,6 @@ var (
 )
 
 func init() {
-	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(kubermaticv1.AddToScheme(scheme))
 }
 
@@ -178,7 +176,7 @@ func (a *authorizationServer) authorize(ctx context.Context, userEmail, clusterI
 
 	for _, member := range allMembers.Items {
 		if strings.EqualFold(member.Spec.UserEmail, userEmail) && member.Spec.ProjectID == projectID {
-			a.log.Debugf("user %q authorized for project: %s", userEmail, projectID)
+			a.log.Debugf("user %q authorized for project: %s, cluster: %s", userEmail, projectID, clusterID)
 			return true, nil
 		}
 	}
