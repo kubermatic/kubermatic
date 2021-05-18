@@ -1483,6 +1483,65 @@ func TestEnsureProjectOwner(t *testing.T) {
 				return []kubermaticv1.UserProjectBinding{*binding, *binding2}
 			}(),
 		},
+		{
+			name: "scenario 4: create bindings only for existing users",
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.CreateUser("Batman"),
+			},
+			projectToSync: func() *kubermaticv1.Project {
+				firstOwner := test.CreateUser("James Bond")
+				secondOwner := test.CreateUser("Batman")
+				thirdOwner := test.CreateUser("Superman")
+				return &kubermaticv1.Project{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       kubermaticv1.ProjectKindName,
+						APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  types.UID("thunderball") + "ID",
+						Name: "thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: firstOwner.APIVersion,
+								Kind:       firstOwner.Kind,
+								UID:        firstOwner.GetUID(),
+								Name:       firstOwner.Name,
+							},
+							{
+								APIVersion: secondOwner.APIVersion,
+								Kind:       secondOwner.Kind,
+								UID:        secondOwner.GetUID(),
+								Name:       secondOwner.Name,
+							},
+							{
+								APIVersion: thirdOwner.APIVersion,
+								Kind:       thirdOwner.Kind,
+								UID:        thirdOwner.GetUID(),
+								Name:       thirdOwner.Name,
+							},
+						},
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "thunderball",
+					},
+					Status: kubermaticv1.ProjectStatus{
+						Phase: kubermaticv1.ProjectInactive,
+					},
+				}
+			}(),
+			existingUser: test.CreateUser("James Bond"),
+			expectedBindings: func() []kubermaticv1.UserProjectBinding {
+				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
+				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				binding.ObjectMeta.Name = ""
+				binding.ResourceVersion = ""
+				binding2 := test.CreateExpectedOwnerBinding("Batman", test.CreateProject("thunderball", test.CreateUser("Batman")))
+				binding2.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				binding2.ObjectMeta.Name = ""
+				binding2.ResourceVersion = ""
+				return []kubermaticv1.UserProjectBinding{*binding, *binding2}
+			}(),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
