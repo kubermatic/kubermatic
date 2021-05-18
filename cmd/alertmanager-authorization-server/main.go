@@ -18,12 +18,10 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"net"
 	"strings"
-	"time"
 
 	"go.uber.org/zap"
 	"google.golang.org/genproto/googleapis/rpc/code"
@@ -66,13 +64,6 @@ type authorizationServer struct {
 }
 
 func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckRequest) (*authv3.CheckResponse, error) {
-	a.log.Debug(">>> Authorization Check")
-
-	b, err := json.MarshalIndent(req.Attributes.Request.Http.Headers, "", "  ")
-	if err == nil {
-		a.log.Debug("Inbound Headers: ")
-		a.log.Debug(string(b))
-	}
 	userEmail, ok := req.Attributes.Request.Http.Headers[a.authHeaderName]
 	if !ok {
 		a.log.Debug("missing user id passed from OAuth proxy")
@@ -112,10 +103,7 @@ func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 		}, nil
 	}
 
-	t := time.Now()
-	a.log.Debugf("request: %s,time now: %s", req.Attributes.Request.Http.Path, t.String())
 	authorized, err := a.authorize(ctx, userEmail, clusterID)
-	a.log.Debugf("request: %s,time to do authorization: %s", req.Attributes.Request.Http.Path, time.Since(t))
 	if err != nil {
 		return &authv3.CheckResponse{
 			Status: &status.Status{
@@ -149,7 +137,6 @@ func (a *authorizationServer) Check(ctx context.Context, req *authv3.CheckReques
 			},
 		}, nil
 	}
-
 	return &authv3.CheckResponse{
 		Status: &status.Status{
 			Code: int32(code.Code_UNAUTHENTICATED),
