@@ -73,6 +73,7 @@ func Add(
 	grafanaSecret string,
 	overwriteRegistry string,
 	cortexAlertmanagerURL string,
+	mlaEnabled bool,
 ) error {
 
 	split := strings.Split(grafanaSecret, "/")
@@ -99,10 +100,10 @@ func Add(
 	grafanaAuth := fmt.Sprintf("%s:%s", adminName, adminPass)
 	httpClient := &http.Client{Timeout: 15 * time.Second}
 	grafanaClient := grafanasdk.NewClient(grafanaURL, grafanaAuth, httpClient)
-	if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient); err != nil {
+	if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, mlaEnabled); err != nil {
 		return fmt.Errorf("failed to create mla project controller: %v", err)
 	}
-	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader); err != nil {
+	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader, mlaEnabled); err != nil {
 		return fmt.Errorf("failed to create mla userprojectbinding controller: %v", err)
 	}
 	if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, httpClient, grafanaURL, grafanaAuth, mlaNamespace, overwriteRegistry); err != nil {

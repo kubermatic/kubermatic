@@ -405,7 +405,7 @@ func createInitialMachineDeploymentController(ctrlCtx *controllerContext) error 
 }
 
 func createMLAController(ctrlCtx *controllerContext) error {
-	if !userClusterMLAEnabled(ctrlCtx) {
+	if !ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) {
 		return nil
 	}
 	return mla.Add(
@@ -421,6 +421,7 @@ func createMLAController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.grafanaSecret,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.cortexAlertmanagerURL,
+		ctrlCtx.runOptions.enableUserClusterMLA,
 	)
 }
 
