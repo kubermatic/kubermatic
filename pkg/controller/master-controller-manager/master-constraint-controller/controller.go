@@ -147,9 +147,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 			return err
 		}
 
-		err := ctrlruntimeclient.IgnoreNotFound(err)
-
-		return fmt.Errorf("failed to get constraint %s: %v", request.Name, err)
+		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
 	// handling deletion
@@ -193,9 +191,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			},
 		})
 
-		err = ctrlruntimeclient.IgnoreNotFound(err)
-
-		return err
+		return ctrlruntimeclient.IgnoreNotFound(err)
 	})
 	if err != nil {
 		return err
