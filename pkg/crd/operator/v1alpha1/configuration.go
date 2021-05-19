@@ -184,6 +184,8 @@ type KubermaticUserClusterConfiguration struct {
 	EtcdVolumeSize string `json:"etcdVolumeSize,omitempty"`
 	// APIServerReplicas configures the replica count for the API-Server deployment inside user clusters.
 	APIServerReplicas *int32 `json:"apiserverReplicas,omitempty"`
+	// MachineController configures the Machine Controller
+	MachineController MachineControllerConfiguration `json:"machineController,omitempty"`
 }
 
 // KubermaticAddonsConfiguration controls the optional additions installed into each user cluster.
@@ -209,6 +211,16 @@ type KubermaticUserClusterMonitoringConfiguration struct {
 	// ScrapeAnnotationPrefix (if set) is used to make the in-cluster Prometheus scrape pods
 	// inside the user clusters.
 	ScrapeAnnotationPrefix string `json:"scrapeAnnotationPrefix,omitempty"`
+}
+
+// MachineControllerConfiguration configures Machine Controller
+type MachineControllerConfiguration struct {
+	// ImageRepository is used to override the Machine Controller image repository.
+	// It is only for development, tests and PoC purposes. This field must not be set in production environments.
+	ImageRepository string `json:"imageRepository,omitempty"`
+	// ImageTag is used to override the Machine Controller image.
+	// It is only for development, tests and PoC purposes. This field must not be set in production environments.
+	ImageTag string `json:"imageTag,omitempty"`
 }
 
 // KubermaticAddonConfiguration describes the addons for a given cluster runtime.
