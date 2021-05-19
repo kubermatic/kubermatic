@@ -84,7 +84,46 @@ func (r *TestClient) CreateProject(name string) (*apiv1.Project, error) {
 	timeout := 30 * time.Second
 
 	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: name}}
-	SetupParams(r.test, params, 1*time.Second, timeout)
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	r.test.Logf("Creating project %s...", name)
+
+	response, err := r.client.Project.CreateProject(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	var apiProject *apiv1.Project
+	if !WaitFor(1*time.Second, timeout, func() bool {
+		apiProject, _ = r.GetProject(response.Payload.ID)
+		return apiProject != nil && apiProject.Status == kubermaticv1.ProjectActive
+	}) {
+		// best effort cleanup of a failed cluster
+		_ = r.DeleteProject(name)
+
+		return nil, fmt.Errorf("project is not ready after %s", timeout)
+	}
+
+	r.test.Logf("Created project and it became ready after %v", time.Since(before))
+
+	return apiProject, nil
+}
+
+// CreateProjectBySA creates a new project and waits for it to become active (ready).
+func (r *TestClient) CreateProjectBySA(name string, users []string) (*apiv1.Project, error) {
+	before := time.Now()
+	timeout := 30 * time.Second
+
+	params := &project.CreateProjectParams{Body: project.CreateProjectBody{Name: name, Users: users}}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
 
 	r.test.Logf("Creating project %s...", name)
 
