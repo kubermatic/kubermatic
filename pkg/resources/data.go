@@ -55,24 +55,26 @@ type CABundle interface {
 
 // TemplateData is a group of data required for template generation
 type TemplateData struct {
-	ctx                      context.Context
-	client                   ctrlruntimeclient.Client
-	cluster                  *kubermaticv1.Cluster
-	dc                       *kubermaticv1.Datacenter
-	seed                     *kubermaticv1.Seed
-	OverwriteRegistry        string
-	nodePortRange            string
-	nodeAccessNetwork        string
-	etcdDiskSize             resource.Quantity
-	oidcIssuerURL            string
-	oidcIssuerClientID       string
-	nodeLocalDNSCacheEnabled bool
-	kubermaticImage          string
-	etcdLauncherImage        string
-	dnatControllerImage      string
-	backupSchedule           time.Duration
-	versions                 kubermatic.Versions
-	caBundle                 CABundle
+	ctx                              context.Context
+	client                           ctrlruntimeclient.Client
+	cluster                          *kubermaticv1.Cluster
+	dc                               *kubermaticv1.Datacenter
+	seed                             *kubermaticv1.Seed
+	OverwriteRegistry                string
+	nodePortRange                    string
+	nodeAccessNetwork                string
+	etcdDiskSize                     resource.Quantity
+	oidcIssuerURL                    string
+	oidcIssuerClientID               string
+	nodeLocalDNSCacheEnabled         bool
+	kubermaticImage                  string
+	etcdLauncherImage                string
+	dnatControllerImage              string
+	machineControllerImageTag        string
+	machineControllerImageRepository string
+	backupSchedule                   time.Duration
+	versions                         kubermatic.Versions
+	caBundle                         CABundle
 
 	supportsFailureDomainZoneAntiAffinity bool
 
@@ -215,6 +217,16 @@ func (td *TemplateDataBuilder) WithFailureDomainZoneAntiaffinity(enabled bool) *
 
 func (td *TemplateDataBuilder) WithBackupPeriod(backupPeriod time.Duration) *TemplateDataBuilder {
 	td.data.backupSchedule = backupPeriod
+	return td
+}
+
+func (td *TemplateDataBuilder) WithMachineControllerImageTag(tag string) *TemplateDataBuilder {
+	td.data.machineControllerImageTag = tag
+	return td
+}
+
+func (td *TemplateDataBuilder) WithMachineControllerImageRepository(repository string) *TemplateDataBuilder {
+	td.data.machineControllerImageRepository = repository
 	return td
 }
 
@@ -394,6 +406,14 @@ func (d *TemplateData) GetClusterRef() metav1.OwnerReference {
 // ExternalIP returns the external facing IP or an error if no IP exists
 func (d *TemplateData) ExternalIP() (*net.IP, error) {
 	return GetClusterExternalIP(d.cluster)
+}
+
+func (d *TemplateData) MachineControllerImageTag() string {
+	return d.machineControllerImageTag
+}
+
+func (d *TemplateData) MachineControllerImageRepository() string {
+	return d.machineControllerImageRepository
 }
 
 // ClusterIPByServiceName returns the ClusterIP as string for the
