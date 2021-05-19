@@ -8,7 +8,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/deepcopy"
 )
 
-func TestDeepCopyStringInterfaceMap(t *testing.T) {
+func TestStringInterfaceMapCopy(t *testing.T) {
 
 	testcases := []struct {
 		name           string
@@ -39,7 +39,7 @@ func TestDeepCopyStringInterfaceMap(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 
-			err := deepcopy.DeepCopyStringInterfaceMap(tc.copyFrom, tc.copyTo)
+			err := deepcopy.StringInterfaceMapCopy(tc.copyFrom, tc.copyTo)
 			if err != nil {
 				if tc.expectedErr != nil {
 

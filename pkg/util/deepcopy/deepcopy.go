@@ -18,7 +18,8 @@ package deepcopy
 
 import "encoding/json"
 
-func DeepCopyStringInterfaceMap(from map[string]interface{}, to map[string]interface{}) error {
+// StringInterfaceMapCopy copies one map[string]interface{} to another by using json to marshall/unmarshall it
+func StringInterfaceMapCopy(from map[string]interface{}, to map[string]interface{}) error {
 	fromBytes, err := json.Marshal(from)
 	if err != nil {
 		return err

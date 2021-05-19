@@ -158,7 +158,7 @@ func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 			// first check if the Constraint is using the deprecated rawJSON parameters, if yes, we should use them
 			rawJSON, ok, err := unstructured.NestedString(constraint.Spec.Parameters, "rawJSON")
 			if err != nil {
-				return nil, fmt.Errorf("error getting Constraint rawJSON parameters %s", err)
+				return nil, fmt.Errorf("error getting constraint rawJSON parameters %s", err)
 			}
 			if ok {
 				err = json.Unmarshal([]byte(rawJSON), &params)
