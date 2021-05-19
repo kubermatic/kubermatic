@@ -30,7 +30,6 @@ import (
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -82,6 +81,10 @@ func Add(ctx context.Context,
 		seedConstraintWatch := &source.Kind{Type: &kubermaticv1.Constraint{}}
 		if err := seedConstraintWatch.InjectCache(seedManager.GetCache()); err != nil {
 			return fmt.Errorf("failed to inject cache for seed %q into watch: %v", seedName, err)
+		}
+
+		if err := c.Watch(seedConstraintWatch, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(namespace)); err != nil {
+			return fmt.Errorf("failed to watch constraints in seed %q: %w", seedName, err)
 		}
 	}
 
@@ -144,10 +147,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 			return err
 		}
 
-		if kerrors.IsNotFound(err) {
-			log.Debug("constraint not found, returning")
-			return nil
-		}
+		err := ctrlruntimeclient.IgnoreNotFound(err)
 
 		return fmt.Errorf("failed to get constraint %s: %v", request.Name, err)
 	}
@@ -193,10 +193,7 @@ func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger,
 			},
 		})
 
-		if kerrors.IsNotFound(err) {
-			log.Debugw("constraint not found, returning")
-			return nil
-		}
+		err = ctrlruntimeclient.IgnoreNotFound(err)
 
 		return err
 	})
