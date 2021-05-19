@@ -66,6 +66,7 @@ func newTestOrgGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Objec
 		grafanaClient: grafanaClient,
 		log:           kubermaticlog.Logger,
 		recorder:      record.NewFakeRecorder(10),
+		mlaEnabled:    true,
 	}
 	return &reconciler, ts
 }

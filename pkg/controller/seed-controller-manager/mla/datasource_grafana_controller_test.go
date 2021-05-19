@@ -60,6 +60,7 @@ func newTestDatasourceGrafanaReconciler(t *testing.T, objects []ctrlruntimeclien
 		grafanaAuth: "admin:admin",
 		log:         kubermaticlog.Logger,
 		recorder:    record.NewFakeRecorder(10),
+		mlaEnabled:  true,
 	}
 	return &reconciler, ts
 }

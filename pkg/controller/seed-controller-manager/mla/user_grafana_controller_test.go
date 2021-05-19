@@ -57,6 +57,7 @@ func newTestUserGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Obje
 		grafanaHeader: "X-WEBAUTH-USER",
 		grafanaURL:    ts.URL,
 		httpClient:    ts.Client(),
+		mlaEnabled:    true,
 	}
 	return &reconciler, ts
 }

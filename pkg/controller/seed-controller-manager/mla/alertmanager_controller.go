@@ -65,6 +65,8 @@ type alertmanagerReconciler struct {
 	versions   kubermatic.Versions
 
 	cortexAlertmanagerURL string
+
+	mlaEnabled bool
 }
 
 func newAlertmanagerReconciler(
@@ -75,6 +77,7 @@ func newAlertmanagerReconciler(
 	versions kubermatic.Versions,
 	httpClient *http.Client,
 	cortexAlertmanagerURL string,
+	mlaEnabled bool,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
@@ -88,6 +91,7 @@ func newAlertmanagerReconciler(
 		recorder:              mgr.GetEventRecorderFor(ControllerName),
 		versions:              versions,
 		cortexAlertmanagerURL: cortexAlertmanagerURL,
+		mlaEnabled:            mlaEnabled,
 	}
 
 	ctrlOptions := controller.Options{
@@ -206,7 +210,7 @@ func (r *alertmanagerReconciler) reconcile(ctx context.Context, cluster *kuberma
 		return nil, nil
 	}
 
-	monitoringEnabled := cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled
+	monitoringEnabled := r.mlaEnabled && cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled
 	// Currently, we don't have a dedicated flag for enabling/disabling Alertmanager, and Alertmanager will be enabled
 	// or disabled based on the monitoring flag.
 	if !monitoringEnabled {
