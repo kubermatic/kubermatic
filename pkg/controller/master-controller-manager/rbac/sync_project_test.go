@@ -1585,15 +1585,18 @@ func TestEnsureProjectOwner(t *testing.T) {
 
 			assert.Len(t, userProjectBindingList.Items, len(test.expectedBindings))
 
-			var copyUserProjectBindingList kubermaticv1.UserProjectBindingList
+			var copyUserProjectBindingList []kubermaticv1.UserProjectBinding
 			for _, item := range userProjectBindingList.Items {
 				// Hack around the fact that the bindings' names are random
 				item.ObjectMeta.Name = ""
 				item.ResourceVersion = ""
-				copyUserProjectBindingList.Items = append(copyUserProjectBindingList.Items, item)
+				copyUserProjectBindingList = append(copyUserProjectBindingList, item)
 			}
 
-			assert.Equal(t, copyUserProjectBindingList.Items, test.expectedBindings)
+			sortUserProjectBinding(test.expectedBindings)
+			sortUserProjectBinding(copyUserProjectBindingList)
+
+			assert.Equal(t, copyUserProjectBindingList, test.expectedBindings)
 		})
 	}
 }
@@ -2643,4 +2646,11 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			}
 		})
 	}
+}
+
+func sortUserProjectBinding(bindings []kubermaticv1.UserProjectBinding) {
+	sort.Slice(bindings, func(i, j int) bool {
+		mi, mj := bindings[i], bindings[j]
+		return mi.Spec.UserEmail < mj.Spec.UserEmail
+	})
 }
