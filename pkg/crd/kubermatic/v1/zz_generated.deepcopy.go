@@ -1154,7 +1154,7 @@ func (in *ConstraintList) DeepCopyObject() runtime.Object {
 func (in *ConstraintSpec) DeepCopyInto(out *ConstraintSpec) {
 	*out = *in
 	in.Match.DeepCopyInto(&out.Match)
-	out.Parameters = in.Parameters.DeepCopy()
+	in.Parameters.DeepCopyInto(&out.Parameters)
 	return
 }
 

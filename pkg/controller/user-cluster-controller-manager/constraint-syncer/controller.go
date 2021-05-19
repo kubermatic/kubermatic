@@ -166,7 +166,7 @@ func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 					return nil, fmt.Errorf("error unmarshalling constraint params: %v", err)
 				}
 			} else {
-				params = constraint.Spec.Parameters.DeepCopy()
+				params = *constraint.Spec.Parameters.DeepCopy()
 			}
 
 			if err = unstructured.SetNestedField(u.Object, params, spec, parametersField); err != nil {

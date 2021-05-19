@@ -67,21 +67,21 @@ type ConstraintSpec struct {
 
 type Parameters map[string]interface{}
 
-func (in *Parameters) DeepCopyInto(out Parameters) {
+func (in *Parameters) DeepCopyInto(out *Parameters) {
 	// controller-gen cannot handle the map[string]interface{} type thus we write our own DeepCopyInto function.
 	if out != nil {
 		casted := (*in)
 		// as there is no way to report error we skip it here
-		_ = deepcopy.StringInterfaceMapCopy(casted, out)
+		_ = deepcopy.StringInterfaceMapCopy(casted, *out)
 	}
 }
 
 // DeepCopy copies the receiver, creating a new Parameter.
-func (in Parameters) DeepCopy() Parameters {
+func (in *Parameters) DeepCopy() *Parameters {
 	if in == nil {
 		return nil
 	}
-	out := Parameters{}
+	out := &Parameters{}
 	in.DeepCopyInto(out)
 	return out
 }
