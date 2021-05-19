@@ -78,16 +78,15 @@ type KubeconfigProvider interface {
 type Reconciler struct {
 	ctrlruntimeclient.Client
 
-	log                      *zap.SugaredLogger
-	workerName               string
-	addonEnforceInterval     int
-	addonVariables           map[string]interface{}
-	kubernetesAddonDir       string
-	overwriteRegistry        string
-	recorder                 record.EventRecorder
-	KubeconfigProvider       KubeconfigProvider
-	nodeLocalDNSCacheEnabled bool
-	versions                 kubermatic.Versions
+	log                  *zap.SugaredLogger
+	workerName           string
+	addonEnforceInterval int
+	addonVariables       map[string]interface{}
+	kubernetesAddonDir   string
+	overwriteRegistry    string
+	recorder             record.EventRecorder
+	KubeconfigProvider   KubeconfigProvider
+	versions             kubermatic.Versions
 }
 
 // Add creates a new Addon controller that is responsible for
@@ -101,7 +100,6 @@ func Add(
 	addonCtxVariables map[string]interface{},
 	kubernetesAddonDir,
 	overwriteRegistey string,
-	nodeLocalDNSCacheEnabled bool,
 	kubeconfigProvider KubeconfigProvider,
 	versions kubermatic.Versions,
 ) error {
@@ -111,16 +109,15 @@ func Add(
 	reconciler := &Reconciler{
 		Client: client,
 
-		log:                      log,
-		addonVariables:           addonCtxVariables,
-		addonEnforceInterval:     addonEnforceInterval,
-		kubernetesAddonDir:       kubernetesAddonDir,
-		KubeconfigProvider:       kubeconfigProvider,
-		workerName:               workerName,
-		recorder:                 mgr.GetEventRecorderFor(ControllerName),
-		overwriteRegistry:        overwriteRegistey,
-		nodeLocalDNSCacheEnabled: nodeLocalDNSCacheEnabled,
-		versions:                 versions,
+		log:                  log,
+		addonVariables:       addonCtxVariables,
+		addonEnforceInterval: addonEnforceInterval,
+		kubernetesAddonDir:   kubernetesAddonDir,
+		KubeconfigProvider:   kubeconfigProvider,
+		workerName:           workerName,
+		recorder:             mgr.GetEventRecorderFor(ControllerName),
+		overwriteRegistry:    overwriteRegistey,
+		versions:             versions,
 	}
 
 	ctrlOptions := controller.Options{
@@ -291,7 +288,7 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		return nil, err
 	}
 	dnsResolverIP := clusterIP
-	if r.nodeLocalDNSCacheEnabled {
+	if cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled != nil && *cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled {
 		dnsResolverIP = machinecontroller.NodeLocalDNSCacheAddress
 	}
 

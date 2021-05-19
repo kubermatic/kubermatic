@@ -682,7 +682,6 @@ func TestLoadFiles(t *testing.T) {
 						WithCABundle(caBundle).
 						WithOIDCIssuerURL("https://dev.kubermatic.io/dex").
 						WithOIDCIssuerClientID("kubermaticIssuer").
-						WithNodeLocalDNSCacheEnabled(true).
 						WithKubermaticImage("quay.io/kubermatic/kubermatic").
 						WithEtcdLauncherImage("quay.io/kubermatic/etcd-launcher").
 						WithDnatControllerImage("quay.io/kubermatic/kubeletdnat-controller").

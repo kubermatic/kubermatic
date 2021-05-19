@@ -426,6 +426,10 @@ type ClusterNetworkingConfig struct {
 	// ProxyMode defines the kube-proxy mode (ipvs/iptables).
 	// Defaults to ipvs.
 	ProxyMode string `json:"proxyMode"`
+
+	// NodeLocalDNSCacheEnabled enables the NodeLocal DNSCache feature.
+	// Defaults to true.
+	NodeLocalDNSCacheEnabled *bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
 }
 
 // MachineNetworkingConfig specifies the networking parameters used for IPAM.
