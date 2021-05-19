@@ -242,6 +242,7 @@ func createFileIfNotExists(path string) error {
 
 func updateOwnAndPermissions(path string) error {
 	paths := strings.Split(path, "/")
+	fmt.Println(paths)
 
 	fileDir := strings.Join(paths[:len(paths)-1], "/")
 	fileInfo, err := os.Stat(fileDir)
