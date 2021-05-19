@@ -51,6 +51,7 @@ type userGrafanaReconciler struct {
 	versions      kubermatic.Versions
 	grafanaURL    string
 	grafanaHeader string
+	mlaEnabled    bool
 }
 
 func newUserGrafanaReconciler(
@@ -63,6 +64,7 @@ func newUserGrafanaReconciler(
 	httpClient *http.Client,
 	grafanaURL string,
 	grafanaHeader string,
+	mlaEnabled bool,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
@@ -78,6 +80,7 @@ func newUserGrafanaReconciler(
 		versions:      versions,
 		grafanaURL:    grafanaURL,
 		grafanaHeader: grafanaHeader,
+		mlaEnabled:    mlaEnabled,
 	}
 
 	ctrlOptions := controller.Options{
@@ -104,7 +107,7 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
-	if !userProjectBinding.DeletionTimestamp.IsZero() {
+	if !userProjectBinding.DeletionTimestamp.IsZero() || !r.mlaEnabled {
 		if err := r.handleDeletion(ctx, userProjectBinding); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
