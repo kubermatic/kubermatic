@@ -55,6 +55,8 @@ The Konnectivity server runs in the control plane cluster and acts as a proxy be
 
 Konnectivity server will be deployed as a sidecar container for the Kubernetes API Server. Connection between the two will be done by using UDS.
 
+Moreover, we will use an `emptyDir` volume, allowing us to use UDS between the KAS and the Konnectivity Server.
+
 
 ### Konnectivity Agents in User Cluster
 
@@ -66,6 +68,8 @@ If there was a need for that going forward, we can potentially add a controller 
 ### Impact on cluster network reachability for other control plane components
 
 Currently, multiple control plane components (not only k8s API server, but also e.g. scheduler, controller-manager, openstack-cloud-controller-manager, etc.) are configured to be able to reach the user cluster network. The current solution is based on `openvpn-client` sidecar containers in the control plane pods, and custom `dnsConfig` pointing to a control-plane cluster-local `dns-resolver` deployment. With Konnectivity, this won’t be possible, since Konnectivity provides the cluster network connectivity only for the API server. However, we believe that given the k8s hub-and-spoke design, these components do not actually need the connectivity to anything else other than the k8s API server. If there is a component which currently runs in the control plane cluster and needs the connectivity to the cluster network, we will have to run it in the user cluster.
+
+One example of components that need to be moved on the user cluster side is metrics-server. It does not support aggregation layers and would need to be extended to support routing by the Konnectivity server.
 
 
 ### Impact on API Extensions in control plane cluster
