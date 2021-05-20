@@ -76,13 +76,6 @@ func Add(
 
 	for seedName, seedManager := range seedManagers {
 		r.seedClients[seedName] = seedManager.GetClient()
-		seedClusterWatch := &source.Kind{Type: &kubermaticv1.User{}}
-		if err := seedClusterWatch.InjectCache(seedManager.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache for seed %q in to watch: %w", seedName, err)
-		}
-		if err := c.Watch(seedClusterWatch, &handler.EnqueueRequestForObject{}, serviceAccountPredicate); err != nil {
-			return fmt.Errorf("failed to watch user objects in seed %q: %w", seedName, err)
-		}
 	}
 
 	if err := c.Watch(
