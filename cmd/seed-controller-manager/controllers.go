@@ -159,7 +159,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		userClusterMLAEnabled(ctrlCtx),
 		ctrlCtx.dockerPullConfigJSON,
-		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
+		ctrlCtx.runOptions.enableNodeLocalDNSCache,
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
 		backupInterval,
@@ -347,7 +347,7 @@ func createAddonController(ctrlCtx *controllerContext) error {
 		},
 		ctrlCtx.runOptions.kubernetesAddonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
-		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
+		ctrlCtx.runOptions.enableNodeLocalDNSCache,
 		ctrlCtx.clientProvider,
 		ctrlCtx.versions,
 	)
