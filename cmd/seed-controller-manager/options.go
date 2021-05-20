@@ -62,6 +62,7 @@ type controllerRunOptions struct {
 	overwriteRegistry                                string
 	nodePortRange                                    string
 	nodeAccessNetwork                                string
+	enableNodeLocalDNSCache                          bool
 	kubernetesAddonsPath                             string
 	openshiftAddonsPath                              string
 	kubernetesAddons                                 kubermaticv1.AddonList
@@ -126,6 +127,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
 	flag.StringVar(&c.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", kubermaticv1.DefaultNodeAccessNetwork, "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
+	flag.BoolVar(&c.enableNodeLocalDNSCache, "enable-nodelocal-dns-cache", true, "Enable NodeLocal DNS Cache in user clusters.")
 	flag.StringVar(&c.kubernetesAddonsPath, "kubernetes-addons-path", "/opt/addons/kubernetes", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&c.openshiftAddonsPath, "openshift-addons-path", "/opt/addons/openshift", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&defaultKubernetesAddonsList, "kubernetes-addons-list", "", "Comma separated list of Addons to install into every user-cluster. Mutually exclusive with `--kubernetes-addons-file`")
@@ -272,15 +274,6 @@ func (o controllerRunOptions) validateCABundle() error {
 
 	_, err = certutil.ParseCertsPEM(bytes)
 	return err
-}
-
-func (o controllerRunOptions) nodeLocalDNSCacheEnabled() bool {
-	for _, addon := range o.kubernetesAddons.Items {
-		if addon.Name == "nodelocal-dns-cache" {
-			return true
-		}
-	}
-	return false
 }
 
 // controllerContext holds all controllerRunOptions plus everything that

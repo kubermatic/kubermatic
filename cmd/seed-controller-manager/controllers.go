@@ -175,7 +175,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.inClusterPrometheusDisableDefaultScrapingConfigs,
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		ctrlCtx.dockerPullConfigJSON,
-		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
+		ctrlCtx.runOptions.enableNodeLocalDNSCache,
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		ctrlCtx.runOptions.oidcCAFile,
 		ctrlCtx.runOptions.oidcIssuerURL,
@@ -302,7 +302,7 @@ func createAddonController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.kubernetesAddonsPath,
 		ctrlCtx.runOptions.openshiftAddonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
-		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
+		ctrlCtx.runOptions.enableNodeLocalDNSCache,
 		ctrlCtx.clientProvider,
 		ctrlCtx.versions,
 	)
