@@ -37,12 +37,12 @@ func TestStringInterfaceMapCopy(t *testing.T) {
 			name: "scenario 1: deep copy one map to another",
 			copyFrom: map[string]interface{}{
 				"key":      []string{"values", "values"},
-				"otherKey": bob{name: "Bob"},
+				"otherKey": struct{ name string }{name: "bob"},
 			},
 			copyTo: map[string]interface{}{},
 			expectedResult: map[string]interface{}{
 				"key":      []string{"values", "values"},
-				"otherKey": bob{name: "Bob"},
+				"otherKey": struct{ name string }{name: "bob"},
 			},
 		},
 		{
@@ -70,8 +70,4 @@ func TestStringInterfaceMapCopy(t *testing.T) {
 
 		})
 	}
-}
-
-type bob struct {
-	name string
 }
