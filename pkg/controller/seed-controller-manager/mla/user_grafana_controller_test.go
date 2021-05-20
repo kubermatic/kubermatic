@@ -91,6 +91,11 @@ func TestUserGrafanaReconcile(t *testing.T) {
 					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1, "isGrafanaAdmin": false, "email": "user@email.com", "login": "user@email.com"}`)), StatusCode: http.StatusOK},
 				},
+				{
+					name:     "delete user from default org",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
+				},
 			},
 		},
 		{
@@ -113,6 +118,11 @@ func TestUserGrafanaReconcile(t *testing.T) {
 					name:     "create OAuth user",
 					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1, "isGrafanaAdmin": false, "email": "user@email.com", "login": "user@email.com"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "delete user from default org",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "update permissions",

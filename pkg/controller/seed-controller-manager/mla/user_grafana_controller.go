@@ -164,6 +164,11 @@ func (r *userGrafanaReconciler) ensureGrafanaUser(ctx context.Context, user *kub
 	if err := decoder.Decode(grafanaUser); err != nil || grafanaUser.ID == 0 {
 		return fmt.Errorf("unable to decode response : %w", err)
 	}
+
+	// delete user from default org
+	if status, err := r.grafanaClient.DeleteOrgUser(ctx, defaultOrgID, grafanaUser.ID); err != nil {
+		return fmt.Errorf("failed to delete grafana user from default org: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+	}
 	if grafanaUser.IsGrafanaAdmin != user.Spec.IsAdmin {
 		grafanaUser.IsGrafanaAdmin = user.Spec.IsAdmin
 		status, err := r.grafanaClient.UpdateUserPermissions(ctx, grafanasdk.UserPermissions{IsGrafanaAdmin: user.Spec.IsAdmin}, grafanaUser.ID)
