@@ -77,15 +77,6 @@ func Add(ctx context.Context,
 
 	for seedName, seedManager := range seedManagers {
 		r.seedClients[seedName] = seedManager.GetClient()
-
-		seedConstraintWatch := &source.Kind{Type: &kubermaticv1.Constraint{}}
-		if err := seedConstraintWatch.InjectCache(seedManager.GetCache()); err != nil {
-			return fmt.Errorf("failed to inject cache for seed %q into watch: %v", seedName, err)
-		}
-
-		if err := c.Watch(seedConstraintWatch, &handler.EnqueueRequestForObject{}, predicate.ByNamespace(namespace)); err != nil {
-			return fmt.Errorf("failed to watch constraints in seed %q: %w", seedName, err)
-		}
 	}
 
 	// Watch for changes to Constraints

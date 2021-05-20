@@ -149,7 +149,7 @@ func masterconstraintSynchronizerFactoryCreator(ctrlCtx *controllerContext) seed
 	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
 		return masterconstraintsynchronizer.ControllerName, masterconstraintsynchronizer.Add(
 			ctrlCtx.ctx,
-			ctrlCtx.mgr,
+			mgr,
 			ctrlCtx.namespace,
 			seedManagerMap,
 			ctrlCtx.log,
