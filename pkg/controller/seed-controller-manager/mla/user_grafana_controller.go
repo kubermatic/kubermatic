@@ -93,7 +93,7 @@ func newUserGrafanaReconciler(
 	}
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch UserProjectBindings: %v", err)
+		return fmt.Errorf("failed to watch Users: %w", err)
 	}
 	return err
 }

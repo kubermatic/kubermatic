@@ -84,7 +84,7 @@ func newOrgUserGrafanaReconciler(
 	}
 
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch UserProjectBindings: %v", err)
+		return fmt.Errorf("failed to watch UserProjectBindings: %w", err)
 	}
 	return err
 }
@@ -162,18 +162,16 @@ func (r *orgUserGrafanaReconciler) handleDeletion(ctx context.Context, userProje
 		return fmt.Errorf("failed to get project: %w", err)
 	}
 	org, err := getOrgByProject(ctx, r.grafanaClient, project)
-	if err != nil {
-		// all errors here means that grafana organization already removed
-		return nil
-	}
-	user, err := r.grafanaClient.LookupUser(ctx, userProjectBinding.Spec.UserEmail)
-	if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
-		return err
-	}
 	if err == nil {
-		status, err := r.grafanaClient.DeleteOrgUser(ctx, org.ID, user.ID)
-		if err != nil {
-			return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+		user, err := r.grafanaClient.LookupUser(ctx, userProjectBinding.Spec.UserEmail)
+		if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
+			return err
+		}
+		if err == nil {
+			status, err := r.grafanaClient.DeleteOrgUser(ctx, org.ID, user.ID)
+			if err != nil {
+				return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			}
 		}
 	}
 
