@@ -32,6 +32,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	autoscalingv1beta2 "k8s.io/autoscaler/vertical-pod-autoscaler/pkg/apis/autoscaling.k8s.io/v1beta2"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -95,10 +96,11 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		Spec: kubermaticv1.ClusterSpec{
 			ExposeStrategy: kubermaticv1.ExposeStrategyLoadBalancer,
 			ClusterNetwork: kubermaticv1.ClusterNetworkingConfig{
-				Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
-				Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.193.0.0/20"}},
-				DNSDomain: "cluster.local",
-				ProxyMode: resources.IPVSProxyMode,
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.193.0.0/20"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                resources.IPVSProxyMode,
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
 			Cloud: kubermaticv1.CloudSpec{
 				DatacenterName: "my-dc",
