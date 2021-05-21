@@ -66,3 +66,11 @@ func (e ExposeStrategiesSet) String() string {
 	// perf critical path.
 	return fmt.Sprintf("[%s]", strings.Join(es, ", "))
 }
+
+func (e ExposeStrategiesSet) Items() []string {
+	var items []string
+	for s := range e {
+		items = append(items, string(s))
+	}
+	return items
+}

@@ -25,6 +25,7 @@ import (
 	"github.com/go-logr/logr"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/utils/pointer"
@@ -60,7 +61,10 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 
 	switch req.Operation {
 	case admissionv1.Create:
-		// NOP
+		if err := h.decoder.Decode(req, cluster); err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		applyDefaults(cluster)
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
@@ -73,19 +77,42 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 			h.log.Info("cluster mutation failed", "error", err)
 			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("cluster mutation request %s failed: %v", req.UID, err))
 		}
-
-		mutatedCluster, err := json.Marshal(cluster)
-		if err != nil {
-			return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling cluster object failed: %v", err))
-		}
-
-		return admission.PatchResponseFromRaw(req.Object.Raw, mutatedCluster)
 	case admissionv1.Delete:
-		// NOP
+		return webhook.Allowed(fmt.Sprintf("no mutation done for request %s", req.UID))
 	default:
 		return admission.Errored(http.StatusBadRequest, fmt.Errorf("%s not supported on cluster resources", req.Operation))
 	}
-	return webhook.Allowed(fmt.Sprintf("no mutation done for request %s", req.UID))
+
+	mutatedCluster, err := json.Marshal(cluster)
+	if err != nil {
+		return webhook.Errored(http.StatusInternalServerError, fmt.Errorf("marshaling cluster object failed: %v", err))
+	}
+
+	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedCluster)
+}
+
+func applyDefaults(c *kubermaticv1.Cluster) {
+	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
+		c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
+	}
+
+	if len(c.Spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
+		c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
+	}
+
+	if c.Spec.ClusterNetwork.DNSDomain == "" {
+		c.Spec.ClusterNetwork.DNSDomain = "cluster.local"
+	}
+
+	if c.Spec.ClusterNetwork.ProxyMode == "" {
+		// IPVS causes issues with Hetzner's LoadBalancers, which should
+		// be addressed via https://github.com/kubernetes/enhancements/pull/1392
+		if c.Spec.Cloud.Hetzner != nil {
+			c.Spec.ClusterNetwork.ProxyMode = resources.IPTablesProxyMode
+		} else {
+			c.Spec.ClusterNetwork.ProxyMode = resources.IPVSProxyMode
+		}
+	}
 }
 
 func (h *AdmissionHandler) mutateUpdate(ctx context.Context, oldCluster, newCluster *kubermaticv1.Cluster) error {

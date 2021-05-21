@@ -23,7 +23,6 @@ import (
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
-	"k8c.io/kubermatic/v2/pkg/resources"
 
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -38,16 +37,13 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		return nil, err
 	}
 
-	// Set default network configuration
-	if err := r.ensureClusterNetworkDefaults(ctx, cluster); err != nil {
-		return nil, err
-	}
-
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer) {
-		if err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(c, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer)
-		}); err != nil {
+		res, err := r.AddFinalizers(ctx, cluster, kubermaticapiv1.EtcdBackupConfigCleanupFinalizer)
+		if err != nil {
 			return nil, err
+		}
+		if !res.IsZero() {
+			return res, nil
 		}
 	}
 
@@ -61,6 +57,7 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		return nil, err
 	}
 
+	var finalizers []string
 	if cluster.Status.ExtendedHealth.Apiserver == kubermaticv1.HealthStatusUp {
 		// Controlling of user-cluster resources
 		reachable, err := r.clusterIsReachable(ctx, cluster)
@@ -75,80 +72,23 @@ func (r *Reconciler) reconcileCluster(ctx context.Context, cluster *kubermaticv1
 		// Only add the node deletion finalizer when the cluster is actually running
 		// Otherwise we fail to delete the nodes and are stuck in a loop
 		if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.NodeDeletionFinalizer) {
-			err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-				kuberneteshelper.AddFinalizer(c, kubermaticapiv1.NodeDeletionFinalizer)
-			})
-			if err != nil {
-				return nil, err
-			}
+			finalizers = append(finalizers, kubermaticapiv1.NodeDeletionFinalizer)
 		}
 
 	}
 
 	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.KubermaticConstraintCleanupFinalizer) {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(c, kubermaticapiv1.KubermaticConstraintCleanupFinalizer)
-		})
-		if err != nil {
-			return nil, err
-		}
+		finalizers = append(finalizers, kubermaticapiv1.KubermaticConstraintCleanupFinalizer)
+	}
+	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer) {
+		finalizers = append(finalizers, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer)
 	}
 
-	if !kuberneteshelper.HasFinalizer(cluster, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer) {
-		err := r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-			kuberneteshelper.AddFinalizer(c, kubermaticapiv1.ClusterRoleBindingsCleanupFinalizer)
-		})
-		if err != nil {
-			return nil, err
-		}
+	if len(finalizers) > 0 {
+		return r.AddFinalizers(ctx, cluster, finalizers...)
 	}
 
 	return &reconcile.Result{}, nil
-}
-
-// ensureClusterNetworkDefaults will apply default cluster network configuration
-func (r *Reconciler) ensureClusterNetworkDefaults(ctx context.Context, cluster *kubermaticv1.Cluster) error {
-	var modifiers []func(*kubermaticv1.Cluster)
-
-	if len(cluster.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		setServiceNetwork := func(c *kubermaticv1.Cluster) {
-			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
-		}
-		modifiers = append(modifiers, setServiceNetwork)
-	}
-
-	if len(cluster.Spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
-		setPodNetwork := func(c *kubermaticv1.Cluster) {
-			c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
-		}
-		modifiers = append(modifiers, setPodNetwork)
-	}
-
-	if cluster.Spec.ClusterNetwork.DNSDomain == "" {
-		setDNSDomain := func(c *kubermaticv1.Cluster) {
-			c.Spec.ClusterNetwork.DNSDomain = "cluster.local"
-		}
-		modifiers = append(modifiers, setDNSDomain)
-	}
-
-	if cluster.Spec.ClusterNetwork.ProxyMode == "" {
-		setProxyMode := func(c *kubermaticv1.Cluster) {
-			// IPVS causes issues with Hetzner's LoadBalancers, which should
-			// be addressed via https://github.com/kubernetes/enhancements/pull/1392
-			if c.Spec.Cloud.Hetzner != nil {
-				c.Spec.ClusterNetwork.ProxyMode = resources.IPTablesProxyMode
-			} else {
-				c.Spec.ClusterNetwork.ProxyMode = resources.IPVSProxyMode
-			}
-		}
-		modifiers = append(modifiers, setProxyMode)
-	}
-
-	return r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {
-		for _, modify := range modifiers {
-			modify(c)
-		}
-	})
 }
 
 // ensureEtcdLauncherFeatureFlag will apply seed controller etcdLauncher setting on the cluster level

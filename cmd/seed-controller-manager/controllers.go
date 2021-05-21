@@ -159,7 +159,7 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.inClusterPrometheusScrapingConfigsFile,
 		userClusterMLAEnabled(ctrlCtx),
 		ctrlCtx.dockerPullConfigJSON,
-		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
+		ctrlCtx.runOptions.enableNodeLocalDNSCache,
 		ctrlCtx.runOptions.concurrentClusterUpdate,
 		ctrlCtx.runOptions.enableEtcdBackupRestoreController,
 		backupInterval,
@@ -168,6 +168,8 @@ func createKubernetesController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.kubermaticImage,
 		ctrlCtx.runOptions.etcdLauncherImage,
 		ctrlCtx.runOptions.dnatControllerImage,
+		ctrlCtx.runOptions.machineControllerImageTag,
+		ctrlCtx.runOptions.machineControllerImageRepository,
 		ctrlCtx.runOptions.tunnelingAgentIP.String(),
 		ctrlCtx.runOptions.caBundle,
 		kubernetescontroller.Features{
@@ -345,7 +347,7 @@ func createAddonController(ctrlCtx *controllerContext) error {
 		},
 		ctrlCtx.runOptions.kubernetesAddonsPath,
 		ctrlCtx.runOptions.overwriteRegistry,
-		ctrlCtx.runOptions.nodeLocalDNSCacheEnabled(),
+		ctrlCtx.runOptions.enableNodeLocalDNSCache,
 		ctrlCtx.clientProvider,
 		ctrlCtx.versions,
 	)
@@ -405,7 +407,7 @@ func createInitialMachineDeploymentController(ctrlCtx *controllerContext) error 
 }
 
 func createMLAController(ctrlCtx *controllerContext) error {
-	if !userClusterMLAEnabled(ctrlCtx) {
+	if !ctrlCtx.runOptions.featureGates.Enabled(features.UserClusterMLA) {
 		return nil
 	}
 	return mla.Add(
@@ -420,6 +422,8 @@ func createMLAController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.grafanaHeaderName,
 		ctrlCtx.runOptions.grafanaSecret,
 		ctrlCtx.runOptions.overwriteRegistry,
+		ctrlCtx.runOptions.cortexAlertmanagerURL,
+		ctrlCtx.runOptions.enableUserClusterMLA,
 	)
 }
 

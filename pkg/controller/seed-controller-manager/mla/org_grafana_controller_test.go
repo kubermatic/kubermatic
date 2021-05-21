@@ -66,6 +66,7 @@ func newTestOrgGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Objec
 		grafanaClient: grafanaClient,
 		log:           kubermaticlog.Logger,
 		recorder:      record.NewFakeRecorder(10),
+		mlaEnabled:    true,
 	}
 	return &reconciler, ts
 }
@@ -237,6 +238,9 @@ func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bo
 		}
 		req := requests[c]
 		t.Logf("checking request: %s", req.name)
+		for key := range req.request.Header {
+			assert.Equal(t, req.request.Header.Get(key), r.Header.Get(key), "header %s not found", key)
+		}
 		assert.Equal(t, req.request.URL.Path, r.URL.Path)
 		assert.Equal(t, req.request.Method, r.Method)
 		if req.request.ContentLength > 0 {

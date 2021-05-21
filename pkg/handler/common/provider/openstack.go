@@ -314,6 +314,7 @@ func GetOpenstackSizes(username, password, tenant, tenantID, domain, datacenterN
 func filterOpenStackByQuota(instances []apiv1.OpenstackSize, quota kubermaticv1.MachineDeploymentVMResourceQuota) []apiv1.OpenstackSize {
 	var filteredRecords []apiv1.OpenstackSize
 
+	filteredRecords = make([]apiv1.OpenstackSize, 0)
 	// Range over the records and apply all the filters to each record.
 	// If the record passes all the filters, add it to the final slice.
 	for _, r := range instances {

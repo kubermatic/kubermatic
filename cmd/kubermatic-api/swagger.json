@@ -1037,6 +1037,14 @@
                 "name": {
                   "type": "string",
                   "x-go-name": "Name"
+                },
+                "users": {
+                  "description": "human user email list for the service account in projectmanagers group",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "x-go-name": "Users"
                 }
               }
             }
@@ -14958,6 +14966,29 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "ClusterNetworkingConfig": {
+      "description": "ClusterNetworkingConfig specifies the different networking\nparameters for a cluster.",
+      "type": "object",
+      "properties": {
+        "dnsDomain": {
+          "description": "Domain name for services.",
+          "type": "string",
+          "x-go-name": "DNSDomain"
+        },
+        "pods": {
+          "$ref": "#/definitions/NetworkRanges"
+        },
+        "proxyMode": {
+          "description": "ProxyMode defines the kube-proxy mode (ipvs/iptables).\nDefaults to ipvs.",
+          "type": "string",
+          "x-go-name": "ProxyMode"
+        },
+        "services": {
+          "$ref": "#/definitions/NetworkRanges"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "ClusterRole": {
       "description": "ClusterRole defines cluster RBAC role for the user cluster",
       "type": "object",
@@ -15058,6 +15089,9 @@
         },
         "cloud": {
           "$ref": "#/definitions/CloudSpec"
+        },
+        "clusterNetwork": {
+          "$ref": "#/definitions/ClusterNetworkingConfig"
         },
         "enableUserSSHKeyAgent": {
           "description": "EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.\nIf it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach\nto the created cluster. If the agent was disabled, it won't be deployed in the user cluster, thus after\nthe cluster creation any attached ssh keys won't be synced to the worker nodes. Once the agent is enabled/disabled\nit cannot be changed after the cluster is being created.",
@@ -17140,6 +17174,20 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "NetworkRanges": {
+      "type": "object",
+      "title": "NetworkRanges represents ranges of network addresses.",
+      "properties": {
+        "cidrBlocks": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "CIDRBlocks"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "Node": {
       "description": "Node represents a worker node that is part of a cluster",

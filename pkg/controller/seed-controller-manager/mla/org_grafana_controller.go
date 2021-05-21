@@ -52,6 +52,7 @@ type orgGrafanaReconciler struct {
 	workerName string
 	recorder   record.EventRecorder
 	versions   kubermatic.Versions
+	mlaEnabled bool
 }
 
 // Add creates a new MLA controller that is responsible for
@@ -63,6 +64,7 @@ func newOrgGrafanaReconciler(
 	workerName string,
 	versions kubermatic.Versions,
 	grafanaClient *grafanasdk.Client,
+	mlaEnabled bool,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
@@ -75,6 +77,7 @@ func newOrgGrafanaReconciler(
 		workerName: workerName,
 		recorder:   mgr.GetEventRecorderFor(ControllerName),
 		versions:   versions,
+		mlaEnabled: mlaEnabled,
 	}
 
 	ctrlOptions := controller.Options{
@@ -100,7 +103,7 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
-	if !project.DeletionTimestamp.IsZero() {
+	if !project.DeletionTimestamp.IsZero() || !r.mlaEnabled {
 		if err := r.handleDeletion(ctx, project); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
@@ -125,8 +128,11 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 }
 
 func (r *orgGrafanaReconciler) handleDeletion(ctx context.Context, project *kubermaticv1.Project) error {
+	update := false
 	orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
 	if ok {
+		update = true
+		delete(project.Annotations, grafanaOrgAnnotationKey)
 		id, err := strconv.ParseUint(orgID, 10, 32)
 		if err != nil {
 			return err
@@ -137,7 +143,10 @@ func (r *orgGrafanaReconciler) handleDeletion(ctx context.Context, project *kube
 		}
 	}
 	if kubernetes.HasFinalizer(project, mlaFinalizer) {
+		update = true
 		kubernetes.RemoveFinalizer(project, mlaFinalizer)
+	}
+	if update {
 		if err := r.Update(ctx, project); err != nil {
 			return fmt.Errorf("updating Project: %w", err)
 		}

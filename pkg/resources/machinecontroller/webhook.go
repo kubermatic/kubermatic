@@ -95,10 +95,20 @@ func WebhookDeploymentCreator(data machinecontrollerData) reconciling.NamedDeplo
 			dep.Spec.Template.ObjectMeta = metav1.ObjectMeta{Labels: podLabels}
 
 			dep.Spec.Template.Spec.InitContainers = []corev1.Container{}
+
+			repository := data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller"
+			if r := data.MachineControllerImageRepository(); r != "" {
+				repository = r
+			}
+			tag := Tag
+			if t := data.MachineControllerImageTag(); t != "" {
+				tag = t
+			}
+
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
-					Image:   data.ImageRegistry(resources.RegistryDocker) + "/kubermatic/machine-controller:" + Tag,
+					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/webhook"},
 					Args:    args,
 					Env: append(envVars, corev1.EnvVar{

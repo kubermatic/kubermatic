@@ -36,6 +36,10 @@ const (
 	// ViewerGroupNamePrefix represents viewers group prefix
 	ViewerGroupNamePrefix = "viewers"
 
+	// ProjectManagerGroupNamePrefix represents project managers group prefix.
+	// Can create, update and delete projects and add/remove members & service accounts.
+	ProjectManagerGroupNamePrefix = "projectmanagers"
+
 	// RBACResourcesNamePrefix represents kubermatic group prefix
 	RBACResourcesNamePrefix = "kubermatic"
 )
@@ -58,6 +62,7 @@ var AllGroupsPrefixes = []string{
 	OwnerGroupNamePrefix,
 	EditorGroupNamePrefix,
 	ViewerGroupNamePrefix,
+	ProjectManagerGroupNamePrefix,
 }
 
 // GenerateActualGroupNameFor generates a group name for the given project and group prefix.
@@ -509,7 +514,7 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 		return []string{"get", "update", "delete"}, nil
 	}
 
-	// verbs for editors
+	// verbs for viewers
 	//
 	// viewers of a named resource
 	// special case - viewers are not allowed to interact with members of a project (UserProjectBinding)
@@ -524,6 +529,19 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 		return []string{"get"}, nil
 	}
 
+	// verbs for projectmanagers
+	//
+	// special case - projectmanagers are not allowed to interact with clusters
+	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == kubermaticv1.ClusterKindName {
+		return nil, nil
+	}
+	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == kubermaticv1.ExternalClusterKind {
+		return nil, nil
+	}
+	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) {
+		return []string{"get", "update", "delete"}, nil
+	}
+
 	// unknown group passed
 	return nil, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
 }
@@ -531,19 +549,25 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 // generateVerbsForResource generates verbs for a resource for example "cluster"
 // to make it even more concrete, if there is "create" verb returned for owners group, that means that the owners can create "cluster" resources.
 func generateVerbsForResource(groupName, resourceKind string) ([]string, error) {
-	// special case - only the owners of a project can manipulate members
+	// special case - only the owners and project managers of a project can manipulate members
 	//
-	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
+	switch {
+	case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind:
 		return []string{"create"}, nil
-	} else if resourceKind == kubermaticv1.UserProjectBindingKind {
+	case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind:
+		return []string{"create"}, nil
+	case resourceKind == kubermaticv1.UserProjectBindingKind:
 		return nil, nil
 	}
 
-	// special case - only the owners of a project can create service account (aka. users)
+	// special case - only the owners and project managers of a project can create service account (aka. users)
 	//
-	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == kubermaticv1.UserKindName {
+	switch {
+	case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == kubermaticv1.UserKindName:
 		return []string{"create"}, nil
-	} else if resourceKind == kubermaticv1.UserKindName {
+	case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == kubermaticv1.UserKindName:
+		return []string{"create"}, nil
+	case resourceKind == kubermaticv1.UserKindName:
 		return nil, nil
 	}
 
@@ -561,17 +585,27 @@ func generateVerbsForResource(groupName, resourceKind string) ([]string, error) 
 		return nil, nil
 	}
 
+	// verbs for project managers
+	//
+	// project managers cannot create other resources
+	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) {
+		return nil, nil
+	}
+
 	// unknown group passed
 	return nil, fmt.Errorf("unable to generate verbs, unknown group name passed in = %s", groupName)
 }
 
 func generateVerbsForNamespacedResource(groupName, resourceKind, namespace string) ([]string, error) {
-	// special case - only the owners of a project can create secrets in "saSecretsNamespaceName" namespace
+	// special case - only the owners of a project and project managers can create secrets in "saSecretsNamespaceName" namespace
 	//
 	if namespace == saSecretsNamespaceName {
-		if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind {
+		switch {
+		case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind:
 			return []string{"create"}, nil
-		} else if resourceKind == secretV1Kind {
+		case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == secretV1Kind:
+			return []string{"create"}, nil
+		case resourceKind == secretV1Kind:
 			return nil, nil
 		}
 	}
@@ -586,9 +620,13 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 	// special case - only the owners of a project can manipulate secrets in "ssaSecretsNamespaceNam" namespace
 	//
 	if namespace == saSecretsNamespaceName {
-		if strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind {
+
+		switch {
+		case strings.HasPrefix(groupName, OwnerGroupNamePrefix) && resourceKind == secretV1Kind:
 			return []string{"get", "update", "delete"}, nil
-		} else if resourceKind == secretV1Kind {
+		case strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == secretV1Kind:
+			return []string{"get", "update", "delete"}, nil
+		case resourceKind == secretV1Kind:
 			return nil, nil
 		}
 	}
@@ -598,12 +636,16 @@ func generateVerbsForNamedResourceInNamespace(groupName, resourceKind, namespace
 }
 
 func generateVerbsForClusterNamespaceResource(cluster *kubermaticv1.Cluster, groupName, kind string) ([]string, error) {
-	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && kind == kubermaticv1.AddonKindName {
+	if strings.HasPrefix(groupName, ViewerGroupNamePrefix) && (kind == kubermaticv1.AddonKindName || kind == kubermaticv1.ConstraintKind) {
 		return []string{"get", "list"}, nil
 	}
 
 	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) || strings.HasPrefix(groupName, EditorGroupNamePrefix) {
 		return []string{"get", "list", "create", "update", "delete"}, nil
+	}
+
+	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) {
+		return nil, nil
 	}
 
 	// unknown group passed
@@ -625,6 +667,10 @@ func generateVerbsForClusterNamespaceNamedResource(cluster *kubermaticv1.Cluster
 		if kind == secretV1Kind && name == defaultAlertmanagerConfigSecretName {
 			return []string{"get", "update", "delete"}, nil
 		}
+	}
+
+	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) {
+		return nil, nil
 	}
 
 	// unknown group passed

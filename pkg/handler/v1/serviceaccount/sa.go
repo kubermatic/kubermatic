@@ -38,6 +38,7 @@ import (
 var serviceAccountGroupsPrefixes = []string{
 	rbac.EditorGroupNamePrefix,
 	rbac.ViewerGroupNamePrefix,
+	rbac.ProjectManagerGroupNamePrefix,
 }
 
 // CreateEndpoint adds the given service account to the given project

@@ -368,6 +368,14 @@ spec:
     etcdVolumeSize: 5Gi
     # KubermaticDockerRepository is the repository containing the Kubermatic user-cluster-controller-manager image.
     kubermaticDockerRepository: quay.io/kubermatic/kubermatic
+    # MachineController configures the Machine Controller
+    machineController:
+      # ImageRepository is used to override the Machine Controller image repository.
+      # It is only for development, tests and PoC purposes. This field must not be set in production environments.
+      imageRepository: ""
+      # ImageTag is used to override the Machine Controller image.
+      # It is only for development, tests and PoC purposes. This field must not be set in production environments.
+      imageTag: ""
     # Monitoring can be used to fine-tune to in-cluster Prometheus.
     monitoring:
       # CustomRules can be used to inject custom recording and alerting rules. This field

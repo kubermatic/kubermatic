@@ -794,8 +794,11 @@ type ClusterSpec struct {
 	// By default it is disabled.
 	OPAIntegration *kubermaticv1.OPAIntegrationSettings `json:"opaIntegration,omitempty"`
 
-	//MLA contains monitoring, logging and alerting related settings for the user cluster.
+	// MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA *kubermaticv1.MLASettings `json:"mla,omitempty"`
+
+	// ClusterNetwork contains network settings.
+	ClusterNetwork *kubermaticv1.ClusterNetworkingConfig `json:"clusterNetwork,omitempty"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
@@ -816,6 +819,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		ServiceAccount                       *kubermaticv1.ServiceAccountSettings   `json:"serviceAccount,omitempty"`
 		OPAIntegration                       *kubermaticv1.OPAIntegrationSettings   `json:"opaIntegration,omitempty"`
 		MLA                                  *kubermaticv1.MLASettings              `json:"mla,omitempty"`
+		ClusterNetwork                       *kubermaticv1.ClusterNetworkingConfig  `json:"clusterNetwork,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
 			DatacenterName: cs.Cloud.DatacenterName,
@@ -846,6 +850,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		ServiceAccount:                       cs.ServiceAccount,
 		OPAIntegration:                       cs.OPAIntegration,
 		MLA:                                  cs.MLA,
+		ClusterNetwork:                       cs.ClusterNetwork,
 	})
 
 	return ret, err
@@ -2167,6 +2172,8 @@ const (
 	SeedProjectCleanupFinalizer = "kubermatic.io/cleanup-seed-projects"
 	// SeedUserProjectBindingCleanupFinalizer indicates that Kubermatic UserProjectBindings on the seed clusters need cleanup
 	SeedUserProjectBindingCleanupFinalizer = "kubermatic.io/cleanup-seed-user-project-bindings"
+	// SeedUserCleanupFinalizer indicates that Kubermatic Users on the seed clusters need cleanup
+	SeedUserCleanupFinalizer = "kubermatic.io/cleanup-seed-users"
 	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup
 	ClusterRoleBindingsCleanupFinalizer = "kubermatic.io/cleanup-cluster-role-bindings"
 )

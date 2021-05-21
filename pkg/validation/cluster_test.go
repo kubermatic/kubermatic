@@ -24,6 +24,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 )
 
@@ -224,10 +225,119 @@ func TestValidateLeaderElectionSettings(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			t.Logf("Validating: %+v", test.leaderElectionSettings)
-			err := ValidateLeaderElectionSettings(test.leaderElectionSettings)
+			errs := ValidateLeaderElectionSettings(&test.leaderElectionSettings, field.NewPath("spec"))
 
-			if test.wantErr == (err == nil) {
-				t.Errorf("Want error: %t, but got: \"%v\"", test.wantErr, err)
+			if test.wantErr == (len(errs) == 0) {
+				t.Errorf("Want error: %t, but got: \"%v\"", test.wantErr, errs)
+			}
+		})
+	}
+}
+
+func TestValidateClusterNetworkingConfig(t *testing.T) {
+	tests := []struct {
+		name          string
+		networkConfig kubermaticv1.ClusterNetworkingConfig
+		wantErr       bool
+		allowEmpty    bool
+	}{
+		{
+			name:          "empty network config",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{},
+			wantErr:       false,
+			allowEmpty:    true,
+		},
+		{
+			name: "valid network config",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				DNSDomain: "cluster.local",
+				ProxyMode: "ipvs",
+			},
+			wantErr:    false,
+			allowEmpty: false,
+		},
+		{
+			name: "missing pods CIDR",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				DNSDomain: "cluster.local",
+				ProxyMode: "ipvs",
+			},
+			wantErr:    true,
+			allowEmpty: false,
+		},
+		{
+			name: "missing services CIDR",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				DNSDomain: "cluster.local",
+				ProxyMode: "ipvs",
+			},
+			wantErr:    true,
+			allowEmpty: false,
+		},
+		{
+			name: "missing DNS domain",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				ProxyMode: "ipvs",
+			},
+			wantErr:    true,
+			allowEmpty: false,
+		},
+		{
+			name: "missing proxy mode",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				DNSDomain: "cluster.local",
+			},
+			wantErr:    true,
+			allowEmpty: false,
+		},
+		{
+			name: "invalid pod cidr",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"192.127.0.0:20"}},
+			},
+			wantErr:    true,
+			allowEmpty: true,
+		},
+		{
+			name: "invalid service cidr",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Services: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"192.127/20"}},
+			},
+			wantErr:    true,
+			allowEmpty: true,
+		},
+		{
+			name: "invalid service cidr",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				DNSDomain: "cluster.bla",
+			},
+			wantErr:    true,
+			allowEmpty: true,
+		},
+		{
+			name: "invalid proxy mode",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				ProxyMode: "none",
+			},
+			wantErr:    true,
+			allowEmpty: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Logf("[%s] Validating: %+v", test.name, test.networkConfig)
+			errs := ValidateClusterNetworkConfig(&test.networkConfig, field.NewPath("spec", "networkConfig"), test.allowEmpty)
+
+			if test.wantErr == (len(errs) == 0) {
+				t.Errorf("Want error: %t, but got: \"%v\"", test.wantErr, errs)
 			}
 		})
 	}

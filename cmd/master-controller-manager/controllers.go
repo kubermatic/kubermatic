@@ -33,6 +33,7 @@ import (
 	serviceaccount "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/service-account"
 	userprojectbinding "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding"
 	userprojectbindingsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding-sync"
+	usersynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkeyssynchronizer"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
@@ -56,6 +57,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
 	userSSHKeysSynchronizerFactory := userSSHKeysSynchronizerFactoryCreator(ctrlCtx)
 	masterconstraintSynchronizerFactory := masterconstraintSynchronizerFactoryCreator(ctrlCtx)
+	userSynchronizerFactory := userSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		kubermaticlog.Logger,
@@ -67,7 +69,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		projectLabelSynchronizerFactory,
 		userSSHKeysSynchronizerFactory,
 		masterconstraintSynchronizerFactory,
-	); err != nil {
+		userSynchronizerFactory); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
 	}
@@ -153,6 +155,17 @@ func masterconstraintSynchronizerFactoryCreator(ctrlCtx *controllerContext) seed
 			ctrlCtx.namespace,
 			seedManagerMap,
 			ctrlCtx.log,
+		)
+	}
+}
+
+func userSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return usersynchronizer.ControllerName, usersynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
+			ctrlCtx.workerCount,
 		)
 	}
 }

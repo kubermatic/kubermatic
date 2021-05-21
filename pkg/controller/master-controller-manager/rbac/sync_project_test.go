@@ -1254,6 +1254,19 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 						},
 					},
 				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:userprojectbindings:projectmanagers",
+						ResourceVersion: "1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{"userprojectbindings"},
+							Verbs:     []string{"create"},
+						},
+					},
+				},
 			},
 		},
 
@@ -1385,31 +1398,148 @@ func TestEnsureProjectClusterRBACRoleForResources(t *testing.T) {
 
 func TestEnsureProjectOwner(t *testing.T) {
 	tests := []struct {
-		name            string
-		projectToSync   *kubermaticv1.Project
-		existingUser    *kubermaticv1.User
-		expectedBinding *kubermaticv1.UserProjectBinding
-		existingBinding *kubermaticv1.UserProjectBinding
+		name                   string
+		existingKubermaticObjs []ctrlruntimeclient.Object
+		projectToSync          *kubermaticv1.Project
+		existingUser           *kubermaticv1.User
+		expectedBindings       []kubermaticv1.UserProjectBinding
+		existingBinding        *kubermaticv1.UserProjectBinding
 	}{
 		{
-			name:          "scenario 1: make sure, that the owner of the newly created project is set properly.",
-			projectToSync: test.CreateProject("thunderball", test.CreateUser("James Bond")),
-			existingUser:  test.CreateUser("James Bond"),
-			expectedBinding: func() *kubermaticv1.UserProjectBinding {
+			name:                   "scenario 1: make sure, that the owner of the newly created project is set properly.",
+			existingKubermaticObjs: []ctrlruntimeclient.Object{},
+			projectToSync:          test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			existingUser:           test.CreateUser("James Bond"),
+			expectedBindings: func() []kubermaticv1.UserProjectBinding {
 				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
 				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
-				binding.ObjectMeta.ResourceVersion = "1"
-				return binding
+				binding.ObjectMeta.Name = ""
+				binding.ResourceVersion = ""
+				return []kubermaticv1.UserProjectBinding{*binding}
 			}(),
 		},
 		{
-			name:            "scenario 2: no op when the owner of the project was set.",
-			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
-			existingUser:    test.CreateUser("James Bond"),
-			existingBinding: test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
-			expectedBinding: func() *kubermaticv1.UserProjectBinding {
+			name:                   "scenario 2: no op when the owner of the project was set.",
+			existingKubermaticObjs: []ctrlruntimeclient.Object{},
+			projectToSync:          test.CreateProject("thunderball", test.CreateUser("James Bond")),
+			existingUser:           test.CreateUser("James Bond"),
+			existingBinding:        test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond"))),
+			expectedBindings: func() []kubermaticv1.UserProjectBinding {
 				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
-				return binding
+				binding.ObjectMeta.Name = ""
+				binding.ResourceVersion = ""
+				return []kubermaticv1.UserProjectBinding{*binding}
+			}(),
+		},
+		{
+			name: "scenario 3: make sure, that the owners of the newly created project are set properly.",
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.CreateUser("Batman"),
+			},
+			projectToSync: func() *kubermaticv1.Project {
+				firstOwner := test.CreateUser("James Bond")
+				secondOwner := test.CreateUser("Batman")
+				return &kubermaticv1.Project{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       kubermaticv1.ProjectKindName,
+						APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  types.UID("thunderball") + "ID",
+						Name: "thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: firstOwner.APIVersion,
+								Kind:       firstOwner.Kind,
+								UID:        firstOwner.GetUID(),
+								Name:       firstOwner.Name,
+							},
+							{
+								APIVersion: secondOwner.APIVersion,
+								Kind:       secondOwner.Kind,
+								UID:        secondOwner.GetUID(),
+								Name:       secondOwner.Name,
+							},
+						},
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "thunderball",
+					},
+					Status: kubermaticv1.ProjectStatus{
+						Phase: kubermaticv1.ProjectInactive,
+					},
+				}
+			}(),
+			existingUser: test.CreateUser("James Bond"),
+			expectedBindings: func() []kubermaticv1.UserProjectBinding {
+				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
+				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				binding.ObjectMeta.Name = ""
+				binding.ResourceVersion = ""
+				binding2 := test.CreateExpectedOwnerBinding("Batman", test.CreateProject("thunderball", test.CreateUser("Batman")))
+				binding2.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				binding2.ObjectMeta.Name = ""
+				binding2.ResourceVersion = ""
+				return []kubermaticv1.UserProjectBinding{*binding, *binding2}
+			}(),
+		},
+		{
+			name: "scenario 4: create bindings only for existing users",
+			existingKubermaticObjs: []ctrlruntimeclient.Object{
+				test.CreateUser("Batman"),
+			},
+			projectToSync: func() *kubermaticv1.Project {
+				firstOwner := test.CreateUser("James Bond")
+				secondOwner := test.CreateUser("Batman")
+				thirdOwner := test.CreateUser("Superman")
+				return &kubermaticv1.Project{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       kubermaticv1.ProjectKindName,
+						APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						UID:  types.UID("thunderball") + "ID",
+						Name: "thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: firstOwner.APIVersion,
+								Kind:       firstOwner.Kind,
+								UID:        firstOwner.GetUID(),
+								Name:       firstOwner.Name,
+							},
+							{
+								APIVersion: secondOwner.APIVersion,
+								Kind:       secondOwner.Kind,
+								UID:        secondOwner.GetUID(),
+								Name:       secondOwner.Name,
+							},
+							{
+								APIVersion: thirdOwner.APIVersion,
+								Kind:       thirdOwner.Kind,
+								UID:        thirdOwner.GetUID(),
+								Name:       thirdOwner.Name,
+							},
+						},
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "thunderball",
+					},
+					Status: kubermaticv1.ProjectStatus{
+						Phase: kubermaticv1.ProjectInactive,
+					},
+				}
+			}(),
+			existingUser: test.CreateUser("James Bond"),
+			expectedBindings: func() []kubermaticv1.UserProjectBinding {
+				binding := test.CreateExpectedOwnerBinding("James Bond", test.CreateProject("thunderball", test.CreateUser("James Bond")))
+				binding.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				binding.ObjectMeta.Name = ""
+				binding.ResourceVersion = ""
+				binding2 := test.CreateExpectedOwnerBinding("Batman", test.CreateProject("thunderball", test.CreateUser("Batman")))
+				binding2.Finalizers = []string{"kubermatic.io/controller-manager-rbac-cleanup"}
+				binding2.ObjectMeta.Name = ""
+				binding2.ResourceVersion = ""
+				return []kubermaticv1.UserProjectBinding{*binding, *binding2}
 			}(),
 		},
 	}
@@ -1417,7 +1547,7 @@ func TestEnsureProjectOwner(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			// setup the test scenario
 			ctx := context.Background()
-			objs := []ctrlruntimeclient.Object{}
+			objs := test.existingKubermaticObjs
 			userIndexer := cache.NewIndexer(cache.MetaNamespaceKeyFunc, cache.Indexers{})
 			if test.existingUser != nil {
 				err := userIndexer.Add(test.existingUser)
@@ -1453,11 +1583,20 @@ func TestEnsureProjectOwner(t *testing.T) {
 			err = masterClient.List(ctx, &userProjectBindingList)
 			assert.NoError(t, err)
 
-			assert.Len(t, userProjectBindingList.Items, 1)
-			// Hack around the fact that the bindings' names are random
-			userProjectBindingList.Items[0].ObjectMeta.Name = test.expectedBinding.ObjectMeta.Name
-			userProjectBindingList.Items[0].ResourceVersion = test.expectedBinding.ResourceVersion
-			assert.Equal(t, userProjectBindingList.Items[0], *test.expectedBinding)
+			assert.Len(t, userProjectBindingList.Items, len(test.expectedBindings))
+
+			var copyUserProjectBindingList []kubermaticv1.UserProjectBinding
+			for _, item := range userProjectBindingList.Items {
+				// Hack around the fact that the bindings' names are random
+				item.ObjectMeta.Name = ""
+				item.ResourceVersion = ""
+				copyUserProjectBindingList = append(copyUserProjectBindingList, item)
+			}
+
+			sortUserProjectBinding(test.expectedBindings)
+			sortUserProjectBinding(copyUserProjectBindingList)
+
+			assert.Equal(t, copyUserProjectBindingList, test.expectedBindings)
 		})
 	}
 }
@@ -1516,12 +1655,40 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						},
 					},
 				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:secrets:projectmanagers",
+						Namespace:       "kubermatic",
+						ResourceVersion: "1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							Resources: []string{"secrets"},
+							Verbs:     []string{"create"},
+						},
+					},
+				},
 			},
 
 			expectedRolesForMaster: []*rbacv1.Role{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:secrets:owners",
+						Namespace:       "kubermatic",
+						ResourceVersion: "1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							Resources: []string{"secrets"},
+							Verbs:     []string{"create"},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:secrets:projectmanagers",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
 					},
@@ -1579,11 +1746,39 @@ func TestEnsureProjectRBACRoleForResources(t *testing.T) {
 						},
 					},
 				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:secrets:projectmanagers",
+						Namespace:       "kubermatic",
+						ResourceVersion: "1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							Resources: []string{"secrets"},
+							Verbs:     []string{"create"},
+						},
+					},
+				},
 			},
 			expectedRolesForMaster: []*rbacv1.Role{
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:secrets:owners",
+						Namespace:       "kubermatic",
+						ResourceVersion: "1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{k8scorev1.SchemeGroupVersion.Group},
+							Resources: []string{"secrets"},
+							Verbs:     []string{"create"},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:secrets:projectmanagers",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
 					},
@@ -1767,6 +1962,25 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 						Name:     "kubermatic:secrets:owners",
 					},
 				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:secrets:projectmanagers",
+						Namespace:       "kubermatic",
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:projectmanagers",
+					},
+				},
 			},
 			seedClusters:            1,
 			expectedActionsForSeeds: []string{"create"},
@@ -1788,6 +2002,25 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 						APIGroup: rbacv1.GroupName,
 						Kind:     "Role",
 						Name:     "kubermatic:secrets:owners",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:secrets:projectmanagers",
+						Namespace:       "kubermatic",
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:projectmanagers",
 					},
 				},
 			},
@@ -1838,8 +2071,55 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 						Name:     "kubermatic:secrets:owners",
 					},
 				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:projectmanagers",
+						Namespace: "kubermatic",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-existing-project-1",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:projectmanagers",
+					},
+				},
 			},
 			expectedRoleBindingsForMaster: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:secrets:projectmanagers",
+						Namespace:       "kubermatic",
+						ResourceVersion: "1",
+					},
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "RoleBinding",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-existing-project-1",
+						},
+						{
+
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:projectmanagers",
+					},
+				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:secrets:owners",
@@ -1875,6 +2155,24 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 			existingRoleBindingsForSeeds: []*rbacv1.RoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:projectmanagers",
+						Namespace: "kubermatic",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-existing-project-1",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:projectmanagers",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
 						Namespace: "kubermatic",
 					},
@@ -1893,6 +2191,34 @@ func TestEnsureProjectRBACRoleBindingForResources(t *testing.T) {
 				},
 			},
 			expectedRoleBindingsForSeeds: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:secrets:projectmanagers",
+						Namespace:       "kubermatic",
+						ResourceVersion: "1",
+					},
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "RoleBinding",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-existing-project-1",
+						},
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:projectmanagers",
+					},
+				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:secrets:owners",
@@ -2068,6 +2394,23 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			expectedRoleBindingsForMaster: []*rbacv1.RoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:secrets:projectmanagers",
+						Namespace:       "kubermatic",
+						ResourceVersion: "1",
+					},
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "RoleBinding",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
+					Subjects: nil,
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:projectmanagers",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:secrets:owners",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
@@ -2085,6 +2428,24 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				},
 			},
 			existingRoleBindingsForMaster: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:projectmanagers",
+						Namespace: "kubermatic",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-plan9",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:projectmanagers",
+					},
+				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
@@ -2109,6 +2470,23 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			expectedRoleBindingsForSeeds: []*rbacv1.RoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
+						Name:            "kubermatic:secrets:projectmanagers",
+						Namespace:       "kubermatic",
+						ResourceVersion: "1",
+					},
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "RoleBinding",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
+					Subjects: nil,
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:projectmanagers",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
 						Name:            "kubermatic:secrets:owners",
 						Namespace:       "kubermatic",
 						ResourceVersion: "1",
@@ -2126,6 +2504,24 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 				},
 			},
 			existingRoleBindingsForSeeds: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secrets:projectmanagers",
+						Namespace: "kubermatic",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-plan9",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secrets:projectmanagers",
+					},
+				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secrets:owners",
@@ -2250,4 +2646,11 @@ func TestEnsureProjectCleanUpForRoleBindings(t *testing.T) {
 			}
 		})
 	}
+}
+
+func sortUserProjectBinding(bindings []kubermaticv1.UserProjectBinding) {
+	sort.Slice(bindings, func(i, j int) bool {
+		mi, mj := bindings[i], bindings[j]
+		return mi.Spec.UserEmail < mj.Spec.UserEmail
+	})
 }

@@ -48,7 +48,7 @@ const (
 var (
 	// groupToRole map kubermatic groups to grafana roles
 	groupToRole = map[string]models.RoleType{
-		rbac.OwnerGroupNamePrefix:  models.ROLE_ADMIN,
+		rbac.OwnerGroupNamePrefix:  models.ROLE_EDITOR, // we assign the editor (not admin) role to project owners, to make sure they cannot edit datasources in Grafana
 		rbac.EditorGroupNamePrefix: models.ROLE_EDITOR,
 		rbac.ViewerGroupNamePrefix: models.ROLE_VIEWER,
 	}
@@ -72,6 +72,8 @@ func Add(
 	grafanaHeader string,
 	grafanaSecret string,
 	overwriteRegistry string,
+	cortexAlertmanagerURL string,
+	mlaEnabled bool,
 ) error {
 
 	split := strings.Split(grafanaSecret, "/")
@@ -95,20 +97,19 @@ func Add(
 	if !ok {
 		return fmt.Errorf("Grafana Secret %q does not contain %s key", grafanaSecret, grafanaPasswordKey)
 	}
+	grafanaAuth := fmt.Sprintf("%s:%s", adminName, adminPass)
 	httpClient := &http.Client{Timeout: 15 * time.Second}
-	grafanaClient := grafanasdk.NewClient(grafanaURL, fmt.Sprintf("%s:%s", adminName, adminPass), httpClient)
-	if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient); err != nil {
+	grafanaClient := grafanasdk.NewClient(grafanaURL, grafanaAuth, httpClient)
+	if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, mlaEnabled); err != nil {
 		return fmt.Errorf("failed to create mla project controller: %v", err)
 	}
-	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader); err != nil {
+	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader, mlaEnabled); err != nil {
 		return fmt.Errorf("failed to create mla userprojectbinding controller: %v", err)
 	}
-	// FIXME: Grafana API uses a global user context switches to manage datasources,
-	// single worker is needed for the datasource reconciler until this is fixed fixed in the grafanasdk
-	if err := newDatasourceGrafanaReconciler(mgr, log, 1, workerName, versions, grafanaClient, mlaNamespace, overwriteRegistry); err != nil {
+	if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, httpClient, grafanaURL, grafanaAuth, mlaNamespace, overwriteRegistry, mlaEnabled); err != nil {
 		return fmt.Errorf("failed to create mla cluster controller: %v", err)
 	}
-	if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, httpClient); err != nil {
+	if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, httpClient, cortexAlertmanagerURL, mlaEnabled); err != nil {
 		return fmt.Errorf("failed to create mla alertmanager configuration controller: %v", err)
 	}
 	return nil

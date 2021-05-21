@@ -1062,3 +1062,40 @@ func ReconcileKubermaticV1Constraints(ctx context.Context, namedGetters []NamedK
 
 	return nil
 }
+
+// KubermaticV1UserCreator defines an interface to create/update Users
+type KubermaticV1UserCreator = func(existing *kubermaticv1.User) (*kubermaticv1.User, error)
+
+// NamedKubermaticV1UserCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1UserCreatorGetter = func() (name string, create KubermaticV1UserCreator)
+
+// KubermaticV1UserObjectWrapper adds a wrapper so the KubermaticV1UserCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1UserObjectWrapper(create KubermaticV1UserCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.User))
+		}
+		return create(&kubermaticv1.User{})
+	}
+}
+
+// ReconcileKubermaticV1Users will create and update the KubermaticV1Users coming from the passed KubermaticV1UserCreator slice
+func ReconcileKubermaticV1Users(ctx context.Context, namedGetters []NamedKubermaticV1UserCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1UserObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.User{}, false); err != nil {
+			return fmt.Errorf("failed to ensure User %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}

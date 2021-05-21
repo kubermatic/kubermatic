@@ -121,6 +121,14 @@ func SeedControllerManagerDeploymentCreator(workerName string, versions kubermat
 				args = append(args, "-v=2")
 			}
 
+			mcCfg := cfg.Spec.UserCluster.MachineController
+			if mcCfg.ImageTag != "" {
+				args = append(args, fmt.Sprintf("-machine-controller-image-tag=%s", mcCfg.ImageTag))
+			}
+			if mcCfg.ImageRepository != "" {
+				args = append(args, fmt.Sprintf("-machine-controller-image-repository=%s", mcCfg.ImageRepository))
+			}
+
 			sharedAddonVolume := "addons"
 			volumes := []corev1.Volume{
 				{
