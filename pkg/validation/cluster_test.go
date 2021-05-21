@@ -250,10 +250,11 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 		{
 			name: "valid network config",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
-				Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
-				Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-				DNSDomain: "cluster.local",
-				ProxyMode: "ipvs",
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
 			wantErr:    false,
 			allowEmpty: false,
@@ -261,9 +262,10 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 		{
 			name: "missing pods CIDR",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
-				Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-				DNSDomain: "cluster.local",
-				ProxyMode: "ipvs",
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
 			wantErr:    true,
 			allowEmpty: false,
@@ -271,9 +273,10 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 		{
 			name: "missing services CIDR",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
-				Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
-				DNSDomain: "cluster.local",
-				ProxyMode: "ipvs",
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				DNSDomain:                "cluster.local",
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
 			wantErr:    true,
 			allowEmpty: false,
@@ -281,9 +284,10 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 		{
 			name: "missing DNS domain",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
-				Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
-				Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-				ProxyMode: "ipvs",
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				ProxyMode:                "ipvs",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 			},
 			wantErr:    true,
 			allowEmpty: false,
@@ -291,9 +295,21 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 		{
 			name: "missing proxy mode",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
+				Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+				Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+				DNSDomain:                "cluster.local",
+				NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+			},
+			wantErr:    true,
+			allowEmpty: false,
+		},
+		{
+			name: "missing NodeLocal DNSCache",
+			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 				Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 				DNSDomain: "cluster.local",
+				ProxyMode: "ipvs",
 			},
 			wantErr:    true,
 			allowEmpty: false,

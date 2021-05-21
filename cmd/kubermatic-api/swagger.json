@@ -14975,6 +14975,11 @@
           "type": "string",
           "x-go-name": "DNSDomain"
         },
+        "nodeLocalDNSCacheEnabled": {
+          "description": "NodeLocalDNSCacheEnabled enables the NodeLocal DNSCache feature.\nDefaults to true.",
+          "type": "boolean",
+          "x-go-name": "NodeLocalDNSCacheEnabled"
+        },
         "pods": {
           "$ref": "#/definitions/NetworkRanges"
         },
