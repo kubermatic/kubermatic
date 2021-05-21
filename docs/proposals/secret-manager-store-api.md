@@ -7,12 +7,10 @@
 ## Goals
 The proposed fix for the issue [6671](https://github.com/kubermatic/kubermatic/issues/6671) 
 
-- Adds support for vault related read access within the kubermatic source
-- Polling support for SSH and Secrets within the Kubermatic source
-- Revocation and TTL-based access for SSH
+- Define secret using Vault signed certificates to assist with SSH access
 
 ## Non-Goals
-Adds support for vault access and a central store for accessing data
+
 
 ## Motivation and Background
 
@@ -20,7 +18,7 @@ Currently, there's a user ssh agent which manages credentials via fsnotify event
 
 This approach is great but adds a limitation where the end user has to manually copy credentials to ssh secrets or add them via the API.
 
-The new approach documented within this proposal adds the ability to hard-code authorized keys but rather, add another option to lease out ssh certificates via vault which can be used to access the necessary clusters.
+The new approach documented within this proposal removes the ability to hard-code authorized keys but rather, add another option to lease out ssh certificates via vault which can be used to access the necessary clusters.
 
 This is possible via signed certificates which can be provided via vault with a lease time configurable by the user.
 
@@ -33,8 +31,9 @@ Once provided, the configuration along with Vault access credentials (Vault addr
 
 Since the signing public key is to be replicated across multiple instances, we'd apply the same approach used previously for the SSH keys.
 
-The keys would be updated but an update to the SSHd config. 
+The keys would be updated but would require an update to the SSHd config written by the machine-controller on cluster creation. 
 
+Updates to the SSH configuration required are detailed below:
 ```text
 .../etc/ssh/sshd_config
 TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem
@@ -43,11 +42,9 @@ TrustedUserCAKeys /etc/ssh/trusted-user-ca-keys.pem
 CASignatureAlgorithms ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa
 ```
 
-Only the master-controller-manager would have access to the Vault instance deployed either within or outside the cluster and a PATH entry to the desired secret engine would be used to fetch it.
+Only the master-controller-manager would write these configurations.
 
-Once fetched, it would be used to create a [UserSSHKey](https://github.com/kubermatic/kubermatic/pkg/crd/kubermatic/v1/sshkeys.go) CRD along with the list of clusters it should be synced to and from there, replicated as needed.
-
-During a revocation / rotation, the same process would be applied, and the previous CRD updated and replicated as before.
+During a revocation / rotation, the user would update the vault-ca secret configuration and that would be reconciled and updated in the cluster via a hostPath mount point.
 
 
 ## Alternatives considered
@@ -57,6 +54,7 @@ No alternatives as this process solves all desired requirements.
 
 ## Task & effort:
 *Specify the tasks and the effort in days (samples unit 0.5days) e.g.*
-* Implement Store Interface - 0.1d
-* Write Store APIs for Kubernetes Secrets Store - 1d
-* Implement Vault integration APIs (Using the agent injector might have limitations) - 2d
+* Define proposal and outline scope of the vault manager implementation - 3d
+* Test POC of the process documented in the proposal - 3d
+* Review changes and update process as desired - 1d
+* Add SSH configuration to machine-controller cloud-init template - 0.1d

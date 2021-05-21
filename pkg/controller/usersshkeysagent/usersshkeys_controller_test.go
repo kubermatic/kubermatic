@@ -153,7 +153,6 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 					if int16(sshDirInfo.Mode()) != tc.expectedDirMode {
 						t.Fatal(".ssh dir mode and its expected file mode don't match")
 					}
-
 				}
 			}
 		})
