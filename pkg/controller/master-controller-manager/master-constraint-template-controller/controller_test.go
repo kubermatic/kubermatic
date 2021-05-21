@@ -172,7 +172,7 @@ func genCTSpec() kubermaticv1.ConstraintTemplateSpec {
 				Target: "admission.k8s.gatekeeper.sh",
 				Rego: `
 		package k8srequiredlabels
-
+		
         deny[{"msg": msg, "details": {"missing_labels": missing}}] {
           provided := {label | input.review.object.metadata.labels[label]}
           required := {label | label := input.parameters.labels[_]}

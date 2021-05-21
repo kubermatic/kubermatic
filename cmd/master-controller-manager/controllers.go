@@ -23,6 +23,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
+	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
 	masterconstrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-template-controller"
 	projectlabelsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-label-synchronizer"
 	projectsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/project-sync"
@@ -55,6 +56,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	)
 	projectLabelSynchronizerFactory := projectLabelSynchronizerFactoryCreator(ctrlCtx)
 	userSSHKeysSynchronizerFactory := userSSHKeysSynchronizerFactoryCreator(ctrlCtx)
+	masterconstraintSynchronizerFactory := masterconstraintSynchronizerFactoryCreator(ctrlCtx)
 	userSynchronizerFactory := userSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
@@ -66,6 +68,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		rbacControllerFactory,
 		projectLabelSynchronizerFactory,
 		userSSHKeysSynchronizerFactory,
+		masterconstraintSynchronizerFactory,
 		userSynchronizerFactory); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
@@ -140,6 +143,18 @@ func userSSHKeysSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontr
 			ctrlCtx.log,
 			ctrlCtx.workerName,
 			ctrlCtx.workerCount,
+		)
+	}
+}
+
+func masterconstraintSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, mgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return masterconstraintsynchronizer.ControllerName, masterconstraintsynchronizer.Add(
+			ctrlCtx.ctx,
+			mgr,
+			ctrlCtx.namespace,
+			seedManagerMap,
+			ctrlCtx.log,
 		)
 	}
 }
