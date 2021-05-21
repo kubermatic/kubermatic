@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -116,7 +117,12 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 		return reconcile.Result{}, err
 	}
 
-	org, err := getOrgByProjectID(ctx, r.Client, r.grafanaClient, userProjectBinding.Spec.ProjectID)
+	project := &kubermaticv1.Project{}
+	if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil {
+		return reconcile.Result{}, fmt.Errorf("failed to get project: %w", err)
+	}
+
+	org, err := getOrgByProject(ctx, r.grafanaClient, project)
 	if err != nil {
 		return reconcile.Result{}, err
 	}
@@ -151,9 +157,14 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 }
 
 func (r *orgUserGrafanaReconciler) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
-	org, err := getOrgByProjectID(ctx, r.Client, r.grafanaClient, userProjectBinding.Spec.ProjectID)
+	project := &kubermaticv1.Project{}
+	if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil {
+		return fmt.Errorf("failed to get project: %w", err)
+	}
+	org, err := getOrgByProject(ctx, r.grafanaClient, project)
 	if err != nil {
-		return err
+		// all errors here means that grafana organization already removed
+		return nil
 	}
 	user, err := r.grafanaClient.LookupUser(ctx, userProjectBinding.Spec.UserEmail)
 	if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {

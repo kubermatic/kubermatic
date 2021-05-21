@@ -36,6 +36,7 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	apiErrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -160,7 +161,12 @@ func (r *datasourceGrafanaReconciler) reconcile(ctx context.Context, cluster *ku
 		return nil, fmt.Errorf("unable to get project name from label")
 	}
 
-	org, err := getOrgByProjectID(ctx, r.Client, grafanaClient, projectID)
+	project := &kubermaticv1.Project{}
+	if err := r.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
+		return nil, fmt.Errorf("failed to get project: %w", err)
+	}
+
+	org, err := getOrgByProject(ctx, grafanaClient, project)
 	if err != nil {
 		return nil, err
 	}
