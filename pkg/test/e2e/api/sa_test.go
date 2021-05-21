@@ -23,6 +23,7 @@ import (
 	"strings"
 	"testing"
 
+	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -35,11 +36,15 @@ func TestCreateSA(t *testing.T) {
 	}{
 		{
 			name:  "create SA with token for editors group",
-			group: "editors",
+			group: rbac.EditorGroupNamePrefix,
 		},
 		{
 			name:  "create SA with token for viewers group",
-			group: "viewers",
+			group: rbac.ViewerGroupNamePrefix,
+		},
+		{
+			name:  "create SA with token for projectmanagers group",
+			group: rbac.ProjectManagerGroupNamePrefix,
 		},
 	}
 
@@ -79,11 +84,15 @@ func TestTokenAccessForProject(t *testing.T) {
 	}{
 		{
 			name:  "test project access when token has editor rights",
-			group: "editors",
+			group: rbac.EditorGroupNamePrefix,
 		},
 		{
 			name:  "test project access when token has viewer rights",
-			group: "viewers",
+			group: rbac.ViewerGroupNamePrefix,
+		},
+		{
+			name:  "test project access when token has projectmanagers rights",
+			group: rbac.ProjectManagerGroupNamePrefix,
 		},
 	}
 
@@ -125,12 +134,29 @@ func TestTokenAccessForProject(t *testing.T) {
 				t.Fatalf("failed to get project: %v", err)
 			}
 
+			// check if SA can add member to the project
+			_, err = apiRunnerWithSAToken.AddProjectUser(project.ID, "roxy2@loodse.com", "roxy2", "viewers")
+			switch tc.group {
+			case rbac.ViewerGroupNamePrefix:
+			case rbac.EditorGroupNamePrefix:
+				if err == nil {
+					t.Fatalf("expected error, SA can not manage members for the group %s", tc.group)
+				}
+				if !strings.Contains(err.Error(), "403") {
+					t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
+				}
+			case rbac.ProjectManagerGroupNamePrefix:
+				if err != nil {
+					t.Fatal("SA in projectmanagers group should add a new member to the project")
+				}
+			}
+
+			// check update project
 			newProjectName := rand.String(10)
 			project.Name = newProjectName
-
 			project, err = apiRunnerWithSAToken.UpdateProject(project)
-
-			if tc.group == "viewers" {
+			switch tc.group {
+			case rbac.ViewerGroupNamePrefix:
 				if err == nil {
 					t.Fatal("expected error")
 				}
@@ -138,14 +164,33 @@ func TestTokenAccessForProject(t *testing.T) {
 				if !strings.Contains(err.Error(), "403") {
 					t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
 				}
-			} else {
+			case rbac.EditorGroupNamePrefix:
+			case rbac.ProjectManagerGroupNamePrefix:
 				if err != nil {
 					t.Fatalf("failed to update project: %v", err)
 				}
-
 				if project.Name != newProjectName {
 					t.Fatalf("expected name %q, but got %q", newProjectName, project.Name)
 				}
+			}
+
+			// check if SA can create a new project
+			switch tc.group {
+			case rbac.ViewerGroupNamePrefix:
+			case rbac.EditorGroupNamePrefix:
+				_, err := apiRunnerWithSAToken.CreateProject(rand.String(10))
+				if err == nil {
+					t.Fatal("expected error, SA can not create a project")
+				}
+				if !strings.Contains(err.Error(), "403") {
+					t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
+				}
+			case rbac.ProjectManagerGroupNamePrefix:
+				newSAproject, err := apiRunnerWithSAToken.CreateProjectBySA(rand.String(10), []string{"roxy2@loodse.com", "roxy@loodse.com"})
+				if err != nil {
+					t.Fatalf("service account in projectmanagers should create a project %v", err)
+				}
+				defer cleanupProject(t, newSAproject.ID)
 			}
 
 			// check access to not owned project
@@ -164,15 +209,6 @@ func TestTokenAccessForProject(t *testing.T) {
 				t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
 			}
 
-			// check if SA can create a new project
-			_, err = apiRunnerWithSAToken.CreateProject(rand.String(10))
-			if err == nil {
-				t.Fatal("expected error, SA can not create a project")
-			}
-
-			if !strings.Contains(err.Error(), "403") {
-				t.Fatalf("expected error status 403 Forbidden, but was: %v", err)
-			}
 		})
 	}
 }
