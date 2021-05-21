@@ -14976,7 +14976,7 @@
           "x-go-name": "DNSDomain"
         },
         "nodeLocalDNSCacheEnabled": {
-          "description": "NodeLocalDNSCacheEnabled enables the NodeLocal DNSCache feature.\nDefaults to true.",
+          "description": "NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.\nDefaults to true.",
           "type": "boolean",
           "x-go-name": "NodeLocalDNSCacheEnabled"
         },

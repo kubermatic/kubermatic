@@ -427,7 +427,7 @@ type ClusterNetworkingConfig struct {
 	// Defaults to ipvs.
 	ProxyMode string `json:"proxyMode"`
 
-	// NodeLocalDNSCacheEnabled enables the NodeLocal DNSCache feature.
+	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
 	// Defaults to true.
 	NodeLocalDNSCacheEnabled *bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
 }
