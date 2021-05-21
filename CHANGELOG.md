@@ -127,6 +127,17 @@
 
 # Kubermatic 2.16
 
+## [v2.16.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.10)
+
+### Misc
+
+- Fix CA certificates not being mounted on Seed clusters using CentOS/Fedora. [#6680](https://github.com/kubermatic/kubermatic/issues/6680) ([xrstf](https://github.com/xrstf))
+- Use the systemd cgroup driver for newly-created Kubernetes 1.19+ clusters using the kubeadm provider. Since the kubelet-configmap addon is not reconciled, this change will not affect existing clusters, only newly-created clusters. [#7065](https://github.com/kubermatic/kubermatic/issues/7065) ([xmudrii](https://github.com/xmudrii))
+- Re-enable NodeLocal DNS Cache in user clusters. [#7075](https://github.com/kubermatic/kubermatic/issues/7075) ([rastislavs](https://github.com/rastislavs))
+
+
+
+
 ## [v2.16.9](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.9)
 
 ### Misc
