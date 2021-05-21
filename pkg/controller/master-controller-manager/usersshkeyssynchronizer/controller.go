@@ -208,8 +208,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	oldCluster := cluster.DeepCopy()
 	if !kubernetes.HasFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer) {
 		kubernetes.AddFinalizer(cluster, UserSSHKeysClusterIDsCleanupFinalizer)
-		if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("failed adding %s finalizer: %v", UserSSHKeysClusterIDsCleanupFinalizer, err)
+		if err := seedClient.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, ctrlruntimeclient.MergeFromWithOptimisticLock{})); err != nil {
+			return fmt.Errorf("failed adding %s finalizer: %w", UserSSHKeysClusterIDsCleanupFinalizer, err)
 		}
 	}
 

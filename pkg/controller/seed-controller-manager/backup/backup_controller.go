@@ -289,8 +289,8 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if !kuberneteshelper.HasFinalizer(cluster, cleanupFinalizer) && !r.disabled {
 		oldCluster := cluster.DeepCopy()
 		kuberneteshelper.AddFinalizer(cluster, cleanupFinalizer)
-		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
-			return fmt.Errorf("failed to update cluster after adding cleanup finalizer: %v", err)
+		if err := r.Patch(ctx, cluster, ctrlruntimeclient.MergeFromWithOptions(oldCluster, ctrlruntimeclient.MergeFromWithOptimisticLock{})); err != nil {
+			return fmt.Errorf("failed to update cluster after adding cleanup finalizer: %w", err)
 		}
 	}
 
