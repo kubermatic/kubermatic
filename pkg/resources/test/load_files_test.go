@@ -54,6 +54,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/utils/pointer"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 )
 
@@ -292,8 +293,9 @@ func TestLoadFiles(t *testing.T) {
 								Pods: kubermaticv1.NetworkRanges{
 									CIDRBlocks: []string{"172.25.0.0/16"},
 								},
-								DNSDomain: "cluster.local",
-								ProxyMode: resources.IPVSProxyMode,
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
 							MachineNetworks: []kubermaticv1.MachineNetworkingConfig{
 								{
