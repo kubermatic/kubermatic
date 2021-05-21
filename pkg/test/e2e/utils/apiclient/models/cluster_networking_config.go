@@ -20,7 +20,7 @@ type ClusterNetworkingConfig struct {
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain,omitempty"`
 
-	// NodeLocalDNSCacheEnabled enables the NodeLocal DNSCache feature.
+	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
 	// Defaults to true.
 	NodeLocalDNSCacheEnabled bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
 
