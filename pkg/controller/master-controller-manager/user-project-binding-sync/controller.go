@@ -86,7 +86,7 @@ func Add(mgr manager.Manager,
 
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.Seed{}},
-		enqueueAllUserProjectBindings(reconciler.masterClient, reconciler.log),
+		enqueueUserProjectBindingsForSeed(reconciler.masterClient, reconciler.log),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for seeds: %v", err)
 	}
@@ -177,7 +177,7 @@ func (r *reconciler) syncAllSeeds(
 	return nil
 }
 
-func enqueueAllUserProjectBindings(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
+func enqueueUserProjectBindingsForSeed(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
@@ -187,9 +187,12 @@ func enqueueAllUserProjectBindings(client ctrlruntimeclient.Client, log *zap.Sug
 			utilruntime.HandleError(fmt.Errorf("failed to list userprojectbindings: %v", err))
 		}
 		for _, userProjectBinding := range userProjectBindingList.Items {
-			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
-				Name: userProjectBinding.Name,
-			}})
+			// We don't trigger reconciliation for UserProjectBinding of service account.
+			if !kubernetes.IsProjectServiceAccount(userProjectBinding.Spec.UserEmail) {
+				requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
+					Name: userProjectBinding.Name,
+				}})
+			}
 		}
 		return requests
 	})
