@@ -19,13 +19,13 @@ package mla
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
-	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
@@ -92,8 +92,8 @@ func newUserGrafanaReconciler(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch UserProjectBindings: %v", err)
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}); err != nil {
+		return fmt.Errorf("failed to watch Users: %w", err)
 	}
 	return err
 }
@@ -102,135 +102,79 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 	log := r.log.With("request", request)
 	log.Debug("Processing")
 
-	userProjectBinding := &kubermaticv1.UserProjectBinding{}
-	if err := r.Get(ctx, request.NamespacedName, userProjectBinding); err != nil {
+	user := &kubermaticv1.User{}
+	if err := r.Get(ctx, request.NamespacedName, user); err != nil {
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
-	if !userProjectBinding.DeletionTimestamp.IsZero() || !r.mlaEnabled {
-		if err := r.handleDeletion(ctx, userProjectBinding); err != nil {
+	if !user.DeletionTimestamp.IsZero() || !r.mlaEnabled {
+		if err := r.handleDeletion(ctx, user); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
 		return reconcile.Result{}, nil
 	}
 
-	if !kubernetes.HasFinalizer(userProjectBinding, mlaFinalizer) {
-		kubernetes.AddFinalizer(userProjectBinding, mlaFinalizer)
-		if err := r.Update(ctx, userProjectBinding); err != nil {
+	if !kubernetes.HasFinalizer(user, mlaFinalizer) {
+		kubernetes.AddFinalizer(user, mlaFinalizer)
+		if err := r.Update(ctx, user); err != nil {
 			return reconcile.Result{}, fmt.Errorf("updating finalizers: %w", err)
 		}
 	}
 
-	org, err := getOrgByProjectID(ctx, r.Client, r.grafanaClient, userProjectBinding.Spec.ProjectID)
-	if err != nil {
-		return reconcile.Result{}, err
+	if err := r.ensureGrafanaUser(ctx, user); err != nil {
+		return reconcile.Result{}, fmt.Errorf("unable to add grafana user : %w", err)
 	}
-
-	group := rbac.ExtractGroupPrefix(userProjectBinding.Spec.Group)
-	role := groupToRole[group]
-
-	// checking if user already exists in the corresponding organization
-	user, err := r.getGrafanaOrgUser(ctx, org.ID, userProjectBinding.Spec.UserEmail)
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to get user : %w", err)
-	}
-	// if there is no such user in project organization, let's create one
-	if user == nil {
-		if _, err := r.addGrafanaOrgUser(ctx, org.ID, userProjectBinding.Spec.UserEmail, string(role)); err != nil {
-			return reconcile.Result{}, fmt.Errorf("unable to add grafana user : %w", err)
-		}
-		return reconcile.Result{}, nil
-	}
-
-	if user.Role != string(role) {
-		userRole := grafanasdk.UserRole{
-			LoginOrEmail: userProjectBinding.Spec.UserEmail,
-			Role:         string(role),
-		}
-		if status, err := r.grafanaClient.UpdateOrgUser(ctx, userRole, org.ID, user.ID); err != nil {
-			return reconcile.Result{}, fmt.Errorf("unable to update grafana user role: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-		}
-	}
-
 	return reconcile.Result{}, nil
 }
 
-func (r *userGrafanaReconciler) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
-	org, err := getOrgByProjectID(ctx, r.Client, r.grafanaClient, userProjectBinding.Spec.ProjectID)
-	if err != nil {
+func (r *userGrafanaReconciler) handleDeletion(ctx context.Context, user *kubermaticv1.User) error {
+	grafanaUser, err := r.grafanaClient.LookupUser(ctx, user.Spec.Email)
+	if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
 		return err
 	}
-	user, err := r.getGrafanaOrgUser(ctx, org.ID, userProjectBinding.Spec.UserEmail)
-	if err != nil {
-		return fmt.Errorf("unable to get user : %w", err)
-	}
-	if user != nil {
-		status, err := r.grafanaClient.DeleteOrgUser(ctx, user.OrgId, user.ID)
+	if err == nil {
+		status, err := r.grafanaClient.DeleteGlobalUser(ctx, grafanaUser.ID)
 		if err != nil {
-			return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			return fmt.Errorf("unable to delete user: %w (status: %s, message: %s)",
+				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 	}
-
-	if kubernetes.HasFinalizer(userProjectBinding, mlaFinalizer) {
-		kubernetes.RemoveFinalizer(userProjectBinding, mlaFinalizer)
-		if err := r.Update(ctx, userProjectBinding); err != nil {
-			return fmt.Errorf("updating UserProjectBinding: %w", err)
+	if kubernetes.HasFinalizer(user, mlaFinalizer) {
+		kubernetes.RemoveFinalizer(user, mlaFinalizer)
+		if err := r.Update(ctx, user); err != nil {
+			return fmt.Errorf("updating User: %w", err)
 		}
 	}
-
 	return nil
 }
 
-func (r *userGrafanaReconciler) getGrafanaOrgUser(ctx context.Context, orgID uint, email string) (*grafanasdk.OrgUser, error) {
-	users, err := r.grafanaClient.GetOrgUsers(ctx, orgID)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, user := range users {
-		if user.Email == email {
-			return &user, nil
-		}
-	}
-	return nil, nil
-}
-
-func (r *userGrafanaReconciler) addGrafanaOrgUser(ctx context.Context, orgID uint, email, role string) (*grafanasdk.OrgUser, error) {
+func (r *userGrafanaReconciler) ensureGrafanaUser(ctx context.Context, user *kubermaticv1.User) error {
 	req, err := http.NewRequest("GET", r.grafanaURL+"/api/user", nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	req.Header.Add(r.grafanaHeader, email)
+	req.Header.Add(r.grafanaHeader, user.Spec.Email)
 	resp, err := r.httpClient.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	type response struct {
-		ID uint `json:"id"`
-	}
-	res := &response{}
+	grafanaUser := &grafanasdk.User{}
 	defer resp.Body.Close()
 	decoder := json.NewDecoder(resp.Body)
-	if err := decoder.Decode(res); err != nil || res.ID == 0 {
-		return nil, fmt.Errorf("unable to decode response : %w", err)
-	}
-	// delete user from default org
-	if status, err := r.grafanaClient.DeleteOrgUser(ctx, defaultOrgID, res.ID); err != nil {
-		return nil, fmt.Errorf("failed to delete grafana user from default org: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+	if err := decoder.Decode(grafanaUser); err != nil || grafanaUser.ID == 0 {
+		return fmt.Errorf("unable to decode response : %w", err)
 	}
 
-	userRole := grafanasdk.UserRole{
-		LoginOrEmail: email,
-		Role:         role,
+	// delete user from default org
+	if status, err := r.grafanaClient.DeleteOrgUser(ctx, defaultOrgID, grafanaUser.ID); err != nil {
+		return fmt.Errorf("failed to delete grafana user from default org: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
-	if status, err := r.grafanaClient.AddOrgUser(ctx, userRole, orgID); err != nil {
-		return nil, fmt.Errorf("failed to add grafana user to org: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+	if grafanaUser.IsGrafanaAdmin != user.Spec.IsAdmin {
+		grafanaUser.IsGrafanaAdmin = user.Spec.IsAdmin
+		status, err := r.grafanaClient.UpdateUserPermissions(ctx, grafanasdk.UserPermissions{IsGrafanaAdmin: user.Spec.IsAdmin}, grafanaUser.ID)
+		if err != nil {
+			return fmt.Errorf("failed to update user permissions: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+		}
 	}
-	return &grafanasdk.OrgUser{
-		ID:    res.ID,
-		OrgId: orgID,
-		Email: email,
-		Login: email,
-		Role:  role,
-	}, nil
+	return nil
 }

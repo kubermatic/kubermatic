@@ -38,11 +38,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/utils/pointer"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const nginxConfig = `worker_processes  1;
@@ -391,12 +389,7 @@ func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 	}
 }
 
-func getOrgByProjectID(ctx context.Context, client ctrlruntimeclient.Client, grafanaClient *grafanasdk.Client, projectID string) (grafanasdk.Org, error) {
-	project := &kubermaticv1.Project{}
-	if err := client.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
-		return grafanasdk.Org{}, fmt.Errorf("failed to get project: %w", err)
-	}
-
+func getOrgByProject(ctx context.Context, grafanaClient *grafanasdk.Client, project *kubermaticv1.Project) (grafanasdk.Org, error) {
 	orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
 	if !ok {
 		return grafanasdk.Org{}, fmt.Errorf("project should have grafana org annotation set")

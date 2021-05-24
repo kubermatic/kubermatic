@@ -57,7 +57,8 @@ var (
 // Add creates a new MLA controller that is responsible for
 // managing Monitoring, Logging and Alerting for user clusters.
 // * org grafana controller - create/update/delete Grafana organizations based on Kubermatic Projects
-// * user grafana controller - create/update/delete Grafana Users to organizations based on Kubermatic UserProjectBindings
+// * org user grafana controller - create/update/delete Grafana Users to organizations based on Kubermatic UserProjectBindings
+// * user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User
 // * datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
 // * alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
 func Add(
@@ -100,17 +101,21 @@ func Add(
 	grafanaAuth := fmt.Sprintf("%s:%s", adminName, adminPass)
 	httpClient := &http.Client{Timeout: 15 * time.Second}
 	grafanaClient := grafanasdk.NewClient(grafanaURL, grafanaAuth, httpClient)
+
 	if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, mlaEnabled); err != nil {
-		return fmt.Errorf("failed to create mla project controller: %v", err)
+		return fmt.Errorf("failed to create mla project controller: %w", err)
 	}
-	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader, mlaEnabled); err != nil {
-		return fmt.Errorf("failed to create mla userprojectbinding controller: %v", err)
+	if err := newOrgUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, mlaEnabled); err != nil {
+		return fmt.Errorf("failed to create mla userprojectbinding controller: %w", err)
 	}
 	if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, httpClient, grafanaURL, grafanaAuth, mlaNamespace, overwriteRegistry, mlaEnabled); err != nil {
-		return fmt.Errorf("failed to create mla cluster controller: %v", err)
+		return fmt.Errorf("failed to create mla cluster controller: %w", err)
 	}
 	if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, httpClient, cortexAlertmanagerURL, mlaEnabled); err != nil {
-		return fmt.Errorf("failed to create mla alertmanager configuration controller: %v", err)
+		return fmt.Errorf("failed to create mla alertmanager configuration controller: %w", err)
+	}
+	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader, mlaEnabled); err != nil {
+		return fmt.Errorf("failed to create mla user controller: %w", err)
 	}
 	return nil
 }
