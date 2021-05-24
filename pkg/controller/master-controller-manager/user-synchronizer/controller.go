@@ -71,7 +71,8 @@ func Add(
 
 	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
 		// We don't trigger reconciliation for service account.
-		return !kubernetes.IsProjectServiceAccount(object.GetName())
+		user := object.(*kubermaticv1.User)
+		return !kubernetes.IsProjectServiceAccount(user.Spec.Email)
 	})
 
 	for seedName, seedManager := range seedManagers {
