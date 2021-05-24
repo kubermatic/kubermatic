@@ -26,6 +26,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -36,6 +37,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -68,9 +70,16 @@ func Add(mgr manager.Manager,
 		return fmt.Errorf("failed to construct controller: %v", err)
 	}
 
+	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
+		// We don't trigger reconciliation for UserProjectBinding of service account.
+		userProjectBinding := object.(*kubermaticv1.UserProjectBinding)
+		return !kubernetes.IsProjectServiceAccount(userProjectBinding.Spec.UserEmail)
+	})
+
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.UserProjectBinding{}},
 		&handler.EnqueueRequestForObject{},
+		serviceAccountPredicate,
 	); err != nil {
 		return fmt.Errorf("failed to create watch for userprojectbindings: %v", err)
 	}
