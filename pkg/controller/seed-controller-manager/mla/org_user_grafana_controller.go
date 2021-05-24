@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
@@ -158,7 +159,7 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 
 func (r *orgUserGrafanaReconciler) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
 	project := &kubermaticv1.Project{}
-	if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil {
+	if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil && !kerrors.IsNotFound(err) {
 		return fmt.Errorf("failed to get project: %w", err)
 	}
 	org, err := getOrgByProject(ctx, r.grafanaClient, project)
