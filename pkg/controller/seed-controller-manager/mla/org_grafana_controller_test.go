@@ -242,6 +242,7 @@ func buildTestServer(t *testing.T, requests ...request) (http.Handler, func() bo
 			assert.Equal(t, req.request.Header.Get(key), r.Header.Get(key), "header %s not found", key)
 		}
 		assert.Equal(t, req.request.URL.Path, r.URL.Path)
+		assert.Equal(t, req.request.URL.Query(), r.URL.Query())
 		assert.Equal(t, req.request.Method, r.Method)
 		if req.request.ContentLength > 0 {
 			assert.True(t, bodyEqual(t, req.request, r))

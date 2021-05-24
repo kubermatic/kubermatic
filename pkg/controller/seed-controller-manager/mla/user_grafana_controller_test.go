@@ -25,13 +25,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-
 	grafanasdk "github.com/kubermatic/grafanasdk"
+	"github.com/stretchr/testify/assert"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -73,45 +71,53 @@ func TestUserGrafanaReconcile(t *testing.T) {
 		err          bool
 	}{
 		{
-			name:        "UserProjectBinding added",
+			name:        "User added",
 			requestName: "create",
 			objects: []ctrlruntimeclient.Object{
-				&kubermaticv1.UserProjectBinding{
+				&kubermaticv1.User{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "create",
 					},
-					Spec: kubermaticv1.UserProjectBindingSpec{
-						UserEmail: "user@email.com",
-						ProjectID: "projectID",
-						Group:     "owners-projectID",
-					},
-				},
-				&kubermaticv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:        "projectID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
-					},
-					Spec: kubermaticv1.ProjectSpec{
-						Name: "projectName",
+					Spec: kubermaticv1.UserSpec{
+						Email:   "user@email.com",
+						IsAdmin: false,
 					},
 				},
 			},
 			hasFinalizer: true,
 			requests: []request{
 				{
-					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					name:     "create OAuth user",
+					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1, "isGrafanaAdmin": false, "email": "user@email.com", "login": "user@email.com"}`)), StatusCode: http.StatusOK},
 				},
 				{
-					name:     "get org users",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
+					name:     "delete user from default org",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
 				},
+			},
+		},
+		{
+			name:        "User IsAdmin updated",
+			requestName: "update",
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "update",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Email:   "user@email.com",
+						IsAdmin: true,
+					},
+				},
+			},
+			hasFinalizer: true,
+			requests: []request{
 				{
 					name:     "create OAuth user",
 					request:  httptest.NewRequest(http.MethodGet, "/api/user", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1}`)), StatusCode: http.StatusOK},
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1, "isGrafanaAdmin": false, "email": "user@email.com", "login": "user@email.com"}`)), StatusCode: http.StatusOK},
 				},
 				{
 					name:     "delete user from default org",
@@ -119,95 +125,38 @@ func TestUserGrafanaReconcile(t *testing.T) {
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message":"org user deleted"}`)), StatusCode: http.StatusOK},
 				},
 				{
-					name:     "add org user",
-					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Editor"}`)),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
+					name:     "update permissions",
+					request:  httptest.NewRequest(http.MethodPut, "/api/admin/users/1/permissions", ioutil.NopCloser(strings.NewReader(`{"isGrafanaAdmin":true}`))),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User permissions updated"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
 		{
-			name:        "UserProjectBinding role updated",
-			requestName: "update",
-			objects: []ctrlruntimeclient.Object{
-				&kubermaticv1.UserProjectBinding{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "update",
-					},
-					Spec: kubermaticv1.UserProjectBindingSpec{
-						UserEmail: "user@email.com",
-						ProjectID: "projectID",
-						Group:     "owners-projectID",
-					},
-				},
-				&kubermaticv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:        "projectID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
-					},
-					Spec: kubermaticv1.ProjectSpec{
-						Name: "projectName",
-					},
-				},
-			},
-			hasFinalizer: true,
-			requests: []request{
-				{
-					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
-				},
-				{
-					name:     "get org users",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`[{"orgId":1,"userId":1,"email":"user@email.com","login":"admin","role":"Viewer"}]`)), StatusCode: http.StatusOK},
-				},
-				{
-					name:     "update org user",
-					request:  httptest.NewRequest(http.MethodPatch, "/api/orgs/1/users/1", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Editor"}`)),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User updated"}`)), StatusCode: http.StatusOK},
-				},
-			},
-		},
-		{
-			name:        "UserProjectBinding role delete",
+			name:        "User delete",
 			requestName: "delete",
 			objects: []ctrlruntimeclient.Object{
-				&kubermaticv1.UserProjectBinding{
+				&kubermaticv1.User{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:              "delete",
 						DeletionTimestamp: &metav1.Time{Time: time.Now()},
+						Finalizers:        []string{mlaFinalizer},
 					},
-					Spec: kubermaticv1.UserProjectBindingSpec{
-						UserEmail: "user@email.com",
-						ProjectID: "projectID",
-						Group:     "owners-projectID",
-					},
-				},
-				&kubermaticv1.Project{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:        "projectID",
-						Annotations: map[string]string{grafanaOrgAnnotationKey: "1"},
-					},
-					Spec: kubermaticv1.ProjectSpec{
-						Name: "projectName",
+					Spec: kubermaticv1.UserSpec{
+						Email:   "user@email.com",
+						IsAdmin: true,
 					},
 				},
 			},
 			hasFinalizer: false,
 			requests: []request{
 				{
-					name:     "get org by id",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"name":"projectName","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)), StatusCode: http.StatusOK},
+					name:     "lookup user",
+					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
 				},
 				{
-					name:     "get org users",
-					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
-					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`[{"orgId":1,"userId":1,"email":"user@email.com","login":"admin","role":"Viewer"}]`)), StatusCode: http.StatusOK},
-				},
-				{
-					name:     "delete org user",
-					request:  httptest.NewRequest(http.MethodDelete, "/api/orgs/1/users/1", nil),
+					name:     "delete user",
+					request:  httptest.NewRequest(http.MethodDelete, "/api/admin/users/1", nil),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User deleted"}`)), StatusCode: http.StatusOK},
 				},
 			},
@@ -226,11 +175,11 @@ func TestUserGrafanaReconcile(t *testing.T) {
 				assert.Nil(t, err)
 			}
 			assert.Equal(t, tc.err, err != nil)
-			upb := &kubermaticv1.UserProjectBinding{}
-			if err := controller.Get(ctx, request.NamespacedName, upb); err != nil {
-				t.Fatalf("unable to get upb: %v", err)
+			user := &kubermaticv1.User{}
+			if err := controller.Get(ctx, request.NamespacedName, user); err != nil {
+				t.Fatalf("unable to get user: %v", err)
 			}
-			assert.Equal(t, tc.hasFinalizer, kubernetes.HasFinalizer(upb, mlaFinalizer))
+			assert.Equal(t, tc.hasFinalizer, kubernetes.HasFinalizer(user, mlaFinalizer))
 			assertExpectation()
 			server.Close()
 		})
