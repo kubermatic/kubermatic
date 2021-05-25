@@ -304,17 +304,6 @@ func TestValidateClusterNetworkingConfig(t *testing.T) {
 			allowEmpty: false,
 		},
 		{
-			name: "missing NodeLocal DNSCache",
-			networkConfig: kubermaticv1.ClusterNetworkingConfig{
-				Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
-				Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
-				DNSDomain: "cluster.local",
-				ProxyMode: "ipvs",
-			},
-			wantErr:    true,
-			allowEmpty: false,
-		},
-		{
 			name: "invalid pod cidr",
 			networkConfig: kubermaticv1.ClusterNetworkingConfig{
 				Pods: kubermaticv1.NetworkRanges{CIDRBlocks: []string{"192.127.0.0:20"}},
