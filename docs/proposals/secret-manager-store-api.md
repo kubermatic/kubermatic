@@ -47,7 +47,9 @@ This includes the following process
 
 The machine controller would create the CA pem file and configure the SSH daemon to add the `TrustedCAKeys` configuration, provided the CA key is specified on cluster creation.
 
-Distribution of the keys is out of scope from the master to user controller, the secret for the CA would be created on the cluster.
+Distribution of the keys is out of scope from the master to user controller, the secret for the CA would be created on the cluster. The reason for this is to remove the issues around the secret being created after cluster creation.
+
+Since the updates to use a TrustedCA require we update the SSH configuration and restart the SSH daemon, this would not be possible if the cluster is already created without the configuration.
 
 During a revocation / rotation, the user would update the `vault-ca` secret configuration and that would be reconciled and updated in the clusters trusted ca config in ssh config at `/etc/ssh/TrustedCA.pem` via a hostPath mount point.
 
