@@ -128,6 +128,7 @@ func createCloudController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.caBundle.CertPool(),
+		ctrlCtx.runOptions.nodePortRange,
 	); err != nil {
 		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
 	}
@@ -272,7 +273,6 @@ func createMonitoringController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerCount,
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.clientProvider,
-
 		ctrlCtx.seedGetter,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.nodePortRange,
