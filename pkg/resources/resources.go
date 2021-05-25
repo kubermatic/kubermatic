@@ -534,7 +534,7 @@ const (
 	UserSSHKeys = "usersshkeys"
 
 	VaultSignedCA  = "vaultsignedca"
-	VaultCAKeyName = "TrustedCAKey.pem"
+	VaultCAKeyName = "TrustedCA.pem"
 )
 
 const (
