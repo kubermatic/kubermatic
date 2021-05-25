@@ -158,6 +158,11 @@ func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.Clu
 		oldC.DNSDomain,
 		field.NewPath("dnsDomain"),
 	)...)
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		c.NodeLocalDNSCacheEnabled,
+		oldC.NodeLocalDNSCacheEnabled,
+		field.NewPath("nodeLocalDNSCacheEnabled"),
+	)...)
 
 	return allErrs
 }

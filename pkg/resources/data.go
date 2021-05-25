@@ -66,7 +66,6 @@ type TemplateData struct {
 	etcdDiskSize                     resource.Quantity
 	oidcIssuerURL                    string
 	oidcIssuerClientID               string
-	nodeLocalDNSCacheEnabled         bool
 	kubermaticImage                  string
 	etcdLauncherImage                string
 	dnatControllerImage              string
@@ -185,11 +184,6 @@ func (td *TemplateDataBuilder) WithOIDCIssuerClientID(clientID string) *Template
 	return td
 }
 
-func (td *TemplateDataBuilder) WithNodeLocalDNSCacheEnabled(enabled bool) *TemplateDataBuilder {
-	td.data.nodeLocalDNSCacheEnabled = enabled
-	return td
-}
-
 func (td *TemplateDataBuilder) WithKubermaticImage(image string) *TemplateDataBuilder {
 	td.data.kubermaticImage = image
 	return td
@@ -254,7 +248,6 @@ func NewTemplateData(
 	inClusterPrometheusScrapingConfigsFile string,
 	oidcURL string,
 	oidcIssuerClientID string,
-	nodeLocalDNSCacheEnabled bool,
 	kubermaticImage string,
 	etcdLauncherImage string,
 	dnatControllerImage string,
@@ -263,24 +256,23 @@ func NewTemplateData(
 	versions kubermatic.Versions,
 	caBundle CABundle) *TemplateData {
 	return &TemplateData{
-		ctx:                      ctx,
-		client:                   client,
-		cluster:                  cluster,
-		dc:                       dc,
-		seed:                     seed,
-		OverwriteRegistry:        overwriteRegistry,
-		nodePortRange:            nodePortRange,
-		nodeAccessNetwork:        nodeAccessNetwork,
-		etcdDiskSize:             etcdDiskSize,
-		oidcIssuerURL:            oidcURL,
-		oidcIssuerClientID:       oidcIssuerClientID,
-		nodeLocalDNSCacheEnabled: nodeLocalDNSCacheEnabled,
-		kubermaticImage:          kubermaticImage,
-		etcdLauncherImage:        etcdLauncherImage,
-		dnatControllerImage:      dnatControllerImage,
-		backupSchedule:           backupSchedule,
-		versions:                 versions,
-		caBundle:                 caBundle,
+		ctx:                 ctx,
+		client:              client,
+		cluster:             cluster,
+		dc:                  dc,
+		seed:                seed,
+		OverwriteRegistry:   overwriteRegistry,
+		nodePortRange:       nodePortRange,
+		nodeAccessNetwork:   nodeAccessNetwork,
+		etcdDiskSize:        etcdDiskSize,
+		oidcIssuerURL:       oidcURL,
+		oidcIssuerClientID:  oidcIssuerClientID,
+		kubermaticImage:     kubermaticImage,
+		etcdLauncherImage:   etcdLauncherImage,
+		dnatControllerImage: dnatControllerImage,
+		backupSchedule:      backupSchedule,
+		versions:            versions,
+		caBundle:            caBundle,
 
 		supportsFailureDomainZoneAntiAffinity: supportsFailureDomainZoneAntiAffinity,
 
@@ -507,7 +499,7 @@ func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
 }
 
 func (d *TemplateData) NodeLocalDNSCacheEnabled() bool {
-	return d.nodeLocalDNSCacheEnabled
+	return d.Cluster().Spec.ClusterNetwork.NodeLocalDNSCacheEnabled != nil && *d.Cluster().Spec.ClusterNetwork.NodeLocalDNSCacheEnabled
 }
 
 func (d *TemplateData) KubermaticAPIImage() string {

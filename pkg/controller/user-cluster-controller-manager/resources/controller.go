@@ -77,6 +77,7 @@ func Add(
 	tunnelingAgentIP net.IP,
 	registerReconciledCheck func(name string, check healthz.Checker) error,
 	dnsClusterIP string,
+	nodeLocalDNSCache bool,
 	opaIntegration bool,
 	versions kubermatic.Versions,
 	userSSHKeyAgent bool,
@@ -95,6 +96,7 @@ func Add(
 		log:               log,
 		platform:          cloudProviderName,
 		dnsClusterIP:      dnsClusterIP,
+		nodeLocalDNSCache: nodeLocalDNSCache,
 		opaIntegration:    opaIntegration,
 		opaWebhookTimeout: opaWebhookTimeout,
 		userSSHKeyAgent:   userSSHKeyAgent,
@@ -209,6 +211,7 @@ type reconciler struct {
 	tunnelingAgentIP  net.IP
 	platform          string
 	dnsClusterIP      string
+	nodeLocalDNSCache bool
 	opaIntegration    bool
 	opaWebhookTimeout int
 	userSSHKeyAgent   bool

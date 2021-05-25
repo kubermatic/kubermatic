@@ -113,6 +113,10 @@ func applyDefaults(c *kubermaticv1.Cluster) {
 			c.Spec.ClusterNetwork.ProxyMode = resources.IPVSProxyMode
 		}
 	}
+
+	if c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
+		c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
+	}
 }
 
 func (h *AdmissionHandler) mutateUpdate(ctx context.Context, oldCluster, newCluster *kubermaticv1.Cluster) error {
