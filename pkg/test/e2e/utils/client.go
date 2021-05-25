@@ -938,6 +938,12 @@ func convertGlobalSettings(gSettings *models.GlobalSettings) *apiv1.GlobalSettin
 			Enabled:  gSettings.OpaOptions.Enabled,
 			Enforced: gSettings.OpaOptions.Enforced,
 		},
+		MlaOptions: kubermaticv1.MlaOptions{
+			LoggingEnabled:     gSettings.MlaOptions.LoggingEnabled,
+			LoggingEnforced:    gSettings.MlaOptions.LoggingEnforced,
+			MonitoringEnabled:  gSettings.MlaOptions.MonitoringEnabled,
+			MonitoringEnforced: gSettings.MlaOptions.MonitoringEnforced,
+		},
 	}
 }
 

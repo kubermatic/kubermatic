@@ -55,6 +55,7 @@ type SettingSpec struct {
 	RestrictProjectCreation     bool           `json:"restrictProjectCreation"`
 	EnableExternalClusterImport bool           `json:"enableExternalClusterImport"`
 	OpaOptions                  OpaOptions     `json:"opaOptions"`
+	MlaOptions                  MlaOptions     `json:"mlaOptions"`
 
 	MachineDeploymentVMResourceQuota MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota"`
 
@@ -91,6 +92,13 @@ type MachineDeploymentVMResourceQuota struct {
 type OpaOptions struct {
 	Enabled  bool `json:"enabled"`
 	Enforced bool `json:"enforced"`
+}
+
+type MlaOptions struct {
+	LoggingEnabled     bool `json:"loggingEnabled"`
+	LoggingEnforced    bool `json:"loggingEnforced"`
+	MonitoringEnabled  bool `json:"monitoringEnabled"`
+	MonitoringEnforced bool `json:"monitoringEnforced"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
