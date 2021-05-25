@@ -499,7 +499,8 @@ func (d *TemplateData) GetMLAGatewayPort() (int32, error) {
 }
 
 func (d *TemplateData) NodeLocalDNSCacheEnabled() bool {
-	return d.Cluster().Spec.ClusterNetwork.NodeLocalDNSCacheEnabled != nil && *d.Cluster().Spec.ClusterNetwork.NodeLocalDNSCacheEnabled
+	// NOTE: even if NodeLocalDNSCacheEnabled is nil, we assume it is enabled (backward compatibility for already existing clusters)
+	return d.Cluster().Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil || *d.Cluster().Spec.ClusterNetwork.NodeLocalDNSCacheEnabled
 }
 
 func (d *TemplateData) KubermaticAPIImage() string {
