@@ -87,9 +87,6 @@ func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, fldPa
 	if len(n.Services.CIDRBlocks) == 0 && !allowEmpty {
 		allErrs = append(allErrs, field.Required(fldPath.Child("services", "cidrBlocks"), "service CIDR must be provided"))
 	}
-	if n.NodeLocalDNSCacheEnabled == nil && !allowEmpty {
-		allErrs = append(allErrs, field.Required(fldPath.Child("nodeLocalDNSCacheEnabled"), "nodeLocalDNSCacheEnabled must be provided"))
-	}
 
 	// Verify that provided CIDR are well formed
 	if podsCIDR := n.Pods.CIDRBlocks; len(podsCIDR) == 1 {
