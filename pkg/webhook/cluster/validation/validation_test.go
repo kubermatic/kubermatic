@@ -391,8 +391,9 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:      "foo",
-							Namespace: "kubermatic",
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -404,14 +405,68 @@ func TestHandle(t *testing.T) {
 					},
 					OldObject: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:      "foo",
-							Namespace: "kubermatic",
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.193.0.0/20"}},
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 								DNSDomain:                "cluster.local",
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: false,
+		},
+		{
+			name: "Reject updating the nodeport range",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32769",
+								},
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
 							},
 						}.Do(),
 					},
@@ -446,6 +501,7 @@ type rawClusterGen struct {
 	EnableUserSSHKey      bool
 	ExternalCloudProvider bool
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
+	ComponentSettings     kubermaticv1.ComponentSettings
 }
 
 func (r rawClusterGen) Do() []byte {
@@ -465,6 +521,7 @@ func (r rawClusterGen) Do() []byte {
 			ExposeStrategy:        kubermaticv1.ExposeStrategy(r.ExposeStrategy),
 			EnableUserSSHKeyAgent: r.EnableUserSSHKey,
 			ClusterNetwork:        r.NetworkConfig,
+			ComponentsOverride:    r.ComponentSettings,
 		},
 	}
 	s := json.NewSerializer(json.DefaultMetaFactory, testScheme, testScheme, true)
