@@ -60,13 +60,12 @@ func newTestAlertmanagerReconciler(objects []ctrlruntimeclient.Object, handler h
 		Build()
 	ts := httptest.NewServer(handler)
 
+	alertmanagerController := newAlertmanagerController(fakeClient, kubermaticlog.Logger, ts.Client(), ts.URL)
 	reconciler := alertmanagerReconciler{
-		Client:                fakeClient,
-		httpClient:            ts.Client(),
-		log:                   kubermaticlog.Logger,
-		recorder:              record.NewFakeRecorder(10),
-		cortexAlertmanagerURL: ts.URL,
-		mlaEnabled:            true,
+		Client:                 fakeClient,
+		log:                    kubermaticlog.Logger,
+		recorder:               record.NewFakeRecorder(10),
+		alertmanagerController: alertmanagerController,
 	}
 	return &reconciler, ts
 }
