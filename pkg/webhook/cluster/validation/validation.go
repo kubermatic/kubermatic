@@ -89,20 +89,34 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	return webhook.Allowed(fmt.Sprintf("cluster validation request %s allowed", req.UID))
 }
 
-func (h *AdmissionHandler) validateCreateOrUpdate(c *kubermaticv1.Cluster) field.ErrorList {
+func (h *AdmissionHandler) validateCreateOrUpdate(cluster *kubermaticv1.Cluster) field.ErrorList {
 	allErrs := field.ErrorList{}
 	specFldPath := field.NewPath("spec")
 
-	if !kubermaticv1.AllExposeStrategies.Has(c.Spec.ExposeStrategy) {
-		allErrs = append(allErrs, field.NotSupported(specFldPath.Child("exposeStrategy"), c.Spec.ExposeStrategy, kubermaticv1.AllExposeStrategies.Items()))
+	if !kubermaticv1.AllExposeStrategies.Has(cluster.Spec.ExposeStrategy) {
+		allErrs = append(allErrs, field.NotSupported(specFldPath.Child("exposeStrategy"), cluster.Spec.ExposeStrategy, kubermaticv1.AllExposeStrategies.Items()))
 	}
-	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling &&
+
+	if cluster.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling &&
 		!h.features.Enabled(features.TunnelingExposeStrategy) {
 		allErrs = append(allErrs, field.Forbidden(specFldPath.Child("exposeStrategy"), "cannot create cluster with Tunneling expose strategy because the TunnelingExposeStrategy feature gate is not enabled"))
 	}
-	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, specFldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
-	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.Scheduler.LeaderElectionSettings, specFldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
-	allErrs = append(allErrs, validation.ValidateClusterNetworkConfig(&c.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"), false)...)
+
+	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(
+		&cluster.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings,
+		specFldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
+
+	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(
+		&cluster.Spec.ComponentsOverride.Scheduler.LeaderElectionSettings,
+		specFldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
+
+	allErrs = append(allErrs, validation.ValidateClusterNetworkConfig(
+		&cluster.Spec.ClusterNetwork,
+		specFldPath.Child("clusterNetwork"), false)...)
+
+	allErrs = append(allErrs, validation.ValidateNodePortRange(
+		cluster.Spec.ComponentsOverride.Apiserver.NodePortRange,
+		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"))...)
 
 	return allErrs
 }
