@@ -204,7 +204,10 @@ func (r *reconciler) reconcileServiceAcconts(ctx context.Context) error {
 		userauth.ServiceAccountCreator(),
 		usersshkeys.ServiceAccountCreator(),
 		coredns.ServiceAccountCreator(),
-		nodelocaldns.ServiceAccountCreator(),
+	}
+
+	if r.nodeLocalDNSCache {
+		creators = append(creators, nodelocaldns.ServiceAccountCreator())
 	}
 
 	if r.userSSHKeyAgent {
@@ -565,10 +568,11 @@ func (r *reconciler) reconcileConfigMaps(ctx context.Context, data reconcileData
 		}
 	}
 
-	creators = append(creators,
-		coredns.ConfigMapCreator(),
-		nodelocaldns.ConfigMapCreator(r.dnsClusterIP),
-	)
+	creators = append(creators, coredns.ConfigMapCreator())
+
+	if r.nodeLocalDNSCache {
+		creators = append(creators, nodelocaldns.ConfigMapCreator(r.dnsClusterIP))
+	}
 
 	if err := reconciling.ReconcileConfigMaps(ctx, creators, metav1.NamespaceSystem, r.Client); err != nil {
 		return fmt.Errorf("failed to reconcile ConfigMaps in kube-system namespace: %v", err)
@@ -651,8 +655,10 @@ func (r *reconciler) reconcileSecrets(ctx context.Context, data reconcileData) e
 }
 
 func (r *reconciler) reconcileDaemonSet(ctx context.Context) error {
-	dsCreators := []reconciling.NamedDaemonSetCreatorGetter{
-		nodelocaldns.DaemonSetCreator(),
+	var dsCreators []reconciling.NamedDaemonSetCreatorGetter
+
+	if r.nodeLocalDNSCache {
+		dsCreators = append(dsCreators, nodelocaldns.DaemonSetCreator())
 	}
 
 	if r.userSSHKeyAgent {

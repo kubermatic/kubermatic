@@ -483,7 +483,6 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 		"",
 		"",
 		"",
-		true,
 		// Since this is the image-loader we hardcode the default image for pulling.
 		resources.DefaultKubermaticImage,
 		resources.DefaultEtcdLauncherImage,

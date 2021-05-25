@@ -20,6 +20,10 @@ type ClusterNetworkingConfig struct {
 	// Domain name for services.
 	DNSDomain string `json:"dnsDomain,omitempty"`
 
+	// NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.
+	// Defaults to true.
+	NodeLocalDNSCacheEnabled bool `json:"nodeLocalDNSCacheEnabled,omitempty"`
+
 	// ProxyMode defines the kube-proxy mode (ipvs/iptables).
 	// Defaults to ipvs.
 	ProxyMode string `json:"proxyMode,omitempty"`

@@ -91,7 +91,6 @@ type Reconciler struct {
 	monitoringScrapeAnnotationPrefix                 string
 	userClusterMLAEnabled                            bool
 	dockerPullConfigJSON                             []byte
-	nodeLocalDNSCacheEnabled                         bool
 	kubermaticImage                                  string
 	etcdLauncherImage                                string
 	dnatControllerImage                              string
@@ -131,7 +130,6 @@ func Add(
 	inClusterPrometheusScrapingConfigsFile string,
 	userClusterMLAEnabled bool,
 	dockerPullConfigJSON []byte,
-	nodeLocalDNSCacheEnabled bool,
 	concurrentClusterUpdates int,
 	etcdBackupRestoreController bool,
 	backupSchedule time.Duration,
@@ -169,7 +167,6 @@ func Add(
 		monitoringScrapeAnnotationPrefix:                 monitoringScrapeAnnotationPrefix,
 		userClusterMLAEnabled:                            userClusterMLAEnabled,
 		dockerPullConfigJSON:                             dockerPullConfigJSON,
-		nodeLocalDNSCacheEnabled:                         nodeLocalDNSCacheEnabled,
 		kubermaticImage:                                  kubermaticImage,
 		etcdLauncherImage:                                etcdLauncherImage,
 		dnatControllerImage:                              dnatControllerImage,

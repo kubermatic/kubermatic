@@ -75,6 +75,7 @@ type controllerRunOptions struct {
 	updateWindowStart     string
 	updateWindowLength    string
 	dnsClusterIP          string
+	nodeLocalDNSCache     bool
 	opaIntegration        bool
 	opaWebhookTimeout     int
 	useSSHKeyAgent        bool
@@ -99,6 +100,7 @@ func main() {
 	flag.StringVar(&runOp.namespace, "namespace", "", "Namespace in which the cluster is running in")
 	flag.StringVar(&runOp.clusterURL, "cluster-url", "", "Cluster URL")
 	flag.StringVar(&runOp.dnsClusterIP, "dns-cluster-ip", "", "KubeDNS service IP for the cluster")
+	flag.BoolVar(&runOp.nodeLocalDNSCache, "node-local-dns-cache", false, "Enable NodeLocal DNS Cache in user cluster")
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
 	flag.IntVar(&runOp.kasSecurePort, "kas-secure-port", 6443, "Secure KAS port")
 	flag.Var(&runOp.tunnelingAgentIP, "tunneling-agent-ip", "If specified the tunneling agent will bind to this IP address, otherwise it will not be deployed.")
@@ -231,6 +233,7 @@ func main() {
 		runOp.tunnelingAgentIP.IP,
 		mgr.AddReadyzCheck,
 		runOp.dnsClusterIP,
+		runOp.nodeLocalDNSCache,
 		runOp.opaIntegration,
 		versions,
 		runOp.useSSHKeyAgent,
