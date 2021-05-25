@@ -39,21 +39,19 @@ This includes the following process
     # Needed for OpenSSH Server 8.1 and older, ssh-rsa is removed from the default supported CA algorithms
     CASignatureAlgorithms ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521,ssh-ed25519,rsa-sha2-512,rsa-sha2-256,ssh-rsa
     ```
- - Restart the SSH daemon to enable configuration on the cluster
- - Distribute the public key to the workers
+ - Starts the SSH daemon with the above configuration on the cluster to use only keys signed by the stated TrustedCA.
+ - Distribute the public key to the workers upon further updates with the help of the `user-ssh-agent`.
 
 > NOTE: This allows the rollout of new CA key pairs for security reasons e.g rotation, revocation etc
 > Management of the CA keys are the responsibility of the admin managing the KKP cluster.
 
-Since the signing public key is to be replicated across multiple instances, we'd apply the same approach used previously for the User SSH keys.
-
-The keys would be updated but would require an update to the SSHd config written by the machine-controller on cluster creation. 
-
-Only the master-controller-manager would write these configurations.
+The machine controller would create the CA pem file and configure the SSH daemon to add the `TrustedCAKeys` configuration, provided the CA key is specified on cluster creation.
 
 Distribution of the keys is out of scope from the master to user controller, the secret for the CA would be created on the cluster.
 
-During a revocation / rotation, the user would update the vault-ca secret configuration and that would be reconciled and updated in the clusters trusted ca config in ssh config at `/etc/ssh/TrustedCA.pem` via a hostPath mount point.
+During a revocation / rotation, the user would update the `vault-ca` secret configuration and that would be reconciled and updated in the clusters trusted ca config in ssh config at `/etc/ssh/TrustedCA.pem` via a hostPath mount point.
+
+The update would now be handled by the `user-ssh-key-agent` controller, instead of the machine controller and reconciled on any changes to the `vault-ca` secret in the `kube-system` namespace.
 
 
 ## Alternatives considered
