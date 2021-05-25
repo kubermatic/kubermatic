@@ -18,7 +18,7 @@ A kubermatic user can assign ssh keys to clusters at creation time via the machi
 
 This approach is great but adds a limitation where the end user has to manually copy credentials to kubermatic usersshkey secrets or added via the API for each cluster's worker nodes authorized_keys.
 
-The new approach documented within this proposal supports the ability to hard-code authorized keys but rather, alongside another option to trust SSH CA public keys.
+The new approach documented within this proposal provides the ability to use [SSH CA certificates](https://www.vaultproject.io/docs/secrets/ssh/signed-ssh-certificates), avoiding the burden of copying each user key individually.
 
 This enables authentication via signed keys which can be provided via vault with a lease time configurable by the user.
 
