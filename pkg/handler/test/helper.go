@@ -1126,6 +1126,12 @@ func GenDefaultGlobalSettings() *kubermaticv1.KubermaticSetting {
 				Enabled:  true,
 				Enforced: true,
 			},
+			MlaOptions: kubermaticv1.MlaOptions{
+				LoggingEnabled:     true,
+				LoggingEnforced:    true,
+				MonitoringEnabled:  true,
+				MonitoringEnforced: true,
+			},
 		},
 	}
 }
