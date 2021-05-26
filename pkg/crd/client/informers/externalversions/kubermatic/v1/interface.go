@@ -16,6 +16,8 @@ type Interface interface {
 	Alertmanagers() AlertmanagerInformer
 	// Clusters returns a ClusterInformer.
 	Clusters() ClusterInformer
+	// ClusterTemplates returns a ClusterTemplateInformer.
+	ClusterTemplates() ClusterTemplateInformer
 	// Constraints returns a ConstraintInformer.
 	Constraints() ConstraintInformer
 	// ConstraintTemplates returns a ConstraintTemplateInformer.
@@ -67,6 +69,11 @@ func (v *version) Alertmanagers() AlertmanagerInformer {
 // Clusters returns a ClusterInformer.
 func (v *version) Clusters() ClusterInformer {
 	return &clusterInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// ClusterTemplates returns a ClusterTemplateInformer.
+func (v *version) ClusterTemplates() ClusterTemplateInformer {
+	return &clusterTemplateInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // Constraints returns a ConstraintInformer.
