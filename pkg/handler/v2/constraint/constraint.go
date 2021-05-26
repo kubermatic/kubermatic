@@ -28,6 +28,8 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -38,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
+	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -298,17 +301,16 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createConstraintReq)
 
-		err := req.ValidateCreateConstraintReq(constraintTemplateProvider)
-		if err != nil {
-			return nil, utilerrors.NewBadRequest(fmt.Sprintf("Validation failed, constraint needs to have an existing constraint template: %v", err))
-		}
-
 		clus, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}
 
 		constraint := convertAPIToInternalConstraint(req.Body.Name, clus.Status.NamespaceName, req.Body.Spec)
+		err = validateConstraint(constraintTemplateProvider, constraint)
+		if err != nil {
+			return nil, err
+		}
 
 		constraintProvider := ctx.Value(middleware.ConstraintProviderContextKey).(provider.ConstraintProvider)
 		privilegedConstraintProvider := ctx.Value(middleware.PrivilegedConstraintProviderContextKey).(provider.PrivilegedConstraintProvider)
@@ -369,13 +371,66 @@ func DecodeCreateConstraintReq(c context.Context, r *http.Request) (interface{},
 	return req, nil
 }
 
-func (req *createConstraintReq) ValidateCreateConstraintReq(constraintTemplateProvider provider.ConstraintTemplateProvider) error {
-	_, err := constraintTemplateProvider.Get(strings.ToLower(req.Body.Spec.ConstraintType))
-	return err
+func validateConstraint(constraintTemplateProvider provider.ConstraintTemplateProvider, constraint *v1.Constraint) error {
+	ct, err := constraintTemplateProvider.Get(strings.ToLower(constraint.Spec.ConstraintType))
+	if err != nil {
+		return utilerrors.NewBadRequest("Validation failed, constraint needs to have an existing constraint template: %v", err)
+	}
+
+	// Validate parameters
+	if ct.Spec.CRD.Spec.Validation != nil && ct.Spec.CRD.Spec.Validation.OpenAPIV3Schema != nil {
+
+		// Set up the validator
+		rawOpenApiSpec, err := json.Marshal(ct.Spec.CRD.Spec.Validation.OpenAPIV3Schema)
+		if err != nil {
+			return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("Validation failed, error marshalling Constraint Template CRD validation spec %q: %v", ct.Name, err))
+		}
+
+		openApiSpec := &apiextensions.JSONSchemaProps{}
+		err = json.Unmarshal(rawOpenApiSpec, openApiSpec)
+		if err != nil {
+			return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("Validation failed, error unmarshalling Constraint Template CRD validation spec %q: %v", ct.Name, err))
+		}
+
+		validator, _, err := validation.NewSchemaValidator(&apiextensions.CustomResourceValidation{OpenAPIV3Schema: openApiSpec})
+		if err != nil {
+			return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("Validation failed, could not create schema validator from Constraint Template %q: %v", ct.Name, err))
+		}
+
+		// Set up parameters
+		parameters := map[string]interface{}{}
+
+		// if legacy rawJSON is used, we need to use it
+		if rawJSON, ok := constraint.Spec.Parameters["rawJSON"]; ok == true {
+			err = json.Unmarshal([]byte(rawJSON.(string)), &parameters)
+			if err != nil {
+				return utilerrors.NewBadRequest("Validation failed, failed unmarshalling body parameters: %v", err)
+			}
+		} else {
+			rawParameters, err := json.Marshal(constraint.Spec.Parameters)
+			if err != nil {
+				return utilerrors.NewBadRequest("Validation failed, failed marshalling body parameters: %v", err)
+			}
+
+			err = json.Unmarshal(rawParameters, &parameters)
+			if err != nil {
+				return utilerrors.NewBadRequest("Validation failed, failed unmarshalling body parameters: %v", err)
+			}
+		}
+
+		// Validate
+		errList := validation.ValidateCustomResource(field.NewPath("spec", "parameters"), parameters, validator)
+		if errList != nil {
+			return utilerrors.NewBadRequest("Validation failed, constraint spec is not valid: %v", errList.ToAggregate())
+		}
+	}
+
+	return nil
 }
 
 func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
-	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
+	privilegedProjectProvider provider.PrivilegedProjectProvider,
+	constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchConstraintReq)
 
@@ -419,6 +474,11 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 
 		// restore ResourceVersion to make patching safer and tests work more easily
 		patchedConstraint.ResourceVersion = originalConstraint.ResourceVersion
+
+		err = validateConstraint(constraintTemplateProvider, patchedConstraint)
+		if err != nil {
+			return nil, err
+		}
 
 		ct, err := updateConstraint(ctx, userInfoGetter, constraintProvider, privilegedConstraintProvider, req.ProjectID, patchedConstraint)
 		if err != nil {

@@ -1441,7 +1441,7 @@ func (r Routing) patchConstraint() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Constraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
 			middleware.PrivilegedConstraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
-		)(constraint.PatchEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		)(constraint.PatchEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintTemplateProvider)),
 		constraint.DecodePatchConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
