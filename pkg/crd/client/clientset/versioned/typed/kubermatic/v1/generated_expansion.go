@@ -24,6 +24,8 @@ type KubermaticSettingExpansion interface{}
 
 type ProjectExpansion interface{}
 
+type RuleGroupExpansion interface{}
+
 type UserExpansion interface{}
 
 type UserProjectBindingExpansion interface{}

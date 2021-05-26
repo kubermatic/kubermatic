@@ -74,6 +74,7 @@ func Add(
 	grafanaSecret string,
 	overwriteRegistry string,
 	cortexAlertmanagerURL string,
+	cortexRulerURL string,
 	mlaEnabled bool,
 ) error {
 
@@ -116,6 +117,9 @@ func Add(
 	}
 	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader, mlaEnabled); err != nil {
 		return fmt.Errorf("failed to create mla user controller: %w", err)
+	}
+	if err := newRuleGroupReconciler(mgr, log, numWorkers, workerName, versions, httpClient, cortexRulerURL, mlaEnabled); err != nil {
+		return fmt.Errorf("failed to create mla rule group controller: %w", err)
 	}
 	return nil
 }

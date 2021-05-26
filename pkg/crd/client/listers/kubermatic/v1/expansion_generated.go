@@ -66,6 +66,14 @@ type KubermaticSettingListerExpansion interface{}
 // ProjectLister.
 type ProjectListerExpansion interface{}
 
+// RuleGroupListerExpansion allows custom methods to be added to
+// RuleGroupLister.
+type RuleGroupListerExpansion interface{}
+
+// RuleGroupNamespaceListerExpansion allows custom methods to be added to
+// RuleGroupNamespaceLister.
+type RuleGroupNamespaceListerExpansion interface{}
+
 // UserListerExpansion allows custom methods to be added to
 // UserLister.
 type UserListerExpansion interface{}

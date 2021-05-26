@@ -21,6 +21,7 @@ type KubermaticV1Interface interface {
 	ExternalClustersGetter
 	KubermaticSettingsGetter
 	ProjectsGetter
+	RuleGroupsGetter
 	UsersGetter
 	UserProjectBindingsGetter
 	UserSSHKeysGetter
@@ -73,6 +74,10 @@ func (c *KubermaticV1Client) KubermaticSettings() KubermaticSettingInterface {
 
 func (c *KubermaticV1Client) Projects() ProjectInterface {
 	return newProjects(c)
+}
+
+func (c *KubermaticV1Client) RuleGroups(namespace string) RuleGroupInterface {
+	return newRuleGroups(c, namespace)
 }
 
 func (c *KubermaticV1Client) Users() UserInterface {

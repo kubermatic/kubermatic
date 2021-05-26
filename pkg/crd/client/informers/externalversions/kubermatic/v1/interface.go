@@ -30,6 +30,8 @@ type Interface interface {
 	KubermaticSettings() KubermaticSettingInformer
 	// Projects returns a ProjectInformer.
 	Projects() ProjectInformer
+	// RuleGroups returns a RuleGroupInformer.
+	RuleGroups() RuleGroupInformer
 	// Users returns a UserInformer.
 	Users() UserInformer
 	// UserProjectBindings returns a UserProjectBindingInformer.
@@ -102,6 +104,11 @@ func (v *version) KubermaticSettings() KubermaticSettingInformer {
 // Projects returns a ProjectInformer.
 func (v *version) Projects() ProjectInformer {
 	return &projectInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// RuleGroups returns a RuleGroupInformer.
+func (v *version) RuleGroups() RuleGroupInformer {
+	return &ruleGroupInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Users returns a UserInformer.
