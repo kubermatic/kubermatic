@@ -71,7 +71,7 @@ func newCleanupReconciler(
 			}}}
 	})
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, mapFn); err != nil {
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, mapFn); err != nil {
 		return fmt.Errorf("failed to watch: %w", err)
 	}
 
@@ -100,31 +100,25 @@ func (r *cleanupReconciler) Reconcile(ctx context.Context, request reconcile.Req
 
 type cleanupController struct {
 	ctrlruntimeclient.Client
-	log        *zap.SugaredLogger
-	mlaEnabled bool
-	cleaners   []cleaner
+	log      *zap.SugaredLogger
+	cleaners []cleaner
 }
 
 func newCleanupController(
 	client ctrlruntimeclient.Client,
 	log *zap.SugaredLogger,
-	mlaEnabled bool,
 	cleaners ...cleaner,
 ) *cleanupController {
 	return &cleanupController{
-		Client:     client,
-		log:        log,
-		mlaEnabled: mlaEnabled,
-		cleaners:   cleaners,
+		Client:   client,
+		log:      log,
+		cleaners: cleaners,
 	}
 }
 
 func (r *cleanupController) cleanup(ctx context.Context) error {
-	if r.mlaEnabled {
-		return nil
-	}
-
 	for _, cleaner := range r.cleaners {
+		fmt.Println("call cleanup for ", cleaner)
 		if err := cleaner.cleanUp(ctx); err != nil {
 			return err
 		}

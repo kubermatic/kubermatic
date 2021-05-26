@@ -128,19 +128,19 @@ func Add(
 		if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, userGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla user controller: %w", err)
 		}
-	}
-	cleanupController := newCleanupController(
-		mgr.GetClient(),
-		log,
-		mlaEnabled,
-		datasourceGrafanaController,
-		alertmanagerController,
-		orgUserGrafanaController,
-		orgGrafanaController,
-		userGrafanaController,
-	)
-	if err := newCleanupReconciler(mgr, log, numWorkers, workerName, versions, cleanupController); err != nil {
-		return fmt.Errorf("failed to create mla cleanup controller: %w", err)
+	} else {
+		cleanupController := newCleanupController(
+			mgr.GetClient(),
+			log,
+			datasourceGrafanaController,
+			alertmanagerController,
+			orgUserGrafanaController,
+			orgGrafanaController,
+			userGrafanaController,
+		)
+		if err := newCleanupReconciler(mgr, log, numWorkers, workerName, versions, cleanupController); err != nil {
+			return fmt.Errorf("failed to create mla cleanup controller: %w", err)
+		}
 	}
 	return nil
 }
