@@ -69,16 +69,10 @@ type Provider struct {
 	secretKeySelector provider.SecretKeySelectorValueFunc
 	caBundle          *x509.CertPool
 	getClientFunc     getClientFunc
-	nodePortsRange    string
 }
 
 // NewCloudProvider creates a new openstack provider.
-func NewCloudProvider(
-	dc *kubermaticv1.Datacenter,
-	secretKeyGetter provider.SecretKeySelectorValueFunc,
-	caBundle *x509.CertPool,
-	nodePortsRange string,
-) (*Provider, error) {
+func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*Provider, error) {
 	if dc.Spec.Openstack == nil {
 		return nil, errors.New("datacenter is not an Openstack datacenter")
 	}
@@ -87,18 +81,17 @@ func NewCloudProvider(
 		secretKeySelector: secretKeyGetter,
 		caBundle:          caBundle,
 		getClientFunc:     getNetClientForCluster,
-		nodePortsRange:    nodePortsRange,
 	}, nil
 }
 
 // DefaultCloudSpec adds defaults to the cloud spec
-func (osp *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
+func (os *Provider) DefaultCloudSpec(spec *kubermaticv1.CloudSpec) error {
 	return nil
 }
 
 // ValidateCloudSpec validates the given CloudSpec
-func (osp *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
-	netClient, err := osp.getClientFunc(spec, osp.dc, osp.secretKeySelector, osp.caBundle)
+func (os *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
+	netClient, err := os.getClientFunc(spec, os.dc, os.secretKeySelector, os.caBundle)
 	if err != nil {
 		return err
 	}
@@ -166,38 +159,33 @@ func validateExistingSubnetOverlap(networkID string, netClient *gophercloud.Serv
 
 // InitializeCloudProvider initializes a cluster, in particular
 // creates security group and network configuration
-func (osp *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	var (
-		routerID   string
-		finalizers []string
-		err        error
-	)
+func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
 
-	netClient, err := osp.getClientFunc(cluster.Spec.Cloud, osp.dc, osp.secretKeySelector, osp.caBundle)
+	netClient, err := os.getClientFunc(cluster.Spec.Cloud, os.dc, os.secretKeySelector, os.caBundle)
 	if err != nil {
 		return nil, err
 	}
 
+	var routerID string
+	var finalizers []string
 	// if security group has to be created add the corresponding finalizer.
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
 		finalizers = append(finalizers, SecurityGroupCleanupFinalizer)
 	}
-
 	// If network has to be created add associated finalizer.
 	if cluster.Spec.Cloud.Openstack.Network == "" {
 		finalizers = append(finalizers, NetworkCleanupFinalizer)
 	}
-
 	// If subnet has to be created, router and router port should be
 	// created too thus we add the finalizers.
 	if cluster.Spec.Cloud.Openstack.SubnetID == "" {
 		finalizers = append(finalizers, SubnetCleanupFinalizer, RouterCleanupFinalizer, RouterSubnetLinkCleanupFinalizer)
 	} else if cluster.Spec.Cloud.Openstack.RouterID == "" {
+		var err error
 		routerID, err = getRouterIDForSubnet(netClient, cluster.Spec.Cloud.Openstack.SubnetID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to verify that the subnet '%s' has a router attached: %v", cluster.Spec.Cloud.Openstack.SubnetID, err)
 		}
-
 		// Subnet exists but we need to create the router
 		if routerID == "" {
 			finalizers = append(finalizers, RouterCleanupFinalizer, RouterSubnetLinkCleanupFinalizer)
@@ -225,7 +213,6 @@ func (osp *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, upda
 		if err != nil {
 			return nil, fmt.Errorf("failed to get external network: %v", err)
 		}
-
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.FloatingIPPool = extNetwork.Name
 			// We're just searching for the floating ip pool here & don't create anything. Thus no need to create a finalizer
@@ -236,23 +223,10 @@ func (osp *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, upda
 	}
 
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
-		lowPort, highPort := resources.NewTemplateDataBuilder().
-			WithNodePortRange(osp.nodePortsRange).
-			WithCluster(cluster).
-			Build().
-			NodePorts()
-
-		req := createKubermaticSecurityGroupRequest{
-			clusterName: cluster.Name,
-			lowPort:     lowPort,
-			highPort:    highPort,
-		}
-
-		secGroupName, err := createKubermaticSecurityGroup(netClient, req)
+		secGroupName, err := createKubermaticSecurityGroup(netClient, cluster.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic security group: %v", err)
 		}
-
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.SecurityGroups = secGroupName
 		})
@@ -266,7 +240,6 @@ func (osp *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, upda
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic network: %v", err)
 		}
-
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 			cluster.Spec.Cloud.Openstack.Network = network.Name
 		})
@@ -281,7 +254,7 @@ func (osp *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, upda
 	}
 
 	if cluster.Spec.Cloud.Openstack.SubnetID == "" {
-		subnet, err := createKubermaticSubnet(netClient, cluster.Name, network.ID, osp.dc.DNSServers)
+		subnet, err := createKubermaticSubnet(netClient, cluster.Name, network.ID, os.dc.DNSServers)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic subnet: %v", err)
 		}
@@ -301,7 +274,6 @@ func (osp *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, upda
 			if err != nil {
 				return nil, fmt.Errorf("failed to create the kubermatic router: %v", err)
 			}
-
 			cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
 				cluster.Spec.Cloud.Openstack.RouterID = router.ID
 			})
@@ -335,8 +307,8 @@ func (osp *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, upda
 
 // CleanUpCloudProvider does the clean-up in particular:
 // removes security group and network configuration
-func (osp *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
-	netClient, err := osp.getClientFunc(cluster.Spec.Cloud, osp.dc, osp.secretKeySelector, osp.caBundle)
+func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update provider.ClusterUpdater) (*kubermaticv1.Cluster, error) {
+	netClient, err := os.getClientFunc(cluster.Spec.Cloud, os.dc, os.secretKeySelector, os.caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -562,18 +534,18 @@ func GetSubnets(username, password, domain, tenant, tenantID, networkID, authURL
 	return subnets, nil
 }
 
-func (osp *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
+func (os *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error {
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
 		return nil
 	}
 	sgName := cluster.Spec.Cloud.Openstack.SecurityGroups
 
-	creds, err := GetCredentialsForCluster(cluster.Spec.Cloud, osp.secretKeySelector)
+	creds, err := GetCredentialsForCluster(cluster.Spec.Cloud, os.secretKeySelector)
 	if err != nil {
 		return err
 	}
 
-	netClient, err := getNetClient(creds.Username, creds.Password, creds.Domain, creds.Tenant, creds.TenantID, osp.dc.AuthURL, osp.dc.Region, osp.caBundle)
+	netClient, err := getNetClient(creds.Username, creds.Password, creds.Domain, creds.Tenant, creds.TenantID, os.dc.AuthURL, os.dc.Region, os.caBundle)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
@@ -639,7 +611,7 @@ func addICMPRulesToSecurityGroupIfNecesary(cluster *kubermaticv1.Cluster, secGro
 }
 
 // ValidateCloudSpecUpdate verifies whether an update of cloud spec is valid and permitted
-func (osp *Provider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
+func (os *Provider) ValidateCloudSpecUpdate(oldSpec kubermaticv1.CloudSpec, newSpec kubermaticv1.CloudSpec) error {
 	return nil
 }
 

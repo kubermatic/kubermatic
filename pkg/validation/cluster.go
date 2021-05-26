@@ -34,7 +34,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	utilerror "k8s.io/apimachinery/pkg/util/errors"
-	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -45,6 +44,7 @@ var (
 
 // ValidateCreateClusterSpec validates the given cluster spec
 func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.Datacenter, cloudProvider provider.CloudProvider) error {
+
 	if spec.HumanReadableName == "" {
 		return errors.New("no name specified")
 	}
@@ -65,32 +65,11 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.
 		return fmt.Errorf("machine network validation failed, see: %v", err)
 	}
 
-	specFieldPath := field.NewPath("spec")
-
-	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, specFieldPath.Child("networkConfig"), true); len(errs) > 0 {
+	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, field.NewPath("spec", "networkConfig"), true); len(errs) > 0 {
 		return fmt.Errorf("cluster network config validation failed: %v", errs)
 	}
 
-	portRangeFld := specFieldPath.Child("componentsOverride", "apiserver", "nodePortRange")
-	if errs := ValidateNodePortRange(spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld); len(errs) > 0 {
-		return fmt.Errorf("apiserver NodePortRange validation failed: %v", errs)
-	}
-
 	return nil
-}
-
-func ValidateNodePortRange(nodePortRange string, fldPath *field.Path) field.ErrorList {
-	allErrs := field.ErrorList{}
-
-	if nodePortRange == "" {
-		return allErrs
-	}
-
-	if _, err := kubenetutil.ParsePortRange(nodePortRange); err != nil {
-		allErrs = append(allErrs, field.Invalid(fldPath, nodePortRange, err.Error()))
-	}
-
-	return allErrs
 }
 
 func ValidateClusterNetworkConfig(n *kubermaticv1.ClusterNetworkingConfig, fldPath *field.Path, allowEmpty bool) field.ErrorList {
@@ -275,7 +254,7 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, clusterProvider.GetSeedClusterAdminRuntimeClient())
-	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle, resources.DefaultNodePortRange)
+	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle)
 	if err != nil {
 		return err
 	}

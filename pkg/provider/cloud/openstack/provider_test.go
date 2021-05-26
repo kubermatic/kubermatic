@@ -24,11 +24,11 @@ import (
 	"github.com/go-test/deep"
 	"github.com/gophercloud/gophercloud"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	ostesting "k8c.io/kubermatic/v2/pkg/provider/cloud/openstack/internal/testing"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestIgnoreRouterAlreadyHasPortInSubnetError(t *testing.T) {
