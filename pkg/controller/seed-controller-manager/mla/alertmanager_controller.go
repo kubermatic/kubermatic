@@ -55,29 +55,6 @@ const (
 	alertmanagerTenantHeaderName = "X-Scope-OrgID"
 )
 
-type alertmanagerController struct {
-	ctrlruntimeclient.Client
-	httpClient *http.Client
-
-	log                   *zap.SugaredLogger
-	cortexAlertmanagerURL string
-}
-
-func newAlertmanagerController(
-	client ctrlruntimeclient.Client,
-	log *zap.SugaredLogger,
-	httpClient *http.Client,
-	cortexAlertmanagerURL string,
-) *alertmanagerController {
-	return &alertmanagerController{
-		Client:     client,
-		httpClient: httpClient,
-
-		log:                   log,
-		cortexAlertmanagerURL: cortexAlertmanagerURL,
-	}
-}
-
 type alertmanagerReconciler struct {
 	ctrlruntimeclient.Client
 
@@ -206,6 +183,29 @@ func (r *alertmanagerReconciler) Reconcile(ctx context.Context, request reconcil
 	}
 	return *result, err
 
+}
+
+type alertmanagerController struct {
+	ctrlruntimeclient.Client
+	httpClient *http.Client
+
+	log                   *zap.SugaredLogger
+	cortexAlertmanagerURL string
+}
+
+func newAlertmanagerController(
+	client ctrlruntimeclient.Client,
+	log *zap.SugaredLogger,
+	httpClient *http.Client,
+	cortexAlertmanagerURL string,
+) *alertmanagerController {
+	return &alertmanagerController{
+		Client:     client,
+		httpClient: httpClient,
+
+		log:                   log,
+		cortexAlertmanagerURL: cortexAlertmanagerURL,
+	}
 }
 
 func (r *alertmanagerController) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
