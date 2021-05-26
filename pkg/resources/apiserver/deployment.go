@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -51,6 +52,8 @@ var (
 
 const (
 	name = "apiserver"
+
+	defaultNodePortRange = "30000-32767"
 )
 
 func AuditConfigMapCreator() reconciling.NamedConfigMapCreatorGetter {
@@ -405,8 +408,18 @@ func getApiserverFlags(data *resources.TemplateData, etcdEndpoints []string, ena
 // getApiserverOverrideFlags creates all settings that may be overridden by cluster specific componentsOverrideSettings
 // otherwise global overrides or defaults will be set
 func getApiserverOverrideFlags(data *resources.TemplateData) (kubermaticv1.APIServerSettings, error) {
-	settings := kubermaticv1.APIServerSettings{
-		NodePortRange: data.ComputedNodePortRange(),
+	settings := kubermaticv1.APIServerSettings{}
+	// nodePortRange section
+	settings.NodePortRange = data.NodePortRange()
+	overrideNodePortRange := data.Cluster().Spec.ComponentsOverride.Apiserver.NodePortRange
+	if overrideNodePortRange != "" {
+		if _, err := net.ParsePortRange(overrideNodePortRange); err != nil {
+			return kubermaticv1.APIServerSettings{}, fmt.Errorf("node port range format is invalid: %v", err)
+		}
+		settings.NodePortRange = overrideNodePortRange
+	}
+	if settings.NodePortRange == "" {
+		settings.NodePortRange = defaultNodePortRange
 	}
 
 	// endpointReconcilingDisabled section
