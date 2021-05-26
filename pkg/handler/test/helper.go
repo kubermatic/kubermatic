@@ -1490,7 +1490,7 @@ func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 			},
 		},
 		Parameters: kubermaticv1.Parameters{
-			"labels": []string{"gatekeeper", "opa"},
+			"labels": []interface{}{"gatekeeper", "opa"},
 		},
 	}
 
