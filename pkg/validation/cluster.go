@@ -33,6 +33,8 @@ import (
 	"github.com/coreos/locksmith/pkg/timeutil"
 	"k8s.io/apimachinery/pkg/api/equality"
 	utilerror "k8s.io/apimachinery/pkg/util/errors"
+	kubenetutil "k8s.io/apimachinery/pkg/util/net"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 var (
@@ -60,6 +62,12 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.
 
 	if err := validateMachineNetworksFromClusterSpec(spec); err != nil {
 		return fmt.Errorf("machine network validation failed, see: %v", err)
+	}
+
+	specFieldPath := field.NewPath("spec")
+	portRangeFld := specFieldPath.Child("componentsOverride", "apiserver", "nodePortRange")
+	if errs := ValidateNodePortRange(spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld); len(errs) > 0 {
+		return fmt.Errorf("apiserver NodePortRange validation failed: %v", errs)
 	}
 
 	return nil
@@ -205,7 +213,7 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, clusterProvider.GetSeedClusterAdminRuntimeClient())
-	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle)
+	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle, resources.DefaultNodePortRange)
 	if err != nil {
 		return err
 	}
@@ -506,4 +514,18 @@ func ValidateLeaderElectionSettings(l kubermaticv1.LeaderElectionSettings) error
 		return errors.New("control plane leader election renew deadline cannot be smaller than lease duration")
 	}
 	return nil
+}
+
+func ValidateNodePortRange(nodePortRange string, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if nodePortRange == "" {
+		return allErrs
+	}
+
+	if _, err := kubenetutil.ParsePortRange(nodePortRange); err != nil {
+		allErrs = append(allErrs, field.Invalid(fldPath, nodePortRange, err.Error()))
+	}
+
+	return allErrs
 }
