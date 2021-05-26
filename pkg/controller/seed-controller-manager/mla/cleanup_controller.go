@@ -22,15 +22,16 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
+	"k8s.io/client-go/util/workqueue"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -63,15 +64,13 @@ func newCleanupReconciler(
 	if err != nil {
 		return err
 	}
-	mapFn := handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
-		return []reconcile.Request{
-			{NamespacedName: types.NamespacedName{
-				Name:      "identifier",
-				Namespace: "",
-			}}}
+	request := reconcile.Request{NamespacedName: types.NamespacedName{Name: "identifier", Namespace: ""}}
+	src := source.Func(func(ctx context.Context, h handler.EventHandler, q workqueue.RateLimitingInterface, p ...predicate.Predicate) error {
+		q.Add(request)
+		return nil
 	})
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, mapFn); err != nil {
+	if err := c.Watch(src, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch: %w", err)
 	}
 
