@@ -34,6 +34,7 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/equality"
 	utilerror "k8s.io/apimachinery/pkg/util/errors"
+	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
@@ -65,8 +66,15 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.
 		return fmt.Errorf("machine network validation failed, see: %v", err)
 	}
 
-	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, field.NewPath("spec", "networkConfig"), true); len(errs) > 0 {
+	specFieldPath := field.NewPath("spec")
+
+	if errs := ValidateClusterNetworkConfig(&spec.ClusterNetwork, specFieldPath.Child("networkConfig"), true); len(errs) > 0 {
 		return fmt.Errorf("cluster network config validation failed: %v", errs)
+	}
+
+	portRangeFld := specFieldPath.Child("componentsOverride", "apiserver", "nodePortRange")
+	if errs := ValidateNodePortRange(spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld); len(errs) > 0 {
+		return fmt.Errorf("apiserver NodePortRange validation failed: %v", errs)
 	}
 
 	return nil
@@ -254,7 +262,7 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, clusterProvider.GetSeedClusterAdminRuntimeClient())
-	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle)
+	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle, resources.DefaultNodePortRange)
 	if err != nil {
 		return err
 	}
@@ -556,5 +564,19 @@ func ValidateLeaderElectionSettings(l *kubermaticv1.LeaderElectionSettings, fldP
 	if lds, rds := l.LeaseDurationSeconds, l.RenewDeadlineSeconds; lds != nil && rds != nil && *lds < *rds {
 		allErrs = append(allErrs, field.Forbidden(fldPath, "control plane leader election renew deadline cannot be smaller than lease duration"))
 	}
+	return allErrs
+}
+
+func ValidateNodePortRange(nodePortRange string, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	if nodePortRange == "" {
+		return allErrs
+	}
+
+	if _, err := kubenetutil.ParsePortRange(nodePortRange); err != nil {
+		allErrs = append(allErrs, field.Invalid(fldPath, nodePortRange, err.Error()))
+	}
+
 	return allErrs
 }

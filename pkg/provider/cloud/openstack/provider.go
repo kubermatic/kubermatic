@@ -69,10 +69,16 @@ type Provider struct {
 	secretKeySelector provider.SecretKeySelectorValueFunc
 	caBundle          *x509.CertPool
 	getClientFunc     getClientFunc
+	nodePortsRange    string
 }
 
 // NewCloudProvider creates a new openstack provider.
-func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*Provider, error) {
+func NewCloudProvider(
+	dc *kubermaticv1.Datacenter,
+	secretKeyGetter provider.SecretKeySelectorValueFunc,
+	caBundle *x509.CertPool,
+	nodePortsRange string,
+) (*Provider, error) {
 	if dc.Spec.Openstack == nil {
 		return nil, errors.New("datacenter is not an Openstack datacenter")
 	}
@@ -81,6 +87,7 @@ func NewCloudProvider(dc *kubermaticv1.Datacenter, secretKeyGetter provider.Secr
 		secretKeySelector: secretKeyGetter,
 		caBundle:          caBundle,
 		getClientFunc:     getNetClientForCluster,
+		nodePortsRange:    nodePortsRange,
 	}, nil
 }
 
@@ -223,7 +230,19 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	}
 
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
-		secGroupName, err := createKubermaticSecurityGroup(netClient, cluster.Name)
+		lowPort, highPort := resources.NewTemplateDataBuilder().
+			WithNodePortRange(os.nodePortsRange).
+			WithCluster(cluster).
+			Build().
+			NodePorts()
+
+		req := createKubermaticSecurityGroupRequest{
+			clusterName: cluster.Name,
+			lowPort:     lowPort,
+			highPort:    highPort,
+		}
+
+		secGroupName, err := createKubermaticSecurityGroup(netClient, req)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create the kubermatic security group: %v", err)
 		}

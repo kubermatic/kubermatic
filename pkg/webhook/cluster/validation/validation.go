@@ -104,6 +104,10 @@ func (h *AdmissionHandler) validateCreateOrUpdate(c *kubermaticv1.Cluster) field
 	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.Scheduler.LeaderElectionSettings, specFldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
 	allErrs = append(allErrs, validation.ValidateClusterNetworkConfig(&c.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"), false)...)
 
+	allErrs = append(allErrs, validation.ValidateNodePortRange(
+		c.Spec.ComponentsOverride.Apiserver.NodePortRange,
+		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"))...)
+
 	return allErrs
 }
 
