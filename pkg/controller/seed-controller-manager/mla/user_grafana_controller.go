@@ -156,7 +156,7 @@ func (r *userGrafanaController) cleanUp(ctx context.Context) error {
 	}
 	for _, user := range userList.Items {
 		if err := r.handleDeletion(ctx, &user); err != nil {
-			return nil
+			return err
 		}
 	}
 	return nil

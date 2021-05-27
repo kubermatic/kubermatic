@@ -151,7 +151,7 @@ func (r *orgGrafanaController) cleanUp(ctx context.Context) error {
 	projectList := &kubermaticv1.ProjectList{}
 	for _, project := range projectList.Items {
 		if err := r.handleDeletion(ctx, &project); err != nil {
-			return nil
+			return err
 		}
 	}
 	return nil
