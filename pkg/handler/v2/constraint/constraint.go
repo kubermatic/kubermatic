@@ -28,8 +28,6 @@ import (
 	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
-	"k8s.io/apimachinery/pkg/util/validation/field"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -40,12 +38,14 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
+	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	"k8s.io/apiextensions-apiserver/pkg/apiserver/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	"k8s.io/utils/pointer"
 )
 
@@ -381,18 +381,18 @@ func validateConstraint(constraintTemplateProvider provider.ConstraintTemplatePr
 	if ct.Spec.CRD.Spec.Validation != nil && ct.Spec.CRD.Spec.Validation.OpenAPIV3Schema != nil {
 
 		// Set up the validator
-		rawOpenApiSpec, err := json.Marshal(ct.Spec.CRD.Spec.Validation.OpenAPIV3Schema)
+		rawOpenAPISpec, err := json.Marshal(ct.Spec.CRD.Spec.Validation.OpenAPIV3Schema)
 		if err != nil {
 			return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("Validation failed, error marshalling Constraint Template CRD validation spec %q: %v", ct.Name, err))
 		}
 
-		openApiSpec := &apiextensions.JSONSchemaProps{}
-		err = json.Unmarshal(rawOpenApiSpec, openApiSpec)
+		openAPISpec := &apiextensions.JSONSchemaProps{}
+		err = json.Unmarshal(rawOpenAPISpec, openAPISpec)
 		if err != nil {
 			return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("Validation failed, error unmarshalling Constraint Template CRD validation spec %q: %v", ct.Name, err))
 		}
 
-		validator, _, err := validation.NewSchemaValidator(&apiextensions.CustomResourceValidation{OpenAPIV3Schema: openApiSpec})
+		validator, _, err := validation.NewSchemaValidator(&apiextensions.CustomResourceValidation{OpenAPIV3Schema: openAPISpec})
 		if err != nil {
 			return utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("Validation failed, could not create schema validator from Constraint Template %q: %v", ct.Name, err))
 		}
@@ -401,7 +401,7 @@ func validateConstraint(constraintTemplateProvider provider.ConstraintTemplatePr
 		parameters := map[string]interface{}{}
 
 		// if legacy rawJSON is used, we need to use it
-		if rawJSON, ok := constraint.Spec.Parameters["rawJSON"]; ok == true {
+		if rawJSON, ok := constraint.Spec.Parameters["rawJSON"]; ok {
 			err = json.Unmarshal([]byte(rawJSON.(string)), &parameters)
 			if err != nil {
 				return utilerrors.NewBadRequest("Validation failed, failed unmarshalling body parameters: %v", err)
