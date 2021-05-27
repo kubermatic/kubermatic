@@ -23,7 +23,7 @@ type ConstraintSpec struct {
 	Match *Match `json:"match,omitempty"`
 
 	// parameters
-	Parameters *Parameters `json:"parameters,omitempty"`
+	Parameters Parameters `json:"parameters,omitempty"`
 }
 
 // Validate validates this constraint spec
@@ -68,13 +68,11 @@ func (m *ConstraintSpec) validateParameters(formats strfmt.Registry) error {
 		return nil
 	}
 
-	if m.Parameters != nil {
-		if err := m.Parameters.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("parameters")
-			}
-			return err
+	if err := m.Parameters.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("parameters")
 		}
+		return err
 	}
 
 	return nil

@@ -151,14 +151,8 @@ func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) er
 	return nil
 }
 
-type createKubermaticSecurityGroupRequest struct {
-	clusterName string
-	lowPort     int
-	highPort    int
-}
-
-func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req createKubermaticSecurityGroupRequest) (string, error) {
-	secGroupName := resourceNamePrefix + req.clusterName
+func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, clusterName string) (string, error) {
+	secGroupName := resourceNamePrefix + clusterName
 	secGroups, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: secGroupName})
 	if err != nil {
 		return "", fmt.Errorf("failed to get security groups: %v", err)
@@ -208,15 +202,6 @@ func createKubermaticSecurityGroup(netClient *gophercloud.ServiceClient, req cre
 			SecGroupID:   securityGroupID,
 			PortRangeMin: provider.DefaultSSHPort,
 			PortRangeMax: provider.DefaultSSHPort,
-			Protocol:     osecuritygrouprules.ProtocolTCP,
-		},
-		{
-			// Allows nodePorts from external
-			Direction:    osecuritygrouprules.DirIngress,
-			EtherType:    osecuritygrouprules.EtherType4,
-			SecGroupID:   securityGroupID,
-			PortRangeMin: req.lowPort,
-			PortRangeMax: req.highPort,
 			Protocol:     osecuritygrouprules.ProtocolTCP,
 		},
 		{

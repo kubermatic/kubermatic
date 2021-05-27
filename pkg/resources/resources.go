@@ -60,12 +60,8 @@ const (
 	RancherServerIngressName            = "rancher-server-ingress"
 )
 
-const (
-	// ApiServer secure port
-	APIServerSecurePort = 6443
-	// DefaultNodePortRange A port range to reserve for services with NodePort visibility
-	DefaultNodePortRange = "30000-32767"
-)
+// ApiServer secure port
+const APIServerSecurePort = 6443
 
 const (
 	// ApiserverDeploymentName is the name of the apiserver deployment

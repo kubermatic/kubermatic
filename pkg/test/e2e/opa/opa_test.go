@@ -256,7 +256,7 @@ func createConstraint(ctx context.Context, client ctrlruntimeclient.Client, name
 			},
 		},
 		Parameters: kubermaticv1.Parameters{
-			RawJSON: `{"labels":["gatekeeper"]}`,
+			"rawJSON": `{"labels":["gatekeeper"]}`,
 		},
 	}
 

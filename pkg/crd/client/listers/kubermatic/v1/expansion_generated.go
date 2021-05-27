@@ -26,6 +26,10 @@ type AlertmanagerNamespaceListerExpansion interface{}
 // ClusterLister.
 type ClusterListerExpansion interface{}
 
+// ClusterTemplateListerExpansion allows custom methods to be added to
+// ClusterTemplateLister.
+type ClusterTemplateListerExpansion interface{}
+
 // ConstraintListerExpansion allows custom methods to be added to
 // ConstraintLister.
 type ConstraintListerExpansion interface{}

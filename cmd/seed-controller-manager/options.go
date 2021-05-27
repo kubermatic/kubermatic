@@ -139,7 +139,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.updatesFile, "updates", "updates.yaml", "The updates.yaml file path")
 	flag.IntVar(&c.workerCount, "worker-count", 4, "Number of workers which process the clusters in parallel.")
 	flag.StringVar(&c.overwriteRegistry, "overwrite-registry", "", "registry to use for all images")
-	flag.StringVar(&c.nodePortRange, "nodeport-range", resources.DefaultNodePortRange, "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
+	flag.StringVar(&c.nodePortRange, "nodeport-range", "30000-32767", "NodePort range to use for new clusters. It must be within the NodePort range of the seed-cluster")
 	flag.StringVar(&c.nodeAccessNetwork, "node-access-network", kubermaticv1.DefaultNodeAccessNetwork, "A network which allows direct access to nodes via VPN. Uses CIDR notation.")
 	flag.StringVar(&c.kubernetesAddonsPath, "kubernetes-addons-path", "/opt/addons/kubernetes", "Path to addon manifests. Should contain sub-folders for each addon")
 	flag.StringVar(&defaultKubernetesAddonsList, "kubernetes-addons-list", "", "Comma separated list of Addons to install into every user-cluster. Mutually exclusive with `--kubernetes-addons-file`")
