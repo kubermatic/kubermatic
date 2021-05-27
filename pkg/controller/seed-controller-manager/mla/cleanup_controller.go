@@ -117,7 +117,6 @@ func newCleanupController(
 
 func (r *cleanupController) cleanup(ctx context.Context) error {
 	for _, cleaner := range r.cleaners {
-		fmt.Println("call cleanup for ", cleaner)
 		if err := cleaner.cleanUp(ctx); err != nil {
 			return err
 		}
