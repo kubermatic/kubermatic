@@ -1,4 +1,4 @@
-# Secrets Store Proposal
+# Signed SSH Certificates Proposal
 
 **Author**: Emmanuel Bakare (@emmanuel-kubermatic)
 
@@ -8,9 +8,6 @@
 The proposed fix for the issue [6671](https://github.com/kubermatic/kubermatic/issues/6671) 
 
 - Define secret using Vault signed certificates to assist with SSH access
-
-## Non-Goals
-
 
 ## Motivation and Background
 
