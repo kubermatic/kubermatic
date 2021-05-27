@@ -323,7 +323,7 @@ func genConstraint(name, namespace string) *kubermaticv1.Constraint {
 			},
 		},
 		Parameters: kubermaticv1.Parameters{
-			RawJSON: `{"labels":[ "gatekeeper", "opa"]}`,
+			"rawJSON": `{"labels":[ "gatekeeper", "opa"]}`,
 		},
 	}
 
