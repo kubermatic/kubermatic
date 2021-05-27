@@ -121,10 +121,9 @@ type userGrafanaController struct {
 	grafanaClient *grafanasdk.Client
 	httpClient    *http.Client
 
-	log                      *zap.SugaredLogger
-	grafanaURL               string
-	grafanaHeader            string
-	orgUserGrafanaController *orgUserGrafanaController
+	log           *zap.SugaredLogger
+	grafanaURL    string
+	grafanaHeader string
 }
 
 func newUserGrafanaController(
@@ -134,7 +133,6 @@ func newUserGrafanaController(
 	httpClient *http.Client,
 	grafanaURL string,
 	grafanaHeader string,
-	orgUserGrafanaController *orgUserGrafanaController,
 ) *userGrafanaController {
 
 	return &userGrafanaController{
@@ -142,10 +140,9 @@ func newUserGrafanaController(
 		grafanaClient: grafanaClient,
 		httpClient:    httpClient,
 
-		log:                      log,
-		grafanaURL:               grafanaURL,
-		grafanaHeader:            grafanaHeader,
-		orgUserGrafanaController: orgUserGrafanaController,
+		log:           log,
+		grafanaURL:    grafanaURL,
+		grafanaHeader: grafanaHeader,
 	}
 }
 
@@ -221,11 +218,11 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 				return err
 			}
 			if grafanaUser.IsGrafanaAdmin {
-				if err := r.orgUserGrafanaController.addUserToOrg(ctx, org, grafanaUser, models.ROLE_ADMIN); err != nil {
+				if err := addUserToOrg(ctx, r.grafanaClient, org, grafanaUser, models.ROLE_ADMIN); err != nil {
 					return err
 				}
 			} else {
-				if err := r.orgUserGrafanaController.removeUserFromOrg(ctx, org, grafanaUser); err != nil {
+				if err := removeUserFromOrg(ctx, r.grafanaClient, org, grafanaUser); err != nil {
 					return err
 				}
 				userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
@@ -236,8 +233,8 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 					if userProjectBinding.Spec.UserEmail != user.Spec.Email {
 						continue
 					}
-					if err := r.orgUserGrafanaController.ensureOrgUser(ctx, &userProjectBinding); err != nil {
-						return nil
+					if err := ensureOrgUser(ctx, r.grafanaClient, &project, &userProjectBinding); err != nil {
+						return err
 					}
 				}
 			}

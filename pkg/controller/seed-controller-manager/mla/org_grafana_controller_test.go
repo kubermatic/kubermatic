@@ -61,8 +61,7 @@ func newTestOrgGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Objec
 
 	grafanaClient := grafanasdk.NewClient(ts.URL, "admin:admin", ts.Client())
 
-	orgUserGrafanaController := newOrgUserGrafanaController(dynamicClient, kubermaticlog.Logger, grafanaClient)
-	orgGrafanaController := newOrgGrafanaController(dynamicClient, kubermaticlog.Logger, grafanaClient, orgUserGrafanaController)
+	orgGrafanaController := newOrgGrafanaController(dynamicClient, kubermaticlog.Logger, grafanaClient)
 	reconciler := orgGrafanaReconciler{
 		Client:               dynamicClient,
 		log:                  kubermaticlog.Logger,

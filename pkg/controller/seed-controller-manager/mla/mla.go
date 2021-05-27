@@ -109,10 +109,10 @@ func Add(
 	grafanaClient := grafanasdk.NewClient(grafanaURL, grafanaAuth, httpClient)
 
 	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, grafanaClient)
-	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, grafanaClient, orgUserGrafanaController)
+	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, grafanaClient)
 	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
 	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), httpClient, grafanaURL, grafanaAuth, mlaNamespace, log, overwriteRegistry)
-	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, grafanaClient, httpClient, grafanaURL, grafanaHeader, orgUserGrafanaController)
+	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, grafanaClient, httpClient, grafanaURL, grafanaHeader)
 	if mlaEnabled {
 		if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, orgGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla project controller: %w", err)

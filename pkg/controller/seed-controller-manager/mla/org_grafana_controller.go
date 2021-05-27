@@ -128,22 +128,19 @@ type orgGrafanaController struct {
 	ctrlruntimeclient.Client
 	grafanaClient *grafanasdk.Client
 
-	log                      *zap.SugaredLogger
-	orgUserGrafanaController *orgUserGrafanaController
+	log *zap.SugaredLogger
 }
 
 func newOrgGrafanaController(
 	client ctrlruntimeclient.Client,
 	log *zap.SugaredLogger,
 	grafanaClient *grafanasdk.Client,
-	orgUserGrafanaController *orgUserGrafanaController,
 ) *orgGrafanaController {
 	return &orgGrafanaController{
 		Client:        client,
 		grafanaClient: grafanaClient,
 
-		log:                      log,
-		orgUserGrafanaController: orgUserGrafanaController,
+		log: log,
 	}
 }
 
@@ -212,8 +209,8 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, org grafana
 		if err != nil {
 			return org, err
 		}
-		if err := r.orgUserGrafanaController.addUserToOrg(ctx, org, &grafanaUser, models.ROLE_ADMIN); err != nil {
-			return org, nil
+		if err := addUserToOrg(ctx, r.grafanaClient, org, &grafanaUser, models.ROLE_ADMIN); err != nil {
+			return org, err
 		}
 
 	}
