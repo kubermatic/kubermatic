@@ -42,16 +42,12 @@ import (
 
 type userGrafanaReconciler struct {
 	ctrlruntimeclient.Client
-	grafanaClient *grafanasdk.Client
-	httpClient    *http.Client
 
-	log           *zap.SugaredLogger
-	workerName    string
-	recorder      record.EventRecorder
-	versions      kubermatic.Versions
-	grafanaURL    string
-	grafanaHeader string
-	mlaEnabled    bool
+	log                   *zap.SugaredLogger
+	workerName            string
+	recorder              record.EventRecorder
+	versions              kubermatic.Versions
+	userGrafanaController *userGrafanaController
 }
 
 func newUserGrafanaReconciler(
@@ -60,27 +56,19 @@ func newUserGrafanaReconciler(
 	numWorkers int,
 	workerName string,
 	versions kubermatic.Versions,
-	grafanaClient *grafanasdk.Client,
-	httpClient *http.Client,
-	grafanaURL string,
-	grafanaHeader string,
-	mlaEnabled bool,
+	userGrafanaController *userGrafanaController,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
 	reconciler := &userGrafanaReconciler{
-		Client:        client,
-		grafanaClient: grafanaClient,
-		httpClient:    httpClient,
+		Client: client,
 
-		log:           log,
-		workerName:    workerName,
-		recorder:      mgr.GetEventRecorderFor(ControllerName),
-		versions:      versions,
-		grafanaURL:    grafanaURL,
-		grafanaHeader: grafanaHeader,
-		mlaEnabled:    mlaEnabled,
+		log:                   log,
+		workerName:            workerName,
+		recorder:              mgr.GetEventRecorderFor(ControllerName),
+		versions:              versions,
+		userGrafanaController: userGrafanaController,
 	}
 
 	ctrlOptions := controller.Options{
@@ -107,8 +95,8 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
-	if !user.DeletionTimestamp.IsZero() || !r.mlaEnabled {
-		if err := r.handleDeletion(ctx, user); err != nil {
+	if !user.DeletionTimestamp.IsZero() {
+		if err := r.userGrafanaController.handleDeletion(ctx, user); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
 		return reconcile.Result{}, nil
@@ -121,13 +109,56 @@ func (r *userGrafanaReconciler) Reconcile(ctx context.Context, request reconcile
 		}
 	}
 
-	if err := r.ensureGrafanaUser(ctx, user); err != nil {
+	if err := r.userGrafanaController.ensureGrafanaUser(ctx, user); err != nil {
 		return reconcile.Result{}, fmt.Errorf("unable to add grafana user : %w", err)
 	}
 	return reconcile.Result{}, nil
 }
 
-func (r *userGrafanaReconciler) handleDeletion(ctx context.Context, user *kubermaticv1.User) error {
+type userGrafanaController struct {
+	ctrlruntimeclient.Client
+	grafanaClient *grafanasdk.Client
+	httpClient    *http.Client
+
+	log           *zap.SugaredLogger
+	grafanaURL    string
+	grafanaHeader string
+}
+
+func newUserGrafanaController(
+	client ctrlruntimeclient.Client,
+	log *zap.SugaredLogger,
+	grafanaClient *grafanasdk.Client,
+	httpClient *http.Client,
+	grafanaURL string,
+	grafanaHeader string,
+) *userGrafanaController {
+
+	return &userGrafanaController{
+		Client:        client,
+		grafanaClient: grafanaClient,
+		httpClient:    httpClient,
+
+		log:           log,
+		grafanaURL:    grafanaURL,
+		grafanaHeader: grafanaHeader,
+	}
+}
+
+func (r *userGrafanaController) cleanUp(ctx context.Context) error {
+	userList := &kubermaticv1.UserList{}
+	if err := r.List(ctx, userList); err != nil {
+		return err
+	}
+	for _, user := range userList.Items {
+		if err := r.handleDeletion(ctx, &user); err != nil {
+			return nil
+		}
+	}
+	return nil
+}
+
+func (r *userGrafanaController) handleDeletion(ctx context.Context, user *kubermaticv1.User) error {
 	grafanaUser, err := r.grafanaClient.LookupUser(ctx, user.Spec.Email)
 	if err != nil && !errors.As(err, &grafanasdk.ErrNotFound{}) {
 		return err
@@ -148,7 +179,7 @@ func (r *userGrafanaReconciler) handleDeletion(ctx context.Context, user *kuberm
 	return nil
 }
 
-func (r *userGrafanaReconciler) ensureGrafanaUser(ctx context.Context, user *kubermaticv1.User) error {
+func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kubermaticv1.User) error {
 	req, err := http.NewRequest("GET", r.grafanaURL+"/api/user", nil)
 	if err != nil {
 		return err

@@ -43,13 +43,12 @@ import (
 
 type orgUserGrafanaReconciler struct {
 	ctrlruntimeclient.Client
-	grafanaClient *grafanasdk.Client
 
-	log        *zap.SugaredLogger
-	workerName string
-	recorder   record.EventRecorder
-	versions   kubermatic.Versions
-	mlaEnabled bool
+	log                      *zap.SugaredLogger
+	workerName               string
+	recorder                 record.EventRecorder
+	versions                 kubermatic.Versions
+	orgUserGrafanaController *orgUserGrafanaController
 }
 
 func newOrgUserGrafanaReconciler(
@@ -58,21 +57,18 @@ func newOrgUserGrafanaReconciler(
 	numWorkers int,
 	workerName string,
 	versions kubermatic.Versions,
-	grafanaClient *grafanasdk.Client,
-	mlaEnabled bool,
+	orgUserGrafanaController *orgUserGrafanaController,
 ) error {
-	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
 	reconciler := &orgUserGrafanaReconciler{
-		Client:        client,
-		grafanaClient: grafanaClient,
+		Client: client,
 
-		log:        log,
-		workerName: workerName,
-		recorder:   mgr.GetEventRecorderFor(ControllerName),
-		versions:   versions,
-		mlaEnabled: mlaEnabled,
+		log:                      log,
+		workerName:               workerName,
+		recorder:                 mgr.GetEventRecorderFor(ControllerName),
+		versions:                 versions,
+		orgUserGrafanaController: orgUserGrafanaController,
 	}
 
 	ctrlOptions := controller.Options{
@@ -99,8 +95,8 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
-	if !userProjectBinding.DeletionTimestamp.IsZero() || !r.mlaEnabled {
-		if err := r.handleDeletion(ctx, userProjectBinding); err != nil {
+	if !userProjectBinding.DeletionTimestamp.IsZero() {
+		if err := r.orgUserGrafanaController.handleDeletion(ctx, userProjectBinding); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
 		return reconcile.Result{}, nil
@@ -113,19 +109,42 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 		}
 	}
 
+	if err := r.orgUserGrafanaController.ensureOrgUser(ctx, userProjectBinding); err != nil {
+		return reconcile.Result{}, fmt.Errorf("unable to ensure Grafana Org/User: %w", err)
+	}
+
+	return reconcile.Result{}, nil
+}
+
+type orgUserGrafanaController struct {
+	ctrlruntimeclient.Client
+	grafanaClient *grafanasdk.Client
+	log           *zap.SugaredLogger
+}
+
+func newOrgUserGrafanaController(client ctrlruntimeclient.Client, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client,
+) *orgUserGrafanaController {
+	return &orgUserGrafanaController{
+		Client:        client,
+		grafanaClient: grafanaClient,
+		log:           log,
+	}
+}
+
+func (r *orgUserGrafanaController) ensureOrgUser(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
 	user, err := r.grafanaClient.LookupUser(ctx, userProjectBinding.Spec.UserEmail)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	project := &kubermaticv1.Project{}
 	if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil {
-		return reconcile.Result{}, fmt.Errorf("failed to get project: %w", err)
+		return fmt.Errorf("failed to get project: %w", err)
 	}
 
 	org, err := getOrgByProject(ctx, r.grafanaClient, project)
 	if err != nil {
-		return reconcile.Result{}, err
+		return err
 	}
 
 	group := rbac.ExtractGroupPrefix(userProjectBinding.Spec.Group)
@@ -134,14 +153,14 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 	// checking if user already exists in the corresponding organization
 	orgUser, err := r.getGrafanaOrgUser(ctx, org.ID, user.ID)
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("unable to get user : %w", err)
+		return fmt.Errorf("unable to get user : %w", err)
 	}
 	// if there is no such user in project organization, let's add one
 	if orgUser == nil {
 		if err := r.addGrafanaOrgUser(ctx, org.ID, user, string(role)); err != nil {
-			return reconcile.Result{}, fmt.Errorf("unable to add grafana user : %w", err)
+			return fmt.Errorf("unable to add grafana user : %w", err)
 		}
-		return reconcile.Result{}, nil
+		return nil
 	}
 
 	if orgUser.Role != string(role) {
@@ -150,14 +169,25 @@ func (r *orgUserGrafanaReconciler) Reconcile(ctx context.Context, request reconc
 			Role:         string(role),
 		}
 		if status, err := r.grafanaClient.UpdateOrgUser(ctx, userRole, org.ID, orgUser.ID); err != nil {
-			return reconcile.Result{}, fmt.Errorf("unable to update grafana user role: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			return fmt.Errorf("unable to update grafana user role: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 	}
-
-	return reconcile.Result{}, nil
+	return nil
 }
 
-func (r *orgUserGrafanaReconciler) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
+func (r *orgUserGrafanaController) cleanUp(ctx context.Context) error {
+	userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
+	if err := r.List(ctx, userProjectBindingList); err != nil {
+		return err
+	}
+	for _, userProjectBinding := range userProjectBindingList.Items {
+		if err := r.handleDeletion(ctx, &userProjectBinding); err != nil {
+			return nil
+		}
+	}
+	return nil
+}
+func (r *orgUserGrafanaController) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
 	project := &kubermaticv1.Project{}
 	if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil && !kerrors.IsNotFound(err) {
 		return fmt.Errorf("failed to get project: %w", err)
@@ -186,7 +216,7 @@ func (r *orgUserGrafanaReconciler) handleDeletion(ctx context.Context, userProje
 	return nil
 }
 
-func (r *orgUserGrafanaReconciler) getGrafanaOrgUser(ctx context.Context, orgID, uid uint) (*grafanasdk.OrgUser, error) {
+func (r *orgUserGrafanaController) getGrafanaOrgUser(ctx context.Context, orgID, uid uint) (*grafanasdk.OrgUser, error) {
 	users, err := r.grafanaClient.GetOrgUsers(ctx, orgID)
 	if err != nil {
 		return nil, err
@@ -200,7 +230,7 @@ func (r *orgUserGrafanaReconciler) getGrafanaOrgUser(ctx context.Context, orgID,
 	return nil, nil
 }
 
-func (r *orgUserGrafanaReconciler) addGrafanaOrgUser(ctx context.Context, orgID uint, user grafanasdk.User, role string) error {
+func (r *orgUserGrafanaController) addGrafanaOrgUser(ctx context.Context, orgID uint, user grafanasdk.User, role string) error {
 	userRole := grafanasdk.UserRole{
 		LoginOrEmail: user.Email,
 		Role:         role,

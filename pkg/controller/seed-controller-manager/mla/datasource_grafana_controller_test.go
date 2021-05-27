@@ -53,14 +53,12 @@ func newTestDatasourceGrafanaReconciler(t *testing.T, objects []ctrlruntimeclien
 		Build()
 	ts := httptest.NewServer(handler)
 
+	datasourceGrafanaController := newDatasourceGrafanaController(dynamicClient, ts.Client(), ts.URL, "admin:admin", "mla", kubermaticlog.Logger, "")
 	reconciler := datasourceGrafanaReconciler{
-		Client:      dynamicClient,
-		grafanaURL:  ts.URL,
-		httpClient:  ts.Client(),
-		grafanaAuth: "admin:admin",
-		log:         kubermaticlog.Logger,
-		recorder:    record.NewFakeRecorder(10),
-		mlaEnabled:  true,
+		Client:                      dynamicClient,
+		log:                         kubermaticlog.Logger,
+		recorder:                    record.NewFakeRecorder(10),
+		datasourceGrafanaController: datasourceGrafanaController,
 	}
 	return &reconciler, ts
 }
