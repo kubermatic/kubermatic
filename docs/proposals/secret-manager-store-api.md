@@ -16,6 +16,10 @@ The proposed fix for the issue [6671](https://github.com/kubermatic/kubermatic/i
 
 A kubermatic user can assign ssh keys to clusters at creation time via the machine controller through cloud-init, but the user ssh agent also assists with updating the keys at runtime via the usersshkeys secret.
 
+The keys are updated mainly via the UserSSHKeys object in the master cluster, so not directly on the secrets. Once the list is updated in the master, users then can attach keys to user clusters which would then create secrets that have the keys in their data field. 
+
+Then those secrets are read from the seed by a user ssh key agent that would always rewrite the ssh keys on each UserSSHKey update.
+
 This approach is great but adds a limitation where the end user has to manually copy credentials to kubermatic usersshkey secrets or added via the API for each cluster's worker nodes authorized_keys.
 
 The new approach documented within this proposal provides the ability to use [SSH CA certificates](https://www.vaultproject.io/docs/secrets/ssh/signed-ssh-certificates), avoiding the burden of copying each user key individually.
@@ -51,7 +55,7 @@ Distribution of the keys is out of scope from the master to user controller, the
 
 Since the updates to use a TrustedCA require we update the SSH configuration and restart the SSH daemon, this would not be possible if the cluster is already created without the configuration.
 
-During a revocation / rotation, the user would update the `vault-ca` secret configuration and that would be reconciled and updated in the clusters trusted ca config in ssh config at `/etc/ssh/TrustedCA.pem` via a hostPath mount point.
+During a revocation / rotation, the user would up date the `vault-ca` secret configuration and that would be reconciled and updated in the clusters trusted ca config in ssh config at `/etc/ssh/TrustedCA.pem` via a hostPath mount point.
 
 The update would now be handled by the `user-ssh-key-agent` controller, instead of the machine controller and reconciled on any changes to the `vault-ca` secret in the `kube-system` namespace.
 
