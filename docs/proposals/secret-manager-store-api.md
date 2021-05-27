@@ -45,7 +45,7 @@ This includes the following process
 > NOTE: This allows the rollout of new CA key pairs for security reasons e.g rotation, revocation etc
 > Management of the CA keys are the responsibility of the admin managing the KKP cluster.
 
-The machine controller would create the CA pem file and configure the SSH daemon to add the `TrustedCAKeys` configuration, provided the CA key is specified on cluster creation.
+The machine controller would create the CA pem file and configure the SSH daemon to add the `TrustedCAKeys` configuration, the provided CA key is specified on cluster creation.
 
 Distribution of the keys is out of scope from the master to user controller, the secret for the CA would be created on the cluster. The reason for this is to remove the issues around the secret being created after cluster creation.
 
