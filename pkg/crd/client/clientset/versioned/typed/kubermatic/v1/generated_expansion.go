@@ -10,6 +10,8 @@ type AlertmanagerExpansion interface{}
 
 type ClusterExpansion interface{}
 
+type ClusterTemplateExpansion interface{}
+
 type ConstraintExpansion interface{}
 
 type ConstraintTemplateExpansion interface{}

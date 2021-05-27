@@ -18193,14 +18193,9 @@
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "Parameters": {
-      "description": "Parameters specifies the parameters used by the constraint template REGO",
       "type": "object",
-      "properties": {
-        "rawJSON": {
-          "description": "RawJSON contains the raw JSON parameters used by REGO",
-          "type": "string",
-          "x-go-name": "RawJSON"
-        }
+      "additionalProperties": {
+        "type": "object"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },

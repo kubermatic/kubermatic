@@ -16,7 +16,11 @@ limitations under the License.
 
 package v1
 
-import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+import (
+	"k8c.io/kubermatic/v2/pkg/util/deepcopy"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+)
 
 const (
 
@@ -44,8 +48,42 @@ type ConstraintSpec struct {
 	ConstraintType string `json:"constraintType"`
 	// Match contains the constraint to resource matching data
 	Match Match `json:"match,omitempty"`
-	// Parameters specifies the parameters used by the constraint template REGO
+	// Parameters specifies the parameters used by the constraint template REGO.
+	// It supports both the legacy rawJSON parameters, in which all the parameters are set in a JSON string, and regular
+	// parameters like in Gatekeeper Constraints.
+	// If rawJSON is set, during constraint syncing to the user cluster, the other parameters are ignored
+	// Example with rawJSON parameters:
+	//
+	// parameters:
+	//   rawJSON: '{"labels":["gatekeeper"]}'
+	//
+	// And with regular parameters:
+	//
+	// parameters:
+	//   labels: ["gatekeeper"]
+	//
 	Parameters Parameters `json:"parameters,omitempty"`
+}
+
+type Parameters map[string]interface{}
+
+func (in *Parameters) DeepCopyInto(out *Parameters) {
+	// controller-gen cannot handle the map[string]interface{} type thus we write our own DeepCopyInto function.
+	if out != nil {
+		casted := (*in)
+		// as there is no way to report error we skip it here
+		_ = deepcopy.StringInterfaceMapCopy(casted, *out)
+	}
+}
+
+// DeepCopy copies the receiver, creating a new Parameter.
+func (in *Parameters) DeepCopy() *Parameters {
+	if in == nil {
+		return nil
+	}
+	out := &Parameters{}
+	in.DeepCopyInto(out)
+	return out
 }
 
 // Match contains the constraint to resource matching data
@@ -72,12 +110,6 @@ type Kind struct {
 	Kinds []string `json:"kinds,omitempty"`
 	// APIGroups specifies the APIGroups of the resources
 	APIGroups []string `json:"apiGroups,omitempty"`
-}
-
-// Parameters specifies the parameters used by the constraint template REGO
-type Parameters struct {
-	// RawJSON contains the raw JSON parameters used by REGO
-	RawJSON string `json:"rawJSON,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

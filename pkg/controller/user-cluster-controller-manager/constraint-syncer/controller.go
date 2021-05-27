@@ -155,10 +155,18 @@ func constraintCreatorGetter(constraint *kubermaticv1.Constraint) reconciling.Na
 		return constraint.Name, constraint.Spec.ConstraintType, constraintAPIVersion, func(u *unstructured.Unstructured) (*unstructured.Unstructured, error) {
 			var params map[string]interface{}
 
-			// set Params
-			err := json.Unmarshal([]byte(constraint.Spec.Parameters.RawJSON), &params)
+			// first check if the Constraint is using the deprecated rawJSON parameters, if yes, we should use them
+			rawJSON, ok, err := unstructured.NestedString(constraint.Spec.Parameters, "rawJSON")
 			if err != nil {
-				return nil, fmt.Errorf("error unmarshalling constraint params: %v", err)
+				return nil, fmt.Errorf("error getting constraint rawJSON parameters %s", err)
+			}
+			if ok {
+				err = json.Unmarshal([]byte(rawJSON), &params)
+				if err != nil {
+					return nil, fmt.Errorf("error unmarshalling constraint params: %v", err)
+				}
+			} else {
+				params = *constraint.Spec.Parameters.DeepCopy()
 			}
 
 			if err = unstructured.SetNestedField(u.Object, params, spec, parametersField); err != nil {
