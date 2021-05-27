@@ -3208,8 +3208,8 @@ func (in *RuleGroupList) DeepCopyObject() runtime.Object {
 func (in *RuleGroupSpec) DeepCopyInto(out *RuleGroupSpec) {
 	*out = *in
 	out.Cluster = in.Cluster
-	if in.Rules != nil {
-		in, out := &in.Rules, &out.Rules
+	if in.Data != nil {
+		in, out := &in.Data, &out.Data
 		*out = make([]byte, len(*in))
 		copy(*out, *in)
 	}

@@ -43,7 +43,7 @@ spec:
           properties:
             cluster:
               description: Cluster is the reference to the cluster the ruleGroup should
-                be created in
+                be created in.
               properties:
                 apiVersion:
                   description: API version of the referent.
@@ -78,20 +78,20 @@ spec:
                   description: 'UID of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids'
                   type: string
               type: object
+            data:
+              description: 'Data contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group'
+              format: byte
+              type: string
             ruleGroupType:
               description: RuleGroupType is the type of this ruleGroup applies to.
                 It can be `Metrics`.
               enum:
                 - Metrics
               type: string
-            rules:
-              description: Rules contains the rules that are defined in this RuleGroup.
-              format: byte
-              type: string
           required:
             - cluster
+            - data
             - ruleGroupType
-            - rules
           type: object
       type: object
   version: v1

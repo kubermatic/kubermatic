@@ -258,7 +258,7 @@ func (r *ruleGroupReconciler) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup,
 		return err
 	}
 	expectedRuleGroup := map[string]interface{}{}
-	if err := yaml.Unmarshal(ruleGroup.Spec.Rules, &expectedRuleGroup); err != nil {
+	if err := yaml.Unmarshal(ruleGroup.Spec.Data, &expectedRuleGroup); err != nil {
 		return fmt.Errorf("unable to unmarshal expected rule group: %w", err)
 	}
 	if reflect.DeepEqual(currentRuleGroup, expectedRuleGroup) {
@@ -267,7 +267,7 @@ func (r *ruleGroupReconciler) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup,
 
 	req, err := http.NewRequest(http.MethodPost,
 		requestURL,
-		bytes.NewBuffer(ruleGroup.Spec.Rules))
+		bytes.NewBuffer(ruleGroup.Spec.Data))
 	if err != nil {
 		return err
 	}

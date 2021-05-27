@@ -42,10 +42,10 @@ type RuleGroup struct {
 type RuleGroupSpec struct {
 	// RuleGroupType is the type of this ruleGroup applies to. It can be `Metrics`.
 	RuleGroupType RuleGroupType `json:"ruleGroupType"`
-	// Cluster is the reference to the cluster the ruleGroup should be created in
+	// Cluster is the reference to the cluster the ruleGroup should be created in.
 	Cluster corev1.ObjectReference `json:"cluster"`
-	// Rules contains the rules that are defined in this RuleGroup.
-	Rules []byte `json:"rules"`
+	// Data contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group
+	Data []byte `json:"data"`
 }
 
 type RuleGroupType string

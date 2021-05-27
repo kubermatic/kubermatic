@@ -91,7 +91,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
 						metricsRuleGroupConfigEndpoint+defaultNamespace,
-						bytes.NewBuffer(generateTestRules("test-rule"))),
+						bytes.NewBuffer(generateTestRuleGroupData("test-rule"))),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
 			},
@@ -170,7 +170,7 @@ func generateRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.Rule
 				Name:       clusterName,
 				APIVersion: kubermaticv1.GroupVersion,
 			},
-			Rules: generateTestRules(name),
+			Data: generateTestRuleGroupData(name),
 		},
 	}
 	if deleted {
@@ -180,7 +180,7 @@ func generateRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.Rule
 	return group
 }
 
-func generateTestRules(name string) []byte {
+func generateTestRuleGroupData(name string) []byte {
 	return []byte(fmt.Sprintf(`
 name: %s
 rules:
