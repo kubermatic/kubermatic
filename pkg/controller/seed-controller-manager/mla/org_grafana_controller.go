@@ -132,13 +132,18 @@ type orgGrafanaController struct {
 	orgUserGrafanaController *orgUserGrafanaController
 }
 
-func newOrgGrafanaController(client ctrlruntimeclient.Client, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client,
+func newOrgGrafanaController(
+	client ctrlruntimeclient.Client,
+	log *zap.SugaredLogger,
+	grafanaClient *grafanasdk.Client,
+	orgUserGrafanaController *orgUserGrafanaController,
 ) *orgGrafanaController {
 	return &orgGrafanaController{
 		Client:        client,
 		grafanaClient: grafanaClient,
 
-		log: log,
+		log:                      log,
+		orgUserGrafanaController: orgUserGrafanaController,
 	}
 }
 

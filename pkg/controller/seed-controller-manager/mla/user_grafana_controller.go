@@ -134,6 +134,7 @@ func newUserGrafanaController(
 	httpClient *http.Client,
 	grafanaURL string,
 	grafanaHeader string,
+	orgUserGrafanaController *orgUserGrafanaController,
 ) *userGrafanaController {
 
 	return &userGrafanaController{
@@ -141,9 +142,10 @@ func newUserGrafanaController(
 		grafanaClient: grafanaClient,
 		httpClient:    httpClient,
 
-		log:           log,
-		grafanaURL:    grafanaURL,
-		grafanaHeader: grafanaHeader,
+		log:                      log,
+		grafanaURL:               grafanaURL,
+		grafanaHeader:            grafanaHeader,
+		orgUserGrafanaController: orgUserGrafanaController,
 	}
 }
 
