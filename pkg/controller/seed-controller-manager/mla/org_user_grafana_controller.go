@@ -187,6 +187,7 @@ func (r *orgUserGrafanaController) cleanUp(ctx context.Context) error {
 	}
 	return nil
 }
+
 func (r *orgUserGrafanaController) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
 	project := &kubermaticv1.Project{}
 	if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil && !kerrors.IsNotFound(err) {

@@ -65,6 +65,7 @@ var (
 // * user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User
 // * datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
 // * alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
+// * rule group controller - manager rule groups that will be used to generate alerts.
 // * cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller
 func Add(
 	ctx context.Context,
