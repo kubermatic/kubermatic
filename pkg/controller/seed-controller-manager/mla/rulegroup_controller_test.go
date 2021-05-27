@@ -48,13 +48,12 @@ func newTestRuleGroupReconciler(objects []ctrlruntimeclient.Object, handler http
 		Build()
 	ts := httptest.NewServer(handler)
 
+	controller := newRuleGroupController(fakeClient, kubermaticlog.Logger, ts.Client(), ts.URL)
 	reconciler := ruleGroupReconciler{
-		Client:         fakeClient,
-		httpClient:     ts.Client(),
-		log:            kubermaticlog.Logger,
-		recorder:       record.NewFakeRecorder(10),
-		cortexRulerURL: ts.URL,
-		mlaEnabled:     true,
+		Client:              fakeClient,
+		log:                 kubermaticlog.Logger,
+		recorder:            record.NewFakeRecorder(10),
+		ruleGroupController: controller,
 	}
 	return &reconciler, ts
 }

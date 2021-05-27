@@ -182,7 +182,7 @@ func (r *orgUserGrafanaController) cleanUp(ctx context.Context) error {
 	}
 	for _, userProjectBinding := range userProjectBindingList.Items {
 		if err := r.handleDeletion(ctx, &userProjectBinding); err != nil {
-			return nil
+			return err
 		}
 	}
 	return nil

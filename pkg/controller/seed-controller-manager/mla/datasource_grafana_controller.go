@@ -333,7 +333,7 @@ func (r *datasourceGrafanaController) cleanUp(ctx context.Context) error {
 	}
 	for _, cluster := range clusterList.Items {
 		if err := r.handleDeletion(ctx, nil, &cluster); err != nil {
-			return nil
+			return err
 		}
 	}
 	return nil

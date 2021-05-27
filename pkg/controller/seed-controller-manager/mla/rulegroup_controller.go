@@ -55,15 +55,11 @@ const (
 
 type ruleGroupReconciler struct {
 	ctrlruntimeclient.Client
-	httpClient *http.Client
-
-	log        *zap.SugaredLogger
-	workerName string
-	recorder   record.EventRecorder
-	versions   kubermatic.Versions
-
-	cortexRulerURL string
-	mlaEnabled     bool
+	log                 *zap.SugaredLogger
+	workerName          string
+	recorder            record.EventRecorder
+	versions            kubermatic.Versions
+	ruleGroupController *ruleGroupController
 }
 
 func newRuleGroupReconciler(
@@ -72,23 +68,18 @@ func newRuleGroupReconciler(
 	numWorkers int,
 	workerName string,
 	versions kubermatic.Versions,
-	httpClient *http.Client,
-	cortexRuleGroupURL string,
-	mlaEnabled bool,
+	ruleGroupController *ruleGroupController,
 ) error {
 	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
 	reconciler := &ruleGroupReconciler{
-		Client:     client,
-		httpClient: httpClient,
-
-		log:            log,
-		workerName:     workerName,
-		recorder:       mgr.GetEventRecorderFor(ControllerName),
-		versions:       versions,
-		cortexRulerURL: cortexRuleGroupURL,
-		mlaEnabled:     mlaEnabled,
+		Client:              client,
+		log:                 log,
+		workerName:          workerName,
+		recorder:            mgr.GetEventRecorderFor(ControllerName),
+		versions:            versions,
+		ruleGroupController: ruleGroupController,
 	}
 
 	ctrlOptions := controller.Options{
@@ -166,7 +157,7 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 		r.versions,
 		kubermaticv1.ClusterConditionMLAControllerReconcilingSuccess,
 		func() (*reconcile.Result, error) {
-			return r.reconcile(ctx, cluster, ruleGroup)
+			return r.ruleGroupController.reconcile(ctx, cluster, ruleGroup)
 		},
 	)
 	if err != nil {
@@ -180,26 +171,42 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 
 }
 
-func (r *ruleGroupReconciler) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, ruleGroup *kubermaticv1.RuleGroup) (*reconcile.Result, error) {
+type ruleGroupController struct {
+	ctrlruntimeclient.Client
+	httpClient *http.Client
+
+	log            *zap.SugaredLogger
+	cortexRulerURL string
+}
+
+func newRuleGroupController(
+	client ctrlruntimeclient.Client,
+	log *zap.SugaredLogger,
+	httpClient *http.Client,
+	cortexRulerURL string,
+) *ruleGroupController {
+	return &ruleGroupController{
+		Client:         client,
+		httpClient:     httpClient,
+		log:            log,
+		cortexRulerURL: cortexRulerURL,
+	}
+}
+
+func (r *ruleGroupController) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster, ruleGroup *kubermaticv1.RuleGroup) (*reconcile.Result, error) {
 	requestURL, err := r.getRequestURL(ruleGroup)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get request URL: %w", err)
 	}
 
 	if !ruleGroup.DeletionTimestamp.IsZero() {
-		if err := r.cleanUpRuleGroup(ruleGroup, requestURL); err != nil {
-			return nil, fmt.Errorf("failed to delete ruleGroup conifugration: %w", err)
-		}
-		if kubernetes.HasFinalizer(ruleGroup, ruleGroupFinalizer) {
-			kubernetes.RemoveFinalizer(ruleGroup, ruleGroupFinalizer)
-			if err := r.Update(ctx, ruleGroup); err != nil {
-				return nil, fmt.Errorf("updating ruleGroup: %w", err)
-			}
+		if err := r.handleDeletion(ctx, ruleGroup, requestURL); err != nil {
+			return nil, fmt.Errorf("failed to delete ruleGroup: %w", err)
 		}
 		return nil, nil
 	}
 
-	monitoringEnabled := r.mlaEnabled && cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled
+	monitoringEnabled := cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled
 	if !cluster.DeletionTimestamp.IsZero() || !monitoringEnabled {
 		// If this cluster is being deleted, or monitoring is disabled for this cluster, we just delete this `RuleGroup`,
 		// and the clean up of `RuleGroup` will be triggered in the next reconciliation loop.
@@ -222,14 +229,34 @@ func (r *ruleGroupReconciler) reconcile(ctx context.Context, cluster *kubermatic
 	return nil, nil
 }
 
-func (r *ruleGroupReconciler) getRequestURL(ruleGroup *kubermaticv1.RuleGroup) (string, error) {
+func (r *ruleGroupController) cleanUp(ctx context.Context) error {
+	ruleGroupList := &kubermaticv1.RuleGroupList{}
+	if err := r.List(ctx, ruleGroupList); err != nil {
+		return err
+	}
+	for _, ruleGroup := range ruleGroupList.Items {
+		requestURL, err := r.getRequestURL(&ruleGroup)
+		if err != nil {
+			return fmt.Errorf("failed to get request URL: %w", err)
+		}
+		if err := r.handleDeletion(ctx, &ruleGroup, requestURL); err != nil {
+			return fmt.Errorf("failed to handle deletion: %w", err)
+		}
+		if err := r.Delete(ctx, &ruleGroup); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (r *ruleGroupController) getRequestURL(ruleGroup *kubermaticv1.RuleGroup) (string, error) {
 	if ruleGroup.Spec.RuleGroupType == kubermaticv1.RuleGroupTypeMetrics {
 		return fmt.Sprintf("%s%s%s", r.cortexRulerURL, metricsRuleGroupConfigEndpoint, defaultNamespace), nil
 	}
 	return "", fmt.Errorf("unknown rule group type: %s", ruleGroup.Spec.RuleGroupType)
 }
 
-func (r *ruleGroupReconciler) cleanUpRuleGroup(ruleGroup *kubermaticv1.RuleGroup, requestURL string) error {
+func (r *ruleGroupController) handleDeletion(ctx context.Context, ruleGroup *kubermaticv1.RuleGroup, requestURL string) error {
 	req, err := http.NewRequest(http.MethodDelete,
 		fmt.Sprintf("%s/%s", requestURL, ruleGroup.Name), nil)
 	if err != nil {
@@ -249,10 +276,16 @@ func (r *ruleGroupReconciler) cleanUpRuleGroup(ruleGroup *kubermaticv1.RuleGroup
 		}
 		return fmt.Errorf("status code: %d, response body: %s", resp.StatusCode, string(body))
 	}
+	if kubernetes.HasFinalizer(ruleGroup, ruleGroupFinalizer) {
+		kubernetes.RemoveFinalizer(ruleGroup, ruleGroupFinalizer)
+		if err := r.Update(ctx, ruleGroup); err != nil {
+			return fmt.Errorf("updating ruleGroup finalizer: %w", err)
+		}
+	}
 	return nil
 }
 
-func (r *ruleGroupReconciler) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup, requestURL string) error {
+func (r *ruleGroupController) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup, requestURL string) error {
 	currentRuleGroup, err := r.getCurrentRuleGroup(ruleGroup, requestURL)
 	if err != nil {
 		return err
@@ -289,7 +322,7 @@ func (r *ruleGroupReconciler) ensureRuleGroup(ruleGroup *kubermaticv1.RuleGroup,
 	return nil
 }
 
-func (r *ruleGroupReconciler) getCurrentRuleGroup(ruleGroup *kubermaticv1.RuleGroup, requestURL string) (map[string]interface{}, error) {
+func (r *ruleGroupController) getCurrentRuleGroup(ruleGroup *kubermaticv1.RuleGroup, requestURL string) (map[string]interface{}, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/%s", requestURL, ruleGroup.Name), nil)
 	if err != nil {
 		return nil, err

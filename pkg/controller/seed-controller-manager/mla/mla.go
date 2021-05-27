@@ -114,6 +114,7 @@ func Add(
 	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, grafanaClient)
 	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), httpClient, grafanaURL, grafanaAuth, mlaNamespace, log, overwriteRegistry)
 	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, grafanaClient, httpClient, grafanaURL, grafanaHeader)
+	ruleGroupController := newRuleGroupController(mgr.GetClient(), log, httpClient, cortexRulerURL)
 	if mlaEnabled {
 		if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, orgGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla project controller: %w", err)
@@ -130,6 +131,9 @@ func Add(
 		if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, userGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla user controller: %w", err)
 		}
+		if err := newRuleGroupReconciler(mgr, log, numWorkers, workerName, versions, ruleGroupController); err != nil {
+			return fmt.Errorf("failed to create rule group controller %w", err)
+		}
 	} else {
 		cleanupController := newCleanupController(
 			mgr.GetClient(),
@@ -139,13 +143,11 @@ func Add(
 			orgUserGrafanaController,
 			orgGrafanaController,
 			userGrafanaController,
+			ruleGroupController,
 		)
 		if err := newCleanupReconciler(mgr, log, numWorkers, workerName, versions, cleanupController); err != nil {
 			return fmt.Errorf("failed to create mla cleanup controller: %w", err)
 		}
-	}
-	if err := newRuleGroupReconciler(mgr, log, numWorkers, workerName, versions, httpClient, cortexRulerURL, mlaEnabled); err != nil {
-		return fmt.Errorf("failed to create mla rule group controller: %w", err)
 	}
 	return nil
 }
