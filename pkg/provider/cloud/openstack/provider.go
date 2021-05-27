@@ -208,7 +208,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	// conflicts to retry later.
 	if len(finalizers) > 0 {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, finalizers...)
+			kubernetes.AddFinalizer(cluster, finalizers...)
 		}, provider.UpdaterOptionOptimisticLock)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add finalizers: %w", err)
