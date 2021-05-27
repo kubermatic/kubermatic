@@ -46,13 +46,12 @@ const (
 // orgGrafanaReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
 type orgGrafanaReconciler struct {
 	ctrlruntimeclient.Client
-	grafanaClient *grafanasdk.Client
 
-	log        *zap.SugaredLogger
-	workerName string
-	recorder   record.EventRecorder
-	versions   kubermatic.Versions
-	mlaEnabled bool
+	log                  *zap.SugaredLogger
+	workerName           string
+	recorder             record.EventRecorder
+	versions             kubermatic.Versions
+	orgGrafanaController *orgGrafanaController
 }
 
 // Add creates a new MLA controller that is responsible for
@@ -63,21 +62,18 @@ func newOrgGrafanaReconciler(
 	numWorkers int,
 	workerName string,
 	versions kubermatic.Versions,
-	grafanaClient *grafanasdk.Client,
-	mlaEnabled bool,
+	orgGrafanaController *orgGrafanaController,
 ) error {
-	log = log.Named(ControllerName)
 	client := mgr.GetClient()
 
 	reconciler := &orgGrafanaReconciler{
-		Client:        client,
-		grafanaClient: grafanaClient,
+		Client: client,
 
-		log:        log,
-		workerName: workerName,
-		recorder:   mgr.GetEventRecorderFor(ControllerName),
-		versions:   versions,
-		mlaEnabled: mlaEnabled,
+		log:                  log,
+		workerName:           workerName,
+		recorder:             mgr.GetEventRecorderFor(ControllerName),
+		versions:             versions,
+		orgGrafanaController: orgGrafanaController,
 	}
 
 	ctrlOptions := controller.Options{
@@ -103,8 +99,8 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 		return reconcile.Result{}, ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
-	if !project.DeletionTimestamp.IsZero() || !r.mlaEnabled {
-		if err := r.handleDeletion(ctx, project); err != nil {
+	if !project.DeletionTimestamp.IsZero() {
+		if err := r.orgGrafanaController.handleDeletion(ctx, project); err != nil {
 			return reconcile.Result{}, fmt.Errorf("handling deletion: %w", err)
 		}
 		return reconcile.Result{}, nil
@@ -120,14 +116,44 @@ func (r *orgGrafanaReconciler) Reconcile(ctx context.Context, request reconcile.
 	org := grafanasdk.Org{
 		Name: getOrgNameForProject(project),
 	}
-	if err := r.ensureOrganization(ctx, log, project, org, grafanaOrgAnnotationKey); err != nil {
+	if err := r.orgGrafanaController.ensureOrganization(ctx, log, project, org, grafanaOrgAnnotationKey); err != nil {
 		return reconcile.Result{}, fmt.Errorf("failed to ensure Grafana Organization Datasources: %w", err)
 	}
 
 	return reconcile.Result{}, nil
 }
 
-func (r *orgGrafanaReconciler) handleDeletion(ctx context.Context, project *kubermaticv1.Project) error {
+type orgGrafanaController struct {
+	ctrlruntimeclient.Client
+	grafanaClient *grafanasdk.Client
+
+	log *zap.SugaredLogger
+}
+
+func newOrgGrafanaController(client ctrlruntimeclient.Client, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client,
+) *orgGrafanaController {
+	return &orgGrafanaController{
+		Client:        client,
+		grafanaClient: grafanaClient,
+
+		log: log,
+	}
+}
+
+func (r *orgGrafanaController) cleanUp(ctx context.Context) error {
+	projectList := &kubermaticv1.ProjectList{}
+	if err := r.List(ctx, projectList); err != nil {
+		return err
+	}
+	for _, project := range projectList.Items {
+		if err := r.handleDeletion(ctx, &project); err != nil {
+			return nil
+		}
+	}
+	return nil
+}
+
+func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kubermaticv1.Project) error {
 	update := false
 	orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
 	if ok {
@@ -154,7 +180,7 @@ func (r *orgGrafanaReconciler) handleDeletion(ctx context.Context, project *kube
 	return nil
 }
 
-func (r *orgGrafanaReconciler) createGrafanaOrg(ctx context.Context, org grafanasdk.Org) (grafanasdk.Org, error) {
+func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, org grafanasdk.Org) (grafanasdk.Org, error) {
 	status, err := r.grafanaClient.CreateOrg(ctx, org)
 	if err != nil {
 		return org, fmt.Errorf("unable to add organization: %w (status: %s, message: %s)",
@@ -172,7 +198,7 @@ func (r *orgGrafanaReconciler) createGrafanaOrg(ctx context.Context, org grafana
 	return org, nil
 }
 
-func (r *orgGrafanaReconciler) ensureOrganization(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project, expected grafanasdk.Org, annotationKey string) error {
+func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project, expected grafanasdk.Org, annotationKey string) error {
 	orgID, ok := project.GetAnnotations()[annotationKey]
 	if !ok {
 		org, err := r.createGrafanaOrg(ctx, expected)
@@ -223,7 +249,7 @@ func (r *orgGrafanaReconciler) ensureOrganization(ctx context.Context, log *zap.
 
 }
 
-func (r *orgGrafanaReconciler) setAnnotation(ctx context.Context, project *kubermaticv1.Project, key, value string) error {
+func (r *orgGrafanaController) setAnnotation(ctx context.Context, project *kubermaticv1.Project, key, value string) error {
 	annotations := project.GetAnnotations()
 	if annotations == nil {
 		annotations = map[string]string{}

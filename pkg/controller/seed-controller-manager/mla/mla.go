@@ -37,6 +37,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
+type cleaner interface {
+	cleanUp(context.Context) error
+}
+
 const (
 	ControllerName     = "kubermatic_mla_controller"
 	mlaFinalizer       = "kubermatic.io/mla"
@@ -61,6 +65,7 @@ var (
 // * user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User
 // * datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
 // * alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
+// * cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller
 func Add(
 	ctx context.Context,
 	mgr manager.Manager,
@@ -76,6 +81,7 @@ func Add(
 	cortexAlertmanagerURL string,
 	mlaEnabled bool,
 ) error {
+	log = log.Named(ControllerName)
 
 	split := strings.Split(grafanaSecret, "/")
 	if n := len(split); n != 2 {
@@ -102,20 +108,40 @@ func Add(
 	httpClient := &http.Client{Timeout: 15 * time.Second}
 	grafanaClient := grafanasdk.NewClient(grafanaURL, grafanaAuth, httpClient)
 
-	if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, mlaEnabled); err != nil {
-		return fmt.Errorf("failed to create mla project controller: %w", err)
-	}
-	if err := newOrgUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, mlaEnabled); err != nil {
-		return fmt.Errorf("failed to create mla userprojectbinding controller: %w", err)
-	}
-	if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, httpClient, grafanaURL, grafanaAuth, mlaNamespace, overwriteRegistry, mlaEnabled); err != nil {
-		return fmt.Errorf("failed to create mla cluster controller: %w", err)
-	}
-	if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, httpClient, cortexAlertmanagerURL, mlaEnabled); err != nil {
-		return fmt.Errorf("failed to create mla alertmanager configuration controller: %w", err)
-	}
-	if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, grafanaClient, httpClient, grafanaURL, grafanaHeader, mlaEnabled); err != nil {
-		return fmt.Errorf("failed to create mla user controller: %w", err)
+	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, grafanaClient)
+	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
+	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, grafanaClient)
+	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), httpClient, grafanaURL, grafanaAuth, mlaNamespace, log, overwriteRegistry)
+	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, grafanaClient, httpClient, grafanaURL, grafanaHeader)
+	if mlaEnabled {
+		if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, orgGrafanaController); err != nil {
+			return fmt.Errorf("failed to create mla project controller: %w", err)
+		}
+		if err := newOrgUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, orgUserGrafanaController); err != nil {
+			return fmt.Errorf("failed to create mla userprojectbinding controller: %w", err)
+		}
+		if err := newDatasourceGrafanaReconciler(mgr, log, numWorkers, workerName, versions, datasourceGrafanaController); err != nil {
+			return fmt.Errorf("failed to create mla cluster controller: %w", err)
+		}
+		if err := newAlertmanagerReconciler(mgr, log, numWorkers, workerName, versions, alertmanagerController); err != nil {
+			return fmt.Errorf("failed to create mla alertmanager configuration controller: %w", err)
+		}
+		if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, userGrafanaController); err != nil {
+			return fmt.Errorf("failed to create mla user controller: %w", err)
+		}
+	} else {
+		cleanupController := newCleanupController(
+			mgr.GetClient(),
+			log,
+			datasourceGrafanaController,
+			alertmanagerController,
+			orgUserGrafanaController,
+			orgGrafanaController,
+			userGrafanaController,
+		)
+		if err := newCleanupReconciler(mgr, log, numWorkers, workerName, versions, cleanupController); err != nil {
+			return fmt.Errorf("failed to create mla cleanup controller: %w", err)
+		}
 	}
 	return nil
 }
