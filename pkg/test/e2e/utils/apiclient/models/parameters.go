@@ -7,37 +7,14 @@ package models
 
 import (
 	"github.com/go-openapi/strfmt"
-	"github.com/go-openapi/swag"
 )
 
-// Parameters Parameters specifies the parameters used by the constraint template REGO
+// Parameters parameters
 //
 // swagger:model Parameters
-type Parameters struct {
-
-	// RawJSON contains the raw JSON parameters used by REGO
-	RawJSON string `json:"rawJSON,omitempty"`
-}
+type Parameters map[string]interface{}
 
 // Validate validates this parameters
-func (m *Parameters) Validate(formats strfmt.Registry) error {
-	return nil
-}
-
-// MarshalBinary interface implementation
-func (m *Parameters) MarshalBinary() ([]byte, error) {
-	if m == nil {
-		return nil, nil
-	}
-	return swag.WriteJSON(m)
-}
-
-// UnmarshalBinary interface implementation
-func (m *Parameters) UnmarshalBinary(b []byte) error {
-	var res Parameters
-	if err := swag.ReadJSON(b, &res); err != nil {
-		return err
-	}
-	*m = res
+func (m Parameters) Validate(formats strfmt.Registry) error {
 	return nil
 }

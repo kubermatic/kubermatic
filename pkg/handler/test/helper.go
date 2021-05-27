@@ -1490,7 +1490,7 @@ func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 			},
 		},
 		Parameters: kubermaticv1.Parameters{
-			RawJSON: `{"labels":["gatekeeper","opa"]}`,
+			"labels": []interface{}{"gatekeeper", "opa"},
 		},
 	}
 
@@ -1508,7 +1508,7 @@ func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
 				},
 			},
 			Parameters: kubermaticv1.Parameters{
-				RawJSON: `{"labels":["gatekeeper","opa"]}`,
+				"labels": []interface{}{"gatekeeper", "opa"},
 			},
 		},
 		Status: &apiv2.ConstraintStatus{
