@@ -23,6 +23,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/grafana/grafana/pkg/models"
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -142,14 +143,18 @@ func (r *orgUserGrafanaController) ensureOrgUser(ctx context.Context, userProjec
 		return fmt.Errorf("failed to get project: %w", err)
 	}
 
+	group := rbac.ExtractGroupPrefix(userProjectBinding.Spec.Group)
+	role := groupToRole[group]
+
 	org, err := getOrgByProject(ctx, r.grafanaClient, project)
 	if err != nil {
 		return err
 	}
 
-	group := rbac.ExtractGroupPrefix(userProjectBinding.Spec.Group)
-	role := groupToRole[group]
+	return r.addUserToOrg(ctx, org, &user, role)
+}
 
+func (r *orgUserGrafanaController) addUserToOrg(ctx context.Context, org grafanasdk.Org, user *grafanasdk.User, role models.RoleType) error {
 	// checking if user already exists in the corresponding organization
 	orgUser, err := r.getGrafanaOrgUser(ctx, org.ID, user.ID)
 	if err != nil {
@@ -157,7 +162,7 @@ func (r *orgUserGrafanaController) ensureOrgUser(ctx context.Context, userProjec
 	}
 	// if there is no such user in project organization, let's add one
 	if orgUser == nil {
-		if err := r.addGrafanaOrgUser(ctx, org.ID, user, string(role)); err != nil {
+		if err := r.addGrafanaOrgUser(ctx, org.ID, user.Email, string(role)); err != nil {
 			return fmt.Errorf("unable to add grafana user : %w", err)
 		}
 		return nil
@@ -165,13 +170,14 @@ func (r *orgUserGrafanaController) ensureOrgUser(ctx context.Context, userProjec
 
 	if orgUser.Role != string(role) {
 		userRole := grafanasdk.UserRole{
-			LoginOrEmail: userProjectBinding.Spec.UserEmail,
+			LoginOrEmail: user.Email,
 			Role:         string(role),
 		}
 		if status, err := r.grafanaClient.UpdateOrgUser(ctx, userRole, org.ID, orgUser.ID); err != nil {
 			return fmt.Errorf("unable to update grafana user role: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 	}
+
 	return nil
 }
 
@@ -187,6 +193,15 @@ func (r *orgUserGrafanaController) cleanUp(ctx context.Context) error {
 	}
 	return nil
 }
+
+func (r *orgUserGrafanaController) removeUserFromOrg(ctx context.Context, org grafanasdk.Org, user *grafanasdk.User) error {
+	status, err := r.grafanaClient.DeleteOrgUser(ctx, org.ID, user.ID)
+	if err != nil {
+		return fmt.Errorf("failed to delete org user: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+	}
+	return nil
+}
+
 func (r *orgUserGrafanaController) handleDeletion(ctx context.Context, userProjectBinding *kubermaticv1.UserProjectBinding) error {
 	project := &kubermaticv1.Project{}
 	if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil && !kerrors.IsNotFound(err) {
@@ -230,9 +245,9 @@ func (r *orgUserGrafanaController) getGrafanaOrgUser(ctx context.Context, orgID,
 	return nil, nil
 }
 
-func (r *orgUserGrafanaController) addGrafanaOrgUser(ctx context.Context, orgID uint, user grafanasdk.User, role string) error {
+func (r *orgUserGrafanaController) addGrafanaOrgUser(ctx context.Context, orgID uint, email string, role string) error {
 	userRole := grafanasdk.UserRole{
-		LoginOrEmail: user.Email,
+		LoginOrEmail: email,
 		Role:         role,
 	}
 	if status, err := r.grafanaClient.AddOrgUser(ctx, userRole, orgID); err != nil {

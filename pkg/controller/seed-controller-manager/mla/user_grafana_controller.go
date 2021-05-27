@@ -25,6 +25,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/grafana/grafana/pkg/models"
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -120,9 +121,10 @@ type userGrafanaController struct {
 	grafanaClient *grafanasdk.Client
 	httpClient    *http.Client
 
-	log           *zap.SugaredLogger
-	grafanaURL    string
-	grafanaHeader string
+	log                      *zap.SugaredLogger
+	grafanaURL               string
+	grafanaHeader            string
+	orgUserGrafanaController *orgUserGrafanaController
 }
 
 func newUserGrafanaController(
@@ -205,6 +207,38 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 		status, err := r.grafanaClient.UpdateUserPermissions(ctx, grafanasdk.UserPermissions{IsGrafanaAdmin: user.Spec.IsAdmin}, grafanaUser.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update user permissions: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+		}
+		projectList := &kubermaticv1.ProjectList{}
+		if err := r.List(ctx, projectList); err != nil {
+			return err
+		}
+		// we also needs to remove user if IsAdmin is false, but keep in orgs with userprojectbingings
+		for _, project := range projectList.Items {
+			org, err := getOrgByProject(ctx, r.grafanaClient, &project)
+			if err != nil {
+				return err
+			}
+			if grafanaUser.IsGrafanaAdmin {
+				if err := r.orgUserGrafanaController.addUserToOrg(ctx, org, grafanaUser, models.ROLE_ADMIN); err != nil {
+					return err
+				}
+			} else {
+				if err := r.orgUserGrafanaController.removeUserFromOrg(ctx, org, grafanaUser); err != nil {
+					return err
+				}
+				userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
+				if err := r.List(ctx, userProjectBindingList); err != nil {
+					return err
+				}
+				for _, userProjectBinding := range userProjectBindingList.Items {
+					if userProjectBinding.Spec.UserEmail != user.Spec.Email {
+						continue
+					}
+					if err := r.orgUserGrafanaController.ensureOrgUser(ctx, &userProjectBinding); err != nil {
+						return nil
+					}
+				}
+			}
 		}
 	}
 	return nil

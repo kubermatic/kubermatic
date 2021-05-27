@@ -24,6 +24,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/grafana/grafana/pkg/models"
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
@@ -127,7 +128,8 @@ type orgGrafanaController struct {
 	ctrlruntimeclient.Client
 	grafanaClient *grafanasdk.Client
 
-	log *zap.SugaredLogger
+	log                      *zap.SugaredLogger
+	orgUserGrafanaController *orgUserGrafanaController
 }
 
 func newOrgGrafanaController(client ctrlruntimeclient.Client, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client,
@@ -195,6 +197,25 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, org grafana
 		return org, nil
 	}
 	org.ID = *status.OrgID
+
+	userList := &kubermaticv1.UserList{}
+	if err := r.List(ctx, userList); err != nil {
+		return org, err
+	}
+	for _, user := range userList.Items {
+		if !user.Spec.IsAdmin {
+			continue
+		}
+		grafanaUser, err := r.grafanaClient.LookupUser(ctx, user.Spec.Email)
+		if err != nil {
+			return org, err
+		}
+		if err := r.orgUserGrafanaController.addUserToOrg(ctx, org, &grafanaUser, models.ROLE_ADMIN); err != nil {
+			return org, nil
+		}
+
+	}
+
 	return org, nil
 }
 
