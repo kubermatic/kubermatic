@@ -19,6 +19,7 @@ package v2
 import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
@@ -157,4 +158,17 @@ type SeedSettings struct {
 type MLA struct {
 	// whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed
 	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled"`
+}
+
+// ClusterTemplate represents a ClusterTemplate object
+// swagger:model ClusterTemplate
+type ClusterTemplate struct {
+	Name string `json:"name"`
+	ID   string `json:"id"`
+
+	ProjectID      string                `json:"projectID,omitempty"`
+	User           string                `json:"user,omitempty"`
+	Scope          string                `json:"scope"`
+	Cluster        apiv1.Cluster         `json:"cluster"`
+	NodeDeployment *apiv1.NodeDeployment `json:"nodeDeployment,omitempty"`
 }

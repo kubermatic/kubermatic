@@ -206,10 +206,10 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 		return true, nil
 	}); err != nil {
 		log.Error("Timed out waiting for cluster to become ready")
-		return convertInternalClusterToExternal(newCluster, true), errors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
+		return ConvertInternalClusterToExternal(newCluster, true), errors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
 	}
 
-	return convertInternalClusterToExternal(newCluster, true), nil
+	return ConvertInternalClusterToExternal(newCluster, true), nil
 }
 
 func GetExternalClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) ([]*apiv1.Cluster, error) {
@@ -248,7 +248,7 @@ func GetEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, 
 		return nil, err
 	}
 
-	return convertInternalClusterToExternal(cluster, true), nil
+	return ConvertInternalClusterToExternal(cluster, true), nil
 }
 
 func DeleteEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, deleteVolumes, deleteLoadBalancers bool, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -309,7 +309,7 @@ func PatchEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	}
 
 	// Converting to API type as it is the type exposed externally.
-	externalCluster := convertInternalClusterToExternal(oldInternalCluster, false)
+	externalCluster := ConvertInternalClusterToExternal(oldInternalCluster, false)
 
 	// Changing the type to patchCluster as during marshalling it doesn't remove the cloud provider authentication
 	// data that is required here for validation.
@@ -403,7 +403,7 @@ func PatchEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return convertInternalClusterToExternal(updatedCluster, true), nil
+	return ConvertInternalClusterToExternal(updatedCluster, true), nil
 }
 
 func GetClusterEventsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID, eventType string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -744,7 +744,7 @@ func updateAndDeleteClusterForRegularUser(ctx context.Context, userInfoGetter pr
 func convertInternalClustersToExternal(internalClusters []kubermaticv1.Cluster) []*apiv1.Cluster {
 	apiClusters := make([]*apiv1.Cluster, len(internalClusters))
 	for index, cluster := range internalClusters {
-		apiClusters[index] = convertInternalClusterToExternal(cluster.DeepCopy(), true)
+		apiClusters[index] = ConvertInternalClusterToExternal(cluster.DeepCopy(), true)
 	}
 	return apiClusters
 }
@@ -808,7 +808,7 @@ func isStatus(err error, status int32) bool {
 	return ok && status == kubernetesError.Status().Code
 }
 
-func convertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, filterSystemLabels bool) *apiv1.Cluster {
+func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, filterSystemLabels bool) *apiv1.Cluster {
 	cluster := &apiv1.Cluster{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalCluster.Name,
