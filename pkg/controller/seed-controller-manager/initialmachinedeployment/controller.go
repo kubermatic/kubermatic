@@ -185,7 +185,7 @@ func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, nodeDep
 		return fmt.Errorf("failed to get target datacenter: %v", err)
 	}
 
-	sshKeys, err := r.getSSHKeys(ctx, cluster)
+	deploymentKeys, err := r.getSSHKeys(ctx, cluster)
 	if err != nil {
 		return fmt.Errorf("failed to get SSH keys: %v", err)
 	}
@@ -196,7 +196,7 @@ func (r *Reconciler) createInitialMachineDeployment(ctx context.Context, nodeDep
 		Client:            r,
 	}
 
-	machineDeployment, err := machineresource.Deployment(cluster, nodeDeployment, datacenter, sshKeys, data)
+	machineDeployment, err := machineresource.Deployment(cluster, nodeDeployment, datacenter, deploymentKeys, data)
 	if err != nil {
 		return fmt.Errorf("failed to assemble MachineDeployment: %v", err)
 	}
@@ -233,9 +233,7 @@ func (r *Reconciler) getTargetDatacenter(cluster *kubermaticv1.Cluster) (*kuberm
 	return nil, fmt.Errorf("there is no datacenter named %q in Seed %q", cluster.Spec.Cloud.DatacenterName, seed.Name)
 }
 
-func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Cluster) ([]*kubermaticv1.UserSSHKey, error) {
-	var keys []*kubermaticv1.UserSSHKey
-
+func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Cluster) (*kubermaticv1.DeploymentSSHKeys, error) {
 	projectID := cluster.Labels[kubermaticv1.ProjectIDLabelKey]
 	if projectID == "" {
 		return nil, fmt.Errorf("cluster does not have a %q label", kubermaticv1.ProjectIDLabelKey)
@@ -247,12 +245,16 @@ func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Clust
 	}
 
 	sshKeyProvider := kubernetes.NewSSHKeyProvider(nil, r)
-	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
+	userSSHKeys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get SSH keys: %v", err)
 	}
 
-	return keys, nil
+	keys := kubermaticv1.DeploymentSSHKeys{
+		UserSSHKey: userSSHKeys,
+	}
+
+	return &keys, nil
 }
 
 func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster) error {

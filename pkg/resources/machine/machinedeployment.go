@@ -41,7 +41,7 @@ import (
 )
 
 // Deployment returns a Machine Deployment object for the given Node Deployment spec.
-func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermaticv1.Datacenter, keys []*kubermaticv1.UserSSHKey, data resources.CredentialsData) (*clusterv1alpha1.MachineDeployment, error) {
+func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermaticv1.Datacenter, keys *kubermaticv1.DeploymentSSHKeys, data resources.CredentialsData) (*clusterv1alpha1.MachineDeployment, error) {
 	md := &clusterv1alpha1.MachineDeployment{}
 
 	if nd.Name != "" {
@@ -131,12 +131,14 @@ func Deployment(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermati
 	return md, nil
 }
 
-func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermaticv1.Datacenter, keys []*kubermaticv1.UserSSHKey, data resources.CredentialsData) (*providerconfig.Config, error) {
+func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *kubermaticv1.Datacenter, keys *kubermaticv1.DeploymentSSHKeys, data resources.CredentialsData) (*providerconfig.Config, error) {
 	config := providerconfig.Config{}
-	config.SSHPublicKeys = make([]string, len(keys))
-	for i, key := range keys {
+	config.SSHPublicKeys = make([]string, len(keys.UserSSHKey))
+	for i, key := range keys.UserSSHKey {
 		config.SSHPublicKeys[i] = key.Spec.PublicKey
 	}
+
+	config.CAPublicKey = keys.CAPublicKey.Spec.PublicKey
 
 	var (
 		cloudExt *runtime.RawExtension

@@ -49,6 +49,11 @@ type SSHKeySpec struct {
 	Clusters    []string `json:"clusters"`
 }
 
+type DeploymentSSHKeys struct {
+	UserSSHKey  []*UserSSHKey `json:"userSSHKey"`
+	CAPublicKey UserSSHKey    `json:"caPublicKey"`
+}
+
 func (sk *UserSSHKey) IsUsedByCluster(clustername string) bool {
 	if sk.Spec.Clusters == nil {
 		return false
