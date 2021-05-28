@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)
 
 REPOSITORY=quay.io/kubermatic/openvpn
-VERSION=2.5.0-r1
+VERSION=2.5.2-r0
 
 docker build --build-arg OPENVPN_VERSION=${VERSION} --no-cache --pull -t "${REPOSITORY}:v${VERSION}" .
 docker push "${REPOSITORY}:v${VERSION}"

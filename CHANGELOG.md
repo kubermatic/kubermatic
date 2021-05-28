@@ -96,7 +96,7 @@
 - oauth2-proxy to 7.0.1 [#6657](https://github.com/kubermatic/kubermatic/issues/6657) 
 - Go 1.16.1 [#6684](https://github.com/kubermatic/kubermatic/issues/6684) 
 - machine-controller to v1.27.1 [#6695](https://github.com/kubermatic/kubermatic/issues/6695) 
-- OpenVPN image to version v2.5.0-r1. [#6697](https://github.com/kubermatic/kubermatic/issues/6697) 
+- OpenVPN image to version v2.5.2-r0. [#6697](https://github.com/kubermatic/kubermatic/issues/6697) 
 - Velero to 1.5.3. [#6701](https://github.com/kubermatic/kubermatic/issues/6701) 
 
 ### Dashboard
