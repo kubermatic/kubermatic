@@ -41,7 +41,6 @@ func Provider(
 	datacenter *kubermaticv1.Datacenter,
 	secretKeyGetter provider.SecretKeySelectorValueFunc,
 	caBundle *x509.CertPool,
-	nodePortsRange string,
 ) (provider.CloudProvider, error) {
 	if datacenter.Spec.Digitalocean != nil {
 		return digitalocean.NewCloudProvider(secretKeyGetter), nil
@@ -56,7 +55,7 @@ func Provider(
 		return azure.New(datacenter, secretKeyGetter)
 	}
 	if datacenter.Spec.Openstack != nil {
-		return openstack.NewCloudProvider(datacenter, secretKeyGetter, caBundle, nodePortsRange)
+		return openstack.NewCloudProvider(datacenter, secretKeyGetter, caBundle)
 	}
 	if datacenter.Spec.Packet != nil {
 		return packet.NewCloudProvider(secretKeyGetter), nil

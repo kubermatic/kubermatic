@@ -262,7 +262,7 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, clusterProvider.GetSeedClusterAdminRuntimeClient())
-	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle, resources.DefaultNodePortRange)
+	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle)
 	if err != nil {
 		return err
 	}
