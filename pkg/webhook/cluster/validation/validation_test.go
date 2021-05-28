@@ -89,6 +89,11 @@ func TestHandle(t *testing.T) {
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
+							},
 						}.Do(),
 					},
 				},
@@ -118,6 +123,11 @@ func TestHandle(t *testing.T) {
 								DNSDomain:                "cluster.local",
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
 							},
 						}.Do(),
 					},
@@ -149,6 +159,11 @@ func TestHandle(t *testing.T) {
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
+							},
 						}.Do(),
 					},
 				},
@@ -177,6 +192,11 @@ func TestHandle(t *testing.T) {
 								DNSDomain:                "cluster.local",
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
 							},
 						}.Do(),
 					},
@@ -208,6 +228,11 @@ func TestHandle(t *testing.T) {
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
+							},
 						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
@@ -221,6 +246,11 @@ func TestHandle(t *testing.T) {
 								Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
 								DNSDomain: "cluster.local",
 								ProxyMode: resources.IPVSProxyMode,
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
 							},
 						}.Do(),
 					},
@@ -252,6 +282,11 @@ func TestHandle(t *testing.T) {
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
+							},
 						}.Do(),
 					},
 				},
@@ -281,6 +316,11 @@ func TestHandle(t *testing.T) {
 								DNSDomain:                "cluster.local",
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
 							},
 						}.Do(),
 					},
@@ -312,6 +352,11 @@ func TestHandle(t *testing.T) {
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
+							},
 						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
@@ -326,6 +371,11 @@ func TestHandle(t *testing.T) {
 								DNSDomain:                "cluster.local",
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
 							},
 						}.Do(),
 					},
@@ -357,6 +407,11 @@ func TestHandle(t *testing.T) {
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
+							},
 						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
@@ -371,6 +426,11 @@ func TestHandle(t *testing.T) {
 								DNSDomain:                "cluster.local",
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
 							},
 						}.Do(),
 					},
@@ -401,6 +461,11 @@ func TestHandle(t *testing.T) {
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
 							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
+							},
 						}.Do(),
 					},
 					OldObject: runtime.RawExtension{
@@ -414,6 +479,11 @@ func TestHandle(t *testing.T) {
 								DNSDomain:                "cluster.local",
 								ProxyMode:                resources.IPVSProxyMode,
 								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32768",
+								},
 							},
 						}.Do(),
 					},
@@ -466,6 +536,74 @@ func TestHandle(t *testing.T) {
 							ComponentSettings: kubermaticv1.ComponentSettings{
 								Apiserver: kubermaticv1.APIServerSettings{
 									NodePortRange: "30000-32768",
+								},
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: false,
+		},
+		{
+			name: "Reject empty nodeport range",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "",
+								},
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: false,
+		},
+		{
+			name: "Reject malformed nodeport range",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "-",
 								},
 							},
 						}.Do(),

@@ -106,7 +106,7 @@ func (h *AdmissionHandler) validateCreateOrUpdate(c *kubermaticv1.Cluster) field
 
 	allErrs = append(allErrs, validation.ValidateNodePortRange(
 		c.Spec.ComponentsOverride.Apiserver.NodePortRange,
-		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"))...)
+		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"), true)...)
 
 	return allErrs
 }
@@ -135,12 +135,12 @@ func validateUpdateImmutability(c, oldC *kubermaticv1.Cluster) field.ErrorList {
 	)...)
 
 	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&c.Spec.ClusterNetwork, &oldC.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"))...)
-	allErrs = append(allErrs, validateComponentSettings(&c.Spec.ComponentsOverride, &oldC.Spec.ComponentsOverride, specFldPath.Child("componentsOverride"))...)
+	allErrs = append(allErrs, validateComponentSettingsImmutability(&c.Spec.ComponentsOverride, &oldC.Spec.ComponentsOverride, specFldPath.Child("componentsOverride"))...)
 
 	return allErrs
 }
 
-func validateComponentSettings(c, oldC *kubermaticv1.ComponentSettings, fldPath *field.Path) field.ErrorList {
+func validateComponentSettingsImmutability(c, oldC *kubermaticv1.ComponentSettings, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
 
 	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
