@@ -1266,6 +1266,21 @@ func GenDefaultConstraintTemplate(name string) apiv2.ConstraintTemplate {
 						Kind:       "labelconstraint",
 						ShortNames: []string{"lc"},
 					},
+					Validation: &constrainttemplatev1beta1.Validation{
+						OpenAPIV3Schema: &apiextensionv1beta1.JSONSchemaProps{
+							Properties: map[string]apiextensionv1beta1.JSONSchemaProps{
+								"labels": {
+									Type: "array",
+									Items: &apiextensionv1beta1.JSONSchemaPropsOrArray{
+										Schema: &apiextensionv1beta1.JSONSchemaProps{
+											Type: "string",
+										},
+									},
+								},
+							},
+							Required: []string{"labels"},
+						},
+					},
 				},
 			},
 			Targets: []constrainttemplatev1beta1.Target{
@@ -1317,6 +1332,21 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 				Names: constrainttemplatev1beta1.Names{
 					Kind:       "labelconstraint",
 					ShortNames: []string{"lc"},
+				},
+				Validation: &constrainttemplatev1beta1.Validation{
+					OpenAPIV3Schema: &apiextensionv1beta1.JSONSchemaProps{
+						Properties: map[string]apiextensionv1beta1.JSONSchemaProps{
+							"labels": {
+								Type: "array",
+								Items: &apiextensionv1beta1.JSONSchemaPropsOrArray{
+									Schema: &apiextensionv1beta1.JSONSchemaProps{
+										Type: "string",
+									},
+								},
+							},
+						},
+						Required: []string{"labels"},
+					},
 				},
 			},
 		},
