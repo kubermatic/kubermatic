@@ -146,6 +146,9 @@ func newOrgGrafanaController(
 
 func (r *orgGrafanaController) cleanUp(ctx context.Context) error {
 	projectList := &kubermaticv1.ProjectList{}
+	if err := r.List(ctx, projectList); err != nil {
+		return err
+	}
 	for _, project := range projectList.Items {
 		if err := r.handleDeletion(ctx, &project); err != nil {
 			return err
