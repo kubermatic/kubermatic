@@ -128,6 +128,7 @@ trap finish EXIT
 docker ps &> /dev/null || start-docker.sh
 
 retry 5 docker login -u ${QUAY_IO_USERNAME} -p ${QUAY_IO_PASSWORD} quay.io
+retry 5 buildah login -u "$QUAY_IO_USERNAME" -p "$QUAY_IO_PASSWORD" quay.io
 
 echodate "Building and pushing Docker images"
 
