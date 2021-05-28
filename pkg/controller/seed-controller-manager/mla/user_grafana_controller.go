@@ -31,6 +31,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -225,17 +226,23 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 				if err := removeUserFromOrg(ctx, r.grafanaClient, org, grafanaUser); err != nil {
 					return err
 				}
-				userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
-				if err := r.List(ctx, userProjectBindingList); err != nil {
-					return err
+			}
+		}
+		if !grafanaUser.IsGrafanaAdmin {
+			userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
+			if err := r.List(ctx, userProjectBindingList); err != nil {
+				return err
+			}
+			for _, userProjectBinding := range userProjectBindingList.Items {
+				if userProjectBinding.Spec.UserEmail != user.Spec.Email {
+					continue
 				}
-				for _, userProjectBinding := range userProjectBindingList.Items {
-					if userProjectBinding.Spec.UserEmail != user.Spec.Email {
-						continue
-					}
-					if err := ensureOrgUser(ctx, r.grafanaClient, &project, &userProjectBinding); err != nil {
-						return err
-					}
+				project := &kubermaticv1.Project{}
+				if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil {
+					return fmt.Errorf("failed to get project: %w", err)
+				}
+				if err := ensureOrgUser(ctx, r.grafanaClient, project, &userProjectBinding); err != nil {
+					return err
 				}
 			}
 		}
