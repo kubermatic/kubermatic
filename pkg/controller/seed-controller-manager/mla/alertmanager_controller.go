@@ -245,7 +245,7 @@ func (r *alertmanagerController) cleanUp(ctx context.Context) error {
 func (r *alertmanagerController) handleDeletion(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	// If monitoring is disabled, we clean up `Alertmanager` and `Secret` objects, and also Alertmanager configuration.
 	if err := r.cleanUpAlertmanagerConfiguration(cluster); err != nil {
-		return fmt.Errorf("failed to delete alertmanager conifugration: %w", err)
+		return fmt.Errorf("failed to delete alertmanager configuration: %w", err)
 	}
 	if cluster.DeletionTimestamp.IsZero() {
 		// if cluster is still there we need to delete objects manually
