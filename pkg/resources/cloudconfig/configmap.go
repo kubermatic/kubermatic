@@ -144,6 +144,7 @@ func CloudConfig(
 			},
 			LoadBalancer: openstack.LoadBalancerOpts{
 				ManageSecurityGroups: manageSecurityGroups == nil || *manageSecurityGroups,
+				UseOctavia:           dc.Spec.Openstack.UseOctavia,
 			},
 			Version: cluster.Spec.Version.String(),
 		}
