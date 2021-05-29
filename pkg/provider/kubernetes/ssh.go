@@ -167,29 +167,23 @@ func (p *SSHKeyProvider) List(project *kubermaticapiv1.Project, options *provide
 	if options == nil {
 		return projectKeys, nil
 	}
-	if len(options.ClusterName) == 0 && len(options.SSHKeyName) == 0 {
-		return projectKeys, nil
-	}
 
 	filteredKeys := []*kubermaticapiv1.UserSSHKey{}
 	for _, key := range projectKeys {
-		if len(options.SSHKeyName) != 0 {
-			if key.Spec.Name == options.SSHKeyName {
-				filteredKeys = append(filteredKeys, key)
-			}
-		}
-
-		if key.Spec.Clusters == nil {
+		// TODO: verify duplicate handling on results in this part
+		if key.Spec.IsCAKey != options.IsCAKey {
 			continue
 		}
 
-		if len(options.ClusterName) != 0 {
-			for _, actualClusterName := range key.Spec.Clusters {
-				if actualClusterName == options.ClusterName {
-					filteredKeys = append(filteredKeys, key)
-				}
-			}
+		if len(options.SSHKeyName) != 0 && key.Spec.Name != options.SSHKeyName {
+			continue
 		}
+
+		if len(options.ClusterName) != 0 && !key.IsUsedByCluster(options.ClusterName) {
+			continue
+		}
+
+		filteredKeys = append(filteredKeys, key)
 	}
 	return filteredKeys, nil
 

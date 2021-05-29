@@ -138,7 +138,9 @@ func getProviderConfig(c *kubermaticv1.Cluster, nd *apiv1.NodeDeployment, dc *ku
 		config.SSHPublicKeys[i] = key.Spec.PublicKey
 	}
 
-	config.CAPublicKey = keys.CAPublicKey.Spec.PublicKey
+	if keys.CAPublicKey != nil {
+		config.CAPublicKey = keys.CAPublicKey.Spec.PublicKey
+	}
 
 	var (
 		cloudExt *runtime.RawExtension

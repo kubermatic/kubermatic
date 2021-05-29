@@ -47,11 +47,12 @@ type SSHKeySpec struct {
 	Fingerprint string   `json:"fingerprint"`
 	PublicKey   string   `json:"publicKey"`
 	Clusters    []string `json:"clusters"`
+	IsCAKey     bool     `json:"isCAKey"`
 }
 
 type DeploymentSSHKeys struct {
 	UserSSHKey  []*UserSSHKey `json:"userSSHKey"`
-	CAPublicKey UserSSHKey    `json:"caPublicKey"`
+	CAPublicKey *UserSSHKey   `json:"caPublicKey"`
 }
 
 func (sk *UserSSHKey) IsUsedByCluster(clustername string) bool {

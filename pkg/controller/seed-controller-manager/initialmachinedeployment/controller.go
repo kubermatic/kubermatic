@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	common2 "k8c.io/kubermatic/v2/pkg/handler/common"
 
 	"go.uber.org/zap"
 
@@ -250,11 +251,12 @@ func (r *Reconciler) getSSHKeys(ctx context.Context, cluster *kubermaticv1.Clust
 		return nil, fmt.Errorf("failed to get SSH keys: %v", err)
 	}
 
-	keys := kubermaticv1.DeploymentSSHKeys{
-		UserSSHKey: userSSHKeys,
+	caPublicKey, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name, IsCAKey: true})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get SSH keys: %v", err)
 	}
 
-	return &keys, nil
+	return common2.GenerateDeploymentKeySpec(userSSHKeys, caPublicKey)
 }
 
 func (r *Reconciler) removeAnnotation(ctx context.Context, cluster *kubermaticv1.Cluster) error {
