@@ -1726,7 +1726,11 @@ func (in *DeploymentSSHKeys) DeepCopyInto(out *DeploymentSSHKeys) {
 			}
 		}
 	}
-	in.CAPublicKey.DeepCopyInto(&out.CAPublicKey)
+	if in.CAPublicKey != nil {
+		in, out := &in.CAPublicKey, &out.CAPublicKey
+		*out = new(UserSSHKey)
+		(*in).DeepCopyInto(*out)
+	}
 	return
 }
 
