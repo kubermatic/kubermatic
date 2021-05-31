@@ -53,7 +53,7 @@ var (
 			},
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("32Mi"),
-				corev1.ResourceCPU:    resource.MustParse("10m"),
+				corev1.ResourceCPU:    resource.MustParse("50m"),
 			},
 		},
 		"openvpn-exporter": openvpnResourceRequirements.DeepCopy(),
