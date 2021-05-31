@@ -48,9 +48,10 @@ type ConstraintSpec struct {
 	ConstraintType string `json:"constraintType"`
 	// Match contains the constraint to resource matching data
 	Match Match `json:"match,omitempty"`
-	// Parameters specifies the parameters used by the constraint template REGO
-	Parameters Parameters         `json:"parameters,omitempty"`
-	Selector   ConstraintSelector `json:"selector,omitempty"`
+	// Parameters specifies the parameters used by the constraint REGO
+	Parameters Parameters `json:"parameters,omitempty"`
+	// Selector specifies the cluster selection filters
+	Selector ConstraintSelector `json:"selector,omitempty"`
 }
 
 // ConstraintSelector is the object holding the cluster selection filters
