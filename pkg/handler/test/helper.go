@@ -1522,6 +1522,21 @@ func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 		Parameters: kubermaticv1.Parameters{
 			"labels": []interface{}{"gatekeeper", "opa"},
 		},
+		Selector: kubermaticv1.ConstraintSelector{
+			Providers: []string{"aws", "gcp"},
+			LabelSelector: metav1.LabelSelector{
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      "cluster",
+						Operator: metav1.LabelSelectorOpExists,
+					},
+				},
+				MatchLabels: map[string]string{
+					"deployment": "prod",
+					"domain":     "sales",
+				},
+			},
+		},
 	}
 
 	return ct

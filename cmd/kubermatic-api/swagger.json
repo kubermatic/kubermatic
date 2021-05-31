@@ -15187,6 +15187,24 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "ConstraintSelector": {
+      "description": "ConstraintSelector is the object holding the cluster selection filters",
+      "type": "object",
+      "properties": {
+        "labelSelector": {
+          "$ref": "#/definitions/LabelSelector"
+        },
+        "providers": {
+          "description": "Providers is a list of cloud providers to which the Constraint applies to. Empty means all providers are selected.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "x-go-name": "Providers"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "ConstraintSpec": {
       "type": "object",
       "title": "ConstraintSpec specifies the data for the constraint.",
@@ -15201,6 +15219,9 @@
         },
         "parameters": {
           "$ref": "#/definitions/Parameters"
+        },
+        "selector": {
+          "$ref": "#/definitions/ConstraintSelector"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
