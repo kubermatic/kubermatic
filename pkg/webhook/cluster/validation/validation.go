@@ -106,7 +106,7 @@ func (h *AdmissionHandler) validateCreateOrUpdate(c *kubermaticv1.Cluster) field
 
 	allErrs = append(allErrs, validation.ValidateNodePortRange(
 		c.Spec.ComponentsOverride.Apiserver.NodePortRange,
-		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"))...)
+		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"), true)...)
 
 	return allErrs
 }
@@ -135,6 +135,19 @@ func validateUpdateImmutability(c, oldC *kubermaticv1.Cluster) field.ErrorList {
 	)...)
 
 	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&c.Spec.ClusterNetwork, &oldC.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"))...)
+	allErrs = append(allErrs, validateComponentSettingsImmutability(&c.Spec.ComponentsOverride, &oldC.Spec.ComponentsOverride, specFldPath.Child("componentsOverride"))...)
+
+	return allErrs
+}
+
+func validateComponentSettingsImmutability(c, oldC *kubermaticv1.ComponentSettings, fldPath *field.Path) field.ErrorList {
+	allErrs := field.ErrorList{}
+
+	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+		c.Apiserver.NodePortRange,
+		oldC.Apiserver.NodePortRange,
+		fldPath.Child("apiserver", "nodePortRange"),
+	)...)
 
 	return allErrs
 }
@@ -155,17 +168,17 @@ func validateClusterNetworkingConfigUpdateImmutability(c, oldC *kubermaticv1.Clu
 	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 		c.ProxyMode,
 		oldC.ProxyMode,
-		field.NewPath("proxyMode"),
+		fldPath.Child("proxyMode"),
 	)...)
 	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 		c.DNSDomain,
 		oldC.DNSDomain,
-		field.NewPath("dnsDomain"),
+		fldPath.Child("dnsDomain"),
 	)...)
 	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 		c.NodeLocalDNSCacheEnabled,
 		oldC.NodeLocalDNSCacheEnabled,
-		field.NewPath("nodeLocalDNSCacheEnabled"),
+		fldPath.Child("nodeLocalDNSCacheEnabled"),
 	)...)
 
 	return allErrs
