@@ -29,6 +29,7 @@ import (
 	ostesting "k8c.io/kubermatic/v2/pkg/provider/cloud/openstack/internal/testing"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 func TestIgnoreRouterAlreadyHasPortInSubnetError(t *testing.T) {
@@ -349,6 +350,15 @@ func TestInitializeCloudProvider(t *testing.T) {
 			if tt.wantErr {
 				return
 			}
+			// We cannot guarantee order if finalizers serialized using sets and deep.Equal fails if order is different,
+			// thus we test finalizers equality separately.
+			if w, g := sets.NewString(tt.wantCluster.Finalizers...), sets.NewString(c.Finalizers...); !w.Equal(g) {
+				t.Errorf("Want finalizers: %v, got: %v", w, g)
+			} else {
+				tt.wantCluster.Finalizers = nil
+				c.Finalizers = nil
+			}
+
 			if diff := deep.Equal(tt.wantCluster, *c); len(diff) > 0 {
 				t.Errorf("Diff found between actual and wanted cluster: %v", diff)
 			}
