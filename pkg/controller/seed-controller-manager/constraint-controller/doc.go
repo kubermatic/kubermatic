@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 /*
-Package clustercomponentdefaulter contains a controller that is responsible for applying some
-defaults for various controlplane components, but never overwrites them to make out-of-tree
-customization is still possible.
+Package seedconstraintsynchronizer contains a controller that is responsible for ensuring that the
+kubermatic constraints are synced to the user cluster namespace.
+
 */
-package clustercomponentdefaulter
+package seedconstraintsynchronizer

@@ -37,7 +37,11 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/vsphere"
 )
 
-func Provider(datacenter *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (provider.CloudProvider, error) {
+func Provider(
+	datacenter *kubermaticv1.Datacenter,
+	secretKeyGetter provider.SecretKeySelectorValueFunc,
+	caBundle *x509.CertPool,
+) (provider.CloudProvider, error) {
 	if datacenter.Spec.Digitalocean != nil {
 		return digitalocean.NewCloudProvider(secretKeyGetter), nil
 	}

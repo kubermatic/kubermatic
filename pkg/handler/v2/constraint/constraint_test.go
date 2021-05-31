@@ -526,7 +526,51 @@ func TestCreateConstraints(t *testing.T) {
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
 			),
-			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			Name: "scenario 5: cannot create constraint with invalid parameters",
+			Constraint: func() apiv2.Constraint {
+				c := test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel")
+				c.Spec.Parameters = map[string]interface{}{"labels": "fail"}
+				return apiv2.Constraint{
+					Name: "ct1",
+					Spec: c.Spec,
+				}
+			}(),
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint spec is not valid: spec.parameters.labels: Invalid value: \"string\": labels in body must be of type array: \"string\""}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenConstraintTemplate("requiredlabel"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			Name: "scenario 6: cannot create rawJSON constraint with invalid parameters",
+			Constraint: func() apiv2.Constraint {
+				c := test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel")
+				c.Spec.Parameters = kubermaticv1.Parameters{
+					"rawJSON": `{"labels":"gatekeeper"}`,
+				}
+				return apiv2.Constraint{
+					Name: "ct1",
+					Spec: c.Spec,
+				}
+			}(),
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint spec is not valid: spec.parameters.labels: Invalid value: \"string\": labels in body must be of type array: \"string\""}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenConstraintTemplate("requiredlabel"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
 	}
 
@@ -586,6 +630,7 @@ func TestPatchConstraints(t *testing.T) {
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
+				test.GenConstraintTemplate("requiredlabel"),
 				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
@@ -601,6 +646,7 @@ func TestPatchConstraints(t *testing.T) {
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
+				test.GenConstraintTemplate("requiredlabel"),
 				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
@@ -616,10 +662,27 @@ func TestPatchConstraints(t *testing.T) {
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
 				test.GenDefaultCluster(),
+				test.GenConstraintTemplate("requiredlabel"),
 				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
 				genKubermaticUser("John", "john@acme.com", true),
 			),
 			ExistingAPIUser: test.GenAPIUser("John", "john@acme.com"),
+		},
+		{
+			Name:             "scenario 4: cannot patch invalid constraint",
+			ConstraintName:   "ct1",
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			Patch:            `{"spec":{"parameters":{"labels":"gatekeeper"}}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint spec is not valid: spec.parameters.labels: Invalid value: \"string\": labels in body must be of type array: \"string\""}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenConstraintTemplate("requiredlabel"),
+				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
 	}
 
