@@ -31,6 +31,7 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -112,6 +113,15 @@ func (h *AdmissionHandler) validateCreateOrUpdate(ctx context.Context, c *kuberm
 	if err := h.rejectUserSSHKeyAgentChanges(ctx, c); err != nil {
 		h.log.Info("cluster admission failed", "error", err)
 		return err
+	}
+
+	specFldPath := field.NewPath("spec")
+	allErrs := validation.ValidateNodePortRange(
+		c.Spec.ComponentsOverride.Apiserver.NodePortRange,
+		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"))
+
+	if len(allErrs) != 0 {
+		return allErrs.ToAggregate()
 	}
 
 	return nil

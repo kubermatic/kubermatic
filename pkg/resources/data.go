@@ -39,6 +39,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	kubenetutil "k8s.io/apimachinery/pkg/util/net"
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/klog"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -372,6 +373,33 @@ func (d *TemplateData) NodeAccessNetwork() string {
 // NodePortRange returns the node access network
 func (d *TemplateData) NodePortRange() string {
 	return d.nodePortRange
+}
+
+// NodePorts returns low and high NodePorts from NodePortRange()
+func (d *TemplateData) NodePorts() (int, int) {
+	portrange, err := kubenetutil.ParsePortRange(d.ComputedNodePortRange())
+	if err != nil {
+		portrange, _ = kubenetutil.ParsePortRange(DefaultNodePortRange)
+	}
+
+	return portrange.Base, portrange.Base + portrange.Size - 1
+}
+
+// ComputedNodePortRange is NodePortRange() with defaulting and ComponentsOverride logic
+func (d *TemplateData) ComputedNodePortRange() string {
+	nodePortRange := d.NodePortRange()
+
+	if nodePortRange == "" {
+		nodePortRange = DefaultNodePortRange
+	}
+
+	if cluster := d.Cluster(); cluster != nil {
+		if npr := cluster.Spec.ComponentsOverride.Apiserver.NodePortRange; npr != "" {
+			nodePortRange = npr
+		}
+	}
+
+	return nodePortRange
 }
 
 // GetClusterRef returns a instance of a OwnerReference for the Cluster in the TemplateData
