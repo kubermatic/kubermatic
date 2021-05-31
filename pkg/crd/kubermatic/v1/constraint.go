@@ -48,21 +48,17 @@ type ConstraintSpec struct {
 	ConstraintType string `json:"constraintType"`
 	// Match contains the constraint to resource matching data
 	Match Match `json:"match,omitempty"`
-	// Parameters specifies the parameters used by the constraint template REGO.
-	// It supports both the legacy rawJSON parameters, in which all the parameters are set in a JSON string, and regular
-	// parameters like in Gatekeeper Constraints.
-	// If rawJSON is set, during constraint syncing to the user cluster, the other parameters are ignored
-	// Example with rawJSON parameters:
-	//
-	// parameters:
-	//   rawJSON: '{"labels":["gatekeeper"]}'
-	//
-	// And with regular parameters:
-	//
-	// parameters:
-	//   labels: ["gatekeeper"]
-	//
-	Parameters Parameters `json:"parameters,omitempty"`
+	// Parameters specifies the parameters used by the constraint template REGO
+	Parameters Parameters         `json:"parameters,omitempty"`
+	Selector   ConstraintSelector `json:"selector,omitempty"`
+}
+
+// ConstraintSelector is the object holding the cluster selection filters
+type ConstraintSelector struct {
+	// Providers is a list of cloud providers to which the Constraint applies to. Empty means all providers are selected.
+	Providers []string `json:"providers,omitempty"`
+	// LabelSelector selects the Clusters to which the Constraint applies based on their labels
+	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
 }
 
 type Parameters map[string]interface{}
