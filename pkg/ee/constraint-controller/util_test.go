@@ -153,7 +153,7 @@ func genCluster(name string, labels map[string]string, bringYourOwnProvider bool
 }
 
 func genConstraintWithSelector(selector v1.ConstraintSelector) *v1.Constraint {
-	ct := test.GenConstraint(constraintName, constraintNamespace, kind)
+	ct := test.GenDefaultConstraint(constraintName, constraintNamespace, kind)
 	ct.Spec.Selector = selector
 	return ct
 }
