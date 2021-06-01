@@ -41,10 +41,6 @@ func (m *ConstraintSpec) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateSelector(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
@@ -80,24 +76,6 @@ func (m *ConstraintSpec) validateParameters(formats strfmt.Registry) error {
 			return ve.ValidateName("parameters")
 		}
 		return err
-	}
-
-	return nil
-}
-
-func (m *ConstraintSpec) validateSelector(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.Selector) { // not required
-		return nil
-	}
-
-	if m.Selector != nil {
-		if err := m.Selector.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("selector")
-			}
-			return err
-		}
 	}
 
 	return nil
