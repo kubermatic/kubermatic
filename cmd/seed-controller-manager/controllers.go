@@ -412,6 +412,7 @@ func createMLAController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.grafanaSecret,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.cortexAlertmanagerURL,
+		ctrlCtx.runOptions.cortexRulerURL,
 		ctrlCtx.runOptions.enableUserClusterMLA,
 	)
 }
