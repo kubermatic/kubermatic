@@ -122,9 +122,10 @@ func TestReconcile(t *testing.T) {
 
 			constraint := &kubermaticv1.Constraint{}
 			err = tc.seedClient.Get(ctx, types.NamespacedName{Name: tc.namespacedName.Name, Namespace: clusterNamespace}, constraint)
+
 			if tc.expectedGetErrStatus != "" {
 				if err == nil {
-					t.Fatalf("expected error status %s, instead got ct: %v", tc.expectedGetErrStatus, constraint)
+					t.Fatalf("expected error status %s, instead got constraint: %v", tc.expectedGetErrStatus, constraint)
 				}
 				if tc.expectedGetErrStatus != errors.ReasonForError(err) {
 					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, errors.ReasonForError(err))
@@ -166,5 +167,8 @@ func genCluster(opaEnabled bool) *kubermaticv1.Cluster {
 	cluster.Spec.OPAIntegration = &kubermaticv1.OPAIntegrationSettings{
 		Enabled: opaEnabled,
 	}
+	cluster.Spec.Cloud.Fake = nil
+	cluster.Spec.Cloud.AWS = &kubermaticv1.AWSCloudSpec{}
+	cluster.Labels = map[string]string{"deployment": "prod", "domain": "sales", "cluster": "test"}
 	return cluster
 }
