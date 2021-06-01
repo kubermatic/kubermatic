@@ -21,6 +21,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/go-test/deep"
 	"github.com/stretchr/testify/assert"
 
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac/test"
@@ -33,6 +34,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	fakectrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 func TestSyncProjectResourcesClusterWide(t *testing.T) {
@@ -719,8 +721,10 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
-			key := ctrlruntimeclient.ObjectKey{Name: objmeta.GetName(), Namespace: objmeta.GetNamespace()}
-			err = target.syncProjectResource(ctx, key)
+			_, err = target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
+				Namespace: objmeta.GetNamespace(),
+				Name:      objmeta.GetName(),
+			}})
 
 			// validate
 			if err != nil && !test.expectError {
@@ -893,8 +897,10 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 			}
 			objmeta, err := meta.Accessor(test.dependantToSync)
 			assert.NoError(t, err)
-			key := ctrlruntimeclient.ObjectKey{Name: objmeta.GetName(), Namespace: objmeta.GetNamespace()}
-			err = target.syncProjectResource(ctx, key)
+			_, err = target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
+				Namespace: objmeta.GetNamespace(),
+				Name:      objmeta.GetName(),
+			}})
 
 			// validate
 			if !test.expectError {
@@ -1873,6 +1879,307 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 					t.Fatalf("expected ClusterRole %q not found in cluster", expectedClusterRole.Name)
 				}
 			}
+		})
+	}
+}
+
+func TestSyncClusterConstraintsRBAC(t *testing.T) {
+	tests := []struct {
+		name                 string
+		dependantToSync      ctrlruntimeclient.Object
+		expectedRoles        []*rbacv1.Role
+		existingRoles        []*rbacv1.Role
+		expectedRoleBindings []*rbacv1.RoleBinding
+		existingRoleBindings []*rbacv1.RoleBinding
+		expectError          bool
+	}{
+		// scenario 1
+		{
+			name: "scenario 1: a proper set of RBAC Role/Binding is generated for constraints",
+
+			dependantToSync: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "clusterid",
+					Labels: map[string]string{"project-id": "my-first-project"},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-clusterid",
+				},
+			},
+
+			expectedRoles: []*rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Verbs:     []string{"get", "list", "create", "update", "delete"},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:editors",
+						Namespace: "cluster-clusterid",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Verbs:     []string{"get", "list", "create", "update", "delete"},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:viewers",
+						Namespace: "cluster-clusterid",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Verbs:     []string{"get", "list"},
+						},
+					},
+				},
+			},
+
+			expectedRoleBindings: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-my-first-project",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:constraint:owners",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:editors",
+						Namespace: "cluster-clusterid",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "editors-my-first-project",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:constraint:editors",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:viewers",
+						Namespace: "cluster-clusterid",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "viewers-my-first-project",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:constraint:viewers",
+					},
+				},
+			},
+		},
+		// scenario 2
+		{
+			name: "scenario 2: a mis-configured set of RBAC Role/Binding is updated for constraints",
+
+			dependantToSync: &kubermaticv1.Cluster{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   "clusterid",
+					Labels: map[string]string{"project-id": "my-first-project"},
+				},
+				Status: kubermaticv1.ClusterStatus{
+					NamespaceName: "cluster-clusterid",
+				},
+			},
+
+			expectedRoles: []*rbacv1.Role{
+				{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "Role",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Verbs:     []string{"get", "list", "create", "update", "delete"},
+						},
+					},
+				},
+			},
+
+			existingRoles: []*rbacv1.Role{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups: []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources: []string{kubermaticv1.ConstraintResourceName},
+							Verbs:     []string{"get", "update", "delete"},
+						},
+					},
+				},
+			},
+
+			expectedRoleBindings: []*rbacv1.RoleBinding{
+				{
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "RoleBinding",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "owners-my-first-project",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:constraint:owners",
+					},
+				},
+			},
+			existingRoleBindings: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:constraint:owners",
+						Namespace: "cluster-clusterid",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "editors-my-first-project",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:constraint:owners",
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// setup the test scenario
+			ctx := context.Background()
+
+			objs := []ctrlruntimeclient.Object{test.dependantToSync}
+			for _, existingRole := range test.existingRoles {
+				objs = append(objs, existingRole)
+			}
+
+			for _, existingRoleBinding := range test.existingRoleBindings {
+				objs = append(objs, existingRoleBinding)
+			}
+
+			fakeMasterClusterClient := fakectrlruntimeclient.NewClientBuilder().WithObjects(objs...).Build()
+			// act
+			target := resourcesController{
+				client:     fakeMasterClusterClient,
+				restMapper: getFakeRestMapper(t),
+				objectType: test.dependantToSync.DeepCopyObject().(ctrlruntimeclient.Object),
+			}
+			objmeta, err := meta.Accessor(test.dependantToSync)
+			assert.NoError(t, err)
+			_, err = target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{
+				Namespace: objmeta.GetNamespace(),
+				Name:      objmeta.GetName(),
+			}})
+
+			// validate
+			if !test.expectError {
+				assert.NoError(t, err)
+			}
+			if test.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			var roles rbacv1.RoleList
+			err = fakeMasterClusterClient.List(context.Background(), &roles)
+			assert.NoError(t, err)
+
+			roleMap := make(map[string]rbacv1.Role)
+			for _, role := range roles.Items {
+				role.ResourceVersion = ""
+				roleMap[role.Name] = role
+			}
+
+			for _, expectedRole := range test.expectedRoles {
+				resultRole, ok := roleMap[expectedRole.Name]
+				if !ok {
+					t.Errorf("expected role %s not in resulting roles", expectedRole.Name)
+				}
+				if diff := deep.Equal(resultRole, *expectedRole); diff != nil {
+					t.Errorf("Got unexpected role. Diff to expected: %v", diff)
+				}
+			}
+
+			var roleBindings rbacv1.RoleBindingList
+			err = fakeMasterClusterClient.List(context.Background(), &roleBindings)
+			assert.NoError(t, err)
+
+			roleBindingMap := make(map[string]rbacv1.RoleBinding)
+			for _, roleBinding := range roleBindings.Items {
+				roleBinding.ResourceVersion = ""
+				roleBindingMap[roleBinding.Name] = roleBinding
+			}
+
+			for _, expectedRoleBinding := range test.expectedRoleBindings {
+				resultRoleBinding, ok := roleBindingMap[expectedRoleBinding.Name]
+				if !ok {
+					t.Errorf("expected rolebinding %s not in resulting roles", expectedRoleBinding.Name)
+				}
+				if diff := deep.Equal(resultRoleBinding, *expectedRoleBinding); diff != nil {
+					t.Errorf("Got unexpected rolebinding. Diff to expected: %v", diff)
+				}
+			}
+
 		})
 	}
 }
