@@ -1522,27 +1522,6 @@ func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 		Parameters: kubermaticv1.Parameters{
 			"labels": []interface{}{"gatekeeper", "opa"},
 		},
-	}
-
-	return ct
-}
-
-func GenDefaultConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
-	ct := &kubermaticv1.Constraint{}
-	ct.Kind = kubermaticv1.ConstraintKind
-	ct.APIVersion = kubermaticv1.SchemeGroupVersion.String()
-	ct.Name = name
-	ct.Namespace = namespace
-	ct.Spec = kubermaticv1.ConstraintSpec{
-		ConstraintType: kind,
-		Match: kubermaticv1.Match{
-			Kinds: []kubermaticv1.Kind{
-				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
-			},
-		},
-		Parameters: kubermaticv1.Parameters{
-			"labels": []interface{}{"gatekeeper", "opa"},
-		},
 		Selector: kubermaticv1.ConstraintSelector{
 			Providers: []string{"aws", "gcp"},
 			LabelSelector: metav1.LabelSelector{
