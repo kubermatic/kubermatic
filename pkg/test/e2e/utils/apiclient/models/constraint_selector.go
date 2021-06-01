@@ -16,14 +16,14 @@ import (
 // swagger:model ConstraintSelector
 type ConstraintSelector struct {
 
-	// label selector
-	LabelSelector *LabelSelector `json:"LabelSelector,omitempty"`
+	// Providers is a list of cloud providers to which the Constraint applies to. Empty means all providers are selected.
+	Providers []string `json:"providers"`
 
-	// Providers is a list of cloud providers to which the Constraint  applies to. Empty means all providers are selected.
-	Providers []string `json:"Providers"`
+	// label selector
+	LabelSelector *LabelSelector `json:"labelSelector,omitempty"`
 }
 
-// Validate validates this constraint  selector
+// Validate validates this constraint selector
 func (m *ConstraintSelector) Validate(formats strfmt.Registry) error {
 	var res []error
 
@@ -46,7 +46,7 @@ func (m *ConstraintSelector) validateLabelSelector(formats strfmt.Registry) erro
 	if m.LabelSelector != nil {
 		if err := m.LabelSelector.Validate(formats); err != nil {
 			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("LabelSelector")
+				return ve.ValidateName("labelSelector")
 			}
 			return err
 		}
