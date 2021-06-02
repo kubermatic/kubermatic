@@ -30,6 +30,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
 
@@ -84,20 +85,68 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 		{
 			name:        "create org for project",
 			requestName: "create",
-			objects: []ctrlruntimeclient.Object{&kubermaticv1.Project{
-				ObjectMeta: metav1.ObjectMeta{
-					Name: "create",
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "create",
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "projectName",
+					},
 				},
-				Spec: kubermaticv1.ProjectSpec{
-					Name: "projectName",
-				},
-			}},
+			},
 			hasFinalizer: true,
 			requests: []request{
 				{
 					name:     "create",
 					request:  httptest.NewRequest(http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "org created", "OrgID": 1}`)), StatusCode: http.StatusOK},
+				},
+			},
+		},
+		{
+			name:        "create org for project with admins",
+			requestName: "create",
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "create",
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "projectName",
+					},
+				},
+				&kubermaticv1.User{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "update",
+					},
+					Spec: kubermaticv1.UserSpec{
+						Email:   "user@email.com",
+						IsAdmin: true,
+					},
+				},
+			},
+			hasFinalizer: true,
+			requests: []request{
+				{
+					name:     "create",
+					request:  httptest.NewRequest(http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "org created", "OrgID": 1}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "lookup user",
+					request:  httptest.NewRequest(http.MethodGet, "/api/users/lookup?loginOrEmail=user@email.com", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"id":1,"email":"user@email.com","login":"admin"}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "get org users",
+					request:  httptest.NewRequest(http.MethodGet, "/api/orgs/1/users", nil),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`[]`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "add org user",
+					request:  httptest.NewRequest(http.MethodPost, "/api/orgs/1/users", strings.NewReader(`{"loginOrEmail":"user@email.com","role":"Admin"}`)),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "User added to organization"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
@@ -267,7 +316,11 @@ func bodyEqual(t *testing.T, expectedRequest, request *http.Request) bool {
 	if bytes.Equal(expectedBody, body) {
 		return true
 	}
-	return jsonEqual(expectedBody, body) || yamlEqual(expectedBody, body)
+	if jsonEqual(expectedBody, body) || yamlEqual(expectedBody, body) {
+		return true
+	}
+	assert.Fail(t, "body not equal", cmp.Diff(string(expectedBody), string(body)))
+	return false
 }
 
 func jsonEqual(expectedBody, body []byte) bool {

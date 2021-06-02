@@ -38,6 +38,7 @@ require (
 	github.com/go-test/deep v1.0.7
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.3
+	github.com/google/go-cmp v0.5.4
 	github.com/gophercloud/gophercloud v0.14.0
 	github.com/gorilla/handlers v1.5.1
 	github.com/gorilla/mux v1.8.0

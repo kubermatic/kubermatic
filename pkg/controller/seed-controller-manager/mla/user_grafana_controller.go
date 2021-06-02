@@ -204,10 +204,6 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 	}
 	if grafanaUser.IsGrafanaAdmin != user.Spec.IsAdmin {
 		grafanaUser.IsGrafanaAdmin = user.Spec.IsAdmin
-		status, err := r.grafanaClient.UpdateUserPermissions(ctx, grafanasdk.UserPermissions{IsGrafanaAdmin: user.Spec.IsAdmin}, grafanaUser.ID)
-		if err != nil {
-			return fmt.Errorf("failed to update user permissions: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
-		}
 		projectList := &kubermaticv1.ProjectList{}
 		if err := r.List(ctx, projectList); err != nil {
 			return err
@@ -245,6 +241,10 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 					return err
 				}
 			}
+		}
+		status, err := r.grafanaClient.UpdateUserPermissions(ctx, grafanasdk.UserPermissions{IsGrafanaAdmin: user.Spec.IsAdmin}, grafanaUser.ID)
+		if err != nil {
+			return fmt.Errorf("failed to update user permissions: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 		}
 	}
 	return nil

@@ -184,25 +184,25 @@ func (r *orgGrafanaController) handleDeletion(ctx context.Context, project *kube
 	return nil
 }
 
-func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, org grafanasdk.Org) (grafanasdk.Org, error) {
-	status, err := r.grafanaClient.CreateOrg(ctx, org)
+func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected grafanasdk.Org) (grafanasdk.Org, error) {
+	status, err := r.grafanaClient.CreateOrg(ctx, expected)
 	if err != nil {
-		return org, fmt.Errorf("unable to add organization: %w (status: %s, message: %s)",
+		return expected, fmt.Errorf("unable to add organization: %w (status: %s, message: %s)",
 			err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
 	}
 	if status.OrgID == nil {
 		// possibly organization already exists
-		org, err := r.grafanaClient.GetOrgByOrgName(ctx, org.Name)
+		org, err := r.grafanaClient.GetOrgByOrgName(ctx, expected.Name)
 		if err != nil {
-			return org, fmt.Errorf("unable to get organization by name %s", org.Name)
+			return org, fmt.Errorf("unable to get organization by name %+v %w", expected, err)
 		}
 		return org, nil
 	}
-	org.ID = *status.OrgID
+	expected.ID = *status.OrgID
 
 	userList := &kubermaticv1.UserList{}
 	if err := r.List(ctx, userList); err != nil {
-		return org, err
+		return expected, err
 	}
 	for _, user := range userList.Items {
 		if !user.Spec.IsAdmin {
@@ -210,15 +210,15 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, org grafana
 		}
 		grafanaUser, err := r.grafanaClient.LookupUser(ctx, user.Spec.Email)
 		if err != nil {
-			return org, err
+			return expected, err
 		}
-		if err := addUserToOrg(ctx, r.grafanaClient, org, &grafanaUser, models.ROLE_ADMIN); err != nil {
-			return org, err
+		if err := addUserToOrg(ctx, r.grafanaClient, expected, &grafanaUser, models.ROLE_ADMIN); err != nil {
+			return expected, err
 		}
 
 	}
 
-	return org, nil
+	return expected, nil
 }
 
 func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project, expected grafanasdk.Org, annotationKey string) error {
