@@ -1,3 +1,5 @@
+# Source: https://docs.projectcalico.org/v3.19/manifests/canal.yaml
+{{ if hasKey (dict "canal_v3.19" "" "canal_v3.19.1" "") (index .Cluster.Annotations "k8c.io/cni-plugin") }}
 ---
 # Source: calico/templates/calico-config.yaml
 # This ConfigMap is used to configure a self-hosted Canal installation.
@@ -3890,4 +3892,4 @@ spec:
 ---
 # Source: calico/templates/configure-canal.yaml
 
-
+{{ end }}

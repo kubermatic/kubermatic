@@ -3,6 +3,7 @@
 #   - The ClusterRoleBinding canal-calico was renamed to canal-calico-node as upstream changed it in a way that we cannot roll out via kubectl apply
 #   - All images now use the canonical name
 #   - Remove the flexvolume installation as its broken for CoreOS & only required for application policies (Which we don't use.)
+{{ if hasKey (dict "" "" "canal_v3.8" "" "canal_v3.8.0" "") (index .Cluster.Annotations "k8c.io/cni-plugin") }}
 ---
 # Source: calico/templates/calico-config.yaml
 # This ConfigMap is used to configure a self-hosted Canal installation.
@@ -605,3 +606,5 @@ metadata:
 
 ---
 # Source: calico/templates/configure-canal.yaml
+
+{{ end }}
