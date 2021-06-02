@@ -163,6 +163,17 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		log.Fatalw("Failed to get clientProvider", zap.Error(err))
 	}
 
+	ctrlCtx := &controllerContext{
+		ctx:                  rootCtx,
+		runOptions:           options,
+		mgr:                  mgr,
+		clientProvider:       clientProvider,
+		seedGetter:           seedGetter,
+		dockerPullConfigJSON: dockerPullConfigJSON,
+		log:                  log,
+		versions:             versions,
+	}
+
 	if options.admissionWebhook.Configured() {
 		if err := options.admissionWebhook.Configure(mgr.GetWebhookServer()); err != nil {
 			log.Fatalw("Failed to configure admission webhook server", zap.Error(err))
@@ -178,18 +189,7 @@ Please install the VerticalPodAutoscaler according to the documentation: https:/
 		// Setup the validation admission handler for kubermatic Cluster CRDs
 		clustervalidation.NewAdmissionHandler(options.featureGates).SetupWebhookWithManager(mgr)
 		// Setup the mutation admission handler for kubermatic Cluster CRDs
-		clustermutation.NewAdmissionHandler().SetupWebhookWithManager(mgr)
-	}
-
-	ctrlCtx := &controllerContext{
-		ctx:                  rootCtx,
-		runOptions:           options,
-		mgr:                  mgr,
-		clientProvider:       clientProvider,
-		seedGetter:           seedGetter,
-		dockerPullConfigJSON: dockerPullConfigJSON,
-		log:                  log,
-		versions:             versions,
+		clustermutation.NewAdmissionHandler(defaultComponentSettings(ctrlCtx)).SetupWebhookWithManager(mgr)
 	}
 
 	if err := createAllControllers(ctrlCtx); err != nil {

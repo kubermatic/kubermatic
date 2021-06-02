@@ -60,6 +60,10 @@ func (c *FakeKubermaticV1) Projects() v1.ProjectInterface {
 	return &FakeProjects{c}
 }
 
+func (c *FakeKubermaticV1) RuleGroups(namespace string) v1.RuleGroupInterface {
+	return &FakeRuleGroups{c, namespace}
+}
+
 func (c *FakeKubermaticV1) Users() v1.UserInterface {
 	return &FakeUsers{c}
 }

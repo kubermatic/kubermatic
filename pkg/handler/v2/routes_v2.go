@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/addon"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
+	clustertemplate "k8c.io/kubermatic/v2/pkg/handler/v2/cluster_template"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	constrainttemplate "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
@@ -492,6 +493,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/seeds/{seed_name}/settings").
 		Handler(r.getSeedSettings())
+
+	// Define a set of endpoints for cluster templates management
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clustertemplates").
+		Handler(r.createClusterTemplate())
 
 }
 
@@ -1441,7 +1447,7 @@ func (r Routing) patchConstraint() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.Constraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
 			middleware.PrivilegedConstraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
-		)(constraint.PatchEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		)(constraint.PatchEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintTemplateProvider)),
 		constraint.DecodePatchConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3329,6 +3335,33 @@ func (r Routing) getSeedSettings() http.Handler {
 		)(seedsettings.GetSeedSettingsEndpoint(r.seedsGetter)),
 		seedsettings.DecodeGetSeedSettingsReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clustertemplates project createClusterTemplate
+//
+//     Creates a cluster templates for the given project.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterTemplate
+//       401: empty
+//       403: empty
+func (r Routing) createClusterTemplate() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.settingsProvider, r.updateManager)),
+		clustertemplate.DecodeCreateReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

@@ -288,7 +288,8 @@ func (r *Reconciler) getAddonManifests(ctx context.Context, log *zap.SugaredLogg
 		return nil, err
 	}
 	dnsResolverIP := clusterIP
-	if cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled != nil && *cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled {
+	if cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil || *cluster.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled {
+		// NOTE: even if NodeLocalDNSCacheEnabled is nil, we assume it is enabled (backward compatibility for already existing clusters)
 		dnsResolverIP = machinecontroller.NodeLocalDNSCacheAddress
 	}
 

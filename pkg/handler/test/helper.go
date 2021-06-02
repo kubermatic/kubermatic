@@ -186,6 +186,7 @@ type newRoutingFunc func(
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
 	constraintProviderGetter provider.ConstraintProviderGetter,
 	alertmanagerProviderGetter provider.AlertmanagerProviderGetter,
+	clusterTemplateProvider provider.ClusterTemplateProvider,
 	kubermaticVersions kubermatic.Versions,
 ) http.Handler
 
@@ -362,6 +363,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find alertmanagerprovider for cluster %q", seed.Name)
 	}
 
+	clusterTemplateProvider, err := kubernetes.NewClusterTemplateProvider(fakeImpersonationClient, fakeClient)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -416,6 +422,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeConstraintTemplateProvider,
 		constraintProviderGetter,
 		alertmanagerProviderGetter,
+		clusterTemplateProvider,
 		kubermaticVersions,
 	)
 
@@ -1266,6 +1273,21 @@ func GenDefaultConstraintTemplate(name string) apiv2.ConstraintTemplate {
 						Kind:       "labelconstraint",
 						ShortNames: []string{"lc"},
 					},
+					Validation: &constrainttemplatev1beta1.Validation{
+						OpenAPIV3Schema: &apiextensionv1beta1.JSONSchemaProps{
+							Properties: map[string]apiextensionv1beta1.JSONSchemaProps{
+								"labels": {
+									Type: "array",
+									Items: &apiextensionv1beta1.JSONSchemaPropsOrArray{
+										Schema: &apiextensionv1beta1.JSONSchemaProps{
+											Type: "string",
+										},
+									},
+								},
+							},
+							Required: []string{"labels"},
+						},
+					},
 				},
 			},
 			Targets: []constrainttemplatev1beta1.Target{
@@ -1317,6 +1339,21 @@ func GenConstraintTemplate(name string) *kubermaticv1.ConstraintTemplate {
 				Names: constrainttemplatev1beta1.Names{
 					Kind:       "labelconstraint",
 					ShortNames: []string{"lc"},
+				},
+				Validation: &constrainttemplatev1beta1.Validation{
+					OpenAPIV3Schema: &apiextensionv1beta1.JSONSchemaProps{
+						Properties: map[string]apiextensionv1beta1.JSONSchemaProps{
+							"labels": {
+								Type: "array",
+								Items: &apiextensionv1beta1.JSONSchemaPropsOrArray{
+									Schema: &apiextensionv1beta1.JSONSchemaProps{
+										Type: "string",
+									},
+								},
+							},
+						},
+						Required: []string{"labels"},
+					},
 				},
 			},
 		},

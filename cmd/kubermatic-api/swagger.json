@@ -12586,6 +12586,73 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clustertemplates": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Creates a cluster templates for the given project.",
+        "operationId": "createClusterTemplate",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "cluster": {
+                  "$ref": "#/definitions/Cluster"
+                },
+                "name": {
+                  "type": "string",
+                  "x-go-name": "Name"
+                },
+                "nodeDeployment": {
+                  "$ref": "#/definitions/NodeDeployment"
+                },
+                "scope": {
+                  "type": "string",
+                  "x-go-name": "Scope"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ClusterTemplate",
+            "schema": {
+              "$ref": "#/definitions/ClusterTemplate"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters": {
       "get": {
         "produces": [
@@ -15164,6 +15231,39 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "ClusterTemplate": {
+      "description": "ClusterTemplate represents a ClusterTemplate object",
+      "type": "object",
+      "properties": {
+        "cluster": {
+          "$ref": "#/definitions/Cluster"
+        },
+        "id": {
+          "type": "string",
+          "x-go-name": "ID"
+        },
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "nodeDeployment": {
+          "$ref": "#/definitions/NodeDeployment"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
+        "scope": {
+          "type": "string",
+          "x-go-name": "Scope"
+        },
+        "user": {
+          "type": "string",
+          "x-go-name": "User"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
     "ClusterType": {
       "type": "integer",
