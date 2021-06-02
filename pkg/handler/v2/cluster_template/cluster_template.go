@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
@@ -160,6 +161,127 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
+func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listClusterTemplatesReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		result := apiv2.ClusterTemplateList{}
+
+		templates, err := clusterTemplateProvider.List(userInfo, project.Name)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		for _, template := range templates {
+			result = append(result, apiv2.ClusterTemplate{
+				Name:      template.Spec.HumanReadableName,
+				ID:        template.Name,
+				ProjectID: template.Labels[kubermaticv1.ProjectIDLabelKey],
+				User:      template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey],
+				Scope:     template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey],
+			})
+		}
+
+		return result, nil
+	}
+}
+
+// listClusterTemplateReq defines HTTP request for listClusterTemplates
+// swagger:parameters listClusterTemplates
+type listClusterTemplatesReq struct {
+	common.ProjectReq
+}
+
+func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req listClusterTemplatesReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	return req, nil
+}
+
+// Validate validates listClusterTemplatesReq request
+func (req listClusterTemplatesReq) Validate() error {
+	if len(req.ProjectID) == 0 {
+		return fmt.Errorf("project ID cannot be empty")
+	}
+	return nil
+}
+
+func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getClusterTemplatesReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		template, err := clusterTemplateProvider.Get(userInfo, project.Name, req.ClusterTemplateID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return convertInternalClusterTemplatetoExternal(template)
+	}
+}
+
+// getClusterTemplatesReq defines HTTP request for getClusterTemplate
+// swagger:parameters getClusterTemplate
+type getClusterTemplatesReq struct {
+	common.ProjectReq
+	// in: path
+	// required: true
+	ClusterTemplateID string `json:"template_id"`
+}
+
+// Validate validates getClusterTemplatesReq request
+func (req getClusterTemplatesReq) Validate() error {
+	if len(req.ProjectID) == 0 {
+		return fmt.Errorf("project ID cannot be empty")
+	}
+	if len(req.ClusterTemplateID) == 0 {
+		return fmt.Errorf("cluster template ID cannot be empty")
+	}
+	return nil
+}
+
+func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req getClusterTemplatesReq
+
+	pr, err := common.DecodeProjectRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.ProjectReq = pr.(common.ProjectReq)
+
+	req.ClusterTemplateID = mux.Vars(r)["template_id"]
+
+	return req, nil
+}
+
 // genSpec builds ClusterSpec kubermatic Custom Resource from API Cluster
 func genSpec(apiCluster apiv1.Cluster) (*kubermaticv1.ClusterSpec, error) {
 	var userSSHKeysAgentEnabled = true
@@ -221,7 +343,7 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 		ProjectID: template.Labels[kubermaticv1.ClusterTemplateProjectLabelKey],
 		User:      template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey],
 		Scope:     template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey],
-		Cluster: apiv1.Cluster{
+		Cluster: &apiv1.Cluster{
 			Labels:          template.ClusterLabels,
 			InheritedLabels: template.InheritedClusterLabels,
 			Credential:      template.Credential,
