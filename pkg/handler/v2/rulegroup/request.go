@@ -117,7 +117,7 @@ func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
 		if req.Type == string(kubermaticcrdv1.RuleGroupTypeMetrics) {
 			return req, nil
 		}
-		return nil, fmt.Errorf("wrong query parametr, unsupported type: %s, supported value: %s", req.Type, kubermaticcrdv1.RuleGroupTypeMetrics)
+		return nil, fmt.Errorf("wrong query parameter, unsupported type: %s, supported value: %s", req.Type, kubermaticcrdv1.RuleGroupTypeMetrics)
 	}
 	return req, nil
 }
