@@ -48,7 +48,20 @@ type ConstraintSpec struct {
 	ConstraintType string `json:"constraintType"`
 	// Match contains the constraint to resource matching data
 	Match Match `json:"match,omitempty"`
-	// Parameters specifies the parameters used by the constraint REGO
+	// Parameters specifies the parameters used by the constraint template REGO.
+	// It supports both the legacy rawJSON parameters, in which all the parameters are set in a JSON string, and regular
+	// parameters like in Gatekeeper Constraints.
+	// If rawJSON is set, during constraint syncing to the user cluster, the other parameters are ignored
+	// Example with rawJSON parameters:
+	//
+	// parameters:
+	//   rawJSON: '{"labels":["gatekeeper"]}'
+	//
+	// And with regular parameters:
+	//
+	// parameters:
+	//   labels: ["gatekeeper"]
+	//
 	Parameters Parameters `json:"parameters,omitempty"`
 	// Selector specifies the cluster selection filters
 	Selector ConstraintSelector `json:"selector,omitempty"`
