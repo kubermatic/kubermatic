@@ -158,3 +158,12 @@ type MLA struct {
 	// whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed
 	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled"`
 }
+
+// RuleGroup represents a rule group of recording and alerting rules.
+// swagger:model RuleGroup
+type RuleGroup struct {
+	// contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group
+	Data []byte `json:"data"`
+	// the type of this ruleGroup applies to. It can be `Metrics`.
+	Type crdapiv1.RuleGroupType `json:"type"`
+}

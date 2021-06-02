@@ -905,3 +905,59 @@ type PrivilegedAlertmanagerProvider interface {
 	// is unsafe in a sense that it uses privileged account to reset the resource
 	ResetUnsecured(cluster *kubermaticv1.Cluster) error
 }
+
+type RuleGroupListOptions struct {
+	RuleGroupType kubermaticv1.RuleGroupType
+}
+
+// RuleGroupProvider declares the set of methods for interacting with ruleGroups
+type RuleGroupProvider interface {
+	// Get gets the given ruleGroup
+	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error)
+
+	// List gets a list of ruleGroups, by default it returns all ruleGroup objects.
+	// If you would like to filer the result, please set RuleGroupListOptions
+	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
+
+	// Create creates the given ruleGroup
+	Create(userInfo *UserInfo, ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+
+	// Update updates an ruleGroup
+	Update(userInfo *UserInfo, newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+
+	// Delete deletes the ruleGroup with the given name
+	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, ruleGroupName string) error
+}
+
+type PrivilegedRuleGroupProvider interface {
+	// GetUnsecured gets the given ruleGroup
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	GetUnsecured(cluster *kubermaticv1.Cluster, ruleGroupName string) (*kubermaticv1.RuleGroup, error)
+
+	// ListUnsecured gets a list of ruleGroups, by default it returns all ruleGroup objects.
+	// If you would like to filer the result, please set RuleGroupListOptions
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resources
+	ListUnsecured(cluster *kubermaticv1.Cluster, options *RuleGroupListOptions) ([]*kubermaticv1.RuleGroup, error)
+
+	// CreateUnsecured creates the given ruleGroup
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecured(ruleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+
+	// UpdateUnsecured updates an ruleGroup
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to update the resource
+	UpdateUnsecured(newRuleGroup *kubermaticv1.RuleGroup) (*kubermaticv1.RuleGroup, error)
+
+	// DeleteUnsecured deletes the ruleGroup with the given name
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to delete the resource
+	DeleteUnsecured(cluster *kubermaticv1.Cluster, ruleGroupName string) error
+}
