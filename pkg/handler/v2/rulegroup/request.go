@@ -27,6 +27,7 @@ import (
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticcrdv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
+	utilerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	"sigs.k8s.io/yaml"
 )
@@ -57,6 +58,10 @@ type createReq struct {
 	Body apiv2.RuleGroup
 }
 
+func (req *createReq) validate() (ruleGroupName string, err error) {
+	return getRuleGroupNameInData(req.Body.Data)
+}
+
 // updateReq defines HTTP request for updating ruleGroup
 // swagger:parameters updateRuleGroup
 type updateReq struct {
@@ -69,15 +74,15 @@ type updateReq struct {
 	Body apiv2.RuleGroup
 }
 
-func (req *updateReq) validateUpdateReq() error {
+func (req *updateReq) validate() (ruleGroupName string, err error) {
 	ruleGroupNameInData, err := getRuleGroupNameInData(req.Body.Data)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if req.Name != ruleGroupNameInData {
-		return fmt.Errorf("cannot update rule group name")
+		return "", fmt.Errorf("cannot update rule group name")
 	}
-	return nil
+	return ruleGroupNameInData, nil
 }
 
 // deleteReq defines HTTP request for deleting ruleGroup
@@ -117,7 +122,7 @@ func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
 		if req.Type == string(kubermaticcrdv1.RuleGroupTypeMetrics) {
 			return req, nil
 		}
-		return nil, fmt.Errorf("wrong query parameter, unsupported type: %s, supported value: %s", req.Type, kubermaticcrdv1.RuleGroupTypeMetrics)
+		return nil, utilerrors.NewBadRequest("wrong query parameter, unsupported type: %s, supported value: %s", req.Type, kubermaticcrdv1.RuleGroupTypeMetrics)
 	}
 	return req, nil
 }
@@ -174,7 +179,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 func decodeRuleGroupName(r *http.Request) (string, error) {
 	ruleGroupName := mux.Vars(r)["rule_group_name"]
 	if ruleGroupName == "" {
-		return "", fmt.Errorf("rule_group_name parameter is required but was not provided")
+		return "", utilerrors.NewBadRequest("rule_group_name parameter is required but was not provided")
 	}
 	return ruleGroupName, nil
 }
@@ -184,7 +189,10 @@ func getRuleGroupNameInData(data []byte) (string, error) {
 	if err := yaml.Unmarshal(data, &bodyMap); err != nil {
 		return "", fmt.Errorf("cannot unmarshal rule group data in yaml: %w", err)
 	}
-	ruleGroupName := bodyMap["name"].(string)
+	ruleGroupName, ok := bodyMap["name"].(string)
+	if !ok {
+		return "", fmt.Errorf("rule group name cannot be parsed in the data")
+	}
 	if ruleGroupName == "" {
 		return "", fmt.Errorf("rule group name cannot be empty in the data")
 	}

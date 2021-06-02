@@ -1630,6 +1630,13 @@ func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroup
 	}
 }
 
+func GenAPIRuleGroup(name string, ruleGroupType kubermaticv1.RuleGroupType) *apiv2.RuleGroup {
+	return &apiv2.RuleGroup{
+		Data: GenerateTestRuleGroupData(name),
+		Type: ruleGroupType,
+	}
+}
+
 func GenerateTestRuleGroupData(ruleGroupName string) []byte {
 	return []byte(fmt.Sprintf(`
 name: %s
