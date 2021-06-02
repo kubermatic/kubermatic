@@ -473,8 +473,8 @@ func isNotFoundErr(err error) bool {
 	return false
 }
 
-func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID, networkID string) (string, error) {
-	ports, err := getAllNetworkPorts(netClient, networkID)
+func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID string) (string, error) {
+	ports, err := getAllNetworkPorts(netClient, subnetID)
 	if err != nil {
 		return "", fmt.Errorf("failed to list ports for subnet: %v", err)
 	}
@@ -482,20 +482,16 @@ func getRouterIDForSubnet(netClient *gophercloud.ServiceClient, subnetID, networ
 	for _, port := range ports {
 		if port.DeviceOwner == "network:router_interface" || port.DeviceOwner == "network:router_interface_distributed" {
 			// Check IP for the interface & check if the IP belongs to the subnet
-			for _, ip := range port.FixedIPs {
-				if ip.SubnetID == subnetID {
-					return port.DeviceID, nil
-				}
-			}
+			return port.DeviceID, nil
 		}
 	}
 
 	return "", nil
 }
 
-func getAllNetworkPorts(netClient *gophercloud.ServiceClient, networkID string) ([]osports.Port, error) {
+func getAllNetworkPorts(netClient *gophercloud.ServiceClient, subnetID string) ([]osports.Port, error) {
 	allPages, err := osports.List(netClient, osports.ListOpts{
-		NetworkID: networkID,
+		FixedIPs: []osports.FixedIPOpts{{SubnetID: subnetID}},
 	}).AllPages()
 	if err != nil {
 		return nil, err
