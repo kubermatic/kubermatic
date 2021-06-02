@@ -68,7 +68,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
-		allErrs = append(allErrs, h.validateCreateOrUpdate(cluster)...)
+		allErrs = append(allErrs, h.validateCreate(cluster)...)
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding cluster: %w", err))
@@ -76,8 +76,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		if err := h.decoder.DecodeRaw(req.OldObject, oldCluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, fmt.Errorf("error occurred while decoding old cluster: %w", err))
 		}
-		allErrs = append(allErrs, h.validateCreateOrUpdate(cluster)...)
-		allErrs = append(allErrs, validateUpdateImmutability(cluster, oldCluster)...)
+		allErrs = append(allErrs, h.validateUpdate(cluster, oldCluster)...)
 	case admissionv1.Delete:
 		// NOP we always allow delete operarions at the moment
 	default:
@@ -89,7 +88,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	return webhook.Allowed(fmt.Sprintf("cluster validation request %s allowed", req.UID))
 }
 
-func (h *AdmissionHandler) validateCreateOrUpdate(c *kubermaticv1.Cluster) field.ErrorList {
+func (h *AdmissionHandler) validateCreate(c *kubermaticv1.Cluster) field.ErrorList {
 	allErrs := field.ErrorList{}
 	specFldPath := field.NewPath("spec")
 
@@ -107,6 +106,30 @@ func (h *AdmissionHandler) validateCreateOrUpdate(c *kubermaticv1.Cluster) field
 	allErrs = append(allErrs, validation.ValidateNodePortRange(
 		c.Spec.ComponentsOverride.Apiserver.NodePortRange,
 		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"), true)...)
+
+	return allErrs
+}
+
+func (h *AdmissionHandler) validateUpdate(c, oldC *kubermaticv1.Cluster) field.ErrorList {
+	allErrs := field.ErrorList{}
+	specFldPath := field.NewPath("spec")
+
+	if !kubermaticv1.AllExposeStrategies.Has(c.Spec.ExposeStrategy) {
+		allErrs = append(allErrs, field.NotSupported(specFldPath.Child("exposeStrategy"), c.Spec.ExposeStrategy, kubermaticv1.AllExposeStrategies.Items()))
+	}
+	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling &&
+		!h.features.Enabled(features.TunnelingExposeStrategy) {
+		allErrs = append(allErrs, field.Forbidden(specFldPath.Child("exposeStrategy"), "cannot create cluster with Tunneling expose strategy because the TunnelingExposeStrategy feature gate is not enabled"))
+	}
+	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, specFldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
+	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.Scheduler.LeaderElectionSettings, specFldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
+	allErrs = append(allErrs, validation.ValidateClusterNetworkConfig(&c.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"), false)...)
+
+	allErrs = append(allErrs, validation.ValidateNodePortRange(
+		c.Spec.ComponentsOverride.Apiserver.NodePortRange,
+		specFldPath.Child("componentsOverride", "apiserver", "nodePortRange"), false)...)
+
+	allErrs = append(allErrs, validateUpdateImmutability(c, oldC)...)
 
 	return allErrs
 }

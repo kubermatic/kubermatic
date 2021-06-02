@@ -260,6 +260,11 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		return providers{}, fmt.Errorf("failed to create constraint template provider due to %v", err)
 	}
 
+	clusterTemplateProvider, err := kubernetesprovider.NewClusterTemplateProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create cluster template provider due to %v", err)
+	}
+
 	constraintProviderGetter := kubernetesprovider.ConstraintProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
 	kubeMasterInformerFactory.Start(wait.NeverStop)
@@ -316,6 +321,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		constraintTemplateProvider:            constraintTemplateProvider,
 		constraintProviderGetter:              constraintProviderGetter,
 		alertmanagerProviderGetter:            alertmanagerProviderGetter,
+		clusterTemplateProvider:               clusterTemplateProvider,
 		ruleGroupProviderGetter:               ruleGroupProviderGetter,
 	}, nil
 }

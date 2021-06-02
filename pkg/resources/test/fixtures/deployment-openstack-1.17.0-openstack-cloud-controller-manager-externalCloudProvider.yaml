@@ -34,7 +34,7 @@ spec:
         - '{"command":"/usr/sbin/openvpn","args":["--client","--proto","tcp","--dev","tun","--auth-nocache","--remote","openvpn-server.cluster-de-test-01.svc.cluster.local.","1194","--nobind","--connect-timeout","5","--connect-retry","1","--ca","/etc/openvpn/pki/client/ca.crt","--cert","/etc/openvpn/pki/client/client.crt","--key","/etc/openvpn/pki/client/client.key","--remote-cert-tls","server","--link-mtu","1432","--cipher","AES-256-GCM","--auth","SHA1","--keysize","256","--script-security","2","--status","/run/openvpn-status","--log","/dev/stdout"]}'
         command:
         - /http-prober-bin/http-prober
-        image: quay.io/kubermatic/openvpn:v2.5.0-r1
+        image: quay.io/kubermatic/openvpn:v2.5.2-r0
         name: openvpn-client
         resources:
           limits:

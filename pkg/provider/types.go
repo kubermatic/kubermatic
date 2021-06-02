@@ -906,6 +906,11 @@ type PrivilegedAlertmanagerProvider interface {
 	ResetUnsecured(cluster *kubermaticv1.Cluster) error
 }
 
+// ClusterTemplateProvider declares the set of method for interacting with cluster templates
+type ClusterTemplateProvider interface {
+	New(userInfo *UserInfo, newClusterTemplate *kubermaticv1.ClusterTemplate, scope, projectID string) (*kubermaticv1.ClusterTemplate, error)
+}
+
 type RuleGroupListOptions struct {
 	RuleGroupType kubermaticv1.RuleGroupType
 }

@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	openvpnImage        = "quay.io/kubermatic/openvpn:v2.5.0-r1"
+	openvpnImage        = "quay.io/kubermatic/openvpn:v2.5.2-r0"
 	clientPodName       = "client-pod"
 	clientContainerName = "openvpn"
 	kubeconfigPath      = "/etc/kubernetes"

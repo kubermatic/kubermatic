@@ -186,6 +186,7 @@ type newRoutingFunc func(
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
 	constraintProviderGetter provider.ConstraintProviderGetter,
 	alertmanagerProviderGetter provider.AlertmanagerProviderGetter,
+	clusterTemplateProvider provider.ClusterTemplateProvider,
 	ruleGroupProviderGetter provider.RuleGroupProviderGetter,
 	kubermaticVersions kubermatic.Versions,
 ) http.Handler
@@ -363,6 +364,11 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find alertmanagerprovider for cluster %q", seed.Name)
 	}
 
+	clusterTemplateProvider, err := kubernetes.NewClusterTemplateProvider(fakeImpersonationClient, fakeClient)
+	if err != nil {
+		return nil, nil, err
+	}
+
 	ruleGroupProvider := kubernetes.NewRuleGroupProvider(fakeImpersonationClient, fakeClient)
 	ruleGroupProviders := map[string]provider.RuleGroupProvider{"us-central1": ruleGroupProvider}
 	ruleGroupProviderGetter := func(seed *kubermaticv1.Seed) (provider.RuleGroupProvider, error) {
@@ -426,6 +432,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeConstraintTemplateProvider,
 		constraintProviderGetter,
 		alertmanagerProviderGetter,
+		clusterTemplateProvider,
 		ruleGroupProviderGetter,
 		kubermaticVersions,
 	)

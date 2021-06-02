@@ -21,6 +21,19 @@ import (
 )
 
 const (
+	UserClusterTemplateScope    = "user"
+	ProjectClusterTemplateScope = "project"
+	GlobalClusterTemplateScope  = "global"
+)
+
+const (
+	ClusterTemplateScopeLabelKey             = "scope"
+	ClusterTemplateUserAnnotationKey         = "user"
+	ClusterTemplateProjectLabelKey           = "project-id"
+	ClusterTemplateHumanReadableNameLabelKey = "name"
+)
+
+const (
 	// ClusterTemplateResourceName represents "Resource" defined in Kubernetes
 	ClusterTemplateResourceName = "clustertemplates"
 
@@ -37,8 +50,10 @@ type ClusterTemplate struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Credential string      `json:"credential"`
-	Spec       ClusterSpec `json:"spec"`
+	ClusterLabels          map[string]string `json:"clusterLabels,omitempty"`
+	InheritedClusterLabels map[string]string `json:"inheritedClusterLabels,omitempty"`
+	Credential             string            `json:"credential"`
+	Spec                   ClusterSpec       `json:"spec"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
