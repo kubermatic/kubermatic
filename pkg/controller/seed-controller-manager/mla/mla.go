@@ -110,9 +110,9 @@ func Add(
 	httpClient := &http.Client{Timeout: 15 * time.Second}
 	grafanaClient := grafanasdk.NewClient(grafanaURL, grafanaAuth, httpClient)
 
+	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, grafanaClient)
 	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, grafanaClient)
 	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
-	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, grafanaClient)
 	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), httpClient, grafanaURL, grafanaAuth, mlaNamespace, log, overwriteRegistry)
 	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, grafanaClient, httpClient, grafanaURL, grafanaHeader)
 	ruleGroupController := newRuleGroupController(mgr.GetClient(), log, httpClient, cortexRulerURL)

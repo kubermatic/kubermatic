@@ -285,6 +285,25 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 			},
 		},
 		{
+			name:         "Project removed before cluster",
+			requestName:  "clusterUID",
+			hasFinalizer: false,
+			hasResources: false,
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.Cluster{
+					ObjectMeta: metav1.ObjectMeta{
+						Labels: map[string]string{kubermaticv1.ProjectIDLabelKey: "projectUID"},
+						Name:   "clusterUID",
+					},
+					Spec: kubermaticv1.ClusterSpec{
+						HumanReadableName: "Super Cluster",
+					},
+					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
+				},
+			},
+			requests: []request{},
+		},
+		{
 			name:         "MLA disabled for cluster",
 			requestName:  "clusterUID",
 			hasFinalizer: false,

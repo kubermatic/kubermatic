@@ -18,16 +18,13 @@ package mla
 
 import (
 	"bytes"
-	"context"
 	"crypto/x509"
 	"fmt"
-	"strconv"
 	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig/v3"
 
-	grafanasdk "github.com/kubermatic/grafanasdk"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -387,18 +384,6 @@ func GatewayDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			return d, nil
 		}
 	}
-}
-
-func getOrgByProject(ctx context.Context, grafanaClient *grafanasdk.Client, project *kubermaticv1.Project) (grafanasdk.Org, error) {
-	orgID, ok := project.GetAnnotations()[grafanaOrgAnnotationKey]
-	if !ok {
-		return grafanasdk.Org{}, fmt.Errorf("project should have grafana org annotation set")
-	}
-	id, err := strconv.ParseUint(orgID, 10, 32)
-	if err != nil {
-		return grafanasdk.Org{}, err
-	}
-	return grafanaClient.GetOrgById(ctx, uint(id))
 }
 
 // GatewayCACreator returns a function to create the ECDSA-based CA to be used for MLA Gateway.
