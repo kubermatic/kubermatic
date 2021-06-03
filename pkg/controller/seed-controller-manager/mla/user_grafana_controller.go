@@ -23,9 +23,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/grafana/grafana/pkg/models"
 	"go.uber.org/zap"
 
-	"github.com/grafana/grafana/pkg/models"
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
