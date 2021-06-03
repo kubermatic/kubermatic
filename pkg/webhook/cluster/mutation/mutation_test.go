@@ -66,6 +66,7 @@ func TestHandle(t *testing.T) {
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
 							Name:                  "foo",
+							Annotations:           map[string]string{"k8c.io/cni-plugin": "canal_v3.19"},
 							CloudSpec:             kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
 							ExternalCloudProvider: true,
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -83,6 +84,38 @@ func TestHandle(t *testing.T) {
 			wantPatches: []jsonpatch.JsonPatchOperation{},
 		},
 		{
+			name: "Default CNI plugin annotation added",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:                  "foo",
+							CloudSpec:             kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							ExternalCloudProvider: true,
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "example.local",
+								ProxyMode:                resources.IPTablesProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			wantPatches: []jsonpatch.JsonPatchOperation{
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{"k8c.io/cni-plugin": "canal_v3.19"}),
+			},
+		},
+		{
 			name: "Default network configuration",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
@@ -95,8 +128,9 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:      "foo",
-							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							Name:        "foo",
+							Annotations: map[string]string{"k8c.io/cni-plugin": "canal_v3.19"},
+							CloudSpec:   kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
 						}.Do(),
 					},
 				},
@@ -236,6 +270,7 @@ type rawClusterGen struct {
 	CloudSpec             kubermaticv1.CloudSpec
 	ExternalCloudProvider bool
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
+	Annotations           map[string]string
 }
 
 func (r rawClusterGen) Do() []byte {
@@ -245,7 +280,8 @@ func (r rawClusterGen) Do() []byte {
 			Kind:       "Cluster",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: r.Name,
+			Name:        r.Name,
+			Annotations: r.Annotations,
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Features: map[string]bool{
