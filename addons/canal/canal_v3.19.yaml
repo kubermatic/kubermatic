@@ -13,6 +13,8 @@
 # limitations under the License.
 
 # Source: https://docs.projectcalico.org/v3.19/manifests/canal.yaml
+# 1 modification:
+#   - Remove the flexvolume installation as its broken for Flatcar Linux & only required for application policies (Which we don't use.)
 {{ if eq (index .Cluster.Annotations "k8c.io/cni-plugin") "canal_v3.19" }}
 ---
 # Source: calico/templates/calico-config.yaml
@@ -3622,15 +3624,6 @@ spec:
               name: cni-net-dir
           securityContext:
             privileged: true
-        # Adds a Flex Volume Driver that creates a per-pod Unix Domain Socket to allow Dikastes
-        # to communicate with Felix over the Policy Sync API.
-        - name: flexvol-driver
-          image: docker.io/calico/pod2daemon-flexvol:v3.19.1
-          volumeMounts:
-          - name: flexvol-driver-host
-            mountPath: /host/driver
-          securityContext:
-            privileged: true
       containers:
         # Runs canal container on each Kubernetes node. This
         # container programs network policy and routes on each
@@ -3800,11 +3793,6 @@ spec:
           hostPath:
             type: DirectoryOrCreate
             path: /var/run/nodeagent
-        # Used to install Flex Volume Driver
-        - name: flexvol-driver-host
-          hostPath:
-            type: DirectoryOrCreate
-            path: /usr/libexec/kubernetes/kubelet-plugins/volume/exec/nodeagent~uds
 ---
 
 apiVersion: v1
