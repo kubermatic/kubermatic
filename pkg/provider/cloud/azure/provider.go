@@ -453,7 +453,11 @@ func ensureVNet(ctx context.Context, cloud kubermaticv1.CloudSpec, location stri
 		},
 	}
 
-	future, err := networksClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName, parameters)
+	var resourceGroup = cloud.Azure.ResourceGroup
+	if cloud.Azure.VNetResourceGroup != "" {
+		resourceGroup = cloud.Azure.VNetResourceGroup
+	}
+	future, err := networksClient.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, parameters)
 	if err != nil {
 		return fmt.Errorf("failed to create or update virtual network %q: %v", cloud.Azure.VNetName, err)
 	}
@@ -479,7 +483,11 @@ func ensureSubnet(ctx context.Context, cloud kubermaticv1.CloudSpec, credentials
 		},
 	}
 
-	future, err := subnetsClient.CreateOrUpdate(ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, parameters)
+	var resourceGroup = cloud.Azure.ResourceGroup
+	if cloud.Azure.VNetResourceGroup != "" {
+		resourceGroup = cloud.Azure.VNetResourceGroup
+	}
+	future, err := subnetsClient.CreateOrUpdate(ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, parameters)
 	if err != nil {
 		return fmt.Errorf("failed to create or update subnetwork %q: %v", cloud.Azure.SubnetName, err)
 	}
@@ -686,13 +694,18 @@ func (a *Azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 		}
 	}
 
+	var resourceGroup = cloud.Azure.ResourceGroup
+	if cloud.Azure.VNetResourceGroup != "" {
+		resourceGroup = cloud.Azure.VNetResourceGroup
+	}
+
 	if cloud.Azure.VNetName != "" {
 		vnetClient, err := getNetworksClient(cloud, credentials)
 		if err != nil {
 			return err
 		}
 
-		if _, err = vnetClient.Get(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName, ""); err != nil {
+		if _, err = vnetClient.Get(a.ctx, resourceGroup, cloud.Azure.VNetName, ""); err != nil {
 			return err
 		}
 	}
@@ -703,7 +716,7 @@ func (a *Azure) ValidateCloudSpec(cloud kubermaticv1.CloudSpec) error {
 			return err
 		}
 
-		if _, err = subnetClient.Get(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, ""); err != nil {
+		if _, err = subnetClient.Get(a.ctx, resourceGroup, cloud.Azure.VNetName, cloud.Azure.SubnetName, ""); err != nil {
 			return err
 		}
 	}
