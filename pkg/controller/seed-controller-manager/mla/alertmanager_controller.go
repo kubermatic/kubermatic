@@ -229,6 +229,7 @@ func (r *alertmanagerController) reconcile(ctx context.Context, cluster *kuberma
 	}
 	return nil, nil
 }
+
 func (r *alertmanagerController) cleanUp(ctx context.Context) error {
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.List(ctx, clusterList); err != nil {
