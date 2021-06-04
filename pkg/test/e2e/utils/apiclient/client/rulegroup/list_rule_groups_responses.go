@@ -67,7 +67,7 @@ type ListRuleGroupsOK struct {
 }
 
 func (o *ListRuleGroupsOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups][%d] listRuleGroupsOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] listRuleGroupsOK  %+v", 200, o.Payload)
 }
 
 func (o *ListRuleGroupsOK) GetPayload() []*models.RuleGroup {
@@ -97,7 +97,7 @@ type ListRuleGroupsUnauthorized struct {
 }
 
 func (o *ListRuleGroupsUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups][%d] listRuleGroupsUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] listRuleGroupsUnauthorized ", 401)
 }
 
 func (o *ListRuleGroupsUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -118,7 +118,7 @@ type ListRuleGroupsForbidden struct {
 }
 
 func (o *ListRuleGroupsForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups][%d] listRuleGroupsForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] listRuleGroupsForbidden ", 403)
 }
 
 func (o *ListRuleGroupsForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -149,7 +149,7 @@ func (o *ListRuleGroupsDefault) Code() int {
 }
 
 func (o *ListRuleGroupsDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups][%d] listRuleGroups default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] listRuleGroups default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *ListRuleGroupsDefault) GetPayload() *models.ErrorResponse {

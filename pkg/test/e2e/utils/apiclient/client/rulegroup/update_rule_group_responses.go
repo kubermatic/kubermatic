@@ -67,7 +67,7 @@ type UpdateRuleGroupOK struct {
 }
 
 func (o *UpdateRuleGroupOK) Error() string {
-	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] updateRuleGroupOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] updateRuleGroupOK  %+v", 200, o.Payload)
 }
 
 func (o *UpdateRuleGroupOK) GetPayload() *models.RuleGroup {
@@ -99,7 +99,7 @@ type UpdateRuleGroupUnauthorized struct {
 }
 
 func (o *UpdateRuleGroupUnauthorized) Error() string {
-	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] updateRuleGroupUnauthorized ", 401)
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] updateRuleGroupUnauthorized ", 401)
 }
 
 func (o *UpdateRuleGroupUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -120,7 +120,7 @@ type UpdateRuleGroupForbidden struct {
 }
 
 func (o *UpdateRuleGroupForbidden) Error() string {
-	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] updateRuleGroupForbidden ", 403)
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] updateRuleGroupForbidden ", 403)
 }
 
 func (o *UpdateRuleGroupForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,7 +151,7 @@ func (o *UpdateRuleGroupDefault) Code() int {
 }
 
 func (o *UpdateRuleGroupDefault) Error() string {
-	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] updateRuleGroup default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] updateRuleGroup default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *UpdateRuleGroupDefault) GetPayload() *models.ErrorResponse {

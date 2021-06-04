@@ -38,7 +38,7 @@ type getReq struct {
 	cluster.GetClusterReq
 	// in: path
 	// required: true
-	Name string `json:"rule_group_name"`
+	RuleGroupID string `json:"rulegroup_id"`
 }
 
 // listReq defines HTTP request for listing ruleGroups
@@ -68,21 +68,21 @@ type updateReq struct {
 	cluster.GetClusterReq
 	// in: path
 	// required: true
-	Name string `json:"rule_group_name"`
+	RuleGroupID string `json:"rulegroup_id"`
 	// in: body
 	// required: true
 	Body apiv2.RuleGroup
 }
 
-func (req *updateReq) validate() (ruleGroupName string, err error) {
+func (req *updateReq) validate() error {
 	ruleGroupNameInData, err := getRuleGroupNameInData(req.Body.Data)
 	if err != nil {
-		return "", err
+		return err
 	}
-	if req.Name != ruleGroupNameInData {
-		return "", fmt.Errorf("cannot update rule group name")
+	if req.RuleGroupID != ruleGroupNameInData {
+		return fmt.Errorf("cannot update rule group name")
 	}
-	return ruleGroupNameInData, nil
+	return nil
 }
 
 // deleteReq defines HTTP request for deleting ruleGroup
@@ -91,7 +91,7 @@ type deleteReq struct {
 	cluster.GetClusterReq
 	// in: path
 	// required: true
-	Name string `json:"rule_group_name"`
+	RuleGroupID string `json:"rulegroup_id"`
 }
 
 func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -102,11 +102,11 @@ func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 
-	ruleGroupName, err := decodeRuleGroupName(r)
+	ruleGroupID, err := decodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
-	req.Name = ruleGroupName
+	req.RuleGroupID = ruleGroupID
 	return req, nil
 }
 
@@ -148,11 +148,11 @@ func DecodeUpdateReq(c context.Context, r *http.Request) (interface{}, error) {
 		return nil, err
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
-	ruleGroupName, err := decodeRuleGroupName(r)
+	ruleGroupID, err := decodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
-	req.Name = ruleGroupName
+	req.RuleGroupID = ruleGroupID
 
 	if err = json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
 		return nil, err
@@ -168,20 +168,20 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 
-	ruleGroupName, err := decodeRuleGroupName(r)
+	ruleGroupID, err := decodeRuleGroupID(r)
 	if err != nil {
 		return nil, err
 	}
-	req.Name = ruleGroupName
+	req.RuleGroupID = ruleGroupID
 	return req, nil
 }
 
-func decodeRuleGroupName(r *http.Request) (string, error) {
-	ruleGroupName := mux.Vars(r)["rule_group_name"]
-	if ruleGroupName == "" {
-		return "", utilerrors.NewBadRequest("rule_group_name parameter is required but was not provided")
+func decodeRuleGroupID(r *http.Request) (string, error) {
+	ruleGroupID := mux.Vars(r)["rulegroup_id"]
+	if ruleGroupID == "" {
+		return "", utilerrors.NewBadRequest("rulegroup_id parameter is required but was not provided")
 	}
-	return ruleGroupName, nil
+	return ruleGroupID, nil
 }
 
 func getRuleGroupNameInData(data []byte) (string, error) {

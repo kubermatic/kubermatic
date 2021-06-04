@@ -67,7 +67,7 @@ type CreateRuleGroupCreated struct {
 }
 
 func (o *CreateRuleGroupCreated) Error() string {
-	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups][%d] createRuleGroupCreated  %+v", 201, o.Payload)
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] createRuleGroupCreated  %+v", 201, o.Payload)
 }
 
 func (o *CreateRuleGroupCreated) GetPayload() *models.RuleGroup {
@@ -99,7 +99,7 @@ type CreateRuleGroupUnauthorized struct {
 }
 
 func (o *CreateRuleGroupUnauthorized) Error() string {
-	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups][%d] createRuleGroupUnauthorized ", 401)
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] createRuleGroupUnauthorized ", 401)
 }
 
 func (o *CreateRuleGroupUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -120,7 +120,7 @@ type CreateRuleGroupForbidden struct {
 }
 
 func (o *CreateRuleGroupForbidden) Error() string {
-	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups][%d] createRuleGroupForbidden ", 403)
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] createRuleGroupForbidden ", 403)
 }
 
 func (o *CreateRuleGroupForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,7 +151,7 @@ func (o *CreateRuleGroupDefault) Code() int {
 }
 
 func (o *CreateRuleGroupDefault) Error() string {
-	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups][%d] createRuleGroup default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups][%d] createRuleGroup default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *CreateRuleGroupDefault) GetPayload() *models.ErrorResponse {

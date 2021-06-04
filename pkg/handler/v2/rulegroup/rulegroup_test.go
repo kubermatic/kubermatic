@@ -104,7 +104,7 @@ func TestGetEndpoint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/rule_groups/%s", tc.ProjectID, tc.ClusterID, tc.RuleGroupName)
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/rulegroups/%s", tc.ProjectID, tc.ClusterID, tc.RuleGroupName)
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			resp := httptest.NewRecorder()
 
@@ -286,7 +286,7 @@ func TestListEndpoint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/rule_groups", tc.ProjectID, tc.ClusterID)
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/rulegroups", tc.ProjectID, tc.ClusterID)
 			req := httptest.NewRequest(http.MethodGet, requestURL, nil)
 			if tc.QueryParams != nil {
 				q := req.URL.Query()
@@ -416,7 +416,7 @@ func TestCreateEndpoint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/rule_groups", tc.ProjectID, tc.ClusterID)
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/rulegroups", tc.ProjectID, tc.ClusterID)
 			body, err := json.Marshal(tc.RuleGroup)
 			if err != nil {
 				t.Fatalf("failed to marshalling rule group: %v", err)
@@ -552,7 +552,7 @@ func TestUpdateEndpoint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/rule_groups/%s", tc.ProjectID, tc.ClusterID, tc.RuleGroupName)
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/rulegroups/%s", tc.ProjectID, tc.ClusterID, tc.RuleGroupName)
 			body, err := json.Marshal(tc.RuleGroup)
 			if err != nil {
 				t.Fatalf("failed to marshalling rule group: %v", err)
@@ -648,7 +648,7 @@ func TestDeleteEndpoint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.Name, func(t *testing.T) {
-			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/rule_groups/%s", tc.ProjectID, tc.ClusterID, tc.RuleGroupName)
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/rulegroups/%s", tc.ProjectID, tc.ClusterID, tc.RuleGroupName)
 			req := httptest.NewRequest(http.MethodDelete, requestURL, nil)
 			resp := httptest.NewRecorder()
 

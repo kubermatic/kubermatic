@@ -66,7 +66,7 @@ type DeleteRuleGroupOK struct {
 }
 
 func (o *DeleteRuleGroupOK) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] deleteRuleGroupOK ", 200)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroupOK ", 200)
 }
 
 func (o *DeleteRuleGroupOK) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -87,7 +87,7 @@ type DeleteRuleGroupUnauthorized struct {
 }
 
 func (o *DeleteRuleGroupUnauthorized) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] deleteRuleGroupUnauthorized ", 401)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroupUnauthorized ", 401)
 }
 
 func (o *DeleteRuleGroupUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -108,7 +108,7 @@ type DeleteRuleGroupForbidden struct {
 }
 
 func (o *DeleteRuleGroupForbidden) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] deleteRuleGroupForbidden ", 403)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroupForbidden ", 403)
 }
 
 func (o *DeleteRuleGroupForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -139,7 +139,7 @@ func (o *DeleteRuleGroupDefault) Code() int {
 }
 
 func (o *DeleteRuleGroupDefault) Error() string {
-	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] deleteRuleGroup default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] deleteRuleGroup default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *DeleteRuleGroupDefault) GetPayload() *models.ErrorResponse {

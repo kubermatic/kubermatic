@@ -502,23 +502,23 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 
 	// Defines a set of HTTP endpoints for managing rule groups
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}").
+		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}").
 		Handler(r.getRuleGroup())
 
 	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/clusters/{cluster_id}/rule_groups").
+		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups").
 		Handler(r.listRuleGroups())
 
 	mux.Methods(http.MethodPost).
-		Path("/projects/{project_id}/clusters/{cluster_id}/rule_groups").
+		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups").
 		Handler(r.createRuleGroup())
 
 	mux.Methods(http.MethodPut).
-		Path("/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}").
+		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}").
 		Handler(r.updateRuleGroup())
 
 	mux.Methods(http.MethodDelete).
-		Path("/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}").
+		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}").
 		Handler(r.deleteRuleGroup())
 
 }
@@ -3388,7 +3388,7 @@ func (r Routing) createClusterTemplate() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name} rulegroup getRuleGroup
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id} rulegroup getRuleGroup
 //
 //     Gets a specified rule group for the given cluster.
 //
@@ -3416,7 +3416,7 @@ func (r Routing) getRuleGroup() http.Handler {
 	)
 }
 
-// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups rulegroup listRuleGroups
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups rulegroup listRuleGroups
 //
 //     Lists rule groups that belong to the given cluster
 //
@@ -3444,7 +3444,7 @@ func (r Routing) listRuleGroups() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups rulegroup createRuleGroup
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups rulegroup createRuleGroup
 //
 //     Creates a rule group that will belong to the given cluster
 //
@@ -3475,7 +3475,7 @@ func (r Routing) createRuleGroup() http.Handler {
 	)
 }
 
-// swagger:route PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name} rulegroup updateRuleGroup
+// swagger:route PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id} rulegroup updateRuleGroup
 //
 //     Updates the specified rule group for the given cluster.
 //
@@ -3506,7 +3506,7 @@ func (r Routing) updateRuleGroup() http.Handler {
 	)
 }
 
-// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name} rulegroup deleteRuleGroup
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id} rulegroup deleteRuleGroup
 //
 //    Deletes the given rule group that belongs to the cluster.
 //

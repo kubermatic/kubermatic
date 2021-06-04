@@ -12333,7 +12333,7 @@
         }
       }
     },
-    "/api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups": {
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups": {
       "get": {
         "description": "Lists rule groups that belong to the given cluster",
         "produces": [
@@ -12447,7 +12447,7 @@
         }
       }
     },
-    "/api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}": {
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}": {
       "get": {
         "produces": [
           "application/json"
@@ -12474,8 +12474,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "Name",
-            "name": "rule_group_name",
+            "x-go-name": "RuleGroupID",
+            "name": "rulegroup_id",
             "in": "path",
             "required": true
           }
@@ -12530,8 +12530,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "Name",
-            "name": "rule_group_name",
+            "x-go-name": "RuleGroupID",
+            "name": "rulegroup_id",
             "in": "path",
             "required": true
           },
@@ -12591,8 +12591,8 @@
           },
           {
             "type": "string",
-            "x-go-name": "Name",
-            "name": "rule_group_name",
+            "x-go-name": "RuleGroupID",
+            "name": "rulegroup_id",
             "in": "path",
             "required": true
           }

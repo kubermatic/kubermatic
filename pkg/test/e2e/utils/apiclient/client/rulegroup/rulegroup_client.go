@@ -50,7 +50,7 @@ func (a *Client) CreateRuleGroup(params *CreateRuleGroupParams, authInfo runtime
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "createRuleGroup",
 		Method:             "POST",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -84,7 +84,7 @@ func (a *Client) DeleteRuleGroup(params *DeleteRuleGroupParams, authInfo runtime
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "deleteRuleGroup",
 		Method:             "DELETE",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -118,7 +118,7 @@ func (a *Client) GetRuleGroup(params *GetRuleGroupParams, authInfo runtime.Clien
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "getRuleGroup",
 		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -152,7 +152,7 @@ func (a *Client) ListRuleGroups(params *ListRuleGroupsParams, authInfo runtime.C
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "listRuleGroups",
 		Method:             "GET",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},
@@ -186,7 +186,7 @@ func (a *Client) UpdateRuleGroup(params *UpdateRuleGroupParams, authInfo runtime
 	result, err := a.transport.Submit(&runtime.ClientOperation{
 		ID:                 "updateRuleGroup",
 		Method:             "PUT",
-		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}",
 		ProducesMediaTypes: []string{"application/json"},
 		ConsumesMediaTypes: []string{"application/json"},
 		Schemes:            []string{"https"},

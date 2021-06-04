@@ -64,8 +64,8 @@ type GetRuleGroupParams struct {
 	ClusterID string
 	/*ProjectID*/
 	ProjectID string
-	/*RuleGroupName*/
-	Name string
+	/*RulegroupID*/
+	RuleGroupID string
 
 	timeout    time.Duration
 	Context    context.Context
@@ -127,15 +127,15 @@ func (o *GetRuleGroupParams) SetProjectID(projectID string) {
 	o.ProjectID = projectID
 }
 
-// WithName adds the ruleGroupName to the get rule group params
-func (o *GetRuleGroupParams) WithName(ruleGroupName string) *GetRuleGroupParams {
-	o.SetName(ruleGroupName)
+// WithRuleGroupID adds the rulegroupID to the get rule group params
+func (o *GetRuleGroupParams) WithRuleGroupID(rulegroupID string) *GetRuleGroupParams {
+	o.SetRuleGroupID(rulegroupID)
 	return o
 }
 
-// SetName adds the ruleGroupName to the get rule group params
-func (o *GetRuleGroupParams) SetName(ruleGroupName string) {
-	o.Name = ruleGroupName
+// SetRuleGroupID adds the rulegroupId to the get rule group params
+func (o *GetRuleGroupParams) SetRuleGroupID(rulegroupID string) {
+	o.RuleGroupID = rulegroupID
 }
 
 // WriteToRequest writes these params to a swagger request
@@ -156,8 +156,8 @@ func (o *GetRuleGroupParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.
 		return err
 	}
 
-	// path param rule_group_name
-	if err := r.SetPathParam("rule_group_name", o.Name); err != nil {
+	// path param rulegroup_id
+	if err := r.SetPathParam("rulegroup_id", o.RuleGroupID); err != nil {
 		return err
 	}
 

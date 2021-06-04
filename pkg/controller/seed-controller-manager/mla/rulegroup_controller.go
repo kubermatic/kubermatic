@@ -114,6 +114,7 @@ func newRuleGroupReconciler(
 				},
 			})
 		}
+		client.List(context.Background(), ruleGroupList, ctrlruntimeclient.MatchingFields{})
 		return requests
 	})
 

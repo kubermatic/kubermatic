@@ -67,7 +67,7 @@ type GetRuleGroupOK struct {
 }
 
 func (o *GetRuleGroupOK) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] getRuleGroupOK  %+v", 200, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroupOK  %+v", 200, o.Payload)
 }
 
 func (o *GetRuleGroupOK) GetPayload() *models.RuleGroup {
@@ -99,7 +99,7 @@ type GetRuleGroupUnauthorized struct {
 }
 
 func (o *GetRuleGroupUnauthorized) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] getRuleGroupUnauthorized ", 401)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroupUnauthorized ", 401)
 }
 
 func (o *GetRuleGroupUnauthorized) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -120,7 +120,7 @@ type GetRuleGroupForbidden struct {
 }
 
 func (o *GetRuleGroupForbidden) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] getRuleGroupForbidden ", 403)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroupForbidden ", 403)
 }
 
 func (o *GetRuleGroupForbidden) readResponse(response runtime.ClientResponse, consumer runtime.Consumer, formats strfmt.Registry) error {
@@ -151,7 +151,7 @@ func (o *GetRuleGroupDefault) Code() int {
 }
 
 func (o *GetRuleGroupDefault) Error() string {
-	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rule_groups/{rule_group_name}][%d] getRuleGroup default  %+v", o._statusCode, o.Payload)
+	return fmt.Sprintf("[GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}][%d] getRuleGroup default  %+v", o._statusCode, o.Payload)
 }
 
 func (o *GetRuleGroupDefault) GetPayload() *models.ErrorResponse {
