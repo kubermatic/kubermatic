@@ -111,16 +111,6 @@ func (s1 clusterNamesList) difference(s2 clusterNamesList) []string {
 
 }
 
-func (s1 clusterNamesList) intersection(s2 clusterNamesList) []string {
-	var result []string
-	for _, value := range s1 {
-		if s2.contains(value) {
-			result = append(result, value)
-		}
-	}
-	return result
-}
-
 // GetClustersForConstraint gets clusters for the constraints by using the constraints selector to filter out unselected clusters
 func GetClustersForConstraint(ctx context.Context, client ctrlruntimeclient.Client,
 	constraint *kubermaticv1.Constraint, workerNamesLabelSelector labels.Selector) ([]kubermaticv1.Cluster, []kubermaticv1.Cluster, error) {
@@ -169,7 +159,7 @@ func getDesiredClusterListForConstraint(ctx context.Context,
 	}
 
 	clusterList.Items = filterProvider(constraint, clusterList.Items)
-	return clusterList, err
+	return clusterList, nil
 }
 
 func filterProvider(constraint *kubermaticv1.Constraint, clusterList []kubermaticv1.Cluster) []kubermaticv1.Cluster {
