@@ -96,6 +96,9 @@ func Add(
 		return err
 	}
 	if err := client.Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
+		if !mlaEnabled {
+			return nil // do not return an error if MLA is disabled (e.g. if MLA is not installed in Seed)
+		}
 		return fmt.Errorf("failed to get Grafana Secret: %v", err)
 	}
 	adminName, ok := secret.Data[grafanaUserKey]
