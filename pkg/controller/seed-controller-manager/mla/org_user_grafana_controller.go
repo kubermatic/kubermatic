@@ -22,10 +22,12 @@ import (
 	"fmt"
 
 	"go.uber.org/zap"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -79,7 +81,13 @@ func newOrgUserGrafanaReconciler(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
+		// We don't trigger reconciliation for UserProjectBinding of service account.
+		userProjectBinding := object.(*kubermaticv1.UserProjectBinding)
+		return !kubernetesprovider.IsProjectServiceAccount(userProjectBinding.Spec.UserEmail)
+	})
+
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.UserProjectBinding{}}, &handler.EnqueueRequestForObject{}, serviceAccountPredicate); err != nil {
 		return fmt.Errorf("failed to watch UserProjectBindings: %w", err)
 	}
 	return err
