@@ -43,6 +43,8 @@ const (
 	Key = "default"
 )
 
+type clusterNamesList []string
+
 func getClusterNameFromNamespace(clusterNamespace string) string {
 	var clusterName string
 	temp := strings.Split(clusterNamespace, "-")
@@ -89,8 +91,6 @@ func getClusterList(ctx context.Context, client ctrlruntimeclient.Client, cluste
 	return existingClusterList
 }
 
-type clusterNamesList []string
-
 func (s clusterNamesList) contains(searchterm string) bool {
 	for _, value := range s {
 		if value == searchterm {
@@ -100,20 +100,21 @@ func (s clusterNamesList) contains(searchterm string) bool {
 	return false
 }
 
-func (s1 clusterNamesList) difference(s2 clusterNamesList) []string {
+func (s clusterNamesList) difference(s2 clusterNamesList) []string {
 	var result []string
-	for _, value := range s1 {
+	for _, value := range s {
 		if !s2.contains(value) {
 			result = append(result, value)
 		}
 	}
 	return result
-
 }
 
 // GetClustersForConstraint gets clusters for the constraints by using the constraints selector to filter out unselected clusters
 func GetClustersForConstraint(ctx context.Context, client ctrlruntimeclient.Client,
 	constraint *kubermaticv1.Constraint, workerNamesLabelSelector labels.Selector) ([]kubermaticv1.Cluster, []kubermaticv1.Cluster, error) {
+
+	var desiredClusterNames clusterNamesList
 
 	desiredList, err := getDesiredClusterListForConstraint(ctx, client, constraint, workerNamesLabelSelector)
 	if err != nil {
@@ -126,8 +127,6 @@ func GetClustersForConstraint(ctx context.Context, client ctrlruntimeclient.Clie
 	if existingClusterNames == nil || err != nil {
 		return desiredClusterList, desiredClusterList, nil
 	}
-
-	var desiredClusterNames clusterNamesList
 
 	for _, cluster := range desiredClusterList {
 		desiredClusterNames = append(desiredClusterNames, cluster.Name)

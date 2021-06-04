@@ -278,9 +278,11 @@ func (r *reconciler) createConstraint(ctx context.Context, log *zap.SugaredLogge
 		constraintCreatorGetter(constraint),
 	}
 
-	r.syncAllClustersNS(ctx, log, constraint, clusterList, func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, namespace string) error {
+	if err := r.syncAllClustersNS(ctx, log, constraint, clusterList, func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, namespace string) error {
 		return reconciling.ReconcileKubermaticV1Constraints(ctx, constraintCreatorGetters, namespace, seedClient)
-	})
+	}); err != nil {
+		return err
+	}
 
 	return nil
 }
