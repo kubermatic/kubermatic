@@ -40,8 +40,6 @@ import (
 const (
 	constraintName = "constraint"
 	kind           = "RequiredLabel"
-	key            = "default"
-	value          = "true"
 )
 
 func TestReconcile(t *testing.T) {
@@ -149,9 +147,9 @@ func genConstraint(name, namespace, kind string, label, delete bool) *kubermatic
 	constraint := test.GenConstraint(name, namespace, kind)
 	if label {
 		if constraint.Labels != nil {
-			constraint.Labels[key] = value
+			constraint.Labels[Key] = constraint.Name
 		} else {
-			constraint.Labels = map[string]string{key: value}
+			constraint.Labels = map[string]string{Key: constraint.Name}
 		}
 	}
 	if delete {

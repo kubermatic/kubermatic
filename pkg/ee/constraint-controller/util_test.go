@@ -119,13 +119,13 @@ func TestGetClustersForConstraint(t *testing.T) {
 				WithObjects(tc.clusters...).
 				Build()
 
-			clusterList, err := eeconstraintcontroller.GetClustersForConstraint(context.Background(), cli, tc.constraint, workerSelector)
+			clusterList, _, err := eeconstraintcontroller.GetClustersForConstraint(context.Background(), cli, tc.constraint, workerSelector)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			resultSet := sets.NewString()
-			for _, cluster := range clusterList.Items {
+			for _, cluster := range clusterList {
 				resultSet.Insert(cluster.Name)
 			}
 

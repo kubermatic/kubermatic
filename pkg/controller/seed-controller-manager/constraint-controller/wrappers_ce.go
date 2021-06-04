@@ -27,10 +27,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func (r *reconciler) getClustersForConstraint(ctx context.Context, constraint *kubermaticv1.Constraint) (*kubermaticv1.ClusterList, error) {
+func (r *reconciler) getClustersForConstraint(ctx context.Context, constraint *kubermaticv1.Constraint) ([]kubermaticv1.Cluster, []kubermaticv1.Cluster, error) {
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.seedClient.List(ctx, clusterList, &ctrlruntimeclient.ListOptions{LabelSelector: r.workerNameLabelSelector}); err != nil {
-		return nil, fmt.Errorf("failed listing clusters: %w", err)
+		return nil, nil, fmt.Errorf("failed listing clusters: %w", err)
 	}
-	return clusterList, nil
+	return clusterList.Items, nil, nil
 }

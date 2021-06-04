@@ -25,6 +25,6 @@ import (
 	eeutil "k8c.io/kubermatic/v2/pkg/ee/constraint-controller"
 )
 
-func (r *reconciler) getClustersForConstraint(ctx context.Context, constraint *kubermaticv1.Constraint) (*kubermaticv1.ClusterList, error) {
+func (r *reconciler) getClustersForConstraint(ctx context.Context, constraint *kubermaticv1.Constraint) ([]kubermaticv1.Cluster, []kubermaticv1.Cluster, error) {
 	return eeutil.GetClustersForConstraint(ctx, r.seedClient, constraint, r.workerNameLabelSelector)
 }
