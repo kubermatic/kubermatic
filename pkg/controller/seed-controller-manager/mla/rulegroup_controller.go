@@ -33,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
@@ -145,6 +146,18 @@ func (r *ruleGroupReconciler) Reconcile(ctx context.Context, request reconcile.R
 
 	cluster := &kubermaticv1.Cluster{}
 	if err := r.Get(ctx, types.NamespacedName{Name: ruleGroup.Spec.Cluster.Name}, cluster); err != nil {
+		if errors.IsNotFound(err) {
+			// If cluster object is already gone, but rule group is still found in the namespace, we need to handle deletion
+			// and remove finalizer for it so that it will not block the deletion of cluster namespace.
+			requestURL, err := r.ruleGroupController.getRequestURL(ruleGroup)
+			if err != nil {
+				return reconcile.Result{}, fmt.Errorf("failed to get request URL: %w", err)
+			}
+			if err := r.ruleGroupController.handleDeletion(ctx, ruleGroup, requestURL); err != nil {
+				return reconcile.Result{}, fmt.Errorf("failed to delete ruleGroup: %w", err)
+			}
+			return reconcile.Result{}, nil
+		}
 		return reconcile.Result{}, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
