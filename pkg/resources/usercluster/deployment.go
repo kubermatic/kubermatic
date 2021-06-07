@@ -120,6 +120,12 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			if err != nil {
 				return nil, err
 			}
+
+			enableUserSSHKeyAgent := false
+			if data.Cluster().Spec.EnableUserSSHKeyAgent == nil {
+				enableUserSSHKeyAgent = true
+			}
+
 			args := append([]string{
 				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"-metrics-listen-address", "0.0.0.0:8085",
@@ -132,7 +138,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-version", data.Cluster().Spec.Version.String(),
 				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
 				"-owner-email", data.Cluster().Status.UserEmail,
-				fmt.Sprintf("-enable-ssh-key-agent=%t", data.Cluster().Spec.EnableUserSSHKeyAgent),
+				fmt.Sprintf("-enable-ssh-key-agent=%t", enableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-node-local-dns-cache=%t", data.NodeLocalDNSCacheEnabled()),
