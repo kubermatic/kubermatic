@@ -34,6 +34,7 @@ import (
 
 const (
 	cinderCSIDriverName = "cinder.csi.openstack.org"
+	logrotateAddonName  = "logrotate"
 )
 
 func migrateOpenStackCSIDrivers(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
@@ -54,7 +55,7 @@ func migrateOpenStackCSIDrivers(ctx context.Context, logger *logrus.Entry, kubeC
 		}
 
 		if idx, _ := kubermaticv1helper.GetClusterCondition(&cluster, kubermaticv1.ClusterConditionAddonControllerReconcilingSuccess); idx != -1 {
-			// cluster succesefully reconciled addons, no need to migrate CSIDriver
+			// cluster successfully reconciled addons, no need to migrate CSIDriver
 			continue
 		}
 
@@ -86,10 +87,47 @@ func deleteCSIDriver(ctx context.Context, kubeClient ctrlruntimeclient.Client, n
 	return kubeClient.Delete(ctx, &drv)
 }
 
+func removeLogrotateAddons(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
+	clusters := kubermaticv1.ClusterList{}
+	if err := kubeClient.List(ctx, &clusters); err != nil {
+		return err
+	}
+
+	// iterates over all user clusters
+	for _, cluster := range clusters.Items {
+		// delete the logrotate addon
+		if err := deleteLogrotateAddon(ctx, kubeClient, logrotateAddonName, cluster.Status.NamespaceName); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func deleteLogrotateAddon(ctx context.Context, kubeClient ctrlruntimeclient.Client, name, namespace string) error {
+	addon := kubermaticv1.Addon{}
+
+	err := kubeClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: name, Namespace: namespace}, &addon)
+	if kerrors.IsNotFound(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+
+	return kubeClient.Delete(ctx, &addon)
+}
+
 func migrateUserClustersData(ctx context.Context, logger *logrus.Entry, kubeClient ctrlruntimeclient.Client, opt stack.DeployOptions) error {
 	if opt.EnableOpenstackCSIDriverMigration {
 		if err := migrateOpenStackCSIDrivers(ctx, logger, kubeClient, opt); err != nil {
 			return fmt.Errorf("failed to migrate OpenStack CSIDrivers: %w", err)
+		}
+	}
+
+	if opt.EnableLogrotateMigration {
+		if err := removeLogrotateAddons(ctx, logger, kubeClient, opt); err != nil {
+			return fmt.Errorf("failed to remove logrotate addons: %w", err)
 		}
 	}
 
