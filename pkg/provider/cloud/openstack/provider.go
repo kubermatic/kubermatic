@@ -477,13 +477,19 @@ func getAuthClient(username, password, domain, tenant, tenantID, authURL string,
 		TenantID:         tenantID,
 	}
 
-	client, err := goopenstack.AuthenticatedClient(opts)
+	client, err := goopenstack.NewClient(authURL)
 	if err != nil {
 		return nil, err
 	}
+
 	if client != nil {
 		// overwrite the default host/root CA Bundle with the proper CA Bundle
 		client.HTTPClient.Transport = &http.Transport{TLSClientConfig: &tls.Config{RootCAs: caBundle}}
+	}
+
+	err = goopenstack.Authenticate(client, opts)
+	if err != nil {
+		return nil, err
 	}
 
 	return client, nil
