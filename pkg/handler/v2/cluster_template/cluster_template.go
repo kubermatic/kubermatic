@@ -248,8 +248,31 @@ func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProv
 	}
 }
 
+func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getClusterTemplatesReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		userInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if err := clusterTemplateProvider.Delete(userInfo, project.Name, req.ClusterTemplateID); err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return nil, nil
+	}
+}
+
 // getClusterTemplatesReq defines HTTP request for getClusterTemplate
-// swagger:parameters getClusterTemplate
+// swagger:parameters getClusterTemplate deleteClusterTemplate
 type getClusterTemplatesReq struct {
 	common.ProjectReq
 	// in: path
