@@ -113,7 +113,6 @@ func (s clusterNamesList) difference(s2 clusterNamesList) []string {
 // GetClustersForConstraint gets clusters for the constraints by using the constraints selector to filter out unselected clusters
 func GetClustersForConstraint(ctx context.Context, client ctrlruntimeclient.Client,
 	constraint *kubermaticv1.Constraint, workerNamesLabelSelector labels.Selector) ([]kubermaticv1.Cluster, []kubermaticv1.Cluster, error) {
-
 	var desiredClusterNames clusterNamesList
 
 	desiredList, err := getDesiredClusterListForConstraint(ctx, client, constraint, workerNamesLabelSelector)
@@ -125,7 +124,7 @@ func GetClustersForConstraint(ctx context.Context, client ctrlruntimeclient.Clie
 
 	existingClusterNames, err := getClusterNamesForExistingConstraint(ctx, client, constraint)
 	if existingClusterNames == nil || err != nil {
-		return desiredClusterList, desiredClusterList, nil
+		return desiredClusterList, nil, nil
 	}
 
 	for _, cluster := range desiredClusterList {
