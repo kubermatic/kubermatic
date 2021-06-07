@@ -41,6 +41,7 @@ type DeployOptions struct {
 	Logger                            *logrus.Entry
 	EnableCertManagerV2Migration      bool
 	EnableOpenstackCSIDriverMigration bool
+	EnableLogrotateMigration          bool
 }
 
 type Stack interface {
