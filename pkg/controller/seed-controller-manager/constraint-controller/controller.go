@@ -242,10 +242,9 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 			return nil
 		}
 
-		if clusterList != nil {
-			if err := r.cleanupConstraint(ctx, log, constraint, clusterList); err != nil {
-				return err
-			}
+		if err := r.cleanupConstraint(ctx, log, constraint, clusterList); err != nil {
+			return err
+
 		}
 
 		return nil
@@ -258,16 +257,12 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 		}
 	}
 
-	if unwantedClusterList != nil {
-		if err = r.cleanupConstraint(ctx, log, constraint, unwantedClusterList); err != nil {
-			return err
-		}
+	if err = r.cleanupConstraint(ctx, log, constraint, unwantedClusterList); err != nil {
+		return err
 	}
 
-	if clusterList != nil {
-		if err = r.createConstraint(ctx, log, constraint, clusterList); err != nil {
-			return err
-		}
+	if err = r.createConstraint(ctx, log, constraint, clusterList); err != nil {
+		return err
 	}
 
 	return nil
