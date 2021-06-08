@@ -87,6 +87,7 @@ spec:
                 It can be `Metrics`.
               enum:
                 - Metrics
+                - Logs
               type: string
           required:
             - cluster
