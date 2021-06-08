@@ -233,7 +233,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 1: get global template",
 			TemplateID:       "ctID2",
-			ExpectedResponse: `{"name":"","id":"ctID2","user":"john@acme.com","scope":"global","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":""},"version":"","oidc":{},"enableUserSSHKeyAgent":false},"status":{"version":"","url":""}}}`,
+			ExpectedResponse: `{"name":"","id":"ctID2","user":"john@acme.com","scope":"global","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":""},"version":"","oidc":{}},"status":{"version":"","url":""}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -265,7 +265,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 3: get user scope template",
 			TemplateID:       "ctID1",
-			ExpectedResponse: `{"name":"","id":"ctID1","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":""},"version":"","oidc":{},"enableUserSSHKeyAgent":false},"status":{"version":"","url":""}}}`,
+			ExpectedResponse: `{"name":"","id":"ctID1","projectID":"my-first-project-ID","user":"bob@acme.com","scope":"user","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":""},"version":"","oidc":{}},"status":{"version":"","url":""}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -281,7 +281,7 @@ func TestGetClusterTemplates(t *testing.T) {
 		{
 			Name:             "scenario 4: get project scope template",
 			TemplateID:       "ctID4",
-			ExpectedResponse: `{"name":"","id":"ctID4","projectID":"my-first-project-ID","user":"john@acme.com","scope":"project","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":""},"version":"","oidc":{},"enableUserSSHKeyAgent":false},"status":{"version":"","url":""}}}`,
+			ExpectedResponse: `{"name":"","id":"ctID4","projectID":"my-first-project-ID","user":"john@acme.com","scope":"project","cluster":{"name":"","creationTimestamp":"0001-01-01T00:00:00Z","type":"","spec":{"cloud":{"dc":""},"version":"","oidc":{}},"status":{"version":"","url":""}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),

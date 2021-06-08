@@ -32,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 )
 
 var (
@@ -121,9 +122,9 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				return nil, err
 			}
 
-			enableUserSSHKeyAgent := false
-			if data.Cluster().Spec.EnableUserSSHKeyAgent == nil {
-				enableUserSSHKeyAgent = true
+			enableUserSSHKeyAgent := data.Cluster().Spec.EnableUserSSHKeyAgent
+			if enableUserSSHKeyAgent == nil {
+				enableUserSSHKeyAgent = pointer.BoolPtr(true)
 			}
 
 			args := append([]string{
@@ -138,7 +139,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-version", data.Cluster().Spec.Version.String(),
 				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
 				"-owner-email", data.Cluster().Status.UserEmail,
-				fmt.Sprintf("-enable-ssh-key-agent=%t", enableUserSSHKeyAgent),
+				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
 				fmt.Sprintf("-ca-bundle=/opt/ca-bundle/%s", resources.CABundleConfigMapKey),
 				fmt.Sprintf("-node-local-dns-cache=%t", data.NodeLocalDNSCacheEnabled()),
