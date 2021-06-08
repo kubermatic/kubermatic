@@ -20,10 +20,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubermaticerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -69,4 +71,61 @@ func (p *ClusterTemplateProvider) New(userInfo *provider.UserInfo, newClusterTem
 
 	return newClusterTemplate, nil
 
+}
+
+func (p *ClusterTemplateProvider) List(userInfo *provider.UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error) {
+	if userInfo == nil {
+		return nil, errors.New("userInfo is missing but required")
+	}
+
+	var result []kubermaticv1.ClusterTemplate
+	globalUserResult := &kubermaticv1.ClusterTemplateList{}
+
+	if err := p.clientPrivileged.List(context.Background(), globalUserResult); err != nil {
+		return nil, err
+	}
+
+	for _, template := range globalUserResult.Items {
+		switch {
+		case template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.GlobalClusterTemplateScope:
+			result = append(result, template)
+		case strings.EqualFold(template.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey], userInfo.Email):
+			result = append(result, template)
+		case projectID != "" && template.Labels[kubermaticv1.ProjectIDLabelKey] == projectID && template.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.ProjectClusterTemplateScope:
+			result = append(result, template)
+		}
+	}
+
+	return result, nil
+}
+
+func (p *ClusterTemplateProvider) Get(userInfo *provider.UserInfo, projectID, templateID string) (*kubermaticv1.ClusterTemplate, error) {
+	if userInfo == nil {
+		return nil, errors.New("userInfo is missing but required")
+	}
+	if templateID == "" {
+		return nil, errors.New("templateID is missing but required")
+	}
+
+	result := &kubermaticv1.ClusterTemplate{}
+
+	if err := p.clientPrivileged.Get(context.Background(), ctrlruntimeclient.ObjectKey{Name: templateID}, result); err != nil {
+		return nil, err
+	}
+
+	if userInfo.IsAdmin {
+		return result, nil
+	}
+	if result.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.GlobalClusterTemplateScope {
+		return result, nil
+	}
+
+	if result.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.UserClusterTemplateScope && !strings.EqualFold(result.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey], userInfo.Email) {
+		return nil, kubermaticerrors.New(http.StatusForbidden, fmt.Sprintf("user %s can't access template %s", userInfo.Email, templateID))
+	}
+	if projectID != "" && result.Labels[kubermaticv1.ProjectIDLabelKey] != projectID && result.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.ProjectClusterTemplateScope {
+		return nil, kubermaticerrors.New(http.StatusForbidden, fmt.Sprintf("cluster template doesn't belong to the project %s", projectID))
+	}
+
+	return result, nil
 }
