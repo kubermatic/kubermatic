@@ -426,6 +426,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ConstraintTemplateProvider:            prov.constraintTemplateProvider,
 		ConstraintProviderGetter:              prov.constraintProviderGetter,
 		AlertmanagerProviderGetter:            prov.alertmanagerProviderGetter,
+		ClusterTemplateProvider:               prov.clusterTemplateProvider,
 		Versions:                              options.versions,
 		CABundle:                              options.caBundle.CertPool(),
 	}
