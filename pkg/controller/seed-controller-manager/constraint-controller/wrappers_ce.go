@@ -25,5 +25,5 @@ import (
 )
 
 func (r *reconciler) filterClustersForConstraint(ctx context.Context, constraint *kubermaticv1.Constraint, clusterList *kubermaticv1.ClusterList) (*kubermaticv1.ClusterList, *kubermaticv1.ClusterList, error) {
-	return clusterList, nil, nil
+	return clusterList, &kubermaticv1.ClusterList{}, nil
 }

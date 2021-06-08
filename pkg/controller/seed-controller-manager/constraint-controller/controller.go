@@ -303,7 +303,7 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, log *zap.SugaredLogg
 		}
 
 		err := seedClient.Get(ctx, types.NamespacedName{Name: constraint.Name, Namespace: namespace}, constraint)
-		if err != nil && errors.IsNotFound(err) {
+		if err != nil || errors.IsNotFound(err) {
 			return nil
 		}
 

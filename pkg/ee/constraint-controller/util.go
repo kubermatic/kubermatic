@@ -44,17 +44,17 @@ const (
 type clusterNamesList []string
 
 func getClusterList(ctx context.Context, client ctrlruntimeclient.Client, clusterNames clusterNamesList) []kubermaticv1.Cluster {
-	var existingClusterList []kubermaticv1.Cluster
+	var undesiredClusterList []kubermaticv1.Cluster
 	for _, clusterName := range clusterNames {
 		cluster := &kubermaticv1.Cluster{}
 		err := client.Get(ctx, types.NamespacedName{Name: clusterName}, cluster)
 		if err != nil {
 			return nil
 		}
-		existingClusterList = append(existingClusterList, *cluster)
+		undesiredClusterList = append(undesiredClusterList, *cluster)
 	}
 
-	return existingClusterList
+	return undesiredClusterList
 }
 
 func getClusterNames(clusterList *kubermaticv1.ClusterList) clusterNamesList {
@@ -69,7 +69,6 @@ func getClusterNames(clusterList *kubermaticv1.ClusterList) clusterNamesList {
 func FilterClustersForConstraint(ctx context.Context, client ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, clusterList *kubermaticv1.ClusterList) (*kubermaticv1.ClusterList, *kubermaticv1.ClusterList, error) {
 	var desiredClusterNames clusterNamesList
 	var existingClusterNames clusterNamesList
-	unwantedList := &kubermaticv1.ClusterList{}
 
 	desiredList, err := getDesiredClusterListForConstraint(ctx, client, constraint)
 	if err != nil {
@@ -81,17 +80,19 @@ func FilterClustersForConstraint(ctx context.Context, client ctrlruntimeclient.C
 
 	existing := sets.NewString(existingClusterNames...)
 	desired := sets.NewString(desiredClusterNames...)
-
 	unwantedClusterNames := existing.Difference(desired)
-	unwantedClusterList := getClusterList(ctx, client, unwantedClusterNames.List())
-	unwantedList.Items = unwantedClusterList
 
-	return desiredList, unwantedList, nil
+	undesiredClusterList := getClusterList(ctx, client, unwantedClusterNames.List())
+	undesiredList := &kubermaticv1.ClusterList{}
+	undesiredList.Items = undesiredClusterList
+
+	return desiredList, undesiredList, nil
 }
 
 func getDesiredClusterListForConstraint(ctx context.Context,
 	client ctrlruntimeclient.Client,
 	constraint *kubermaticv1.Constraint) (*kubermaticv1.ClusterList, error) {
+
 	constraintLabelSelector, err := v1.LabelSelectorAsSelector(&constraint.Spec.Selector.LabelSelector)
 	if err != nil {
 		return nil, fmt.Errorf("error converting Constraint label selector (%v) to a kubernetes selector: %w", constraint.Spec.Selector.LabelSelector, err)
