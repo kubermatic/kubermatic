@@ -28,6 +28,7 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
+
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 

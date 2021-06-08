@@ -12333,6 +12333,289 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups": {
+      "get": {
+        "description": "Lists rule groups that belong to the given cluster",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "rulegroup"
+        ],
+        "operationId": "listRuleGroups",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "Type",
+            "name": "type",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RuleGroup",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/RuleGroup"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a rule group that will belong to the given cluster",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "rulegroup"
+        ],
+        "operationId": "createRuleGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RuleGroup"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "RuleGroup",
+            "schema": {
+              "$ref": "#/definitions/RuleGroup"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "rulegroup"
+        ],
+        "summary": "Gets a specified rule group for the given cluster.",
+        "operationId": "getRuleGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RuleGroupID",
+            "name": "rulegroup_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RuleGroup",
+            "schema": {
+              "$ref": "#/definitions/RuleGroup"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "rulegroup"
+        ],
+        "summary": "Updates the specified rule group for the given cluster.",
+        "operationId": "updateRuleGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RuleGroupID",
+            "name": "rulegroup_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/RuleGroup"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "RuleGroup",
+            "schema": {
+              "$ref": "#/definitions/RuleGroup"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "rulegroup"
+        ],
+        "summary": "Deletes the given rule group that belongs to the cluster.",
+        "operationId": "deleteRuleGroup",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "RuleGroupID",
+            "name": "rulegroup_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/sshkeys": {
       "get": {
         "description": "Lists ssh keys that are assigned to the cluster\nThe returned collection is sorted by creation timestamp.",
@@ -18965,6 +19248,29 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "RuleGroup": {
+      "type": "object",
+      "title": "RuleGroup represents a rule group of recording and alerting rules.",
+      "properties": {
+        "data": {
+          "description": "contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group",
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8"
+          },
+          "x-go-name": "Data"
+        },
+        "type": {
+          "$ref": "#/definitions/RuleGroupType"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "RuleGroupType": {
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "SLESSpec": {
       "description": "SLESSpec contains SLES specific settings",

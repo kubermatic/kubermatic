@@ -67,6 +67,9 @@ type ConstraintProviderGetter = func(seed *kubermaticv1.Seed) (ConstraintProvide
 // AlertmanagerProviderGetter is used to get an AlertmanagerProvider
 type AlertmanagerProviderGetter = func(seed *kubermaticv1.Seed) (AlertmanagerProvider, error)
 
+// RuleGroupProviderGetter is used to get an RuleGroupProvider
+type RuleGroupProviderGetter = func(seed *kubermaticv1.Seed) (RuleGroupProvider, error)
+
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName string, namespace string) (SeedGetter, error) {
 	return func() (*kubermaticv1.Seed, error) {

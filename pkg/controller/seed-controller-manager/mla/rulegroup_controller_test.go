@@ -28,10 +28,10 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -90,7 +90,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 					name: "post",
 					request: httptest.NewRequest(http.MethodPost,
 						metricsRuleGroupConfigEndpoint+defaultNamespace,
-						bytes.NewBuffer(generateTestRuleGroupData("test-rule"))),
+						bytes.NewBuffer(test.GenerateTestRuleGroupData("test-rule"))),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},
 			},
@@ -156,40 +156,10 @@ func TestRuleGroupReconcile(t *testing.T) {
 }
 
 func generateRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroupType, deleted bool) *kubermaticv1.RuleGroup {
-	group := &kubermaticv1.RuleGroup{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
-			Namespace: "cluster-" + clusterName,
-		},
-		Spec: kubermaticv1.RuleGroupSpec{
-			RuleGroupType: ruleGroupType,
-			Cluster: corev1.ObjectReference{
-				Kind:       kubermaticv1.ClusterKindName,
-				Namespace:  "",
-				Name:       clusterName,
-				APIVersion: kubermaticv1.GroupVersion,
-			},
-			Data: generateTestRuleGroupData(name),
-		},
-	}
+	group := test.GenRuleGroup(name, clusterName, ruleGroupType)
 	if deleted {
 		deleteTime := metav1.NewTime(time.Now())
 		group.DeletionTimestamp = &deleteTime
 	}
 	return group
-}
-
-func generateTestRuleGroupData(name string) []byte {
-	return []byte(fmt.Sprintf(`
-name: %s
-rules:
-# Alert for any instance that is unreachable for >5 minutes.
-- alert: InstanceDown
-  expr: up == 0
-  for: 5m
-  labels:
-    severity: page
-  annotations:
-    summary: "Instance  down"
-`, name))
 }
