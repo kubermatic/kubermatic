@@ -28,6 +28,7 @@ import (
 	"context"
 	"testing"
 
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	eeconstraintcontroller "k8c.io/kubermatic/v2/pkg/ee/constraint-controller"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
@@ -113,19 +114,25 @@ func TestGetClustersForConstraint(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
 			cli := fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
 				WithObjects(tc.clusters...).
 				Build()
 
-			clusterList, _, err := eeconstraintcontroller.GetClustersForConstraint(context.Background(), cli, tc.constraint, workerSelector)
+			clusterList := &kubermaticv1.ClusterList{}
+			if err := cli.List(ctx, clusterList, &ctrlruntimeclient.ListOptions{LabelSelector: workerSelector}); err != nil {
+				t.Fatal(err)
+			}
+
+			desiredList, _, err := eeconstraintcontroller.FilterClustersForConstraint(ctx, cli, tc.constraint, clusterList)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			resultSet := sets.NewString()
-			for _, cluster := range clusterList {
+			for _, cluster := range desiredList.Items {
 				resultSet.Insert(cluster.Name)
 			}
 

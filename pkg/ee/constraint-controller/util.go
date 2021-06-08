@@ -27,13 +27,11 @@ package seedconstraintsynchronizer
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
 
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -44,38 +42,6 @@ const (
 )
 
 type clusterNamesList []string
-
-func getClusterNameFromNamespace(clusterNamespace string) string {
-	var clusterName string
-	temp := strings.Split(clusterNamespace, "-")
-	if len(temp) == 2 {
-		clusterName = temp[1]
-	}
-	return clusterName
-}
-
-func getClusterNamesForExistingConstraint(ctx context.Context, client ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint) (clusterNamesList, error) {
-
-	var existingClusterNames []string
-
-	labelSelector, err := labels.Parse(fmt.Sprintf("%s=%s", Key, constraint.Name))
-	if err != nil {
-		return nil, err
-	}
-
-	constraintList := &kubermaticv1.ConstraintList{}
-
-	err = client.List(ctx, constraintList, &ctrlruntimeclient.ListOptions{LabelSelector: labelSelector})
-	if err != nil {
-		return nil, err
-	}
-
-	for _, defaultConstraint := range constraintList.Items {
-		clusterName := getClusterNameFromNamespace(defaultConstraint.Namespace)
-		existingClusterNames = append(existingClusterNames, clusterName)
-	}
-	return existingClusterNames, nil
-}
 
 func getClusterList(ctx context.Context, client ctrlruntimeclient.Client, clusterNames clusterNamesList) []kubermaticv1.Cluster {
 	var existingClusterList []kubermaticv1.Cluster
@@ -91,68 +57,49 @@ func getClusterList(ctx context.Context, client ctrlruntimeclient.Client, cluste
 	return existingClusterList
 }
 
-func (s clusterNamesList) contains(searchterm string) bool {
-	for _, value := range s {
-		if value == searchterm {
-			return true
-		}
+func getClusterNames(clusterList *kubermaticv1.ClusterList) clusterNamesList {
+	var clusterNames clusterNamesList
+	for _, cluster := range clusterList.Items {
+		clusterNames = append(clusterNames, cluster.Name)
 	}
-	return false
+	return clusterNames
 }
 
-func (s clusterNamesList) difference(s2 clusterNamesList) []string {
-	var result []string
-	for _, value := range s {
-		if !s2.contains(value) {
-			result = append(result, value)
-		}
-	}
-	return result
-}
-
-// GetClustersForConstraint gets clusters for the constraints by using the constraints selector to filter out unselected clusters
-func GetClustersForConstraint(ctx context.Context, client ctrlruntimeclient.Client,
-	constraint *kubermaticv1.Constraint, workerNamesLabelSelector labels.Selector) ([]kubermaticv1.Cluster, []kubermaticv1.Cluster, error) {
+// FilterClustersForConstraint gets clusters for the constraints by using the constraints selector to filter out unselected clusters
+func FilterClustersForConstraint(ctx context.Context, client ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, clusterList *kubermaticv1.ClusterList) (*kubermaticv1.ClusterList, *kubermaticv1.ClusterList, error) {
 	var desiredClusterNames clusterNamesList
+	var existingClusterNames clusterNamesList
+	unwantedList := &kubermaticv1.ClusterList{}
 
-	desiredList, err := getDesiredClusterListForConstraint(ctx, client, constraint, workerNamesLabelSelector)
+	desiredList, err := getDesiredClusterListForConstraint(ctx, client, constraint)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed listing clusters: %w", err)
 	}
 
-	desiredClusterList := desiredList.Items
+	existingClusterNames = getClusterNames(clusterList)
+	desiredClusterNames = getClusterNames(desiredList)
 
-	existingClusterNames, err := getClusterNamesForExistingConstraint(ctx, client, constraint)
-	if existingClusterNames == nil || err != nil {
-		return desiredClusterList, nil, nil
-	}
+	existing := sets.NewString(existingClusterNames...)
+	desired := sets.NewString(desiredClusterNames...)
 
-	for _, cluster := range desiredClusterList {
-		desiredClusterNames = append(desiredClusterNames, cluster.Name)
-	}
+	unwantedClusterNames := existing.Difference(desired)
+	unwantedClusterList := getClusterList(ctx, client, unwantedClusterNames.List())
+	unwantedList.Items = unwantedClusterList
 
-	unwantedClusterNames := existingClusterNames.difference(desiredClusterNames)
-	unwantedClusterList := getClusterList(ctx, client, unwantedClusterNames)
-
-	return desiredClusterList, unwantedClusterList, nil
+	return desiredList, unwantedList, nil
 }
 
 func getDesiredClusterListForConstraint(ctx context.Context,
 	client ctrlruntimeclient.Client,
-	constraint *kubermaticv1.Constraint,
-	workerNamesLabelSelector labels.Selector) (*kubermaticv1.ClusterList, error) {
+	constraint *kubermaticv1.Constraint) (*kubermaticv1.ClusterList, error) {
 	constraintLabelSelector, err := v1.LabelSelectorAsSelector(&constraint.Spec.Selector.LabelSelector)
 	if err != nil {
 		return nil, fmt.Errorf("error converting Constraint label selector (%v) to a kubernetes selector: %w", constraint.Spec.Selector.LabelSelector, err)
 	}
 
-	var selector labels.Selector
-	constraintReq, _ := constraintLabelSelector.Requirements()
-	selector = workerNamesLabelSelector.Add(constraintReq...)
-
 	clusterList := &kubermaticv1.ClusterList{}
 
-	if err := client.List(ctx, clusterList, &ctrlruntimeclient.ListOptions{LabelSelector: selector}); err != nil {
+	if err := client.List(ctx, clusterList, &ctrlruntimeclient.ListOptions{LabelSelector: constraintLabelSelector}); err != nil {
 		return nil, fmt.Errorf("failed listing clusters: %w", err)
 	}
 
