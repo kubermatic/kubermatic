@@ -53,6 +53,8 @@ type RuleGroupType string
 const (
 	// RuleGroupTypeMetrics means the RuleGroup defines the rules to generate alerts from metrics.
 	RuleGroupTypeMetrics RuleGroupType = "Metrics"
+	// RuleGroupTypeLogs means the RuleGroup defines the rules to generate alerts from logs.
+	RuleGroupTypeLogs RuleGroupType = "Logs"
 )
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
