@@ -1607,6 +1607,22 @@ func GenAlertmanagerConfigSecret(name, namespace string, config []byte) *corev1.
 	}
 }
 
+func GenClusterTemplate(name, id, projectID, scope, userEmail string) *kubermaticv1.ClusterTemplate {
+	return &kubermaticv1.ClusterTemplate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        id,
+			Labels:      map[string]string{kubermaticv1.ClusterTemplateScopeLabelKey: scope, kubermaticv1.ProjectIDLabelKey: projectID},
+			Annotations: map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail},
+		},
+		ClusterLabels:          nil,
+		InheritedClusterLabels: nil,
+		Credential:             "",
+		Spec: kubermaticv1.ClusterSpec{
+			HumanReadableName: name,
+		},
+	}
+}
+
 func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroupType) *kubermaticv1.RuleGroup {
 	return &kubermaticv1.RuleGroup{
 		ObjectMeta: metav1.ObjectMeta{

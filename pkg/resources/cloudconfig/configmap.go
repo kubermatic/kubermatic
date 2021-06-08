@@ -116,7 +116,7 @@ func CloudConfig(
 			RouteTableName:             cloud.Azure.RouteTableName,
 			SecurityGroupName:          cloud.Azure.SecurityGroup,
 			PrimaryAvailabilitySetName: cloud.Azure.AvailabilitySet,
-			VnetResourceGroup:          cloud.Azure.ResourceGroup,
+			VnetResourceGroup:          cloud.Azure.VNetResourceGroup,
 			UseInstanceMetadata:        false,
 		}
 		cloudConfig, err = azure.CloudConfigToString(azureCloudConfig)

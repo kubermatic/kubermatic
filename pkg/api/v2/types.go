@@ -169,9 +169,13 @@ type ClusterTemplate struct {
 	ProjectID      string                `json:"projectID,omitempty"`
 	User           string                `json:"user,omitempty"`
 	Scope          string                `json:"scope"`
-	Cluster        apiv1.Cluster         `json:"cluster"`
+	Cluster        *apiv1.Cluster        `json:"cluster,omitempty"`
 	NodeDeployment *apiv1.NodeDeployment `json:"nodeDeployment,omitempty"`
 }
+
+// ClusterTemplateList represents a ClusterTemplate list
+// swagger:model ClusterTemplateList
+type ClusterTemplateList []ClusterTemplate
 
 // RuleGroup represents a rule group of recording and alerting rules.
 // swagger:model RuleGroup

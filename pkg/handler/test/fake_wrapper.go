@@ -392,6 +392,36 @@ func (k NodeDeploymentSliceWrapper) EqualOrDie(expected NodeDeploymentSliceWrapp
 	}
 }
 
+// NewClusterTemplateSliceWrapper wraps []apiv2.ClusterTemplate
+// to provide convenient methods for tests
+type NewClusterTemplateSliceWrapper []apiv2.ClusterTemplate
+
+// Sort sorts the collection by Name
+func (k NewClusterTemplateSliceWrapper) Sort() {
+	sort.Slice(k, func(i, j int) bool {
+		return k[i].Name < k[j].Name
+	})
+}
+
+// DecodeOrDie reads and decodes json data from the reader
+func (k *NewClusterTemplateSliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewClusterTemplateSliceWrapper {
+	t.Helper()
+	dec := json.NewDecoder(r)
+	err := dec.Decode(k)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return k
+}
+
+// EqualOrDie compares whether expected collection is equal to the actual one
+func (k NewClusterTemplateSliceWrapper) EqualOrDie(expected NewClusterTemplateSliceWrapper, t *testing.T) {
+	t.Helper()
+	if diff := deep.Equal(k, expected); diff != nil {
+		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
+	}
+}
+
 // NewRuleGroupSliceWrapper wraps []apiv2.RuleGroup
 // to provide convenient methods for tests
 type NewRuleGroupSliceWrapper []*apiv2.RuleGroup
