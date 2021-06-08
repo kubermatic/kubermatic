@@ -22,7 +22,6 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/docker/docker/opts"
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -34,6 +33,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -233,10 +233,10 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 
 	clusterList := &kubermaticv1.ClusterList{}
 	if err := r.seedClient.List(ctx, clusterList, &ctrlruntimeclient.ListOptions{LabelSelector: r.workerNameLabelSelector}); err != nil {
-		return nil, nil, fmt.Errorf("failed listing clusters: %w", err)
+		return fmt.Errorf("failed listing clusters: %w", err)
 	}
 
-	clusterList, unwantedClusterList, err := r.filterClustersForConstraint(constraint, clusterList)
+	desiredClusterList, undesiredClusterList, err := r.filterClustersForConstraint(ctx, constraint, clusterList)
 	if err != nil {
 		return fmt.Errorf("failed listing clusters: %w", err)
 	}
@@ -248,7 +248,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 			return nil
 		}
 
-		if err := r.cleanupConstraint(ctx, log, constraint, clusterList); err != nil {
+		if err := r.cleanupConstraint(ctx, log, constraint, desiredClusterList); err != nil {
 			return err
 
 		}
@@ -263,18 +263,18 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 		}
 	}
 
-	if err = r.cleanupConstraint(ctx, log, constraint, unwantedClusterList); err != nil {
+	if err = r.cleanupConstraint(ctx, log, constraint, undesiredClusterList); err != nil {
 		return err
 	}
 
-	if err = r.createConstraint(ctx, log, constraint, clusterList); err != nil {
+	if err = r.createConstraint(ctx, log, constraint, desiredClusterList); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *reconciler) createConstraint(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint, clusterList []kubermaticv1.Cluster) error {
+func (r *reconciler) createConstraint(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint, clusterList *kubermaticv1.ClusterList) error {
 	constraintCreatorGetters := []reconciling.NamedKubermaticV1ConstraintCreatorGetter{
 		constraintCreatorGetter(constraint),
 	}
@@ -288,14 +288,14 @@ func (r *reconciler) createConstraint(ctx context.Context, log *zap.SugaredLogge
 	return nil
 }
 
-func (r *reconciler) cleanupConstraint(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint, clusterList []kubermaticv1.Cluster) error {
+func (r *reconciler) cleanupConstraint(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint, clusterList *kubermaticv1.ClusterList) error {
 
 	if err := r.syncAllClustersNS(ctx, log, constraint, clusterList, func(seedClient ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, namespace string) error {
 
 		log := log.With("constraint", constraint)
 		log.Debugw("cleanup processing:", namespace)
 
-		constraint := &kubermaticv1.Constraint{
+		constraint = &kubermaticv1.Constraint{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      constraint.Name,
 				Namespace: namespace,
@@ -303,11 +303,11 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, log *zap.SugaredLogg
 		}
 
 		err := seedClient.Get(ctx, types.NamespacedName{Name: constraint.Name, Namespace: namespace}, constraint)
-		if err != nil && errors.IsNotFound(err){
+		if err != nil && errors.IsNotFound(err) {
 			return nil
 		}
 
-		err := seedClient.Delete(ctx, constraint)
+		err = seedClient.Delete(ctx, constraint)
 		return ctrlruntimeclient.IgnoreNotFound(err)
 
 	}); err != nil {
@@ -361,7 +361,7 @@ func enqueueConstraints(client ctrlruntimeclient.Client, log *zap.SugaredLogger,
 		var requests []reconcile.Request
 
 		constraintList := &kubermaticv1.ConstraintList{}
-		client.DeleteAllOf(ctx, constraintList, &ctrlruntimeclient.DeleteAllOfOptions{ListOptions: })
+
 		if err := client.List(context.Background(), constraintList, &ctrlruntimeclient.ListOptions{Namespace: namespace}); err != nil {
 			log.Error(err)
 			utilruntime.HandleError(fmt.Errorf("failed to list constraints: %v", err))
