@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewListOpenstackSubnetsParams creates a new ListOpenstackSubnetsParams object
@@ -60,12 +61,18 @@ for the list openstack subnets operation typically these are written to a http.R
 */
 type ListOpenstackSubnetsParams struct {
 
+	/*ApplicationCredentialID*/
+	ApplicationCredentialID *string
+	/*ApplicationCredentialSecret*/
+	ApplicationCredentialSecret *string
 	/*Credential*/
 	Credential *string
 	/*DatacenterName*/
 	DatacenterName *string
 	/*Domain*/
 	Domain *string
+	/*OIDCAuthentication*/
+	OIDCAuthentication *bool
 	/*Password*/
 	Password *string
 	/*Tenant*/
@@ -115,6 +122,28 @@ func (o *ListOpenstackSubnetsParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithApplicationCredentialID adds the applicationCredentialID to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) WithApplicationCredentialID(applicationCredentialID *string) *ListOpenstackSubnetsParams {
+	o.SetApplicationCredentialID(applicationCredentialID)
+	return o
+}
+
+// SetApplicationCredentialID adds the applicationCredentialId to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) SetApplicationCredentialID(applicationCredentialID *string) {
+	o.ApplicationCredentialID = applicationCredentialID
+}
+
+// WithApplicationCredentialSecret adds the applicationCredentialSecret to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) WithApplicationCredentialSecret(applicationCredentialSecret *string) *ListOpenstackSubnetsParams {
+	o.SetApplicationCredentialSecret(applicationCredentialSecret)
+	return o
+}
+
+// SetApplicationCredentialSecret adds the applicationCredentialSecret to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) SetApplicationCredentialSecret(applicationCredentialSecret *string) {
+	o.ApplicationCredentialSecret = applicationCredentialSecret
+}
+
 // WithCredential adds the credential to the list openstack subnets params
 func (o *ListOpenstackSubnetsParams) WithCredential(credential *string) *ListOpenstackSubnetsParams {
 	o.SetCredential(credential)
@@ -146,6 +175,17 @@ func (o *ListOpenstackSubnetsParams) WithDomain(domain *string) *ListOpenstackSu
 // SetDomain adds the domain to the list openstack subnets params
 func (o *ListOpenstackSubnetsParams) SetDomain(domain *string) {
 	o.Domain = domain
+}
+
+// WithOIDCAuthentication adds the oIDCAuthentication to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) WithOIDCAuthentication(oIDCAuthentication *bool) *ListOpenstackSubnetsParams {
+	o.SetOIDCAuthentication(oIDCAuthentication)
+	return o
+}
+
+// SetOIDCAuthentication adds the oIdCAuthentication to the list openstack subnets params
+func (o *ListOpenstackSubnetsParams) SetOIDCAuthentication(oIDCAuthentication *bool) {
+	o.OIDCAuthentication = oIDCAuthentication
 }
 
 // WithPassword adds the password to the list openstack subnets params
@@ -211,6 +251,24 @@ func (o *ListOpenstackSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg
 	}
 	var res []error
 
+	if o.ApplicationCredentialID != nil {
+
+		// header param ApplicationCredentialID
+		if err := r.SetHeaderParam("ApplicationCredentialID", *o.ApplicationCredentialID); err != nil {
+			return err
+		}
+
+	}
+
+	if o.ApplicationCredentialSecret != nil {
+
+		// header param ApplicationCredentialSecret
+		if err := r.SetHeaderParam("ApplicationCredentialSecret", *o.ApplicationCredentialSecret); err != nil {
+			return err
+		}
+
+	}
+
 	if o.Credential != nil {
 
 		// header param Credential
@@ -233,6 +291,15 @@ func (o *ListOpenstackSubnetsParams) WriteToRequest(r runtime.ClientRequest, reg
 
 		// header param Domain
 		if err := r.SetHeaderParam("Domain", *o.Domain); err != nil {
+			return err
+		}
+
+	}
+
+	if o.OIDCAuthentication != nil {
+
+		// header param OIDCAuthentication
+		if err := r.SetHeaderParam("OIDCAuthentication", swag.FormatBool(*o.OIDCAuthentication)); err != nil {
 			return err
 		}
 

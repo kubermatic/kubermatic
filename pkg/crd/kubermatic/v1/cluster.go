@@ -599,11 +599,17 @@ type AWSCloudSpec struct {
 type OpenstackCloudSpec struct {
 	CredentialsReference *providerconfig.GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
 
-	Username string `json:"username,omitempty"`
-	Password string `json:"password,omitempty"`
-	Tenant   string `json:"tenant,omitempty"`
-	TenantID string `json:"tenantID,omitempty"`
-	Domain   string `json:"domain,omitempty"`
+	Username                    string `json:"username,omitempty"`
+	Password                    string `json:"password,omitempty"`
+	Tenant                      string `json:"tenant,omitempty"`
+	TenantID                    string `json:"tenantID,omitempty"`
+	Domain                      string `json:"domain,omitempty"`
+	ApplicationCredentialID     string `json:"applicationCredentialID,omitempty"`
+	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`
+	UseToken                    bool   `json:"useToken,omitempty"`
+	// Used internally during cluster creation
+	Token string `json:"token,omitempty"`
+
 	// Network holds the name of the internal network
 	// When specified, all worker nodes will be attached to this network. If not specified, a network, subnet & router will be created
 	//

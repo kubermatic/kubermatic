@@ -395,8 +395,8 @@ func (os *Provider) CleanUpCloudProvider(cluster *kubermaticv1.Cluster, update p
 }
 
 // GetFlavors lists available flavors for the given CloudSpec.DatacenterName and OpenstackSpec.Region
-func GetFlavors(username, password, domain, tenant, tenantID, authURL, region string, caBundle *x509.CertPool) ([]osflavors.Flavor, error) {
-	authClient, err := getAuthClient(username, password, domain, tenant, tenantID, authURL, caBundle)
+func GetFlavors(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osflavors.Flavor, error) {
+	authClient, err := getAuthClient(authURL, credentials, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -409,8 +409,8 @@ func GetFlavors(username, password, domain, tenant, tenantID, authURL, region st
 }
 
 // GetTenants lists all available tenents for the given CloudSpec.DatacenterName
-func GetTenants(username, password, domain, tenant, tenantID, authURL, region string, caBundle *x509.CertPool) ([]osprojects.Project, error) {
-	authClient, err := getAuthClient(username, password, domain, tenant, tenantID, authURL, caBundle)
+func GetTenants(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osprojects.Project, error) {
+	authClient, err := getAuthClient(authURL, credentials, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
 	}
@@ -424,8 +424,8 @@ func GetTenants(username, password, domain, tenant, tenantID, authURL, region st
 }
 
 // GetNetworks lists all available networks for the given CloudSpec.DatacenterName
-func GetNetworks(username, password, domain, tenant, tenantID, authURL, region string, caBundle *x509.CertPool) ([]NetworkWithExternalExt, error) {
-	authClient, err := getNetClient(username, password, domain, tenant, tenantID, authURL, region, caBundle)
+func GetNetworks(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]NetworkWithExternalExt, error) {
+	authClient, err := getNetClient(authURL, region, credentials, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
 	}
@@ -439,8 +439,8 @@ func GetNetworks(username, password, domain, tenant, tenantID, authURL, region s
 }
 
 // GetSecurityGroups lists all available security groups for the given CloudSpec.DatacenterName
-func GetSecurityGroups(username, password, domain, tenant, tenantID, authURL, region string, caBundle *x509.CertPool) ([]ossecuritygroups.SecGroup, error) {
-	netClient, err := getNetClient(username, password, domain, tenant, tenantID, authURL, region, caBundle)
+func GetSecurityGroups(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossecuritygroups.SecGroup, error) {
+	netClient, err := getNetClient(authURL, region, credentials, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
 	}
@@ -457,8 +457,8 @@ func GetSecurityGroups(username, password, domain, tenant, tenantID, authURL, re
 }
 
 // GetAvailabilityZones lists availability zones for the given CloudSpec.DatacenterName and OpenstackSpec.Region
-func GetAvailabilityZones(username, password, domain, tenant, tenantID, authURL, region string, caBundle *x509.CertPool) ([]osavailabilityzones.AvailabilityZone, error) {
-	computeClient, err := getComputeClient(username, password, domain, tenant, tenantID, authURL, region, caBundle)
+func GetAvailabilityZones(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]osavailabilityzones.AvailabilityZone, error) {
+	computeClient, err := getComputeClient(authURL, region, credentials, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -470,14 +470,17 @@ func GetAvailabilityZones(username, password, domain, tenant, tenantID, authURL,
 	return availabilityZones, nil
 }
 
-func getAuthClient(username, password, domain, tenant, tenantID, authURL string, caBundle *x509.CertPool) (*gophercloud.ProviderClient, error) {
+func getAuthClient(authURL string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) (*gophercloud.ProviderClient, error) {
 	opts := gophercloud.AuthOptions{
-		IdentityEndpoint: authURL,
-		Username:         username,
-		Password:         password,
-		DomainName:       domain,
-		TenantName:       tenant,
-		TenantID:         tenantID,
+		IdentityEndpoint:            authURL,
+		Username:                    credentials.Username,
+		Password:                    credentials.Password,
+		DomainName:                  credentials.Domain,
+		TenantName:                  credentials.Tenant,
+		TenantID:                    credentials.TenantID,
+		ApplicationCredentialID:     credentials.ApplicationCredentialID,
+		ApplicationCredentialSecret: credentials.ApplicationCredentialSecret,
+		TokenID:                     credentials.Token,
 	}
 
 	client, err := goopenstack.NewClient(authURL)
@@ -498,8 +501,8 @@ func getAuthClient(username, password, domain, tenant, tenantID, authURL string,
 	return client, nil
 }
 
-func getNetClient(username, password, domain, tenant, tenantID, authURL, region string, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
-	authClient, err := getAuthClient(username, password, domain, tenant, tenantID, authURL, caBundle)
+func getNetClient(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
+	authClient, err := getAuthClient(authURL, credentials, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -521,8 +524,8 @@ func getNetClient(username, password, domain, tenant, tenantID, authURL, region 
 	return serviceClient, err
 }
 
-func getComputeClient(username, password, domain, tenant, tenantID, authURL, region string, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
-	authClient, err := getAuthClient(username, password, domain, tenant, tenantID, authURL, caBundle)
+func getComputeClient(authURL, region string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) (*gophercloud.ServiceClient, error) {
+	authClient, err := getAuthClient(authURL, credentials, caBundle)
 	if err != nil {
 		return nil, err
 	}
@@ -545,8 +548,8 @@ func getComputeClient(username, password, domain, tenant, tenantID, authURL, reg
 }
 
 // GetSubnets list all available subnet ids for a given CloudSpec
-func GetSubnets(username, password, domain, tenant, tenantID, networkID, authURL, region string, caBundle *x509.CertPool) ([]ossubnets.Subnet, error) {
-	serviceClient, err := getNetClient(username, password, domain, tenant, tenantID, authURL, region, caBundle)
+func GetSubnets(authURL, region, networkID string, credentials *resources.OpenstackCredentials, caBundle *x509.CertPool) ([]ossubnets.Subnet, error) {
+	serviceClient, err := getNetClient(authURL, region, credentials, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't get auth client: %v", err)
 	}
@@ -570,7 +573,7 @@ func (os *Provider) AddICMPRulesIfRequired(cluster *kubermaticv1.Cluster) error 
 		return err
 	}
 
-	netClient, err := getNetClient(creds.Username, creds.Password, creds.Domain, creds.Tenant, creds.TenantID, os.dc.AuthURL, os.dc.Region, os.caBundle)
+	netClient, err := getNetClient(os.dc.AuthURL, os.dc.Region, creds, os.caBundle)
 	if err != nil {
 		return fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
@@ -646,7 +649,7 @@ func getNetClientForCluster(cluster kubermaticv1.CloudSpec, dc *kubermaticv1.Dat
 		return nil, fmt.Errorf("failed to get credentials: %v", err)
 	}
 
-	netClient, err := getNetClient(creds.Username, creds.Password, creds.Domain, creds.Tenant, creds.TenantID, dc.AuthURL, dc.Region, caBundle)
+	netClient, err := getNetClient(dc.AuthURL, dc.Region, creds, caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create a authenticated openstack client: %v", err)
 	}
@@ -654,65 +657,108 @@ func getNetClientForCluster(cluster kubermaticv1.CloudSpec, dc *kubermaticv1.Dat
 }
 
 // GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
-func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (resources.OpenstackCredentials, error) {
+func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (*resources.OpenstackCredentials, error) {
 	username := cloud.Openstack.Username
 	password := cloud.Openstack.Password
 	tenant := cloud.Openstack.Tenant
 	tenantID := cloud.Openstack.TenantID
 	domain := cloud.Openstack.Domain
-
+	applicationCredentialID := cloud.Openstack.ApplicationCredentialID
+	applicationCredentialSecret := cloud.Openstack.ApplicationCredentialSecret
+	useToken := cloud.Openstack.UseToken
+	token := cloud.Openstack.Token
 	var err error
+
+	if useToken && token != "" {
+		return &resources.OpenstackCredentials{
+			Token: token,
+		}, nil
+	}
+
+	if !useToken && cloud.Openstack.CredentialsReference != nil {
+		token, _ := secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackToken)
+		if token != "" {
+			return &resources.OpenstackCredentials{
+				Token: token,
+			}, nil
+		}
+
+	}
+
+	if applicationCredentialID != "" && applicationCredentialSecret != "" {
+		return &resources.OpenstackCredentials{
+			ApplicationCredentialSecret: applicationCredentialSecret,
+			ApplicationCredentialID:     applicationCredentialID,
+		}, nil
+	}
+
+	if applicationCredentialID == "" && cloud.Openstack.CredentialsReference != nil {
+		applicationCredentialID, _ = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackApplicationCredentialID)
+		if applicationCredentialID != "" {
+			applicationCredentialSecret, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackApplicationCredentialSecret)
+			if err != nil {
+				return &resources.OpenstackCredentials{}, err
+			}
+
+			return &resources.OpenstackCredentials{
+				ApplicationCredentialSecret: applicationCredentialSecret,
+				ApplicationCredentialID:     applicationCredentialID,
+			}, nil
+		}
+	}
 
 	if username == "" {
 		if cloud.Openstack.CredentialsReference == nil {
-			return resources.OpenstackCredentials{}, errors.New("no credentials provided")
+			return &resources.OpenstackCredentials{}, errors.New("no credentials provided")
 		}
 		username, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackUsername)
 		if err != nil {
-			return resources.OpenstackCredentials{}, err
+			return &resources.OpenstackCredentials{}, err
 		}
 	}
 
 	if password == "" {
 		if cloud.Openstack.CredentialsReference == nil {
-			return resources.OpenstackCredentials{}, errors.New("no credentials provided")
+			return &resources.OpenstackCredentials{}, errors.New("no credentials provided")
 		}
 		password, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackPassword)
 		if err != nil {
-			return resources.OpenstackCredentials{}, err
+			return &resources.OpenstackCredentials{}, err
 		}
 	}
 
 	if tenant == "" && cloud.Openstack.CredentialsReference != nil && cloud.Openstack.CredentialsReference.Name != "" {
 		tenant, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackTenant)
 		if err != nil {
-			return resources.OpenstackCredentials{}, err
+			return &resources.OpenstackCredentials{}, err
 		}
 	}
 
 	if tenantID == "" && cloud.Openstack.CredentialsReference != nil && cloud.Openstack.CredentialsReference.Name != "" {
 		tenantID, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackTenantID)
 		if err != nil {
-			return resources.OpenstackCredentials{}, err
+			return &resources.OpenstackCredentials{}, err
 		}
 	}
 
 	if domain == "" {
 		if cloud.Openstack.CredentialsReference == nil {
-			return resources.OpenstackCredentials{}, errors.New("no credentials provided")
+			return &resources.OpenstackCredentials{}, errors.New("no credentials provided")
 		}
 		domain, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackDomain)
 		if err != nil {
-			return resources.OpenstackCredentials{}, err
+			return &resources.OpenstackCredentials{}, err
 		}
 	}
 
-	return resources.OpenstackCredentials{
-		Username: username,
-		Password: password,
-		Tenant:   tenant,
-		TenantID: tenantID,
-		Domain:   domain,
+	return &resources.OpenstackCredentials{
+		Username:                    username,
+		Password:                    password,
+		Tenant:                      tenant,
+		TenantID:                    tenantID,
+		Domain:                      domain,
+		ApplicationCredentialID:     applicationCredentialID,
+		ApplicationCredentialSecret: applicationCredentialSecret,
 	}, nil
 }
 

@@ -301,6 +301,11 @@ func (s AWS) IsValid() bool {
 type Openstack struct {
 	PresetProvider `json:",inline"`
 
+	UseToken bool `json:"useToken,omitempty"`
+
+	ApplicationCredentialID     string `json:"applicationCredentialID,omitempty"`
+	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`
+
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Tenant   string `json:"tenant"`
@@ -315,6 +320,15 @@ type Openstack struct {
 }
 
 func (s Openstack) IsValid() bool {
+
+	if s.UseToken {
+		return true
+	}
+
+	if len(s.ApplicationCredentialID) > 0 {
+		return len(s.ApplicationCredentialSecret) > 0
+	}
+
 	return len(s.Username) > 0 &&
 		len(s.Password) > 0 &&
 		(len(s.Tenant) > 0 || len(s.TenantID) > 0) &&
