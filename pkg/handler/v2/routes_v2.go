@@ -505,6 +505,9 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clustertemplates/{template_id}").
 		Handler(r.getClusterTemplate())
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/clustertemplates/{template_id}").
+		Handler(r.deleteClusterTemplate())
 
 	// Defines a set of HTTP endpoints for managing rule groups
 	mux.Methods(http.MethodGet).
@@ -3442,6 +3445,33 @@ func (r Routing) getClusterTemplate() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(clustertemplate.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider)),
+		clustertemplate.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/projects/{project_id}/clustertemplates/{template_id} project deleteClusterTemplate
+//
+//     Delete cluster template.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteClusterTemplate() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.DeleteEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider)),
 		clustertemplate.DecodeGetReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

@@ -65,6 +65,8 @@ type ClientService interface {
 
 	DeleteClusterRole(params *DeleteClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterRoleOK, error)
 
+	DeleteClusterTemplate(params *DeleteClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterTemplateOK, error)
+
 	DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterV2OK, error)
 
 	DeleteConstraint(params *DeleteConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteConstraintOK, error)
@@ -937,6 +939,40 @@ func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteClusterTemplate deletes cluster template
+*/
+func (a *Client) DeleteClusterTemplate(params *DeleteClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterTemplateOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteClusterTemplateParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteClusterTemplate",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteClusterTemplateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteClusterTemplateOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteClusterTemplateDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

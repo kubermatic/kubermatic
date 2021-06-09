@@ -911,6 +911,7 @@ type ClusterTemplateProvider interface {
 	New(userInfo *UserInfo, newClusterTemplate *kubermaticv1.ClusterTemplate, scope, projectID string) (*kubermaticv1.ClusterTemplate, error)
 	List(userInfo *UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error)
 	Get(userInfo *UserInfo, projectID, templateID string) (*kubermaticv1.ClusterTemplate, error)
+	Delete(userInfo *UserInfo, projectID, templateID string) error
 }
 
 type RuleGroupListOptions struct {
