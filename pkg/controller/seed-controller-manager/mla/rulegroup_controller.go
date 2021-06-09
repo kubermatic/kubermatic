@@ -50,6 +50,7 @@ import (
 const (
 	ruleGroupFinalizer             = "kubermatic.io/rule-group"
 	metricsRuleGroupConfigEndpoint = "/api/v1/rules"
+	logRuleGroupConfigEndpoint     = "/loki/api/v1/rules"
 	ruleGroupTenantHeaderName      = "X-Scope-OrgID"
 	defaultNamespace               = "/default"
 )
@@ -190,6 +191,7 @@ type ruleGroupController struct {
 
 	log            *zap.SugaredLogger
 	cortexRulerURL string
+	lokiRulerURL   string
 }
 
 func newRuleGroupController(
@@ -197,12 +199,14 @@ func newRuleGroupController(
 	log *zap.SugaredLogger,
 	httpClient *http.Client,
 	cortexRulerURL string,
+	lokiRulerURL string,
 ) *ruleGroupController {
 	return &ruleGroupController{
 		Client:         client,
 		httpClient:     httpClient,
 		log:            log,
 		cortexRulerURL: cortexRulerURL,
+		lokiRulerURL:   lokiRulerURL,
 	}
 }
 
@@ -265,6 +269,9 @@ func (r *ruleGroupController) cleanUp(ctx context.Context) error {
 func (r *ruleGroupController) getRequestURL(ruleGroup *kubermaticv1.RuleGroup) (string, error) {
 	if ruleGroup.Spec.RuleGroupType == kubermaticv1.RuleGroupTypeMetrics {
 		return fmt.Sprintf("%s%s%s", r.cortexRulerURL, metricsRuleGroupConfigEndpoint, defaultNamespace), nil
+	}
+	if ruleGroup.Spec.RuleGroupType == kubermaticv1.RuleGroupTypeLogs {
+		return fmt.Sprintf("%s%s%s", r.lokiRulerURL, logRuleGroupConfigEndpoint, defaultNamespace), nil
 	}
 	return "", fmt.Errorf("unknown rule group type: %s", ruleGroup.Spec.RuleGroupType)
 }

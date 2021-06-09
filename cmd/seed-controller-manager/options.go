@@ -108,6 +108,7 @@ type controllerRunOptions struct {
 	grafanaSecret         string
 	cortexAlertmanagerURL string
 	cortexRulerURL        string
+	lokiRulerURL          string
 
 	// Machine Controller configuration
 	machineControllerImageTag        string
@@ -180,6 +181,7 @@ func newControllerRunOptions() (controllerRunOptions, error) {
 	flag.StringVar(&c.grafanaSecret, "grafana-secret-name", "mla/grafana", "Grafana secret name in format namespace/secretname, that contains basic auth info")
 	flag.StringVar(&c.cortexAlertmanagerURL, "cortex-alertmanager-url", "http://cortex-alertmanager.mla.svc.cluster.local:8080", "The URL of cortex alertmanager which is running for MLA stack.")
 	flag.StringVar(&c.cortexRulerURL, "cortex-ruler-url", "http://cortex-ruler.mla.svc.cluster.local:8080", "The URL of cortex ruler which is running for MLA stack.")
+	flag.StringVar(&c.lokiRulerURL, "loki-ruler-url", "http://loki-distributed-ruler.mla.svc.cluster.local:3100", "The URL of loki ruler which is running for MLA stack.")
 	flag.StringVar(&c.machineControllerImageTag, "machine-controller-image-tag", "", "The Machine Controller image tag.")
 	flag.StringVar(&c.machineControllerImageRepository, "machine-controller-image-repository", "", "The Machine Controller image repository.")
 	c.admissionWebhook.AddFlags(flag.CommandLine, true)
