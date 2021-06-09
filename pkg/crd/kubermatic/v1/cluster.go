@@ -61,6 +61,11 @@ const (
 	MaxEtcdClusterSize     = 9
 )
 
+const (
+	AnnotationCNIPluginKind    = "cni-plugin.k8c.io/kind"
+	AnnotationCNIPluginVersion = "cni-plugin.k8c.io/version"
+)
+
 // ProtectedClusterLabels is a set of labels that must not be set by users on clusters,
 // as they are security relevant.
 var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey)

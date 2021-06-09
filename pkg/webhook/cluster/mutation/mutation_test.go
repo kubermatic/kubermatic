@@ -65,8 +65,11 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:                  "foo",
-							Annotations:           map[string]string{"k8c.io/cni-plugin": "canal_v3.19"},
+							Name: "foo",
+							Annotations: map[string]string{
+								kubermaticv1.AnnotationCNIPluginKind:    "canal",
+								kubermaticv1.AnnotationCNIPluginVersion: "v3.19",
+							},
 							CloudSpec:             kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
 							ExternalCloudProvider: true,
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
@@ -112,7 +115,10 @@ func TestHandle(t *testing.T) {
 			},
 			wantAllowed: true,
 			wantPatches: []jsonpatch.JsonPatchOperation{
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{"k8c.io/cni-plugin": "canal_v3.19"}),
+				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{
+					kubermaticv1.AnnotationCNIPluginKind:    "canal",
+					kubermaticv1.AnnotationCNIPluginVersion: "v3.19",
+				}),
 			},
 		},
 		{
@@ -129,7 +135,7 @@ func TestHandle(t *testing.T) {
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
 							Name:        "foo",
-							Annotations: map[string]string{"k8c.io/cni-plugin": "canal_v3.19"},
+							Annotations: map[string]string{kubermaticv1.AnnotationCNIPluginKind: "canal", kubermaticv1.AnnotationCNIPluginVersion: "v3.19"},
 							CloudSpec:   kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
 						}.Do(),
 					},

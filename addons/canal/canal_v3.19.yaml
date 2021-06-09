@@ -15,7 +15,8 @@
 # Source: https://docs.projectcalico.org/v3.19/manifests/canal.yaml
 # 1 modification:
 #   - Remove the flexvolume installation as its broken for Flatcar Linux & only required for application policies (Which we don't use.)
-{{ if eq (index .Cluster.Annotations "k8c.io/cni-plugin") "canal_v3.19" }}
+{{ if eq (index .Cluster.Annotations "cni-plugin.k8c.io/kind") "canal" }}
+{{ if hasKey (dict "v3.19" "" "v3.19.1" "") (index .Cluster.Annotations "cni-plugin.k8c.io/version") }}
 ---
 # Source: calico/templates/calico-config.yaml
 # This ConfigMap is used to configure a self-hosted Canal installation.
