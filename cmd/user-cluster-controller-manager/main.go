@@ -19,6 +19,8 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	ccmcsimigrator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
+	"k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"net/url"
 	"strings"
 
@@ -64,6 +66,7 @@ type controllerRunOptions struct {
 	networks              networkFlags
 	namespace             string
 	clusterURL            string
+	clusterName string
 	openvpnServerPort     int
 	kasSecurePort         int
 	tunnelingAgentIP      flagopts.IPValue
@@ -99,6 +102,7 @@ func main() {
 	flag.Var(&runOp.networks, "ipam-controller-network", "The networks from which the ipam controller should allocate IPs for machines (e.g.: .--ipam-controller-network=10.0.0.0/16,10.0.0.1,8.8.8.8 --ipam-controller-network=192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4)")
 	flag.StringVar(&runOp.namespace, "namespace", "", "Namespace in which the cluster is running in")
 	flag.StringVar(&runOp.clusterURL, "cluster-url", "", "Cluster URL")
+	flag.StringVar(&runOp.clusterName, "cluster-name", "", "cluster name")
 	flag.StringVar(&runOp.dnsClusterIP, "dns-cluster-ip", "", "KubeDNS service IP for the cluster")
 	flag.BoolVar(&runOp.nodeLocalDNSCache, "node-local-dns-cache", false, "Enable NodeLocal DNS Cache in user cluster")
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
@@ -134,6 +138,9 @@ func main() {
 	}
 	if runOp.clusterURL == "" {
 		log.Fatal("-cluster-url must be set")
+	}
+	if runOp.clusterName == "" {
+		log.Fatal("-cluster-name must be set")
 	}
 	if runOp.dnsClusterIP == "" {
 		log.Fatal("-dns-cluster-ip must be set")
@@ -219,6 +226,9 @@ func main() {
 	if err := apiregistrationv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiregistrationv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
+	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", v1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
 
 	// Setup all Controllers
 	log.Info("registering controllers")
@@ -251,9 +261,6 @@ func main() {
 	log.Info("Registered usercluster controller")
 
 	if len(runOp.networks) > 0 {
-		if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-			log.Fatalw("Failed to add clusterv1alpha1 scheme", zap.Error(err))
-		}
 		// We need to add the machine CRDs once here, because otherwise the IPAM
 		// controller keeps the manager from starting as it can not establish a
 		// watch for machine CRs, keeping us from creating them
@@ -300,10 +307,16 @@ func main() {
 		log.Fatalw("Failed to register rolecloner controller", zap.Error(err))
 	}
 	log.Info("Registered rolecloner controller")
+
 	if err := ownerbindingcreator.Add(rootCtx, log, mgr, runOp.ownerEmail); err != nil {
 		log.Fatalw("Failed to register ownerbindingcreator controller", zap.Error(err))
 	}
 	log.Info("Registered ownerbindingcreator controller")
+
+	if err := ccmcsimigrator.Add(rootCtx, log, seedMgr, mgr, versions, runOp.clusterName); err != nil {
+		log.Fatalw("failed to register ccmcsimigrator controller", zap.Error(err))
+	}
+	log.Info("registered ccmcsimigrator controller")
 
 	if runOp.opaIntegration {
 		if err := constraintsyncer.Add(rootCtx, log, seedMgr, mgr, runOp.namespace); err != nil {
