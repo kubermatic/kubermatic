@@ -129,3 +129,24 @@ func (p *ClusterTemplateProvider) Get(userInfo *provider.UserInfo, projectID, te
 
 	return result, nil
 }
+
+func (p *ClusterTemplateProvider) Delete(userInfo *provider.UserInfo, projectID, templateID string) error {
+	if userInfo == nil {
+		return errors.New("userInfo is missing but required")
+	}
+	if templateID == "" {
+		return errors.New("templateID is missing but required")
+	}
+
+	result, err := p.Get(userInfo, projectID, templateID)
+	if err != nil {
+		return err
+	}
+
+	// only admin can delete global templates
+	if !userInfo.IsAdmin && result.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] == kubermaticv1.GlobalClusterTemplateScope {
+		return kubermaticerrors.New(http.StatusForbidden, fmt.Sprintf("user %s can't delete template %s", userInfo.Email, templateID))
+	}
+
+	return p.clientPrivileged.Delete(context.Background(), result)
+}
