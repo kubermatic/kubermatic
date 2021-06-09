@@ -21,7 +21,7 @@ metadata:
 spec:
   acme:
     server: {{ $issuer.server }}
-    email: {{ $issuer.email }}
+    email: {{ required "An email must be set for all certManager.clusterIssuers" $issuer.email }}
     privateKeySecretRef:
       name: {{ $name }}-acme-account-key
     solvers:
