@@ -132,7 +132,7 @@ func TestGetClustersForConstraint(t *testing.T) {
 			}
 
 			resultSet := sets.NewString()
-			for _, cluster := range desiredList.Items {
+			for _, cluster := range desiredList {
 				resultSet.Insert(cluster.Name)
 			}
 
