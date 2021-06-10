@@ -43,31 +43,32 @@ import (
 )
 
 const (
-	constraintName      = "constraint"
-	constraintNamespace = "namespace"
-	kind                = "RequiredLabel"
+	constraintName = "constraint"
+	seedNamespace  = "kubermatic"
+	kind           = "RequiredLabel"
 )
 
 func TestGetClustersForConstraint(t *testing.T) {
 	workerSelector, _ := workerlabel.LabelSelector("")
 
 	testCases := []struct {
-		name             string
-		constraint       *v1.Constraint
-		clusters         []ctrlruntimeclient.Object
-		expectedClusters sets.String
+		name                     string
+		constraint               *v1.Constraint
+		clusters                 []ctrlruntimeclient.Object
+		expectedUnwantedClusters sets.String
+		expectedDesiredClusters  sets.String
 	}{
 		{
 			name: "scenario 1: get clusters without filters",
 			constraint: genConstraintWithSelector(v1.ConstraintSelector{
 				Providers:     nil,
 				LabelSelector: metav1.LabelSelector{},
-			}),
+			}, seedNamespace),
 			clusters: []ctrlruntimeclient.Object{
 				genCluster("cluster1", nil, false),
 				genCluster("cluster2", nil, false),
 			},
-			expectedClusters: sets.NewString("cluster1", "cluster2"),
+			expectedDesiredClusters: sets.NewString("cluster1", "cluster2"),
 		},
 		{
 			name: "scenario 2: filter clusters with labels",
@@ -76,24 +77,26 @@ func TestGetClustersForConstraint(t *testing.T) {
 				LabelSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{"test": "value"},
 				},
-			}),
+			}, seedNamespace),
 			clusters: []ctrlruntimeclient.Object{
-				genCluster("cluster1", map[string]string{"test": "value"}, false),
-				genCluster("cluster2", nil, false),
+				genCluster("cluster1", nil, false),
+				genCluster("cluster2", map[string]string{"test": "value"}, false),
 			},
-			expectedClusters: sets.NewString("cluster1"),
+			expectedUnwantedClusters: sets.NewString("cluster1"),
+			expectedDesiredClusters:  sets.NewString("cluster2"),
 		},
 		{
 			name: "scenario 3: filter clusters with providers",
 			constraint: genConstraintWithSelector(v1.ConstraintSelector{
 				Providers:     []string{"fake"},
 				LabelSelector: metav1.LabelSelector{},
-			}),
+			}, seedNamespace),
 			clusters: []ctrlruntimeclient.Object{
-				genCluster("cluster1", nil, false),
-				genCluster("cluster2", nil, true),
+				genCluster("cluster1", nil, true),
+				genCluster("cluster2", nil, false),
 			},
-			expectedClusters: sets.NewString("cluster1"),
+			expectedUnwantedClusters: sets.NewString("cluster1"),
+			expectedDesiredClusters:  sets.NewString("cluster2"),
 		},
 		{
 			name: "scenario 4: filter clusters with providers and labels",
@@ -102,13 +105,14 @@ func TestGetClustersForConstraint(t *testing.T) {
 				LabelSelector: metav1.LabelSelector{
 					MatchLabels: map[string]string{"test": "value"},
 				},
-			}),
+			}, seedNamespace),
 			clusters: []ctrlruntimeclient.Object{
 				genCluster("cluster1", nil, false),
 				genCluster("cluster2", map[string]string{"test": "value"}, true),
 				genCluster("cluster3", map[string]string{"test": "value"}, false),
 			},
-			expectedClusters: sets.NewString("cluster3"),
+			expectedUnwantedClusters: sets.NewString("cluster1", "cluster2"),
+			expectedDesiredClusters:  sets.NewString("cluster3"),
 		},
 	}
 
@@ -126,18 +130,27 @@ func TestGetClustersForConstraint(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			desiredList, _, err := eeconstraintcontroller.FilterClustersForConstraint(ctx, cli, tc.constraint, clusterList)
+			desiredList, unwantedList, err := eeconstraintcontroller.FilterClustersForConstraint(ctx, cli, tc.constraint, clusterList)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			resultSet := sets.NewString()
+			resultSetDesired := sets.NewString()
 			for _, cluster := range desiredList {
-				resultSet.Insert(cluster.Name)
+				resultSetDesired.Insert(cluster.Name)
 			}
 
-			if !resultSet.Equal(tc.expectedClusters) {
-				t.Fatalf("received clusters differ from expected: diff: %s", diff.ObjectGoPrintSideBySide(resultSet, tc.expectedClusters))
+			resultSetUnwanted := sets.NewString()
+			for _, cluster := range unwantedList {
+				resultSetUnwanted.Insert(cluster.Name)
+			}
+
+			if !resultSetDesired.Equal(tc.expectedDesiredClusters) {
+				t.Fatalf("received clusters differ from expected: diff: %s", diff.ObjectGoPrintSideBySide(resultSetDesired, tc.expectedDesiredClusters))
+			}
+
+			if !resultSetUnwanted.Equal(tc.expectedUnwantedClusters) {
+				t.Fatalf("received clusters differ from expected: diff: %s", diff.ObjectGoPrintSideBySide(resultSetUnwanted, tc.expectedUnwantedClusters))
 			}
 
 		})
@@ -159,8 +172,8 @@ func genCluster(name string, labels map[string]string, bringYourOwnProvider bool
 	return cluster
 }
 
-func genConstraintWithSelector(selector v1.ConstraintSelector) *v1.Constraint {
-	ct := test.GenConstraint(constraintName, constraintNamespace, kind)
+func genConstraintWithSelector(selector v1.ConstraintSelector, namespace string) *v1.Constraint {
+	ct := test.GenConstraint(constraintName, namespace, kind)
 	ct.Spec.Selector = selector
 	return ct
 }
