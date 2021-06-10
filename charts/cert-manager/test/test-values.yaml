@@ -1,4 +1,4 @@
-# Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-name: cert-manager
-version: 2.0.1
-appVersion: v1.2.0
-description: A Helm chart for cert-manager
-keywords:
-- kubermatic
-- cert-manager
-- letsencrypt
-- tls
-home: https://github.com/jetstack/cert-manager
-sources:
-- https://github.com/jetstack/cert-manager/tree/master/deploy/charts/cert-manager
-maintainers:
-- name: Loodse GmbH
-  email: support@kubermatic.com
+certManager:
+  clusterIssuers:
+    letsencrypt-prod:
+      email: dev@kubermatic.com
+
+    letsencrypt-staging:
+      email: dev@kubermatic.com
