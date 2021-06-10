@@ -27,6 +27,10 @@ import (
 )
 
 func (d *Deletion) cleanupConstraints(ctx context.Context, cluster *kubermaticv1.Cluster) error {
+	if cluster.Status.NamespaceName == "" {
+		return nil
+	}
+
 	if err := d.seedClient.DeleteAllOf(ctx, &kubermaticv1.Constraint{}, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
 		return err
 	}
