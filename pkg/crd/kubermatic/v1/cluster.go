@@ -533,6 +533,8 @@ type AzureCloudSpec struct {
 	RouteTableName    string `json:"routeTable"`
 	SecurityGroup     string `json:"securityGroup"`
 	AvailabilitySet   string `json:"availabilitySet"`
+	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
+	LoadBalancerSKU string `json:"loadBalancerSKU"`
 }
 
 // VSphereCredentials credentials represents a credential for accessing vSphere

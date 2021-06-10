@@ -177,6 +177,7 @@ func TestLoadFiles(t *testing.T) {
 				RouteTableName:  "az-route-table-name",
 				SecurityGroup:   "az-sec-group",
 				AvailabilitySet: "az-availability-set",
+				LoadBalancerSKU: "basic",
 			},
 		},
 		"vsphere": {
