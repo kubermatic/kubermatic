@@ -177,6 +177,10 @@ type CNIPluginSettings struct {
 // CNIPluginType define the type of CNI plugin installed. e.g. Canal
 type CNIPluginType string
 
+func (c CNIPluginType) String() string {
+	return string(c)
+}
+
 const (
 	// CNIPluginTypeCanal corresponds to Canal CNI plugin (i.e. Flannel +
 	// Calico for policy enforcement).

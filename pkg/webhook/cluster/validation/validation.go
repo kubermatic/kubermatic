@@ -29,10 +29,18 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+var (
+	supportedCNIPlugins        = sets.NewString(kubermaticv1.CNIPluginTypeCanal.String())
+	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
+		kubermaticv1.CNIPluginTypeCanal: sets.NewString("v3.8", "v3.19"),
+	}
 )
 
 // AdmissionHandler for validating Kubermatic Cluster CRD.
@@ -98,6 +106,13 @@ func (h *AdmissionHandler) validateCreate(c *kubermaticv1.Cluster) field.ErrorLi
 	if c.Spec.ExposeStrategy == kubermaticv1.ExposeStrategyTunneling &&
 		!h.features.Enabled(features.TunnelingExposeStrategy) {
 		allErrs = append(allErrs, field.Forbidden(specFldPath.Child("exposeStrategy"), "cannot create cluster with Tunneling expose strategy because the TunnelingExposeStrategy feature gate is not enabled"))
+	}
+	if c.Spec.CNIPlugin != nil {
+		if !supportedCNIPlugins.Has(c.Spec.CNIPlugin.Type.String()) {
+			allErrs = append(allErrs, field.NotSupported(specFldPath.Child("cniPlugin", "type"), c.Spec.CNIPlugin.Type.String(), supportedCNIPlugins.List()))
+		} else if !supportedCNIPluginVersions[c.Spec.CNIPlugin.Type].Has(c.Spec.CNIPlugin.Version) {
+			allErrs = append(allErrs, field.NotSupported(specFldPath.Child("cniPlugin", "version"), c.Spec.CNIPlugin.Version, supportedCNIPluginVersions[c.Spec.CNIPlugin.Type].List()))
+		}
 	}
 	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, specFldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
 	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.Scheduler.LeaderElectionSettings, specFldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)

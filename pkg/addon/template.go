@@ -87,14 +87,14 @@ func NewTemplateData(
 	var cniPlugin CNIPlugin
 	if cluster.Spec.CNIPlugin == nil {
 		cniPlugin = CNIPlugin{
-			Type: string(kubermaticv1.CNIPluginTypeCanal),
+			Type: kubermaticv1.CNIPluginTypeCanal.String(),
 			// This is to keep backward compatibility with clusters created before
 			// those settings were introduced.
 			Version: "v3.8",
 		}
 	} else {
 		cniPlugin = CNIPlugin{
-			Type:    string(cluster.Spec.CNIPlugin.Type),
+			Type:    cluster.Spec.CNIPlugin.Type.String(),
 			Version: cluster.Spec.CNIPlugin.Version,
 		}
 	}
