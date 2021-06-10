@@ -51,7 +51,7 @@ require (
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac // indirect
 	github.com/jetstack/cert-manager v1.1.0
 	github.com/kubermatic/grafanasdk v0.9.3
-	github.com/kubermatic/machine-controller v1.27.1
+	github.com/kubermatic/machine-controller v1.27.6
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
 	github.com/nelsam/hel v0.0.0-20200611165952-2d829bae0c66 // indirect
