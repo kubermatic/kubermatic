@@ -25,6 +25,9 @@ type AzureCloudSpec struct {
 	// client secret
 	ClientSecret string `json:"clientSecret,omitempty"`
 
+	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
+	LoadBalancerSKU string `json:"loadBalancerSKU,omitempty"`
+
 	// resource group
 	ResourceGroup string `json:"resourceGroup,omitempty"`
 

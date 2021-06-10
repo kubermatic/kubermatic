@@ -14285,6 +14285,11 @@
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
+        "loadBalancerSKU": {
+          "description": "LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are \"basic\" and \"standard\", if empty, \"basic\" will be used",
+          "type": "string",
+          "x-go-name": "LoadBalancerSKU"
+        },
         "resourceGroup": {
           "type": "string",
           "x-go-name": "ResourceGroup"
