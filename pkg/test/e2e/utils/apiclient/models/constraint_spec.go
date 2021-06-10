@@ -16,6 +16,9 @@ import (
 // swagger:model ConstraintSpec
 type ConstraintSpec struct {
 
+	// Active flag tells constraint's active state
+	Active bool `json:"active,omitempty"`
+
 	// ConstraintType specifies the type of gatekeeper constraint that the constraint applies to
 	ConstraintType string `json:"constraintType,omitempty"`
 
