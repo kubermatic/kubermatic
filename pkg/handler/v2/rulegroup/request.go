@@ -119,10 +119,11 @@ func DecodeListReq(c context.Context, r *http.Request) (interface{}, error) {
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 	req.Type = r.URL.Query().Get("type")
 	if len(req.Type) > 0 {
-		if req.Type == string(kubermaticcrdv1.RuleGroupTypeMetrics) {
+		if (req.Type == string(kubermaticcrdv1.RuleGroupTypeMetrics)) ||
+			(req.Type == string(kubermaticcrdv1.RuleGroupTypeLogs)) {
 			return req, nil
 		}
-		return nil, utilerrors.NewBadRequest("wrong query parameter, unsupported type: %s, supported value: %s", req.Type, kubermaticcrdv1.RuleGroupTypeMetrics)
+		return nil, utilerrors.NewBadRequest("wrong query parameter, unsupported type: %s, supported value: %s, %s", req.Type, kubermaticcrdv1.RuleGroupTypeMetrics, kubermaticcrdv1.RuleGroupTypeLogs)
 	}
 	return req, nil
 }
