@@ -23,11 +23,9 @@ import (
 
 	"go.uber.org/zap"
 
-	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	constrainthandler "k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
-	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -96,7 +94,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to get constraint: %v", err)
 	}
 
-	err := r.reconcile(ctx, constraint)
+	err := r.reconcile(ctx, constraint, log)
 	if err != nil {
 		log.Errorw("Reconciling failed", zap.Error(err))
 		r.recorder.Event(constraint, corev1.EventTypeWarning, "ConstraintReconcileFailed", err.Error())
@@ -104,39 +102,8 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Constraint) error {
-	if constraint.DeletionTimestamp != nil {
-		if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer) {
-			return nil
-		}
-
-		toDelete := &unstructured.Unstructured{}
-		toDelete.SetGroupVersionKind(schema.GroupVersionKind{
-			Group:   constrainthandler.ConstraintsGroup,
-			Version: constrainthandler.ConstraintsVersion,
-			Kind:    constraint.Spec.ConstraintType,
-		})
-		toDelete.SetName(constraint.Name)
-
-		if err := r.userClient.Delete(ctx, toDelete); err != nil && !kerrors.IsNotFound(err) {
-			return fmt.Errorf("failed to delete constraint: %v", err)
-		}
-
-		oldConstraint := constraint.DeepCopy()
-		kuberneteshelper.RemoveFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
-		if err := r.seedClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldConstraint)); err != nil {
-			return fmt.Errorf("failed to remove constraint finalizer %s: %v", constraint.Name, err)
-		}
-		return nil
-	}
-
-	if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer) {
-		oldConstraint := constraint.DeepCopy()
-		kuberneteshelper.AddFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
-		if err := r.seedClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldConstraint)); err != nil {
-			return fmt.Errorf("failed to set constraint finalizer %s: %v", constraint.Name, err)
-		}
-	}
+func (r *reconciler) createConstraint(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
+	log = log.With("constraint", constraint)
 
 	constraintCreatorGetters := []reconciling.NamedUnstructuredCreatorGetter{
 		constraintCreatorGetter(constraint),
@@ -145,7 +112,26 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 	if err := reconciling.ReconcileUnstructureds(ctx, constraintCreatorGetters, "", r.userClient); err != nil {
 		return fmt.Errorf("failed to reconcile constraint: %v", err)
 	}
+	log.Debugw("constraint created")
+	return nil
+}
 
+func (r *reconciler) cleanupConstraint(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
+	log = log.With("constraint", constraint)
+	log.Debugw("cleanup processing:")
+
+	toDelete := &unstructured.Unstructured{}
+	toDelete.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   constrainthandler.ConstraintsGroup,
+		Version: constrainthandler.ConstraintsVersion,
+		Kind:    constraint.Spec.ConstraintType,
+	})
+	toDelete.SetName(constraint.Name)
+
+	if err := r.userClient.Delete(ctx, toDelete); err != nil && !kerrors.IsNotFound(err) {
+		return fmt.Errorf("failed to delete constraint: %v", err)
+	}
+	log.Debugw("constraint deleted")
 	return nil
 }
 

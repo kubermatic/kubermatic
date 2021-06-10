@@ -15744,6 +15744,11 @@
       "type": "object",
       "title": "ConstraintSpec specifies the data for the constraint.",
       "properties": {
+        "active": {
+          "description": "Active flag tells constraint's active state",
+          "type": "boolean",
+          "x-go-name": "Active"
+        },
         "constraintType": {
           "description": "ConstraintType specifies the type of gatekeeper constraint that the constraint applies to",
           "type": "string",
