@@ -75,7 +75,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", true, false, false),
 				generateRuleGroup("test-rule", "test", kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 			requests: []request{
@@ -103,7 +103,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", false, true, false),
 				generateRuleGroup("test-rule", "test", kubermaticv1.RuleGroupTypeLogs, false),
 			},
 			requests: []request{
@@ -131,7 +131,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", true, true, false),
 				generateRuleGroup("test-rule", "test", "type", false),
 			},
 			expectedErr: true,
@@ -143,7 +143,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", true, true, false),
 				generateRuleGroup("test-rule", "test", kubermaticv1.RuleGroupTypeMetrics, true),
 			},
 			requests: []request{
@@ -164,7 +164,7 @@ func TestRuleGroupReconcile(t *testing.T) {
 				Namespace: "cluster-test",
 			},
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", true, true, false),
 				generateRuleGroup("test-rule", "test", kubermaticv1.RuleGroupTypeLogs, true),
 			},
 			requests: []request{
