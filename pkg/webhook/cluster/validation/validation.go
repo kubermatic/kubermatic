@@ -145,7 +145,22 @@ func validateUpdateImmutability(c, oldC *kubermaticv1.Cluster) field.ErrorList {
 		c.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; vOld && !v {
 		allErrs = append(allErrs, field.Invalid(specFldPath.Child("features").Key(kubermaticv1.ClusterFeatureExternalCloudProvider), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureExternalCloudProvider)))
 	}
-	// Immutable fields
+	if c.Spec.CNIPlugin != nil && oldC.Spec.CNIPlugin != nil {
+		// Immutable fields
+		// TODO(irozzo): this constraint should be relaxed to provide the
+		// possibility to upgrade CNI plugin version.
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			*c.Spec.CNIPlugin,
+			*oldC.Spec.CNIPlugin,
+			specFldPath.Child("cniPlugin"),
+		)...)
+	} else {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			c.Spec.CNIPlugin,
+			oldC.Spec.CNIPlugin,
+			specFldPath.Child("cniPlugin"),
+		)...)
+	}
 	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 		c.Spec.ExposeStrategy,
 		oldC.Spec.ExposeStrategy,

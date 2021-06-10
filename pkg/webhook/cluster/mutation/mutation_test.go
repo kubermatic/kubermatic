@@ -65,12 +65,12 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name: "foo",
-							Annotations: map[string]string{
-								kubermaticv1.AnnotationCNIPluginKind:    "canal",
-								kubermaticv1.AnnotationCNIPluginVersion: "v3.19",
+							Name:      "foo",
+							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
 							},
-							CloudSpec:             kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
 							ExternalCloudProvider: true,
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -115,9 +115,9 @@ func TestHandle(t *testing.T) {
 			},
 			wantAllowed: true,
 			wantPatches: []jsonpatch.JsonPatchOperation{
-				jsonpatch.NewOperation("add", "/metadata/annotations", map[string]interface{}{
-					kubermaticv1.AnnotationCNIPluginKind:    "canal",
-					kubermaticv1.AnnotationCNIPluginVersion: "v3.19",
+				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
+					"type":    "canal",
+					"version": "v3.19",
 				}),
 			},
 		},
@@ -134,9 +134,12 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:        "foo",
-							Annotations: map[string]string{kubermaticv1.AnnotationCNIPluginKind: "canal", kubermaticv1.AnnotationCNIPluginVersion: "v3.19"},
-							CloudSpec:   kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							Name:      "foo",
+							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
 						}.Do(),
 					},
 				},
@@ -274,9 +277,9 @@ func TestHandle(t *testing.T) {
 type rawClusterGen struct {
 	Name                  string
 	CloudSpec             kubermaticv1.CloudSpec
+	CNIPluginSpec         *kubermaticv1.CNIPluginSettings
 	ExternalCloudProvider bool
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
-	Annotations           map[string]string
 }
 
 func (r rawClusterGen) Do() []byte {
@@ -286,8 +289,7 @@ func (r rawClusterGen) Do() []byte {
 			Kind:       "Cluster",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:        r.Name,
-			Annotations: r.Annotations,
+			Name: r.Name,
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Features: map[string]bool{
@@ -295,6 +297,7 @@ func (r rawClusterGen) Do() []byte {
 			},
 			Cloud:          r.CloudSpec,
 			ClusterNetwork: r.NetworkConfig,
+			CNIPlugin:      r.CNIPluginSpec,
 		},
 	}
 	s := json.NewSerializer(json.DefaultMetaFactory, testScheme, testScheme, true)

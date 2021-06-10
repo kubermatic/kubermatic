@@ -721,6 +721,185 @@ func TestHandle(t *testing.T) {
 			},
 			wantAllowed: false,
 		},
+		{
+			name: "Reject CNIPlugin version update",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							CNIPlugin: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32000",
+								},
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							CNIPlugin: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.20",
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32000",
+								},
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: false,
+		},
+		{
+			name: "Reject CNIPlugin type change",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							CNIPlugin: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32000",
+								},
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							CNIPlugin: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginType("other"),
+								Version: "v3.19",
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32000",
+								},
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: false,
+		},
+		{
+			name: "Reject add CNIPlugin settings",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Update,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32000",
+								},
+							},
+						}.Do(),
+					},
+					OldObject: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:           "foo",
+							Namespace:      "kubermatic",
+							ExposeStrategy: kubermaticv1.ExposeStrategyNodePort.String(),
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"172.192.0.0/20"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "cluster.local",
+								ProxyMode:                resources.IPVSProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+							CNIPlugin: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
+							ComponentSettings: kubermaticv1.ComponentSettings{
+								Apiserver: kubermaticv1.APIServerSettings{
+									NodePortRange: "30000-32000",
+								},
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: false,
+		},
 	}
 	for _, tt := range tests {
 		d, err := admission.NewDecoder(testScheme)
@@ -749,6 +928,7 @@ type rawClusterGen struct {
 	ExternalCloudProvider bool
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
 	ComponentSettings     kubermaticv1.ComponentSettings
+	CNIPlugin             *kubermaticv1.CNIPluginSettings
 }
 
 func (r rawClusterGen) Do() []byte {
@@ -769,6 +949,7 @@ func (r rawClusterGen) Do() []byte {
 			EnableUserSSHKeyAgent: r.EnableUserSSHKey,
 			ClusterNetwork:        r.NetworkConfig,
 			ComponentsOverride:    r.ComponentSettings,
+			CNIPlugin:             r.CNIPlugin,
 		},
 	}
 	s := json.NewSerializer(json.DefaultMetaFactory, testScheme, testScheme, true)

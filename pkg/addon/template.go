@@ -84,6 +84,21 @@ func NewTemplateData(
 		variables = make(map[string]interface{})
 	}
 
+	var cniPlugin CNIPlugin
+	if cluster.Spec.CNIPlugin == nil {
+		cniPlugin = CNIPlugin{
+			Type: string(kubermaticv1.CNIPluginTypeCanal),
+			// This is to keep backward compatibility with clusters created before
+			// those settings were introduced.
+			Version: "v3.8",
+		}
+	} else {
+		cniPlugin = CNIPlugin{
+			Type:    string(cluster.Spec.CNIPlugin.Type),
+			Version: cluster.Spec.CNIPlugin.Version,
+		}
+	}
+
 	return &TemplateData{
 		DatacenterName: cluster.Spec.Cloud.DatacenterName,
 		Variables:      variables,
@@ -113,6 +128,7 @@ func NewTemplateData(
 				ServiceCIDRBlocks: cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
 				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
 			},
+			CNIPlugin: cniPlugin,
 		},
 	}, nil
 }
@@ -164,6 +180,8 @@ type ClusterData struct {
 	Network ClusterNetwork
 	// Features is a set of enabled features for this cluster.
 	Features sets.String
+	// CNIPlugin contains the CNIPlugin settings
+	CNIPlugin CNIPlugin
 }
 
 type ClusterNetwork struct {
@@ -173,6 +191,11 @@ type ClusterNetwork struct {
 	PodCIDRBlocks     []string
 	ServiceCIDRBlocks []string
 	ProxyMode         string
+}
+
+type CNIPlugin struct {
+	Type    string
+	Version string
 }
 
 func ParseFromFolder(log *zap.SugaredLogger, overwriteRegistry string, manifestPath string, data *TemplateData) ([]runtime.RawExtension, error) {

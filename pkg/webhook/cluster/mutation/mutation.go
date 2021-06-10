@@ -98,14 +98,11 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 	// Add cni-plugin annotation if not present pointing to latest canal
 	// version provided by the addon.
-	if _, ok := c.Annotations[kubermaticv1.AnnotationCNIPluginKind]; !ok {
-		if c.Annotations == nil {
-			c.Annotations = map[string]string{}
+	if c.Spec.CNIPlugin == nil {
+		c.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+			Type:    kubermaticv1.CNIPluginTypeCanal,
+			Version: "v3.19",
 		}
-		c.Annotations[kubermaticv1.AnnotationCNIPluginKind] = "canal"
-	}
-	if _, ok := c.Annotations[kubermaticv1.AnnotationCNIPluginVersion]; !ok {
-		c.Annotations[kubermaticv1.AnnotationCNIPluginVersion] = "v3.19"
 	}
 
 	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
