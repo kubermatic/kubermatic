@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/defaulting"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
-	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/validation"
 )
 
@@ -67,7 +66,7 @@ func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter
 	if providerName == "" {
 		return nil, errors.New("cluster has no cloudprovider")
 	}
-	cloudProvider, err := cloud.Provider(dc, secretKeyGetter, caBundle, resources.DefaultNodePortRange)
+	cloudProvider, err := cloud.Provider(dc, secretKeyGetter, caBundle)
 	if err != nil {
 		return nil, err
 	}

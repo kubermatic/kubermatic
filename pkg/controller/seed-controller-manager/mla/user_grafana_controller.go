@@ -23,19 +23,23 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/grafana/grafana/pkg/models"
 	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
@@ -80,7 +84,13 @@ func newUserGrafanaReconciler(
 		return err
 	}
 
-	if err := c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}); err != nil {
+	serviceAccountPredicate := predicate.NewPredicateFuncs(func(object ctrlruntimeclient.Object) bool {
+		// We don't trigger reconciliation for service account.
+		user := object.(*kubermaticv1.User)
+		return !kubernetesprovider.IsProjectServiceAccount(user.Spec.Email)
+	})
+
+	if err := c.Watch(&source.Kind{Type: &kubermaticv1.User{}}, &handler.EnqueueRequestForObject{}, serviceAccountPredicate); err != nil {
 		return fmt.Errorf("failed to watch Users: %w", err)
 	}
 	return err
@@ -152,7 +162,7 @@ func (r *userGrafanaController) cleanUp(ctx context.Context) error {
 	}
 	for _, user := range userList.Items {
 		if err := r.handleDeletion(ctx, &user); err != nil {
-			return nil
+			return err
 		}
 	}
 	return nil
@@ -202,6 +212,44 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 	}
 	if grafanaUser.IsGrafanaAdmin != user.Spec.IsAdmin {
 		grafanaUser.IsGrafanaAdmin = user.Spec.IsAdmin
+		projectList := &kubermaticv1.ProjectList{}
+		if err := r.List(ctx, projectList); err != nil {
+			return err
+		}
+		// we also needs to remove user if IsAdmin is false, but keep in orgs with userprojectbingings
+		for _, project := range projectList.Items {
+			org, err := getOrgByProject(ctx, r.grafanaClient, &project)
+			if err != nil {
+				return err
+			}
+			if grafanaUser.IsGrafanaAdmin {
+				if err := addUserToOrg(ctx, r.grafanaClient, org, grafanaUser, models.ROLE_ADMIN); err != nil {
+					return err
+				}
+			} else {
+				if err := removeUserFromOrg(ctx, r.grafanaClient, org, grafanaUser); err != nil {
+					return err
+				}
+			}
+		}
+		if !grafanaUser.IsGrafanaAdmin {
+			userProjectBindingList := &kubermaticv1.UserProjectBindingList{}
+			if err := r.List(ctx, userProjectBindingList); err != nil {
+				return err
+			}
+			for _, userProjectBinding := range userProjectBindingList.Items {
+				if userProjectBinding.Spec.UserEmail != user.Spec.Email {
+					continue
+				}
+				project := &kubermaticv1.Project{}
+				if err := r.Get(ctx, types.NamespacedName{Name: userProjectBinding.Spec.ProjectID}, project); err != nil {
+					return fmt.Errorf("failed to get project: %w", err)
+				}
+				if err := ensureOrgUser(ctx, r.grafanaClient, project, &userProjectBinding); err != nil {
+					return err
+				}
+			}
+		}
 		status, err := r.grafanaClient.UpdateUserPermissions(ctx, grafanasdk.UserPermissions{IsGrafanaAdmin: user.Spec.IsAdmin}, grafanaUser.ID)
 		if err != nil {
 			return fmt.Errorf("failed to update user permissions: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))

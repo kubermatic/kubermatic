@@ -31,6 +31,7 @@ helm3 upgrade \
   --namespace cert-manager \
   --create-namespace \
   --atomic \
+  --values charts/cert-manager/test/test-values.yaml \
   cert-manager charts/cert-manager/
 
 # make sure the webhook works, but before that, give the cainjector some

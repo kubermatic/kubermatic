@@ -19,6 +19,7 @@ package v2
 import (
 	"github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 
+	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	crdapiv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 )
 
@@ -157,4 +158,30 @@ type SeedSettings struct {
 type MLA struct {
 	// whether the user cluster MLA (Monitoring, Logging & Alerting) stack is enabled in the seed
 	UserClusterMLAEnabled bool `json:"user_cluster_mla_enabled"`
+}
+
+// ClusterTemplate represents a ClusterTemplate object
+// swagger:model ClusterTemplate
+type ClusterTemplate struct {
+	Name string `json:"name"`
+	ID   string `json:"id"`
+
+	ProjectID      string                `json:"projectID,omitempty"`
+	User           string                `json:"user,omitempty"`
+	Scope          string                `json:"scope"`
+	Cluster        *apiv1.Cluster        `json:"cluster,omitempty"`
+	NodeDeployment *apiv1.NodeDeployment `json:"nodeDeployment,omitempty"`
+}
+
+// ClusterTemplateList represents a ClusterTemplate list
+// swagger:model ClusterTemplateList
+type ClusterTemplateList []ClusterTemplate
+
+// RuleGroup represents a rule group of recording and alerting rules.
+// swagger:model RuleGroup
+type RuleGroup struct {
+	// contains the RuleGroup data. Ref: https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/#rule_group
+	Data []byte `json:"data"`
+	// the type of this ruleGroup applies to. It can be `Metrics`.
+	Type crdapiv1.RuleGroupType `json:"type"`
 }

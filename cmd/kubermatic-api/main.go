@@ -260,6 +260,11 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		return providers{}, fmt.Errorf("failed to create constraint template provider due to %v", err)
 	}
 
+	clusterTemplateProvider, err := kubernetesprovider.NewClusterTemplateProvider(defaultImpersonationClient.CreateImpersonatedClient, client)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create cluster template provider due to %v", err)
+	}
+
 	constraintProviderGetter := kubernetesprovider.ConstraintProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
 	kubeMasterInformerFactory.Start(wait.NeverStop)
@@ -272,6 +277,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 	addonProviderGetter := kubernetesprovider.AddonProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter, options.accessibleAddons)
 
 	alertmanagerProviderGetter := kubernetesprovider.AlertmanagerProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
+
+	ruleGroupProviderGetter := kubernetesprovider.RuleGroupProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
 	if err != nil {
@@ -314,6 +321,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		constraintTemplateProvider:            constraintTemplateProvider,
 		constraintProviderGetter:              constraintProviderGetter,
 		alertmanagerProviderGetter:            alertmanagerProviderGetter,
+		clusterTemplateProvider:               clusterTemplateProvider,
+		ruleGroupProviderGetter:               ruleGroupProviderGetter,
 	}, nil
 }
 
@@ -420,6 +429,8 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ConstraintTemplateProvider:            prov.constraintTemplateProvider,
 		ConstraintProviderGetter:              prov.constraintProviderGetter,
 		AlertmanagerProviderGetter:            prov.alertmanagerProviderGetter,
+		ClusterTemplateProvider:               prov.clusterTemplateProvider,
+		RuleGroupProviderGetter:               prov.ruleGroupProviderGetter,
 		Versions:                              options.versions,
 		CABundle:                              options.caBundle.CertPool(),
 	}

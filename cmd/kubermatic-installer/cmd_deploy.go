@@ -95,6 +95,10 @@ var (
 		Name:  "migrate-openstack-csidrivers",
 		Usage: "(kubermatic-seed STACK only) enable the data migration of CSIDriver of openstack user-clusters",
 	}
+	migrateLogrotateFlag = cli.BoolFlag{
+		Name:  "migrate-logrotate",
+		Usage: "enable the data migration to delete the logrotate addon",
+	}
 )
 
 func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) cli.Command {
@@ -114,6 +118,7 @@ func DeployCommand(logger *logrus.Logger, versions kubermaticversion.Versions) c
 			deployStorageClassFlag,
 			enableCertManagerV2MigrationFlag,
 			migrateOpenstackCSIdriversFlag,
+			migrateLogrotateFlag,
 		},
 	}
 }
@@ -265,6 +270,7 @@ func DeployAction(logger *logrus.Logger, versions kubermaticversion.Versions) cl
 			ChartsDirectory:                   ctx.GlobalString(chartsDirectoryFlag.Name),
 			EnableCertManagerV2Migration:      ctx.Bool(enableCertManagerV2MigrationFlag.Name),
 			EnableOpenstackCSIDriverMigration: ctx.Bool(migrateOpenstackCSIdriversFlag.Name),
+			EnableLogrotateMigration:          ctx.Bool(migrateLogrotateFlag.Name),
 		}
 
 		logger.Infof("🧩 Deploying %s…", kubermaticStack.Name())

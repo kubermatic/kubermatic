@@ -69,7 +69,6 @@ type Provider struct {
 	secretKeySelector provider.SecretKeySelectorValueFunc
 	caBundle          *x509.CertPool
 	getClientFunc     getClientFunc
-	nodePortsRange    string
 }
 
 // NewCloudProvider creates a new openstack provider.
@@ -77,7 +76,6 @@ func NewCloudProvider(
 	dc *kubermaticv1.Datacenter,
 	secretKeyGetter provider.SecretKeySelectorValueFunc,
 	caBundle *x509.CertPool,
-	nodePortsRange string,
 ) (*Provider, error) {
 	if dc.Spec.Openstack == nil {
 		return nil, errors.New("datacenter is not an Openstack datacenter")
@@ -87,7 +85,6 @@ func NewCloudProvider(
 		secretKeySelector: secretKeyGetter,
 		caBundle:          caBundle,
 		getClientFunc:     getNetClientForCluster,
-		nodePortsRange:    nodePortsRange,
 	}, nil
 }
 
@@ -208,7 +205,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 	// conflicts to retry later.
 	if len(finalizers) > 0 {
 		cluster, err = update(cluster.Name, func(cluster *kubermaticv1.Cluster) {
-			cluster.Finalizers = append(cluster.Finalizers, finalizers...)
+			kubernetes.AddFinalizer(cluster, finalizers...)
 		}, provider.UpdaterOptionOptimisticLock)
 		if err != nil {
 			return nil, fmt.Errorf("failed to add finalizers: %w", err)
@@ -231,7 +228,7 @@ func (os *Provider) InitializeCloudProvider(cluster *kubermaticv1.Cluster, updat
 
 	if cluster.Spec.Cloud.Openstack.SecurityGroups == "" {
 		lowPort, highPort := resources.NewTemplateDataBuilder().
-			WithNodePortRange(os.nodePortsRange).
+			WithNodePortRange(cluster.Spec.ComponentsOverride.Apiserver.NodePortRange).
 			WithCluster(cluster).
 			Build().
 			NodePorts()
@@ -480,13 +477,19 @@ func getAuthClient(username, password, domain, tenant, tenantID, authURL string,
 		TenantID:         tenantID,
 	}
 
-	client, err := goopenstack.AuthenticatedClient(opts)
+	client, err := goopenstack.NewClient(authURL)
 	if err != nil {
 		return nil, err
 	}
+
 	if client != nil {
 		// overwrite the default host/root CA Bundle with the proper CA Bundle
 		client.HTTPClient.Transport = &http.Transport{TLSClientConfig: &tls.Config{RootCAs: caBundle}}
+	}
+
+	err = goopenstack.Authenticate(client, opts)
+	if err != nil {
+		return nil, err
 	}
 
 	return client, nil

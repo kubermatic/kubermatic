@@ -75,8 +75,6 @@ type Reconciler struct {
 	workerName string
 	versions   kubermatic.Versions
 	caBundle   *x509.CertPool
-
-	seedNodePortsRange string
 }
 
 func Add(
@@ -87,7 +85,6 @@ func Add(
 	workerName string,
 	versions kubermatic.Versions,
 	caBundle *x509.CertPool,
-	nodePortsRange string,
 ) error {
 	reconciler := &Reconciler{
 		Client:     mgr.GetClient(),
@@ -97,8 +94,6 @@ func Add(
 		workerName: workerName,
 		versions:   versions,
 		caBundle:   caBundle,
-
-		seedNodePortsRange: nodePortsRange,
 	}
 
 	c, err := controller.New(ControllerName, mgr, controller.Options{Reconciler: reconciler, MaxConcurrentReconciles: numWorkers})
@@ -152,7 +147,7 @@ func (r *Reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, clus
 	if !found {
 		return nil, fmt.Errorf("couldn't find datacenter %q for cluster %q", cluster.Spec.Cloud.DatacenterName, cluster.Name)
 	}
-	prov, err := cloud.Provider(datacenter.DeepCopy(), r.getGlobalSecretKeySelectorValue, r.caBundle, r.seedNodePortsRange)
+	prov, err := cloud.Provider(datacenter.DeepCopy(), r.getGlobalSecretKeySelectorValue, r.caBundle)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create cloud provider: %v", err)
 	}

@@ -26,7 +26,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
-	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/clustercomponentdefaulter"
 	seedconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-controller"
 	constrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-template-controller"
 	etcdbackupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdbackup"
@@ -61,7 +60,6 @@ var AllControllers = map[string]controllerCreator{
 	etcdrestorecontroller.ControllerName:          createEtcdRestoreController,
 	monitoring.ControllerName:                     createMonitoringController,
 	cloudcontroller.ControllerName:                createCloudController,
-	clustercomponentdefaulter.ControllerName:      createClusterComponentDefaulter,
 	seedresourcesuptodatecondition.ControllerName: createSeedConditionUpToDateController,
 	rancher.ControllerName:                        createRancherController,
 	pvwatcher.ControllerName:                      createPvWatcherController,
@@ -93,11 +91,12 @@ func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
-	defaultCompontentsOverrides := kubermaticv1.ComponentSettings{
+func defaultComponentSettings(ctrlCtx *controllerContext) kubermaticv1.ComponentSettings {
+	return kubermaticv1.ComponentSettings{
 		Apiserver: kubermaticv1.APIServerSettings{
 			DeploymentSettings:          kubermaticv1.DeploymentSettings{Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.apiServerDefaultReplicas))},
 			EndpointReconcilingDisabled: utilpointer.BoolPtr(ctrlCtx.runOptions.apiServerEndpointReconcilingDisabled),
+			NodePortRange:               ctrlCtx.runOptions.nodePortRange,
 		},
 		ControllerManager: kubermaticv1.ControllerSettings{
 			DeploymentSettings: kubermaticv1.DeploymentSettings{
@@ -110,15 +109,6 @@ func createClusterComponentDefaulter(ctrlCtx *controllerContext) error {
 			},
 		},
 	}
-	return clustercomponentdefaulter.Add(
-		ctrlCtx.ctx,
-		ctrlCtx.log,
-		ctrlCtx.mgr,
-		ctrlCtx.runOptions.workerCount,
-		defaultCompontentsOverrides,
-		ctrlCtx.runOptions.workerName,
-		ctrlCtx.versions,
-	)
 }
 
 func createCloudController(ctrlCtx *controllerContext) error {
@@ -130,7 +120,6 @@ func createCloudController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.workerName,
 		ctrlCtx.versions,
 		ctrlCtx.runOptions.caBundle.CertPool(),
-		ctrlCtx.runOptions.nodePortRange,
 	); err != nil {
 		return fmt.Errorf("failed to add cloud controller to mgr: %v", err)
 	}
@@ -423,6 +412,8 @@ func createMLAController(ctrlCtx *controllerContext) error {
 		ctrlCtx.runOptions.grafanaSecret,
 		ctrlCtx.runOptions.overwriteRegistry,
 		ctrlCtx.runOptions.cortexAlertmanagerURL,
+		ctrlCtx.runOptions.cortexRulerURL,
+		ctrlCtx.runOptions.lokiRulerURL,
 		ctrlCtx.runOptions.enableUserClusterMLA,
 	)
 }

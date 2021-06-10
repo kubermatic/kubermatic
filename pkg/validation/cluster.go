@@ -73,7 +73,7 @@ func ValidateCreateClusterSpec(spec *kubermaticv1.ClusterSpec, dc *kubermaticv1.
 	}
 
 	portRangeFld := specFieldPath.Child("componentsOverride", "apiserver", "nodePortRange")
-	if errs := ValidateNodePortRange(spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld); len(errs) > 0 {
+	if errs := ValidateNodePortRange(spec.ComponentsOverride.Apiserver.NodePortRange, portRangeFld, false); len(errs) > 0 {
 		return fmt.Errorf("apiserver NodePortRange validation failed: %v", errs)
 	}
 
@@ -262,7 +262,7 @@ func ValidateUpdateCluster(ctx context.Context, newCluster, oldCluster *kubermat
 	}
 
 	secretKeySelectorFunc := provider.SecretKeySelectorValueFuncFactory(ctx, clusterProvider.GetSeedClusterAdminRuntimeClient())
-	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle, resources.DefaultNodePortRange)
+	cloudProvider, err := cloud.Provider(dc, secretKeySelectorFunc, caBundle)
 	if err != nil {
 		return err
 	}
@@ -567,15 +567,17 @@ func ValidateLeaderElectionSettings(l *kubermaticv1.LeaderElectionSettings, fldP
 	return allErrs
 }
 
-func ValidateNodePortRange(nodePortRange string, fldPath *field.Path) field.ErrorList {
+func ValidateNodePortRange(nodePortRange string, fldPath *field.Path, required bool) field.ErrorList {
 	allErrs := field.ErrorList{}
 
-	if nodePortRange == "" {
+	if !required && nodePortRange == "" {
 		return allErrs
 	}
 
-	if _, err := kubenetutil.ParsePortRange(nodePortRange); err != nil {
+	if pr, err := kubenetutil.ParsePortRange(nodePortRange); err != nil {
 		allErrs = append(allErrs, field.Invalid(fldPath, nodePortRange, err.Error()))
+	} else if pr.Base == 0 || pr.Size == 0 {
+		allErrs = append(allErrs, field.Invalid(fldPath, nodePortRange, "invalid nodeport range"))
 	}
 
 	return allErrs

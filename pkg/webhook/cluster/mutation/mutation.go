@@ -38,11 +38,15 @@ import (
 type AdmissionHandler struct {
 	log     logr.Logger
 	decoder *admission.Decoder
+
+	defaultComponentSettings kubermaticv1.ComponentSettings
 }
 
 // NewAdmissionHandler returns a new cluster mutation AdmissionHandler.
-func NewAdmissionHandler() *AdmissionHandler {
-	return &AdmissionHandler{}
+func NewAdmissionHandler(defaults kubermaticv1.ComponentSettings) *AdmissionHandler {
+	return &AdmissionHandler{
+		defaultComponentSettings: defaults,
+	}
 }
 
 func (h *AdmissionHandler) InjectLogger(l logr.Logger) error {
@@ -64,7 +68,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
 		}
-		applyDefaults(cluster)
+		h.applyDefaults(cluster)
 	case admissionv1.Update:
 		if err := h.decoder.Decode(req, cluster); err != nil {
 			return admission.Errored(http.StatusBadRequest, err)
@@ -91,7 +95,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 	return admission.PatchResponseFromRaw(req.Object.Raw, mutatedCluster)
 }
 
-func applyDefaults(c *kubermaticv1.Cluster) {
+func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
 		c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
 	}
@@ -116,6 +120,38 @@ func applyDefaults(c *kubermaticv1.Cluster) {
 
 	if c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
 		c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
+	}
+
+	// Default component settings
+	if c.Spec.ComponentsOverride.Apiserver.Replicas == nil {
+		c.Spec.ComponentsOverride.Apiserver.Replicas = h.defaultComponentSettings.Apiserver.Replicas
+	}
+	if c.Spec.ComponentsOverride.Apiserver.Resources == nil {
+		c.Spec.ComponentsOverride.Apiserver.Resources = h.defaultComponentSettings.Apiserver.Resources
+	}
+	if c.Spec.ComponentsOverride.Apiserver.NodePortRange == "" {
+		c.Spec.ComponentsOverride.Apiserver.NodePortRange = h.defaultComponentSettings.Apiserver.NodePortRange
+	}
+	if c.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled == nil {
+		c.Spec.ComponentsOverride.Apiserver.EndpointReconcilingDisabled = h.defaultComponentSettings.Apiserver.EndpointReconcilingDisabled
+	}
+	if c.Spec.ComponentsOverride.ControllerManager.Replicas == nil {
+		c.Spec.ComponentsOverride.ControllerManager.Replicas = h.defaultComponentSettings.ControllerManager.Replicas
+	}
+	if c.Spec.ComponentsOverride.ControllerManager.Resources == nil {
+		c.Spec.ComponentsOverride.ControllerManager.Resources = h.defaultComponentSettings.ControllerManager.Resources
+	}
+	if c.Spec.ComponentsOverride.Scheduler.Replicas == nil {
+		c.Spec.ComponentsOverride.Scheduler.Replicas = h.defaultComponentSettings.Scheduler.Replicas
+	}
+	if c.Spec.ComponentsOverride.Scheduler.Resources == nil {
+		c.Spec.ComponentsOverride.Scheduler.Resources = h.defaultComponentSettings.Scheduler.Resources
+	}
+	if c.Spec.ComponentsOverride.Etcd.Resources == nil {
+		c.Spec.ComponentsOverride.Etcd.Resources = h.defaultComponentSettings.Etcd.Resources
+	}
+	if c.Spec.ComponentsOverride.Prometheus.Resources == nil {
+		c.Spec.ComponentsOverride.Prometheus.Resources = h.defaultComponentSettings.Prometheus.Resources
 	}
 }
 

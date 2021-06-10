@@ -841,7 +841,7 @@ items:
 - apiVersion: kubermatic.k8s.io/v1
   kind: Addon
   metadata:
-    name: logrotate
+    name: aws-node-termination-handler
     labels:
       addons.kubermatic.io/ensure: true
 `

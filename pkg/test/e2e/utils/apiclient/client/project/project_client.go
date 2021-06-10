@@ -41,6 +41,8 @@ type ClientService interface {
 
 	CreateClusterRole(params *CreateClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterRoleCreated, error)
 
+	CreateClusterTemplate(params *CreateClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterTemplateCreated, error)
+
 	CreateClusterV2(params *CreateClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterV2Created, error)
 
 	CreateConstraint(params *CreateConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*CreateConstraintOK, error)
@@ -62,6 +64,8 @@ type ClientService interface {
 	DeleteCluster(params *DeleteClusterParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterOK, error)
 
 	DeleteClusterRole(params *DeleteClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterRoleOK, error)
+
+	DeleteClusterTemplate(params *DeleteClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterTemplateOK, error)
 
 	DeleteClusterV2(params *DeleteClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterV2OK, error)
 
@@ -111,6 +115,8 @@ type ClientService interface {
 
 	GetClusterRole(params *GetClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterRoleOK, error)
 
+	GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterTemplateOK, error)
+
 	GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesOK, error)
 
 	GetClusterUpgradesV2(params *GetClusterUpgradesV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesV2OK, error)
@@ -150,6 +156,8 @@ type ClientService interface {
 	ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleNamesV2OK, error)
 
 	ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleV2OK, error)
+
+	ListClusterTemplates(params *ListClusterTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplatesOK, error)
 
 	ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersOK, error)
 
@@ -521,6 +529,40 @@ func (a *Client) CreateClusterRole(params *CreateClusterRoleParams, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  CreateClusterTemplate creates a cluster templates for the given project
+*/
+func (a *Client) CreateClusterTemplate(params *CreateClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*CreateClusterTemplateCreated, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewCreateClusterTemplateParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "createClusterTemplate",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &CreateClusterTemplateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*CreateClusterTemplateCreated)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*CreateClusterTemplateDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -897,6 +939,40 @@ func (a *Client) DeleteClusterRole(params *DeleteClusterRoleParams, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*DeleteClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteClusterTemplate deletes cluster template
+*/
+func (a *Client) DeleteClusterTemplate(params *DeleteClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteClusterTemplateOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteClusterTemplateParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteClusterTemplate",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteClusterTemplateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteClusterTemplateOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteClusterTemplateDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
@@ -1719,6 +1795,40 @@ func (a *Client) GetClusterRole(params *GetClusterRoleParams, authInfo runtime.C
 }
 
 /*
+  GetClusterTemplate gets cluster template
+*/
+func (a *Client) GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterTemplateOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetClusterTemplateParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getClusterTemplate",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetClusterTemplateReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetClusterTemplateOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterTemplateDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetClusterUpgrades Gets possible cluster upgrades
 */
 func (a *Client) GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesOK, error) {
@@ -2395,6 +2505,40 @@ func (a *Client) ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListClusterRoleV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListClusterTemplates lists cluster templates for the given project
+*/
+func (a *Client) ListClusterTemplates(params *ListClusterTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplatesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListClusterTemplatesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listClusterTemplates",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListClusterTemplatesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListClusterTemplatesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClusterTemplatesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -65,6 +65,7 @@ var (
 // * user grafana controller - create/update/delete Grafana Global Users based on Kubermatic User
 // * datasource grafana controller - create/update/delete Grafana Datasources to organizations based on Kubermatic Clusters
 // * alertmanager configuration controller - manage alertmanager configuration based on Kubermatic Clusters
+// * rule group controller - manager rule groups that will be used to generate alerts.
 // * cleanup controller - this controller runs when mla disabled and clean objects that left from other MLA controller
 func Add(
 	ctx context.Context,
@@ -79,6 +80,8 @@ func Add(
 	grafanaSecret string,
 	overwriteRegistry string,
 	cortexAlertmanagerURL string,
+	cortexRulerURL string,
+	lokiRulerURL string,
 	mlaEnabled bool,
 ) error {
 	log = log.Named(ControllerName)
@@ -94,6 +97,9 @@ func Add(
 		return err
 	}
 	if err := client.Get(ctx, types.NamespacedName{Name: split[1], Namespace: split[0]}, &secret); err != nil {
+		if !mlaEnabled {
+			return nil // do not return an error if MLA is disabled (e.g. if MLA is not installed in Seed)
+		}
 		return fmt.Errorf("failed to get Grafana Secret: %v", err)
 	}
 	adminName, ok := secret.Data[grafanaUserKey]
@@ -108,11 +114,12 @@ func Add(
 	httpClient := &http.Client{Timeout: 15 * time.Second}
 	grafanaClient := grafanasdk.NewClient(grafanaURL, grafanaAuth, httpClient)
 
+	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, grafanaClient)
 	orgGrafanaController := newOrgGrafanaController(mgr.GetClient(), log, grafanaClient)
 	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
-	orgUserGrafanaController := newOrgUserGrafanaController(mgr.GetClient(), log, grafanaClient)
 	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), httpClient, grafanaURL, grafanaAuth, mlaNamespace, log, overwriteRegistry)
 	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, grafanaClient, httpClient, grafanaURL, grafanaHeader)
+	ruleGroupController := newRuleGroupController(mgr.GetClient(), log, httpClient, cortexRulerURL, lokiRulerURL)
 	if mlaEnabled {
 		if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, orgGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla project controller: %w", err)
@@ -129,6 +136,9 @@ func Add(
 		if err := newUserGrafanaReconciler(mgr, log, numWorkers, workerName, versions, userGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla user controller: %w", err)
 		}
+		if err := newRuleGroupReconciler(mgr, log, numWorkers, workerName, versions, ruleGroupController); err != nil {
+			return fmt.Errorf("failed to create rule group controller %w", err)
+		}
 	} else {
 		cleanupController := newCleanupController(
 			mgr.GetClient(),
@@ -138,6 +148,7 @@ func Add(
 			orgUserGrafanaController,
 			orgGrafanaController,
 			userGrafanaController,
+			ruleGroupController,
 		)
 		if err := newCleanupReconciler(mgr, log, numWorkers, workerName, versions, cleanupController); err != nil {
 			return fmt.Errorf("failed to create mla cleanup controller: %w", err)

@@ -179,10 +179,17 @@ func (r *datasourceGrafanaController) reconcile(ctx context.Context, cluster *ku
 	}
 
 	project := &kubermaticv1.Project{}
-	if err := r.Get(ctx, types.NamespacedName{Name: projectID}, project); err != nil {
+	err := r.Get(ctx, types.NamespacedName{Name: projectID}, project)
+	if err != nil {
+		if apiErrors.IsNotFound(err) {
+			// if project removed before cluster we need only to remove resources and finalizer
+			if err := r.handleDeletion(ctx, nil, cluster); err != nil {
+				return nil, fmt.Errorf("handling deletion: %w", err)
+			}
+			return nil, nil
+		}
 		return nil, fmt.Errorf("failed to get project: %w", err)
 	}
-
 	org, err := getOrgByProject(ctx, grafanaClient, project)
 	if err != nil {
 		return nil, err
@@ -333,7 +340,7 @@ func (r *datasourceGrafanaController) cleanUp(ctx context.Context) error {
 	}
 	for _, cluster := range clusterList.Items {
 		if err := r.handleDeletion(ctx, nil, &cluster); err != nil {
-			return nil
+			return err
 		}
 	}
 	return nil

@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/addon"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
+	clustertemplate "k8c.io/kubermatic/v2/pkg/handler/v2/cluster_template"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
 	constrainttemplate "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"
 	externalcluster "k8c.io/kubermatic/v2/pkg/handler/v2/external_cluster"
@@ -37,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/machine"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/preset"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
 )
 
@@ -492,6 +494,41 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/seeds/{seed_name}/settings").
 		Handler(r.getSeedSettings())
+
+	// Define a set of endpoints for cluster templates management
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clustertemplates").
+		Handler(r.createClusterTemplate())
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clustertemplates").
+		Handler(r.listClusterTemplates())
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clustertemplates/{template_id}").
+		Handler(r.getClusterTemplate())
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/clustertemplates/{template_id}").
+		Handler(r.deleteClusterTemplate())
+
+	// Defines a set of HTTP endpoints for managing rule groups
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}").
+		Handler(r.getRuleGroup())
+
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups").
+		Handler(r.listRuleGroups())
+
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups").
+		Handler(r.createRuleGroup())
+
+	mux.Methods(http.MethodPut).
+		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}").
+		Handler(r.updateRuleGroup())
+
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}").
+		Handler(r.deleteRuleGroup())
 
 }
 
@@ -3328,6 +3365,260 @@ func (r Routing) getSeedSettings() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(seedsettings.GetSeedSettingsEndpoint(r.seedsGetter)),
 		seedsettings.DecodeGetSeedSettingsReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clustertemplates project createClusterTemplate
+//
+//     Creates a cluster templates for the given project.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterTemplate
+//       401: empty
+//       403: empty
+func (r Routing) createClusterTemplate() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.settingsProvider, r.updateManager)),
+		clustertemplate.DecodeCreateReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clustertemplates project listClusterTemplates
+//
+//     List cluster templates for the given project.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterTemplateList
+//       401: empty
+//       403: empty
+func (r Routing) listClusterTemplates() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.ListEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider)),
+		clustertemplate.DecodeListReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clustertemplates/{template_id} project getClusterTemplate
+//
+//     Get cluster template.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterTemplate
+//       401: empty
+//       403: empty
+func (r Routing) getClusterTemplate() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider)),
+		clustertemplate.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/projects/{project_id}/clustertemplates/{template_id} project deleteClusterTemplate
+//
+//     Delete cluster template.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteClusterTemplate() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.DeleteEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider)),
+		clustertemplate.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id} rulegroup getRuleGroup
+//
+//     Gets a specified rule group for the given cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: RuleGroup
+//       401: empty
+//       403: empty
+func (r Routing) getRuleGroup() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.RuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+		)(rulegroup.GetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		rulegroup.DecodeGetReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups rulegroup listRuleGroups
+//
+//     Lists rule groups that belong to the given cluster
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []RuleGroup
+//       401: empty
+//       403: empty
+func (r Routing) listRuleGroups() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.RuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+		)(rulegroup.ListEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		rulegroup.DecodeListReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups rulegroup createRuleGroup
+//
+//     Creates a rule group that will belong to the given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: RuleGroup
+//       401: empty
+//       403: empty
+func (r Routing) createRuleGroup() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.RuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+		)(rulegroup.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		rulegroup.DecodeCreateReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PUT /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id} rulegroup updateRuleGroup
+//
+//     Updates the specified rule group for the given cluster.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: RuleGroup
+//       401: empty
+//       403: empty
+func (r Routing) updateRuleGroup() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.RuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+		)(rulegroup.UpdateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		rulegroup.DecodeUpdateReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id} rulegroup deleteRuleGroup
+//
+//    Deletes the given rule group that belongs to the cluster.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteRuleGroup() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.RuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
+		)(rulegroup.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		rulegroup.DecodeDeleteReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

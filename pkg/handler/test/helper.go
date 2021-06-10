@@ -186,6 +186,8 @@ type newRoutingFunc func(
 	constraintTemplateProvider provider.ConstraintTemplateProvider,
 	constraintProviderGetter provider.ConstraintProviderGetter,
 	alertmanagerProviderGetter provider.AlertmanagerProviderGetter,
+	clusterTemplateProvider provider.ClusterTemplateProvider,
+	ruleGroupProviderGetter provider.RuleGroupProviderGetter,
 	kubermaticVersions kubermatic.Versions,
 ) http.Handler
 
@@ -362,6 +364,20 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find alertmanagerprovider for cluster %q", seed.Name)
 	}
 
+	clusterTemplateProvider, err := kubernetes.NewClusterTemplateProvider(fakeImpersonationClient, fakeClient)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	ruleGroupProvider := kubernetes.NewRuleGroupProvider(fakeImpersonationClient, fakeClient)
+	ruleGroupProviders := map[string]provider.RuleGroupProvider{"us-central1": ruleGroupProvider}
+	ruleGroupProviderGetter := func(seed *kubermaticv1.Seed) (provider.RuleGroupProvider, error) {
+		if ruleGroup, exists := ruleGroupProviders[seed.Name]; exists {
+			return ruleGroup, nil
+		}
+		return nil, fmt.Errorf("can not find ruleGroupProvider for cluster %q", seed.Name)
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -416,6 +432,8 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		fakeConstraintTemplateProvider,
 		constraintProviderGetter,
 		alertmanagerProviderGetter,
+		clusterTemplateProvider,
+		ruleGroupProviderGetter,
 		kubermaticVersions,
 	)
 
@@ -1617,4 +1635,65 @@ func GenAlertmanagerConfigSecret(name, namespace string, config []byte) *corev1.
 			resources.AlertmanagerConfigSecretKey: config,
 		},
 	}
+}
+
+func GenClusterTemplate(name, id, projectID, scope, userEmail string) *kubermaticv1.ClusterTemplate {
+	return &kubermaticv1.ClusterTemplate{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        id,
+			Labels:      map[string]string{kubermaticv1.ClusterTemplateScopeLabelKey: scope, kubermaticv1.ProjectIDLabelKey: projectID},
+			Annotations: map[string]string{kubermaticv1.ClusterTemplateUserAnnotationKey: userEmail},
+		},
+		ClusterLabels:          nil,
+		InheritedClusterLabels: nil,
+		Credential:             "",
+		Spec: kubermaticv1.ClusterSpec{
+			HumanReadableName: name,
+		},
+	}
+}
+
+func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroupType) *kubermaticv1.RuleGroup {
+	return &kubermaticv1.RuleGroup{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "cluster-" + clusterName,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       kubermaticv1.RuleGroupKindName,
+			APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+		},
+		Spec: kubermaticv1.RuleGroupSpec{
+			RuleGroupType: ruleGroupType,
+			Cluster: corev1.ObjectReference{
+				Kind:       kubermaticv1.ClusterKindName,
+				Namespace:  "",
+				Name:       clusterName,
+				APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+			},
+			Data: GenerateTestRuleGroupData(name),
+		},
+	}
+}
+
+func GenAPIRuleGroup(name string, ruleGroupType kubermaticv1.RuleGroupType) *apiv2.RuleGroup {
+	return &apiv2.RuleGroup{
+		Data: GenerateTestRuleGroupData(name),
+		Type: ruleGroupType,
+	}
+}
+
+func GenerateTestRuleGroupData(ruleGroupName string) []byte {
+	return []byte(fmt.Sprintf(`
+name: %s
+rules:
+# Alert for any instance that is unreachable for >5 minutes.
+- alert: InstanceDown
+  expr: up == 0
+  for: 5m
+  labels:
+    severity: page
+  annotations:
+    summary: "Instance  down"
+`, ruleGroupName))
 }
