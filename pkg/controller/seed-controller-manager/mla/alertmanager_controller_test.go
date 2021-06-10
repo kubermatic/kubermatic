@@ -85,7 +85,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			name:        "create default alertmanager configuration when no alertmanager is created",
 			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", true, false, false),
 			},
 			requests: []request{
 				{
@@ -108,7 +108,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			name:        "create default alertmanager configuration if alertmanager is found but config secret is not set",
 			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", false, true, false),
 				&kubermaticv1.Alertmanager{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resources.AlertmanagerName,
@@ -137,7 +137,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			name:        "create default alertmanager configuration if config secret is set but not found",
 			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", true, false, false),
 				&kubermaticv1.Alertmanager{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      resources.AlertmanagerName,
@@ -171,7 +171,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			name:        "create alertmanager configuration based on the config secret",
 			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", false, true, false),
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "config-secret",
@@ -211,10 +211,10 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			hasResources: true,
 		},
 		{
-			name:        "clean up alertmanager configuration when monitoring is disabled",
+			name:        "clean up alertmanager configuration when mla is disabled",
 			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", false, false),
+				generateCluster("test", false, false, false),
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "config-secret",
@@ -252,7 +252,7 @@ func TestAlertmanagerReconcile(t *testing.T) {
 			name:        "clean up alertmanager configuration when cluster is removed",
 			requestName: "test",
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", false, true),
+				generateCluster("test", false, true, true),
 			},
 			requests: []request{
 				{
@@ -312,14 +312,17 @@ func TestAlertmanagerReconcile(t *testing.T) {
 	}
 }
 
-func generateCluster(name string, monitoringEnabled, deleted bool) *kubermaticv1.Cluster {
+func generateCluster(name string, monitoringEnabled, loggingEnabled, deleted bool) *kubermaticv1.Cluster {
 	cluster := &kubermaticv1.Cluster{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			HumanReadableName: name,
-			MLA:               &kubermaticv1.MLASettings{MonitoringEnabled: monitoringEnabled},
+			MLA: &kubermaticv1.MLASettings{
+				MonitoringEnabled: monitoringEnabled,
+				LoggingEnabled:    loggingEnabled,
+			},
 		},
 		Status: kubermaticv1.ClusterStatus{NamespaceName: fmt.Sprintf("cluster-%s", name)},
 	}
