@@ -31,7 +31,11 @@ func (d *Deletion) cleanupConstraints(ctx context.Context, cluster *kubermaticv1
 		return err
 	}
 
-	// removing fianlzers from all constraints
+	// `kubermaticapiv1.GatekeeperConstraintCleanupFinalizer` is added by user-cluster-controller-manager/constraints-syncer.
+	// It could be the case that during cluster deletion, user-cluster-controller-manager is deleted before it removes
+	// the finalizer from constraints object, in this case, the user-cluster namespace will get stuck on deletion.
+	// So here we just remove the finalizer from constraints so that user-cluster namespace can be garbage-collected.
+	// Ref:https://github.com/kubermatic/kubermatic/issues/6934
 	constraintList := &kubermaticv1.ConstraintList{}
 	if err := d.seedClient.List(ctx, constraintList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName)); err != nil {
 		return err
