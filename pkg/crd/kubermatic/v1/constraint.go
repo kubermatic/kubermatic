@@ -46,6 +46,8 @@ type Constraint struct {
 type ConstraintSpec struct {
 	// ConstraintType specifies the type of gatekeeper constraint that the constraint applies to
 	ConstraintType string `json:"constraintType"`
+	// Active flag tells constraint's active state
+	Active bool `json:"active,omitempty"`
 	// Match contains the constraint to resource matching data
 	Match Match `json:"match,omitempty"`
 	// Parameters specifies the parameters used by the constraint template REGO.
