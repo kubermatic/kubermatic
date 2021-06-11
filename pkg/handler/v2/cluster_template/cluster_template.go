@@ -352,7 +352,7 @@ func genSpec(apiCluster apiv1.Cluster) (*kubermaticv1.ClusterSpec, error) {
 }
 
 func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemplate) (*apiv2.ClusterTemplate, error) {
-	var md *apiv1.NodeDeployment
+	md := &apiv1.NodeDeployment{}
 	rawMachineDeployment, ok := template.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
 	if ok {
 		err := json.Unmarshal([]byte(rawMachineDeployment), md)
