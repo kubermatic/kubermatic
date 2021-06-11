@@ -31,7 +31,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/util/workerlabel"
 
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/types"
@@ -156,11 +155,9 @@ func Add(ctx context.Context,
 func ByLabel(key string) predicate.Funcs {
 	return kubermaticpred.Factory(func(o ctrlruntimeclient.Object) bool {
 		labels := o.GetLabels()
-		if labels != nil {
-			if existingValue, ok := labels[key]; ok {
-				if existingValue == o.GetName() {
-					return true
-				}
+		if existingValue, ok := labels[key]; ok {
+			if existingValue == o.GetName() {
+				return true
 			}
 		}
 		return false
@@ -231,7 +228,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 		return fmt.Errorf("failed listing clusters: %w", err)
 	}
 
-	desiredClusterList, unwantedClusterList, err := r.filterClustersForConstraint(ctx, constraint, clusterList)
+	desiredClusters, unwantedClusters, err := r.filterClustersForConstraint(ctx, constraint, clusterList)
 	if err != nil {
 		return fmt.Errorf("failed listing clusters: %w", err)
 	}
@@ -243,7 +240,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 			return nil
 		}
 
-		if err := r.cleanupConstraint(ctx, log, constraint, desiredClusterList); err != nil {
+		if err := r.cleanupConstraint(ctx, log, constraint, desiredClusters); err != nil {
 			return err
 		}
 
@@ -261,18 +258,18 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 		}
 	}
 
-	if err = r.cleanupConstraint(ctx, log, constraint, unwantedClusterList); err != nil {
+	if err = r.cleanupConstraint(ctx, log, constraint, unwantedClusters); err != nil {
 		return err
 	}
 
-	if err = r.createConstraint(ctx, log, constraint, desiredClusterList); err != nil {
+	if err = r.ensureConstraint(ctx, log, constraint, desiredClusters); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (r *reconciler) createConstraint(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint, clusterList []kubermaticv1.Cluster) error {
+func (r *reconciler) ensureConstraint(ctx context.Context, log *zap.SugaredLogger, constraint *kubermaticv1.Constraint, clusterList []kubermaticv1.Cluster) error {
 	constraintCreatorGetters := []reconciling.NamedKubermaticV1ConstraintCreatorGetter{
 		constraintCreatorGetter(constraint),
 	}
@@ -301,8 +298,8 @@ func (r *reconciler) cleanupConstraint(ctx context.Context, log *zap.SugaredLogg
 
 		// to avoid performing API calls when not needed, the Get is cached while delete will hit the kubermatic api server
 		err := seedClient.Get(ctx, types.NamespacedName{Name: constraint.Name, Namespace: namespace}, constraint)
-		if err != nil || errors.IsNotFound(err) {
-			return nil
+		if err != nil {
+			return ctrlruntimeclient.IgnoreNotFound(err)
 		}
 
 		log.Debugw("cleanup processing:", namespace)

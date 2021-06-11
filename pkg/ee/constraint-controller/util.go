@@ -43,29 +43,34 @@ const (
 
 // FilterClustersForConstraint gets clusters for the constraints by using the constraints selector to filter out unselected clusters
 func FilterClustersForConstraint(ctx context.Context, client ctrlruntimeclient.Client, constraint *kubermaticv1.Constraint, clusterList *kubermaticv1.ClusterList) ([]kubermaticv1.Cluster, []kubermaticv1.Cluster, error) {
+
 	constraintLabelSelector, err := v1.LabelSelectorAsSelector(&constraint.Spec.Selector.LabelSelector)
 	if err != nil {
 		return nil, nil, fmt.Errorf("error converting Constraint label selector (%v) to a kubernetes selector: %w", constraint.Spec.Selector.LabelSelector, err)
 	}
 	providersSet := sets.NewString(constraint.Spec.Selector.Providers...)
 
-	var unwantedList []kubermaticv1.Cluster
-	var desiredList []kubermaticv1.Cluster
+	var unwanted []kubermaticv1.Cluster
+	var desired []kubermaticv1.Cluster
 
 	for _, cluster := range clusterList.Items {
 		if !constraintLabelSelector.Matches(labels.Set(cluster.Labels)) {
-			unwantedList = append(unwantedList, cluster)
+			unwanted = append(unwanted, cluster)
 			continue
 		}
 
 		name, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 
-		if err != nil || providersSet.Len() != 0 && !providersSet.Has(name) {
-			unwantedList = append(unwantedList, cluster)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if providersSet.Len() != 0 && !providersSet.Has(name) {
+			unwanted = append(unwanted, cluster)
 			continue
 		}
-		desiredList = append(desiredList, cluster)
+		desired = append(desired, cluster)
 	}
 
-	return desiredList, unwantedList, nil
+	return desired, unwanted, nil
 }
