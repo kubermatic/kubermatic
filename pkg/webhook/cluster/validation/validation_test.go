@@ -220,7 +220,7 @@ func TestHandle(t *testing.T) {
 							Name:             "foo",
 							Namespace:        "kubermatic",
 							ExposeStrategy:   "NodePort",
-							EnableUserSSHKey: true,
+							EnableUserSSHKey: pointer.BoolPtr(true),
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -240,7 +240,7 @@ func TestHandle(t *testing.T) {
 							Name:             "foo",
 							Namespace:        "kubermatic",
 							ExposeStrategy:   "NodePort",
-							EnableUserSSHKey: false,
+							EnableUserSSHKey: pointer.BoolPtr(false),
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 								Pods:      kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
 								Services:  kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
@@ -745,7 +745,7 @@ type rawClusterGen struct {
 	Name                  string
 	Namespace             string
 	ExposeStrategy        string
-	EnableUserSSHKey      bool
+	EnableUserSSHKey      *bool
 	ExternalCloudProvider bool
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
 	ComponentSettings     kubermaticv1.ComponentSettings
