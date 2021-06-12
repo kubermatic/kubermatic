@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"reflect"
 
 	"github.com/go-logr/logr"
 
@@ -166,7 +167,7 @@ func (h *AdmissionHandler) rejectUserSSHKeyAgentChanges(ctx context.Context, clu
 			return fmt.Errorf("failed to fetch cluster name=%s: %v", cluster.Name, err)
 		}
 
-		if oldCluster.Spec.EnableUserSSHKeyAgent != cluster.Spec.EnableUserSSHKeyAgent {
+		if !reflect.DeepEqual(oldCluster.Spec.EnableUserSSHKeyAgent, cluster.Spec.EnableUserSSHKeyAgent) {
 			return errors.New("enableUserSSHKeyAgent field cannot be updated after cluster creation")
 		}
 	}

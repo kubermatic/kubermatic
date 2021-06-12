@@ -800,8 +800,9 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				DatacenterName: "FakeDatacenter",
 				Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 			},
-			Version:           *semver.NewSemverOrDie("9.9.9"),
-			HumanReadableName: name,
+			Version:               *semver.NewSemverOrDie("9.9.9"),
+			HumanReadableName:     name,
+			EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 		},
 		Address: kubermaticv1.ClusterAddress{
 			AdminToken:   "drphc2.g4kq82pnlfqjqt65",

@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"context"
 	"testing"
-	"text/template"
 
 	logrtesting "github.com/go-logr/logr/testing"
 
@@ -30,6 +29,8 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/serializer/json"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrlruntimefakeclient "sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -153,7 +154,7 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: true}.Do(),
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: pointer.BoolPtr(true)}.Do(),
 					},
 				},
 			},
@@ -164,7 +165,7 @@ func TestHandle(t *testing.T) {
 						Name: "foo",
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						EnableUserSSHKeyAgent: true,
+						EnableUserSSHKeyAgent: pointer.BoolPtr(true),
 					},
 				},
 			).Build(),
@@ -181,10 +182,10 @@ func TestHandle(t *testing.T) {
 					},
 					Name: "foo",
 					Object: runtime.RawExtension{
-						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: false}.Do(),
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: pointer.BoolPtr(false)}.Do(),
 					},
 					OldObject: runtime.RawExtension{
-						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: false}.Do(),
+						Raw: rawClusterGen{Name: "foo", Namespace: "kubermatic", ExposeStrategy: "NodePort", EnableUserSSHKey: pointer.BoolPtr(false)}.Do(),
 					},
 				},
 			},
@@ -195,7 +196,7 @@ func TestHandle(t *testing.T) {
 						Name: "foo",
 					},
 					Spec: kubermaticv1.ClusterSpec{
-						EnableUserSSHKeyAgent: false,
+						EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 					},
 				},
 			).Build(),
@@ -351,27 +352,34 @@ type rawClusterGen struct {
 	Name                  string
 	Namespace             string
 	ExposeStrategy        string
-	EnableUserSSHKey      bool
+	EnableUserSSHKey      *bool
 	ExternalCloudProvider bool
+	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
+	ComponentSettings     kubermaticv1.ComponentSettings
 }
 
 func (r rawClusterGen) Do() []byte {
-	tmpl, _ := template.New("cluster").Parse(`{
-  "apiVersion": "kubermatic.k8s.io/v1",
-  "kind": "Cluster",
-  "metadata": {
-	"name": "{{ .Name }}",
-	"namespace": "{{ .Namespace}}"
-  },
-  "spec": {
-	"exposeStrategy": "{{ .ExposeStrategy }}",
-	"enableUserSSHKey": {{ .EnableUserSSHKey }},
-	"features": {
-		"externalCloudProvider": {{ .ExternalCloudProvider }}
+	c := kubermaticv1.Cluster{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "kubermatic.k8s.io/v1",
+			Kind:       "Cluster",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      r.Name,
+			Namespace: r.Namespace,
+		},
+		Spec: kubermaticv1.ClusterSpec{
+			Features: map[string]bool{
+				"externalCloudProvider": r.ExternalCloudProvider,
+			},
+			ExposeStrategy:        kubermaticv1.ExposeStrategy(r.ExposeStrategy),
+			EnableUserSSHKeyAgent: r.EnableUserSSHKey,
+			ClusterNetwork:        r.NetworkConfig,
+			ComponentsOverride:    r.ComponentSettings,
+		},
 	}
-  }
-}`)
-	sb := bytes.Buffer{}
-	_ = tmpl.Execute(&sb, r)
-	return sb.Bytes()
+	s := json.NewSerializer(json.DefaultMetaFactory, testScheme, testScheme, true)
+	buff := bytes.NewBuffer([]byte{})
+	_ = s.Encode(&c, buff)
+	return buff.Bytes()
 }

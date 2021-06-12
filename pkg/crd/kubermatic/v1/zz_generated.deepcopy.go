@@ -815,6 +815,11 @@ func (in *ClusterSpec) DeepCopyInto(out *ClusterSpec) {
 		*out = new(UpdateWindow)
 		**out = **in
 	}
+	if in.EnableUserSSHKeyAgent != nil {
+		in, out := &in.EnableUserSSHKeyAgent, &out.EnableUserSSHKeyAgent
+		*out = new(bool)
+		**out = **in
+	}
 	if in.PodNodeSelectorAdmissionPluginConfig != nil {
 		in, out := &in.PodNodeSelectorAdmissionPluginConfig, &out.PodNodeSelectorAdmissionPluginConfig
 		*out = make(map[string]string, len(*in))

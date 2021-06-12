@@ -32,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/sets"
+	"k8s.io/utils/pointer"
 )
 
 var (
@@ -117,6 +118,12 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 			if err != nil {
 				return nil, err
 			}
+
+			enableUserSSHKeyAgent := data.Cluster().Spec.EnableUserSSHKeyAgent
+			if enableUserSSHKeyAgent == nil {
+				enableUserSSHKeyAgent = pointer.BoolPtr(true)
+			}
+
 			args := append([]string{
 				"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 				"-metrics-listen-address", "0.0.0.0:8085",
@@ -129,7 +136,7 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-version", data.Cluster().Spec.Version.String(),
 				"-cloud-provider-name", data.GetKubernetesCloudProviderName(),
 				"-owner-email", data.Cluster().Status.UserEmail,
-				fmt.Sprintf("-enable-ssh-key-agent=%t", data.Cluster().Spec.EnableUserSSHKeyAgent),
+				fmt.Sprintf("-enable-ssh-key-agent=%t", *enableUserSSHKeyAgent),
 				fmt.Sprintf("-opa-integration=%t", data.Cluster().Spec.OPAIntegration != nil && data.Cluster().Spec.OPAIntegration.Enabled),
 				fmt.Sprintf("-user-cluster-monitoring=%t", data.Cluster().Spec.MLA != nil && data.Cluster().Spec.MLA.MonitoringEnabled),
 				fmt.Sprintf("-user-cluster-logging=%t", data.Cluster().Spec.MLA != nil && data.Cluster().Spec.MLA.LoggingEnabled),
