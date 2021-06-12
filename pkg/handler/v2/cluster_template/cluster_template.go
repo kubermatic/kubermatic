@@ -35,6 +35,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
+	"k8s.io/utils/pointer"
 )
 
 // scopeList holds a list of user cluster template access levels.
@@ -307,10 +308,10 @@ func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
 
 // genSpec builds ClusterSpec kubermatic Custom Resource from API Cluster
 func genSpec(apiCluster apiv1.Cluster) (*kubermaticv1.ClusterSpec, error) {
-	var userSSHKeysAgentEnabled = true
+	var userSSHKeysAgentEnabled = pointer.BoolPtr(true)
 
 	if apiCluster.Spec.EnableUserSSHKeyAgent != nil {
-		userSSHKeysAgentEnabled = *apiCluster.Spec.EnableUserSSHKeyAgent
+		userSSHKeysAgentEnabled = apiCluster.Spec.EnableUserSSHKeyAgent
 	}
 
 	spec := &kubermaticv1.ClusterSpec{
@@ -379,7 +380,7 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 				AuditLogging:                         template.Spec.AuditLogging,
 				UsePodSecurityPolicyAdmissionPlugin:  template.Spec.UsePodSecurityPolicyAdmissionPlugin,
 				UsePodNodeSelectorAdmissionPlugin:    template.Spec.UsePodNodeSelectorAdmissionPlugin,
-				EnableUserSSHKeyAgent:                &template.Spec.EnableUserSSHKeyAgent,
+				EnableUserSSHKeyAgent:                template.Spec.EnableUserSSHKeyAgent,
 				AdmissionPlugins:                     template.Spec.AdmissionPlugins,
 				OPAIntegration:                       template.Spec.OPAIntegration,
 				PodNodeSelectorAdmissionPluginConfig: template.Spec.PodNodeSelectorAdmissionPluginConfig,

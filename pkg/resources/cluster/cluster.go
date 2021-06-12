@@ -27,14 +27,16 @@ import (
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud"
 	"k8c.io/kubermatic/v2/pkg/validation"
+
+	"k8s.io/utils/pointer"
 )
 
 // Spec builds ClusterSpec kubermatic Custom Resource from API Cluster
 func Spec(apiCluster apiv1.Cluster, dc *kubermaticv1.Datacenter, secretKeyGetter provider.SecretKeySelectorValueFunc, caBundle *x509.CertPool) (*kubermaticv1.ClusterSpec, error) {
-	var userSSHKeysAgentEnabled = true
+	var userSSHKeysAgentEnabled = pointer.BoolPtr(true)
 
 	if apiCluster.Spec.EnableUserSSHKeyAgent != nil {
-		userSSHKeysAgentEnabled = *apiCluster.Spec.EnableUserSSHKeyAgent
+		userSSHKeysAgentEnabled = apiCluster.Spec.EnableUserSSHKeyAgent
 	}
 
 	spec := &kubermaticv1.ClusterSpec{

@@ -48,6 +48,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -171,9 +172,9 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 	}
 
 	if body.Cluster.Spec.EnableUserSSHKeyAgent == nil {
-		partialCluster.Spec.EnableUserSSHKeyAgent = true
+		partialCluster.Spec.EnableUserSSHKeyAgent = pointer.BoolPtr(true)
 	} else {
-		partialCluster.Spec.EnableUserSSHKeyAgent = *body.Cluster.Spec.EnableUserSSHKeyAgent
+		partialCluster.Spec.EnableUserSSHKeyAgent = body.Cluster.Spec.EnableUserSSHKeyAgent
 	}
 
 	// Generate the name here so that it can be used in the secretName below.
@@ -833,7 +834,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, fil
 			AuditLogging:                         internalCluster.Spec.AuditLogging,
 			UsePodSecurityPolicyAdmissionPlugin:  internalCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
 			UsePodNodeSelectorAdmissionPlugin:    internalCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
-			EnableUserSSHKeyAgent:                &internalCluster.Spec.EnableUserSSHKeyAgent,
+			EnableUserSSHKeyAgent:                internalCluster.Spec.EnableUserSSHKeyAgent,
 			AdmissionPlugins:                     internalCluster.Spec.AdmissionPlugins,
 			OPAIntegration:                       internalCluster.Spec.OPAIntegration,
 			PodNodeSelectorAdmissionPluginConfig: internalCluster.Spec.PodNodeSelectorAdmissionPluginConfig,
