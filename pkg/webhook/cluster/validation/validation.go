@@ -29,10 +29,18 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	apimachineryvalidation "k8s.io/apimachinery/pkg/api/validation"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrlruntime "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+)
+
+var (
+	supportedCNIPlugins        = sets.NewString(kubermaticv1.CNIPluginTypeCanal.String())
+	supportedCNIPluginVersions = map[kubermaticv1.CNIPluginType]sets.String{
+		kubermaticv1.CNIPluginTypeCanal: sets.NewString("v3.8", "v3.19"),
+	}
 )
 
 // AdmissionHandler for validating Kubermatic Cluster CRD.
@@ -99,6 +107,13 @@ func (h *AdmissionHandler) validateCreate(c *kubermaticv1.Cluster) field.ErrorLi
 		!h.features.Enabled(features.TunnelingExposeStrategy) {
 		allErrs = append(allErrs, field.Forbidden(specFldPath.Child("exposeStrategy"), "cannot create cluster with Tunneling expose strategy because the TunnelingExposeStrategy feature gate is not enabled"))
 	}
+	if c.Spec.CNIPlugin != nil {
+		if !supportedCNIPlugins.Has(c.Spec.CNIPlugin.Type.String()) {
+			allErrs = append(allErrs, field.NotSupported(specFldPath.Child("cniPlugin", "type"), c.Spec.CNIPlugin.Type.String(), supportedCNIPlugins.List()))
+		} else if !supportedCNIPluginVersions[c.Spec.CNIPlugin.Type].Has(c.Spec.CNIPlugin.Version) {
+			allErrs = append(allErrs, field.NotSupported(specFldPath.Child("cniPlugin", "version"), c.Spec.CNIPlugin.Version, supportedCNIPluginVersions[c.Spec.CNIPlugin.Type].List()))
+		}
+	}
 	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.ControllerManager.LeaderElectionSettings, specFldPath.Child("componentsOverride", "controllerManager", "leaderElection"))...)
 	allErrs = append(allErrs, validation.ValidateLeaderElectionSettings(&c.Spec.ComponentsOverride.Scheduler.LeaderElectionSettings, specFldPath.Child("componentsOverride", "scheduler", "leaderElection"))...)
 	allErrs = append(allErrs, validation.ValidateClusterNetworkConfig(&c.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"), false)...)
@@ -145,7 +160,22 @@ func validateUpdateImmutability(c, oldC *kubermaticv1.Cluster) field.ErrorList {
 		c.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; vOld && !v {
 		allErrs = append(allErrs, field.Invalid(specFldPath.Child("features").Key(kubermaticv1.ClusterFeatureExternalCloudProvider), v, fmt.Sprintf("feature gate %q cannot be disabled once it's enabled", kubermaticv1.ClusterFeatureExternalCloudProvider)))
 	}
-	// Immutable fields
+	if c.Spec.CNIPlugin != nil && oldC.Spec.CNIPlugin != nil {
+		// Immutable fields
+		// TODO(irozzo): this constraint should be relaxed to provide the
+		// possibility to upgrade CNI plugin version.
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			*c.Spec.CNIPlugin,
+			*oldC.Spec.CNIPlugin,
+			specFldPath.Child("cniPlugin"),
+		)...)
+	} else {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			c.Spec.CNIPlugin,
+			oldC.Spec.CNIPlugin,
+			specFldPath.Child("cniPlugin"),
+		)...)
+	}
 	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
 		c.Spec.ExposeStrategy,
 		oldC.Spec.ExposeStrategy,
