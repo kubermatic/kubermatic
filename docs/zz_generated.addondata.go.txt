@@ -54,6 +54,8 @@ type ClusterData struct {
 	Network ClusterNetwork
 	// Features is a set of enabled features for this cluster.
 	Features sets.String
+	// CNIPlugin contains the CNIPlugin settings
+	CNIPlugin CNIPlugin
 }
 
 type ClusterNetwork struct {
@@ -63,6 +65,11 @@ type ClusterNetwork struct {
 	PodCIDRBlocks     []string
 	ServiceCIDRBlocks []string
 	ProxyMode         string
+}
+
+type CNIPlugin struct {
+	Type    string
+	Version string
 }
 
 type Credentials struct {
