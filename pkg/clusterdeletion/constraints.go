@@ -18,6 +18,7 @@ package clusterdeletion
 
 import (
 	"context"
+	"fmt"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -48,7 +49,9 @@ func (d *Deletion) cleanupConstraints(ctx context.Context, cluster *kubermaticv1
 	for _, constraint := range constraintList.Items {
 		oldConstraint := constraint.DeepCopy()
 		kuberneteshelper.RemoveFinalizer(&constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
-		d.seedClient.Patch(ctx, &constraint, ctrlruntimeclient.MergeFrom(oldConstraint))
+		if err := d.seedClient.Patch(ctx, &constraint, ctrlruntimeclient.MergeFrom(oldConstraint)); err != nil {
+			return fmt.Errorf("failed to remove constraint finalizer %s: %v", constraint.Name, err)
+		}
 	}
 
 	oldCluster := cluster.DeepCopy()
