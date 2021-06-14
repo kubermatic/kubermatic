@@ -295,6 +295,11 @@ func (r *reconciler) syncAllClustersNS(
 			continue
 		}
 
+		if !userCluster.DeletionTimestamp.IsZero() {
+			log.Debugw("Cluster deletion in progress, skipping", "cluster", clusterName)
+			continue
+		}
+
 		if isOPAEnabled(&userCluster) {
 			if err := actionFunc(r.seedClient, constraint, userCluster.Status.NamespaceName); err != nil {
 				return fmt.Errorf("failed syncing constraint for cluster %s namespace: %w", clusterName, err)
