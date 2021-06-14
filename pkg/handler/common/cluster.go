@@ -362,6 +362,7 @@ func PatchEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	newInternalCluster.Spec.PodNodeSelectorAdmissionPluginConfig = patchedCluster.Spec.PodNodeSelectorAdmissionPluginConfig
 	newInternalCluster.Spec.ServiceAccount = patchedCluster.Spec.ServiceAccount
 	newInternalCluster.Spec.MLA = patchedCluster.Spec.MLA
+	newInternalCluster.Spec.ContainerRuntime = patchedCluster.Spec.ContainerRuntime
 
 	incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfoGetter, clusterProvider, newInternalCluster, projectID)
 	if err != nil {
