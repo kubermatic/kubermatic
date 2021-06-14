@@ -265,9 +265,6 @@ spec:
       }
     # DockerRepository is the repository containing the Kubermatic dashboard image.
     dockerRepository: quay.io/kubermatic/dashboard
-    # DockerTag is used to overwrite the dashboard Docker image tag and is only for development
-    # purposes. This field must not be set in production environments.
-    dockerTag: ""
     # Replicas sets the number of pod replicas for the UI deployment.
     replicas: 2
     # Resources describes the requested and maximum allowed CPU/memory usage.
@@ -429,37 +426,22 @@ spec:
           from: 1.17.*
           # From is the version to which an update is allowed. Wildcards are allowed, e.g. "1.18.*".
           to: 1.18.17
-        - automatic: null
-          automaticNodeUpdate: null
-          from: 1.18.*
+        - from: 1.18.*
           to: 1.18.*
         - automatic: true
-          automaticNodeUpdate: null
           from: <= 1.18.5, >= 1.18.0
           to: 1.18.6
-        - automatic: null
-          automaticNodeUpdate: null
-          from: 1.18.*
+        - from: 1.18.*
           to: 1.19.*
-        - automatic: null
-          automaticNodeUpdate: null
-          from: 1.19.*
+        - from: 1.19.*
           to: 1.19.*
-        - automatic: null
-          automaticNodeUpdate: null
-          from: 1.19.*
+        - from: 1.19.*
           to: 1.20.*
-        - automatic: null
-          automaticNodeUpdate: null
-          from: 1.20.*
+        - from: 1.20.*
           to: 1.20.*
-        - automatic: null
-          automaticNodeUpdate: null
-          from: 1.20.*
+        - from: 1.20.*
           to: 1.21.*
-        - automatic: null
-          automaticNodeUpdate: null
-          from: 1.21.*
+        - from: 1.21.*
           to: 1.21.*
       # Versions lists the available versions.
       versions:
