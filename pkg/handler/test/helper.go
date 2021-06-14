@@ -829,8 +829,9 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 				DatacenterName: "FakeDatacenter",
 				Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 			},
-			Version:           *semver.NewSemverOrDie("9.9.9"),
-			HumanReadableName: name,
+			Version:               *semver.NewSemverOrDie("9.9.9"),
+			HumanReadableName:     name,
+			EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 		},
 		Address: kubermaticv1.ClusterAddress{
 			AdminToken:   "drphc2.g4kq82pnlfqjqt65",
@@ -1541,6 +1542,21 @@ func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 		Parameters: kubermaticv1.Parameters{
 			"labels": []interface{}{"gatekeeper", "opa"},
 		},
+		Selector: kubermaticv1.ConstraintSelector{
+			Providers: []string{"aws", "gcp"},
+			LabelSelector: metav1.LabelSelector{
+				MatchExpressions: []metav1.LabelSelectorRequirement{
+					{
+						Key:      "cluster",
+						Operator: metav1.LabelSelectorOpExists,
+					},
+				},
+				MatchLabels: map[string]string{
+					"deployment": "prod",
+					"domain":     "sales",
+				},
+			},
+		},
 	}
 
 	return ct
@@ -1559,6 +1575,21 @@ func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
 			},
 			Parameters: kubermaticv1.Parameters{
 				"labels": []interface{}{"gatekeeper", "opa"},
+			},
+			Selector: kubermaticv1.ConstraintSelector{
+				Providers: []string{"aws", "gcp"},
+				LabelSelector: metav1.LabelSelector{
+					MatchExpressions: []metav1.LabelSelectorRequirement{
+						{
+							Key:      "cluster",
+							Operator: metav1.LabelSelectorOpExists,
+						},
+					},
+					MatchLabels: map[string]string{
+						"deployment": "prod",
+						"domain":     "sales",
+					},
+				},
 			},
 		},
 		Status: &apiv2.ConstraintStatus{

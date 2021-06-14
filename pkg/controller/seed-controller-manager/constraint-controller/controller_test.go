@@ -40,8 +40,6 @@ import (
 const (
 	constraintName = "constraint"
 	kind           = "RequiredLabel"
-	key            = "default"
-	value          = "true"
 )
 
 func TestReconcile(t *testing.T) {
@@ -122,9 +120,10 @@ func TestReconcile(t *testing.T) {
 
 			constraint := &kubermaticv1.Constraint{}
 			err = tc.seedClient.Get(ctx, types.NamespacedName{Name: tc.namespacedName.Name, Namespace: clusterNamespace}, constraint)
+
 			if tc.expectedGetErrStatus != "" {
 				if err == nil {
-					t.Fatalf("expected error status %s, instead got ct: %v", tc.expectedGetErrStatus, constraint)
+					t.Fatalf("expected error status %s, instead got constraint: %v", tc.expectedGetErrStatus, constraint)
 				}
 				if tc.expectedGetErrStatus != errors.ReasonForError(err) {
 					t.Fatalf("Expected error status %s differs from the expected one %s", tc.expectedGetErrStatus, errors.ReasonForError(err))
@@ -148,9 +147,9 @@ func genConstraint(name, namespace, kind string, label, delete bool) *kubermatic
 	constraint := test.GenConstraint(name, namespace, kind)
 	if label {
 		if constraint.Labels != nil {
-			constraint.Labels[key] = value
+			constraint.Labels[Key] = constraint.Name
 		} else {
-			constraint.Labels = map[string]string{key: value}
+			constraint.Labels = map[string]string{Key: constraint.Name}
 		}
 	}
 	if delete {
@@ -166,5 +165,8 @@ func genCluster(opaEnabled bool) *kubermaticv1.Cluster {
 	cluster.Spec.OPAIntegration = &kubermaticv1.OPAIntegrationSettings{
 		Enabled: opaEnabled,
 	}
+	cluster.Spec.Cloud.Fake = nil
+	cluster.Spec.Cloud.AWS = &kubermaticv1.AWSCloudSpec{}
+	cluster.Labels = map[string]string{"deployment": "prod", "domain": "sales", "cluster": "test"}
 	return cluster
 }

@@ -65,6 +65,16 @@ type ConstraintSpec struct {
 	//   labels: ["gatekeeper"]
 	//
 	Parameters Parameters `json:"parameters,omitempty"`
+	// Selector specifies the cluster selection filters
+	Selector ConstraintSelector `json:"selector,omitempty"`
+}
+
+// ConstraintSelector is the object holding the cluster selection filters
+type ConstraintSelector struct {
+	// Providers is a list of cloud providers to which the Constraint applies to. Empty means all providers are selected.
+	Providers []string `json:"providers,omitempty"`
+	// LabelSelector selects the Clusters to which the Constraint applies based on their labels
+	LabelSelector metav1.LabelSelector `json:"labelSelector,omitempty"`
 }
 
 type Parameters map[string]interface{}

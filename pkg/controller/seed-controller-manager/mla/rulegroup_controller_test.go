@@ -48,7 +48,7 @@ func newTestRuleGroupReconciler(objects []ctrlruntimeclient.Object, handler http
 		Build()
 	ts := httptest.NewServer(handler)
 
-	controller := newRuleGroupController(fakeClient, kubermaticlog.Logger, ts.Client(), ts.URL)
+	controller := newRuleGroupController(fakeClient, kubermaticlog.Logger, ts.Client(), ts.URL, ts.URL)
 	reconciler := ruleGroupReconciler{
 		Client:              fakeClient,
 		log:                 kubermaticlog.Logger,
@@ -69,13 +69,13 @@ func TestRuleGroupReconcile(t *testing.T) {
 		hasFinalizer bool
 	}{
 		{
-			name: "create rule group",
+			name: "create metrics rule group",
 			request: types.NamespacedName{
 				Name:      "test-rule",
 				Namespace: "cluster-test",
 			},
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", true, false, false),
 				generateRuleGroup("test-rule", "test", kubermaticv1.RuleGroupTypeMetrics, false),
 			},
 			requests: []request{
@@ -97,25 +97,53 @@ func TestRuleGroupReconcile(t *testing.T) {
 			hasFinalizer: true,
 		},
 		{
+			name: "create logs rule group",
+			request: types.NamespacedName{
+				Name:      "test-rule",
+				Namespace: "cluster-test",
+			},
+			objects: []ctrlruntimeclient.Object{
+				generateCluster("test", false, true, false),
+				generateRuleGroup("test-rule", "test", kubermaticv1.RuleGroupTypeLogs, false),
+			},
+			requests: []request{
+				{
+					name: "get",
+					request: httptest.NewRequest(http.MethodGet,
+						fmt.Sprintf("%s%s/%s", logRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
+						nil),
+					response: &http.Response{StatusCode: http.StatusNotFound},
+				},
+				{
+					name: "post",
+					request: httptest.NewRequest(http.MethodPost,
+						logRuleGroupConfigEndpoint+defaultNamespace,
+						bytes.NewBuffer(test.GenerateTestRuleGroupData("test-rule"))),
+					response: &http.Response{StatusCode: http.StatusAccepted},
+				},
+			},
+			hasFinalizer: true,
+		},
+		{
 			name: "create rule group with unknown type",
 			request: types.NamespacedName{
 				Name:      "test-rule",
 				Namespace: "cluster-test",
 			},
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", true, true, false),
 				generateRuleGroup("test-rule", "test", "type", false),
 			},
 			expectedErr: true,
 		},
 		{
-			name: "clean up rule group",
+			name: "clean up metrics rule group",
 			request: types.NamespacedName{
 				Name:      "test-rule",
 				Namespace: "cluster-test",
 			},
 			objects: []ctrlruntimeclient.Object{
-				generateCluster("test", true, false),
+				generateCluster("test", true, true, false),
 				generateRuleGroup("test-rule", "test", kubermaticv1.RuleGroupTypeMetrics, true),
 			},
 			requests: []request{
@@ -123,6 +151,27 @@ func TestRuleGroupReconcile(t *testing.T) {
 					name: "delete",
 					request: httptest.NewRequest(http.MethodDelete,
 						fmt.Sprintf("%s%s/%s", metricsRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
+						nil),
+					response: &http.Response{StatusCode: http.StatusAccepted},
+				},
+			},
+			hasFinalizer: false,
+		},
+		{
+			name: "clean up logs rule group",
+			request: types.NamespacedName{
+				Name:      "test-rule",
+				Namespace: "cluster-test",
+			},
+			objects: []ctrlruntimeclient.Object{
+				generateCluster("test", true, true, false),
+				generateRuleGroup("test-rule", "test", kubermaticv1.RuleGroupTypeLogs, true),
+			},
+			requests: []request{
+				{
+					name: "delete",
+					request: httptest.NewRequest(http.MethodDelete,
+						fmt.Sprintf("%s%s/%s", logRuleGroupConfigEndpoint, defaultNamespace, "test-rule"),
 						nil),
 					response: &http.Response{StatusCode: http.StatusAccepted},
 				},

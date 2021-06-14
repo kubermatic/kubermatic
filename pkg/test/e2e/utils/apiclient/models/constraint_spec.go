@@ -27,6 +27,9 @@ type ConstraintSpec struct {
 
 	// parameters
 	Parameters Parameters `json:"parameters,omitempty"`
+
+	// selector
+	Selector *ConstraintSelector `json:"selector,omitempty"`
 }
 
 // Validate validates this constraint spec
@@ -38,6 +41,10 @@ func (m *ConstraintSpec) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateParameters(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateSelector(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -76,6 +83,24 @@ func (m *ConstraintSpec) validateParameters(formats strfmt.Registry) error {
 			return ve.ValidateName("parameters")
 		}
 		return err
+	}
+
+	return nil
+}
+
+func (m *ConstraintSpec) validateSelector(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Selector) { // not required
+		return nil
+	}
+
+	if m.Selector != nil {
+		if err := m.Selector.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("selector")
+			}
+			return err
+		}
 	}
 
 	return nil

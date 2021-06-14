@@ -81,6 +81,7 @@ func Add(
 	overwriteRegistry string,
 	cortexAlertmanagerURL string,
 	cortexRulerURL string,
+	lokiRulerURL string,
 	mlaEnabled bool,
 ) error {
 	log = log.Named(ControllerName)
@@ -118,7 +119,7 @@ func Add(
 	alertmanagerController := newAlertmanagerController(mgr.GetClient(), log, httpClient, cortexAlertmanagerURL)
 	datasourceGrafanaController := newDatasourceGrafanaController(mgr.GetClient(), httpClient, grafanaURL, grafanaAuth, mlaNamespace, log, overwriteRegistry)
 	userGrafanaController := newUserGrafanaController(mgr.GetClient(), log, grafanaClient, httpClient, grafanaURL, grafanaHeader)
-	ruleGroupController := newRuleGroupController(mgr.GetClient(), log, httpClient, cortexRulerURL)
+	ruleGroupController := newRuleGroupController(mgr.GetClient(), log, httpClient, cortexRulerURL, lokiRulerURL)
 	if mlaEnabled {
 		if err := newOrgGrafanaReconciler(mgr, log, numWorkers, workerName, versions, orgGrafanaController); err != nil {
 			return fmt.Errorf("failed to create mla project controller: %w", err)

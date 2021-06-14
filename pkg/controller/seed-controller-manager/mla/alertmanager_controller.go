@@ -210,10 +210,10 @@ func newAlertmanagerController(
 
 func (r *alertmanagerController) reconcile(ctx context.Context, cluster *kubermaticv1.Cluster) (*reconcile.Result, error) {
 
-	monitoringEnabled := cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled
+	mlaEnabled := cluster.Spec.MLA != nil && (cluster.Spec.MLA.MonitoringEnabled || cluster.Spec.MLA.LoggingEnabled)
 	// Currently, we don't have a dedicated flag for enabling/disabling Alertmanager, and Alertmanager will be enabled
-	// or disabled based on the monitoring flag.
-	if !cluster.DeletionTimestamp.IsZero() || !monitoringEnabled {
+	// or disabled based on MLA flag.
+	if !cluster.DeletionTimestamp.IsZero() || !mlaEnabled {
 		return nil, r.handleDeletion(ctx, cluster)
 	}
 

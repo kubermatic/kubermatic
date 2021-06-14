@@ -92,7 +92,7 @@ func (c *ClusterJig) SetUp() error {
 					},
 				},
 			},
-			EnableUserSSHKeyAgent: false,
+			EnableUserSSHKeyAgent: pointer.BoolPtr(false),
 			ExposeStrategy:        kubermaticv1.ExposeStrategyTunneling,
 			HumanReadableName:     "test",
 			Version:               c.Version,

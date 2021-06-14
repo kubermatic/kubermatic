@@ -2786,7 +2786,7 @@ func TestSyncClusterAlertmanagerRBAC(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					MLA: &kubermaticv1.MLASettings{
-						MonitoringEnabled: true,
+						LoggingEnabled: true,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -3097,7 +3097,7 @@ func TestSyncClusterRuleGroupsRBAC(t *testing.T) {
 				},
 				Spec: kubermaticv1.ClusterSpec{
 					MLA: &kubermaticv1.MLASettings{
-						MonitoringEnabled: true,
+						LoggingEnabled: true,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{

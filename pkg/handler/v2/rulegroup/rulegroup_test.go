@@ -204,12 +204,32 @@ func TestListEndpoint(t *testing.T) {
 				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
 				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, "FakeType"),
 				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-4", test.GenDefaultCluster().Name, v1.RuleGroupTypeLogs),
 			),
 			ExistingAPIUser:        test.GenDefaultAPIUser(),
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: []*apiv2.RuleGroup{
 				test.GenAPIRuleGroup("test-1", v1.RuleGroupTypeMetrics),
 				test.GenAPIRuleGroup("test-3", v1.RuleGroupTypeMetrics),
+			},
+		},
+		{
+			Name:        "list rule groups with type Logs that belong to the given cluster",
+			ProjectID:   test.GenDefaultProject().Name,
+			ClusterID:   test.GenDefaultCluster().Name,
+			QueryParams: map[string]string{"type": "Logs"},
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenRuleGroup("test-1", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-2", test.GenDefaultCluster().Name, "FakeType"),
+				test.GenRuleGroup("test-3", test.GenDefaultCluster().Name, v1.RuleGroupTypeMetrics),
+				test.GenRuleGroup("test-4", test.GenDefaultCluster().Name, v1.RuleGroupTypeLogs),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
+			ExpectedResponse: []*apiv2.RuleGroup{
+				test.GenAPIRuleGroup("test-4", v1.RuleGroupTypeLogs),
 			},
 		},
 		{

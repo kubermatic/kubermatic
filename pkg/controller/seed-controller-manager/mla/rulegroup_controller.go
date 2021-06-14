@@ -50,6 +50,7 @@ import (
 const (
 	ruleGroupFinalizer             = "kubermatic.io/rule-group"
 	metricsRuleGroupConfigEndpoint = "/api/v1/rules"
+	logRuleGroupConfigEndpoint     = "/loki/api/v1/rules"
 	ruleGroupTenantHeaderName      = "X-Scope-OrgID"
 	defaultNamespace               = "/default"
 )
@@ -119,13 +120,15 @@ func newRuleGroupReconciler(
 	})
 
 	clusterPredicate := predicate.Funcs{
-		// For Update event, only trigger reconciliation when MonitoringEnabled changes.
+		// For Update event, only trigger reconciliation when MonitoringEnabled or LoggingEnabled changes.
 		UpdateFunc: func(event event.UpdateEvent) bool {
 			oldCluster := event.ObjectOld.(*kubermaticv1.Cluster)
 			newCluster := event.ObjectNew.(*kubermaticv1.Cluster)
 			oldMonitoringEnabled := oldCluster.Spec.MLA != nil && oldCluster.Spec.MLA.MonitoringEnabled
 			newMonitoringEnabled := newCluster.Spec.MLA != nil && newCluster.Spec.MLA.MonitoringEnabled
-			return oldMonitoringEnabled != newMonitoringEnabled
+			oldLoggingEnabled := oldCluster.Spec.MLA != nil && oldCluster.Spec.MLA.LoggingEnabled
+			newLoggingEnabled := newCluster.Spec.MLA != nil && newCluster.Spec.MLA.LoggingEnabled
+			return (oldMonitoringEnabled != newMonitoringEnabled) || (oldLoggingEnabled != newLoggingEnabled)
 		},
 	}
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Cluster{}}, enqueueRuleGroupsForCluster, clusterPredicate); err != nil {
@@ -190,6 +193,7 @@ type ruleGroupController struct {
 
 	log            *zap.SugaredLogger
 	cortexRulerURL string
+	lokiRulerURL   string
 }
 
 func newRuleGroupController(
@@ -197,12 +201,14 @@ func newRuleGroupController(
 	log *zap.SugaredLogger,
 	httpClient *http.Client,
 	cortexRulerURL string,
+	lokiRulerURL string,
 ) *ruleGroupController {
 	return &ruleGroupController{
 		Client:         client,
 		httpClient:     httpClient,
 		log:            log,
 		cortexRulerURL: cortexRulerURL,
+		lokiRulerURL:   lokiRulerURL,
 	}
 }
 
@@ -219,9 +225,9 @@ func (r *ruleGroupController) reconcile(ctx context.Context, cluster *kubermatic
 		return nil, nil
 	}
 
-	monitoringEnabled := cluster.Spec.MLA != nil && cluster.Spec.MLA.MonitoringEnabled
-	if !cluster.DeletionTimestamp.IsZero() || !monitoringEnabled {
-		// If this cluster is being deleted, or monitoring is disabled for this cluster, we just delete this `RuleGroup`,
+	mlaEnabled := cluster.Spec.MLA != nil && (cluster.Spec.MLA.MonitoringEnabled || cluster.Spec.MLA.LoggingEnabled)
+	if !cluster.DeletionTimestamp.IsZero() || !mlaEnabled {
+		// If this cluster is being deleted, or MLA is disabled for this cluster, we just delete this `RuleGroup`,
 		// and the clean up of `RuleGroup` will be triggered in the next reconciliation loop.
 		if err := r.Delete(ctx, ruleGroup); err != nil {
 			return nil, ctrlruntimeclient.IgnoreNotFound(err)
@@ -265,6 +271,9 @@ func (r *ruleGroupController) cleanUp(ctx context.Context) error {
 func (r *ruleGroupController) getRequestURL(ruleGroup *kubermaticv1.RuleGroup) (string, error) {
 	if ruleGroup.Spec.RuleGroupType == kubermaticv1.RuleGroupTypeMetrics {
 		return fmt.Sprintf("%s%s%s", r.cortexRulerURL, metricsRuleGroupConfigEndpoint, defaultNamespace), nil
+	}
+	if ruleGroup.Spec.RuleGroupType == kubermaticv1.RuleGroupTypeLogs {
+		return fmt.Sprintf("%s%s%s", r.lokiRulerURL, logRuleGroupConfigEndpoint, defaultNamespace), nil
 	}
 	return "", fmt.Errorf("unknown rule group type: %s", ruleGroup.Spec.RuleGroupType)
 }
