@@ -822,6 +822,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		ServiceAccount                       *kubermaticv1.ServiceAccountSettings   `json:"serviceAccount,omitempty"`
 		OPAIntegration                       *kubermaticv1.OPAIntegrationSettings   `json:"opaIntegration,omitempty"`
 		MLA                                  *kubermaticv1.MLASettings              `json:"mla,omitempty"`
+		ContainerRuntime                     string                                 `json:"containerRuntime,omitempty"`
 		ClusterNetwork                       *kubermaticv1.ClusterNetworkingConfig  `json:"clusterNetwork,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
@@ -853,6 +854,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		ServiceAccount:                       cs.ServiceAccount,
 		OPAIntegration:                       cs.OPAIntegration,
 		MLA:                                  cs.MLA,
+		ContainerRuntime:                     cs.ContainerRuntime,
 		ClusterNetwork:                       cs.ClusterNetwork,
 	})
 
