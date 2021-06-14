@@ -96,8 +96,7 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 }
 
 func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
-	// Add cni-plugin annotation if not present pointing to latest canal
-	// version provided by the addon.
+	// Add default CNI plugin settings if not present.
 	if c.Spec.CNIPlugin == nil {
 		c.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
 			Type:    kubermaticv1.CNIPluginTypeCanal,
