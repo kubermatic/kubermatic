@@ -133,7 +133,7 @@ type ClusterSpec struct {
 	// to the created cluster. If the agent was disabled, it won't be deployed in the user cluster, thus after
 	// the cluster creation any attached ssh keys won't be synced to the worker nodes. Once the agent is enabled/disabled
 	// it cannot be changed after the cluster is being created.
-	EnableUserSSHKeyAgent bool `json:"enableUserSSHKeyAgent,omitempty"`
+	EnableUserSSHKeyAgent *bool `json:"enableUserSSHKeyAgent,omitempty"`
 
 	// PodNodeSelectorAdmissionPluginConfig provides the configuration for the PodNodeSelector.
 	// It's used by the backend to create a configuration file for this plugin.
