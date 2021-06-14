@@ -158,6 +158,9 @@ type ClusterSpec struct {
 
 	//MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA *MLASettings `json:"mla,omitempty"`
+
+	// ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.
+	ContainerRuntime string `json:"containerRuntime,omitempty"`
 }
 
 const (
