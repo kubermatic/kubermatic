@@ -1,5 +1,27 @@
 # Kubermatic 2.17
 
+## [v2.17.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.17.1)
+
+### Security
+
+- Upgrade machine-controller to v1.27.8 [#7209](https://github.com/kubermatic/kubermatic/pull/7166) to address [runC vulnerability CVE-2021-30465](https://github.com/opencontainers/runc/security/advisories/GHSA-c3xm-pvg7-gh7r)
+
+### Bugfixes
+
+- Fixed using a custom CA Bundle for Openstack by authenticating after setting the proper CA bundle ([#7192](https://github.com/kubermatic/kubermatic/issues/7192))
+- Fix user ssh key agent migration ([#7193](https://github.com/kubermatic/kubermatic/issues/7193))
+- Fix issue where Kubermatic non-admin users were not allowed to manage Kubermatic Constraints ([#6942](https://github.com/kubermatic/kubermatic/issues/6942))
+- Fix KKP vSphere client not using the provided custom CA bundle ([#6973](https://github.com/kubermatic/kubermatic/issues/6973))
+- Use optimistic lock when adding finalizers to prevent lost updates, and avoiding resource leaks ([#7153](https://github.com/kubermatic/kubermatic/issues/6759))
+
+### Misc
+
+- Use the systemd cgroup driver for newly-created Kubernetes 1.19+ clusters using the kubeadm provider. Since the kubelet-configmap addon is not reconciled, this change will not affect existing clusters, only newly-created clusters ([#7065](https://github.com/kubermatic/kubermatic/issues/7065))
+- Re-enable NodeLocal DNS Cache in user clusters ([#7075](https://github.com/kubermatic/kubermatic/issues/7075))
+- Open NodePort range in openstack ([#7131](https://github.com/kubermatic/kubermatic/issues/7131))
+- Upgrade machine controller to v1.27.8 ([#7209](https://github.com/kubermatic/kubermatic/issues/7209))
+
+
 ## [v2.17.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.17.0)
 
 ### Supported Kubernetes Versions
