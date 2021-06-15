@@ -32,6 +32,10 @@ func (c *FakeKubermaticV1) ClusterTemplates() v1.ClusterTemplateInterface {
 	return &FakeClusterTemplates{c}
 }
 
+func (c *FakeKubermaticV1) ClusterTemplateInstances() v1.ClusterTemplateInstanceInterface {
+	return &FakeClusterTemplateInstances{c}
+}
+
 func (c *FakeKubermaticV1) Constraints(namespace string) v1.ConstraintInterface {
 	return &FakeConstraints{c, namespace}
 }

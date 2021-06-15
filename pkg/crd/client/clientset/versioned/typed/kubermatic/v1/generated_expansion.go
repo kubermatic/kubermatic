@@ -12,6 +12,8 @@ type ClusterExpansion interface{}
 
 type ClusterTemplateExpansion interface{}
 
+type ClusterTemplateInstanceExpansion interface{}
+
 type ConstraintExpansion interface{}
 
 type ConstraintTemplateExpansion interface{}

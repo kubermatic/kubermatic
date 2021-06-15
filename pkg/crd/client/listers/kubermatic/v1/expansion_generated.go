@@ -30,6 +30,10 @@ type ClusterListerExpansion interface{}
 // ClusterTemplateLister.
 type ClusterTemplateListerExpansion interface{}
 
+// ClusterTemplateInstanceListerExpansion allows custom methods to be added to
+// ClusterTemplateInstanceLister.
+type ClusterTemplateInstanceListerExpansion interface{}
+
 // ConstraintListerExpansion allows custom methods to be added to
 // ConstraintLister.
 type ConstraintListerExpansion interface{}
