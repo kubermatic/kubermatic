@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/coreos/locksmith/pkg/timeutil"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -543,6 +544,23 @@ func ValidateUpdateWindow(updateWindow *kubermaticv1.UpdateWindow) error {
 			return fmt.Errorf("error parsing update window: %s", err)
 		}
 	}
+	return nil
+}
+
+func ValidateContainerRuntime(spec *kubermaticv1.ClusterSpec) error {
+	supportedContainerRuntimes := map[string]struct{}{
+		"docker":     {},
+		"containerd": {},
+	}
+	if _, isSupported := supportedContainerRuntimes[spec.ContainerRuntime]; !isSupported {
+		return fmt.Errorf("container runtime not supported: %s", spec.ContainerRuntime)
+	}
+
+	dockerSupportLimit := semver.MustParse("1.22.0")
+	if spec.ContainerRuntime == "docker" && !spec.Version.LessThan(dockerSupportLimit) {
+		return fmt.Errorf("docker not supported from version 1.22: %s", spec.ContainerRuntime)
+	}
+
 	return nil
 }
 

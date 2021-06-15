@@ -330,6 +330,7 @@ func genSpec(apiCluster apiv1.Cluster) (*kubermaticv1.ClusterSpec, error) {
 		PodNodeSelectorAdmissionPluginConfig: apiCluster.Spec.PodNodeSelectorAdmissionPluginConfig,
 		ServiceAccount:                       apiCluster.Spec.ServiceAccount,
 		MLA:                                  apiCluster.Spec.MLA,
+		ContainerRuntime:                     apiCluster.Spec.ContainerRuntime,
 	}
 
 	if apiCluster.Spec.ClusterNetwork != nil {
@@ -386,6 +387,7 @@ func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemp
 				PodNodeSelectorAdmissionPluginConfig: template.Spec.PodNodeSelectorAdmissionPluginConfig,
 				ServiceAccount:                       template.Spec.ServiceAccount,
 				MLA:                                  template.Spec.MLA,
+				ContainerRuntime:                     template.Spec.ContainerRuntime,
 			},
 		},
 		NodeDeployment: md,
