@@ -74,9 +74,10 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 			name: "Test updating authorized_keys file from reconcile",
 			reconciler: Reconciler{
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				authorizedKeysPath: []string{
+				mountPaths: []string{
 					authorizedKeysPath,
 				},
+				secretName: resources.UserSSHKeys,
 			},
 			expectedSSHKey: "ssh-rsa test_user_ssh_key\nssh-rsa test_user_ssh_key_2",
 		},
@@ -84,9 +85,10 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 			name: "Test ssh dir file mode",
 			reconciler: Reconciler{
 				log: kubermaticlog.New(true, kubermaticlog.FormatConsole).Sugar(),
-				authorizedKeysPath: []string{
+				mountPaths: []string{
 					authorizedKeysPath,
 				},
+				secretName: resources.UserSSHKeys,
 			},
 			modifier:         changeFileModes,
 			expectedSSHKey:   "ssh-rsa test_user_ssh_key\nssh-rsa test_user_ssh_key_2",
@@ -102,7 +104,7 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						ResourceVersion: "123456",
-						Name:            resources.UserSSHKeys,
+						Name:            tc.reconciler.secretName,
 						Namespace:       metav1.NamespaceSystem,
 					},
 					Data: map[string][]byte{
@@ -119,11 +121,11 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 			}
 
 			if _, err := tc.reconciler.Reconcile(context.Background(), reconcile.Request{
-				NamespacedName: types.NamespacedName{Name: resources.UserSSHKeys, Namespace: metav1.NamespaceSystem}}); err != nil {
+				NamespacedName: types.NamespacedName{Name: tc.reconciler.secretName, Namespace: metav1.NamespaceSystem}}); err != nil {
 				t.Fatalf("failed to run reconcile: %v", err)
 			}
 
-			for _, path := range tc.reconciler.authorizedKeysPath {
+			for _, path := range tc.reconciler.mountPaths {
 				key, err := readAuthorizedKeysFile(path)
 				if err != nil {
 					t.Fatal(err)
@@ -151,7 +153,6 @@ func TestReconcileUserSSHKeys(t *testing.T) {
 					if int16(sshDirInfo.Mode()) != tc.expectedDirMode {
 						t.Fatal(".ssh dir mode and its expected file mode don't match")
 					}
-
 				}
 			}
 		})

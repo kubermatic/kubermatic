@@ -20,6 +20,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"os"
 	"syscall"
 
@@ -64,7 +65,12 @@ func main() {
 	if err != nil {
 		log.Fatalw("Failed to get users directories", zap.Error(err))
 	}
-	if err := usersshkeys.Add(mgr, log, paths); err != nil {
+	if err := usersshkeys.Add(mgr, log, paths, resources.UserSSHKeys); err != nil {
+		log.Fatalw("Failed registering user ssh key controller", zap.Error(err))
+	}
+
+	vaultCAMountPath := []string{fmt.Sprintf("/etc/ssh/%s", resources.VaultCAKeyName)}
+	if err := usersshkeys.Add(mgr, log, vaultCAMountPath, resources.VaultSignedCA); err != nil {
 		log.Fatalw("Failed registering user ssh key controller", zap.Error(err))
 	}
 

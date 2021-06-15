@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"syscall"
@@ -30,8 +31,6 @@ import (
 	"gopkg.in/fsnotify.v1"
 
 	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
-	"k8c.io/kubermatic/v2/pkg/resources"
-
 	corev1 "k8s.io/api/core/v1"
 	kubeapierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,20 +50,23 @@ const (
 
 type Reconciler struct {
 	ctrlruntimeclient.Client
-	log                *zap.SugaredLogger
-	authorizedKeysPath []string
-	events             chan event.GenericEvent
+	log        *zap.SugaredLogger
+	mountPaths []string
+	events     chan event.GenericEvent
+	secretName string
 }
 
 func Add(
 	mgr manager.Manager,
 	log *zap.SugaredLogger,
-	authorizedKeysPaths []string) error {
+	mountPaths []string,
+	secretName string) error {
 	reconciler := &Reconciler{
-		Client:             mgr.GetClient(),
-		log:                log,
-		authorizedKeysPath: authorizedKeysPaths,
-		events:             make(chan event.GenericEvent),
+		Client:     mgr.GetClient(),
+		log:        log,
+		mountPaths: mountPaths,
+		events:     make(chan event.GenericEvent),
+		secretName: secretName,
 	}
 
 	c, err := controller.New(operatorName, mgr, controller.Options{Reconciler: reconciler})
@@ -72,13 +74,13 @@ func Add(
 		return fmt.Errorf("failed creating a new runtime controller: %v", err)
 	}
 
-	namePredicate := predicateutil.ByName(resources.UserSSHKeys)
+	namePredicate := predicateutil.ByName(reconciler.secretName)
 	namespacePredicate := predicateutil.ByNamespace(metav1.NamespaceSystem)
 	if err := c.Watch(&source.Kind{Type: &corev1.Secret{}}, &handler.EnqueueRequestForObject{}, namePredicate, namespacePredicate); err != nil {
 		return fmt.Errorf("failed to create watcher for secrets: %v", err)
 	}
 
-	if err := reconciler.watchAuthorizedKeys(context.TODO(), authorizedKeysPaths); err != nil {
+	if err := reconciler.watchAuthorizedKeys(context.TODO(), mountPaths); err != nil {
 		return fmt.Errorf("failed to watch authorized_keys files: %v", err)
 	}
 
@@ -87,7 +89,7 @@ func Add(
 			{
 				NamespacedName: types.NamespacedName{
 					Namespace: metav1.NamespaceSystem,
-					Name:      resources.UserSSHKeys,
+					Name:      reconciler.secretName,
 				},
 			},
 		}
@@ -108,7 +110,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 		return reconcile.Result{}, fmt.Errorf("failed to fetch user ssh keys: %v", err)
 	}
 
-	if err := r.updateAuthorizedKeys(secret.Data); err != nil {
+	if err := r.updateKeys(secret.Data); err != nil {
 		r.log.Errorw("Failed reconciling user ssh key secret", zap.Error(err))
 		return reconcile.Result{}, fmt.Errorf("failed to reconcile user ssh keys: %v", err)
 	}
@@ -143,6 +145,9 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 	}()
 
 	for _, path := range paths {
+		if err := createFileIfNotExists(path); err != nil {
+			return fmt.Errorf("failed creating non-existent file for watcher: %v", err)
+		}
 		if err := watcher.Add(path); err != nil {
 			return fmt.Errorf("failed adding a new path to the files watcher: %v", err)
 		}
@@ -153,25 +158,25 @@ func (r *Reconciler) watchAuthorizedKeys(ctx context.Context, paths []string) er
 
 func (r *Reconciler) fetchUserSSHKeySecret(ctx context.Context, namespace string) (*corev1.Secret, error) {
 	secret := &corev1.Secret{}
-	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: resources.UserSSHKeys, Namespace: namespace}, secret); err != nil {
+	if err := r.Get(ctx, ctrlruntimeclient.ObjectKey{Name: r.secretName, Namespace: namespace}, secret); err != nil {
 		if kubeapierrors.IsNotFound(err) {
 			r.log.Debugw("Secret is not found", "secret", secret.Name)
 			return nil, nil
 		}
-		r.log.Errorw("Cannot get secret", "secret", resources.UserSSHKeys)
+		r.log.Errorw("Cannot get secret", "secret", r.secretName)
 		return nil, err
 	}
 
 	return secret, nil
 }
 
-func (r *Reconciler) updateAuthorizedKeys(sshKeys map[string][]byte) error {
+func (r *Reconciler) updateKeys(sshKeys map[string][]byte) error {
 	expectedUserSSHKeys, err := createBuffer(sshKeys)
 	if err != nil {
 		return fmt.Errorf("failed creating user ssh keys buffer: %v", err)
 	}
 
-	for _, path := range r.authorizedKeysPath {
+	for _, path := range r.mountPaths {
 		if err := updateOwnAndPermissions(path); err != nil {
 			return fmt.Errorf("failed updating permissions %s: %v", path, err)
 		}
@@ -215,31 +220,40 @@ func createBuffer(data map[string][]byte) (*bytes.Buffer, error) {
 	return buffer, nil
 }
 
+func ChownR(path string, uid, gid int) error {
+	return filepath.Walk(path, func(name string, info os.FileInfo, err error) error {
+		if err == nil {
+			err = os.Chown(name, uid, gid)
+		}
+		return err
+	})
+}
+
+func createFileIfNotExists(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		_, err := os.Create(path)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 func updateOwnAndPermissions(path string) error {
-	sshPath := strings.TrimSuffix(path, "/authorized_keys")
-	if err := os.Chmod(sshPath, os.FileMode(0700)); err != nil {
-		return fmt.Errorf("failed to change permission on file: %v", err)
-	}
+	paths := strings.Split(path, "/")
 
-	if err := os.Chmod(path, os.FileMode(0600)); err != nil {
-		return fmt.Errorf("failed to change permission on file: %v", err)
-	}
-
-	userHome := strings.TrimSuffix(sshPath, "/.ssh")
-	fileInfo, err := os.Stat(userHome)
+	fileDir := strings.Join(paths[:len(paths)-1], "/")
+	fileInfo, err := os.Stat(fileDir)
 	if err != nil {
-		return fmt.Errorf("failed describing the authorized_keys file in path %s: %v", userHome, err)
+		return fmt.Errorf("failed describing the directory in path %s: %v", fileDir, err)
 	}
 
 	uid := fileInfo.Sys().(*syscall.Stat_t).Uid
 	gid := fileInfo.Sys().(*syscall.Stat_t).Gid
 
-	if err := os.Chown(path, int(uid), int(gid)); err != nil {
+	if err := ChownR(path, int(uid), int(gid)); err != nil {
 		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", path, err)
-	}
-
-	if err := os.Chown(sshPath, int(uid), int(gid)); err != nil {
-		return fmt.Errorf("failed changing the numeric uid and gid of %s: %v", sshPath, err)
 	}
 
 	return nil

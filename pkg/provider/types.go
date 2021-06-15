@@ -262,6 +262,8 @@ type SSHKeyListOptions struct {
 	ClusterName string
 	// SSHKeyName gets the ssh keys with the given name in the spec
 	SSHKeyName string
+	// IsCAKey gets the keys which are CAKeys in the spec
+	IsCAKey bool
 }
 
 // SSHKeyProvider declares the set of methods for interacting with ssh keys

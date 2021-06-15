@@ -59,6 +59,22 @@ const (
 	MachineDeploymentEventNormalType  = "normal"
 )
 
+func GenerateDeploymentKeySpec(userSSHKeys []*kubermaticv1.UserSSHKey, caPublicKey []*kubermaticv1.UserSSHKey) (*kubermaticv1.DeploymentSSHKeys, error) {
+	keys := kubermaticv1.DeploymentSSHKeys{
+		UserSSHKey: userSSHKeys,
+	}
+
+	if len(caPublicKey) > 1 {
+		return nil, fmt.Errorf("multiple ca keys found")
+	}
+
+	if len(caPublicKey) == 1 {
+		keys.CAPublicKey = caPublicKey[0]
+	}
+
+	return &keys, nil
+}
+
 func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, sshKeyProvider provider.SSHKeyProvider, seedsGetter provider.SeedsGetter, machineDeployment apiv1.NodeDeployment, projectID, clusterID string) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
@@ -80,9 +96,14 @@ func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserIn
 		return nil, k8cerrors.NewBadRequest("You cannot create a node deployment for KubeAdm provider")
 	}
 
-	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+	userSSHKeys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	caPublicKey, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name, IsCAKey: true})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get SSH keys: %v", err)
 	}
 
 	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, project.Name)
@@ -113,6 +134,11 @@ func CreateMachineDeployment(ctx context.Context, userInfoGetter provider.UserIn
 		Ctx:               ctx,
 		KubermaticCluster: cluster,
 		Client:            assertedClusterProvider.GetSeedClusterAdminRuntimeClient(),
+	}
+
+	keys, err := GenerateDeploymentKeySpec(userSSHKeys, caPublicKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get deployment ssh key spec: %v", err)
 	}
 
 	md, err := machineresource.Deployment(cluster, nd, dc, keys, data)
@@ -489,7 +515,12 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 		return nil, fmt.Errorf("error getting dc: %v", err)
 	}
 
-	keys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+	userSSHKeys, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: clusterID})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	caPublicKey, err := sshKeyProvider.List(project, &provider.SSHKeyListOptions{ClusterName: cluster.Name, IsCAKey: true})
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
@@ -503,6 +534,12 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 		KubermaticCluster: cluster,
 		Client:            assertedClusterProvider.GetSeedClusterAdminRuntimeClient(),
 	}
+
+	keys, err := GenerateDeploymentKeySpec(userSSHKeys, caPublicKey)
+	if err != nil {
+		return nil, err
+	}
+
 	patchedMachineDeployment, err := machineresource.Deployment(cluster, patchedNodeDeployment, dc, keys, data)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create machine deployment from template: %v", err)
