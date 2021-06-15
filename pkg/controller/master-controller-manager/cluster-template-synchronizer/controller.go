@@ -28,15 +28,15 @@ import (
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
+
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
@@ -69,7 +69,7 @@ func Add(
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to construct controller: %v", err)
+		return fmt.Errorf("failed to construct controller: %w", err)
 	}
 
 	for seedName, seedManager := range seedManagers {
@@ -78,7 +78,7 @@ func Add(
 
 	// Watch for changes to ClusterTemplates
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.ClusterTemplate{}}, &handler.EnqueueRequestForObject{}); err != nil {
-		return fmt.Errorf("failed to watch cluster templates: %v", err)
+		return fmt.Errorf("failed to watch cluster templates: %w", err)
 	}
 
 	return nil
@@ -103,16 +103,13 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, request reconcile.Request) error {
 	clusterTemplate := &kubermaticv1.ClusterTemplate{}
 	if err := r.masterClient.Get(ctx, ctrlruntimeclient.ObjectKey{Name: request.Name}, clusterTemplate); err != nil {
-		if controllerutil.IsCacheNotStarted(err) {
-			return err
-		}
 		return ctrlruntimeclient.IgnoreNotFound(err)
 	}
 
 	// handling deletion
 	if !clusterTemplate.DeletionTimestamp.IsZero() {
 		if err := r.handleDeletion(ctx, log, clusterTemplate); err != nil {
-			return fmt.Errorf("handling deletion of cluster template: %v", err)
+			return fmt.Errorf("handling deletion of cluster template: %w", err)
 		}
 		return nil
 	}
@@ -120,7 +117,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	if !kuberneteshelper.HasFinalizer(clusterTemplate, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer) {
 		kuberneteshelper.AddFinalizer(clusterTemplate, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer)
 		if err := r.masterClient.Update(ctx, clusterTemplate); err != nil {
-			return fmt.Errorf("failed to add finalizer: %v", err)
+			return fmt.Errorf("failed to add finalizer: %w", err)
 		}
 	}
 
@@ -133,7 +130,7 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 	})
 	if err != nil {
 		r.recorder.Eventf(clusterTemplate, corev1.EventTypeWarning, "ReconcilingError", err.Error())
-		return fmt.Errorf("reconciled cluster template: %s: %v", clusterTemplate.Name, err)
+		return fmt.Errorf("reconciled cluster template: %s: %w", clusterTemplate.Name, err)
 	}
 	return nil
 }
