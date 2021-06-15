@@ -30,6 +30,11 @@ import (
 
 const (
 	annotationKeyDescription = "description"
+
+	// AnnDynamicallyProvisioned is added to a PV that is dynamically provisioned by kubernetes
+	// Because the annotation is defined only at k8s.io/kubernetes, copying the content instead of vendoring
+	// https://github.com/kubernetes/kubernetes/blob/v1.21.0/pkg/controller/volume/persistentvolume/util/util.go#L65
+	AnnDynamicallyProvisioned = "pv.kubernetes.io/provisioned-by"
 )
 
 func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Cluster) (deletedSomeResource bool, err error) {
@@ -48,9 +53,17 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 		return false, fmt.Errorf("failed to list PVCs from user cluster: %v", err)
 	}
 
+	allPVList := &corev1.PersistentVolumeList{}
+	if err := userClusterClient.List(ctx, allPVList); err != nil {
+		return false, fmt.Errorf("failed to list PVs from user cluster: %v", err)
+	}
 	pvList := &corev1.PersistentVolumeList{}
-	if err := userClusterClient.List(ctx, pvList); err != nil {
-		return deletedSomeResource, fmt.Errorf("failed to list PVs from user cluster: %v", err)
+	for _, pv := range allPVList.Items {
+		// Check only dynamically provisioned PVs with delete reclaim policy to verify provisioner has done the cleanup
+		// this filters out everything else because we leave those be
+		if pv.Annotations[AnnDynamicallyProvisioned] != "" && pv.Spec.PersistentVolumeReclaimPolicy == corev1.PersistentVolumeReclaimDelete {
+			pvList.Items = append(pvList.Items, pv)
+		}
 	}
 
 	// Do not attempt to delete any pods when there are no PVs and PVCs
@@ -72,11 +85,9 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 		deletedSomeResource = true
 	}
 
-	// Delete PV's
-	for _, pv := range pvList.Items {
-		if err := userClusterClient.Delete(ctx, &pv); err != nil && !kerrors.IsNotFound(err) {
-			return deletedSomeResource, fmt.Errorf("failed to delete PV '%s' from user cluster: %v", pv.Name, err)
-		}
+	if len(pvList.Items) > 0 {
+		// We don't delete PVs but we want to wait for provisioners to cleanup dynamically provisioned PVs
+		// pretend we need to requeue to avoid removing finalizer prematurely
 		deletedSomeResource = true
 	}
 
