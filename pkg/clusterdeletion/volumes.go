@@ -55,7 +55,7 @@ func (d *Deletion) cleanupVolumes(ctx context.Context, cluster *kubermaticv1.Clu
 
 	allPVList := &corev1.PersistentVolumeList{}
 	if err := userClusterClient.List(ctx, allPVList); err != nil {
-		return deletedSomeResource, fmt.Errorf("failed to list PVs from user cluster: %v", err)
+		return false, fmt.Errorf("failed to list PVs from user cluster: %v", err)
 	}
 	pvList := &corev1.PersistentVolumeList{}
 	for _, pv := range allPVList.Items {
