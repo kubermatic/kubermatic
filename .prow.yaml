@@ -48,7 +48,7 @@ presubmits:
       preset-goproxy: "true"
     spec:
       containers:
-      - image: golang:1.16.1
+      - image: quay.io/kubermatic/build:go-1.16-node-14-0
         command:
         - make
         args:
