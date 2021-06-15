@@ -96,6 +96,14 @@ func (h *AdmissionHandler) Handle(ctx context.Context, req webhook.AdmissionRequ
 }
 
 func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
+	// Add default CNI plugin settings if not present.
+	if c.Spec.CNIPlugin == nil {
+		c.Spec.CNIPlugin = &kubermaticv1.CNIPluginSettings{
+			Type:    kubermaticv1.CNIPluginTypeCanal,
+			Version: "v3.19",
+		}
+	}
+
 	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
 		c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
 	}
