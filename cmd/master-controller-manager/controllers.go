@@ -22,6 +22,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	clustertemplatesynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/cluster-template-synchronizer"
 	externalcluster "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/external-cluster"
 	masterconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-controller"
 	masterconstrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/master-constraint-template-controller"
@@ -58,6 +59,7 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	userSSHKeysSynchronizerFactory := userSSHKeysSynchronizerFactoryCreator(ctrlCtx)
 	masterconstraintSynchronizerFactory := masterconstraintSynchronizerFactoryCreator(ctrlCtx)
 	userSynchronizerFactory := userSynchronizerFactoryCreator(ctrlCtx)
+	clusterTemplateSynchronizerFactory := clusterTemplateSynchronizerFactoryCreator(ctrlCtx)
 
 	if err := seedcontrollerlifecycle.Add(ctrlCtx.ctx,
 		kubermaticlog.Logger,
@@ -69,7 +71,8 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 		projectLabelSynchronizerFactory,
 		userSSHKeysSynchronizerFactory,
 		masterconstraintSynchronizerFactory,
-		userSynchronizerFactory); err != nil {
+		userSynchronizerFactory,
+		clusterTemplateSynchronizerFactory); err != nil {
 		//TODO: Find a better name
 		return fmt.Errorf("failed to create seedcontrollerlifecycle: %v", err)
 	}
@@ -166,6 +169,16 @@ func userSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerli
 			seedManagerMap,
 			ctrlCtx.log,
 			ctrlCtx.workerCount,
+		)
+	}
+}
+
+func clusterTemplateSynchronizerFactoryCreator(ctrlCtx *controllerContext) seedcontrollerlifecycle.ControllerFactory {
+	return func(ctx context.Context, masterMgr manager.Manager, seedManagerMap map[string]manager.Manager) (string, error) {
+		return clustertemplatesynchronizer.ControllerName, clustertemplatesynchronizer.Add(
+			masterMgr,
+			seedManagerMap,
+			ctrlCtx.log,
 		)
 	}
 }
