@@ -51,7 +51,7 @@ var (
 			},
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("1000m"),
+				corev1.ResourceCPU:    resource.MustParse("1"),
 			},
 		},
 		auditName: {
@@ -61,7 +61,7 @@ var (
 			},
 			Limits: corev1.ResourceList{
 				corev1.ResourceMemory: resource.MustParse("512Mi"),
-				corev1.ResourceCPU:    resource.MustParse("1000m"),
+				corev1.ResourceCPU:    resource.MustParse("1"),
 			},
 		},
 	}
