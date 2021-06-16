@@ -77,6 +77,7 @@ set -x
   -pprof-listen-address=":${PPROF_PORT}" \
   -namespace=${NAMESPACE} \
   -openvpn-server-port=${OPENVPN_SERVER_NODEPORT} \
+  -cluster-name=${CLUSTER_NAME} \
   -cluster-url=${CLUSTER_URL} \
   -version=${CLUSTER_VERSION} \
   -log-debug=$KUBERMATIC_DEBUG \

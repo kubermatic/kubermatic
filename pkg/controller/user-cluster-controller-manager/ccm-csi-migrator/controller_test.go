@@ -161,7 +161,7 @@ func TestReconcile(t *testing.T) {
 				clusterName:  tc.userCluster.Name,
 			}
 
-			for _ = range tc.machines {
+			for range tc.machines {
 				request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.clusterName}}
 				if _, err := r.Reconcile(ctx, request); err != nil {
 					t.Fatalf("reconciling failed: %v", err)

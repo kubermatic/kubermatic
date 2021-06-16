@@ -19,5 +19,4 @@ Package ccmcsimigrator contains a controller that is responsible to ensure the c
 status related to CCM/CSI machine migration. Only when all the machines in a user cluster have
 been migrated, the status CSIKubeletMigrationCompleted is set to True.
 */
-
 package ccmcsimigrator
