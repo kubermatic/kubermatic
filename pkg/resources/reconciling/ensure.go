@@ -19,8 +19,10 @@ package reconciling
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
+	"github.com/kr/pretty"
 	v1 "k8s.io/api/apps/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -104,6 +106,10 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 
 	if DeepEqual(obj.(metav1.Object), existingObject.(metav1.Object)) {
 		return nil
+	}
+
+	if strings.HasPrefix(obj.GetName(), "gatekeeper-controller") {
+		klog.V(2).Info(pretty.Diff(obj, existingObject))
 	}
 
 	if !requiresRecreate {
