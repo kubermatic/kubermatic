@@ -43,7 +43,7 @@ type ClusterTemplateInstanceSpec struct {
 	ProjectID           string `json:"projectID"`
 	ClusterTemplateID   string `json:"clusterTemplateID"`
 	ClusterTemplateName string `json:"clusterTemplateName"`
-	Size                int64  `json:"size"`
+	Replicas            int64  `json:"replicas"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

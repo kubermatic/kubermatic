@@ -18,6 +18,10 @@ metadata:
   name: clustertemplateinstances.kubermatic.k8s.io
 spec:
   group: kubermatic.k8s.io
+  subresources:
+    scale:
+      specReplicasPath: .spec.replicas
+      statusReplicasPath: .status.replicas
   names:
     kind: ClusterTemplateInstance
     listKind: ClusterTemplateInstanceList
