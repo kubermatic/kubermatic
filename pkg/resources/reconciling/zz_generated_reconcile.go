@@ -1099,3 +1099,40 @@ func ReconcileKubermaticV1Users(ctx context.Context, namedGetters []NamedKuberma
 
 	return nil
 }
+
+// KubermaticV1ClusterTemplateCreator defines an interface to create/update ClusterTemplates
+type KubermaticV1ClusterTemplateCreator = func(existing *kubermaticv1.ClusterTemplate) (*kubermaticv1.ClusterTemplate, error)
+
+// NamedKubermaticV1ClusterTemplateCreatorGetter returns the name of the resource and the corresponding creator function
+type NamedKubermaticV1ClusterTemplateCreatorGetter = func() (name string, create KubermaticV1ClusterTemplateCreator)
+
+// KubermaticV1ClusterTemplateObjectWrapper adds a wrapper so the KubermaticV1ClusterTemplateCreator matches ObjectCreator.
+// This is needed as Go does not support function interface matching.
+func KubermaticV1ClusterTemplateObjectWrapper(create KubermaticV1ClusterTemplateCreator) ObjectCreator {
+	return func(existing ctrlruntimeclient.Object) (ctrlruntimeclient.Object, error) {
+		if existing != nil {
+			return create(existing.(*kubermaticv1.ClusterTemplate))
+		}
+		return create(&kubermaticv1.ClusterTemplate{})
+	}
+}
+
+// ReconcileKubermaticV1ClusterTemplates will create and update the KubermaticV1ClusterTemplates coming from the passed KubermaticV1ClusterTemplateCreator slice
+func ReconcileKubermaticV1ClusterTemplates(ctx context.Context, namedGetters []NamedKubermaticV1ClusterTemplateCreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	for _, get := range namedGetters {
+		name, create := get()
+		createObject := KubermaticV1ClusterTemplateObjectWrapper(create)
+		createObject = createWithNamespace(createObject, namespace)
+		createObject = createWithName(createObject, name)
+
+		for _, objectModifier := range objectModifiers {
+			createObject = objectModifier(createObject)
+		}
+
+		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &kubermaticv1.ClusterTemplate{}, false); err != nil {
+			return fmt.Errorf("failed to ensure ClusterTemplate %s/%s: %v", namespace, name, err)
+		}
+	}
+
+	return nil
+}
