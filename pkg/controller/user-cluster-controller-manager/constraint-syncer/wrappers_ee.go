@@ -56,17 +56,16 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 		return nil
 	}
 
-	// add finalizer
-	if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer) {
-		oldConstraint := constraint.DeepCopy()
-		kuberneteshelper.AddFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
-		if err := r.seedClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldConstraint)); err != nil {
-			return fmt.Errorf("failed to set constraint finalizer %s: %v", constraint.Name, err)
-		}
-	}
-
-	// constraint creation
 	if constraint.Spec.Active {
+		// add finalizer
+		if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer) {
+			oldConstraint := constraint.DeepCopy()
+			kuberneteshelper.AddFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer)
+			if err := r.seedClient.Patch(ctx, constraint, ctrlruntimeclient.MergeFrom(oldConstraint)); err != nil {
+				return fmt.Errorf("failed to set constraint finalizer %s: %v", constraint.Name, err)
+			}
+		}
+		// constraint creation
 		if err := r.createConstraint(ctx, constraint, log); err != nil {
 			return err
 		}
