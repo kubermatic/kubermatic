@@ -158,9 +158,20 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, oldC
 }
 
 func (r *reconciler) ensureMigrationConditionStatus(migrated bool, cluster *v1.Cluster) bool {
-	newStatus := corev1.ConditionFalse
+	var (
+		newStatus corev1.ConditionStatus
+		reason    string
+		message   string
+	)
+
 	if migrated {
 		newStatus = corev1.ConditionTrue
+		reason = v1.ReasonClusterCSIKubeletMigrationCompleted
+		message = "external CCM/CSI migration completed"
+	} else {
+		newStatus = corev1.ConditionFalse
+		reason = v1.ReasonClusterCCMMigrationInProgress
+		message = "migrating to external CCM"
 	}
 
 	toPatch := !helper.ClusterConditionHasStatus(cluster, v1.ClusterConditionCSIKubeletMigrationCompleted, newStatus)
@@ -170,8 +181,8 @@ func (r *reconciler) ensureMigrationConditionStatus(migrated bool, cluster *v1.C
 			r.versions,
 			v1.ClusterConditionCSIKubeletMigrationCompleted,
 			newStatus,
-			v1.ReasonClusterCSIKubeletMigrationCompleted,
-			"external ccm/csi migration completed",
+			reason,
+			message,
 		)
 	}
 	return toPatch

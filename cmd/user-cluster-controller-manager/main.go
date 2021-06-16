@@ -19,15 +19,14 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	ccmcsimigrator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
-	"k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"net/url"
 	"strings"
 
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
-	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	clusterrolelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
 	constraintsyncer "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/constraint-syncer"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar"
@@ -226,9 +225,6 @@ func main() {
 	if err := apiregistrationv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiregistrationv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
-	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", v1alpha1.SchemeGroupVersion), zap.Error(err))
-	}
 
 	// Setup all Controllers
 	log.Info("registering controllers")
@@ -260,10 +256,14 @@ func main() {
 	}
 	log.Info("Registered usercluster controller")
 
+	// We need to add the machine CRDs once here, because otherwise the IPAM
+	// controller keeps the manager from starting as it can not establish a
+	// watch for machine CRs, keeping us from creating them
+	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
+
 	if len(runOp.networks) > 0 {
-		// We need to add the machine CRDs once here, because otherwise the IPAM
-		// controller keeps the manager from starting as it can not establish a
-		// watch for machine CRs, keeping us from creating them
 		creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
 			machinecontrolerresources.MachineCRDCreator(),
 		}
