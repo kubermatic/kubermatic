@@ -87,6 +87,8 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&AlertmanagerList{},
 		&ClusterTemplate{},
 		&ClusterTemplateList{},
+		&ClusterTemplateInstance{},
+		&ClusterTemplateInstanceList{},
 		&RuleGroup{},
 		&RuleGroupList{},
 	)
