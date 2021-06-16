@@ -66,7 +66,7 @@ type controllerRunOptions struct {
 	networks              networkFlags
 	namespace             string
 	clusterURL            string
-	clusterName string
+	clusterName           string
 	openvpnServerPort     int
 	kasSecurePort         int
 	tunnelingAgentIP      flagopts.IPValue

@@ -46,24 +46,24 @@ const (
 )
 
 type reconciler struct {
-	log      *zap.SugaredLogger
+	log          *zap.SugaredLogger
 	seedClient   ctrlruntimeclient.Client
-	userClient ctrlruntimeclient.Client
+	userClient   ctrlruntimeclient.Client
 	seedRecorder record.EventRecorder
-	versions kubermatic.Versions
-	clusterName string
+	versions     kubermatic.Versions
+	clusterName  string
 }
 
 func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.Manager, versions kubermatic.Versions, clusterName string) error {
 	log = log.Named(controllerName)
 
 	r := &reconciler{
-		log:      log,
-		seedClient: seedMgr.GetClient(),
-		userClient: userMgr.GetClient(),
+		log:          log,
+		seedClient:   seedMgr.GetClient(),
+		userClient:   userMgr.GetClient(),
 		seedRecorder: seedMgr.GetEventRecorderFor(controllerName),
-		versions: versions,
-		clusterName: clusterName,
+		versions:     versions,
+		clusterName:  clusterName,
 	}
 	c, err := controller.New(controllerName, userMgr, controller.Options{
 		Reconciler: r,
@@ -75,7 +75,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 	commonHandler := func(obj ctrlruntimeclient.Object, queue workqueue.RateLimitingInterface) {
 		cluster := &v1.Cluster{}
 		if err := r.seedClient.Get(ctx, types.NamespacedName{
-			Name:      r.clusterName,
+			Name: r.clusterName,
 		}, cluster); err != nil {
 			log.Warnf("cluster %s not found", clusterName)
 			return
@@ -97,8 +97,8 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 	if err = c.Watch(
 		&source.Kind{Type: &v1alpha1.Machine{}},
 		&handler.Funcs{
-			CreateFunc: func(e event.CreateEvent, queue workqueue.RateLimitingInterface) {commonHandler(e.Object, queue)},
-			UpdateFunc: func(e event.UpdateEvent, queue workqueue.RateLimitingInterface) {commonHandler(e.ObjectNew, queue)},
+			CreateFunc: func(e event.CreateEvent, queue workqueue.RateLimitingInterface) { commonHandler(e.Object, queue) },
+			UpdateFunc: func(e event.UpdateEvent, queue workqueue.RateLimitingInterface) { commonHandler(e.ObjectNew, queue) },
 		},
 	); err != nil {
 		return fmt.Errorf("failed to establish watch for the Machines %v", err)
