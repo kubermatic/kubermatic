@@ -187,6 +187,7 @@ type newRoutingFunc func(
 	constraintProviderGetter provider.ConstraintProviderGetter,
 	alertmanagerProviderGetter provider.AlertmanagerProviderGetter,
 	clusterTemplateProvider provider.ClusterTemplateProvider,
+	clusterTemplateInstanceProviderGetter provider.ClusterTemplateInstanceProviderGetter,
 	ruleGroupProviderGetter provider.RuleGroupProviderGetter,
 	kubermaticVersions kubermatic.Versions,
 ) http.Handler
@@ -378,6 +379,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find ruleGroupProvider for cluster %q", seed.Name)
 	}
 
+	clusterTemplateInstanceProvider := kubernetes.NewClusterTemplateInstanceProvider(fakeImpersonationClient, fakeClient)
+	clusterTemplateInstanceProviders := map[string]provider.ClusterTemplateInstanceProvider{"us-central1": clusterTemplateInstanceProvider}
+	clusterTemplateInstanceProviderGetter := func(seed *kubermaticv1.Seed) (provider.ClusterTemplateInstanceProvider, error) {
+		if instances, exists := clusterTemplateInstanceProviders[seed.Name]; exists {
+			return instances, nil
+		}
+		return nil, fmt.Errorf("can not find clusterTemplateInstanceProvider for seed %q", seed.Name)
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -433,6 +443,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		constraintProviderGetter,
 		alertmanagerProviderGetter,
 		clusterTemplateProvider,
+		clusterTemplateInstanceProviderGetter,
 		ruleGroupProviderGetter,
 		kubermaticVersions,
 	)
@@ -1650,6 +1661,10 @@ func GenClusterTemplate(name, id, projectID, scope, userEmail string) *kubermati
 		Credential:             "",
 		Spec: kubermaticv1.ClusterSpec{
 			HumanReadableName: name,
+			Cloud: kubermaticv1.CloudSpec{
+				DatacenterName: "fake-dc",
+				Fake:           &kubermaticv1.FakeCloudSpec{},
+			},
 		},
 	}
 }

@@ -13075,6 +13075,71 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Create cluster template instance.",
+        "operationId": "createClusterTemplateInstance",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterTemplateID",
+            "name": "template_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "replicas": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "Replicas"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "ClusterTemplateInstance",
+            "schema": {
+              "$ref": "#/definitions/ClusterTemplateInstance"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/kubernetes/clusters": {
       "get": {
         "produces": [
@@ -15694,6 +15759,44 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ClusterTemplateInstance": {
+      "description": "ClusterTemplateInstance represents a ClusterTemplateInstance object",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/ClusterTemplateInstanceSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "ClusterTemplateInstanceSpec": {
+      "type": "object",
+      "title": "ClusterTemplateInstanceSpec specifies the data for cluster instances.",
+      "properties": {
+        "clusterTemplateID": {
+          "type": "string",
+          "x-go-name": "ClusterTemplateID"
+        },
+        "clusterTemplateName": {
+          "type": "string",
+          "x-go-name": "ClusterTemplateName"
+        },
+        "projectID": {
+          "type": "string",
+          "x-go-name": "ProjectID"
+        },
+        "replicas": {
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Replicas"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "ClusterTemplateList": {
       "description": "ClusterTemplateList represents a ClusterTemplate list",

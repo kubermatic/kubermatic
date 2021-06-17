@@ -143,6 +143,7 @@ func New(ctx context.Context, metrics *Metrics, mgr manager.Manager, seedManager
 					Kind:       kubermaticv1.ClusterTemplateInstanceKindName,
 				},
 			},
+			destination: destinationSeed,
 		},
 	}
 

@@ -70,6 +70,9 @@ type AlertmanagerProviderGetter = func(seed *kubermaticv1.Seed) (AlertmanagerPro
 // RuleGroupProviderGetter is used to get an RuleGroupProvider
 type RuleGroupProviderGetter = func(seed *kubermaticv1.Seed) (RuleGroupProvider, error)
 
+// ClusterTemplateInstanceProviderGetter is used to get a ClusterTemplateInstanceProvider
+type ClusterTemplateInstanceProviderGetter = func(seed *kubermaticv1.Seed) (ClusterTemplateInstanceProvider, error)
+
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName string, namespace string) (SeedGetter, error) {
 	return func() (*kubermaticv1.Seed, error) {

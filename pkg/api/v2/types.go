@@ -177,6 +177,14 @@ type ClusterTemplate struct {
 // swagger:model ClusterTemplateList
 type ClusterTemplateList []ClusterTemplate
 
+// ClusterTemplateInstance represents a ClusterTemplateInstance object
+// swagger:model ClusterTemplateInstance
+type ClusterTemplateInstance struct {
+	Name string `json:"name"`
+
+	Spec crdapiv1.ClusterTemplateInstanceSpec `json:"spec"`
+}
+
 // RuleGroup represents a rule group of recording and alerting rules.
 // swagger:model RuleGroup
 type RuleGroup struct {
