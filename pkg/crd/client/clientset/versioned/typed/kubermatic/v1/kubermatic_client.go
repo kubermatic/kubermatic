@@ -15,6 +15,7 @@ type KubermaticV1Interface interface {
 	AlertmanagersGetter
 	ClustersGetter
 	ClusterTemplatesGetter
+	ClusterTemplateInstancesGetter
 	ConstraintsGetter
 	ConstraintTemplatesGetter
 	EtcdBackupConfigsGetter
@@ -51,6 +52,10 @@ func (c *KubermaticV1Client) Clusters() ClusterInterface {
 
 func (c *KubermaticV1Client) ClusterTemplates() ClusterTemplateInterface {
 	return newClusterTemplates(c)
+}
+
+func (c *KubermaticV1Client) ClusterTemplateInstances() ClusterTemplateInstanceInterface {
+	return newClusterTemplateInstances(c)
 }
 
 func (c *KubermaticV1Client) Constraints(namespace string) ConstraintInterface {
