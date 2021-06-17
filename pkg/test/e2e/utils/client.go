@@ -647,7 +647,7 @@ func (r *TestClient) WaitForClusterHealthy(projectID, dc, clusterID string) erro
 }
 
 func (r *TestClient) WaitForOPAEnabledClusterHealthy(projectID, dc, clusterID string) error {
-	timeout := 20 * time.Minute
+	timeout := 5 * time.Minute
 	before := time.Now()
 
 	r.test.Logf("Waiting %v for OPA enabled cluster %s to become healthy...", timeout, clusterID)

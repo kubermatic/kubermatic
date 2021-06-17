@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-test/deep"
 	v1 "k8s.io/api/apps/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -106,8 +105,6 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 	if DeepEqual(obj.(metav1.Object), existingObject.(metav1.Object)) {
 		return nil
 	}
-
-	fmt.Println(deep.Equal(obj, existingObject))
 
 	if !requiresRecreate {
 		// We keep resetting the status here to avoid working on any outdated object
