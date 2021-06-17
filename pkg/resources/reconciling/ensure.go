@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kr/pretty"
+	"github.com/go-test/deep"
 	v1 "k8s.io/api/apps/v1"
 	kubeerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -109,7 +109,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 	}
 
 	if strings.HasPrefix(obj.GetName(), "gatekeeper-controller") {
-		klog.V(2).Info(pretty.Diff(obj, existingObject))
+		fmt.Println(deep.Equal(obj, existingObject))
 	}
 
 	if !requiresRecreate {
