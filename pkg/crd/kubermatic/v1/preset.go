@@ -107,9 +107,10 @@ type PresetSpec struct {
 	Alibaba      *Alibaba      `json:"alibaba,omitempty"`
 	Anexia       *Anexia       `json:"anexia,omitempty"`
 
-	Fake                *Fake  `json:"fake,omitempty"`
-	RequiredEmailDomain string `json:"requiredEmailDomain,omitempty"`
-	Enabled             *bool  `json:"enabled,omitempty"`
+	Fake                *Fake    `json:"fake,omitempty"`
+	RequiredEmailDomain string   `json:"requiredEmailDomain,omitempty"`
+	RequiredEmails      []string `json:"requiredEmails,omitempty"`
+	Enabled             *bool    `json:"enabled,omitempty"`
 }
 
 func (s *PresetSpec) getProviderValue(providerType ProviderType) reflect.Value {
