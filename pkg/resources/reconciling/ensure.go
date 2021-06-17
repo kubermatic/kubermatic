@@ -19,7 +19,6 @@ package reconciling
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/go-test/deep"
@@ -108,9 +107,7 @@ func EnsureNamedObject(ctx context.Context, namespacedName types.NamespacedName,
 		return nil
 	}
 
-	if strings.HasPrefix(obj.GetName(), "gatekeeper-controller") {
-		fmt.Println(deep.Equal(obj, existingObject))
-	}
+	fmt.Println(deep.Equal(obj, existingObject))
 
 	if !requiresRecreate {
 		// We keep resetting the status here to avoid working on any outdated object
