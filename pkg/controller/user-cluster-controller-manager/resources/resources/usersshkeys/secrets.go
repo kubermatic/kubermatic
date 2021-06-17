@@ -27,14 +27,7 @@ import (
 func SecretCreator(userSSHKeys map[string][]byte) reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.UserSSHKeys, func(sec *corev1.Secret) (*corev1.Secret, error) {
-			if len(userSSHKeys) == 0 {
-				return sec, nil
-			}
-			sec.Data = map[string][]byte{}
-			for k, v := range userSSHKeys {
-				sec.Data[k] = v
-			}
-
+			sec.Data = userSSHKeys
 			return sec, nil
 		}
 	}
