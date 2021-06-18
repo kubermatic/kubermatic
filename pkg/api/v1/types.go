@@ -799,6 +799,9 @@ type ClusterSpec struct {
 
 	// ClusterNetwork contains network settings.
 	ClusterNetwork *kubermaticv1.ClusterNetworkingConfig `json:"clusterNetwork,omitempty"`
+
+	// ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.
+	ContainerRuntime string `json:"containerRuntime,omitempty"`
 }
 
 // MarshalJSON marshals ClusterSpec object into JSON. It is overwritten to control data
@@ -819,6 +822,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		ServiceAccount                       *kubermaticv1.ServiceAccountSettings   `json:"serviceAccount,omitempty"`
 		OPAIntegration                       *kubermaticv1.OPAIntegrationSettings   `json:"opaIntegration,omitempty"`
 		MLA                                  *kubermaticv1.MLASettings              `json:"mla,omitempty"`
+		ContainerRuntime                     string                                 `json:"containerRuntime,omitempty"`
 		ClusterNetwork                       *kubermaticv1.ClusterNetworkingConfig  `json:"clusterNetwork,omitempty"`
 	}{
 		Cloud: PublicCloudSpec{
@@ -850,6 +854,7 @@ func (cs *ClusterSpec) MarshalJSON() ([]byte, error) {
 		ServiceAccount:                       cs.ServiceAccount,
 		OPAIntegration:                       cs.OPAIntegration,
 		MLA:                                  cs.MLA,
+		ContainerRuntime:                     cs.ContainerRuntime,
 		ClusterNetwork:                       cs.ClusterNetwork,
 	})
 
@@ -2178,6 +2183,8 @@ const (
 	SeedUserCleanupFinalizer = "kubermatic.io/cleanup-seed-users"
 	// ClusterRoleBindingsCleanupFinalizer indicates that the cluster ClusterRoleBindings on the seed cluster need cleanup
 	ClusterRoleBindingsCleanupFinalizer = "kubermatic.io/cleanup-cluster-role-bindings"
+	// ClusterTemplateSeedCleanupFinalizer indicates that synced cluster template on seed clusters need cleanup
+	ClusterTemplateSeedCleanupFinalizer = "kubermatic.io/cleanup-seed-cluster-template"
 )
 
 func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {

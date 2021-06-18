@@ -18,6 +18,8 @@ type Interface interface {
 	Clusters() ClusterInformer
 	// ClusterTemplates returns a ClusterTemplateInformer.
 	ClusterTemplates() ClusterTemplateInformer
+	// ClusterTemplateInstances returns a ClusterTemplateInstanceInformer.
+	ClusterTemplateInstances() ClusterTemplateInstanceInformer
 	// Constraints returns a ConstraintInformer.
 	Constraints() ConstraintInformer
 	// ConstraintTemplates returns a ConstraintTemplateInformer.
@@ -76,6 +78,11 @@ func (v *version) Clusters() ClusterInformer {
 // ClusterTemplates returns a ClusterTemplateInformer.
 func (v *version) ClusterTemplates() ClusterTemplateInformer {
 	return &clusterTemplateInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// ClusterTemplateInstances returns a ClusterTemplateInstanceInformer.
+func (v *version) ClusterTemplateInstances() ClusterTemplateInstanceInformer {
+	return &clusterTemplateInstanceInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // Constraints returns a ConstraintInformer.

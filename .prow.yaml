@@ -1240,8 +1240,8 @@ presubmits:
   #########################################################
 
   - name: pre-kubermatic-opa-e2e
-    run_if_changed: "(go.mod|go.sum|pkg/|.prow.yaml)"
     decorate: true
+    always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-digitalocean: "true"

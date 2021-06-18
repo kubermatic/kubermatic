@@ -158,7 +158,32 @@ type ClusterSpec struct {
 
 	//MLA contains monitoring, logging and alerting related settings for the user cluster.
 	MLA *MLASettings `json:"mla,omitempty"`
+
+	// ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.
+	ContainerRuntime string `json:"containerRuntime,omitempty"`
+
+	// CNIPlugin contains the spec of the CNI plugin to be installed in the cluster.
+	CNIPlugin *CNIPluginSettings `json:"cniPlugin,omitempty"`
 }
+
+// CNIPluginSettings contains the spec of the CNI plugin used by the Cluster.
+type CNIPluginSettings struct {
+	Type    CNIPluginType `json:"type"`
+	Version string        `json:"version"`
+}
+
+// CNIPluginType define the type of CNI plugin installed. e.g. Canal
+type CNIPluginType string
+
+func (c CNIPluginType) String() string {
+	return string(c)
+}
+
+const (
+	// CNIPluginTypeCanal corresponds to Canal CNI plugin (i.e. Flannel +
+	// Calico for policy enforcement).
+	CNIPluginTypeCanal CNIPluginType = "canal"
+)
 
 const (
 	// ClusterFeatureExternalCloudProvider describes the external cloud provider feature. It is

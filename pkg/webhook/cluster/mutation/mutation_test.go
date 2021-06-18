@@ -65,8 +65,12 @@ func TestHandle(t *testing.T) {
 					Name: "foo",
 					Object: runtime.RawExtension{
 						Raw: rawClusterGen{
-							Name:                  "foo",
-							CloudSpec:             kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							Name:      "foo",
+							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
 							ExternalCloudProvider: true,
 							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
 								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
@@ -83,6 +87,41 @@ func TestHandle(t *testing.T) {
 			wantPatches: []jsonpatch.JsonPatchOperation{},
 		},
 		{
+			name: "Default CNI plugin annotation added",
+			req: webhook.AdmissionRequest{
+				AdmissionRequest: admissionv1.AdmissionRequest{
+					Operation: admissionv1.Create,
+					RequestKind: &metav1.GroupVersionKind{
+						Group:   kubermaticv1.GroupName,
+						Version: kubermaticv1.GroupVersion,
+						Kind:    "Cluster",
+					},
+					Name: "foo",
+					Object: runtime.RawExtension{
+						Raw: rawClusterGen{
+							Name:                  "foo",
+							CloudSpec:             kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							ExternalCloudProvider: true,
+							NetworkConfig: kubermaticv1.ClusterNetworkingConfig{
+								Pods:                     kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.241.0.0/16"}},
+								Services:                 kubermaticv1.NetworkRanges{CIDRBlocks: []string{"10.240.32.0/20"}},
+								DNSDomain:                "example.local",
+								ProxyMode:                resources.IPTablesProxyMode,
+								NodeLocalDNSCacheEnabled: pointer.BoolPtr(true),
+							},
+						}.Do(),
+					},
+				},
+			},
+			wantAllowed: true,
+			wantPatches: []jsonpatch.JsonPatchOperation{
+				jsonpatch.NewOperation("add", "/spec/cniPlugin", map[string]interface{}{
+					"type":    "canal",
+					"version": "v3.19",
+				}),
+			},
+		},
+		{
 			name: "Default network configuration",
 			req: webhook.AdmissionRequest{
 				AdmissionRequest: admissionv1.AdmissionRequest{
@@ -97,6 +136,10 @@ func TestHandle(t *testing.T) {
 						Raw: rawClusterGen{
 							Name:      "foo",
 							CloudSpec: kubermaticv1.CloudSpec{Openstack: &kubermaticv1.OpenstackCloudSpec{}},
+							CNIPluginSpec: &kubermaticv1.CNIPluginSettings{
+								Type:    kubermaticv1.CNIPluginTypeCanal,
+								Version: "v3.19",
+							},
 						}.Do(),
 					},
 				},
@@ -234,6 +277,7 @@ func TestHandle(t *testing.T) {
 type rawClusterGen struct {
 	Name                  string
 	CloudSpec             kubermaticv1.CloudSpec
+	CNIPluginSpec         *kubermaticv1.CNIPluginSettings
 	ExternalCloudProvider bool
 	NetworkConfig         kubermaticv1.ClusterNetworkingConfig
 }
@@ -253,6 +297,7 @@ func (r rawClusterGen) Do() []byte {
 			},
 			Cloud:          r.CloudSpec,
 			ClusterNetwork: r.NetworkConfig,
+			CNIPlugin:      r.CNIPluginSpec,
 		},
 	}
 	s := json.NewSerializer(json.DefaultMetaFactory, testScheme, testScheme, true)

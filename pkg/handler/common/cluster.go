@@ -123,6 +123,14 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
+	// Default container runtime if it is empty and run the validation.
+	if spec.ContainerRuntime == "" {
+		spec.ContainerRuntime = "containerd"
+	}
+	if err = validation.ValidateContainerRuntime(spec); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
 	// Start filling cluster object.
 	partialCluster := &kubermaticv1.Cluster{}
 	partialCluster.Labels = body.Cluster.Labels
@@ -354,6 +362,7 @@ func PatchEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 	newInternalCluster.Spec.PodNodeSelectorAdmissionPluginConfig = patchedCluster.Spec.PodNodeSelectorAdmissionPluginConfig
 	newInternalCluster.Spec.ServiceAccount = patchedCluster.Spec.ServiceAccount
 	newInternalCluster.Spec.MLA = patchedCluster.Spec.MLA
+	newInternalCluster.Spec.ContainerRuntime = patchedCluster.Spec.ContainerRuntime
 
 	incompatibleKubelets, err := common.CheckClusterVersionSkew(ctx, userInfoGetter, clusterProvider, newInternalCluster, projectID)
 	if err != nil {
@@ -840,6 +849,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, fil
 			PodNodeSelectorAdmissionPluginConfig: internalCluster.Spec.PodNodeSelectorAdmissionPluginConfig,
 			ServiceAccount:                       internalCluster.Spec.ServiceAccount,
 			MLA:                                  internalCluster.Spec.MLA,
+			ContainerRuntime:                     internalCluster.Spec.ContainerRuntime,
 		},
 		Status: apiv1.ClusterStatus{
 			Version: internalCluster.Spec.Version,

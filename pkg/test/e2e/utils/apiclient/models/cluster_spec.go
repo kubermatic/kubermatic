@@ -21,6 +21,9 @@ type ClusterSpec struct {
 	// Additional Admission Controller plugins
 	AdmissionPlugins []string `json:"admissionPlugins"`
 
+	// ContainerRuntime to use, i.e. Docker or containerd. By default containerd will be used.
+	ContainerRuntime string `json:"containerRuntime,omitempty"`
+
 	// EnableUserSSHKeyAgent control whether the UserSSHKeyAgent will be deployed in the user cluster or not.
 	// If it was enabled, the agent will be deployed and used to sync the user ssh keys, that the user attach
 	// to the created cluster. If the agent was disabled, it won't be deployed in the user cluster, thus after
