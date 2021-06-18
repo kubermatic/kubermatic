@@ -165,6 +165,13 @@ func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProj
 	}
 }
 
+func MigrateToExternalCloudProvider(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(common.GetClusterReq)
+		return handlercommon.MigrateToExternalCloudProvider(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, seedsGetter, privilegedProjectProvider)
+	}
+}
+
 // AssignSSHKeysReq defines HTTP request data for assignSSHKeyToCluster  endpoint
 // swagger:parameters assignSSHKeyToCluster
 type AssignSSHKeysReq struct {

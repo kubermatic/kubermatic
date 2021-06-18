@@ -595,6 +595,12 @@ func (r Routing) RegisterV1(mux *mux.Router, metrics common.ServerMetrics) {
 		Handler(r.kubernetesDashboardProxy())
 
 	//
+	// Defines an endpoint to enable external cloud controller migration
+	mux.Methods(http.MethodPost).
+		Path("/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/migratetoexternalcloudprovider").
+		Handler(r.externalCloudProviderMigration())
+
+	//
 	// Defines set of HTTP endpoints for Users of the given project
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/users").
@@ -4323,6 +4329,31 @@ func (r Routing) getAdmissionPlugins() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(admissionplugin.GetAdmissionPluginEndpoint(r.admissionPluginProvider)),
 		admissionplugin.DecodeGetAdmissionPlugin,
+		EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/migratetoexternalcloudprovider externalCloudProviderMigration
+//
+//    Enable the migration to the external cloud provider for the given cluster
+//
+//	   Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//		 403: empty
+func (r Routing) externalCloudProviderMigration() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.MigrateToExternalCloudProvider(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		common.DecodeEmptyReq,
 		EncodeJSON,
 		r.defaultServerOptions()...,
 	)

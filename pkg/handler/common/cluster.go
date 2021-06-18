@@ -524,6 +524,46 @@ func GetMetricsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGet
 	return ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
 }
 
+func MigrateToExternalCloudProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID,
+	clusterID string, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	oldCluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, oldCluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if !cloudcontroller.ExternalCloudControllerFeatureSupported(dc, oldCluster) {
+		return nil, errors.NewBadRequest("external cloud controller not supported by the given provider")
+	}
+
+	if ok := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok {
+		return nil, errors.NewBadRequest("external cloud controller already enabled, cannot be disabled")
+	}
+
+	newCluster := oldCluster.DeepCopy()
+	oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+
+	seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+	if err := seedAdminClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], nil
+}
+
 func ListNamespaceEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
