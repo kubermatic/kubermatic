@@ -61,6 +61,13 @@ const (
 	MaxEtcdClusterSize     = 9
 )
 
+type LBSKU string
+
+const (
+	AzureStandardLBSKU = LBSKU("standard")
+	AzureBasicLBSKU    = LBSKU("basic")
+)
+
 // ProtectedClusterLabels is a set of labels that must not be set by users on clusters,
 // as they are security relevant.
 var ProtectedClusterLabels = sets.NewString(WorkerNameLabelKey, ProjectIDLabelKey)
@@ -534,7 +541,7 @@ type AzureCloudSpec struct {
 	SecurityGroup     string `json:"securityGroup"`
 	AvailabilitySet   string `json:"availabilitySet"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
-	LoadBalancerSKU string `json:"loadBalancerSKU"`
+	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"`
 }
 
 // VSphereCredentials credentials represents a credential for accessing vSphere

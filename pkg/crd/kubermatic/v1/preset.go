@@ -256,7 +256,7 @@ type Azure struct {
 	RouteTableName    string `json:"routeTable,omitempty"`
 	SecurityGroup     string `json:"securityGroup,omitempty"`
 	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
-	LoadBalancerSKU string `json:"loadBalancerSKU"`
+	LoadBalancerSKU LBSKU `json:"loadBalancerSKU"`
 }
 
 func (s Azure) IsValid() bool {
