@@ -18,15 +18,18 @@ package mla
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 
 	"github.com/grafana/grafana/pkg/models"
+	"go.uber.org/zap"
 
 	grafanasdk "github.com/kubermatic/grafanasdk"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/rbac"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/utils/pointer"
 )
 
@@ -115,6 +118,21 @@ func addGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, or
 	}
 	if status, err := grafanaClient.AddOrgUser(ctx, userRole, orgID); err != nil {
 		return fmt.Errorf("failed to add grafana user to org: %w (status: %s, message: %s)", err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+	}
+	return nil
+}
+
+func addDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, configMap *corev1.ConfigMap) error {
+	for _, data := range configMap.Data {
+		var board grafanasdk.Board
+		if err := json.Unmarshal([]byte(data), &board); err != nil {
+			return fmt.Errorf("unable to unmarshal dashboard: %w", err)
+		}
+		if status, err := grafanaClient.SetDashboard(ctx, board, grafanasdk.SetDashboardParams{Overwrite: true}); err != nil {
+			log.Debugf("unable to set dashboard: %w (status: %s, message: %s)",
+				err, pointer.StringPtrDerefOr(status.Status, "no status"), pointer.StringPtrDerefOr(status.Message, "no message"))
+			return err
+		}
 	}
 	return nil
 }
