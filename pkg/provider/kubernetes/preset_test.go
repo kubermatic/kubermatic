@@ -515,8 +515,8 @@ func TestGetPresets(t *testing.T) {
 			},
 		},
 		{
-			name:     "test 6: get Presets for a specific user, requiredEmailDomain precedence",
-			userInfo: provider.UserInfo{Email: "test@example.com"},
+			name:     "test 6: get Presets for a specific user - RequiredEmailDomain and RequiredEmails defined",
+			userInfo: provider.UserInfo{Email: "test@foobar.com"},
 			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
 					ObjectMeta: metav1.ObjectMeta{
@@ -554,6 +554,18 @@ func TestGetPresets(t *testing.T) {
 				},
 			},
 			expected: []kubermaticv1.Preset{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-1",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: "foobar.com",
+						RequiredEmails:      []string{"test@example.com"},
+						Fake: &kubermaticv1.Fake{
+							Token: "aaaaa",
+						},
+					},
+				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "test-3",
