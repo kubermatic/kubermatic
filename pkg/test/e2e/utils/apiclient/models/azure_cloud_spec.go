@@ -25,9 +25,6 @@ type AzureCloudSpec struct {
 	// client secret
 	ClientSecret string `json:"clientSecret,omitempty"`
 
-	// LoadBalancerSKU sets the LB type that will be used for the Azure cluster, possible values are "basic" and "standard", if empty, "basic" will be used
-	LoadBalancerSKU string `json:"loadBalancerSKU,omitempty"`
-
 	// resource group
 	ResourceGroup string `json:"resourceGroup,omitempty"`
 
@@ -54,6 +51,9 @@ type AzureCloudSpec struct {
 
 	// credentials reference
 	CredentialsReference GlobalSecretKeySelector `json:"credentialsReference,omitempty"`
+
+	// load balancer s k u
+	LoadBalancerSKU LBSKU `json:"loadBalancerSKU,omitempty"`
 }
 
 // Validate validates this azure cloud spec
@@ -61,6 +61,10 @@ func (m *AzureCloudSpec) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCredentialsReference(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateLoadBalancerSKU(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -79,6 +83,22 @@ func (m *AzureCloudSpec) validateCredentialsReference(formats strfmt.Registry) e
 	if err := m.CredentialsReference.Validate(formats); err != nil {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("credentialsReference")
+		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *AzureCloudSpec) validateLoadBalancerSKU(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.LoadBalancerSKU) { // not required
+		return nil
+	}
+
+	if err := m.LoadBalancerSKU.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("loadBalancerSKU")
 		}
 		return err
 	}
