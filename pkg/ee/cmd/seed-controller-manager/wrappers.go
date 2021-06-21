@@ -44,7 +44,7 @@ func AddFlags(fs *flag.FlagSet) {
 	fs.StringVar(&datacentersFile, "datacenters", "", "The datacenters.yaml file path.")
 }
 
-func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName string, namespace string) (provider.SeedGetter, error) {
+func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, seedName string, namespace string) (provider.SeedGetter, error) {
 	if dynamicDatacenters {
 		return provider.SeedGetterFactory(ctx, client, seedName, namespace)
 	}

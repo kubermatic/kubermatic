@@ -80,7 +80,7 @@ type EtcdBackupConfigProviderGetter = func(seed *kubermaticv1.Seed) (EtcdBackupC
 type EtcdRestoreProviderGetter = func(seed *kubermaticv1.Seed) (EtcdRestoreProvider, error)
 
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
-func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName string, namespace string) (SeedGetter, error) {
+func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, seedName string, namespace string) (SeedGetter, error) {
 	return func() (*kubermaticv1.Seed, error) {
 		seed := &kubermaticv1.Seed{}
 		if err := client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: seedName}, seed); err != nil {

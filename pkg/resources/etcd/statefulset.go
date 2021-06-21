@@ -34,7 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/klog"
 )
 
 const (
@@ -79,7 +78,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 
 			replicas := computeReplicas(data, set)
 			set.Name = resources.EtcdStatefulSetName
-			set.Spec.Replicas = resources.Int32(int32(replicas))
+			set.Spec.Replicas = resources.Int32(replicas)
 			set.Spec.UpdateStrategy.Type = appsv1.RollingUpdateStatefulSetStrategyType
 			set.Spec.PodManagementPolicy = appsv1.ParallelPodManagement
 			set.Spec.ServiceName = resources.EtcdServiceName
@@ -164,7 +163,7 @@ func StatefulSetCreator(data etcdStatefulSetCreatorData, enableDataCorruptionChe
 						},
 						{
 							Name:  "ETCD_CLUSTER_SIZE",
-							Value: strconv.Itoa(replicas),
+							Value: strconv.Itoa(int(replicas)),
 						},
 						{
 							Name:  "ENABLE_CORRUPTION_CHECK",
@@ -361,7 +360,7 @@ func ImageTag(c *kubermaticv1.Cluster) string {
 	return etcdImageTagV34
 }
 
-func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int {
+func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) int32 {
 	if !data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureEtcdLauncher] {
 		return kubermaticv1.DefaultEtcdClusterSize
 	}
@@ -369,7 +368,7 @@ func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) i
 	if set.Spec.Replicas == nil { // new replicaset
 		return etcdClusterSize
 	}
-	replicas := int(*set.Spec.Replicas)
+	replicas := *set.Spec.Replicas
 	// at required size. do nothing
 	if etcdClusterSize == replicas {
 		return replicas
@@ -385,19 +384,17 @@ func computeReplicas(data etcdStatefulSetCreatorData, set *appsv1.StatefulSet) i
 	return replicas
 }
 
-func getClusterSize(settings kubermaticv1.EtcdStatefulSetSettings) int {
+func getClusterSize(settings kubermaticv1.EtcdStatefulSetSettings) int32 {
 	if settings.ClusterSize == nil {
 		return kubermaticv1.DefaultEtcdClusterSize
 	}
 	if *settings.ClusterSize < kubermaticv1.MinEtcdClusterSize {
-		klog.V(2).Infof("cluster size [%d] is smaller than DefaultEtcdClusterSize [%d]. Falling back to DefaultEtcdClusterSize", *settings.ClusterSize, kubermaticv1.DefaultEtcdClusterSize)
 		return kubermaticv1.MinEtcdClusterSize
 	}
 	if *settings.ClusterSize > kubermaticv1.MaxEtcdClusterSize {
-		klog.V(2).Infof("cluster size [%d] is larger than MaxEtcdClusterSize [%d]. Falling back to MaxEtcdClusterSize", *settings.ClusterSize, kubermaticv1.MaxEtcdClusterSize)
 		return kubermaticv1.MaxEtcdClusterSize
 	}
-	return int(*settings.ClusterSize)
+	return *settings.ClusterSize
 }
 
 type commandTplData struct {

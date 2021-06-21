@@ -40,7 +40,7 @@ type SeedList struct {
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// SeedDatacenter is the type representing a SeedDatacenter
+// Seed is the type representing a SeedDatacenter
 type Seed struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -91,6 +91,8 @@ type SeedSpec struct {
 	ExposeStrategy ExposeStrategy `json:"expose_strategy,omitempty"`
 	// Optional: MLA allows configuring seed level MLA (Monitoring, Logging & Alerting) stack settings.
 	MLA *SeedMLASettings `json:"mla,omitempty"`
+	// DefaultComponentSettings are default values to set for newly created clusters.
+	DefaultComponentSettings ComponentSettings `json:"defaultComponentSettings,omitempty"`
 }
 
 type NodeportProxyConfig struct {

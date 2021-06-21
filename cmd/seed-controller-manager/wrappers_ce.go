@@ -32,7 +32,7 @@ func addFlags(fs *flag.FlagSet) {
 	// NOP
 }
 
-func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, options controllerRunOptions) (provider.SeedGetter, error) {
+func seedGetterFactory(ctx context.Context, client ctrlruntimeclient.Reader, options controllerRunOptions) (provider.SeedGetter, error) {
 	return provider.SeedGetterFactory(ctx, client, options.dc, options.namespace)
 }
 
