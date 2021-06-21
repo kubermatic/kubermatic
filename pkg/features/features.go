@@ -53,6 +53,11 @@ const (
 
 	// UserClusterMLA if enabled MonitoringLoggingAlerting stack will be deployed with corresponding controller
 	UserClusterMLA = "UserClusterMLA"
+
+	// KonnectivityService enables the deployment of Konnectivity proxy for hte
+	// control plane to cluster communication, instead of relying on the legacy
+	// solution based on OpenVPN.
+	KonnectivityService = "KonnectivityService"
 )
 
 // FeatureGate is map of key=value pairs that enables/disables various features.
