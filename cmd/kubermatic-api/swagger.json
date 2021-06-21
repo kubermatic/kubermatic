@@ -15006,6 +15006,9 @@
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
+        "loadBalancerSKU": {
+          "$ref": "#/definitions/LBSKU"
+        },
         "resourceGroup": {
           "type": "string",
           "x-go-name": "ResourceGroup"
@@ -17440,6 +17443,10 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "LBSKU": {
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "LabelKeyList": {
       "type": "array",
