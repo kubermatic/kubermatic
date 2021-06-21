@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"strings"
 
 	"github.com/grafana/grafana/pkg/models"
 	"go.uber.org/zap"
@@ -30,8 +31,10 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
 
+	predicateutil "k8c.io/kubermatic/v2/pkg/controller/util/predicate"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/utils/pointer"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -43,8 +46,8 @@ import (
 )
 
 const (
-	grafanaOrgAnnotationKey        = "mla.k8c.io/organization"
-	grafanaDashboardsConfigmapName = "dashboards"
+	grafanaOrgAnnotationKey              = "mla.k8c.io/organization"
+	grafanaDashboardsConfigmapNamePrefix = "grafana-dashboards"
 )
 
 // orgGrafanaReconciler stores necessary components that are required to manage MLA(Monitoring, Logging, and Alerting) setup.
@@ -88,6 +91,26 @@ func newOrgGrafanaReconciler(
 	if err != nil {
 		return err
 	}
+
+	enqueueProjectForConfigMap := handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
+		if !strings.HasPrefix(a.GetName(), grafanaDashboardsConfigmapNamePrefix) {
+			return []reconcile.Request{}
+		}
+		projectList := &kubermaticv1.ProjectList{}
+		if err := client.List(context.Background(), projectList); err != nil {
+			log.Errorw("Failed to list projects", zap.Error(err))
+			utilruntime.HandleError(fmt.Errorf("failed to list Projects: %w", err))
+		}
+		requests := make([]reconcile.Request, 0, len(projectList.Items))
+		for _, project := range projectList.Items {
+			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{Name: project.Name, Namespace: project.Namespace}})
+		}
+		return requests
+	})
+	if err := c.Watch(&source.Kind{Type: &corev1.ConfigMap{}}, enqueueProjectForConfigMap, predicateutil.ByNamespace(orgGrafanaController.mlaNamespace)); err != nil {
+		return fmt.Errorf("failed to watch ConfigMap: %v", err)
+	}
+
 	if err := c.Watch(&source.Kind{Type: &kubermaticv1.Project{}}, &handler.EnqueueRequestForObject{}); err != nil {
 		return fmt.Errorf("failed to watch Projects: %v", err)
 	}
@@ -233,12 +256,20 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected gr
 }
 
 func (r *orgGrafanaController) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, orgID uint) error {
-	configMap := &corev1.ConfigMap{}
-	keyName := types.NamespacedName{Namespace: r.mlaNamespace, Name: grafanaDashboardsConfigmapName}
-	if err := r.Get(ctx, keyName, configMap); err != nil {
-		return ctrlruntimeclient.IgnoreNotFound(err)
+	configMapList := &corev1.ConfigMapList{}
+	listOptions := &ctrlruntimeclient.ListOptions{Namespace: r.mlaNamespace}
+	if err := r.List(ctx, configMapList, listOptions); err != nil {
+		return fmt.Errorf("Failed to list configmaps: %w", err)
 	}
-	return addDashboards(ctx, log, r.grafanaClient.WithOrgIDHeader(orgID), configMap)
+	for _, configMap := range configMapList.Items {
+		if !strings.HasPrefix(configMap.GetName(), grafanaDashboardsConfigmapNamePrefix) {
+			continue
+		}
+		if err := addDashboards(ctx, log, r.grafanaClient.WithOrgIDHeader(orgID), configMap); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (r *orgGrafanaController) ensureOrganization(ctx context.Context, log *zap.SugaredLogger, project *kubermaticv1.Project, expected grafanasdk.Org, annotationKey string) (uint, error) {

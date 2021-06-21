@@ -122,7 +122,7 @@ func addGrafanaOrgUser(ctx context.Context, grafanaClient *grafanasdk.Client, or
 	return nil
 }
 
-func addDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, configMap *corev1.ConfigMap) error {
+func addDashboards(ctx context.Context, log *zap.SugaredLogger, grafanaClient *grafanasdk.Client, configMap corev1.ConfigMap) error {
 	for _, data := range configMap.Data {
 		var board grafanasdk.Board
 		if err := json.Unmarshal([]byte(data), &board); err != nil {
