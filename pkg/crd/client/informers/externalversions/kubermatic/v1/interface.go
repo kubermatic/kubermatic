@@ -42,6 +42,8 @@ type Interface interface {
 	UserProjectBindings() UserProjectBindingInformer
 	// UserSSHKeys returns a UserSSHKeyInformer.
 	UserSSHKeys() UserSSHKeyInformer
+	// WhitelistedRegistries returns a WhitelistedRegistryInformer.
+	WhitelistedRegistries() WhitelistedRegistryInformer
 }
 
 type version struct {
@@ -138,4 +140,9 @@ func (v *version) UserProjectBindings() UserProjectBindingInformer {
 // UserSSHKeys returns a UserSSHKeyInformer.
 func (v *version) UserSSHKeys() UserSSHKeyInformer {
 	return &userSSHKeyInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
+}
+
+// WhitelistedRegistries returns a WhitelistedRegistryInformer.
+func (v *version) WhitelistedRegistries() WhitelistedRegistryInformer {
+	return &whitelistedRegistryInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
