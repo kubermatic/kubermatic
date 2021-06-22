@@ -27,10 +27,6 @@ import (
 func KeyHolderSecretCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KubernetesDashboardKeyHolderSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
-			if secret.Data == nil {
-				secret.Data = map[string][]byte{}
-			}
-
 			secret.Labels = resources.BaseAppLabels(AppName, nil)
 			return secret, nil
 		}
@@ -41,10 +37,6 @@ func KeyHolderSecretCreator() reconciling.NamedSecretCreatorGetter {
 func CsrfTokenSecretCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.KubernetesDashboardCsrfTokenSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
-			if secret.Data == nil {
-				secret.Data = map[string][]byte{}
-			}
-
 			secret.Labels = resources.BaseAppLabels(AppName, nil)
 			return secret, nil
 		}
