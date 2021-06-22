@@ -36,12 +36,14 @@ import (
 	"k8s.io/apimachinery/pkg/api/equality"
 	utilerror "k8s.io/apimachinery/pkg/util/errors"
 	kubenetutil "k8s.io/apimachinery/pkg/util/net"
+	"k8s.io/apimachinery/pkg/util/sets"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 )
 
 var (
 	// ErrCloudChangeNotAllowed describes that it is not allowed to change the cloud provider
-	ErrCloudChangeNotAllowed = errors.New("not allowed to change the cloud provider")
+	ErrCloudChangeNotAllowed  = errors.New("not allowed to change the cloud provider")
+	azureLoadBalancerSKUTypes = sets.NewString("", string(kubermaticv1.AzureStandardLBSKU), string(kubermaticv1.AzureBasicLBSKU))
 )
 
 // ValidateCreateClusterSpec validates the given cluster spec
@@ -472,6 +474,9 @@ func validateAzureCloudSpec(spec *kubermaticv1.AzureCloudSpec) error {
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.AzureClientSecret); err != nil {
 			return err
 		}
+	}
+	if !azureLoadBalancerSKUTypes.Has(string(spec.LoadBalancerSKU)) {
+		return fmt.Errorf("azure LB SKU cannot be %q, allowed values are %v", spec.LoadBalancerSKU, azureLoadBalancerSKUTypes.List())
 	}
 
 	return nil

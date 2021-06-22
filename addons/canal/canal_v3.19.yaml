@@ -14,7 +14,8 @@
 
 # Source: https://docs.projectcalico.org/v3.19/manifests/canal.yaml
 # 1 modification:
-#   - Remove the flexvolume installation as its broken for Flatcar Linux & only required for application policies (Which we don't use.)
+#   - Remove the flexvolume installation as its broken for Flatcar Linux & only required for application policies (Which we don't use).
+#   - Add envoyagent interface to the exclusion list for Calico IP autodetection. 
 {{ if eq .Cluster.CNIPlugin.Type "canal" }}
 {{ if eq .Cluster.CNIPlugin.Version "v3.19" }}
 ---
@@ -3618,6 +3619,11 @@ spec:
             # Prevents the container from sleeping forever.
             - name: SLEEP
               value: "false"
+            # Skips envoyagent interface created in scope of Tunneling expose
+            # strategy from IP autodetection.
+            # https://docs.projectcalico.org/networking/ip-autodetection#change-the-autodetection-method
+            - name: IP_AUTODETECTION_METHOD
+              value: "skip-interface=envoyagent"
           volumeMounts:
             - mountPath: /host/opt/cni/bin
               name: cni-bin-dir

@@ -105,11 +105,21 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 	}
 
 	if len(c.Spec.ClusterNetwork.Services.CIDRBlocks) == 0 {
-		c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
+		if c.Spec.Cloud.Kubevirt != nil {
+			// KubeVirt cluster can be provisioned on top of k8s cluster created by KKP
+			// thus we have to avoid network collision
+			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.241.0.0/20"}
+		} else {
+			c.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.240.16.0/20"}
+		}
 	}
 
 	if len(c.Spec.ClusterNetwork.Pods.CIDRBlocks) == 0 {
-		c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
+		if c.Spec.Cloud.Kubevirt != nil {
+			c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.26.0.0/16"}
+		} else {
+			c.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
+		}
 	}
 
 	if c.Spec.ClusterNetwork.DNSDomain == "" {
