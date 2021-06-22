@@ -78,6 +78,7 @@ type Routing struct {
 	userWatcher                           watcher.UserWatcher
 	externalClusterProvider               provider.ExternalClusterProvider
 	privilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
+	defaultConstraintProvider             provider.DefaultConstraintProvider
 	constraintTemplateProvider            provider.ConstraintTemplateProvider
 	constraintProviderGetter              provider.ConstraintProviderGetter
 	alertmanagerProviderGetter            provider.AlertmanagerProviderGetter
@@ -128,6 +129,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		userWatcher:                           routingParams.UserWatcher,
 		externalClusterProvider:               routingParams.ExternalClusterProvider,
 		privilegedExternalClusterProvider:     routingParams.PrivilegedExternalClusterProvider,
+		defaultConstraintProvider:             routingParams.DefaultConstraintProvider,
 		constraintTemplateProvider:            routingParams.ConstraintTemplateProvider,
 		constraintProviderGetter:              routingParams.ConstraintProviderGetter,
 		alertmanagerProviderGetter:            routingParams.AlertmanagerProviderGetter,

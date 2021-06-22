@@ -873,6 +873,12 @@ type PrivilegedConstraintProvider interface {
 	UpdateUnsecured(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
+// DefaultConstraintProvider declares the set of method for interacting with default constraints
+type DefaultConstraintProvider interface {
+	// Create creates the given default constraint
+	Create(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+}
+
 // AlertmanagerProvider declares the set of method for interacting with alertmanagers
 type AlertmanagerProvider interface {
 	// Get gets the given alertmanager and the config secret

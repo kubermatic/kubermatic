@@ -32,7 +32,7 @@ import (
 
 // ClusterTemplateProvider struct that holds required components in order manage cluster templates
 type ClusterTemplateProvider struct {
-	// createSeedImpersonatedClient is used as a ground for impersonation
+	// createMasterImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient impersonationClient
 	clientPrivileged               ctrlruntimeclient.Client
 }

@@ -189,6 +189,7 @@ type newRoutingFunc func(
 	clusterTemplateProvider provider.ClusterTemplateProvider,
 	ruleGroupProviderGetter provider.RuleGroupProviderGetter,
 	kubermaticVersions kubermatic.Versions,
+	constraintProvider provider.DefaultConstraintProvider,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -343,6 +344,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		FakeClient: fakeClient,
 	}
 
+	defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, fakeClient)
+	if err != nil {
+		return nil, nil, err
+	}
+	fakeDefaultConstraintProvider := &FakeDefaultConstraintProvider{
+		Provider:   defaultConstraintProvider,
+		FakeClient: fakeClient,
+	}
+
 	constraintProvider, err := kubernetes.NewConstraintProvider(fakeImpersonationClient, fakeClient)
 	if err != nil {
 		return nil, nil, err
@@ -399,7 +409,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		userInfoGetter,
 		seedsGetter,
 		seedClientGetter,
-
 		clusterProviderGetter,
 		addonProviderGetter,
 		addonConfigProvider,
@@ -435,6 +444,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		clusterTemplateProvider,
 		ruleGroupProviderGetter,
 		kubermaticVersions,
+		fakeDefaultConstraintProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

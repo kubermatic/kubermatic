@@ -37,11 +37,26 @@ type ConstraintProvider struct {
 	clientPrivileged             ctrlruntimeclient.Client
 }
 
+// DefaultConstraintProvider struct that holds required components in order manage constraints
+type DefaultConstraintProvider struct {
+	// createMasterImpersonatedClient is used as a ground for impersonation
+	createMasterImpersonatedClient impersonationClient
+	clientPrivileged               ctrlruntimeclient.Client
+}
+
 // NewConstraintProvider returns a constraint provider
 func NewConstraintProvider(createSeedImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) (*ConstraintProvider, error) {
 	return &ConstraintProvider{
 		clientPrivileged:             client,
 		createSeedImpersonatedClient: createSeedImpersonatedClient,
+	}, nil
+}
+
+// NewDefaultConstraintProvider returns a constraint provider
+func NewDefaultConstraintProvider(createMasterImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) (*DefaultConstraintProvider, error) {
+	return &DefaultConstraintProvider{
+		createMasterImpersonatedClient: createMasterImpersonatedClient,
+		clientPrivileged:               client,
 	}, nil
 }
 
@@ -141,5 +156,11 @@ func (p *ConstraintProvider) Update(userInfo *provider.UserInfo, constraint *kub
 func (p *ConstraintProvider) UpdateUnsecured(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
 
 	err := p.clientPrivileged.Update(context.Background(), constraint)
+	return constraint, err
+}
+
+func (p *DefaultConstraintProvider) Create(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+
+	err := p.clientPrivileged.Create(context.Background(), constraint)
 	return constraint, err
 }

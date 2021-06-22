@@ -262,6 +262,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/constrainttemplates/{ct_name}").
 		Handler(r.deleteConstraintTemplate())
 
+	// Define a set of endpoints for default constraints
+	mux.Methods(http.MethodPost).
+		Path("/constraints").
+		Handler(r.createDefaultConstraint())
+
 	// Define a set of endpoints for gatekeeper constraints
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/constraints").
@@ -1451,6 +1456,30 @@ func (r Routing) createConstraint() http.Handler {
 			middleware.PrivilegedConstraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
 		)(constraint.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintTemplateProvider)),
 		constraint.DecodeCreateConstraintReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/constraints constraint createDefaultConstraint
+//
+//     Creates default constraint
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Constraint
+//       401: empty
+//       403: empty
+func (r Routing) createDefaultConstraint() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constraint.CreateDefaultEndpoint(r.userInfoGetter, r.defaultConstraintProvider, r.constraintTemplateProvider)),
+		constraint.DecodeDefaultCreateConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

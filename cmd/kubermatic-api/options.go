@@ -171,6 +171,7 @@ type providers struct {
 	externalClusterProvider               provider.ExternalClusterProvider
 	privilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
 	constraintTemplateProvider            provider.ConstraintTemplateProvider
+	defaultConstraintProvider             provider.DefaultConstraintProvider
 	constraintProviderGetter              provider.ConstraintProviderGetter
 	alertmanagerProviderGetter            provider.AlertmanagerProviderGetter
 	clusterTemplateProvider               provider.ClusterTemplateProvider

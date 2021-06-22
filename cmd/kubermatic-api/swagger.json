@@ -8225,6 +8225,38 @@
         }
       }
     },
+    "/api/v2/constraints": {
+      "post": {
+        "description": "Creates default constraint",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "constraint"
+        ],
+        "operationId": "createDefaultConstraint",
+        "responses": {
+          "200": {
+            "description": "Constraint",
+            "schema": {
+              "$ref": "#/definitions/Constraint"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/constrainttemplates": {
       "get": {
         "produces": [
