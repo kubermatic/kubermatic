@@ -23,15 +23,14 @@ import (
 	"net/http"
 	"strings"
 
-	"k8c.io/kubermatic/v2/pkg/handler/middleware"
-	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
-
 	"github.com/go-kit/kit/endpoint"
 
 	providercommon "k8c.io/kubermatic/v2/pkg/handler/common/provider"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	k8cerrors "k8c.io/kubermatic/v2/pkg/util/errors"
 )
 
 func getAuthInfo(ctx context.Context, req OpenstackReq, userInfoGetter provider.UserInfoGetter, presetsProvider provider.PresetProvider) (*provider.UserInfo, *resources.OpenstackCredentials, error) {

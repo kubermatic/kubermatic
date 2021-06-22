@@ -654,6 +654,8 @@ func getNetClientForCluster(cluster kubermaticv1.CloudSpec, dc *kubermaticv1.Dat
 }
 
 // GetCredentialsForCluster returns the credentials for the passed in cloud spec or an error
+// The user can choose three ways for authentication. The first is a token. Second through Application Credentials.
+// The last one uses a username and password. Those methods work exclusively.
 func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector provider.SecretKeySelectorValueFunc) (*resources.OpenstackCredentials, error) {
 	username := cloud.Openstack.Username
 	password := cloud.Openstack.Password
