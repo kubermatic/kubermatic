@@ -3619,11 +3619,6 @@ spec:
             # Prevents the container from sleeping forever.
             - name: SLEEP
               value: "false"
-            # Skips envoyagent interface created in scope of Tunneling expose
-            # strategy from IP autodetection.
-            # https://docs.projectcalico.org/networking/ip-autodetection#change-the-autodetection-method
-            - name: IP_AUTODETECTION_METHOD
-              value: "skip-interface=envoyagent"
           volumeMounts:
             - mountPath: /host/opt/cni/bin
               name: cni-bin-dir
@@ -3685,6 +3680,11 @@ spec:
               value: "false"
             - name: FELIX_HEALTHENABLED
               value: "true"
+            # Skips envoyagent interface created in scope of Tunneling expose
+            # strategy from IP autodetection.
+            # https://docs.projectcalico.org/networking/ip-autodetection#change-the-autodetection-method
+            - name: IP_AUTODETECTION_METHOD
+              value: "skip-interface=envoyagent"
           securityContext:
             privileged: true
           resources:
