@@ -288,14 +288,12 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 	if spec.ApplicationCredentialID != "" {
 		openstackCredentials.ApplicationCredentialID = spec.ApplicationCredentialID
 		openstackCredentials.ApplicationCredentialSecret = spec.ApplicationCredentialSecret
+		return openstackCredentials, err
 	} else if openstackCredentials.ApplicationCredentialID, _ = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackApplicationCredentialID); openstackCredentials.ApplicationCredentialID != "" {
 		openstackCredentials.ApplicationCredentialSecret, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackApplicationCredentialSecret)
 		if err != nil {
 			return OpenstackCredentials{}, err
 		}
-	}
-
-	if openstackCredentials.ApplicationCredentialID != "" {
 		return openstackCredentials, err
 	}
 
