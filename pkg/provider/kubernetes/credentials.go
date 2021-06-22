@@ -23,6 +23,7 @@ import (
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/provider"
 	"k8c.io/kubermatic/v2/pkg/provider/cloud/openstack"
 	"k8c.io/kubermatic/v2/pkg/resources"
@@ -269,7 +270,7 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	spec := cluster.Spec.Cloud.Openstack
 
 	// already migrated
-	if spec.Username == "" && spec.Password == "" && spec.Tenant == "" && spec.TenantID == "" && spec.Domain == "" {
+	if spec.Username == "" && spec.Password == "" && spec.Tenant == "" && spec.TenantID == "" && spec.Domain == "" && spec.ApplicationCredentialID == "" && spec.ApplicationCredentialSecret == "" && !spec.UseToken {
 		return nil
 	}
 
@@ -287,14 +288,26 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	if spec.Domain == "" {
 		spec.Domain = oldCred.Domain
 	}
+	authToken := ""
+	if spec.UseToken {
+		t := ctx.Value(middleware.RawTokenContextKey)
+		token, ok := t.(string)
+		if !ok || token == "" {
+			return fmt.Errorf("failed to get authentication token")
+		}
+		authToken = token
+	}
 
 	// move credentials into dedicated Secret
 	credentialRef, err := ensureCredentialSecret(ctx, seedClient, cluster, map[string][]byte{
-		resources.OpenstackUsername: []byte(spec.Username),
-		resources.OpenstackPassword: []byte(spec.Password),
-		resources.OpenstackTenant:   []byte(spec.Tenant),
-		resources.OpenstackTenantID: []byte(spec.TenantID),
-		resources.OpenstackDomain:   []byte(spec.Domain),
+		resources.OpenstackUsername:                    []byte(spec.Username),
+		resources.OpenstackPassword:                    []byte(spec.Password),
+		resources.OpenstackTenant:                      []byte(spec.Tenant),
+		resources.OpenstackTenantID:                    []byte(spec.TenantID),
+		resources.OpenstackDomain:                      []byte(spec.Domain),
+		resources.OpenstackApplicationCredentialID:     []byte(spec.ApplicationCredentialID),
+		resources.OpenstackApplicationCredentialSecret: []byte(spec.ApplicationCredentialSecret),
+		resources.OpenstackToken:                       []byte(authToken),
 	})
 	if err != nil {
 		return err
@@ -309,6 +322,9 @@ func createOrUpdateOpenstackSecret(ctx context.Context, seedClient ctrlruntimecl
 	cluster.Spec.Cloud.Openstack.Tenant = ""
 	cluster.Spec.Cloud.Openstack.TenantID = ""
 	cluster.Spec.Cloud.Openstack.Domain = ""
+	cluster.Spec.Cloud.Openstack.ApplicationCredentialSecret = ""
+	cluster.Spec.Cloud.Openstack.ApplicationCredentialID = ""
+	cluster.Spec.Cloud.Openstack.UseToken = false
 
 	return nil
 }

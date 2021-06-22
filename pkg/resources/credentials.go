@@ -65,11 +65,14 @@ type HetznerCredentials struct {
 }
 
 type OpenstackCredentials struct {
-	Username string
-	Password string
-	Tenant   string
-	TenantID string
-	Domain   string
+	Username                    string
+	Password                    string
+	Tenant                      string
+	TenantID                    string
+	Domain                      string
+	ApplicationCredentialID     string
+	ApplicationCredentialSecret string
+	Token                       string
 }
 
 type PacketCredentials struct {
@@ -281,6 +284,18 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 	spec := data.Cluster().Spec.Cloud.Openstack
 	openstackCredentials := OpenstackCredentials{}
 	var err error
+
+	if spec.ApplicationCredentialID != "" {
+		openstackCredentials.ApplicationCredentialID = spec.ApplicationCredentialID
+		openstackCredentials.ApplicationCredentialSecret = spec.ApplicationCredentialSecret
+		return openstackCredentials, err
+	} else if openstackCredentials.ApplicationCredentialID, _ = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackApplicationCredentialID); openstackCredentials.ApplicationCredentialID != "" {
+		openstackCredentials.ApplicationCredentialSecret, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackApplicationCredentialSecret)
+		if err != nil {
+			return OpenstackCredentials{}, err
+		}
+		return openstackCredentials, err
+	}
 
 	if spec.Username != "" {
 		openstackCredentials.Username = spec.Username

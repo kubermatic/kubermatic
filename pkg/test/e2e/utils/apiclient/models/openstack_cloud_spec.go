@@ -16,6 +16,12 @@ import (
 // swagger:model OpenstackCloudSpec
 type OpenstackCloudSpec struct {
 
+	// application credential ID
+	ApplicationCredentialID string `json:"applicationCredentialID,omitempty"`
+
+	// application credential secret
+	ApplicationCredentialSecret string `json:"applicationCredentialSecret,omitempty"`
+
 	// domain
 	Domain string `json:"domain,omitempty"`
 
@@ -52,6 +58,9 @@ type OpenstackCloudSpec struct {
 	// tenant ID
 	TenantID string `json:"tenantID,omitempty"`
 
+	// Used internally during cluster creation
+	Token string `json:"token,omitempty"`
+
 	// Whether or not to use Octavia for LoadBalancer type of Service
 	// implementation instead of using Neutron-LBaaS.
 	// Attention:Openstack CCM use Octavia as default load balancer
@@ -61,6 +70,9 @@ type OpenstackCloudSpec struct {
 	// level if both are specified.
 	// +optional
 	UseOctavia bool `json:"useOctavia,omitempty"`
+
+	// use token
+	UseToken bool `json:"useToken,omitempty"`
 
 	// username
 	Username string `json:"username,omitempty"`
