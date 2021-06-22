@@ -27,10 +27,6 @@ import (
 func SecretCreator() reconciling.NamedSecretCreatorGetter {
 	return func() (string, reconciling.SecretCreator) {
 		return resources.GatekeeperWebhookServerCertSecretName, func(secret *corev1.Secret) (*corev1.Secret, error) {
-			if secret.Data == nil {
-				secret.Data = map[string][]byte{}
-			}
-
 			secret.Labels = resources.BaseAppLabels(resources.GatekeeperControllerDeploymentName, map[string]string{"gatekeeper.sh/system": "yes"})
 			return secret, nil
 		}
