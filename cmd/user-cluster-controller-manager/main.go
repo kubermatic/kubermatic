@@ -101,7 +101,7 @@ func main() {
 	flag.Var(&runOp.networks, "ipam-controller-network", "The networks from which the ipam controller should allocate IPs for machines (e.g.: .--ipam-controller-network=10.0.0.0/16,10.0.0.1,8.8.8.8 --ipam-controller-network=192.168.5.0/24,192.168.5.1,1.1.1.1,8.8.4.4)")
 	flag.StringVar(&runOp.namespace, "namespace", "", "Namespace in which the cluster is running in")
 	flag.StringVar(&runOp.clusterURL, "cluster-url", "", "Cluster URL")
-	flag.StringVar(&runOp.clusterName, "cluster-name", "", "cluster name")
+	flag.StringVar(&runOp.clusterName, "cluster-name", "", "Cluster name")
 	flag.StringVar(&runOp.dnsClusterIP, "dns-cluster-ip", "", "KubeDNS service IP for the cluster")
 	flag.BoolVar(&runOp.nodeLocalDNSCache, "node-local-dns-cache", false, "Enable NodeLocal DNS Cache in user cluster")
 	flag.IntVar(&runOp.openvpnServerPort, "openvpn-server-port", 0, "OpenVPN server port")
@@ -314,9 +314,9 @@ func main() {
 	log.Info("Registered ownerbindingcreator controller")
 
 	if err := ccmcsimigrator.Add(rootCtx, log, seedMgr, mgr, versions, runOp.clusterName); err != nil {
-		log.Fatalw("failed to register ccmcsimigrator controller", zap.Error(err))
+		log.Fatalw("failed to register ccm-csi-migrator controller", zap.Error(err))
 	}
-	log.Info("registered ccmcsimigrator controller")
+	log.Info("registered ccm-csi-migrator controller")
 
 	if runOp.opaIntegration {
 		if err := constraintsyncer.Add(rootCtx, log, seedMgr, mgr, runOp.namespace); err != nil {

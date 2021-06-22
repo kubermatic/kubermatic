@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Kubermatic Kubernetes Platform contributors.
+Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -69,7 +69,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller: %v", err)
+		return fmt.Errorf("failed to create controller %s: %v", controllerName , err)
 	}
 
 	commonHandler := func(obj ctrlruntimeclient.Object, queue workqueue.RateLimitingInterface) {
@@ -108,7 +108,7 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 }
 
 func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
-	log := r.log.With("Cluster", request.NamespacedName.String())
+	log := r.log.With("Request", request.NamespacedName.String())
 	log.Debug("Reconciling")
 
 	cluster := &v1.Cluster{}
