@@ -524,7 +524,7 @@ func GetMetricsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGet
 	return ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
 }
 
-func MigrateToExternalCloudProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID,
+func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID,
 	clusterID string, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter,
 	privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
 
@@ -546,11 +546,11 @@ func MigrateToExternalCloudProvider(ctx context.Context, userInfoGetter provider
 	}
 
 	if !cloudcontroller.ExternalCloudControllerFeatureSupported(dc, oldCluster) {
-		return nil, errors.NewBadRequest("external cloud controller not supported by the given provider")
+		return nil, errors.NewBadRequest("external CCM not supported by the given provider")
 	}
 
 	if ok := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok {
-		return nil, errors.NewBadRequest("external cloud controller already enabled, cannot be disabled")
+		return nil, errors.NewBadRequest("external CCM already enabled, cannot be disabled")
 	}
 
 	newCluster := oldCluster.DeepCopy()

@@ -2675,32 +2675,6 @@
         }
       }
     },
-    "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/migratetoexternalcloudprovider": {
-      "post": {
-        "description": "Enable the migration to the external cloud provider for the given cluster",
-        "produces": [
-          "application/json"
-        ],
-        "operationId": "externalCloudProviderMigration",
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
     "/api/v1/projects/{project_id}/dc/{dc}/clusters/{cluster_id}/namespaces": {
       "get": {
         "description": "Lists all namespaces in the cluster",
@@ -10891,6 +10865,32 @@
             "schema": {
               "$ref": "#/definitions/ClusterMetrics"
             }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/migratetoexternalccm": {
+      "post": {
+        "description": "Enable the migration to the external CCM for the given cluster",
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "migrateClusterToExternalCCM",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
           },
           "401": {
             "$ref": "#/responses/empty"
