@@ -17,14 +17,14 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	machinesv1alpha1 "github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
 	ccmcsimigrator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
-	"k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
@@ -50,6 +50,7 @@ import (
 
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/klog"
@@ -227,12 +228,6 @@ func main() {
 	if err := apiregistrationv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiregistrationv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
-	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", v1alpha1.SchemeGroupVersion), zap.Error(err))
-	}
-	if err := machinesv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("failed to add machinesv1alpha1 api to scheme", zap.Error(err))
-	}
 
 	// Setup all Controllers
 	log.Info("registering controllers")
@@ -264,16 +259,15 @@ func main() {
 	}
 	log.Info("Registered usercluster controller")
 
+	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to add clusterv1alpha1 scheme", zap.Error(err))
+	}
+	// We need to add the machine CRDs once here, because otherwise the IPAM
+	// controller keeps the manager from starting as it can not establish a
+	// watch for machine CRs, keeping us from creating them
+	go createMachineCRD(rootCtx, log, mgr)
+
 	if len(runOp.networks) > 0 {
-		creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
-			machinecontrolerresources.MachineCRDCreator(),
-		}
-		if err := reconciling.ReconcileCustomResourceDefinitions(rootCtx, creators, "", mgr.GetClient()); err != nil {
-			// The mgr.Client is uninitianlized here and hence always returns a 404, regardless of the object existing or not
-			if !strings.Contains(err.Error(), `customresourcedefinitions.apiextensions.k8s.io "machines.cluster.k8s.io" already exists`) {
-				log.Fatalw("Failed to initially create the Machine CR", zap.Error(err))
-			}
-		}
 		if err := ipam.Add(mgr, runOp.networks, log); err != nil {
 			log.Fatalw("Failed to add IPAM controller to mgr", zap.Error(err))
 		}
@@ -328,5 +322,34 @@ func main() {
 
 	if err := mgr.Start(rootCtx); err != nil {
 		log.Fatalw("Failed running manager", zap.Error(err))
+	}
+}
+
+func createMachineCRD(ctx context.Context, log *zap.SugaredLogger, mgr manager.Manager) {
+	var (
+		cachePopulatingInterval = 100 * time.Millisecond
+		cachePopulatingTimeout  = 10 * time.Minute
+	)
+
+	err := wait.Poll(cachePopulatingInterval, cachePopulatingTimeout, func() (done bool, err error) {
+		creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
+			machinecontrolerresources.MachineCRDCreator(),
+		}
+
+		if err := reconciling.ReconcileCustomResourceDefinitions(ctx, creators, "", mgr.GetClient()); err != nil {
+			if strings.Contains(err.Error(), `the cache is not started, can not read objects`) {
+				return false, nil
+			}
+
+			// The mgr.Client is uninitianlized here and hence always returns a 404, regardless of the object existing or not
+			if !strings.Contains(err.Error(), `customresourcedefinitions.apiextensions.k8s.io "machines.cluster.k8s.io" already exists`) {
+				log.Fatalw("Failed to initially create the Machine CR", zap.Error(err))
+			}
+		}
+		return true, nil
+	})
+
+	if err != nil {
+		log.Fatalw("Failed to initially create the Machine CR", zap.Error(err))
 	}
 }
