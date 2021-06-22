@@ -111,11 +111,14 @@ type HetznerCredentials struct {
 }
 
 type OpenstackCredentials struct {
-	Username string
-	Password string
-	Tenant   string
-	TenantID string
-	Domain   string
+	Username                    string
+	Password                    string
+	Tenant                      string
+	TenantID                    string
+	Domain                      string
+	ApplicationCredentialID     string
+	ApplicationCredentialSecret string
+	Token                       string
 }
 
 type PacketCredentials struct {
