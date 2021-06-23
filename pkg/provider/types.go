@@ -337,7 +337,7 @@ type PrivilegedProjectProvider interface {
 type ProjectProvider interface {
 	// New creates a brand new project in the system with the given name
 	// Note that a user cannot own more than one project with the given name
-	New(user *kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error)
+	New(users []*kubermaticv1.User, name string, labels map[string]string) (*kubermaticv1.Project, error)
 
 	// Delete deletes the given project as the given user
 	//
@@ -396,6 +396,10 @@ type PrivilegedProjectMemberProvider interface {
 	// CreateUnsecured creates a binding for the given member and the given project
 	// This function is unsafe in a sense that it uses privileged account to create the resource
 	CreateUnsecured(project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
+
+	// CreateUnsecuredForServiceAccount creates a binding for the given service account and the given project
+	// This function is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecuredForServiceAccount(project *kubermaticv1.Project, memberEmail, group string) (*kubermaticv1.UserProjectBinding, error)
 
 	// DeleteUnsecured deletes the given binding
 	// Note:
