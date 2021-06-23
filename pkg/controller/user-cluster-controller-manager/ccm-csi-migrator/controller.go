@@ -19,19 +19,19 @@ package ccmcsimigrator
 import (
 	"context"
 	"fmt"
+	"strconv"
+
+	"go.uber.org/zap"
+
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/common"
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	"go.uber.org/zap"
 	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/version/kubermatic"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/workqueue"
-	"sigs.k8s.io/controller-runtime/pkg/event"
-	"strconv"
 
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -69,37 +69,21 @@ func Add(ctx context.Context, log *zap.SugaredLogger, seedMgr, userMgr manager.M
 		Reconciler: r,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to create controller %s: %v", controllerName , err)
-	}
-
-	commonHandler := func(obj ctrlruntimeclient.Object, queue workqueue.RateLimitingInterface) {
-		cluster := &v1.Cluster{}
-		if err := r.seedClient.Get(ctx, types.NamespacedName{
-			Name: r.clusterName,
-		}, cluster); err != nil {
-			log.Warnf("cluster %s not found", clusterName)
-			return
-		}
-
-		// consider only clusters needing the migration
-		_, ccmOk := cluster.Annotations[v1.CCMMigrationNeededAnnotation]
-		_, csiOk := cluster.Annotations[v1.CSIMigrationNeededAnnotation]
-		if ccmOk && csiOk {
-			queue.Add(reconcile.Request{
-				NamespacedName: types.NamespacedName{
-					Name: clusterName,
-				},
-			})
-		}
+		return fmt.Errorf("failed to create controller %s: %v", controllerName, err)
 	}
 
 	// Watch for changes to Machines
 	if err = c.Watch(
 		&source.Kind{Type: &v1alpha1.Machine{}},
-		&handler.Funcs{
-			CreateFunc: func(e event.CreateEvent, queue workqueue.RateLimitingInterface) { commonHandler(e.Object, queue) },
-			UpdateFunc: func(e event.UpdateEvent, queue workqueue.RateLimitingInterface) { commonHandler(e.ObjectNew, queue) },
-		},
+		handler.EnqueueRequestsFromMapFunc(func(o ctrlruntimeclient.Object) []reconcile.Request {
+			return []reconcile.Request{
+				{
+					NamespacedName: types.NamespacedName{
+						Name: clusterName,
+					},
+				},
+			}
+		}),
 	); err != nil {
 		return fmt.Errorf("failed to establish watch for the Machines %v", err)
 	}

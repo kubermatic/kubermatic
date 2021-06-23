@@ -19,6 +19,7 @@ package usercluster
 import (
 	"encoding/json"
 	"fmt"
+	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -132,7 +133,6 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 				"-metrics-listen-address", "0.0.0.0:8085",
 				"-health-listen-address", "0.0.0.0:8086",
 				"-namespace", "$(NAMESPACE)",
-				"-cluster-name", data.Cluster().Name,
 				"-cluster-url", data.Cluster().Address.URL,
 				"-dns-cluster-ip", dnsClusterIP,
 				"-openvpn-server-port", fmt.Sprint(openvpnServerPort),
@@ -174,6 +174,11 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 					}
 					args = append(args, "-mla-gateway-url", "https://"+mlaEndpoint)
 				}
+			}
+
+			if helper.NeedCCMMigration(data.Cluster()) {
+				args = append(args, "-ccm-migration")
+				args = append(args, fmt.Sprintf("-cluster-name=%v", data.Cluster().Name))
 			}
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())

@@ -20,13 +20,13 @@ import (
 	"encoding/json"
 	"flag"
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
-	ccmcsimigrator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
 	"net/url"
 	"strings"
 
 	"github.com/go-logr/zapr"
 	"go.uber.org/zap"
 
+	ccmcsimigrator "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/ccm-csi-migrator"
 	clusterrolelabeler "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/cluster-role-labeler"
 	constraintsyncer "k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/constraint-syncer"
 	"k8c.io/kubermatic/v2/pkg/controller/user-cluster-controller-manager/flatcar"
@@ -85,6 +85,7 @@ type controllerRunOptions struct {
 	mlaGatewayURL         string
 	userClusterLogging    bool
 	userClusterMonitoring bool
+	ccmMigration          bool
 }
 
 func main() {
@@ -121,6 +122,8 @@ func main() {
 	flag.StringVar(&runOp.mlaGatewayURL, "mla-gateway-url", "", "The URL of MLA (Monitoring, Logging, and Alerting) gateway endpoint.")
 	flag.BoolVar(&runOp.userClusterLogging, "user-cluster-logging", false, "Enable logging in user cluster.")
 	flag.BoolVar(&runOp.userClusterMonitoring, "user-cluster-monitoring", false, "Enable monitoring in user cluster.")
+	flag.BoolVar(&runOp.ccmMigration, "ccm-migration", false, "Enable ccm migration in user cluster.")
+
 	flag.Parse()
 
 	rawLog := kubermaticlog.New(logOpts.Debug, logOpts.Format)
@@ -138,7 +141,7 @@ func main() {
 	if runOp.clusterURL == "" {
 		log.Fatal("-cluster-url must be set")
 	}
-	if runOp.clusterName == "" {
+	if runOp.ccmMigration && runOp.clusterName == "" {
 		log.Fatal("-cluster-name must be set")
 	}
 	if runOp.dnsClusterIP == "" {
@@ -225,6 +228,9 @@ func main() {
 	if err := apiregistrationv1beta1.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Fatalw("Failed to register scheme", zap.Stringer("api", apiregistrationv1beta1.SchemeGroupVersion), zap.Error(err))
 	}
+	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
+		log.Fatalw("Failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
+	}
 
 	// Setup all Controllers
 	log.Info("registering controllers")
@@ -256,14 +262,10 @@ func main() {
 	}
 	log.Info("Registered usercluster controller")
 
-	// We need to add the machine CRDs once here, because otherwise the IPAM
-	// controller keeps the manager from starting as it can not establish a
-	// watch for machine CRs, keeping us from creating them
-	if err := clusterv1alpha1.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatalw("Failed to register scheme", zap.Stringer("api", clusterv1alpha1.SchemeGroupVersion), zap.Error(err))
-	}
-
 	if len(runOp.networks) > 0 {
+		// We need to add the machine CRDs once here, because otherwise the IPAM
+		// controller keeps the manager from starting as it can not establish a
+		// watch for machine CRs, keeping us from creating them
 		creators := []reconciling.NamedCustomResourceDefinitionCreatorGetter{
 			machinecontrolerresources.MachineCRDCreator(),
 		}
@@ -313,10 +315,12 @@ func main() {
 	}
 	log.Info("Registered ownerbindingcreator controller")
 
-	if err := ccmcsimigrator.Add(rootCtx, log, seedMgr, mgr, versions, runOp.clusterName); err != nil {
-		log.Fatalw("failed to register ccm-csi-migrator controller", zap.Error(err))
+	if runOp.ccmMigration {
+		if err := ccmcsimigrator.Add(rootCtx, log, seedMgr, mgr, versions, runOp.clusterName); err != nil {
+			log.Fatalw("failed to register ccm-csi-migrator controller", zap.Error(err))
+		}
+		log.Info("registered ccm-csi-migrator controller")
 	}
-	log.Info("registered ccm-csi-migrator controller")
 
 	if runOp.opaIntegration {
 		if err := constraintsyncer.Add(rootCtx, log, seedMgr, mgr, runOp.namespace); err != nil {
