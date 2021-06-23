@@ -223,7 +223,7 @@ func (r *userGrafanaController) ensureGrafanaUser(ctx context.Context, user *kub
 				return err
 			}
 			if grafanaUser.IsGrafanaAdmin {
-				if err := addUserToOrg(ctx, r.grafanaClient, org, grafanaUser, models.ROLE_ADMIN); err != nil {
+				if err := addUserToOrg(ctx, r.grafanaClient, org, grafanaUser, models.ROLE_EDITOR); err != nil {
 					return err
 				}
 			} else {
