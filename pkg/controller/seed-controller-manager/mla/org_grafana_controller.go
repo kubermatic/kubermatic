@@ -212,7 +212,7 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected gr
 		if err != nil {
 			return expected, err
 		}
-		if err := addUserToOrg(ctx, r.grafanaClient, expected, &grafanaUser, models.ROLE_ADMIN); err != nil {
+		if err := addUserToOrg(ctx, r.grafanaClient, expected, &grafanaUser, models.ROLE_EDITOR); err != nil {
 			return expected, err
 		}
 
