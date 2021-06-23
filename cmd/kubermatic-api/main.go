@@ -257,7 +257,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 
 	defaultConstraintProvider, err := kubernetesprovider.NewDefaultConstraintProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create default constraint provider due to %v", err)
+		return providers{}, fmt.Errorf("failed to create default constraint provider due to %w", err)
 	}
 
 	constraintTemplateProvider, err := kubernetesprovider.NewConstraintTemplateProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())

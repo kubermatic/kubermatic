@@ -128,6 +128,7 @@ func NewTestRouting(
 		PrivilegedExternalClusterProvider:     privilegedExternalClusterProvider,
 		ConstraintTemplateProvider:            constraintTemplateProvider,
 		ConstraintProviderGetter:              constraintProviderGetter,
+		DefaultConstraintProvider:             defaultConstraintProvider,
 		AlertmanagerProviderGetter:            alertmanagerProviderGetter,
 		ClusterTemplateProvider:               clusterTemplateProvider,
 		RuleGroupProviderGetter:               ruleGroupProviderGetter,
