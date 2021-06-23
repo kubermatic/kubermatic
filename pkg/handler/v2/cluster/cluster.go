@@ -131,6 +131,13 @@ func MigrateEndpointToExternalCCM(projectProvider provider.ProjectProvider, priv
 	}
 }
 
+func GetEndpointCCMMigrationStatus(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetClusterReq)
+		return handlercommon.GetMigrationToExternalCCMStatus(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider)
+	}
+}
+
 func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetClusterReq)

@@ -21,6 +21,7 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"net/http"
 	"time"
 
@@ -28,6 +29,7 @@ import (
 	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
+	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
@@ -554,7 +556,10 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 	}
 
 	newCluster := oldCluster.DeepCopy()
-	oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+	if newCluster.Spec.Features == nil {
+		newCluster.Spec.Features = make(map[string]bool)
+	}
+	newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
 
 	seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
 	if err := seedAdminClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
@@ -562,6 +567,18 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 	}
 
 	return oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], nil
+}
+
+func GetMigrationToExternalCCMStatus(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID,
+	clusterID string, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return convertInternalCCMStatusToExternal(cluster), nil
 }
 
 func ListNamespaceEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -997,4 +1014,20 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 		return nil, errors.New(http.StatusInternalServerError, err.Error())
 	}
 	return sshKeyProvider.Get(userInfo, keyName)
+}
+
+func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster) *apiv2.ExternalCCMMigrationStatus {
+	status := &apiv2.ExternalCCMMigrationStatus{}
+
+	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+		status.ExternalCCM = true
+	}
+	_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
+	_, csiOk := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
+	if ccmOk && csiOk {
+		status.MigrationNeeded = pointer.BoolPtr(true)
+		status.MigrationCompleted = pointer.BoolPtr(helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue))
+	}
+
+	return status
 }
