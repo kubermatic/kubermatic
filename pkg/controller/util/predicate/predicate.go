@@ -73,21 +73,3 @@ func ByLabel(key, value string) predicate.Funcs {
 		return false
 	})
 }
-
-// ByAnnotations returns a predicate func that only includes objects with the given annotations
-func ByAnnotations(annotations map[string]string) predicate.Funcs {
-	return Factory(func(o ctrlruntimeclient.Object) bool {
-		objAnnotations := o.GetAnnotations()
-		for key, value := range annotations {
-			if objAnnotations != nil {
-				if existingValue, ok := objAnnotations[key]; ok {
-					if existingValue == value {
-						continue
-					}
-				}
-			}
-			return false
-		}
-		return true
-	})
-}
