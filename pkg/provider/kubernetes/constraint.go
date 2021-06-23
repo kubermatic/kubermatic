@@ -42,6 +42,7 @@ type DefaultConstraintProvider struct {
 	// createMasterImpersonatedClient is used as a ground for impersonation
 	createMasterImpersonatedClient impersonationClient
 	clientPrivileged               ctrlruntimeclient.Client
+	kubermaticNamespace            string
 }
 
 // NewConstraintProvider returns a constraint provider
@@ -52,11 +53,12 @@ func NewConstraintProvider(createSeedImpersonatedClient impersonationClient, cli
 	}, nil
 }
 
-// NewDefaultConstraintProvider returns a constraint provider
-func NewDefaultConstraintProvider(createMasterImpersonatedClient impersonationClient, client ctrlruntimeclient.Client) (*DefaultConstraintProvider, error) {
+// NewDefaultConstraintProvider returns a default constraint provider
+func NewDefaultConstraintProvider(createMasterImpersonatedClient impersonationClient, client ctrlruntimeclient.Client, namespace string) (*DefaultConstraintProvider, error) {
 	return &DefaultConstraintProvider{
 		createMasterImpersonatedClient: createMasterImpersonatedClient,
 		clientPrivileged:               client,
+		kubermaticNamespace:            namespace,
 	}, nil
 }
 
@@ -160,7 +162,7 @@ func (p *ConstraintProvider) UpdateUnsecured(constraint *kubermaticv1.Constraint
 }
 
 func (p *DefaultConstraintProvider) Create(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
-
+	constraint.Namespace = p.kubermaticNamespace
 	err := p.clientPrivileged.Create(context.Background(), constraint)
 	return constraint, err
 }

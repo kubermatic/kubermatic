@@ -35,8 +35,9 @@ import (
 )
 
 const (
-	testClusterName = "test-constraints"
-	testNamespace   = "cluster-test-constraints"
+	testClusterName         = "test-constraints"
+	testNamespace           = "cluster-test-constraints"
+	testKubermaticNamespace = "kubermatic"
 )
 
 func TestListConstraints(t *testing.T) {
@@ -339,8 +340,8 @@ func TestCreateDefaultConstraint(t *testing.T) {
 	}{
 		{
 			name:       "scenario 1: create constraint",
-			ctToCreate: genConstraint("ct", testNamespace),
-			expectedCT: genConstraint("ct", testNamespace),
+			ctToCreate: genConstraint("ct", testKubermaticNamespace),
+			expectedCT: genConstraint("ct", testKubermaticNamespace),
 		},
 	}
 
@@ -352,7 +353,7 @@ func TestCreateDefaultConstraint(t *testing.T) {
 			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
 				return client, nil
 			}
-			defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, client)
+			defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, client, testKubermaticNamespace)
 			if err != nil {
 				t.Fatal(err)
 			}

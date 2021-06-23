@@ -547,7 +547,12 @@ func CreateDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
 
-		constraint := convertAPIToInternalConstraint(req.Body.Name, ConstraintNamespace, req.Body.Spec)
+		constraint := &v1.Constraint{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: req.Body.Name,
+			},
+			Spec: req.Body.Spec,
+		}
 		err = validateConstraint(constraintTemplateProvider, constraint)
 		if err != nil {
 			return nil, err

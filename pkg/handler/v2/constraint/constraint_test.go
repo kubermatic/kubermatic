@@ -39,6 +39,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	kubermaticNamespace = "kubermatic"
+)
+
 func TestListConstraints(t *testing.T) {
 	if err := test.RegisterScheme(test.SchemeBuilder); err != nil {
 		t.Fatal(err)
@@ -727,7 +731,7 @@ func TestCreateDefaultConstraints(t *testing.T) {
 			Name: "scenario 1: admin can create default constraint",
 			CTtoCreate: apiv2.Constraint{
 				Name: "ct1",
-				Spec: test.GenConstraint("ct1", "", "RequiredLabel").Spec,
+				Spec: test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel").Spec,
 			},
 			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","active":true,"match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"labels":["gatekeeper","opa"]},"selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"deployment":"prod","domain":"sales"},"matchExpressions":[{"key":"cluster","operator":"Exists"}]}}}}`,
 			HTTPStatus:       http.StatusOK,
@@ -738,7 +742,7 @@ func TestCreateDefaultConstraints(t *testing.T) {
 			Name: "scenario 2: non-admin can not create default constraint",
 			CTtoCreate: apiv2.Constraint{
 				Name: "ct1",
-				Spec: test.GenConstraint("ct1", "", "RequiredLabel").Spec,
+				Spec: test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel").Spec,
 			},
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			HTTPStatus:       http.StatusForbidden,
@@ -749,7 +753,7 @@ func TestCreateDefaultConstraints(t *testing.T) {
 			Name: "scenario 3: cannot create constraint with not existing constraint template",
 			CTtoCreate: apiv2.Constraint{
 				Name: "ct1",
-				Spec: test.GenConstraint("ct1", "", "RequiredLabel").Spec,
+				Spec: test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel").Spec,
 			},
 			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8s.io \"requiredlabel\" not found"}}`,
 			HTTPStatus:       http.StatusBadRequest,

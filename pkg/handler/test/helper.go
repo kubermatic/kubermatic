@@ -131,6 +131,8 @@ const (
 	RequiredEmailDomain = "acme.com"
 	// DefaultKubernetesVersion kubernetes version
 	DefaultKubernetesVersion = "1.17.9"
+	// Kubermatic namespace
+	KubermaticNamespace = "kubermatic"
 )
 
 // GetUser is a convenience function for generating apiv1.User
@@ -189,7 +191,7 @@ type newRoutingFunc func(
 	clusterTemplateProvider provider.ClusterTemplateProvider,
 	ruleGroupProviderGetter provider.RuleGroupProviderGetter,
 	kubermaticVersions kubermatic.Versions,
-	constraintProvider provider.DefaultConstraintProvider,
+	defaultConstraintProvider provider.DefaultConstraintProvider,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -344,7 +346,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		FakeClient: fakeClient,
 	}
 
-	defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, fakeClient)
+	defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, fakeClient, KubermaticNamespace)
 	if err != nil {
 		return nil, nil, err
 	}
