@@ -1543,6 +1543,7 @@ func GenConstraint(name, namespace, kind string) *kubermaticv1.Constraint {
 	ct.Namespace = namespace
 	ct.Spec = kubermaticv1.ConstraintSpec{
 		ConstraintType: kind,
+		Active:         true,
 		Match: kubermaticv1.Match{
 			Kinds: []kubermaticv1.Kind{
 				{Kinds: []string{"namespace"}, APIGroups: []string{""}},
@@ -1576,6 +1577,7 @@ func GenDefaultAPIConstraint(name, kind string) apiv2.Constraint {
 		Name: name,
 		Spec: kubermaticv1.ConstraintSpec{
 			ConstraintType: kind,
+			Active:         true,
 			Match: kubermaticv1.Match{
 				Kinds: []kubermaticv1.Kind{
 					{Kinds: []string{"namespace"}, APIGroups: []string{""}},

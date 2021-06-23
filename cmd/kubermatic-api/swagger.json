@@ -7149,6 +7149,21 @@
           },
           {
             "type": "string",
+            "name": "ApplicationCredentialID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ApplicationCredentialSecret",
+            "in": "header"
+          },
+          {
+            "type": "boolean",
+            "name": "OIDCAuthentication",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "Credential",
             "in": "header"
           }
@@ -7211,6 +7226,21 @@
           {
             "type": "string",
             "name": "DatacenterName",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ApplicationCredentialID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ApplicationCredentialSecret",
+            "in": "header"
+          },
+          {
+            "type": "boolean",
+            "name": "OIDCAuthentication",
             "in": "header"
           },
           {
@@ -7281,6 +7311,21 @@
           },
           {
             "type": "string",
+            "name": "ApplicationCredentialID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ApplicationCredentialSecret",
+            "in": "header"
+          },
+          {
+            "type": "boolean",
+            "name": "OIDCAuthentication",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "Credential",
             "in": "header"
           }
@@ -7343,6 +7388,21 @@
           {
             "type": "string",
             "name": "DatacenterName",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ApplicationCredentialID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ApplicationCredentialSecret",
+            "in": "header"
+          },
+          {
+            "type": "boolean",
+            "name": "OIDCAuthentication",
             "in": "header"
           },
           {
@@ -7413,6 +7473,21 @@
           },
           {
             "type": "string",
+            "name": "ApplicationCredentialID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ApplicationCredentialSecret",
+            "in": "header"
+          },
+          {
+            "type": "boolean",
+            "name": "OIDCAuthentication",
+            "in": "header"
+          },
+          {
+            "type": "string",
             "name": "Credential",
             "in": "header"
           },
@@ -7471,6 +7546,21 @@
           {
             "type": "string",
             "name": "DatacenterName",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ApplicationCredentialID",
+            "in": "header"
+          },
+          {
+            "type": "string",
+            "name": "ApplicationCredentialSecret",
+            "in": "header"
+          },
+          {
+            "type": "boolean",
+            "name": "OIDCAuthentication",
             "in": "header"
           },
           {
@@ -15779,6 +15869,11 @@
       "type": "object",
       "title": "ConstraintSpec specifies the data for the constraint.",
       "properties": {
+        "active": {
+          "description": "Active flag tells constraint's active state",
+          "type": "boolean",
+          "x-go-name": "Active"
+        },
         "constraintType": {
           "description": "ConstraintType specifies the type of gatekeeper constraint that the constraint applies to",
           "type": "string",
@@ -18402,6 +18497,14 @@
       "type": "object",
       "title": "OpenstackCloudSpec specifies access data to an OpenStack cloud.",
       "properties": {
+        "applicationCredentialID": {
+          "type": "string",
+          "x-go-name": "ApplicationCredentialID"
+        },
+        "applicationCredentialSecret": {
+          "type": "string",
+          "x-go-name": "ApplicationCredentialSecret"
+        },
         "credentialsReference": {
           "$ref": "#/definitions/GlobalSecretKeySelector"
         },
@@ -18443,10 +18546,19 @@
           "type": "string",
           "x-go-name": "TenantID"
         },
+        "token": {
+          "description": "Used internally during cluster creation",
+          "type": "string",
+          "x-go-name": "Token"
+        },
         "useOctavia": {
           "description": "Whether or not to use Octavia for LoadBalancer type of Service\nimplementation instead of using Neutron-LBaaS.\nAttention:Openstack CCM use Octavia as default load balancer\nimplementation since v1.17.0\n\nTakes precedence over the 'use_octavia' flag provided at datacenter\nlevel if both are specified.\n+optional",
           "type": "boolean",
           "x-go-name": "UseOctavia"
+        },
+        "useToken": {
+          "type": "boolean",
+          "x-go-name": "UseToken"
         },
         "username": {
           "type": "string",

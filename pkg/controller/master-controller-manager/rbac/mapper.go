@@ -538,6 +538,9 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == kubermaticv1.ExternalClusterKind {
 		return nil, nil
 	}
+	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) && resourceKind == kubermaticv1.ClusterTemplateInstanceKindName {
+		return nil, nil
+	}
 	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) {
 		return []string{"get", "update", "delete"}, nil
 	}

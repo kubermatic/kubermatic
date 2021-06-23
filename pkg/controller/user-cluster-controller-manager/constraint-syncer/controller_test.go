@@ -1,3 +1,5 @@
+// +build ee
+
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 
@@ -151,6 +153,53 @@ func TestReconcile(t *testing.T) {
 			userClient: fakectrlruntimeclient.
 				NewClientBuilder().
 				WithScheme(scheme.Scheme).
+				Build(),
+		},
+		{
+			name: "scenario 5: don't create kubermatic constraint on user cluster when the corresponding constraint on user cluster ns is deactivated",
+			namespacedName: types.NamespacedName{
+				Namespace: "namespace",
+				Name:      constraintName,
+			},
+			expectedGetErrStatus: metav1.StatusReasonNotFound,
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(func() *v1.Constraint {
+					c := test.GenConstraint(constraintName, "namespace", kind)
+					c.Spec.Active = false
+					return c
+				}()).
+				Build(),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				Build(),
+		},
+		{
+			name: "scenario 6: delete kubermatic constraint on user cluster when the corresponding constraint on user cluster ns is deactivated",
+			namespacedName: types.NamespacedName{
+				Namespace: "namespace",
+				Name:      constraintName,
+			},
+			expectedGetErrStatus: metav1.StatusReasonNotFound,
+			seedClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(func() *v1.Constraint {
+					c := test.GenConstraint(constraintName, "namespace", kind)
+					c.Spec.Active = false
+					return c
+				}()).
+				Build(),
+			userClient: fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(&test.RequiredLabel{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: constraintName,
+					},
+				}).
 				Build(),
 		},
 	}
