@@ -272,6 +272,29 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			expectedClusterRoles: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:usersshkey-abcd:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.SSHKeyKind,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{kubermaticv1.SSHKeyResourceName},
+							ResourceNames: []string{"abcd"},
+							Verbs:         []string{"get", "update", "delete"},
+						},
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
@@ -340,6 +363,32 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			},
 
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:usersshkey-abcd:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.SSHKeyKind,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:usersshkey-abcd:projectmanagers-thunderball",
+					},
+				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:usersshkey-abcd:owners-thunderball",
@@ -452,6 +501,28 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			expectedClusterRoles: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:userprojectbinding-abcd:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.UserProjectBindingKind,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{kubermaticv1.UserProjectBindingResourceName},
+							ResourceNames: []string{"abcd"},
+							Verbs:         []string{"get", "update", "delete"},
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:userprojectbinding-abcd:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
@@ -475,6 +546,32 @@ func TestSyncProjectResourcesClusterWide(t *testing.T) {
 			},
 
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:userprojectbinding-abcd:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.UserProjectBindingKind,
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:userprojectbinding-abcd:projectmanagers-thunderball",
+					},
+				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:userprojectbinding-abcd:owners-thunderball",
@@ -840,9 +937,59 @@ func TestSyncProjectResourcesNamespaced(t *testing.T) {
 						},
 					},
 				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secret-abcd:projectmanagers-thunderball",
+						Namespace: "kubermatic",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: k8scorev1.SchemeGroupVersion.String(),
+								Kind:       "Secret",
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{k8scorev1.SchemeGroupVersion.Group},
+							Resources:     []string{"secrets"},
+							ResourceNames: []string{"abcd"},
+							Verbs:         []string{"get", "update", "delete"},
+						},
+					},
+				},
 			},
 
 			expectedRoleBindings: []*rbacv1.RoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "kubermatic:secret-abcd:projectmanagers-thunderball",
+						Namespace: "kubermatic",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: k8scorev1.SchemeGroupVersion.String(),
+								Kind:       "Secret",
+								Name:       "abcd",
+								UID:        "abcdID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "Role",
+						Name:     "kubermatic:secret-abcd:projectmanagers-thunderball",
+					},
+				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "kubermatic:secret-abcd:owners-thunderball",
@@ -974,6 +1121,32 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			expectedActions: []string{"create", "create", "create"},
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:project-thunderball:projectmanagers-thunderball",
+					},
+				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
@@ -1142,6 +1315,32 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
 				{
 					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:project-thunderball:projectmanagers-thunderball",
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
@@ -1227,6 +1426,36 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			expectedActions: []string{"update", "update", "update"},
 			existingClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ClusterRoleBinding",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:project-thunderball:projectmanagers-thunderball",
+					},
+				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
@@ -1319,6 +1548,36 @@ func TestEnsureProjectClusterRBACRoleBindingForNamedResource(t *testing.T) {
 				},
 			},
 			expectedClusterRoleBindings: []*rbacv1.ClusterRoleBinding{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ClusterRoleBinding",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
+					Subjects: []rbacv1.Subject{
+						{
+							APIGroup: rbacv1.GroupName,
+							Kind:     "Group",
+							Name:     "projectmanagers-thunderball",
+						},
+					},
+					RoleRef: rbacv1.RoleRef{
+						APIGroup: rbacv1.GroupName,
+						Kind:     "ClusterRole",
+						Name:     "kubermatic:project-thunderball:projectmanagers-thunderball",
+					},
+				},
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
@@ -1467,6 +1726,29 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			expectedClusterRoles: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{"projects"},
+							ResourceNames: []string{"thunderball"},
+							Verbs:         []string{"get", "update", "delete"},
+						},
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
@@ -1608,6 +1890,28 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			expectedClusterRoles: []*rbacv1.ClusterRole{
 				{
 					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{"projects"},
+							ResourceNames: []string{"thunderball"},
+							Verbs:         []string{"get", "update", "delete"},
+						},
+					},
+				},
+
+				{
+					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
 						OwnerReferences: []metav1.OwnerReference{
 							{
@@ -1679,6 +1983,33 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 			projectToSync:   test.CreateProject("thunderball", test.CreateUser("James Bond")),
 			expectedActions: []string{"update", "update"},
 			existingClusterRoles: []*rbacv1.ClusterRole{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ClusterRole",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{"projects"},
+							ResourceNames: []string{"thunderball"},
+							Verbs:         []string{"get", "update", "delete"},
+						},
+					},
+				},
+
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
@@ -1761,6 +2092,33 @@ func TestEnsureProjectClusterRBACRoleForNamedResource(t *testing.T) {
 				},
 			},
 			expectedClusterRoles: []*rbacv1.ClusterRole{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "kubermatic:project-thunderball:projectmanagers-thunderball",
+						OwnerReferences: []metav1.OwnerReference{
+							{
+								APIVersion: kubermaticv1.SchemeGroupVersion.String(),
+								Kind:       kubermaticv1.ProjectKindName,
+								Name:       "thunderball",
+								UID:        "thunderballID", // set manually
+							},
+						},
+						ResourceVersion: "1",
+					},
+					TypeMeta: metav1.TypeMeta{
+						Kind:       "ClusterRole",
+						APIVersion: "rbac.authorization.k8s.io/v1",
+					},
+					Rules: []rbacv1.PolicyRule{
+						{
+							APIGroups:     []string{kubermaticv1.SchemeGroupVersion.Group},
+							Resources:     []string{"projects"},
+							ResourceNames: []string{"thunderball"},
+							Verbs:         []string{"get", "update", "delete"},
+						},
+					},
+				},
+
 				{
 					ObjectMeta: metav1.ObjectMeta{
 						Name: "kubermatic:project-thunderball:owners-thunderball",
