@@ -257,8 +257,7 @@ func (r *orgGrafanaController) createGrafanaOrg(ctx context.Context, expected gr
 
 func (r *orgGrafanaController) ensureDashboards(ctx context.Context, log *zap.SugaredLogger, orgID uint) error {
 	configMapList := &corev1.ConfigMapList{}
-	listOptions := &ctrlruntimeclient.ListOptions{Namespace: r.mlaNamespace}
-	if err := r.List(ctx, configMapList, listOptions); err != nil {
+	if err := r.List(ctx, configMapList, ctrlruntimeclient.InNamespace(r.mlaNamespace)); err != nil {
 		return fmt.Errorf("Failed to list configmaps: %w", err)
 	}
 	for _, configMap := range configMapList.Items {

@@ -39,6 +39,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/kubernetes"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/record"
@@ -73,6 +74,17 @@ func newTestOrgGrafanaReconciler(t *testing.T, objects []ctrlruntimeclient.Objec
 }
 
 func TestOrgGrafanaReconcile(t *testing.T) {
+
+	var board struct {
+		Dashboard grafanasdk.Board `json:"dashboard"`
+		FolderID  int              `json:"folderId"`
+		Overwrite bool             `json:"overwrite"`
+	}
+
+	board.Overwrite = true
+	board.Dashboard.Title = "dashboard"
+	boardData, err := json.Marshal(board)
+	assert.Nil(t, err)
 	testCases := []struct {
 		name         string
 		requestName  string
@@ -101,6 +113,48 @@ func TestOrgGrafanaReconcile(t *testing.T) {
 					name:     "create",
 					request:  httptest.NewRequest(http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
 					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "org created", "OrgID": 1}`)), StatusCode: http.StatusOK},
+				},
+			},
+		},
+		{
+			name:        "create org for project with dashboards",
+			requestName: "create",
+			objects: []ctrlruntimeclient.Object{
+				&kubermaticv1.Project{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "create",
+					},
+					Spec: kubermaticv1.ProjectSpec{
+						Name: "projectName",
+					},
+				},
+
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      grafanaDashboardsConfigmapNamePrefix + "-defaults",
+						Namespace: "mla",
+					},
+					Data: map[string]string{"first": `{"title": "dashboard"}`},
+				},
+				&corev1.ConfigMap{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      "wrong-prefix-defaults",
+						Namespace: "mla",
+					},
+					Data: map[string]string{"second": "not dashboard data"},
+				},
+			},
+			hasFinalizer: true,
+			requests: []request{
+				{
+					name:     "create",
+					request:  httptest.NewRequest(http.MethodPost, "/api/orgs", strings.NewReader(`{"id":0,"name":"projectName-create","address":{"address1":"","address2":"","city":"","zipCode":"","state":"","country":""}}`)),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "org created", "OrgID": 1}`)), StatusCode: http.StatusOK},
+				},
+				{
+					name:     "set dashboard",
+					request:  httptest.NewRequest(http.MethodPost, "/api/dashboards/db", strings.NewReader(string(boardData))),
+					response: &http.Response{Body: ioutil.NopCloser(strings.NewReader(`{"message": "dashboard set"}`)), StatusCode: http.StatusOK},
 				},
 			},
 		},
