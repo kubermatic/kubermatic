@@ -156,7 +156,7 @@ func TestReconcile(t *testing.T) {
 				Build(),
 		},
 		{
-			name: "scenario 5: don't create kubermatic constraint on user cluster when the corresponding constraint on user cluster ns is deactivated",
+			name: "scenario 5: don't create kubermatic constraint on user cluster when the corresponding constraint on user cluster ns is disabled",
 			namespacedName: types.NamespacedName{
 				Namespace: "namespace",
 				Name:      constraintName,
@@ -167,7 +167,7 @@ func TestReconcile(t *testing.T) {
 				WithScheme(scheme.Scheme).
 				WithObjects(func() *v1.Constraint {
 					c := test.GenConstraint(constraintName, "namespace", kind)
-					c.Spec.Active = false
+					c.Spec.Disabled = true
 					return c
 				}()).
 				Build(),
@@ -177,7 +177,7 @@ func TestReconcile(t *testing.T) {
 				Build(),
 		},
 		{
-			name: "scenario 6: delete kubermatic constraint on user cluster when the corresponding constraint on user cluster ns is deactivated",
+			name: "scenario 6: delete kubermatic constraint on user cluster when the corresponding constraint on user cluster ns is disabled",
 			namespacedName: types.NamespacedName{
 				Namespace: "namespace",
 				Name:      constraintName,
@@ -188,7 +188,7 @@ func TestReconcile(t *testing.T) {
 				WithScheme(scheme.Scheme).
 				WithObjects(func() *v1.Constraint {
 					c := test.GenConstraint(constraintName, "namespace", kind)
-					c.Spec.Active = false
+					c.Spec.Disabled = true
 					return c
 				}()).
 				Build(),
