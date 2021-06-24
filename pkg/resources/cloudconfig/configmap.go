@@ -118,6 +118,7 @@ func CloudConfig(
 			PrimaryAvailabilitySetName: cloud.Azure.AvailabilitySet,
 			VnetResourceGroup:          cloud.Azure.VNetResourceGroup,
 			UseInstanceMetadata:        false,
+			LoadBalancerSku:            string(cloud.Azure.LoadBalancerSKU),
 		}
 		cloudConfig, err = azure.CloudConfigToString(azureCloudConfig)
 		if err != nil {
