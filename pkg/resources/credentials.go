@@ -285,6 +285,13 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 	openstackCredentials := OpenstackCredentials{}
 	var err error
 
+	// needed for cluster creation with other credentials
+	if spec.Domain != "" {
+		openstackCredentials.Domain = spec.Domain
+	} else if openstackCredentials.Domain, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackDomain); err != nil {
+		return OpenstackCredentials{}, err
+	}
+
 	if spec.ApplicationCredentialID != "" {
 		openstackCredentials.ApplicationCredentialID = spec.ApplicationCredentialID
 		openstackCredentials.ApplicationCredentialSecret = spec.ApplicationCredentialSecret
@@ -323,12 +330,6 @@ func GetOpenstackCredentials(data CredentialsData) (OpenstackCredentials, error)
 		if openstackCredentials.TenantID, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackTenantID); err != nil {
 			return OpenstackCredentials{}, err
 		}
-	}
-
-	if spec.Domain != "" {
-		openstackCredentials.Domain = spec.Domain
-	} else if openstackCredentials.Domain, err = data.GetGlobalSecretKeySelectorValue(spec.CredentialsReference, OpenstackDomain); err != nil {
-		return OpenstackCredentials{}, err
 	}
 
 	return openstackCredentials, nil
