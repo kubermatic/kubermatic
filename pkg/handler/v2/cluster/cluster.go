@@ -131,13 +131,6 @@ func MigrateEndpointToExternalCCM(projectProvider provider.ProjectProvider, priv
 	}
 }
 
-func GetEndpointCCMMigrationStatus(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(GetClusterReq)
-		return handlercommon.GetMigrationToExternalCCMStatus(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider)
-	}
-}
-
 func GetMetricsEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetClusterReq)
@@ -446,7 +439,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // GetClusterReq defines HTTP request for getCluster endpoint.
-// swagger:parameters getClusterV2 getClusterHealthV2 getOidcClusterKubeconfigV2 getClusterKubeconfigV2 getClusterMetricsV2 listNamespaceV2 getClusterUpgradesV2 listAWSSizesNoCredentialsV2 listAWSSubnetsNoCredentialsV2 listGCPNetworksNoCredentialsV2 listGCPZonesNoCredentialsV2 listHetznerSizesNoCredentialsV2 listDigitaloceanSizesNoCredentialsV2 migrateClusterToExternalCCM getExternalCCMMigrationStatus
+// swagger:parameters getClusterV2 getClusterHealthV2 getOidcClusterKubeconfigV2 getClusterKubeconfigV2 getClusterMetricsV2 listNamespaceV2 getClusterUpgradesV2 listAWSSizesNoCredentialsV2 listAWSSubnetsNoCredentialsV2 listGCPNetworksNoCredentialsV2 listGCPZonesNoCredentialsV2 listHetznerSizesNoCredentialsV2 listDigitaloceanSizesNoCredentialsV2 migrateClusterToExternalCCM
 type GetClusterReq struct {
 	common.ProjectReq
 	// in: path

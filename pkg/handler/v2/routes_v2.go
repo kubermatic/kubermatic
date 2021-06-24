@@ -74,10 +74,6 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/health").
 		Handler(r.getClusterHealth())
 
-	mux.Methods(http.MethodGet).
-		Path("/projects/{project_id}/clusters/{cluster_id}/externalccmmigration").
-		Handler(r.getExternalCCMMigrationStatus())
-
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clusters/{cluster_id}/externalccmmigration").
 		Handler(r.migrateClusterToExternalCCM())
@@ -3741,32 +3737,6 @@ func (r Routing) migrateClusterToExternalCCM() http.Handler {
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 		)(cluster.MigrateEndpointToExternalCCM(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
-		cluster.DecodeGetClusterReq,
-		handler.EncodeJSON,
-		r.defaultServerOptions()...,
-	)
-}
-
-// swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration getExternalCCMMigrationStatus
-//
-//    Get the external CCM migration status
-//
-//	   Produces:
-//     - application/json
-//
-//     Responses:
-//       default: errorResponse
-//       200: ExternalCCMMigrationStatus
-//       401: empty
-//       403: empty
-func (r Routing) getExternalCCMMigrationStatus() http.Handler {
-	return httptransport.NewServer(
-		endpoint.Chain(
-			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
-			middleware.UserSaver(r.userProvider),
-			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.GetEndpointCCMMigrationStatus(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
 		cluster.DecodeGetClusterReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

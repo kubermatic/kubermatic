@@ -21,7 +21,6 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
-	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"net/http"
 	"time"
 
@@ -29,8 +28,8 @@ import (
 	"go.uber.org/zap"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
-	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
@@ -569,18 +568,6 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 	return nil, nil
 }
 
-func GetMigrationToExternalCCMStatus(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID,
-	clusterID string, projectProvider provider.ProjectProvider,
-	privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
-
-	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return convertInternalCCMStatusToExternal(cluster), nil
-}
-
 func ListNamespaceEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 
@@ -911,6 +898,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, fil
 		Status: apiv1.ClusterStatus{
 			Version: internalCluster.Spec.Version,
 			URL:     internalCluster.Address.URL,
+			CCM:     convertInternalCCMStatusToExternal(internalCluster),
 		},
 		Type: apiv1.KubernetesClusterType,
 	}
@@ -1016,8 +1004,8 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 	return sshKeyProvider.Get(userInfo, keyName)
 }
 
-func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster) *apiv2.ExternalCCMMigrationStatus {
-	status := &apiv2.ExternalCCMMigrationStatus{}
+func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster) apiv1.ExternalCCMStatus {
+	status := apiv1.ExternalCCMStatus{}
 
 	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		status.ExternalCCM = true

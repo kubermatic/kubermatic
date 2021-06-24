@@ -193,14 +193,3 @@ type RuleGroup struct {
 	// the type of this ruleGroup applies to. It can be `Metrics`.
 	Type crdapiv1.RuleGroupType `json:"type"`
 }
-
-// ExternalCCMMigrationStatus represents the external CCM migration status for a given cluster
-// swagger:model ExternalCCMMigrationStatus
-type ExternalCCMMigrationStatus struct {
-	// the ClusterFeatureExternalCloudProvider in the cluster .spec.features
-	ExternalCCM bool `json:"externalCCM"`
-	// the logic AND of the CCMMigrationNeededAnnotation and CSIMigrationNeededAnnotation annotations
-	MigrationNeeded *bool `json:"migrationNeeded,omitempty"`
-	// reflect the ClusterConditionCSIKubeletMigrationCompleted condition of the cluster
-	MigrationCompleted *bool `json:"migrationCompleted,omitempty"`
-}
