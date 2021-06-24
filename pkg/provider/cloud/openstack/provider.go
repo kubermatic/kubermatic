@@ -671,9 +671,20 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 	token := cloud.Openstack.Token
 	var err error
 
+	if domain == "" {
+		if cloud.Openstack.CredentialsReference == nil {
+			return &resources.OpenstackCredentials{}, errors.New("no credentials provided")
+		}
+		domain, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackDomain)
+		if err != nil {
+			return &resources.OpenstackCredentials{}, err
+		}
+	}
+
 	if useToken && token != "" {
 		return &resources.OpenstackCredentials{
-			Token: token,
+			Token:  token,
+			Domain: domain,
 		}, nil
 	}
 
@@ -681,7 +692,8 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 		token, _ := secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackToken)
 		if token != "" {
 			return &resources.OpenstackCredentials{
-				Token: token,
+				Token:  token,
+				Domain: domain,
 			}, nil
 		}
 
@@ -691,6 +703,7 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 		return &resources.OpenstackCredentials{
 			ApplicationCredentialSecret: applicationCredentialSecret,
 			ApplicationCredentialID:     applicationCredentialID,
+			Domain:                      domain,
 		}, nil
 	}
 
@@ -705,6 +718,7 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 			return &resources.OpenstackCredentials{
 				ApplicationCredentialSecret: applicationCredentialSecret,
 				ApplicationCredentialID:     applicationCredentialID,
+				Domain:                      domain,
 			}, nil
 		}
 	}
@@ -738,16 +752,6 @@ func GetCredentialsForCluster(cloud kubermaticv1.CloudSpec, secretKeySelector pr
 
 	if tenantID == "" && cloud.Openstack.CredentialsReference != nil && cloud.Openstack.CredentialsReference.Name != "" {
 		tenantID, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackTenantID)
-		if err != nil {
-			return &resources.OpenstackCredentials{}, err
-		}
-	}
-
-	if domain == "" {
-		if cloud.Openstack.CredentialsReference == nil {
-			return &resources.OpenstackCredentials{}, errors.New("no credentials provided")
-		}
-		domain, err = secretKeySelector(cloud.Openstack.CredentialsReference, resources.OpenstackDomain)
 		if err != nil {
 			return &resources.OpenstackCredentials{}, err
 		}
