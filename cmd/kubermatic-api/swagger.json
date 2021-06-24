@@ -5,13 +5,17 @@
   "produces": [
     "application/json"
   ],
+  "schemes": [
+    "https"
+  ],
   "swagger": "2.0",
   "info": {
-    "description": "Kubermatic API\n\nThis describes possible operations which can be made against the Kubermatic API.",
+    "description": "Kubermatic API. This describes possible operations which can be made against the Kubermatic API.",
     "title": "Kubermatic API.",
     "termsOfService": "There are no TOS at this moment, use at your own risk we take no responsibility",
     "version": "2.11"
   },
+  "host": "dev.kubermatic.io",
   "paths": {
     "/api/projects/{project_id}/clusters/{cluster_id}/sshkeys/{key_id}": {
       "delete": {
@@ -9984,9 +9988,28 @@
           "application/json"
         ],
         "operationId": "getExternalCCMMigrationStatus",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
-            "$ref": "#/responses/empty"
+            "description": "ExternalCCMMigrationStatus",
+            "schema": {
+              "$ref": "#/definitions/ExternalCCMMigrationStatus"
+            }
           },
           "401": {
             "$ref": "#/responses/empty"
@@ -10008,6 +10031,22 @@
           "application/json"
         ],
         "operationId": "migrateClusterToExternalCCM",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "$ref": "#/responses/empty"
@@ -11374,6 +11413,13 @@
         "parameters": [
           {
             "type": "string",
+            "x-go-name": "Architecture",
+            "description": "architecture query parameter. Supports: arm64 and x64 types.",
+            "name": "architecture",
+            "in": "query"
+          },
+          {
+            "type": "string",
             "x-go-name": "ProjectID",
             "name": "project_id",
             "in": "path",
@@ -11385,13 +11431,6 @@
             "name": "cluster_id",
             "in": "path",
             "required": true
-          },
-          {
-            "type": "string",
-            "x-go-name": "Architecture",
-            "description": "architecture query parameter. Supports: arm64 and x64 types.",
-            "name": "architecture",
-            "in": "query"
           }
         ],
         "responses": {
@@ -20552,5 +20591,17 @@
     "empty": {
       "description": "EmptyResponse is a empty response"
     }
-  }
+  },
+  "securityDefinitions": {
+    "api_key": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "api_key": []
+    }
+  ]
 }

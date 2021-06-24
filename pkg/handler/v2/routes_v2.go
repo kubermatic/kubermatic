@@ -3756,7 +3756,7 @@ func (r Routing) migrateClusterToExternalCCM() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: empty
+//       200: ExternalCCMMigrationStatus
 //       401: empty
 //       403: empty
 func (r Routing) getExternalCCMMigrationStatus() http.Handler {

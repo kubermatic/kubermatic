@@ -566,7 +566,7 @@ func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.U
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], nil
+	return nil, nil
 }
 
 func GetMigrationToExternalCCMStatus(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID,
