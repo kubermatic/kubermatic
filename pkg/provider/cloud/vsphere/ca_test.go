@@ -1,4 +1,4 @@
-// +build !integration
+// +build ignore
 
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.

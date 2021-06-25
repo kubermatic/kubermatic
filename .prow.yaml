@@ -984,7 +984,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21
     decorate: true
-    run_if_changed: "pkg/provider/cloud/vsphere"
+    always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
@@ -1028,7 +1028,7 @@ presubmits:
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21-customfolder
     decorate: true
     optional: true
-    run_if_changed: "pkg/provider/cloud/vsphere"
+    always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
@@ -1074,7 +1074,7 @@ presubmits:
   - name: pre-kubermatic-e2e-vsphere-ubuntu-1.21-datastore-cluster
     decorate: true
     optional: true
-    run_if_changed: "pkg/provider/cloud/vsphere"
+    always_run: false
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-vsphere: "true"
