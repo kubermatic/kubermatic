@@ -2185,6 +2185,8 @@ const (
 	ClusterRoleBindingsCleanupFinalizer = "kubermatic.io/cleanup-cluster-role-bindings"
 	// ClusterTemplateSeedCleanupFinalizer indicates that synced cluster template on seed clusters need cleanup
 	ClusterTemplateSeedCleanupFinalizer = "kubermatic.io/cleanup-seed-cluster-template"
+	// WhitelistedRegistryCleanupFinalizer indicates that whitelisted registry Constraints need to be cleaned up
+	WhitelistedRegistryCleanupFinalizer = "kubermatic.io/cleanup-whitelisted-registry"
 )
 
 func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {
