@@ -35,6 +35,8 @@ type ClientService interface {
 
 	ListSystemLabels(params *ListSystemLabelsParams, authInfo runtime.ClientAuthInfoWriter) (*ListSystemLabelsOK, error)
 
+	MigrateClusterToExternalCCM(params *MigrateClusterToExternalCCMParams, authInfo runtime.ClientAuthInfoWriter) (*MigrateClusterToExternalCCMOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -206,6 +208,40 @@ func (a *Client) ListSystemLabels(params *ListSystemLabelsParams, authInfo runti
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListSystemLabelsDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  MigrateClusterToExternalCCM Enable the migration to the external CCM for the given cluster
+*/
+func (a *Client) MigrateClusterToExternalCCM(params *MigrateClusterToExternalCCMParams, authInfo runtime.ClientAuthInfoWriter) (*MigrateClusterToExternalCCMOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewMigrateClusterToExternalCCMParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "migrateClusterToExternalCCM",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &MigrateClusterToExternalCCMReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*MigrateClusterToExternalCCMOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*MigrateClusterToExternalCCMDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
