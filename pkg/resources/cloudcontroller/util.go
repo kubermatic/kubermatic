@@ -47,6 +47,9 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 	case cluster.Spec.Cloud.Hetzner != nil:
 		return dc.Spec.Hetzner.Network != "" && cluster.Spec.Version.Minor() >= 18
 
+	case cluster.Spec.Cloud.VSphere != nil:
+		return VsphereSupported(cluster.Spec.Version)
+
 	default:
 		return false
 	}

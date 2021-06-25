@@ -19,7 +19,6 @@ package cloudcontroller
 import (
 	"errors"
 	"fmt"
-
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -44,6 +43,9 @@ func DeploymentCreator(data *resources.TemplateData) reconciling.NamedDeployment
 
 	case data.Cluster().Spec.Cloud.Hetzner != nil:
 		creatorGetter = hetznerDeploymentCreator(data)
+
+	case data.Cluster().Spec.Cloud.VSphere != nil:
+		creatorGetter = vsphereDeploymentCreator(data)
 	}
 
 	if creatorGetter != nil {
