@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/apiserver"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -173,6 +174,11 @@ func DeploymentCreator(data userclusterControllerData) reconciling.NamedDeployme
 					}
 					args = append(args, "-mla-gateway-url", "https://"+mlaEndpoint)
 				}
+			}
+
+			if helper.NeedCCMMigration(data.Cluster()) {
+				args = append(args, "-ccm-migration")
+				args = append(args, fmt.Sprintf("-cluster-name=%v", data.Cluster().Name))
 			}
 
 			labelArgsValue, err := getLabelsArgValue(data.Cluster())
