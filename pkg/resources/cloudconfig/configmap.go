@@ -282,6 +282,14 @@ func getVsphereCloudConfig(
 		Disk: vsphere.DiskOpts{
 			SCSIControllerType: "pvscsi",
 		},
+		VirtualCenter: map[string]*vsphere.VirtualCenterConfig{
+			vspherURL.Hostname(): {
+				User:        credentials.VSphere.Username,
+				Password:    credentials.VSphere.Password,
+				VCenterPort: port,
+				Datacenters: dc.Spec.VSphere.Datacenter,
+			},
+		},
 	}, nil
 }
 
