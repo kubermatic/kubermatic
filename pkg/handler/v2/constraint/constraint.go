@@ -531,3 +531,46 @@ func DecodePatchConstraintReq(c context.Context, r *http.Request) (interface{}, 
 
 	return req, nil
 }
+
+func CreateDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
+	defaultConstraintProvider provider.DefaultConstraintProvider,
+	constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(createConstraintReq)
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !adminUserInfo.IsAdmin {
+			return nil, utilerrors.New(http.StatusForbidden,
+				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
+		}
+
+		constraint := &v1.Constraint{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: req.Body.Name,
+			},
+			Spec: req.Body.Spec,
+		}
+		err = validateConstraint(constraintTemplateProvider, constraint)
+		if err != nil {
+			return nil, err
+		}
+
+		ct, err := defaultConstraintProvider.Create(constraint)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return convertInternalToAPIConstraint(ct), nil
+	}
+}
+
+func DecodeDefaultCreateConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req createConstraintReq
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+	return req, nil
+}

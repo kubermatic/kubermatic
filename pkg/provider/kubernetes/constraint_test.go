@@ -35,8 +35,9 @@ import (
 )
 
 const (
-	testClusterName = "test-constraints"
-	testNamespace   = "cluster-test-constraints"
+	testClusterName         = "test-constraints"
+	testNamespace           = "cluster-test-constraints"
+	testKubermaticNamespace = "kubermatic"
 )
 
 func TestListConstraints(t *testing.T) {
@@ -328,4 +329,45 @@ func genConstraint(name, namespace string) *kubermaticv1.Constraint {
 	}
 
 	return ct
+}
+
+func TestCreateDefaultConstraint(t *testing.T) {
+
+	testCases := []struct {
+		name       string
+		ctToCreate *kubermaticv1.Constraint
+		expectedCT *kubermaticv1.Constraint
+	}{
+		{
+			name:       "scenario 1: create constraint",
+			ctToCreate: genConstraint("ct", testKubermaticNamespace),
+			expectedCT: genConstraint("ct", testKubermaticNamespace),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := fakectrlruntimeclient.NewClientBuilder().WithScheme(scheme.Scheme).Build()
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, client, testKubermaticNamespace)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			constraint, err := defaultConstraintProvider.Create(tc.ctToCreate)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// set the RV because it gets set when created
+			tc.expectedCT.ResourceVersion = "1"
+			if !reflect.DeepEqual(constraint, tc.expectedCT) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedCT))
+			}
+		})
+	}
 }

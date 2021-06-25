@@ -169,6 +169,7 @@ type RoutingParams struct {
 	UserWatcher                           watcher.UserWatcher
 	ExternalClusterProvider               provider.ExternalClusterProvider
 	PrivilegedExternalClusterProvider     provider.PrivilegedExternalClusterProvider
+	DefaultConstraintProvider             provider.DefaultConstraintProvider
 	ConstraintTemplateProvider            provider.ConstraintTemplateProvider
 	ConstraintProviderGetter              provider.ConstraintProviderGetter
 	AlertmanagerProviderGetter            provider.AlertmanagerProviderGetter

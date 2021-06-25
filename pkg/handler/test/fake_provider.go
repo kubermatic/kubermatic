@@ -238,3 +238,12 @@ func (p *FakeConstraintProvider) Create(userInfo *provider.UserInfo, constraint 
 func (p *FakeConstraintProvider) Update(userInfo *provider.UserInfo, constraint *kubermaticapiv1.Constraint) (*kubermaticapiv1.Constraint, error) {
 	return p.Provider.Update(userInfo, constraint)
 }
+
+type FakeDefaultConstraintProvider struct {
+	Provider   *kubernetes.DefaultConstraintProvider
+	FakeClient ctrlruntimeclient.Client
+}
+
+func (p *FakeDefaultConstraintProvider) Create(ct *kubermaticapiv1.Constraint) (*kubermaticapiv1.Constraint, error) {
+	return p.Provider.Create(ct)
+}
