@@ -272,6 +272,91 @@ func DeleteEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
+func CreateInstanceEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider, seedsGetter provider.SeedsGetter, clusterTemplateProviderGetter provider.ClusterTemplateInstanceProviderGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(createInstanceReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		ct, err := clusterTemplateProvider.Get(adminUserInfo, project.Name, req.ClusterTemplateID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		seed, _, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, ct.Spec.Cloud.DatacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting seed: %v", err)
+		}
+
+		clusterTemplateInstanceProvider, err := clusterTemplateProviderGetter(seed)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if adminUserInfo.IsAdmin {
+			privilegedclusterTemplateInstanceProvider := clusterTemplateInstanceProvider.(provider.PrivilegedClusterTemplateInstanceProvider)
+			instance, err := privilegedclusterTemplateInstanceProvider.CreateUnsecured(ct, project, req.Body.Replicas)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			return apiv2.ClusterTemplateInstance{
+				Name: instance.Name,
+				Spec: instance.Spec,
+			}, nil
+		}
+
+		userInfo, err := userInfoGetter(ctx, project.Name)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		instance, err := clusterTemplateInstanceProvider.Create(userInfo, ct, project, req.Body.Replicas)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return apiv2.ClusterTemplateInstance{
+			Name: instance.Name,
+			Spec: instance.Spec,
+		}, nil
+	}
+}
+
+// createInstanceReq defines HTTP request for createClusterTemplateInstance
+// swagger:parameters createClusterTemplateInstance
+type createInstanceReq struct {
+	getClusterTemplatesReq
+	// in: body
+	Body struct {
+		Replicas int64 `json:"replicas"`
+	}
+}
+
+func DecodeCreateInstanceReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req createInstanceReq
+
+	pr, err := DecodeGetReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.getClusterTemplatesReq = pr.(getClusterTemplatesReq)
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // getClusterTemplatesReq defines HTTP request for getClusterTemplate
 // swagger:parameters getClusterTemplate deleteClusterTemplate
 type getClusterTemplatesReq struct {
