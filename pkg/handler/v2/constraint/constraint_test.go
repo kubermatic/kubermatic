@@ -39,6 +39,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	kubermaticNamespace = "kubermatic"
+)
+
 func TestListConstraints(t *testing.T) {
 	if err := test.RegisterScheme(test.SchemeBuilder); err != nil {
 		t.Fatal(err)
@@ -711,4 +715,82 @@ func genKubermaticUser(name, email string, isAdmin bool) *kubermaticv1.User {
 	user := test.GenUser("", name, email)
 	user.Spec.IsAdmin = isAdmin
 	return user
+}
+
+func TestCreateDefaultConstraints(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name             string
+		CTtoCreate       apiv2.Constraint
+		ExpectedResponse string
+		HTTPStatus       int
+		ExistingAPIUser  *apiv1.User
+		ExistingObjects  []ctrlruntimeclient.Object
+	}{
+		{
+			Name: "scenario 1: admin can create default constraint",
+			CTtoCreate: apiv2.Constraint{
+				Name: "ct1",
+				Spec: test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel").Spec,
+			},
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","active":true,"match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"labels":["gatekeeper","opa"]},"selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"deployment":"prod","domain":"sales"},"matchExpressions":[{"key":"cluster","operator":"Exists"}]}}}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraintTemplate("requiredlabel")},
+		},
+		{
+			Name: "scenario 2: non-admin can not create default constraint",
+			CTtoCreate: apiv2.Constraint{
+				Name: "ct1",
+				Spec: test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel").Spec,
+			},
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraintTemplate("requiredlabel")},
+		},
+		{
+			Name: "scenario 3: cannot create constraint with not existing constraint template",
+			CTtoCreate: apiv2.Constraint{
+				Name: "ct1",
+				Spec: test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel").Spec,
+			},
+			ExpectedResponse: `{"error":{"code":400,"message":"Validation failed, constraint needs to have an existing constraint template: constrainttemplates.kubermatic.k8s.io \"requiredlabel\" not found"}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+	}
+	for _, tc := range testcases {
+		var reqBody struct {
+			Name string                      `json:"name"`
+			Spec kubermaticv1.ConstraintSpec `json:"spec"`
+		}
+		reqBody.Spec = tc.CTtoCreate.Spec
+		reqBody.Name = tc.CTtoCreate.Name
+
+		body, err := json.Marshal(reqBody)
+		if err != nil {
+			t.Fatalf("error marshalling body into json: %v", err)
+		}
+		t.Run(tc.Name, func(t *testing.T) {
+
+			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
+
+			req := httptest.NewRequest("POST", "/api/v2/constraints", bytes.NewBuffer(body))
+			res := httptest.NewRecorder()
+
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
 }
