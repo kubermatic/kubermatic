@@ -605,6 +605,11 @@ type VSphereCloudSpec struct {
 	// +optional
 	DatastoreCluster string `json:"datastoreCluster,omitempty"`
 
+	// ResourcePool is used to manage resources such as cpu and memory for vSphere virtual machines. The resource pool
+	// should be defined on vSphere cluster level.
+	// +optional
+	ResourcePool string `json:"resourcePool,omitempty"`
+
 	// This user will be used for everything except cloud provider functionality
 	InfraManagementUser VSphereCredentials `json:"infraManagementUser"`
 }
