@@ -109,3 +109,231 @@ func TestGetCSIMigrationFeatureGates(t *testing.T) {
 		})
 	}
 }
+
+func TestKubermaticAPIImage(t *testing.T) {
+	testCases := []struct {
+		name         string
+		templateData *TemplateData
+		wantAPIImage string
+	}{
+		{
+			name: "default image",
+			templateData: &TemplateData{
+				kubermaticImage: "quay.io/kubermatic/kubermatic",
+			},
+			wantAPIImage: "quay.io/kubermatic/kubermatic",
+		},
+		{
+			name: "default image with overwrite registry",
+			templateData: &TemplateData{
+				kubermaticImage:   "quay.io/kubermatic/kubermatic",
+				OverwriteRegistry: "custom-registry.kubermatic.io",
+			},
+			wantAPIImage: "custom-registry.kubermatic.io/kubermatic/kubermatic",
+		},
+		{
+			name: "custom image with 2 parts",
+			templateData: &TemplateData{
+				kubermaticImage: "kubermatic/kubermatic",
+			},
+			wantAPIImage: "docker.io/kubermatic/kubermatic",
+		},
+		{
+			name: "custom image with 2 parts with overwrite registry",
+			templateData: &TemplateData{
+				kubermaticImage:   "kubermatic/kubermatic",
+				OverwriteRegistry: "custom-registry.kubermatic.io",
+			},
+			wantAPIImage: "custom-registry.kubermatic.io/kubermatic/kubermatic",
+		},
+		{
+			name: "custom image with 1 part",
+			templateData: &TemplateData{
+				kubermaticImage: "kubermatic",
+			},
+			wantAPIImage: "docker.io/kubermatic",
+		},
+		{
+			name: "custom image with 1 part with overwrite registry",
+			templateData: &TemplateData{
+				kubermaticImage:   "kubermatic",
+				OverwriteRegistry: "custom-registry.kubermatic.io",
+			},
+			wantAPIImage: "custom-registry.kubermatic.io/kubermatic",
+		},
+		{
+			name: "custom image with 4 parts",
+			templateData: &TemplateData{
+				kubermaticImage: "registry.kubermatic.io/images/kubermatic/kubermatic",
+			},
+			wantAPIImage: "registry.kubermatic.io/images/kubermatic/kubermatic",
+		},
+		{
+			name: "custom image with 4 parts with overwrite registry",
+			templateData: &TemplateData{
+				kubermaticImage:   "registry.kubermatic.io/images/kubermatic/kubermatic",
+				OverwriteRegistry: "custom-registry.kubermatic.io",
+			},
+			wantAPIImage: "custom-registry.kubermatic.io/images/kubermatic/kubermatic",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if img := tc.templateData.KubermaticAPIImage(); img != tc.wantAPIImage {
+				t.Errorf("want kubermatic api image %q, but got %q", tc.wantAPIImage, img)
+			}
+		})
+	}
+}
+
+func TestEtcdLauncherImage(t *testing.T) {
+	testCases := []struct {
+		name                  string
+		templateData          *TemplateData
+		wantEtcdLauncherImage string
+	}{
+		{
+			name: "default image",
+			templateData: &TemplateData{
+				etcdLauncherImage: "quay.io/kubermatic/etcd-launcher",
+			},
+			wantEtcdLauncherImage: "quay.io/kubermatic/etcd-launcher",
+		},
+		{
+			name: "default image with overwrite registry",
+			templateData: &TemplateData{
+				etcdLauncherImage: "quay.io/kubermatic/etcd-launcher",
+				OverwriteRegistry: "custom-registry.kubermatic.io",
+			},
+			wantEtcdLauncherImage: "custom-registry.kubermatic.io/kubermatic/etcd-launcher",
+		},
+		{
+			name: "custom image with 2 parts",
+			templateData: &TemplateData{
+				etcdLauncherImage: "kubermatic/etcd-launcher",
+			},
+			wantEtcdLauncherImage: "docker.io/kubermatic/etcd-launcher",
+		},
+		{
+			name: "custom image with 2 parts with overwrite registry",
+			templateData: &TemplateData{
+				etcdLauncherImage: "kubermatic/etcd-launcher",
+				OverwriteRegistry: "custom-registry.kubermatic.io",
+			},
+			wantEtcdLauncherImage: "custom-registry.kubermatic.io/kubermatic/etcd-launcher",
+		},
+		{
+			name: "custom image with 1 part",
+			templateData: &TemplateData{
+				etcdLauncherImage: "etcd-launcher",
+			},
+			wantEtcdLauncherImage: "docker.io/etcd-launcher",
+		},
+		{
+			name: "custom image with 1 part with overwrite registry",
+			templateData: &TemplateData{
+				etcdLauncherImage: "etcd-launcher",
+				OverwriteRegistry: "custom-registry.kubermatic.io",
+			},
+			wantEtcdLauncherImage: "custom-registry.kubermatic.io/etcd-launcher",
+		},
+		{
+			name: "custom image with 4 parts",
+			templateData: &TemplateData{
+				etcdLauncherImage: "registry.kubermatic.io/images/kubermatic/etcd-launcher",
+			},
+			wantEtcdLauncherImage: "registry.kubermatic.io/images/kubermatic/etcd-launcher",
+		},
+		{
+			name: "custom image with 4 parts with overwrite registry",
+			templateData: &TemplateData{
+				etcdLauncherImage: "registry.kubermatic.io/images/kubermatic/etcd-launcher",
+				OverwriteRegistry: "custom-registry.kubermatic.io",
+			},
+			wantEtcdLauncherImage: "custom-registry.kubermatic.io/images/kubermatic/etcd-launcher",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if img := tc.templateData.EtcdLauncherImage(); img != tc.wantEtcdLauncherImage {
+				t.Errorf("want etcd-launcher image %q, but got %q", tc.wantEtcdLauncherImage, img)
+			}
+		})
+	}
+}
+
+func TestDNATControllerImage(t *testing.T) {
+	testCases := []struct {
+		name                    string
+		templateData            *TemplateData
+		wantDNATControllerImage string
+	}{
+		{
+			name: "default image",
+			templateData: &TemplateData{
+				dnatControllerImage: "quay.io/kubermatic/kubeletdnat-controller",
+			},
+			wantDNATControllerImage: "quay.io/kubermatic/kubeletdnat-controller",
+		},
+		{
+			name: "default image with overwrite registry",
+			templateData: &TemplateData{
+				dnatControllerImage: "quay.io/kubermatic/kubeletdnat-controller",
+				OverwriteRegistry:   "custom-registry.kubermatic.io",
+			},
+			wantDNATControllerImage: "custom-registry.kubermatic.io/kubermatic/kubeletdnat-controller",
+		},
+		{
+			name: "custom image with 2 parts",
+			templateData: &TemplateData{
+				dnatControllerImage: "kubermatic/kubeletdnat-controller",
+			},
+			wantDNATControllerImage: "docker.io/kubermatic/kubeletdnat-controller",
+		},
+		{
+			name: "custom image with 2 parts with overwrite registry",
+			templateData: &TemplateData{
+				dnatControllerImage: "kubermatic/kubeletdnat-controller",
+				OverwriteRegistry:   "custom-registry.kubermatic.io",
+			},
+			wantDNATControllerImage: "custom-registry.kubermatic.io/kubermatic/kubeletdnat-controller",
+		},
+		{
+			name: "custom image with 1 part",
+			templateData: &TemplateData{
+				dnatControllerImage: "kubeletdnat-controller",
+			},
+			wantDNATControllerImage: "docker.io/kubeletdnat-controller",
+		},
+		{
+			name: "custom image with 1 part with overwrite registry",
+			templateData: &TemplateData{
+				dnatControllerImage: "kubeletdnat-controller",
+				OverwriteRegistry:   "custom-registry.kubermatic.io",
+			},
+			wantDNATControllerImage: "custom-registry.kubermatic.io/kubeletdnat-controller",
+		},
+		{
+			name: "custom image with 4 parts",
+			templateData: &TemplateData{
+				dnatControllerImage: "registry.kubermatic.io/images/kubermatic/kubeletdnat-controller",
+			},
+			wantDNATControllerImage: "registry.kubermatic.io/images/kubermatic/kubeletdnat-controller",
+		},
+		{
+			name: "custom image with 4 parts with overwrite registry",
+			templateData: &TemplateData{
+				dnatControllerImage: "registry.kubermatic.io/images/kubermatic/kubeletdnat-controller",
+				OverwriteRegistry:   "custom-registry.kubermatic.io",
+			},
+			wantDNATControllerImage: "custom-registry.kubermatic.io/images/kubermatic/kubeletdnat-controller",
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			if img := tc.templateData.DNATControllerImage(); img != tc.wantDNATControllerImage {
+				t.Errorf("want kubeletdnat-controller image %q, but got %q", tc.wantDNATControllerImage, img)
+			}
+		})
+	}
+}
