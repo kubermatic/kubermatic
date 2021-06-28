@@ -51,7 +51,7 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/inconshreveable/log15 v0.0.0-20201112154412-8562bdadbbac // indirect
 	github.com/jetstack/cert-manager v1.1.0
-	github.com/kubermatic/grafanasdk v0.9.8
+	github.com/kubermatic/grafanasdk v0.9.9
 	github.com/kubermatic/machine-controller v1.32.0
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect

@@ -210,3 +210,11 @@ func GetHealthStatus(status kubermaticv1.HealthStatus, cluster *kubermaticv1.Clu
 func uniqueVersion(v kubermatic.Versions) string {
 	return v.KubermaticCommit
 }
+
+func NeedCCMMigration(cluster *kubermaticv1.Cluster) bool {
+	_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
+	_, csiOk := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
+	migrated := ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue)
+
+	return ccmOk && csiOk && !migrated
+}

@@ -262,6 +262,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/constrainttemplates/{ct_name}").
 		Handler(r.deleteConstraintTemplate())
 
+	// Define a set of endpoints for default constraints
+	mux.Methods(http.MethodPost).
+		Path("/constraints").
+		Handler(r.createDefaultConstraint())
+
 	// Define a set of endpoints for gatekeeper constraints
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/constraints").
@@ -508,6 +513,9 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clustertemplates/{template_id}").
 		Handler(r.deleteClusterTemplate())
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clustertemplates/{template_id}/instances").
+		Handler(r.createClusterTemplateInstance())
 
 	// Defines a set of HTTP endpoints for managing rule groups
 	mux.Methods(http.MethodGet).
@@ -1451,6 +1459,30 @@ func (r Routing) createConstraint() http.Handler {
 			middleware.PrivilegedConstraints(r.clusterProviderGetter, r.constraintProviderGetter, r.seedsGetter),
 		)(constraint.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider, r.constraintTemplateProvider)),
 		constraint.DecodeCreateConstraintReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/constraints constraint createDefaultConstraint
+//
+//     Creates default constraint
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Constraint
+//       401: empty
+//       403: empty
+func (r Routing) createDefaultConstraint() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constraint.CreateDefaultEndpoint(r.userInfoGetter, r.defaultConstraintProvider, r.constraintTemplateProvider)),
+		constraint.DecodeDefaultCreateConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -3474,6 +3506,33 @@ func (r Routing) deleteClusterTemplate() http.Handler {
 		)(clustertemplate.DeleteEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider)),
 		clustertemplate.DecodeGetReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances project createClusterTemplateInstance
+//
+//     Create cluster template instance.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: ClusterTemplateInstance
+//       401: empty
+//       403: empty
+func (r Routing) createClusterTemplateInstance() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.CreateInstanceEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.clusterTemplateInstanceProviderGetter)),
+		clustertemplate.DecodeCreateInstanceReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

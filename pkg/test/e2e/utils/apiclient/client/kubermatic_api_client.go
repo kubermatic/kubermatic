@@ -16,6 +16,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/anexia"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/aws"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/azure"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constraint"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constrainttemplates"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
@@ -86,6 +87,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Anexia = anexia.New(transport, formats)
 	cli.Aws = aws.New(transport, formats)
 	cli.Azure = azure.New(transport, formats)
+	cli.Constraint = constraint.New(transport, formats)
 	cli.Constrainttemplates = constrainttemplates.New(transport, formats)
 	cli.Credentials = credentials.New(transport, formats)
 	cli.Datacenter = datacenter.New(transport, formats)
@@ -162,6 +164,8 @@ type KubermaticAPI struct {
 
 	Azure azure.ClientService
 
+	Constraint constraint.ClientService
+
 	Constrainttemplates constrainttemplates.ClientService
 
 	Credentials credentials.ClientService
@@ -214,6 +218,7 @@ func (c *KubermaticAPI) SetTransport(transport runtime.ClientTransport) {
 	c.Anexia.SetTransport(transport)
 	c.Aws.SetTransport(transport)
 	c.Azure.SetTransport(transport)
+	c.Constraint.SetTransport(transport)
 	c.Constrainttemplates.SetTransport(transport)
 	c.Credentials.SetTransport(transport)
 	c.Datacenter.SetTransport(transport)

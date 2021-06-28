@@ -873,6 +873,12 @@ type PrivilegedConstraintProvider interface {
 	UpdateUnsecured(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
+// DefaultConstraintProvider declares the set of method for interacting with default constraints
+type DefaultConstraintProvider interface {
+	// Create creates the given default constraint
+	Create(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+}
+
 // AlertmanagerProvider declares the set of method for interacting with alertmanagers
 type AlertmanagerProvider interface {
 	// Get gets the given alertmanager and the config secret
@@ -912,6 +918,33 @@ type ClusterTemplateProvider interface {
 	List(userInfo *UserInfo, projectID string) ([]kubermaticv1.ClusterTemplate, error)
 	Get(userInfo *UserInfo, projectID, templateID string) (*kubermaticv1.ClusterTemplate, error)
 	Delete(userInfo *UserInfo, projectID, templateID string) error
+}
+
+// ClusterTemplateInstanceProvider declares the set of method for interacting with cluster templates
+type ClusterTemplateInstanceProvider interface {
+	Create(userInfo *UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
+	Get(userInfo *UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error)
+	List(userInfo *UserInfo, options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
+	Update(userInfo *UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
+}
+
+// PrivilegedClusterTemplateInstanceProvider declares the set of methods for interacting with the cluster template instances
+// as an admin.
+type PrivilegedClusterTemplateInstanceProvider interface {
+	// CreateUnsecured create cluster template instance
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	CreateUnsecured(template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
+}
+
+// ClusterTemplateInstanceListOptions allows to set filters that will be applied to filter the result.
+type ClusterTemplateInstanceListOptions struct {
+	// ProjectID list only instances with the specified ID
+	ProjectID string
+
+	// TemplateID list only instances with the specified ID
+	TemplateID string
 }
 
 type RuleGroupListOptions struct {

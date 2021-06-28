@@ -131,6 +131,8 @@ const (
 	RequiredEmailDomain = "acme.com"
 	// DefaultKubernetesVersion kubernetes version
 	DefaultKubernetesVersion = "1.17.9"
+	// Kubermatic namespace
+	KubermaticNamespace = "kubermatic"
 )
 
 // GetUser is a convenience function for generating apiv1.User
@@ -187,8 +189,10 @@ type newRoutingFunc func(
 	constraintProviderGetter provider.ConstraintProviderGetter,
 	alertmanagerProviderGetter provider.AlertmanagerProviderGetter,
 	clusterTemplateProvider provider.ClusterTemplateProvider,
+	clusterTemplateInstanceProviderGetter provider.ClusterTemplateInstanceProviderGetter,
 	ruleGroupProviderGetter provider.RuleGroupProviderGetter,
 	kubermaticVersions kubermatic.Versions,
+	defaultConstraintProvider provider.DefaultConstraintProvider,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -343,6 +347,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		FakeClient: fakeClient,
 	}
 
+	defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, fakeClient, KubermaticNamespace)
+	if err != nil {
+		return nil, nil, err
+	}
+	fakeDefaultConstraintProvider := &FakeDefaultConstraintProvider{
+		Provider:   defaultConstraintProvider,
+		FakeClient: fakeClient,
+	}
+
 	constraintProvider, err := kubernetes.NewConstraintProvider(fakeImpersonationClient, fakeClient)
 	if err != nil {
 		return nil, nil, err
@@ -378,6 +391,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find ruleGroupProvider for cluster %q", seed.Name)
 	}
 
+	clusterTemplateInstanceProvider := kubernetes.NewClusterTemplateInstanceProvider(fakeImpersonationClient, fakeClient)
+	clusterTemplateInstanceProviders := map[string]provider.ClusterTemplateInstanceProvider{"us-central1": clusterTemplateInstanceProvider}
+	clusterTemplateInstanceProviderGetter := func(seed *kubermaticv1.Seed) (provider.ClusterTemplateInstanceProvider, error) {
+		if instances, exists := clusterTemplateInstanceProviders[seed.Name]; exists {
+			return instances, nil
+		}
+		return nil, fmt.Errorf("can not find clusterTemplateInstanceProvider for seed %q", seed.Name)
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -399,7 +421,6 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		userInfoGetter,
 		seedsGetter,
 		seedClientGetter,
-
 		clusterProviderGetter,
 		addonProviderGetter,
 		addonConfigProvider,
@@ -433,8 +454,10 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		constraintProviderGetter,
 		alertmanagerProviderGetter,
 		clusterTemplateProvider,
+		clusterTemplateInstanceProviderGetter,
 		ruleGroupProviderGetter,
 		kubermaticVersions,
+		fakeDefaultConstraintProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
@@ -1650,6 +1673,10 @@ func GenClusterTemplate(name, id, projectID, scope, userEmail string) *kubermati
 		Credential:             "",
 		Spec: kubermaticv1.ClusterSpec{
 			HumanReadableName: name,
+			Cloud: kubermaticv1.CloudSpec{
+				DatacenterName: "fake-dc",
+				Fake:           &kubermaticv1.FakeCloudSpec{},
+			},
 		},
 	}
 }

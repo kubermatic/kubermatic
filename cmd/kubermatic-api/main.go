@@ -255,6 +255,11 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		return providers{}, fmt.Errorf("failed to create external cluster provider due to %v", err)
 	}
 
+	defaultConstraintProvider, err := kubernetesprovider.NewDefaultConstraintProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient(), options.namespace)
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create default constraint provider due to %w", err)
+	}
+
 	constraintTemplateProvider, err := kubernetesprovider.NewConstraintTemplateProvider(defaultImpersonationClient.CreateImpersonatedClient, mgr.GetClient())
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create constraint template provider due to %v", err)
@@ -279,6 +284,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 	alertmanagerProviderGetter := kubernetesprovider.AlertmanagerProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
 	ruleGroupProviderGetter := kubernetesprovider.RuleGroupProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
+
+	clusterTemplateInstanceProviderGetter := kubernetesprovider.ClusterTemplateInstanceProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
 	if err != nil {
@@ -319,10 +326,12 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		externalClusterProvider:               externalClusterProvider,
 		privilegedExternalClusterProvider:     externalClusterProvider,
 		constraintTemplateProvider:            constraintTemplateProvider,
+		defaultConstraintProvider:             defaultConstraintProvider,
 		constraintProviderGetter:              constraintProviderGetter,
 		alertmanagerProviderGetter:            alertmanagerProviderGetter,
 		clusterTemplateProvider:               clusterTemplateProvider,
 		ruleGroupProviderGetter:               ruleGroupProviderGetter,
+		clusterTemplateInstanceProviderGetter: clusterTemplateInstanceProviderGetter,
 	}, nil
 }
 
@@ -427,9 +436,11 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ExternalClusterProvider:               prov.externalClusterProvider,
 		PrivilegedExternalClusterProvider:     prov.privilegedExternalClusterProvider,
 		ConstraintTemplateProvider:            prov.constraintTemplateProvider,
+		DefaultConstraintProvider:             prov.defaultConstraintProvider,
 		ConstraintProviderGetter:              prov.constraintProviderGetter,
 		AlertmanagerProviderGetter:            prov.alertmanagerProviderGetter,
 		ClusterTemplateProvider:               prov.clusterTemplateProvider,
+		ClusterTemplateInstanceProviderGetter: prov.clusterTemplateInstanceProviderGetter,
 		RuleGroupProviderGetter:               prov.ruleGroupProviderGetter,
 		Versions:                              options.versions,
 		CABundle:                              options.caBundle.CertPool(),
