@@ -161,6 +161,9 @@ func TestEnsureResourcesAreDeployedIdempotency(t *testing.T) {
 		Client:               mgr.GetClient(),
 		dockerPullConfigJSON: []byte("{}"),
 		nodeAccessNetwork:    kubermaticv1.DefaultNodeAccessNetwork,
+		kubermaticImage:      resources.DefaultKubermaticImage,
+		dnatControllerImage:  resources.DefaultDNATControllerImage,
+		etcdLauncherImage:    resources.DefaultEtcdLauncherImage,
 		seedGetter: func() (*kubermaticv1.Seed, error) {
 			return &kubermaticv1.Seed{
 				Spec: kubermaticv1.SeedSpec{
