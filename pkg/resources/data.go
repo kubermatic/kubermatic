@@ -333,7 +333,7 @@ func (d *TemplateData) EtcdDiskSize() resource.Quantity {
 func (d *TemplateData) EtcdLauncherImage() string {
 	imageSplit := strings.Split(d.etcdLauncherImage, "/")
 	var registry, imageWithoutRegistry string
-	if len(imageSplit) != 3 {
+	if len(imageSplit) < 3 {
 		registry = RegistryDocker
 		imageWithoutRegistry = strings.Join(imageSplit, "/")
 	} else {
@@ -534,7 +534,7 @@ func (d *TemplateData) NodeLocalDNSCacheEnabled() bool {
 func (d *TemplateData) KubermaticAPIImage() string {
 	apiImageSplit := strings.Split(d.kubermaticImage, "/")
 	var registry, imageWithoutRegistry string
-	if len(apiImageSplit) != 3 {
+	if len(apiImageSplit) < 3 {
 		registry = RegistryDocker
 		imageWithoutRegistry = strings.Join(apiImageSplit, "/")
 	} else {
@@ -551,7 +551,7 @@ func (d *TemplateData) KubermaticDockerTag() string {
 func (d *TemplateData) DNATControllerImage() string {
 	dnatControllerImageSplit := strings.Split(d.dnatControllerImage, "/")
 	var registry, imageWithoutRegistry string
-	if len(dnatControllerImageSplit) != 3 {
+	if len(dnatControllerImageSplit) < 3 {
 		registry = RegistryDocker
 		imageWithoutRegistry = strings.Join(dnatControllerImageSplit, "/")
 	} else {
