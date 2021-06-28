@@ -98,7 +98,7 @@ func getNetworkByName(netClient *gophercloud.ServiceClient, name string, isExter
 	case 1:
 		return candidates[0], nil
 	case 0:
-		return nil, fmt.Errorf("no network named '%s' with external=%v found", name, isExternal)
+		return nil, fmt.Errorf("network named '%s' with external=%v not found", name, isExternal)
 	default:
 		return nil, fmt.Errorf("found %d networks for name '%s' (external=%v), expected exactly one", len(candidates), name, isExternal)
 	}
@@ -135,7 +135,7 @@ func validateSecurityGroupsExist(netClient *gophercloud.ServiceClient, securityG
 func deleteSecurityGroup(netClient *gophercloud.ServiceClient, sgName string) error {
 	results, err := getSecurityGroups(netClient, ossecuritygroups.ListOpts{Name: sgName})
 	if err != nil {
-		return fmt.Errorf("failed to get security group: %v", err)
+		return fmt.Errorf("failed to get security group: %w", err)
 	}
 
 	for _, sg := range results {
@@ -277,7 +277,7 @@ func createKubermaticNetwork(netClient *gophercloud.ServiceClient, clusterName s
 func deleteNetworkByName(netClient *gophercloud.ServiceClient, networkName string) error {
 	network, err := getNetworkByName(netClient, networkName, false)
 	if err != nil {
-		return fmt.Errorf("failed to get network '%s' by name: %v", networkName, err)
+		return fmt.Errorf("failed to get network '%s' by name: %w", networkName, err)
 	}
 
 	res := osnetworks.Delete(netClient, network.ID)
@@ -468,7 +468,7 @@ func getSubnetForNetwork(netClient *gophercloud.ServiceClient, networkIDOrName s
 }
 
 func isNotFoundErr(err error) bool {
-	if _, ok := err.(gophercloud.ErrDefault404); ok || strings.Contains(err.Error(), "not found") {
+	if _, ok := err.(gophercloud.ErrDefault404); ok || strings.Contains(errors.Unwrap(err).Error(), "not found") {
 		return true
 	}
 	return false
