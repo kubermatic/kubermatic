@@ -1025,10 +1025,8 @@ func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacente
 	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		status.ExternalCCM = true
 		status.MigrationNeeded = nil
-	} else {
-		if cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, cluster) {
-			status.MigrationNeeded = pointer.BoolPtr(true)
-		}
+	} else if cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, cluster) {
+		status.MigrationNeeded = pointer.BoolPtr(true)
 	}
 
 	if _, condition := helper.GetClusterCondition(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted); condition != nil {

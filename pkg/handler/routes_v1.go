@@ -35,7 +35,6 @@ limitations under the License.
 //          in: header
 //
 // swagger:meta
-
 package handler
 
 import (

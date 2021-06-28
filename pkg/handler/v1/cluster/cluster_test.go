@@ -1159,7 +1159,9 @@ func TestPatchCluster(t *testing.T) {
 			project:          test.GenDefaultProject().Name,
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
+				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+					seed.Spec.Datacenters["us-central1"] = kubermaticv1.Datacenter{}
+				}),
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud.DatacenterName = "us-central1"
@@ -1181,7 +1183,9 @@ func TestPatchCluster(t *testing.T) {
 			project:          test.GenDefaultProject().Name,
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
 			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
+				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+					seed.Spec.Datacenters["us-central1"] = kubermaticv1.Datacenter{}
+				}),
 				func() *kubermaticv1.Cluster {
 					cluster := test.GenCluster("keen-snyder", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC))
 					cluster.Spec.Cloud.DatacenterName = "us-central1"
@@ -1273,11 +1277,13 @@ func TestGetCluster(t *testing.T) {
 		{
 			Name:             "scenario 1: gets cluster with the given name that belongs to the given project",
 			Body:             ``,
-			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"FakeDatacenter","fake":{}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","ccm":{"externalCCM":false}}}`,
+			ExpectedResponse: `{"id":"defClusterID","name":"defClusterName","creationTimestamp":"2013-02-03T19:54:00Z","type":"kubernetes","spec":{"cloud":{"dc":"private-do1","fake":{}},"version":"9.9.9","oidc":{},"enableUserSSHKeyAgent":false},"status":{"version":"9.9.9","url":"https://w225mx4z66.asia-east1-a-1.cloud.kubermatic.io:31885","ccm":{"externalCCM":false}}}`,
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
+				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+					seed.Spec.Datacenters["private-do1"] = kubermaticv1.Datacenter{}
+				}),
 				test.GenDefaultCluster(),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 			),
@@ -1291,7 +1297,13 @@ func TestGetCluster(t *testing.T) {
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
+				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+					seed.Spec.Datacenters["OpenstackDatacenter"] = kubermaticv1.Datacenter{
+						Spec: kubermaticv1.DatacenterSpec{
+							Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
+						},
+					}
+				}),
 				test.GenClusterWithOpenstack(test.GenDefaultCluster()),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 			),
@@ -1305,7 +1317,17 @@ func TestGetCluster(t *testing.T) {
 			ClusterToGet:     test.GenDefaultCluster().Name,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
+				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+					seed.Spec.Datacenters["OpenstackDatacenter"] = kubermaticv1.Datacenter{
+						Country:  "NL",
+						Location: "US ",
+						Spec: kubermaticv1.DatacenterSpec{
+							Openstack: &kubermaticv1.DatacenterSpecOpenstack{
+								Region: "ams2",
+							},
+						},
+					}
+				}),
 				genUser("John", "john@acme.com", true),
 				test.GenClusterWithOpenstack(test.GenDefaultCluster()),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
@@ -1372,7 +1394,7 @@ func TestListClusters(t *testing.T) {
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
-							DatacenterName: "FakeDatacenter",
+							DatacenterName: "private-do1",
 							Fake:           &kubermaticv1.FakeCloudSpec{},
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
@@ -1392,7 +1414,7 @@ func TestListClusters(t *testing.T) {
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
-							DatacenterName: "FakeDatacenter",
+							DatacenterName: "private-do1",
 							Fake:           &kubermaticv1.FakeCloudSpec{},
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
@@ -1435,7 +1457,13 @@ func TestListClusters(t *testing.T) {
 			},
 			HTTPStatus: http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
+				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+					seed.Spec.Datacenters["OpenstackDatacenter"] = kubermaticv1.Datacenter{
+						Spec: kubermaticv1.DatacenterSpec{
+							Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
+						},
+					}
+				}),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 				test.GenCluster("clusterDefID", "clusterDef", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC)),
 				test.GenClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
@@ -1454,7 +1482,7 @@ func TestListClusters(t *testing.T) {
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
-							DatacenterName: "FakeDatacenter",
+							DatacenterName: "private-do1",
 							Fake:           &kubermaticv1.FakeCloudSpec{},
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
@@ -1474,7 +1502,7 @@ func TestListClusters(t *testing.T) {
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
-							DatacenterName: "FakeDatacenter",
+							DatacenterName: "private-do1",
 							Fake:           &kubermaticv1.FakeCloudSpec{},
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
@@ -1517,7 +1545,13 @@ func TestListClusters(t *testing.T) {
 			},
 			HTTPStatus: http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
+				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+					seed.Spec.Datacenters["OpenstackDatacenter"] = kubermaticv1.Datacenter{
+						Spec: kubermaticv1.DatacenterSpec{
+							Openstack: &kubermaticv1.DatacenterSpecOpenstack{},
+						},
+					}
+				}),
 				genUser("John", "john@acme.com", true),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 				test.GenCluster("clusterDefID", "clusterDef", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 01, 54, 0, 0, time.UTC)),
@@ -1576,7 +1610,7 @@ func TestListClustersForProject(t *testing.T) {
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
-							DatacenterName: "FakeDatacenter",
+							DatacenterName: "private-do1",
 							Fake:           &kubermaticv1.FakeCloudSpec{},
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
@@ -1619,7 +1653,11 @@ func TestListClustersForProject(t *testing.T) {
 			},
 			HTTPStatus: http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
+				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+					seed.Spec.Datacenters["OpenstackDatacenter"] = kubermaticv1.Datacenter{
+						Spec: kubermaticv1.DatacenterSpec{Openstack: &kubermaticv1.DatacenterSpecOpenstack{}},
+					}
+				}),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 				test.GenClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
 			),
@@ -1637,7 +1675,7 @@ func TestListClustersForProject(t *testing.T) {
 					},
 					Spec: apiv1.ClusterSpec{
 						Cloud: kubermaticv1.CloudSpec{
-							DatacenterName: "FakeDatacenter",
+							DatacenterName: "private-do1",
 							Fake:           &kubermaticv1.FakeCloudSpec{},
 						},
 						Version:               *semver.NewSemverOrDie("9.9.9"),
@@ -1680,7 +1718,11 @@ func TestListClustersForProject(t *testing.T) {
 			},
 			HTTPStatus: http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
-				test.GenTestSeed(),
+				test.GenTestSeed(func(seed *kubermaticv1.Seed) {
+					seed.Spec.Datacenters["OpenstackDatacenter"] = kubermaticv1.Datacenter{
+						Spec: kubermaticv1.DatacenterSpec{Openstack: &kubermaticv1.DatacenterSpecOpenstack{}},
+					}
+				}),
 				genUser("John", "john@acme.com", true),
 				test.GenCluster("clusterAbcID", "clusterAbc", test.GenDefaultProject().Name, time.Date(2013, 02, 03, 19, 54, 0, 0, time.UTC)),
 				test.GenClusterWithOpenstack(test.GenCluster("clusterOpenstackID", "clusterOpenstack", test.GenDefaultProject().Name, time.Date(2013, 02, 04, 03, 54, 0, 0, time.UTC))),
