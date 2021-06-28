@@ -123,16 +123,34 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse aws config: %v", err)
 		}
+
+		var (
+			spotInstanceMaxPrice             *string
+			spotInstancePersistentRequest    *bool
+			spotInstanceInterruptionBehavior *string
+		)
+
+		if config.IsSpotInstance != nil && *config.IsSpotInstance {
+			if config.SpotInstanceConfig != nil {
+				spotInstanceMaxPrice = &config.SpotInstanceConfig.MaxPrice.Value
+				spotInstancePersistentRequest = &config.SpotInstanceConfig.PersistentRequest.Value
+				spotInstanceInterruptionBehavior = &config.SpotInstanceConfig.InterruptionBehavior.Value
+			}
+		}
+
 		cloudSpec.AWS = &apiv1.AWSNodeSpec{
-			Tags:             config.Tags,
-			VolumeSize:       config.DiskSize,
-			VolumeType:       config.DiskType.Value,
-			InstanceType:     config.InstanceType.Value,
-			AMI:              config.AMI.Value,
-			AvailabilityZone: config.AvailabilityZone.Value,
-			SubnetID:         config.SubnetID.Value,
-			AssignPublicIP:   config.AssignPublicIP,
-			IsSpotInstance:   config.IsSpotInstance,
+			Tags:                             config.Tags,
+			VolumeSize:                       config.DiskSize,
+			VolumeType:                       config.DiskType.Value,
+			InstanceType:                     config.InstanceType.Value,
+			AMI:                              config.AMI.Value,
+			AvailabilityZone:                 config.AvailabilityZone.Value,
+			SubnetID:                         config.SubnetID.Value,
+			AssignPublicIP:                   config.AssignPublicIP,
+			IsSpotInstance:                   config.IsSpotInstance,
+			SpotInstanceMaxPrice:             spotInstanceMaxPrice,
+			SpotInstancePersistentRequest:    spotInstancePersistentRequest,
+			SpotInstanceInterruptionBehavior: spotInstanceInterruptionBehavior,
 		}
 	case providerconfig.CloudProviderAzure:
 		config := &azure.RawConfig{}
