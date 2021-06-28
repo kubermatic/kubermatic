@@ -16,11 +16,11 @@ import (
 // swagger:model ConstraintSpec
 type ConstraintSpec struct {
 
-	// Active flag tells constraint's active state
-	Active bool `json:"active,omitempty"`
-
 	// ConstraintType specifies the type of gatekeeper constraint that the constraint applies to
 	ConstraintType string `json:"constraintType,omitempty"`
+
+	// Disabled  is the flag for disabling OPA constraints
+	Disabled bool `json:"disabled,omitempty"`
 
 	// match
 	Match *Match `json:"match,omitempty"`

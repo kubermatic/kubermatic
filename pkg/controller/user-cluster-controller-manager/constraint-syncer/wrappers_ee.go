@@ -33,7 +33,8 @@ import (
 
 func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Constraint, log *zap.SugaredLogger) error {
 	// constraint deletion
-	if !constraint.Spec.Active {
+	if constraint.Spec.Disabled {
+
 		if err := r.cleanupConstraint(ctx, constraint, log); err != nil {
 			return err
 		}
@@ -56,7 +57,7 @@ func (r *reconciler) reconcile(ctx context.Context, constraint *kubermaticv1.Con
 		return nil
 	}
 
-	if constraint.Spec.Active {
+	if !constraint.Spec.Disabled {
 		// add finalizer
 		if !kuberneteshelper.HasFinalizer(constraint, kubermaticapiv1.GatekeeperConstraintCleanupFinalizer) {
 			oldConstraint := constraint.DeepCopy()
