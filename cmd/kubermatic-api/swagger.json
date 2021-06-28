@@ -16901,17 +16901,17 @@
       "type": "object",
       "properties": {
         "externalCCM": {
-          "description": "the ClusterFeatureExternalCloudProvider in the cluster .spec.features",
+          "description": "ExternalCCM reflects the ClusterFeatureExternalCloudProvider in the cluster .spec.features",
           "type": "boolean",
           "x-go-name": "ExternalCCM"
         },
         "migrationCompleted": {
-          "description": "reflect the ClusterConditionCSIKubeletMigrationCompleted condition of the cluster",
+          "description": "MigrationCompleted reflects the CSIKubeletMigrationCompleted condition of the cluster",
           "type": "boolean",
           "x-go-name": "MigrationCompleted"
         },
         "migrationNeeded": {
-          "description": "the logic AND of the CCMMigrationNeededAnnotation and CSIMigrationNeededAnnotation annotations",
+          "description": "MigrationNeeded reflects if the CCMMigrationNeeded and CSIMigrationNeeded annotations are set and the cloud\nprovider supports external CCM",
           "type": "boolean",
           "x-go-name": "MigrationNeeded"
         }
