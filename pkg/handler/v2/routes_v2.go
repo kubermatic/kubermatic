@@ -516,6 +516,9 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clustertemplates/{template_id}/instances").
 		Handler(r.createClusterTemplateInstance())
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}").
+		Handler(r.getClusterTemplateInstance())
 
 	// Defines a set of HTTP endpoints for managing rule groups
 	mux.Methods(http.MethodGet).
@@ -3533,6 +3536,33 @@ func (r Routing) createClusterTemplateInstance() http.Handler {
 		)(clustertemplate.CreateInstanceEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.clusterTemplateInstanceProviderGetter)),
 		clustertemplate.DecodeCreateInstanceReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id} project getClusterTemplateInstance
+//
+//     Get cluster template instance.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterTemplateInstance
+//       401: empty
+//       403: empty
+func (r Routing) getClusterTemplateInstance() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.GetInstanceEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.clusterTemplateInstanceProviderGetter)),
+		clustertemplate.DecodeGetInstanceReq,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

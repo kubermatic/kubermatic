@@ -1681,6 +1681,19 @@ func GenClusterTemplate(name, id, projectID, scope, userEmail string) *kubermati
 	}
 }
 
+func GenClusterTemplateInstance(projectID, templateID string, replicas int64) *kubermaticv1.ClusterTemplateInstance {
+	return &kubermaticv1.ClusterTemplateInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: fmt.Sprintf("%s-%s", projectID, templateID),
+		},
+		Spec: kubermaticv1.ClusterTemplateInstanceSpec{
+			ProjectID:         projectID,
+			ClusterTemplateID: templateID,
+			Replicas:          replicas,
+		},
+	}
+}
+
 func GenRuleGroup(name, clusterName string, ruleGroupType kubermaticv1.RuleGroupType) *kubermaticv1.RuleGroup {
 	return &kubermaticv1.RuleGroup{
 		ObjectMeta: metav1.ObjectMeta{

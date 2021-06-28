@@ -104,6 +104,16 @@ func createClusterTemplateInstance(template *kubermaticv1.ClusterTemplate, proje
 	return instance
 }
 
+func (r ClusterTemplateInstanceProvider) GetUnsecured(name string) (*kubermaticv1.ClusterTemplateInstance, error) {
+	instance := &kubermaticv1.ClusterTemplateInstance{}
+	if err := r.privilegedClient.Get(context.Background(), types.NamespacedName{
+		Name: name,
+	}, instance); err != nil {
+		return nil, err
+	}
+	return instance, nil
+}
+
 func (r ClusterTemplateInstanceProvider) Get(userInfo *provider.UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
 	if err != nil {
