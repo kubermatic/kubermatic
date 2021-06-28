@@ -15972,15 +15972,15 @@
       "type": "object",
       "title": "ConstraintSpec specifies the data for the constraint.",
       "properties": {
-        "active": {
-          "description": "Active flag tells constraint's active state",
-          "type": "boolean",
-          "x-go-name": "Active"
-        },
         "constraintType": {
           "description": "ConstraintType specifies the type of gatekeeper constraint that the constraint applies to",
           "type": "string",
           "x-go-name": "ConstraintType"
+        },
+        "disabled": {
+          "description": "Disabled  is the flag for disabling OPA constraints",
+          "type": "boolean",
+          "x-go-name": "Disabled"
         },
         "match": {
           "$ref": "#/definitions/Match"
