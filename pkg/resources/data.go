@@ -25,6 +25,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/distribution/reference"
+
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	httpproberapi "k8c.io/kubermatic/v2/cmd/http-prober/api"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -331,16 +333,7 @@ func (d *TemplateData) EtcdDiskSize() resource.Quantity {
 }
 
 func (d *TemplateData) EtcdLauncherImage() string {
-	imageSplit := strings.Split(d.etcdLauncherImage, "/")
-	var registry, imageWithoutRegistry string
-	if len(imageSplit) < 3 {
-		registry = RegistryDocker
-		imageWithoutRegistry = strings.Join(imageSplit, "/")
-	} else {
-		registry = imageSplit[0]
-		imageWithoutRegistry = strings.Join(imageSplit[1:], "/")
-	}
-	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
+	return d.parseImage(d.etcdLauncherImage)
 }
 
 func (d *TemplateData) EtcdLauncherTag() string {
@@ -532,16 +525,22 @@ func (d *TemplateData) NodeLocalDNSCacheEnabled() bool {
 }
 
 func (d *TemplateData) KubermaticAPIImage() string {
-	apiImageSplit := strings.Split(d.kubermaticImage, "/")
-	var registry, imageWithoutRegistry string
-	if len(apiImageSplit) < 3 {
-		registry = RegistryDocker
-		imageWithoutRegistry = strings.Join(apiImageSplit, "/")
-	} else {
-		registry = apiImageSplit[0]
-		imageWithoutRegistry = strings.Join(apiImageSplit[1:], "/")
+	return d.parseImage(d.kubermaticImage)
+}
+
+func (d *TemplateData) parseImage(image string) string {
+	named, _ := reference.ParseNormalizedNamed(image)
+	domain := reference.Domain(named)
+	reminder := reference.Path(named)
+
+	if d.OverwriteRegistry != "" {
+		domain = d.OverwriteRegistry
 	}
-	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
+	if domain == "" {
+		domain = RegistryDocker
+	}
+
+	return domain + "/" + reminder
 }
 
 func (d *TemplateData) KubermaticDockerTag() string {
@@ -549,16 +548,7 @@ func (d *TemplateData) KubermaticDockerTag() string {
 }
 
 func (d *TemplateData) DNATControllerImage() string {
-	dnatControllerImageSplit := strings.Split(d.dnatControllerImage, "/")
-	var registry, imageWithoutRegistry string
-	if len(dnatControllerImageSplit) < 3 {
-		registry = RegistryDocker
-		imageWithoutRegistry = strings.Join(dnatControllerImageSplit, "/")
-	} else {
-		registry = dnatControllerImageSplit[0]
-		imageWithoutRegistry = strings.Join(dnatControllerImageSplit[1:], "/")
-	}
-	return d.ImageRegistry(registry) + "/" + imageWithoutRegistry
+	return d.parseImage(d.dnatControllerImage)
 }
 
 func (d *TemplateData) BackupSchedule() time.Duration {
