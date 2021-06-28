@@ -936,6 +936,12 @@ type PrivilegedClusterTemplateInstanceProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
 	CreateUnsecured(template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
+
+	// GetUnsecured gets cluster template instance
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	GetUnsecured(name string) (*kubermaticv1.ClusterTemplateInstance, error)
 }
 
 // ClusterTemplateInstanceListOptions allows to set filters that will be applied to filter the result.
