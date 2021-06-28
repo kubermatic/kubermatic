@@ -577,3 +577,57 @@ func TestGetClusterTemplateInstance(t *testing.T) {
 		})
 	}
 }
+
+func TestListClusterTemplateInstances(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		ExpectedResponse       string
+		TemplateID             string
+		HTTPStatus             int
+		ExistingAPIUser        *apiv1.User
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+	}{
+		// scenario 1
+		{
+			Name:             "scenario 1: get template instance for global template",
+			TemplateID:       "ctID2",
+			ExpectedResponse: `[{"name":"","spec":{"projectID":"","clusterTemplateID":"","clusterTemplateName":"","replicas":0}},{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"","replicas":10}}]`,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenAdminUser("admin", "john@acme.com", true),
+				test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
+				test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct3", "ctID3", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct4", "ctID4", test.GenDefaultProject().Name, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID1", 10),
+				test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 10),
+				test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID3", 10),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/projects/%s/clustertemplates/%s/instances", test.ProjectName, tc.TemplateID), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			var kubermaticObj []ctrlruntimeclient.Object
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+
+		})
+	}
+}
