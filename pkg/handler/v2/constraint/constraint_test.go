@@ -733,7 +733,7 @@ func TestCreateDefaultConstraints(t *testing.T) {
 				Name: "ct1",
 				Spec: test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel").Spec,
 			},
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","active":true,"match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"labels":["gatekeeper","opa"]},"selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"deployment":"prod","domain":"sales"},"matchExpressions":[{"key":"cluster","operator":"Exists"}]}}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"labels":["gatekeeper","opa"]},"selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"deployment":"prod","domain":"sales"},"matchExpressions":[{"key":"cluster","operator":"Exists"}]}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraintTemplate("requiredlabel")},
