@@ -63,3 +63,10 @@ scrape_configs:
 - {{ . | toJson }}
 {{- end }}
 {{- end }}
+
+{{- if .Values.prometheus.remoteWrite }}
+remote_write:
+{{- range .Values.prometheus.remoteWrite }}
+- {{ . | toJson }}
+{{- end }}
+{{- end }}
