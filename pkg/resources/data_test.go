@@ -147,21 +147,6 @@ func TestKubermaticAPIImage(t *testing.T) {
 			wantAPIImage: "custom-registry.kubermatic.io/kubermatic/kubermatic",
 		},
 		{
-			name: "custom image with 1 part",
-			templateData: &TemplateData{
-				kubermaticImage: "kubermatic",
-			},
-			wantAPIImage: "docker.io/kubermatic",
-		},
-		{
-			name: "custom image with 1 part with overwrite registry",
-			templateData: &TemplateData{
-				kubermaticImage:   "kubermatic",
-				OverwriteRegistry: "custom-registry.kubermatic.io",
-			},
-			wantAPIImage: "custom-registry.kubermatic.io/kubermatic",
-		},
-		{
 			name: "custom image with 4 parts",
 			templateData: &TemplateData{
 				kubermaticImage: "registry.kubermatic.io/images/kubermatic/kubermatic",
@@ -223,21 +208,6 @@ func TestEtcdLauncherImage(t *testing.T) {
 			wantEtcdLauncherImage: "custom-registry.kubermatic.io/kubermatic/etcd-launcher",
 		},
 		{
-			name: "custom image with 1 part",
-			templateData: &TemplateData{
-				etcdLauncherImage: "etcd-launcher",
-			},
-			wantEtcdLauncherImage: "docker.io/etcd-launcher",
-		},
-		{
-			name: "custom image with 1 part with overwrite registry",
-			templateData: &TemplateData{
-				etcdLauncherImage: "etcd-launcher",
-				OverwriteRegistry: "custom-registry.kubermatic.io",
-			},
-			wantEtcdLauncherImage: "custom-registry.kubermatic.io/etcd-launcher",
-		},
-		{
 			name: "custom image with 4 parts",
 			templateData: &TemplateData{
 				etcdLauncherImage: "registry.kubermatic.io/images/kubermatic/etcd-launcher",
@@ -297,21 +267,6 @@ func TestDNATControllerImage(t *testing.T) {
 				OverwriteRegistry:   "custom-registry.kubermatic.io",
 			},
 			wantDNATControllerImage: "custom-registry.kubermatic.io/kubermatic/kubeletdnat-controller",
-		},
-		{
-			name: "custom image with 1 part",
-			templateData: &TemplateData{
-				dnatControllerImage: "kubeletdnat-controller",
-			},
-			wantDNATControllerImage: "docker.io/kubeletdnat-controller",
-		},
-		{
-			name: "custom image with 1 part with overwrite registry",
-			templateData: &TemplateData{
-				dnatControllerImage: "kubeletdnat-controller",
-				OverwriteRegistry:   "custom-registry.kubermatic.io",
-			},
-			wantDNATControllerImage: "custom-registry.kubermatic.io/kubeletdnat-controller",
 		},
 		{
 			name: "custom image with 4 parts",
