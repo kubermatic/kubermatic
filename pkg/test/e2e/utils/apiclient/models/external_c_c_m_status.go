@@ -18,10 +18,10 @@ type ExternalCCMStatus struct {
 	// ExternalCCM reflects the ClusterFeatureExternalCloudProvider in the cluster .spec.features
 	ExternalCCM bool `json:"externalCCM,omitempty"`
 
-	// MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled
+	// MigrationCompleted reflects the CSIKubeletMigrationCompleted condition of the cluster
 	MigrationCompleted bool `json:"migrationCompleted,omitempty"`
 
-	// MigrationCompleted reflects the CSIKubeletMigrationCompleted condition of the cluster
+	// MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled
 	MigrationNeeded bool `json:"migrationNeeded,omitempty"`
 }
 
