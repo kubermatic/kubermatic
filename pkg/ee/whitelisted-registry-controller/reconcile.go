@@ -202,7 +202,6 @@ func whitelistedRegistryConstraintCreatorGetter(wr *kubermaticv1.WhitelistedRegi
 							Kinds:     []string{"Pod"},
 						},
 					},
-					Namespaces: []string{"default"},
 				},
 				Parameters: kubermaticv1.Parameters{
 					WhitelistedRegistryField: regSet.List(),
