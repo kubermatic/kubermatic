@@ -53,6 +53,8 @@ spec:
         - name: OS_TENANT_NAME
           value: openstack-tenant
         - name: OS_TENANT_ID
+        - name: OS_APPLICATION_CREDENTIAL_ID
+        - name: OS_APPLICATION_CREDENTIAL_SECRET
         - name: HTTP_PROXY
           value: http://my-corp
         - name: HTTPS_PROXY
