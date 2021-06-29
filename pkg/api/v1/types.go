@@ -1051,13 +1051,12 @@ type ClusterStatus struct {
 	CCM ExternalCCMStatus `json:"ccm"`
 }
 
-// ExternalCCMStatus represents the external CCM migration status
+// ExternalCCMStatus represents the external CCM status
 // swagger:model ExternalCCMStatus
 type ExternalCCMStatus struct {
 	// ExternalCCM reflects the ClusterFeatureExternalCloudProvider in the cluster .spec.features
 	ExternalCCM bool `json:"externalCCM"`
-	// MigrationNeeded reflects if the CCMMigrationNeeded and CSIMigrationNeeded annotations are set and the cloud
-	// provider supports external CCM
+	// MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled
 	MigrationNeeded *bool `json:"migrationNeeded,omitempty"`
 	// MigrationCompleted reflects the CSIKubeletMigrationCompleted condition of the cluster
 	MigrationCompleted *bool `json:"migrationCompleted,omitempty"`

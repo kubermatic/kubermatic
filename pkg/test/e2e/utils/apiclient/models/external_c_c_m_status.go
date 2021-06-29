@@ -10,18 +10,18 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// ExternalCCMStatus ExternalCCMStatus represents the external CCM migration status
+// ExternalCCMStatus ExternalCCMStatus represents the external CCM status
 //
 // swagger:model ExternalCCMStatus
 type ExternalCCMStatus struct {
 
-	// the ClusterFeatureExternalCloudProvider in the cluster .spec.features
+	// ExternalCCM reflects the ClusterFeatureExternalCloudProvider in the cluster .spec.features
 	ExternalCCM bool `json:"externalCCM,omitempty"`
 
-	// reflect the ClusterConditionCSIKubeletMigrationCompleted condition of the cluster
+	// MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled
 	MigrationCompleted bool `json:"migrationCompleted,omitempty"`
 
-	// the logic AND of the CCMMigrationNeededAnnotation and CSIMigrationNeededAnnotation annotations
+	// MigrationCompleted reflects the CSIKubeletMigrationCompleted condition of the cluster
 	MigrationNeeded bool `json:"migrationNeeded,omitempty"`
 }
 
