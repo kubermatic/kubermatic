@@ -52,11 +52,11 @@ const (
 func getSecurityGroups(netClient *gophercloud.ServiceClient, opts ossecuritygroups.ListOpts) ([]ossecuritygroups.SecGroup, error) {
 	page, err := ossecuritygroups.List(netClient, opts).AllPages()
 	if err != nil {
-		return nil, fmt.Errorf("failed to list security groups: %v", err)
+		return nil, fmt.Errorf("failed to list security groups: %w", err)
 	}
 	secGroups, err := ossecuritygroups.ExtractGroups(page)
 	if err != nil {
-		return nil, fmt.Errorf("failed to extract security groups: %v", err)
+		return nil, fmt.Errorf("failed to extract security groups: %w", err)
 	}
 	return secGroups, nil
 }
