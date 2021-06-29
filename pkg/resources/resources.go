@@ -30,8 +30,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/minio/minio-go"
-
+	minio "github.com/minio/minio-go"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -510,11 +509,14 @@ const (
 
 	HetznerToken = "token"
 
-	OpenstackUsername = "username"
-	OpenstackPassword = "password"
-	OpenstackTenant   = "tenant"
-	OpenstackTenantID = "tenantID"
-	OpenstackDomain   = "domain"
+	OpenstackUsername                    = "username"
+	OpenstackPassword                    = "password"
+	OpenstackTenant                      = "tenant"
+	OpenstackTenantID                    = "tenantID"
+	OpenstackDomain                      = "domain"
+	OpenstackApplicationCredentialID     = "applicationCredentialID"
+	OpenstackApplicationCredentialSecret = "applicationCredentialSecret"
+	OpenstackToken                       = "token"
 
 	PacketAPIKey    = "apiKey"
 	PacketProjectID = "projectID"

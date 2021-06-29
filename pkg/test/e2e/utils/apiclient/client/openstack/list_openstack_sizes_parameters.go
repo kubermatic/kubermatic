@@ -14,6 +14,7 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag"
 )
 
 // NewListOpenstackSizesParams creates a new ListOpenstackSizesParams object
@@ -60,12 +61,18 @@ for the list openstack sizes operation typically these are written to a http.Req
 */
 type ListOpenstackSizesParams struct {
 
+	/*ApplicationCredentialID*/
+	ApplicationCredentialID *string
+	/*ApplicationCredentialSecret*/
+	ApplicationCredentialSecret *string
 	/*Credential*/
 	Credential *string
 	/*DatacenterName*/
 	DatacenterName *string
 	/*Domain*/
 	Domain *string
+	/*OIDCAuthentication*/
+	OIDCAuthentication *bool
 	/*Password*/
 	Password *string
 	/*Tenant*/
@@ -113,6 +120,28 @@ func (o *ListOpenstackSizesParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithApplicationCredentialID adds the applicationCredentialID to the list openstack sizes params
+func (o *ListOpenstackSizesParams) WithApplicationCredentialID(applicationCredentialID *string) *ListOpenstackSizesParams {
+	o.SetApplicationCredentialID(applicationCredentialID)
+	return o
+}
+
+// SetApplicationCredentialID adds the applicationCredentialId to the list openstack sizes params
+func (o *ListOpenstackSizesParams) SetApplicationCredentialID(applicationCredentialID *string) {
+	o.ApplicationCredentialID = applicationCredentialID
+}
+
+// WithApplicationCredentialSecret adds the applicationCredentialSecret to the list openstack sizes params
+func (o *ListOpenstackSizesParams) WithApplicationCredentialSecret(applicationCredentialSecret *string) *ListOpenstackSizesParams {
+	o.SetApplicationCredentialSecret(applicationCredentialSecret)
+	return o
+}
+
+// SetApplicationCredentialSecret adds the applicationCredentialSecret to the list openstack sizes params
+func (o *ListOpenstackSizesParams) SetApplicationCredentialSecret(applicationCredentialSecret *string) {
+	o.ApplicationCredentialSecret = applicationCredentialSecret
+}
+
 // WithCredential adds the credential to the list openstack sizes params
 func (o *ListOpenstackSizesParams) WithCredential(credential *string) *ListOpenstackSizesParams {
 	o.SetCredential(credential)
@@ -144,6 +173,17 @@ func (o *ListOpenstackSizesParams) WithDomain(domain *string) *ListOpenstackSize
 // SetDomain adds the domain to the list openstack sizes params
 func (o *ListOpenstackSizesParams) SetDomain(domain *string) {
 	o.Domain = domain
+}
+
+// WithOIDCAuthentication adds the oIDCAuthentication to the list openstack sizes params
+func (o *ListOpenstackSizesParams) WithOIDCAuthentication(oIDCAuthentication *bool) *ListOpenstackSizesParams {
+	o.SetOIDCAuthentication(oIDCAuthentication)
+	return o
+}
+
+// SetOIDCAuthentication adds the oIdCAuthentication to the list openstack sizes params
+func (o *ListOpenstackSizesParams) SetOIDCAuthentication(oIDCAuthentication *bool) {
+	o.OIDCAuthentication = oIDCAuthentication
 }
 
 // WithPassword adds the password to the list openstack sizes params
@@ -198,6 +238,24 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 	}
 	var res []error
 
+	if o.ApplicationCredentialID != nil {
+
+		// header param ApplicationCredentialID
+		if err := r.SetHeaderParam("ApplicationCredentialID", *o.ApplicationCredentialID); err != nil {
+			return err
+		}
+
+	}
+
+	if o.ApplicationCredentialSecret != nil {
+
+		// header param ApplicationCredentialSecret
+		if err := r.SetHeaderParam("ApplicationCredentialSecret", *o.ApplicationCredentialSecret); err != nil {
+			return err
+		}
+
+	}
+
 	if o.Credential != nil {
 
 		// header param Credential
@@ -220,6 +278,15 @@ func (o *ListOpenstackSizesParams) WriteToRequest(r runtime.ClientRequest, reg s
 
 		// header param Domain
 		if err := r.SetHeaderParam("Domain", *o.Domain); err != nil {
+			return err
+		}
+
+	}
+
+	if o.OIDCAuthentication != nil {
+
+		// header param OIDCAuthentication
+		if err := r.SetHeaderParam("OIDCAuthentication", swag.FormatBool(*o.OIDCAuthentication)); err != nil {
 			return err
 		}
 

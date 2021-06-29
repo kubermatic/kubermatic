@@ -309,6 +309,13 @@ func ValidateCloudSpec(spec kubermaticv1.CloudSpec, dc *kubermaticv1.Datacenter)
 }
 
 func validateOpenStackCloudSpec(spec *kubermaticv1.OpenstackCloudSpec, dc *kubermaticv1.Datacenter) error {
+	// validate applicationCredentials
+	if spec.ApplicationCredentialID != "" && spec.ApplicationCredentialSecret == "" {
+		return errors.New("no applicationCredentialSecret specified")
+	} else if spec.ApplicationCredentialID != "" && spec.ApplicationCredentialSecret != "" {
+		return nil
+	}
+
 	if spec.Domain == "" {
 		if err := kuberneteshelper.ValidateSecretKeySelector(spec.CredentialsReference, resources.OpenstackDomain); err != nil {
 			return err
