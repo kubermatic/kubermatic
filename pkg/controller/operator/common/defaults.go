@@ -578,15 +578,17 @@ func defaultResources(settings *corev1.ResourceRequirements, defaults corev1.Res
 }
 
 func defaultResourceList(list *corev1.ResourceList, defaults corev1.ResourceList, key string, logger *zap.SugaredLogger) error {
-	if list == nil || *list == nil {
+	if *list == nil {
 		*list = defaults
 		logger.Debugw("Defaulting resource constraints", "field", key, "memory", defaults.Memory(), "cpu", defaults.Cpu())
 		return nil
 	}
 
 	for _, name := range []corev1.ResourceName{corev1.ResourceMemory, corev1.ResourceCPU} {
-		(*list)[name] = defaults[name]
-		logger.Debugw("Defaulting resource constraint", "field", key+"."+name.String(), "value", (*list)[name])
+		if _, ok := (*list)[name]; !ok {
+			(*list)[name] = defaults[name]
+			logger.Debugw("Defaulting resource constraint", "field", key+"."+name.String(), "value", (*list)[name])
+		}
 	}
 
 	return nil
