@@ -124,19 +124,7 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 			return nil, fmt.Errorf("failed to parse aws config: %v", err)
 		}
 
-		var (
-			spotInstanceMaxPrice             *string
-			spotInstancePersistentRequest    *bool
-			spotInstanceInterruptionBehavior *string
-		)
-
-		if config.IsSpotInstance != nil && *config.IsSpotInstance {
-			if config.SpotInstanceConfig != nil {
-				spotInstanceMaxPrice = &config.SpotInstanceConfig.MaxPrice.Value
-				spotInstancePersistentRequest = &config.SpotInstanceConfig.PersistentRequest.Value
-				spotInstanceInterruptionBehavior = &config.SpotInstanceConfig.InterruptionBehavior.Value
-			}
-		}
+		spotInstanceMaxPrice, spotInstanceInterruptionBehavior, spotInstancePersistentRequest := extractSpotInstanceConfigs(config)
 
 		cloudSpec.AWS = &apiv1.AWSNodeSpec{
 			Tags:                             config.Tags,
@@ -295,4 +283,18 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 	}
 
 	return cloudSpec, nil
+}
+
+func extractSpotInstanceConfigs(config *aws.RawConfig) (*string, *string, *bool) {
+	if config.IsSpotInstance != nil && *config.IsSpotInstance {
+		if config.SpotInstanceConfig != nil {
+			return &config.SpotInstanceConfig.MaxPrice.Value,
+				&config.SpotInstanceConfig.InterruptionBehavior.Value,
+				&config.SpotInstanceConfig.PersistentRequest.Value
+		}
+
+		return nil, nil, nil
+	}
+
+	return nil, nil, nil
 }

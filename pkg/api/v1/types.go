@@ -1533,8 +1533,8 @@ func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {
 		Tags                             map[string]string `json:"tags"`
 		AvailabilityZone                 string            `json:"availabilityZone"`
 		SubnetID                         string            `json:"subnetID"`
-		AssignPublicIP                   *bool             `json:"assignPublicIP,omitempty"`
-		IsSpotInstance                   *bool             `json:"isSpotInstance,omitempty"`
+		AssignPublicIP                   *bool             `json:"assignPublicIP"`
+		IsSpotInstance                   *bool             `json:"isSpotInstance"`
 		SpotInstanceMaxPrice             *string           `json:"spotInstanceMaxPrice,omitempty"`
 		SpotInstancePersistentRequest    *bool             `json:"spotInstancePersistentRequest,omitempty"`
 		SpotInstanceInterruptionBehavior *string           `json:"spotInstanceInterruptionBehavior,omitempty"`
