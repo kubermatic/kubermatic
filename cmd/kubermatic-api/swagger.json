@@ -20257,6 +20257,11 @@
           "type": "string",
           "x-go-name": "Password"
         },
+        "resourcePool": {
+          "description": "ResourcePool is used to manage resources such as cpu and memory for vSphere virtual machines. The resource pool\nshould be defined on vSphere cluster level.\n+optional",
+          "type": "string",
+          "x-go-name": "ResourcePool"
+        },
         "username": {
           "description": "Username is the vSphere user name.\n+optional",
           "type": "string",

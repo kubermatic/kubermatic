@@ -254,6 +254,12 @@ func (v *Provider) ValidateCloudSpec(spec kubermaticv1.CloudSpec) error {
 		}
 	}
 
+	if rp := spec.VSphere.ResourcePool; rp != "" {
+		if _, err := session.Finder.ResourcePool(ctx, rp); err != nil {
+			return fmt.Errorf("failed to get resource pool %s: %v", rp, err)
+		}
+	}
+
 	if dc := spec.VSphere.DatastoreCluster; dc != "" {
 		if _, err := session.Finder.DatastoreCluster(ctx, spec.VSphere.DatastoreCluster); err != nil {
 			return fmt.Errorf("failed to get datastore cluster provided by cluste spec %q: %v", dc, err)
