@@ -223,6 +223,8 @@ type ClientService interface {
 
 	PatchClusterRole(params *PatchClusterRoleParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterRoleOK, error)
 
+	PatchClusterTemplateInstance(params *PatchClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterTemplateInstanceOK, error)
+
 	PatchClusterV2(params *PatchClusterV2Params, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterV2OK, error)
 
 	PatchConstraint(params *PatchConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*PatchConstraintOK, error)
@@ -3641,6 +3643,40 @@ func (a *Client) PatchClusterRole(params *PatchClusterRoleParams, authInfo runti
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*PatchClusterRoleDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchClusterTemplateInstance patches cluster template instances
+*/
+func (a *Client) PatchClusterTemplateInstance(params *PatchClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter) (*PatchClusterTemplateInstanceOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchClusterTemplateInstanceParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchClusterTemplateInstance",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchClusterTemplateInstanceReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchClusterTemplateInstanceOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchClusterTemplateInstanceDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

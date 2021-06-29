@@ -925,7 +925,7 @@ type ClusterTemplateInstanceProvider interface {
 	Create(userInfo *UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
 	Get(userInfo *UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error)
 	List(userInfo *UserInfo, options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
-	Update(userInfo *UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
+	Patch(userInfo *UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
 }
 
 // PrivilegedClusterTemplateInstanceProvider declares the set of methods for interacting with the cluster template instances
@@ -948,6 +948,12 @@ type PrivilegedClusterTemplateInstanceProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
 	ListUnsecured(options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
+
+	// PatchUnsecured patches cluster template instances
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	PatchUnsecured(instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
 }
 
 // ClusterTemplateInstanceListOptions allows to set filters that will be applied to filter the result.
