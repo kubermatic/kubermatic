@@ -209,13 +209,18 @@ func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList
 		if len(requiredEmails) != 0 {
 			userDomain := strings.Split(userInfo.Email, "@")
 			for _, emailItem := range requiredEmails {
-				domain := strings.Split(emailItem, "@")
+				// Special case:
+				//   userDomain = foo@bar@acme.com
+				//     user: foo@bar
+				//     domain: acme.com
+				//   --> take last element: userDomain[len(userDomain)-1]
+				reqEmail := strings.Split(emailItem, "@")
 
 				// if it's a domain, we compare it against the userDomain,
 				// otherwise, it has to match the whole email
-				if len(domain) == 1 {
+				if len(reqEmail) == 1 {
 					// domain provided
-					if len(userDomain) == 2 && strings.EqualFold(userDomain[1], domain[0]) {
+					if len(userDomain) >= 2 && strings.EqualFold(userDomain[len(userDomain)-1], reqEmail[0]) {
 						presetList = append(presetList, preset)
 						break
 					}
