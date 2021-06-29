@@ -36,6 +36,11 @@ type VSphereCloudSpec struct {
 	// +optional
 	Password string `json:"password,omitempty"`
 
+	// ResourcePool is used to manage resources such as cpu and memory for vSphere virtual machines. The resource pool
+	// should be defined on vSphere cluster level.
+	// +optional
+	ResourcePool string `json:"resourcePool,omitempty"`
+
 	// Username is the vSphere user name.
 	// +optional
 	Username string `json:"username,omitempty"`

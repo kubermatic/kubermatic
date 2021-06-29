@@ -167,6 +167,7 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 	if c.Spec.Cloud.VSphere.DatastoreCluster == "" {
 		datastore = defaultIfEmpty(c.Spec.Cloud.VSphere.Datastore, dc.Spec.VSphere.DefaultDatastore)
 	}
+
 	config := vsphere.RawConfig{
 		TemplateVMName:   providerconfig.ConfigVarString{Value: nodeSpec.Cloud.VSphere.Template},
 		VMNetName:        providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.VMNetName},
@@ -179,6 +180,7 @@ func getVSphereProviderSpec(c *kubermaticv1.Cluster, nodeSpec apiv1.NodeSpec, dc
 		Cluster:          providerconfig.ConfigVarString{Value: dc.Spec.VSphere.Cluster},
 		Folder:           providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.Folder},
 		AllowInsecure:    providerconfig.ConfigVarBool{Value: dc.Spec.VSphere.AllowInsecure},
+		ResourcePool:     providerconfig.ConfigVarString{Value: c.Spec.Cloud.VSphere.ResourcePool},
 	}
 
 	ext := &runtime.RawExtension{}
