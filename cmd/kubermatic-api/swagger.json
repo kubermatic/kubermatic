@@ -14859,6 +14859,21 @@
           "type": "boolean",
           "x-go-name": "IsSpotInstance"
         },
+        "spotInstanceInterruptionBehavior": {
+          "description": "SpotInstanceInterruptionBehavior Sets the interruption behavior for the spot instance when capacity is no longer\navailable at the price you specified, if there is no capacity, or if a constraint cannot be met. Charges for EBS\nvolume storage apply when an instance is stopped.",
+          "type": "string",
+          "x-go-name": "SpotInstanceInterruptionBehavior"
+        },
+        "spotInstanceMaxPrice": {
+          "description": "SpotInstanceMaxPrice The maximum price you are willing to pay per instance hour. Your instance runs when\nyour maximum price is greater than the Spot Price.",
+          "type": "string",
+          "x-go-name": "SpotInstanceMaxPrice"
+        },
+        "spotInstancePersistentRequest": {
+          "description": "SpotInstancePersistentRequest Ensures that your request will be submitted every time your Spot Instance is terminated.\nFor information about Persistent requests and other customization options",
+          "type": "boolean",
+          "x-go-name": "SpotInstancePersistentRequest"
+        },
         "subnetID": {
           "description": "The VPC subnet to which the node shall be connected.",
           "type": "string",
