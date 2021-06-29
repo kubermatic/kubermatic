@@ -267,6 +267,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/constraints").
 		Handler(r.createDefaultConstraint())
 
+	mux.Methods(http.MethodGet).
+		Path("/constraints").
+		Handler(r.listDefaultConstraint())
+
+	mux.Methods(http.MethodGet).
+		Path("/constraints/{constraint_name}").
+		Handler(r.getDefaultConstraint())
+
 	// Define a set of endpoints for gatekeeper constraints
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/constraints").
@@ -1485,7 +1493,57 @@ func (r Routing) createDefaultConstraint() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(constraint.CreateDefaultEndpoint(r.userInfoGetter, r.defaultConstraintProvider, r.constraintTemplateProvider)),
-		constraint.DecodeDefaultCreateConstraintReq,
+		constraint.DecodeCreateDefaultConstraintReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/constraints constraint listDefaultConstraint
+//
+//     List default constraint.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Constraint
+//       401: empty
+//       403: empty
+func (r Routing) listDefaultConstraint() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constraint.ListDefaultEndpoint(r.defaultConstraintProvider)),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/constraints/{constraint_name} constraint getDefaultConstraint
+//
+//     Gets an specified default constraint
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Constraint
+//       401: empty
+//       403: empty
+func (r Routing) getDefaultConstraint() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constraint.GetDefaultEndpoint(r.defaultConstraintProvider)),
+		constraint.DecodeDefaultConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
