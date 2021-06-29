@@ -181,11 +181,19 @@ func validateUpdateImmutability(c, oldC *kubermaticv1.Cluster) field.ErrorList {
 		oldC.Spec.ExposeStrategy,
 		specFldPath.Child("exposeStrategy"),
 	)...)
-	allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
-		c.Spec.EnableUserSSHKeyAgent,
-		oldC.Spec.EnableUserSSHKeyAgent,
-		specFldPath.Child("enableUserSSHKeyAgent"),
-	)...)
+
+	if oldC.Spec.EnableUserSSHKeyAgent != nil {
+		allErrs = append(allErrs, apimachineryvalidation.ValidateImmutableField(
+			c.Spec.EnableUserSSHKeyAgent,
+			oldC.Spec.EnableUserSSHKeyAgent,
+			specFldPath.Child("enableUserSSHKeyAgent"),
+		)...)
+	} else if c.Spec.EnableUserSSHKeyAgent != nil && !*c.Spec.EnableUserSSHKeyAgent {
+		path := field.NewPath("cluster", "spec", "enableUserSSHKeyAgent")
+		allErrs = append(allErrs, field.Invalid(path, *c.Spec.EnableUserSSHKeyAgent, "UserSSHKey agent is enabled by default "+
+			"for user clusters created prior KKP 2.16 version"))
+
+	}
 
 	allErrs = append(allErrs, validateClusterNetworkingConfigUpdateImmutability(&c.Spec.ClusterNetwork, &oldC.Spec.ClusterNetwork, specFldPath.Child("clusterNetwork"))...)
 	allErrs = append(allErrs, validateComponentSettingsImmutability(&c.Spec.ComponentsOverride, &oldC.Spec.ComponentsOverride, specFldPath.Child("componentsOverride"))...)
