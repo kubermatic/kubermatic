@@ -35,3 +35,5 @@ type UserExpansion interface{}
 type UserProjectBindingExpansion interface{}
 
 type UserSSHKeyExpansion interface{}
+
+type WhitelistedRegistryExpansion interface{}
