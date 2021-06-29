@@ -93,3 +93,7 @@ type UserProjectBindingListerExpansion interface{}
 // UserSSHKeyListerExpansion allows custom methods to be added to
 // UserSSHKeyLister.
 type UserSSHKeyListerExpansion interface{}
+
+// WhitelistedRegistryListerExpansion allows custom methods to be added to
+// WhitelistedRegistryLister.
+type WhitelistedRegistryListerExpansion interface{}
