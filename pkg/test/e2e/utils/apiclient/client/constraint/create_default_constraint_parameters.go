@@ -14,12 +14,14 @@ import (
 	"github.com/go-openapi/runtime"
 	cr "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
+
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/models"
 )
 
 // NewCreateDefaultConstraintParams creates a new CreateDefaultConstraintParams object
 // with the default values initialized.
 func NewCreateDefaultConstraintParams() *CreateDefaultConstraintParams {
-
+	var ()
 	return &CreateDefaultConstraintParams{
 
 		timeout: cr.DefaultTimeout,
@@ -29,7 +31,7 @@ func NewCreateDefaultConstraintParams() *CreateDefaultConstraintParams {
 // NewCreateDefaultConstraintParamsWithTimeout creates a new CreateDefaultConstraintParams object
 // with the default values initialized, and the ability to set a timeout on a request
 func NewCreateDefaultConstraintParamsWithTimeout(timeout time.Duration) *CreateDefaultConstraintParams {
-
+	var ()
 	return &CreateDefaultConstraintParams{
 
 		timeout: timeout,
@@ -39,7 +41,7 @@ func NewCreateDefaultConstraintParamsWithTimeout(timeout time.Duration) *CreateD
 // NewCreateDefaultConstraintParamsWithContext creates a new CreateDefaultConstraintParams object
 // with the default values initialized, and the ability to set a context for a request
 func NewCreateDefaultConstraintParamsWithContext(ctx context.Context) *CreateDefaultConstraintParams {
-
+	var ()
 	return &CreateDefaultConstraintParams{
 
 		Context: ctx,
@@ -49,7 +51,7 @@ func NewCreateDefaultConstraintParamsWithContext(ctx context.Context) *CreateDef
 // NewCreateDefaultConstraintParamsWithHTTPClient creates a new CreateDefaultConstraintParams object
 // with the default values initialized, and the ability to set a custom HTTPClient for a request
 func NewCreateDefaultConstraintParamsWithHTTPClient(client *http.Client) *CreateDefaultConstraintParams {
-
+	var ()
 	return &CreateDefaultConstraintParams{
 		HTTPClient: client,
 	}
@@ -59,6 +61,10 @@ func NewCreateDefaultConstraintParamsWithHTTPClient(client *http.Client) *Create
 for the create default constraint operation typically these are written to a http.Request
 */
 type CreateDefaultConstraintParams struct {
+
+	/*Body*/
+	Body *models.ConstraintBody
+
 	timeout    time.Duration
 	Context    context.Context
 	HTTPClient *http.Client
@@ -97,6 +103,17 @@ func (o *CreateDefaultConstraintParams) SetHTTPClient(client *http.Client) {
 	o.HTTPClient = client
 }
 
+// WithBody adds the body to the create default constraint params
+func (o *CreateDefaultConstraintParams) WithBody(body *models.ConstraintBody) *CreateDefaultConstraintParams {
+	o.SetBody(body)
+	return o
+}
+
+// SetBody adds the body to the create default constraint params
+func (o *CreateDefaultConstraintParams) SetBody(body *models.ConstraintBody) {
+	o.Body = body
+}
+
 // WriteToRequest writes these params to a swagger request
 func (o *CreateDefaultConstraintParams) WriteToRequest(r runtime.ClientRequest, reg strfmt.Registry) error {
 
@@ -104,6 +121,12 @@ func (o *CreateDefaultConstraintParams) WriteToRequest(r runtime.ClientRequest, 
 		return err
 	}
 	var res []error
+
+	if o.Body != nil {
+		if err := r.SetBodyParam(o.Body); err != nil {
+			return err
+		}
+	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)

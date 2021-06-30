@@ -8316,6 +8316,39 @@
       }
     },
     "/api/v2/constraints": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "constraint"
+        ],
+        "summary": "List default constraint.",
+        "operationId": "listDefaultConstraint",
+        "responses": {
+          "200": {
+            "description": "Constraint",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Constraint"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
       "post": {
         "description": "Creates default constraint",
         "produces": [
@@ -8325,6 +8358,57 @@
           "constraint"
         ],
         "operationId": "createDefaultConstraint",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/constraintBody"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Constraint",
+            "schema": {
+              "$ref": "#/definitions/Constraint"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/constraints/{constraint_name}": {
+      "get": {
+        "description": "Gets an specified default constraint",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "constraint"
+        ],
+        "operationId": "getDefaultConstraint",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "constraint_name",
+            "in": "path",
+            "required": true
+          }
+        ],
         "responses": {
           "200": {
             "description": "Constraint",

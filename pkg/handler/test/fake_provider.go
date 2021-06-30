@@ -247,3 +247,11 @@ type FakeDefaultConstraintProvider struct {
 func (p *FakeDefaultConstraintProvider) Create(ct *kubermaticapiv1.Constraint) (*kubermaticapiv1.Constraint, error) {
 	return p.Provider.Create(ct)
 }
+
+func (p *FakeDefaultConstraintProvider) List() (*kubermaticapiv1.ConstraintList, error) {
+	return p.Provider.List()
+}
+
+func (p *FakeDefaultConstraintProvider) Get(name string) (*kubermaticapiv1.Constraint, error) {
+	return p.Provider.Get(name)
+}
