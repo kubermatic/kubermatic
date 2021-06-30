@@ -107,7 +107,7 @@ func TestGetConstraintTemplates(t *testing.T) {
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
 		{
-			Name:             "scenario 1: get non-existing constraint template",
+			Name:             "scenario 2: get non-existing constraint template",
 			CTName:           "missing",
 			ExpectedResponse: `{"error":{"code":404,"message":"constrainttemplates.kubermatic.k8s.io \"missing\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,

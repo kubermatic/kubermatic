@@ -875,6 +875,14 @@ type PrivilegedConstraintProvider interface {
 
 // DefaultConstraintProvider declares the set of method for interacting with default constraints
 type DefaultConstraintProvider interface {
+	// List gets a list of default constraints
+	//
+	// Note that the list is taken from the cache
+	List() (*kubermaticv1.ConstraintList, error)
+
+	// Get gets the given default constraints
+	Get(name string) (*kubermaticv1.Constraint, error)
+
 	// Create creates the given default constraint
 	Create(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
