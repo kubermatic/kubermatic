@@ -3104,6 +3104,11 @@ func (in *PresetSpec) DeepCopyInto(out *PresetSpec) {
 		*out = new(Fake)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.RequiredEmails != nil {
+		in, out := &in.RequiredEmails, &out.RequiredEmails
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
 	if in.Enabled != nil {
 		in, out := &in.Enabled, &out.Enabled
 		*out = new(bool)
