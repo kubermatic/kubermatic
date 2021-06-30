@@ -455,7 +455,7 @@ func convertInternalToExternalInstances(instances *kubermaticv1.ClusterTemplateI
 	if instances == nil {
 		return []apiv2.ClusterTemplateInstance{}
 	}
-	externalInstances := make([]apiv2.ClusterTemplateInstance, len(instances.Items))
+	externalInstances := make([]apiv2.ClusterTemplateInstance, 0)
 	for _, item := range instances.Items {
 		externalInstances = append(externalInstances, apiv2.ClusterTemplateInstance{
 			Name: item.Name,

@@ -592,7 +592,7 @@ func TestListClusterTemplateInstances(t *testing.T) {
 		{
 			Name:             "scenario 1: get template instance for global template",
 			TemplateID:       "ctID2",
-			ExpectedResponse: `[{"name":"","spec":{"projectID":"","clusterTemplateID":"","clusterTemplateName":"","replicas":0}},{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"","replicas":10}}]`,
+			ExpectedResponse: `[{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"","replicas":10}}]`,
 			HTTPStatus:       http.StatusOK,
 			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
