@@ -177,4 +177,5 @@ type providers struct {
 	clusterTemplateProvider               provider.ClusterTemplateProvider
 	clusterTemplateInstanceProviderGetter provider.ClusterTemplateInstanceProviderGetter
 	ruleGroupProviderGetter               provider.RuleGroupProviderGetter
+	privilegedWhitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider
 }
