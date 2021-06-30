@@ -195,12 +195,42 @@ func filterOutPresets(userInfo *provider.UserInfo, list *kubermaticv1.PresetList
 	var presetList []kubermaticv1.Preset
 
 	for _, preset := range list.Items {
+		// find preset based on domains and emails
+		// Example: [ "example.com", "foobar@example.com", "foo.bar@test.com"]
+		// --> all "example.com" emails and "foo.bar@test.com" will get the preset
+		requiredEmails := preset.Spec.RequiredEmails
+
+		// assure backwards compatibility
 		requiredEmailDomain := preset.Spec.RequiredEmailDomain
-		// find preset for specific email domain
 		if requiredEmailDomain != "" {
+			requiredEmails = append(requiredEmails, requiredEmailDomain)
+		}
+
+		if len(requiredEmails) != 0 {
 			userDomain := strings.Split(userInfo.Email, "@")
-			if len(userDomain) == 2 && strings.EqualFold(userDomain[1], requiredEmailDomain) {
-				presetList = append(presetList, preset)
+			for _, emailItem := range requiredEmails {
+				// Special case:
+				//   userDomain = foo@bar@acme.com
+				//     user: foo@bar
+				//     domain: acme.com
+				//   --> take last element: userDomain[len(userDomain)-1]
+				reqEmail := strings.Split(emailItem, "@")
+
+				// if it's a domain, we compare it against the userDomain,
+				// otherwise, it has to match the whole email
+				if len(reqEmail) == 1 {
+					// domain provided
+					if len(userDomain) >= 2 && strings.EqualFold(userDomain[len(userDomain)-1], reqEmail[0]) {
+						presetList = append(presetList, preset)
+						break
+					}
+				} else {
+					// email provided
+					if strings.EqualFold(userInfo.Email, emailItem) {
+						presetList = append(presetList, preset)
+						break
+					}
+				}
 			}
 		} else {
 			// find preset for "all" without RequiredEmailDomain field

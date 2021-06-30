@@ -280,7 +280,7 @@ func TestGetPresets(t *testing.T) {
 			},
 		},
 		{
-			name:     "test 1: get Presets for the all users, not for the specific email group",
+			name:     "test 2: get Presets for the all users, not for the specific email group",
 			userInfo: provider.UserInfo{Email: "test@example.com"},
 			presets: []ctrlruntimeclient.Object{
 				&kubermaticv1.Preset{
@@ -333,6 +333,246 @@ func TestGetPresets(t *testing.T) {
 					Spec: kubermaticv1.PresetSpec{
 						Fake: &kubermaticv1.Fake{
 							Token: "bbbbb",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:     "test 3: get Presets for a specific user",
+			userInfo: provider.UserInfo{Email: "test@example.com"},
+			presets: []ctrlruntimeclient.Object{
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-1",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"test@example.com", "pleaseno.org"},
+						Fake: &kubermaticv1.Fake{
+							Token: "aaaaa",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-2",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"foo@bar.com", "pleaseno.org"},
+						Fake: &kubermaticv1.Fake{
+							Token: "bbbbb",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-3",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"foobar@example.com"},
+						Fake: &kubermaticv1.Fake{
+							Token: "abc",
+						},
+					},
+				},
+			},
+			expected: []kubermaticv1.Preset{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-1",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"test@example.com", "pleaseno.org"},
+						Fake: &kubermaticv1.Fake{
+							Token: "aaaaa",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:     "test 4: get Presets for a specific user including group mail preset",
+			userInfo: provider.UserInfo{Email: "test@example.com"},
+			presets: []ctrlruntimeclient.Object{
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-1",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"test@example.com", "pleaseno.org"},
+						Fake: &kubermaticv1.Fake{
+							Token: "aaaaa",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-2",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"foo@bar.com"},
+						Fake: &kubermaticv1.Fake{
+							Token: "bbbbb",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-3",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"example.com", "foobar.com"},
+						Fake: &kubermaticv1.Fake{
+							Token: "abc",
+						},
+					},
+				},
+			},
+			expected: []kubermaticv1.Preset{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-1",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"test@example.com", "pleaseno.org"},
+						Fake: &kubermaticv1.Fake{
+							Token: "aaaaa",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-3",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"example.com", "foobar.com"},
+						Fake: &kubermaticv1.Fake{
+							Token: "abc",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:     "test 5: get Presets for a specific user including generic preset",
+			userInfo: provider.UserInfo{Email: "test@example.com"},
+			presets: []ctrlruntimeclient.Object{
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-1",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"test@example.com"},
+						Fake: &kubermaticv1.Fake{
+							Token: "aaaaa",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-2",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"foo@bar.com"},
+						Fake: &kubermaticv1.Fake{
+							Token: "bbbbb",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-3",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						Fake: &kubermaticv1.Fake{
+							Token: "abc",
+						},
+					},
+				},
+			},
+			expected: []kubermaticv1.Preset{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-1",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"test@example.com"},
+						Fake: &kubermaticv1.Fake{
+							Token: "aaaaa",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-3",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						Fake: &kubermaticv1.Fake{
+							Token: "abc",
+						},
+					},
+				},
+			},
+		},
+		{
+			name:     "test 6: get Presets for a specific user - RequiredEmailDomain and RequiredEmails defined",
+			userInfo: provider.UserInfo{Email: "test@foobar.com"},
+			presets: []ctrlruntimeclient.Object{
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-1",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						// RequiredEmailDomain has precedence, such that this will be filtered.
+						RequiredEmailDomain: "foobar.com",
+						RequiredEmails:      []string{"test@example.com"},
+						Fake: &kubermaticv1.Fake{
+							Token: "aaaaa",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-2",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmails: []string{"foo@bar.com"},
+						Fake: &kubermaticv1.Fake{
+							Token: "bbbbb",
+						},
+					},
+				},
+				&kubermaticv1.Preset{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-3",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						Fake: &kubermaticv1.Fake{
+							Token: "abc",
+						},
+					},
+				},
+			},
+			expected: []kubermaticv1.Preset{
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-1",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						RequiredEmailDomain: "foobar.com",
+						RequiredEmails:      []string{"test@example.com"},
+						Fake: &kubermaticv1.Fake{
+							Token: "aaaaa",
+						},
+					},
+				},
+				{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "test-3",
+					},
+					Spec: kubermaticv1.PresetSpec{
+						Fake: &kubermaticv1.Fake{
+							Token: "abc",
 						},
 					},
 				},
