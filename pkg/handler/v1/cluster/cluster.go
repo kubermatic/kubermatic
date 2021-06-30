@@ -58,10 +58,10 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	}
 }
 
-func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(common.GetClusterReq)
-		return handlercommon.GetEndpoint(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		return handlercommon.GetEndpoint(ctx, projectProvider, privilegedProjectProvider, seedsGetter, userInfoGetter, req.ProjectID, req.ClusterID)
 	}
 }
 
@@ -75,11 +75,11 @@ func PatchEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPr
 }
 
 // ListEndpoint list clusters within the given datacenter
-func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListReq)
 		clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
-		apiClusters, err := handlercommon.GetExternalClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, req.ProjectID)
+		apiClusters, err := handlercommon.GetExternalClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -105,7 +105,7 @@ func ListAllEndpoint(projectProvider provider.ProjectProvider, privilegedProject
 				klog.Errorf("failed to create cluster provider for seed %s: %v", seed.Name, err)
 				continue
 			}
-			apiClusters, err := handlercommon.GetExternalClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, req.ProjectID)
+			apiClusters, err := handlercommon.GetExternalClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}

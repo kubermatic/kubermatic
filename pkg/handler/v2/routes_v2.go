@@ -74,6 +74,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/health").
 		Handler(r.getClusterHealth())
 
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/externalccmmigration").
+		Handler(r.migrateClusterToExternalCCM())
+
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/kubeconfig").
 		Handler(r.getClusterKubeconfig())
@@ -619,7 +623,7 @@ func (r Routing) getCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		)(cluster.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		cluster.DecodeGetClusterReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -3738,6 +3742,32 @@ func (r Routing) deleteRuleGroup() http.Handler {
 			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
 		)(rulegroup.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		rulegroup.DecodeDeleteReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration migrateClusterToExternalCCM
+//
+//    Enable the migration to the external CCM for the given cluster
+//
+//	   Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) migrateClusterToExternalCCM() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.MigrateEndpointToExternalCCM(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		cluster.DecodeGetClusterReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
