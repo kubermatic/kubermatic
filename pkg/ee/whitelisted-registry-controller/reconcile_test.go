@@ -22,7 +22,7 @@
    END OF TERMS AND CONDITIONS
 */
 
-package whitelistedregistrycontroller
+package whitelistedregistrycontroller_test
 
 import (
 	"context"
@@ -34,6 +34,7 @@ import (
 
 	v1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	whitelistedregistrycontroller "k8c.io/kubermatic/v2/pkg/ee/whitelisted-registry-controller"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
 	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
@@ -89,12 +90,12 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			r := reconciler{
-				log:          kubermaticlog.Logger,
-				recorder:     &record.FakeRecorder{},
-				masterClient: tc.masterClient,
-				namespace:    testNamespace,
-			}
+			r := whitelistedregistrycontroller.NewReconciler(
+				kubermaticlog.Logger,
+				&record.FakeRecorder{},
+				tc.masterClient,
+				testNamespace,
+			)
 
 			request := reconcile.Request{NamespacedName: types.NamespacedName{Name: tc.whitelistedRegistry.Name}}
 			if _, err := r.Reconcile(ctx, request); err != nil {
@@ -141,17 +142,18 @@ func TestReconcile(t *testing.T) {
 func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 	ct := &kubermaticv1.ConstraintTemplate{}
 
-	ct.Name = WhitelistedRegistryCTName
+	ct.Name = whitelistedregistrycontroller.WhitelistedRegistryCTName
 	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
 		CRD: constrainttemplatev1beta1.CRD{
 			Spec: constrainttemplatev1beta1.CRDSpec{
 				Names: constrainttemplatev1beta1.Names{
-					Kind: WhitelistedRegistryCTName,
+					Kind: whitelistedregistrycontroller.WhitelistedRegistryCTName,
 				},
 				Validation: &constrainttemplatev1beta1.Validation{
 					OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
 						Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
-							WhitelistedRegistryField: {
+							whitelistedregistrycontroller.WhitelistedRegistryField: {
+								Type: "array",
 								Items: &apiextensionsv1beta1.JSONSchemaPropsOrArray{
 									Schema: &apiextensionsv1beta1.JSONSchemaProps{
 										Type: "string",
@@ -166,7 +168,7 @@ func genConstraintTemplate() *kubermaticv1.ConstraintTemplate {
 		Targets: []constrainttemplatev1beta1.Target{
 			{
 				Target: "admission.k8s.gatekeeper.sh",
-				Rego:   "violation[{\"msg\": msg}] {\n\tcontainer := input.request.object.spec.containers[_].image\n\tsatisfied := [good | repo = input.parameters.repos[_]; good = startswith(container, repo)]\n\tnot any(satisfied)\n\tmsg := sprintf(\"container <%v> has an invalid image repo <%v>, allowed repos are %v\", [container.name, container.image, input.parameters.repos])\n}",
+				Rego:   "package whitelistedregistry\n\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.containers[_]\n  satisfied := [good | repo = input.parameters.whitelisted_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.whitelisted_registry])\n}\nviolation[{\"msg\": msg}] {\n  container := input.review.object.spec.initContainers[_]\n  satisfied := [good | repo = input.parameters.whitelisted_registry[_] ; good = startswith(container.image, repo)]\n  not any(satisfied)\n  msg := sprintf(\"container <%v> has an invalid image registry <%v>, allowed image registries are %v\", [container.name, container.image, input.parameters.whitelisted_registry])\n}",
 			},
 		},
 	}
@@ -192,7 +194,7 @@ func genWhitelistedRegistry(deleted bool) *kubermaticv1.WhitelistedRegistry {
 
 func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 	ct := &kubermaticv1.Constraint{}
-	ct.Name = WhitelistedRegistryCTName
+	ct.Name = whitelistedregistrycontroller.WhitelistedRegistryCTName
 	ct.Namespace = testNamespace
 
 	interfaceList := []interface{}{}
@@ -201,21 +203,17 @@ func genWRConstraint(registrySet sets.String) *kubermaticv1.Constraint {
 	}
 
 	ct.Spec = kubermaticv1.ConstraintSpec{
-		ConstraintType: WhitelistedRegistryCTName,
+		ConstraintType: whitelistedregistrycontroller.WhitelistedRegistryCTName,
 		Match: kubermaticv1.Match{
 			Kinds: []kubermaticv1.Kind{
 				{
 					APIGroups: []string{""},
 					Kinds:     []string{"Pod"},
 				},
-				{
-					APIGroups: []string{"apps"},
-					Kinds:     []string{"Deployment", "StatefulSet", "DaemonSet", "ReplicaSet"},
-				},
 			},
 		},
 		Parameters: kubermaticv1.Parameters{
-			WhitelistedRegistryField: interfaceList,
+			whitelistedregistrycontroller.WhitelistedRegistryField: interfaceList,
 		},
 		Disabled: registrySet.Len() == 0,
 	}

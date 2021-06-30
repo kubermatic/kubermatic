@@ -50,15 +50,15 @@ const (
 	WhitelistedRegistryField  = "whitelisted_registry"
 )
 
-type reconciler struct {
+type Reconciler struct {
 	log          *zap.SugaredLogger
 	recorder     record.EventRecorder
 	masterClient ctrlruntimeclient.Client
 	namespace    string
 }
 
-func NewReconciler(log *zap.SugaredLogger, recorder record.EventRecorder, masterClient ctrlruntimeclient.Client, namespace string) *reconciler {
-	return &reconciler{
+func NewReconciler(log *zap.SugaredLogger, recorder record.EventRecorder, masterClient ctrlruntimeclient.Client, namespace string) *Reconciler {
+	return &Reconciler{
 		log:          log,
 		recorder:     recorder,
 		masterClient: masterClient,
@@ -67,7 +67,7 @@ func NewReconciler(log *zap.SugaredLogger, recorder record.EventRecorder, master
 }
 
 // Reconcile reconciles the whitelisted registry
-func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
+func (r *Reconciler) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 	log := r.log.With("request", request)
 	log.Debug("Reconciling")
 
@@ -89,7 +89,7 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 	return reconcile.Result{}, err
 }
 
-func (r *reconciler) reconcile(ctx context.Context, whitelistedRegistry *kubermaticv1.WhitelistedRegistry) error {
+func (r *Reconciler) reconcile(ctx context.Context, whitelistedRegistry *kubermaticv1.WhitelistedRegistry) error {
 	if whitelistedRegistry.DeletionTimestamp != nil {
 		if !kuberneteshelper.HasFinalizer(whitelistedRegistry, kubermaticapiv1.WhitelistedRegistryCleanupFinalizer) {
 			return nil
