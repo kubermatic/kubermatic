@@ -877,6 +877,9 @@ type PrivilegedConstraintProvider interface {
 type DefaultConstraintProvider interface {
 	// Create creates the given default constraint
 	Create(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
+
+	// Delete deletes the given default constraint
+	Delete(name string) error
 }
 
 // AlertmanagerProvider declares the set of method for interacting with alertmanagers

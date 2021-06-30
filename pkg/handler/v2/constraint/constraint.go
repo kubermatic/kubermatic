@@ -566,6 +566,34 @@ func CreateDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 	}
 }
 
+func DeleteDefaultEndpoint(userInfoGetter provider.UserInfoGetter, defaultConstraintProvider provider.DefaultConstraintProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(defaultConstraintReq)
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !adminUserInfo.IsAdmin {
+			return nil, utilerrors.New(http.StatusForbidden,
+				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
+		}
+
+		constraint := &v1.Constraint{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: req.Name,
+			},
+		}
+
+		err = defaultConstraintProvider.Delete(constraint.Name)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return nil, nil
+	}
+}
+
 func DecodeDefaultCreateConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
 	var req createConstraintReq
 
