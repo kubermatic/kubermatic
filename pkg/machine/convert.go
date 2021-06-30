@@ -286,14 +286,12 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 }
 
 func extractSpotInstanceConfigs(config *aws.RawConfig) (*string, *string, *bool) {
-	if config.IsSpotInstance != nil && *config.IsSpotInstance {
-		if config.SpotInstanceConfig != nil {
-			return &config.SpotInstanceConfig.MaxPrice.Value,
-				&config.SpotInstanceConfig.InterruptionBehavior.Value,
-				&config.SpotInstanceConfig.PersistentRequest.Value
-		}
-
-		return nil, nil, nil
+	if config.IsSpotInstance != nil &&
+		*config.IsSpotInstance &&
+		config.SpotInstanceConfig != nil {
+		return &config.SpotInstanceConfig.MaxPrice.Value,
+			&config.SpotInstanceConfig.InterruptionBehavior.Value,
+			&config.SpotInstanceConfig.PersistentRequest.Value
 	}
 
 	return nil, nil, nil
