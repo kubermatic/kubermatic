@@ -532,11 +532,18 @@ func DecodePatchConstraintReq(c context.Context, r *http.Request) (interface{}, 
 	return req, nil
 }
 
+// swagger:parameters createDefaultConstraint
+type createDefaultConstraintReq struct {
+	// in: body
+	// required: true
+	Body constraintBody
+}
+
 func CreateDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 	defaultConstraintProvider provider.DefaultConstraintProvider,
 	constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req := request.(createConstraintReq)
+		req := request.(createDefaultConstraintReq)
 
 		adminUserInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
@@ -566,6 +573,73 @@ func CreateDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 	}
 }
 
+// defaultConstraintReq defines HTTP request for a default constraint endpoint
+// swagger:parameters getDefaultConstraint deleteDefaultConstraint
+type defaultConstraintReq struct {
+	// in: path
+	// required: true
+	Name string `json:"constraint_name"`
+}
+
+// Validate validates defaultConstraint request
+func (req defaultConstraintReq) Validate() error {
+	if len(req.Name) == 0 {
+		return fmt.Errorf("the default constraint name cannot be empty")
+	}
+	return nil
+}
+
+func ListDefaultEndpoint(defaultConstraintProvider provider.DefaultConstraintProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		defaultConstraintList, err := defaultConstraintProvider.List()
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		apiDefaultConstraintList := make([]*apiv2.Constraint, 0)
+		for _, ct := range defaultConstraintList.Items {
+			apiDefaultConstraintList = append(apiDefaultConstraintList, convertInternalToAPIConstraint(&ct))
+		}
+
+		return apiDefaultConstraintList, nil
+	}
+}
+
+func GetDefaultEndpoint(defaultConstraintProvider provider.DefaultConstraintProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(defaultConstraintReq)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		constraint, err := defaultConstraintProvider.Get(req.Name)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return convertInternalToAPIConstraint(constraint), nil
+	}
+}
+
+func DecodeCreateDefaultConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req createDefaultConstraintReq
+
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+	return req, nil
+}
+
+func DecodeDefaultConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req defaultConstraintReq
+
+	req.Name = mux.Vars(r)["constraint_name"]
+	if req.Name == "" {
+		return "", errors.New("'constraint_name' parameter is required but was not provided")
+	}
+
+	return req, nil
+}
+
 func DeleteDefaultEndpoint(userInfoGetter provider.UserInfoGetter, defaultConstraintProvider provider.DefaultConstraintProvider) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(defaultConstraintReq)
@@ -592,13 +666,4 @@ func DeleteDefaultEndpoint(userInfoGetter provider.UserInfoGetter, defaultConstr
 
 		return nil, nil
 	}
-}
-
-func DecodeDefaultCreateConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
-	var req createConstraintReq
-
-	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
-		return nil, err
-	}
-	return req, nil
 }

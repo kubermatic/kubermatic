@@ -161,6 +161,8 @@ type ClientService interface {
 
 	ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleV2OK, error)
 
+	ListClusterTemplateInstances(params *ListClusterTemplateInstancesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplateInstancesOK, error)
+
 	ListClusterTemplates(params *ListClusterTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplatesOK, error)
 
 	ListClusters(params *ListClustersParams, authInfo runtime.ClientAuthInfoWriter) (*ListClustersOK, error)
@@ -2577,6 +2579,40 @@ func (a *Client) ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListClusterRoleV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListClusterTemplateInstances lists cluster template instances
+*/
+func (a *Client) ListClusterTemplateInstances(params *ListClusterTemplateInstancesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplateInstancesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListClusterTemplateInstancesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listClusterTemplateInstances",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListClusterTemplateInstancesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListClusterTemplateInstancesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClusterTemplateInstancesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

@@ -76,7 +76,7 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 				klog.Errorf("failed to create cluster provider for seed %s: %v", seed.Name, err)
 				continue
 			}
-			apiClusters, err := handlercommon.GetExternalClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, req.ProjectID)
+			apiClusters, err := handlercommon.GetExternalClusters(ctx, userInfoGetter, clusterProvider, projectProvider, privilegedProjectProvider, seedsGetter, req.ProjectID)
 			if err != nil {
 				return nil, common.KubernetesErrorToHTTPError(err)
 			}
@@ -87,10 +87,10 @@ func ListEndpoint(projectProvider provider.ProjectProvider, privilegedProjectPro
 	}
 }
 
-func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+func GetEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetClusterReq)
-		return handlercommon.GetEndpoint(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID)
+		return handlercommon.GetEndpoint(ctx, projectProvider, privilegedProjectProvider, seedsGetter, userInfoGetter, req.ProjectID, req.ClusterID)
 	}
 }
 
@@ -121,6 +121,13 @@ func HealthEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(GetClusterReq)
 		return handlercommon.HealthEndpoint(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, privilegedProjectProvider)
+	}
+}
+
+func MigrateEndpointToExternalCCM(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(GetClusterReq)
+		return handlercommon.MigrateEndpointToExternalCCM(ctx, userInfoGetter, req.ProjectID, req.ClusterID, projectProvider, seedsGetter, privilegedProjectProvider)
 	}
 }
 
@@ -432,7 +439,7 @@ func DecodeDeleteReq(c context.Context, r *http.Request) (interface{}, error) {
 }
 
 // GetClusterReq defines HTTP request for getCluster endpoint.
-// swagger:parameters getClusterV2 getClusterHealthV2 getOidcClusterKubeconfigV2 getClusterKubeconfigV2 getClusterMetricsV2 listNamespaceV2 getClusterUpgradesV2 listAWSSizesNoCredentialsV2 listAWSSubnetsNoCredentialsV2 listGCPNetworksNoCredentialsV2 listGCPZonesNoCredentialsV2 listHetznerSizesNoCredentialsV2 listDigitaloceanSizesNoCredentialsV2
+// swagger:parameters getClusterV2 getClusterHealthV2 getOidcClusterKubeconfigV2 getClusterKubeconfigV2 getClusterMetricsV2 listNamespaceV2 getClusterUpgradesV2 listAWSSizesNoCredentialsV2 listAWSSubnetsNoCredentialsV2 listGCPNetworksNoCredentialsV2 listGCPZonesNoCredentialsV2 listHetznerSizesNoCredentialsV2 listDigitaloceanSizesNoCredentialsV2 migrateClusterToExternalCCM
 type GetClusterReq struct {
 	common.ProjectReq
 	// in: path

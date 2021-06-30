@@ -372,6 +372,118 @@ func TestCreateDefaultConstraint(t *testing.T) {
 	}
 }
 
+func TestListDefaultConstraints(t *testing.T) {
+
+	testCases := []struct {
+		name                string
+		existingObjects     []ctrlruntimeclient.Object
+		expectedConstraints []*kubermaticv1.Constraint
+	}{
+		{
+			name: "scenario 1: list constraints",
+			existingObjects: []ctrlruntimeclient.Object{
+				genConstraint("ct1", testKubermaticNamespace),
+				genConstraint("ct2", testKubermaticNamespace),
+				genConstraint("ct3", "other-ns"),
+			},
+			expectedConstraints: []*kubermaticv1.Constraint{genConstraint("ct1", testKubermaticNamespace), genConstraint("ct2", testKubermaticNamespace)},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, client, testKubermaticNamespace)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			constraintList, err := defaultConstraintProvider.List()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(tc.expectedConstraints) != len(constraintList.Items) {
+				t.Fatalf("expected to get %d constraints, but got %d", len(tc.expectedConstraints), len(constraintList.Items))
+			}
+
+			for _, returnedConstraint := range constraintList.Items {
+				returnedConstraint.ResourceVersion = ""
+				cFound := false
+				for _, expectedCT := range tc.expectedConstraints {
+					expectedCT.ResourceVersion = ""
+					if dif := deep.Equal(returnedConstraint, *expectedCT); dif == nil {
+						cFound = true
+						break
+					}
+				}
+				if !cFound {
+					t.Fatalf("returned default constraint was not found on the list of expected ones, ct = %#v", returnedConstraint)
+				}
+			}
+		})
+	}
+}
+
+func TestGetDefaultConstraint(t *testing.T) {
+
+	testCases := []struct {
+		name               string
+		existingObjects    []ctrlruntimeclient.Object
+		expectedConstraint *kubermaticv1.Constraint
+	}{
+		{
+			name: "scenario 1: get constraint",
+			existingObjects: []ctrlruntimeclient.Object{
+				genConstraint("ct1", testKubermaticNamespace),
+				genConstraint("ct2", testKubermaticNamespace),
+				genConstraint("ct3", "other-ns"),
+			},
+			expectedConstraint: genConstraint("ct1", testKubermaticNamespace),
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, client, testKubermaticNamespace)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			constraint, err := defaultConstraintProvider.Get(tc.expectedConstraint.Name)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			tc.expectedConstraint.ResourceVersion = constraint.ResourceVersion
+
+			if !reflect.DeepEqual(constraint, tc.expectedConstraint) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, tc.expectedConstraint))
+			}
+		})
+	}
+}
+
 func TestDeleteDefaultConstraint(t *testing.T) {
 	testCases := []struct {
 		name            string

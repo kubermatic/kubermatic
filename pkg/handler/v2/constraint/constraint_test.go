@@ -29,6 +29,7 @@ import (
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	v1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/handler/test"
 	"k8c.io/kubermatic/v2/pkg/handler/test/hack"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
@@ -795,6 +796,121 @@ func TestCreateDefaultConstraints(t *testing.T) {
 	}
 }
 
+func convertInternalToAPIConstraint(c *v1.Constraint) *apiv2.Constraint {
+	return &apiv2.Constraint{
+		Name: c.Name,
+		Spec: c.Spec,
+	}
+}
+
+func TestListDefaultConstraints(t *testing.T) {
+	ct1 := test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel")
+	ct2 := test.GenConstraint("ct2", kubermaticNamespace, "RequiredLabel")
+
+	t.Parallel()
+	testcases := []struct {
+		Name                       string
+		ct1                        *v1.Constraint
+		ct2                        *v1.Constraint
+		ExpectedDefaultConstraints []apiv2.Constraint
+		HTTPStatus                 int
+		ExistingAPIUser            *apiv1.User
+		ExistingObjects            []ctrlruntimeclient.Object
+	}{
+		{
+			Name: "scenario 1: list all default constraint",
+			ExpectedDefaultConstraints: []apiv2.Constraint{
+				*convertInternalToAPIConstraint(ct1),
+				*convertInternalToAPIConstraint(ct2),
+			},
+			HTTPStatus: http.StatusOK,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				ct1,
+				ct2,
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("GET", "/api/v2/constraints", strings.NewReader(""))
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			actualCTs := test.NewConstraintsSliceWrapper{}
+			actualCTs.DecodeOrDie(res.Body, t).Sort()
+
+			wrappedExpectedCTs := test.NewConstraintsSliceWrapper(tc.ExpectedDefaultConstraints)
+			wrappedExpectedCTs.Sort()
+
+			actualCTs.EqualOrDie(wrappedExpectedCTs, t)
+		})
+	}
+}
+
+func TestGetDefaultConstraint(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name             string
+		CTName           string
+		ExpectedResponse string
+		HTTPStatus       int
+		ExistingAPIUser  *apiv1.User
+		ExistingObjects  []ctrlruntimeclient.Object
+	}{
+		{
+			Name:             "scenario 1: get existing default constraint",
+			CTName:           "ct1",
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["namespace"],"apiGroups":[""]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"labels":["gatekeeper","opa"]},"selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"deployment":"prod","domain":"sales"},"matchExpressions":[{"key":"cluster","operator":"Exists"}]}}}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel"),
+				test.GenConstraint("ct2", kubermaticNamespace, "RequiredLabel"),
+			)},
+		{
+			Name:             "scenario 2: get non-existing default constraint",
+			CTName:           "missing",
+			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8s.io \"missing\" not found"}}`,
+			HTTPStatus:       http.StatusNotFound,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel"),
+				test.GenConstraint("ct2", kubermaticNamespace, "RequiredLabel"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+
+			req := httptest.NewRequest("GET", fmt.Sprintf("/api/v2/constraints/%s", tc.CTName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
 func TestDeleteDefaultConstraints(t *testing.T) {
 	t.Parallel()
 	testcases := []struct {
@@ -811,14 +927,14 @@ func TestDeleteDefaultConstraints(t *testing.T) {
 			ExpectedResponse: `{}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
-			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel")},
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraint("ct", kubermaticNamespace, "RequiredLabel")},
 		},
 		{
 			Name:             "scenario 2: non-admin can not create default constraint",
 			CTToDeleteName:   "ct",
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			HTTPStatus:       http.StatusForbidden,
-			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraint("ct1", kubermaticNamespace, "RequiredLabel")},
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraint("ct", kubermaticNamespace, "RequiredLabel")},
 			ExistingAPIUser:  test.GenDefaultAPIUser(),
 		},
 		{
@@ -826,7 +942,7 @@ func TestDeleteDefaultConstraints(t *testing.T) {
 			CTToDeleteName:   "idontexist",
 			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8s.io \"idontexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
-			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraintTemplate("labelconstraint")},
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraint("ct", kubermaticNamespace, "RequiredLabel")},
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 		},
 	}
