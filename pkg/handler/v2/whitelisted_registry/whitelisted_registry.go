@@ -53,7 +53,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, whitelistedRegistryP
 			Spec: req.Body.WhitelistedRegistrySpec,
 		}
 
-		wr, err = whitelistedRegistryProvider.Create(wr)
+		wr, err = whitelistedRegistryProvider.CreateUnsecured(wr)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

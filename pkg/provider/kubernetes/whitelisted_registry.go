@@ -37,7 +37,7 @@ func NewWhitelistedRegistryPrivilegedProvider(client ctrlruntimeclient.Client) (
 }
 
 // Create creates a whitelisted registry
-func (p *PrivilegedWhitelistedRegistryProvider) Create(wr *kubermaticv1.WhitelistedRegistry) (*kubermaticv1.WhitelistedRegistry, error) {
+func (p *PrivilegedWhitelistedRegistryProvider) CreateUnsecured(wr *kubermaticv1.WhitelistedRegistry) (*kubermaticv1.WhitelistedRegistry, error) {
 
 	if err := p.clientPrivileged.Create(context.Background(), wr); err != nil {
 		return nil, err

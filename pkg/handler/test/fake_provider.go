@@ -261,6 +261,6 @@ type FakePrivilegedWhitelisedRegistryProvider struct {
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakePrivilegedWhitelisedRegistryProvider) Create(wr *kubermaticapiv1.WhitelistedRegistry) (*kubermaticapiv1.WhitelistedRegistry, error) {
-	return p.Provider.Create(wr)
+func (p *FakePrivilegedWhitelisedRegistryProvider) CreateUnsecured(wr *kubermaticapiv1.WhitelistedRegistry) (*kubermaticapiv1.WhitelistedRegistry, error) {
+	return p.Provider.CreateUnsecured(wr)
 }
