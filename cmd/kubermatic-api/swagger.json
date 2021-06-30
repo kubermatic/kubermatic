@@ -9977,6 +9977,48 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration": {
+      "post": {
+        "description": "Enable the migration to the external CCM for the given cluster",
+        "produces": [
+          "application/json"
+        ],
+        "operationId": "migrateClusterToExternalCCM",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/gatekeeper/config": {
       "get": {
         "produces": [
@@ -15948,6 +15990,9 @@
       "description": "ClusterStatus defines the cluster status",
       "type": "object",
       "properties": {
+        "ccm": {
+          "$ref": "#/definitions/ExternalCCMStatus"
+        },
         "url": {
           "description": "URL specifies the address at which the cluster is available",
           "type": "string",
@@ -16898,6 +16943,28 @@
       "type": "string",
       "title": "ExposeStrategy is the strategy to expose the cluster with.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "ExternalCCMStatus": {
+      "description": "ExternalCCMStatus represents the external CCM status",
+      "type": "object",
+      "properties": {
+        "externalCCM": {
+          "description": "ExternalCCM reflects the ClusterFeatureExternalCloudProvider in the cluster .spec.features",
+          "type": "boolean",
+          "x-go-name": "ExternalCCM"
+        },
+        "migrationCompleted": {
+          "description": "MigrationCompleted reflects the CSIKubeletMigrationCompleted condition of the cluster",
+          "type": "boolean",
+          "x-go-name": "MigrationCompleted"
+        },
+        "migrationNeeded": {
+          "description": "MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled",
+          "type": "boolean",
+          "x-go-name": "MigrationNeeded"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "ExternalDocumentation": {
       "type": "object",

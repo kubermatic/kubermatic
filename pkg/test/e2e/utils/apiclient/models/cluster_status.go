@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -18,12 +19,42 @@ type ClusterStatus struct {
 	// URL specifies the address at which the cluster is available
 	URL string `json:"url,omitempty"`
 
+	// ccm
+	Ccm *ExternalCCMStatus `json:"ccm,omitempty"`
+
 	// version
 	Version Semver `json:"version,omitempty"`
 }
 
 // Validate validates this cluster status
 func (m *ClusterStatus) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateCcm(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ClusterStatus) validateCcm(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.Ccm) { // not required
+		return nil
+	}
+
+	if m.Ccm != nil {
+		if err := m.Ccm.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("ccm")
+			}
+			return err
+		}
+	}
+
 	return nil
 }
 

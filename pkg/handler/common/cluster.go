@@ -29,6 +29,7 @@ import (
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/label"
@@ -215,25 +216,28 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 		return true, nil
 	}); err != nil {
 		log.Error("Timed out waiting for cluster to become ready")
-		return ConvertInternalClusterToExternal(newCluster, true), errors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
+		return ConvertInternalClusterToExternal(newCluster, dc, true), errors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
 	}
 
-	return ConvertInternalClusterToExternal(newCluster, true), nil
+	return ConvertInternalClusterToExternal(newCluster, dc, true), nil
 }
 
-func GetExternalClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID string) ([]*apiv1.Cluster, error) {
+func GetExternalClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID string) ([]*apiv1.Cluster, error) {
 	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, nil)
 	if err != nil {
 		return nil, err
 	}
 
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
 	clusters, err := clusterProvider.List(project, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	apiClusters := convertInternalClustersToExternal(clusters.Items)
-	return apiClusters, nil
+	return convertInternalClustersToExternal(clusters.Items, adminUserInfo, seedsGetter)
 }
 
 // GetCluster returns the cluster for a given request
@@ -251,13 +255,21 @@ func GetCluster(ctx context.Context, projectProvider provider.ProjectProvider, p
 	return GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, clusterID, options)
 }
 
-func GetEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (interface{}, error) {
+func GetEndpoint(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, userInfoGetter provider.UserInfoGetter, projectID, clusterID string) (interface{}, error) {
 	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
 	if err != nil {
 		return nil, err
 	}
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
 
-	return ConvertInternalClusterToExternal(cluster, true), nil
+	return ConvertInternalClusterToExternal(cluster, dc, true), nil
 }
 
 func DeleteEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, deleteVolumes, deleteLoadBalancers bool, sshKeyProvider provider.SSHKeyProvider, privilegedSSHKeyProvider provider.PrivilegedSSHKeyProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -317,8 +329,17 @@ func PatchEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
+	userInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, errors.New(http.StatusInternalServerError, err.Error())
+	}
+	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, oldInternalCluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting dc: %v", err)
+	}
+
 	// Converting to API type as it is the type exposed externally.
-	externalCluster := ConvertInternalClusterToExternal(oldInternalCluster, false)
+	externalCluster := ConvertInternalClusterToExternal(oldInternalCluster, dc, false)
 
 	// Changing the type to patchCluster as during marshalling it doesn't remove the cloud provider authentication
 	// data that is required here for validation.
@@ -372,15 +393,6 @@ func PatchEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return nil, errors.NewBadRequest("Cluster contains nodes running the following incompatible kubelet versions: %v. Upgrade your nodes before you upgrade the cluster.", incompatibleKubelets)
 	}
 
-	userInfo, err := userInfoGetter(ctx, "")
-	if err != nil {
-		return nil, errors.New(http.StatusInternalServerError, err.Error())
-	}
-	_, dc, err := provider.DatacenterFromSeedMap(userInfo, seedsGetter, newInternalCluster.Spec.Cloud.DatacenterName)
-	if err != nil {
-		return nil, fmt.Errorf("error getting dc: %v", err)
-	}
-
 	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), newInternalCluster); err != nil {
 		return nil, err
 	}
@@ -413,7 +425,7 @@ func PatchEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, 
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	return ConvertInternalClusterToExternal(updatedCluster, true), nil
+	return ConvertInternalClusterToExternal(updatedCluster, dc, true), nil
 }
 
 func GetClusterEventsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID, eventType string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -522,6 +534,49 @@ func GetMetricsEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGet
 		}
 	}
 	return ConvertClusterMetrics(podMetricsList, allNodeMetricsList.Items, availableResources, cluster.Name)
+}
+
+func MigrateEndpointToExternalCCM(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID,
+	clusterID string, projectProvider provider.ProjectProvider, seedsGetter provider.SeedsGetter,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
+
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	oldCluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, oldCluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if !cloudcontroller.ExternalCloudControllerFeatureSupported(dc, oldCluster) {
+		return nil, errors.NewBadRequest("external CCM not supported by the given provider")
+	}
+
+	if ok := oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; ok {
+		return nil, errors.NewBadRequest("external CCM already enabled, cannot be disabled")
+	}
+
+	newCluster := oldCluster.DeepCopy()
+	if newCluster.Spec.Features == nil {
+		newCluster.Spec.Features = make(map[string]bool)
+	}
+	newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+
+	seedAdminClient := privilegedClusterProvider.GetSeedClusterAdminRuntimeClient()
+	if err := seedAdminClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(oldCluster)); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return nil, nil
 }
 
 func ListNamespaceEndpoint(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID, clusterID string, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider) (interface{}, error) {
@@ -751,12 +806,16 @@ func updateAndDeleteClusterForRegularUser(ctx context.Context, userInfoGetter pr
 	return nil
 }
 
-func convertInternalClustersToExternal(internalClusters []kubermaticv1.Cluster) []*apiv1.Cluster {
+func convertInternalClustersToExternal(internalClusters []kubermaticv1.Cluster, adminUserInfo *provider.UserInfo, seedsGetter provider.SeedsGetter) ([]*apiv1.Cluster, error) {
 	apiClusters := make([]*apiv1.Cluster, len(internalClusters))
 	for index, cluster := range internalClusters {
-		apiClusters[index] = ConvertInternalClusterToExternal(cluster.DeepCopy(), true)
+		_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, cluster.Spec.Cloud.DatacenterName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		apiClusters[index] = ConvertInternalClusterToExternal(cluster.DeepCopy(), dc, true)
 	}
-	return apiClusters
+	return apiClusters, nil
 }
 
 func createNewCluster(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, privilegedClusterProvider provider.PrivilegedClusterProvider, project *kubermaticv1.Project, cluster *kubermaticv1.Cluster) (*kubermaticv1.Cluster, error) {
@@ -818,7 +877,7 @@ func isStatus(err error, status int32) bool {
 	return ok && status == kubernetesError.Status().Code
 }
 
-func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, filterSystemLabels bool) *apiv1.Cluster {
+func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter, filterSystemLabels bool) *apiv1.Cluster {
 	cluster := &apiv1.Cluster{
 		ObjectMeta: apiv1.ObjectMeta{
 			ID:                internalCluster.Name,
@@ -854,6 +913,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, fil
 		Status: apiv1.ClusterStatus{
 			Version: internalCluster.Spec.Version,
 			URL:     internalCluster.Address.URL,
+			CCM:     convertInternalCCMStatusToExternal(internalCluster, datacenter),
 		},
 		Type: apiv1.KubernetesClusterType,
 	}
@@ -957,4 +1017,23 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 		return nil, errors.New(http.StatusInternalServerError, err.Error())
 	}
 	return sshKeyProvider.Get(userInfo, keyName)
+}
+
+func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) apiv1.ExternalCCMStatus {
+	status := apiv1.ExternalCCMStatus{}
+
+	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+		status.ExternalCCM = true
+		status.MigrationNeeded = nil
+	} else if cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, cluster) {
+		status.MigrationNeeded = pointer.BoolPtr(true)
+	}
+
+	if _, condition := helper.GetClusterCondition(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted); condition != nil {
+		status.MigrationCompleted = pointer.BoolPtr(helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue))
+	} else {
+		status.MigrationCompleted = nil
+	}
+
+	return status
 }

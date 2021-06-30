@@ -1045,9 +1045,21 @@ func newPublicAnexiaCloudSpec(internal *kubermaticv1.AnexiaCloudSpec) (public *P
 type ClusterStatus struct {
 	// Version actual version of the kubernetes master components
 	Version ksemver.Semver `json:"version"`
-
 	// URL specifies the address at which the cluster is available
 	URL string `json:"url"`
+	// CCM represents the externalCCM status
+	CCM ExternalCCMStatus `json:"ccm"`
+}
+
+// ExternalCCMStatus represents the external CCM status
+// swagger:model ExternalCCMStatus
+type ExternalCCMStatus struct {
+	// ExternalCCM reflects the ClusterFeatureExternalCloudProvider in the cluster .spec.features
+	ExternalCCM bool `json:"externalCCM"`
+	// MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled
+	MigrationNeeded *bool `json:"migrationNeeded,omitempty"`
+	// MigrationCompleted reflects the CSIKubeletMigrationCompleted condition of the cluster
+	MigrationCompleted *bool `json:"migrationCompleted,omitempty"`
 }
 
 // ClusterHealth stores health information about the cluster's components.
