@@ -631,3 +631,81 @@ func TestListClusterTemplateInstances(t *testing.T) {
 		})
 	}
 }
+
+func TestPatchClusterTemplateInstance(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name                   string
+		Body                   string
+		ExpectedResponse       string
+		TemplateID             string
+		InstanceID             string
+		HTTPStatus             int
+		ExistingAPIUser        *apiv1.User
+		ExistingKubermaticObjs []ctrlruntimeclient.Object
+	}{
+		// scenario 1
+		{
+			Name:             "scenario 1: update global template",
+			Body:             `{"replicas":1}`,
+			TemplateID:       "ctID2",
+			InstanceID:       "my-first-project-ID-ctID2",
+			ExpectedResponse: `{"name":"my-first-project-ID-ctID2","spec":{"projectID":"my-first-project-ID","clusterTemplateID":"ctID2","clusterTemplateName":"","replicas":1}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenAdminUser("admin", "john@acme.com", true),
+				test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
+				test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct3", "ctID3", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct4", "ctID4", test.GenDefaultProject().Name, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID1", 10),
+				test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 10),
+				test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID3", 10),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		// scenario 2
+		{
+			Name:             "scenario 2: update instance for other template",
+			Body:             `{"replicas":1}`,
+			TemplateID:       "ctID2",
+			InstanceID:       "my-first-project-ID-ctID1",
+			ExpectedResponse: `{"error":{"code":500,"message":"cluster template instance doesn't belong to the template ctID2"}}`,
+			HTTPStatus:       http.StatusInternalServerError,
+			ExistingKubermaticObjs: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenAdminUser("admin", "john@acme.com", true),
+				test.GenClusterTemplate("ct1", "ctID1", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, test.GenDefaultAPIUser().Email),
+				test.GenClusterTemplate("ct2", "ctID2", "", kubermaticv1.GlobalClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct3", "ctID3", test.GenDefaultProject().Name, kubermaticv1.UserClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplate("ct4", "ctID4", test.GenDefaultProject().Name, kubermaticv1.ProjectClusterTemplateScope, "john@acme.com"),
+				test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID1", 10),
+				test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID2", 10),
+				test.GenClusterTemplateInstance(test.GenDefaultProject().Name, "ctID3", 10),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		}}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/projects/%s/clustertemplates/%s/instances/%s", test.ProjectName, tc.TemplateID, tc.InstanceID), strings.NewReader(tc.Body))
+			res := httptest.NewRecorder()
+			var kubermaticObj []ctrlruntimeclient.Object
+			kubermaticObj = append(kubermaticObj, tc.ExistingKubermaticObjs...)
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, []ctrlruntimeclient.Object{}, kubermaticObj, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+
+		})
+	}
+}
