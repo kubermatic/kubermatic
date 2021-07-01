@@ -186,3 +186,13 @@ func (p *DefaultConstraintProvider) Get(name string) (*kubermaticv1.Constraint, 
 
 	return constraint, nil
 }
+
+func (p *DefaultConstraintProvider) Delete(name string) error {
+
+	return p.clientPrivileged.Delete(context.Background(), &kubermaticv1.Constraint{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: p.kubermaticNamespace,
+		},
+	})
+}

@@ -483,3 +483,43 @@ func TestGetDefaultConstraint(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteDefaultConstraint(t *testing.T) {
+	testCases := []struct {
+		name            string
+		existingObjects []ctrlruntimeclient.Object
+		CTtoDelete      *kubermaticv1.Constraint
+	}{
+		{
+			name:            "test: delete default constraint",
+			existingObjects: []ctrlruntimeclient.Object{genConstraint("ct", testKubermaticNamespace)},
+			CTtoDelete:      genConstraint("ct", testKubermaticNamespace),
+		},
+	}
+
+	for idx := range testCases {
+		tc := testCases[idx]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			provider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, client, testKubermaticNamespace)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = provider.Delete(tc.CTtoDelete.Name)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
