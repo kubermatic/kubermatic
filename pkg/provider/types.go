@@ -936,7 +936,7 @@ type ClusterTemplateInstanceProvider interface {
 	Create(userInfo *UserInfo, template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
 	Get(userInfo *UserInfo, name string) (*kubermaticv1.ClusterTemplateInstance, error)
 	List(userInfo *UserInfo, options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
-	Update(userInfo *UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
+	Patch(userInfo *UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
 }
 
 // PrivilegedClusterTemplateInstanceProvider declares the set of methods for interacting with the cluster template instances
@@ -959,6 +959,12 @@ type PrivilegedClusterTemplateInstanceProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
 	ListUnsecured(options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
+
+	// PatchUnsecured patches cluster template instances
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	PatchUnsecured(instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error)
 }
 
 // ClusterTemplateInstanceListOptions allows to set filters that will be applied to filter the result.
@@ -1024,4 +1030,13 @@ type PrivilegedRuleGroupProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
 	DeleteUnsecured(cluster *kubermaticv1.Cluster, ruleGroupName string) error
+}
+
+// PrivilegedWhitelistedRegistryProvider declares the set of method for interacting with whitelisted registries
+type PrivilegedWhitelistedRegistryProvider interface {
+	// CreateUnsecured creates the given whitelisted registry
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecured(ct *kubermaticv1.WhitelistedRegistry) (*kubermaticv1.WhitelistedRegistry, error)
 }

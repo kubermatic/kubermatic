@@ -176,6 +176,7 @@ type RoutingParams struct {
 	ClusterTemplateProvider               provider.ClusterTemplateProvider
 	ClusterTemplateInstanceProviderGetter provider.ClusterTemplateInstanceProviderGetter
 	RuleGroupProviderGetter               provider.RuleGroupProviderGetter
+	PrivilegedWhitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider
 	Versions                              kubermatic.Versions
 	CABundle                              *x509.CertPool
 }

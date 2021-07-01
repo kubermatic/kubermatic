@@ -40,6 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/whitelisted_registry"
 )
 
 // RegisterV2 declares all router paths for v2
@@ -538,6 +539,9 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clustertemplates/{template_id}/instances").
 		Handler(r.listClusterTemplateInstances())
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}").
+		Handler(r.patchClusterTemplateInstance())
 
 	// Defines a set of HTTP endpoints for managing rule groups
 	mux.Methods(http.MethodGet).
@@ -559,6 +563,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}").
 		Handler(r.deleteRuleGroup())
+
+	// Defines a set of HTTP endpoints for managing whitelisted registries
+	mux.Methods(http.MethodPost).
+		Path("/whitelistedregistries").
+		Handler(r.createWhitelistedRegistry())
 
 }
 
@@ -3688,6 +3697,33 @@ func (r Routing) listClusterTemplateInstances() http.Handler {
 	)
 }
 
+// swagger:route PATCH /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id} project patchClusterTemplateInstance
+//
+//     Patch cluster template instances.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterTemplateInstance
+//       401: empty
+//       403: empty
+func (r Routing) patchClusterTemplateInstance() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.PatchInstanceEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.clusterTemplateInstanceProviderGetter)),
+		clustertemplate.DecodePatchInstanceReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id} rulegroup getRuleGroup
 //
 //     Gets a specified rule group for the given cluster.
@@ -3856,6 +3892,33 @@ func (r Routing) migrateClusterToExternalCCM() http.Handler {
 		)(cluster.MigrateEndpointToExternalCCM(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		cluster.DecodeGetClusterReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/whitelistedregistries whitelistedregistry createWhitelistedRegistry
+//
+//     Creates a whitelisted registry
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: WhitelistedRegistry
+//       401: empty
+//       403: empty
+func (r Routing) createWhitelistedRegistry() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(whitelistedregistry.CreateEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
+		whitelistedregistry.DecodeCreateWhitelistedRegistryRequest,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }

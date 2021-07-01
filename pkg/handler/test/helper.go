@@ -193,6 +193,7 @@ type newRoutingFunc func(
 	ruleGroupProviderGetter provider.RuleGroupProviderGetter,
 	kubermaticVersions kubermatic.Versions,
 	defaultConstraintProvider provider.DefaultConstraintProvider,
+	privilegedWhitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -347,6 +348,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		FakeClient: fakeClient,
 	}
 
+	privilegedWhitelistedRegistryProvider, err := kubernetes.NewWhitelistedRegistryPrivilegedProvider(fakeClient)
+	if err != nil {
+		return nil, nil, err
+	}
+	fakePrivilegedWhitelistedRegistryProvider := &FakePrivilegedWhitelisedRegistryProvider{
+		Provider:   privilegedWhitelistedRegistryProvider,
+		FakeClient: fakeClient,
+	}
+
 	defaultConstraintProvider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, fakeClient, KubermaticNamespace)
 	if err != nil {
 		return nil, nil, err
@@ -458,6 +468,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		ruleGroupProviderGetter,
 		kubermaticVersions,
 		fakeDefaultConstraintProvider,
+		fakePrivilegedWhitelistedRegistryProvider,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil
@@ -1743,4 +1754,13 @@ rules:
   annotations:
     summary: "Instance  down"
 `, ruleGroupName))
+}
+
+func GenDefaultWhitelistedRegistry(name, registryPrefix string) apiv2.WhitelistedRegistry {
+	return apiv2.WhitelistedRegistry{
+		Name: name,
+		Spec: kubermaticv1.WhitelistedRegistrySpec{
+			RegistryPrefix: registryPrefix,
+		},
+	}
 }

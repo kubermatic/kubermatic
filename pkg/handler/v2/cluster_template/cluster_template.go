@@ -340,50 +340,10 @@ func GetInstanceEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 		if err := req.Validate(); err != nil {
 			return nil, errors.NewBadRequest(err.Error())
 		}
-		project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
 
-		adminUserInfo, err := userInfoGetter(ctx, "")
+		instance, err := getClusterTemplateInstance(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterTemplateProvider, seedsGetter, clusterTemplateProviderGetter, req.ProjectID, req.ClusterTemplateID, req.ClusterTemplateInstanceID)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-		ct, err := clusterTemplateProvider.Get(adminUserInfo, project.Name, req.ClusterTemplateID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		seed, _, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, ct.Spec.Cloud.DatacenterName)
-		if err != nil {
-			return nil, fmt.Errorf("error getting seed: %v", err)
-		}
-
-		clusterTemplateInstanceProvider, err := clusterTemplateProviderGetter(seed)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		if adminUserInfo.IsAdmin {
-			privilegedclusterTemplateInstanceProvider := clusterTemplateInstanceProvider.(provider.PrivilegedClusterTemplateInstanceProvider)
-			instance, err := privilegedclusterTemplateInstanceProvider.GetUnsecured(req.ClusterTemplateInstanceID)
-			if err != nil {
-				return nil, common.KubernetesErrorToHTTPError(err)
-			}
-			return apiv2.ClusterTemplateInstance{
-				Name: instance.Name,
-				Spec: instance.Spec,
-			}, nil
-		}
-
-		userInfo, err := userInfoGetter(ctx, project.Name)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
-		}
-
-		instance, err := clusterTemplateInstanceProvider.Get(userInfo, req.ClusterTemplateInstanceID)
-		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
 		return apiv2.ClusterTemplateInstance{
@@ -391,6 +351,47 @@ func GetInstanceEndpoint(projectProvider provider.ProjectProvider, privilegedPro
 			Spec: instance.Spec,
 		}, nil
 	}
+}
+
+func getClusterTemplateInstance(ctx context.Context, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider, seedsGetter provider.SeedsGetter, clusterTemplateProviderGetter provider.ClusterTemplateInstanceProviderGetter,
+	projectID, clusterTemplateID, clusterTemplateInstanceID string) (*kubermaticv1.ClusterTemplateInstance, error) {
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	ct, err := clusterTemplateProvider.Get(adminUserInfo, project.Name, clusterTemplateID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	seed, _, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, ct.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, fmt.Errorf("error getting seed: %v", err)
+	}
+
+	clusterTemplateInstanceProvider, err := clusterTemplateProviderGetter(seed)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if adminUserInfo.IsAdmin {
+		privilegedclusterTemplateInstanceProvider := clusterTemplateInstanceProvider.(provider.PrivilegedClusterTemplateInstanceProvider)
+		return privilegedclusterTemplateInstanceProvider.GetUnsecured(clusterTemplateInstanceID)
+	}
+
+	userInfo, err := userInfoGetter(ctx, project.Name)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	return clusterTemplateInstanceProvider.Get(userInfo, clusterTemplateInstanceID)
+
 }
 
 func ListInstanceEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
@@ -451,6 +452,71 @@ func ListInstanceEndpoint(projectProvider provider.ProjectProvider, privilegedPr
 	}
 }
 
+func PatchInstanceEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
+	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider, seedsGetter provider.SeedsGetter, clusterTemplateProviderGetter provider.ClusterTemplateInstanceProviderGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchInstanceReq)
+		if err := req.Validate(); err != nil {
+			return nil, errors.NewBadRequest(err.Error())
+		}
+
+		// get instance
+		instance, err := getClusterTemplateInstance(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, clusterTemplateProvider, seedsGetter, clusterTemplateProviderGetter, req.ProjectID, req.ClusterTemplateID, req.ClusterTemplateInstanceID)
+		if err != nil {
+			return nil, err
+		}
+
+		// update number of replicas
+		instance.Spec.Replicas = req.Body.Replicas
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		ct, err := clusterTemplateProvider.Get(adminUserInfo, req.ProjectID, req.ClusterTemplateID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		seed, _, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, ct.Spec.Cloud.DatacenterName)
+		if err != nil {
+			return nil, fmt.Errorf("error getting seed: %v", err)
+		}
+
+		clusterTemplateInstanceProvider, err := clusterTemplateProviderGetter(seed)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		if adminUserInfo.IsAdmin {
+			privilegedclusterTemplateInstanceProvider := clusterTemplateInstanceProvider.(provider.PrivilegedClusterTemplateInstanceProvider)
+			instance, err := privilegedclusterTemplateInstanceProvider.PatchUnsecured(instance)
+			if err != nil {
+				return nil, common.KubernetesErrorToHTTPError(err)
+			}
+			return apiv2.ClusterTemplateInstance{
+				Name: instance.Name,
+				Spec: instance.Spec,
+			}, nil
+		}
+
+		userInfo, err := userInfoGetter(ctx, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		instance, err = clusterTemplateInstanceProvider.Patch(userInfo, instance)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return apiv2.ClusterTemplateInstance{
+			Name: instance.Name,
+			Spec: instance.Spec,
+		}, nil
+	}
+}
+
 func convertInternalToExternalInstances(instances *kubermaticv1.ClusterTemplateInstanceList) []apiv2.ClusterTemplateInstance {
 	if instances == nil {
 		return []apiv2.ClusterTemplateInstance{}
@@ -500,6 +566,32 @@ type getInstanceReq struct {
 	// in: path
 	// required: true
 	ClusterTemplateInstanceID string `json:"instance_id"`
+}
+
+// patchInstanceReq defines HTTP request for patchClusterTemplateInstance
+// swagger:parameters patchClusterTemplateInstance
+type patchInstanceReq struct {
+	getInstanceReq
+
+	// in: body
+	Body struct {
+		Replicas int64 `json:"replicas"`
+	}
+}
+
+func DecodePatchInstanceReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchInstanceReq
+
+	pr, err := DecodeGetInstanceReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.getInstanceReq = pr.(getInstanceReq)
+	if err := json.NewDecoder(r.Body).Decode(&req.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 func DecodeCreateInstanceReq(c context.Context, r *http.Request) (interface{}, error) {

@@ -13532,6 +13532,76 @@
             }
           }
         }
+      },
+      "patch": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "project"
+        ],
+        "summary": "Patch cluster template instances.",
+        "operationId": "patchClusterTemplateInstance",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterTemplateID",
+            "name": "template_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterTemplateInstanceID",
+            "name": "instance_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "replicas": {
+                  "type": "integer",
+                  "format": "int64",
+                  "x-go-name": "Replicas"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ClusterTemplateInstance",
+            "schema": {
+              "$ref": "#/definitions/ClusterTemplateInstance"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v2/projects/{project_id}/kubernetes/clusters": {
@@ -14568,6 +14638,50 @@
             "description": "SeedSettings",
             "schema": {
               "$ref": "#/definitions/SeedSettings"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/whitelistedregistries": {
+      "post": {
+        "description": "Creates a whitelisted registry",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "whitelistedregistry"
+        ],
+        "operationId": "createWhitelistedRegistry",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/wrBody"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "WhitelistedRegistry",
+            "schema": {
+              "$ref": "#/definitions/WhitelistedRegistry"
             }
           },
           "401": {
@@ -20649,6 +20763,32 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
+    "WhitelistedRegistry": {
+      "description": "WhitelistedRegistry represents a object containing a whitelisted image registry prefix",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/WhitelistedRegistrySpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "WhitelistedRegistrySpec": {
+      "type": "object",
+      "title": "WhitelistedRegistrySpec specifies the data for whitelisted registry spec.",
+      "properties": {
+        "registryPrefix": {
+          "description": "RegistryPrefix contains the prefix of the registry which will be whitelisted. User clusters will be able to deploy\nonly images which are prefixed with one of the whitelisted registry prefixes.",
+          "type": "string",
+          "x-go-name": "RegistryPrefix"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "body": {
       "type": "object",
       "properties": {
@@ -20703,6 +20843,20 @@
       },
       "x-go-name": "ErrorResponse",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/handler"
+    },
+    "wrBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the whitelisted registry",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/WhitelistedRegistrySpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/whitelisted_registry"
     }
   },
   "responses": {

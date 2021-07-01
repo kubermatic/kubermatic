@@ -38,6 +38,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/users"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/versions"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/vsphere"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/whitelistedregistry"
 )
 
 // Default kubermatic API HTTP client.
@@ -110,6 +111,7 @@ func New(transport runtime.ClientTransport, formats strfmt.Registry) *Kubermatic
 	cli.Users = users.New(transport, formats)
 	cli.Versions = versions.New(transport, formats)
 	cli.Vsphere = vsphere.New(transport, formats)
+	cli.Whitelistedregistry = whitelistedregistry.New(transport, formats)
 	return cli
 }
 
@@ -210,6 +212,8 @@ type KubermaticAPI struct {
 
 	Vsphere vsphere.ClientService
 
+	Whitelistedregistry whitelistedregistry.ClientService
+
 	Transport runtime.ClientTransport
 }
 
@@ -244,4 +248,5 @@ func (c *KubermaticAPI) SetTransport(transport runtime.ClientTransport) {
 	c.Users.SetTransport(transport)
 	c.Versions.SetTransport(transport)
 	c.Vsphere.SetTransport(transport)
+	c.Whitelistedregistry.SetTransport(transport)
 }
