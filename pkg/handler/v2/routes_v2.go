@@ -280,6 +280,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/constraints/{constraint_name}").
 		Handler(r.getDefaultConstraint())
 
+	mux.Methods(http.MethodDelete).
+		Path("/constraints/{constraint_name}").
+		Handler(r.deleteDefaultConstraint())
+
 	// Define a set of endpoints for gatekeeper constraints
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/constraints").
@@ -1559,6 +1563,31 @@ func (r Routing) getDefaultConstraint() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(constraint.GetDefaultEndpoint(r.defaultConstraintProvider)),
+		constraint.DecodeDefaultConstraintReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/constraints/{constraint_name} constraints deleteDefaultConstraint
+//
+//     Deletes a specified default constraint.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteDefaultConstraint() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constraint.DeleteDefaultEndpoint(r.userInfoGetter, r.defaultConstraintProvider)),
 		constraint.DecodeDefaultConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,

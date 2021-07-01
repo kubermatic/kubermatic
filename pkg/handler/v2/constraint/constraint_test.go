@@ -910,3 +910,60 @@ func TestGetDefaultConstraint(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteDefaultConstraints(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name             string
+		CTToDeleteName   string
+		ExpectedResponse string
+		HTTPStatus       int
+		ExistingAPIUser  *apiv1.User
+		ExistingObjects  []ctrlruntimeclient.Object
+	}{
+		{
+			Name:             "scenario 1: admin can delete default constraint",
+			CTToDeleteName:   "ct",
+			ExpectedResponse: `{}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraint("ct", kubermaticNamespace, "RequiredLabel")},
+		},
+		{
+			Name:             "scenario 2: non-admin can not create default constraint",
+			CTToDeleteName:   "ct",
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraint("ct", kubermaticNamespace, "RequiredLabel")},
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			Name:             "scenario 3: delete non-existing default constraint should fail",
+			CTToDeleteName:   "idontexist",
+			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8s.io \"idontexist\" not found"}}`,
+			HTTPStatus:       http.StatusNotFound,
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenConstraint("ct", kubermaticNamespace, "RequiredLabel")},
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+
+			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/constraints/%s", tc.CTToDeleteName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}

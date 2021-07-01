@@ -574,7 +574,7 @@ func CreateDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
 }
 
 // defaultConstraintReq defines HTTP request for a default constraint endpoint
-// swagger:parameters getDefaultConstraint
+// swagger:parameters getDefaultConstraint deleteDefaultConstraint
 type defaultConstraintReq struct {
 	// in: path
 	// required: true
@@ -638,4 +638,25 @@ func DecodeDefaultConstraintReq(c context.Context, r *http.Request) (interface{}
 	}
 
 	return req, nil
+}
+
+func DeleteDefaultEndpoint(userInfoGetter provider.UserInfoGetter, defaultConstraintProvider provider.DefaultConstraintProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(defaultConstraintReq)
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !adminUserInfo.IsAdmin {
+			return nil, utilerrors.New(http.StatusForbidden,
+				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
+		}
+		err = defaultConstraintProvider.Delete(req.Name)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return nil, nil
+	}
 }
