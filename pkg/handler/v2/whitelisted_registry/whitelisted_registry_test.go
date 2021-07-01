@@ -123,7 +123,7 @@ func TestGetWhitelistedRegistry(t *testing.T) {
 			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
 		},
 		{
-			Name:             "scenario 3: non-admin cant get whitelisted registry",
+			Name:             "scenario 3: non-admin can't get whitelisted registry",
 			WRName:           "wr1",
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
 			HTTPStatus:       http.StatusForbidden,

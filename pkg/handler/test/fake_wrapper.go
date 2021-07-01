@@ -470,7 +470,7 @@ func (k *NewWhitelistedRegistrySliceWrapper) DecodeOrDie(r io.Reader, t *testing
 // Sort sorts the collection by Name
 func (k NewWhitelistedRegistrySliceWrapper) Sort() {
 	sort.Slice(k, func(i, j int) bool {
-		return string(k[i].Name) < string(k[j].Name)
+		return k[i].Name < k[j].Name
 	})
 }
 
