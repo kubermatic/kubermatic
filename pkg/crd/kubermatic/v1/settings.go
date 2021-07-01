@@ -56,6 +56,7 @@ type SettingSpec struct {
 	EnableExternalClusterImport bool           `json:"enableExternalClusterImport"`
 	OpaOptions                  OpaOptions     `json:"opaOptions"`
 	MlaOptions                  MlaOptions     `json:"mlaOptions"`
+	MlaAlertmanagerDomain       string         `json:"mlaAlertmanagerDomain"`
 
 	MachineDeploymentVMResourceQuota MachineDeploymentVMResourceQuota `json:"machineDeploymentVMResourceQuota"`
 

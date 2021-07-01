@@ -20257,6 +20257,10 @@
         "machineDeploymentVMResourceQuota": {
           "$ref": "#/definitions/MachineDeploymentVMResourceQuota"
         },
+        "mlaAlertmanagerDomain": {
+          "type": "string",
+          "x-go-name": "MlaAlertmanagerDomain"
+        },
         "mlaOptions": {
           "$ref": "#/definitions/MlaOptions"
         },
