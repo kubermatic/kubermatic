@@ -152,13 +152,36 @@ func (r ClusterTemplateInstanceProvider) List(userInfo *provider.UserInfo, optio
 	return instanceList, nil
 }
 
-func (r ClusterTemplateInstanceProvider) Update(userInfo *provider.UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error) {
+func (r ClusterTemplateInstanceProvider) Patch(userInfo *provider.UserInfo, instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error) {
 	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, r.createSeedImpersonatedClient)
 	if err != nil {
 		return nil, err
 	}
-	err = impersonationClient.Update(context.Background(), instance)
-	return instance, err
+
+	oldInstance, err := r.Get(userInfo, instance.Name)
+	if err != nil {
+		return nil, err
+	}
+	oldInstance = oldInstance.DeepCopy()
+
+	if err := impersonationClient.Patch(context.Background(), instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
+		return nil, err
+	}
+
+	return instance, nil
+}
+
+func (r ClusterTemplateInstanceProvider) PatchUnsecured(instance *kubermaticv1.ClusterTemplateInstance) (*kubermaticv1.ClusterTemplateInstance, error) {
+	oldInstance, err := r.GetUnsecured(instance.Name)
+	if err != nil {
+		return nil, err
+	}
+	oldInstance = oldInstance.DeepCopy()
+	if err := r.privilegedClient.Patch(context.Background(), instance, ctrlruntimeclient.MergeFrom(oldInstance)); err != nil {
+		return nil, err
+	}
+
+	return instance, nil
 }
 
 func GetClusterTemplateInstanceName(projectID, templateID string) string {
