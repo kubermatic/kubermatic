@@ -74,6 +74,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/health").
 		Handler(r.getClusterHealth())
 
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/externalccmmigration").
+		Handler(r.migrateClusterToExternalCCM())
+
 	mux.Methods(http.MethodGet).
 		Path("/projects/{project_id}/clusters/{cluster_id}/kubeconfig").
 		Handler(r.getClusterKubeconfig())
@@ -266,6 +270,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPost).
 		Path("/constraints").
 		Handler(r.createDefaultConstraint())
+
+	mux.Methods(http.MethodGet).
+		Path("/constraints").
+		Handler(r.listDefaultConstraint())
+
+	mux.Methods(http.MethodGet).
+		Path("/constraints/{constraint_name}").
+		Handler(r.getDefaultConstraint())
 
 	// Define a set of endpoints for gatekeeper constraints
 	mux.Methods(http.MethodGet).
@@ -516,6 +528,12 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPost).
 		Path("/projects/{project_id}/clustertemplates/{template_id}/instances").
 		Handler(r.createClusterTemplateInstance())
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}").
+		Handler(r.getClusterTemplateInstance())
+	mux.Methods(http.MethodGet).
+		Path("/projects/{project_id}/clustertemplates/{template_id}/instances").
+		Handler(r.listClusterTemplateInstances())
 
 	// Defines a set of HTTP endpoints for managing rule groups
 	mux.Methods(http.MethodGet).
@@ -613,7 +631,7 @@ func (r Routing) getCluster() http.Handler {
 			middleware.UserSaver(r.userProvider),
 			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
-		)(cluster.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter)),
+		)(cluster.GetEndpoint(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
 		cluster.DecodeGetClusterReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
@@ -1482,7 +1500,57 @@ func (r Routing) createDefaultConstraint() http.Handler {
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
 		)(constraint.CreateDefaultEndpoint(r.userInfoGetter, r.defaultConstraintProvider, r.constraintTemplateProvider)),
-		constraint.DecodeDefaultCreateConstraintReq,
+		constraint.DecodeCreateDefaultConstraintReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/constraints constraint listDefaultConstraint
+//
+//     List default constraint.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []Constraint
+//       401: empty
+//       403: empty
+func (r Routing) listDefaultConstraint() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constraint.ListDefaultEndpoint(r.defaultConstraintProvider)),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/constraints/{constraint_name} constraint getDefaultConstraint
+//
+//     Gets an specified default constraint
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Constraint
+//       401: empty
+//       403: empty
+func (r Routing) getDefaultConstraint() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constraint.GetDefaultEndpoint(r.defaultConstraintProvider)),
+		constraint.DecodeDefaultConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
@@ -3537,6 +3605,60 @@ func (r Routing) createClusterTemplateInstance() http.Handler {
 	)
 }
 
+// swagger:route POST /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id} project getClusterTemplateInstance
+//
+//     Get cluster template instance.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ClusterTemplateInstance
+//       401: empty
+//       403: empty
+func (r Routing) getClusterTemplateInstance() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.GetInstanceEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.clusterTemplateInstanceProviderGetter)),
+		clustertemplate.DecodeGetInstanceReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/projects/{project_id}/clustertemplates/{template_id}/instances project listClusterTemplateInstances
+//
+//     List cluster template instances.
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []ClusterTemplateInstance
+//       401: empty
+//       403: empty
+func (r Routing) listClusterTemplateInstances() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(clustertemplate.ListInstanceEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.seedsGetter, r.clusterTemplateInstanceProviderGetter)),
+		clustertemplate.DecodeListInstancesReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
 // swagger:route GET /api/v2/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id} rulegroup getRuleGroup
 //
 //     Gets a specified rule group for the given cluster.
@@ -3678,6 +3800,32 @@ func (r Routing) deleteRuleGroup() http.Handler {
 			middleware.PrivilegedRuleGroups(r.clusterProviderGetter, r.ruleGroupProviderGetter, r.seedsGetter),
 		)(rulegroup.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		rulegroup.DecodeDeleteReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/externalccmmigration migrateClusterToExternalCCM
+//
+//    Enable the migration to the external CCM for the given cluster
+//
+//	   Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) migrateClusterToExternalCCM() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(cluster.MigrateEndpointToExternalCCM(r.projectProvider, r.privilegedProjectProvider, r.seedsGetter, r.userInfoGetter)),
+		cluster.DecodeGetClusterReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

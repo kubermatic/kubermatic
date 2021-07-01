@@ -875,6 +875,14 @@ type PrivilegedConstraintProvider interface {
 
 // DefaultConstraintProvider declares the set of method for interacting with default constraints
 type DefaultConstraintProvider interface {
+	// List gets a list of default constraints
+	//
+	// Note that the list is taken from the cache
+	List() (*kubermaticv1.ConstraintList, error)
+
+	// Get gets the given default constraints
+	Get(name string) (*kubermaticv1.Constraint, error)
+
 	// Create creates the given default constraint
 	Create(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
@@ -936,6 +944,18 @@ type PrivilegedClusterTemplateInstanceProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
 	CreateUnsecured(template *kubermaticv1.ClusterTemplate, project *kubermaticv1.Project, replicas int64) (*kubermaticv1.ClusterTemplateInstance, error)
+
+	// GetUnsecured gets cluster template instance
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	GetUnsecured(name string) (*kubermaticv1.ClusterTemplateInstance, error)
+
+	// ListUnsecured lists cluster template instances
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	ListUnsecured(options ClusterTemplateInstanceListOptions) (*kubermaticv1.ClusterTemplateInstanceList, error)
 }
 
 // ClusterTemplateInstanceListOptions allows to set filters that will be applied to filter the result.

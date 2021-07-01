@@ -474,8 +474,8 @@ func CreateTestEndpoint(user apiv1.User, kubeObjects, kubermaticObjects []ctrlru
 	return router, err
 }
 
-func GenTestSeed() *kubermaticv1.Seed {
-	return &kubermaticv1.Seed{
+func GenTestSeed(modifiers ...func(seed *kubermaticv1.Seed)) *kubermaticv1.Seed {
+	seed := &kubermaticv1.Seed{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "us-central1",
 			Namespace: "kubermatic",
@@ -562,7 +562,12 @@ func GenTestSeed() *kubermaticv1.Seed {
 					},
 				},
 			},
-		}}
+		},
+	}
+	for _, modifier := range modifiers {
+		modifier(seed)
+	}
+	return seed
 }
 
 // CreateTestSeedsGetter creates a SeedsGetter only useful for generic tests,
@@ -849,7 +854,7 @@ func GenCluster(id string, name string, projectID string, creationTime time.Time
 		},
 		Spec: kubermaticv1.ClusterSpec{
 			Cloud: kubermaticv1.CloudSpec{
-				DatacenterName: "FakeDatacenter",
+				DatacenterName: "private-do1",
 				Fake:           &kubermaticv1.FakeCloudSpec{Token: "SecretToken"},
 			},
 			Version:               *semver.NewSemverOrDie("9.9.9"),
@@ -1677,6 +1682,20 @@ func GenClusterTemplate(name, id, projectID, scope, userEmail string) *kubermati
 				DatacenterName: "fake-dc",
 				Fake:           &kubermaticv1.FakeCloudSpec{},
 			},
+		},
+	}
+}
+
+func GenClusterTemplateInstance(projectID, templateID string, replicas int64) *kubermaticv1.ClusterTemplateInstance {
+	return &kubermaticv1.ClusterTemplateInstance{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:   fmt.Sprintf("%s-%s", projectID, templateID),
+			Labels: map[string]string{kubernetes.ClusterTemplateLabelKey: templateID, kubermaticv1.ProjectIDLabelKey: projectID},
+		},
+		Spec: kubermaticv1.ClusterTemplateInstanceSpec{
+			ProjectID:         projectID,
+			ClusterTemplateID: templateID,
+			Replicas:          replicas,
 		},
 	}
 }

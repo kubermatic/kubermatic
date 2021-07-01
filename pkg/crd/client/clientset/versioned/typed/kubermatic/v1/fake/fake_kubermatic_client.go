@@ -80,6 +80,10 @@ func (c *FakeKubermaticV1) UserSSHKeys() v1.UserSSHKeyInterface {
 	return &FakeUserSSHKeys{c}
 }
 
+func (c *FakeKubermaticV1) WhitelistedRegistries() v1.WhitelistedRegistryInterface {
+	return &FakeWhitelistedRegistries{c}
+}
+
 // RESTClient returns a RESTClient that is used to communicate
 // with API server by this client implementation.
 func (c *FakeKubermaticV1) RESTClient() rest.Interface {

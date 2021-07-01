@@ -27,6 +27,10 @@ type Client struct {
 type ClientService interface {
 	CreateDefaultConstraint(params *CreateDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*CreateDefaultConstraintOK, error)
 
+	GetDefaultConstraint(params *GetDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*GetDefaultConstraintOK, error)
+
+	ListDefaultConstraint(params *ListDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*ListDefaultConstraintOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -61,6 +65,74 @@ func (a *Client) CreateDefaultConstraint(params *CreateDefaultConstraintParams, 
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateDefaultConstraintDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  GetDefaultConstraint Gets an specified default constraint
+*/
+func (a *Client) GetDefaultConstraint(params *GetDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*GetDefaultConstraintOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetDefaultConstraintParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getDefaultConstraint",
+		Method:             "GET",
+		PathPattern:        "/api/v2/constraints/{constraint_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetDefaultConstraintReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetDefaultConstraintOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetDefaultConstraintDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListDefaultConstraint lists default constraint
+*/
+func (a *Client) ListDefaultConstraint(params *ListDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*ListDefaultConstraintOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListDefaultConstraintParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listDefaultConstraint",
+		Method:             "GET",
+		PathPattern:        "/api/v2/constraints",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListDefaultConstraintReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListDefaultConstraintOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListDefaultConstraintDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

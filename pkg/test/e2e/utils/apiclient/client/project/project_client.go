@@ -119,6 +119,8 @@ type ClientService interface {
 
 	GetClusterTemplate(params *GetClusterTemplateParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterTemplateOK, error)
 
+	GetClusterTemplateInstance(params *GetClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterTemplateInstanceOK, error)
+
 	GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesOK, error)
 
 	GetClusterUpgradesV2(params *GetClusterUpgradesV2Params, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesV2OK, error)
@@ -158,6 +160,8 @@ type ClientService interface {
 	ListClusterRoleNamesV2(params *ListClusterRoleNamesV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleNamesV2OK, error)
 
 	ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo runtime.ClientAuthInfoWriter) (*ListClusterRoleV2OK, error)
+
+	ListClusterTemplateInstances(params *ListClusterTemplateInstancesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplateInstancesOK, error)
 
 	ListClusterTemplates(params *ListClusterTemplatesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplatesOK, error)
 
@@ -1865,6 +1869,40 @@ func (a *Client) GetClusterTemplate(params *GetClusterTemplateParams, authInfo r
 }
 
 /*
+  GetClusterTemplateInstance gets cluster template instance
+*/
+func (a *Client) GetClusterTemplateInstance(params *GetClusterTemplateInstanceParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterTemplateInstanceOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewGetClusterTemplateInstanceParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "getClusterTemplateInstance",
+		Method:             "POST",
+		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances/{instance_id}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &GetClusterTemplateInstanceReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*GetClusterTemplateInstanceOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*GetClusterTemplateInstanceDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
   GetClusterUpgrades Gets possible cluster upgrades
 */
 func (a *Client) GetClusterUpgrades(params *GetClusterUpgradesParams, authInfo runtime.ClientAuthInfoWriter) (*GetClusterUpgradesOK, error) {
@@ -2541,6 +2579,40 @@ func (a *Client) ListClusterRoleV2(params *ListClusterRoleV2Params, authInfo run
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListClusterRoleV2Default)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListClusterTemplateInstances lists cluster template instances
+*/
+func (a *Client) ListClusterTemplateInstances(params *ListClusterTemplateInstancesParams, authInfo runtime.ClientAuthInfoWriter) (*ListClusterTemplateInstancesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListClusterTemplateInstancesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listClusterTemplateInstances",
+		Method:             "GET",
+		PathPattern:        "/api/v2/projects/{project_id}/clustertemplates/{template_id}/instances",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListClusterTemplateInstancesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListClusterTemplateInstancesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListClusterTemplateInstancesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

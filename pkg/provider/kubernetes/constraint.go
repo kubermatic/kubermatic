@@ -166,3 +166,23 @@ func (p *DefaultConstraintProvider) Create(constraint *kubermaticv1.Constraint) 
 	err := p.clientPrivileged.Create(context.Background(), constraint)
 	return constraint, err
 }
+
+func (p *DefaultConstraintProvider) List() (*kubermaticv1.ConstraintList, error) {
+
+	constraints := &kubermaticv1.ConstraintList{}
+	if err := p.clientPrivileged.List(context.Background(), constraints, ctrlruntimeclient.InNamespace(p.kubermaticNamespace)); err != nil {
+		return nil, fmt.Errorf("failed to list default constraints: %v", err)
+	}
+
+	return constraints, nil
+}
+
+func (p *DefaultConstraintProvider) Get(name string) (*kubermaticv1.Constraint, error) {
+
+	constraint := &kubermaticv1.Constraint{}
+	if err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Namespace: p.kubermaticNamespace, Name: name}, constraint); err != nil {
+		return nil, err
+	}
+
+	return constraint, nil
+}
