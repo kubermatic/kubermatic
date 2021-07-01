@@ -270,6 +270,11 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		return providers{}, fmt.Errorf("failed to create cluster template provider due to %v", err)
 	}
 
+	privilegedWhitelistedRegistryProvider, err := kubernetesprovider.NewWhitelistedRegistryPrivilegedProvider(mgr.GetClient())
+	if err != nil {
+		return providers{}, fmt.Errorf("failed to create whitelisted registry provider due to %v", err)
+	}
+
 	constraintProviderGetter := kubernetesprovider.ConstraintProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
 	kubeMasterInformerFactory.Start(wait.NeverStop)
@@ -332,6 +337,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		clusterTemplateProvider:               clusterTemplateProvider,
 		ruleGroupProviderGetter:               ruleGroupProviderGetter,
 		clusterTemplateInstanceProviderGetter: clusterTemplateInstanceProviderGetter,
+		privilegedWhitelistedRegistryProvider: privilegedWhitelistedRegistryProvider,
 	}, nil
 }
 
@@ -442,6 +448,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ClusterTemplateProvider:               prov.clusterTemplateProvider,
 		ClusterTemplateInstanceProviderGetter: prov.clusterTemplateInstanceProviderGetter,
 		RuleGroupProviderGetter:               prov.ruleGroupProviderGetter,
+		PrivilegedWhitelistedRegistryProvider: prov.privilegedWhitelistedRegistryProvider,
 		Versions:                              options.versions,
 		CABundle:                              options.caBundle.CertPool(),
 	}

@@ -1028,3 +1028,12 @@ type PrivilegedRuleGroupProvider interface {
 	// is unsafe in a sense that it uses privileged account to delete the resource
 	DeleteUnsecured(cluster *kubermaticv1.Cluster, ruleGroupName string) error
 }
+
+// PrivilegedWhitelistedRegistryProvider declares the set of method for interacting with whitelisted registries
+type PrivilegedWhitelistedRegistryProvider interface {
+	// CreateUnsecured creates the given whitelisted registry
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecured(ct *kubermaticv1.WhitelistedRegistry) (*kubermaticv1.WhitelistedRegistry, error)
+}

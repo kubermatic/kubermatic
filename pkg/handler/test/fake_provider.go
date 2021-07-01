@@ -255,3 +255,12 @@ func (p *FakeDefaultConstraintProvider) List() (*kubermaticapiv1.ConstraintList,
 func (p *FakeDefaultConstraintProvider) Get(name string) (*kubermaticapiv1.Constraint, error) {
 	return p.Provider.Get(name)
 }
+
+type FakePrivilegedWhitelisedRegistryProvider struct {
+	Provider   *kubernetes.PrivilegedWhitelistedRegistryProvider
+	FakeClient ctrlruntimeclient.Client
+}
+
+func (p *FakePrivilegedWhitelisedRegistryProvider) CreateUnsecured(wr *kubermaticapiv1.WhitelistedRegistry) (*kubermaticapiv1.WhitelistedRegistry, error) {
+	return p.Provider.CreateUnsecured(wr)
+}
