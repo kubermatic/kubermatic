@@ -909,6 +909,7 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 			ServiceAccount:                       internalCluster.Spec.ServiceAccount,
 			MLA:                                  internalCluster.Spec.MLA,
 			ContainerRuntime:                     internalCluster.Spec.ContainerRuntime,
+			ClusterNetwork:                       &internalCluster.Spec.ClusterNetwork,
 		},
 		Status: apiv1.ClusterStatus{
 			Version: internalCluster.Spec.Version,
