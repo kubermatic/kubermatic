@@ -14656,6 +14656,39 @@
       }
     },
     "/api/v2/whitelistedregistries": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "whitelistedregistry"
+        ],
+        "summary": "List whitelisted registries.",
+        "operationId": "listWhitelistedRegistries",
+        "responses": {
+          "200": {
+            "description": "WhitelistedRegistry",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/WhitelistedRegistry"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
       "post": {
         "description": "Creates a whitelisted registry",
         "consumes": [
@@ -14679,6 +14712,47 @@
         ],
         "responses": {
           "201": {
+            "description": "WhitelistedRegistry",
+            "schema": {
+              "$ref": "#/definitions/WhitelistedRegistry"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/whitelistedregistries/{whitelisted_registry}": {
+      "get": {
+        "description": "Get whitelisted registries specified by name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "whitelistedregistries"
+        ],
+        "operationId": "getWhitelistedRegistry",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "WhitelistedRegistryName",
+            "name": "whitelisted_registry",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
             "description": "WhitelistedRegistry",
             "schema": {
               "$ref": "#/definitions/WhitelistedRegistry"
