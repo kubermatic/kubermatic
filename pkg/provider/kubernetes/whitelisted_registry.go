@@ -18,6 +18,7 @@ package kubernetes
 
 import (
 	"context"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -60,4 +61,28 @@ func (p *PrivilegedWhitelistedRegistryProvider) ListUnsecured() (*kubermaticv1.W
 	wrList := &kubermaticv1.WhitelistedRegistryList{}
 	err := p.clientPrivileged.List(context.Background(), wrList)
 	return wrList, err
+}
+
+// PatchUnsecured patches a whitelisted registry
+func (p *PrivilegedWhitelistedRegistryProvider) PatchUnsecured(wr *kubermaticv1.WhitelistedRegistry) (*kubermaticv1.WhitelistedRegistry, error) {
+
+	oldWR, err := p.GetUnsecured(wr.Name)
+	if err != nil {
+		return nil, err
+	}
+	oldWR = oldWR.DeepCopy()
+
+	if err := p.clientPrivileged.Patch(context.Background(), wr, ctrlruntimeclient.MergeFrom(oldWR)); err != nil {
+		return nil, err
+	}
+
+	return wr, nil
+}
+
+// DeleteUnsecured deletes a whitelisted registry
+func (p *PrivilegedWhitelistedRegistryProvider) DeleteUnsecured(name string) error {
+
+	wr := &kubermaticv1.WhitelistedRegistry{}
+	wr.Name = name
+	return p.clientPrivileged.Delete(context.Background(), wr)
 }

@@ -577,6 +577,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/whitelistedregistries/{whitelisted_registry}").
 		Handler(r.getWhitelistedRegistry())
 
+	mux.Methods(http.MethodDelete).
+		Path("/whitelistedregistries/{whitelisted_registry}").
+		Handler(r.deleteWhitelistedRegistry())
+
+	mux.Methods(http.MethodPatch).
+		Path("/whitelistedregistries/{whitelisted_registry}").
+		Handler(r.patchWhitelistedRegistry())
+
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -3976,6 +3984,57 @@ func (r Routing) getWhitelistedRegistry() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(whitelistedregistry.GetEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
 		whitelistedregistry.DecodeGetWhitelistedRegistryRequest,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/whitelistedregistries/{whitelisted_registry} whitelistedregistries deleteWhitelistedRegistry
+//
+//    Deletes the given whitelisted registry.
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteWhitelistedRegistry() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(whitelistedregistry.DeleteEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
+		whitelistedregistry.DecodeGetWhitelistedRegistryRequest,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v2/whitelistedregistries/{whitelisted_registry} whitelistedregistries patchWhitelistedRegistry
+//
+//     Patch a specified whitelisted registry
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: ConstraintTemplate
+//       401: empty
+//       403: empty
+func (r Routing) patchWhitelistedRegistry() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(whitelistedregistry.PatchEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
+		whitelistedregistry.DecodePatchWhitelistedRegistryReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
