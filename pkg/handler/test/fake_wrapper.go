@@ -452,8 +452,6 @@ func (k NewRuleGroupSliceWrapper) EqualOrDie(expected NewRuleGroupSliceWrapper, 
 	}
 }
 
-
-
 // NewWhitelistedRegistrySliceWrapper wraps []apiv2.WhitelistedRegistry
 // to provide convenient methods for tests
 type NewWhitelistedRegistrySliceWrapper []*apiv2.WhitelistedRegistry
