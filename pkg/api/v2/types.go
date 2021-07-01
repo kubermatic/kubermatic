@@ -193,3 +193,11 @@ type RuleGroup struct {
 	// the type of this ruleGroup applies to. It can be `Metrics`.
 	Type crdapiv1.RuleGroupType `json:"type"`
 }
+
+// WhitelistedRegistry represents a object containing a whitelisted image registry prefix
+// swagger:model WhitelistedRegistry
+type WhitelistedRegistry struct {
+	Name string `json:"name"`
+
+	Spec crdapiv1.WhitelistedRegistrySpec `json:"spec"`
+}
