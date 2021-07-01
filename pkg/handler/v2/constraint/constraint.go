@@ -652,14 +652,7 @@ func DeleteDefaultEndpoint(userInfoGetter provider.UserInfoGetter, defaultConstr
 			return nil, utilerrors.New(http.StatusForbidden,
 				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
 		}
-
-		constraint := &v1.Constraint{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: req.Name,
-			},
-		}
-
-		err = defaultConstraintProvider.Delete(constraint.Name)
+		err = defaultConstraintProvider.Delete(req.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
