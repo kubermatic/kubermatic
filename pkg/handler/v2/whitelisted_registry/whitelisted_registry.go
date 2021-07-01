@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -84,6 +85,73 @@ func DecodeCreateWhitelistedRegistryRequest(c context.Context, r *http.Request) 
 	}
 
 	return req, nil
+}
+
+func GetEndpoint(userInfoGetter provider.UserInfoGetter, whitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getWhitelistedRegistryReq)
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !adminUserInfo.IsAdmin {
+			return nil, errors.New(http.StatusForbidden,
+				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
+		}
+
+		wr, err := whitelistedRegistryProvider.GetUnsecured(req.WhitelistedRegistryName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalWhitelistedRegistryToExternal(wr), nil
+	}
+}
+
+// getWhitelistedRegistryReq represents a request for getting a whitelisted registry
+// swagger:parameters getWhitelistedRegistry
+type getWhitelistedRegistryReq struct {
+	// in: path
+	// required: true
+	WhitelistedRegistryName string `json:"whitelisted_registry"`
+}
+
+func DecodeGetWhitelistedRegistryRequest(c context.Context, r *http.Request) (interface{}, error) {
+	var req getWhitelistedRegistryReq
+
+	whitelistedRegistry := mux.Vars(r)["whitelisted_registry"]
+	if whitelistedRegistry == "" {
+		return "", fmt.Errorf("'whitelisted_registry' parameter is required but was not provided")
+	}
+	req.WhitelistedRegistryName = whitelistedRegistry
+
+	return req, nil
+}
+
+func ListEndpoint(userInfoGetter provider.UserInfoGetter, whitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !adminUserInfo.IsAdmin {
+			return nil, errors.New(http.StatusForbidden,
+				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
+		}
+
+		whitelistedRegistryList, err := whitelistedRegistryProvider.ListUnsecured()
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		apiWR := make([]*apiv2.WhitelistedRegistry, 0)
+		for _, wr := range whitelistedRegistryList.Items {
+			apiWR = append(apiWR, convertInternalWhitelistedRegistryToExternal(&wr))
+		}
+
+		return apiWR, nil
+	}
 }
 
 func convertInternalWhitelistedRegistryToExternal(wr *kubermaticv1.WhitelistedRegistry) *apiv2.WhitelistedRegistry {

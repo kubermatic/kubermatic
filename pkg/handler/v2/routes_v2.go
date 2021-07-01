@@ -569,6 +569,14 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/whitelistedregistries").
 		Handler(r.createWhitelistedRegistry())
 
+	mux.Methods(http.MethodGet).
+		Path("/whitelistedregistries").
+		Handler(r.listWhitelistedRegistries())
+
+	mux.Methods(http.MethodGet).
+		Path("/whitelistedregistries/{whitelisted_registry}").
+		Handler(r.getWhitelistedRegistry())
+
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -3919,6 +3927,56 @@ func (r Routing) createWhitelistedRegistry() http.Handler {
 		)(whitelistedregistry.CreateEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
 		whitelistedregistry.DecodeCreateWhitelistedRegistryRequest,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/whitelistedregistries whitelistedregistry listWhitelistedRegistries
+//
+//     List whitelisted registries.
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: []WhitelistedRegistry
+//       401: empty
+//       403: empty
+func (r Routing) listWhitelistedRegistries() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(whitelistedregistry.ListEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
+		common.DecodeEmptyReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route GET /api/v2/whitelistedregistries/{whitelisted_registry} whitelistedregistries getWhitelistedRegistry
+//
+//     Get whitelisted registries specified by name
+//
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: WhitelistedRegistry
+//       401: empty
+//       403: empty
+func (r Routing) getWhitelistedRegistry() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(whitelistedregistry.GetEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
+		whitelistedregistry.DecodeGetWhitelistedRegistryRequest,
+		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }

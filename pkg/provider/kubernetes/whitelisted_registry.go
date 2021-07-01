@@ -19,6 +19,8 @@ package kubernetes
 import (
 	"context"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,7 +38,7 @@ func NewWhitelistedRegistryPrivilegedProvider(client ctrlruntimeclient.Client) (
 	}, nil
 }
 
-// Create creates a whitelisted registry
+// CreateUnsecured creates a whitelisted registry
 func (p *PrivilegedWhitelistedRegistryProvider) CreateUnsecured(wr *kubermaticv1.WhitelistedRegistry) (*kubermaticv1.WhitelistedRegistry, error) {
 
 	if err := p.clientPrivileged.Create(context.Background(), wr); err != nil {
@@ -44,4 +46,20 @@ func (p *PrivilegedWhitelistedRegistryProvider) CreateUnsecured(wr *kubermaticv1
 	}
 
 	return wr, nil
+}
+
+// GetUnsecured gets a whitelisted registry
+func (p *PrivilegedWhitelistedRegistryProvider) GetUnsecured(name string) (*kubermaticv1.WhitelistedRegistry, error) {
+
+	wr := &kubermaticv1.WhitelistedRegistry{}
+	err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: name}, wr)
+	return wr, err
+}
+
+// ListUnsecured lists a whitelisted registries
+func (p *PrivilegedWhitelistedRegistryProvider) ListUnsecured() (*kubermaticv1.WhitelistedRegistryList, error) {
+
+	wrList := &kubermaticv1.WhitelistedRegistryList{}
+	err := p.clientPrivileged.List(context.Background(), wrList)
+	return wrList, err
 }
