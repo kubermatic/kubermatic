@@ -585,6 +585,11 @@ func defaultResourceList(list *corev1.ResourceList, defaults corev1.ResourceList
 	}
 
 	for _, name := range []corev1.ResourceName{corev1.ResourceMemory, corev1.ResourceCPU} {
+		quantity := (*list)[name]
+		if !quantity.IsZero() {
+			continue
+		}
+
 		(*list)[name] = defaults[name]
 		logger.Debugw("Defaulting resource constraint", "field", key+"."+name.String(), "value", (*list)[name])
 	}
