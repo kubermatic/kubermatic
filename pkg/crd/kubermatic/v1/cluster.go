@@ -173,6 +173,10 @@ const (
 	// not be set if its not supported.
 	ClusterFeatureExternalCloudProvider = "externalCloudProvider"
 
+	// ClusterFeatureCCMClusterName sets the cluster-name flag on the external CCM deployment.
+	// The cluster-name flag is often used for naming cloud resources, such as load balancers.
+	ClusterFeatureCCMClusterName = "ccmClusterName"
+
 	// ClusterFeatureRancherIntegration enables the rancher server integration feature.
 	// It will deploy a Rancher Server Managegment plane on the seed cluster and import the user cluster into it.
 	ClusterFeatureRancherIntegration = "rancherIntegration"
