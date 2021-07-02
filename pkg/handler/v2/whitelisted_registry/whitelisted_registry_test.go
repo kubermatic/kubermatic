@@ -170,7 +170,7 @@ func TestListWhitelistedRegistries(t *testing.T) {
 		ExistingObjects               []ctrlruntimeclient.Object
 	}{
 		{
-			Name: "scenario 1: admin can list all default constraint",
+			Name: "scenario 1: admin can list all default whitelisted registries",
 			ExpectedWhitelistedRegistries: []*apiv2.WhitelistedRegistry{
 				&wr1,
 				&wr2,
