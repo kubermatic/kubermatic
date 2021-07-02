@@ -32,7 +32,7 @@ import (
 )
 
 const (
-	vsphereCPIControllerManager = "vsphere-cloud-controller-manager"
+	vsphereCCMDeploymentName = "vsphere-cloud-controller-manager"
 )
 
 var (
@@ -50,15 +50,15 @@ var (
 
 func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDeploymentCreatorGetter {
 	return func() (string, reconciling.DeploymentCreator) {
-		return vsphereCPIControllerManager, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
-			dep.Name = vsphereCPIControllerManager
-			dep.Labels = resources.BaseAppLabels(vsphereCPIControllerManager, nil)
+		return vsphereCCMDeploymentName, func(dep *appsv1.Deployment) (*appsv1.Deployment, error) {
+			dep.Name = vsphereCCMDeploymentName
+			dep.Labels = resources.BaseAppLabels(vsphereCCMDeploymentName, nil)
 
 			dep.Spec.Selector = &metav1.LabelSelector{
-				MatchLabels: resources.BaseAppLabels(vsphereCPIControllerManager, nil),
+				MatchLabels: resources.BaseAppLabels(vsphereCCMDeploymentName, nil),
 			}
 
-			podLabels, err := data.GetPodTemplateLabels(vsphereCPIControllerManager, dep.Spec.Template.Spec.Volumes, map[string]string{
+			podLabels, err := data.GetPodTemplateLabels(vsphereCCMDeploymentName, dep.Spec.Template.Spec.Volumes, map[string]string{
 				"component": "cloud-controller-manager",
 				"tier":      "control-plane",
 			})
@@ -85,11 +85,14 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			if err != nil {
 				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 			}
-			containers, err := getCPIContainerList(version, data)
+			container, err := getCPIContainer(version, data)
 			if err != nil {
 				return nil, err
 			}
-			dep.Spec.Template.Spec.Containers = append(containers, *openvpnSidecar)
+			dep.Spec.Template.Spec.Containers = []corev1.Container{
+				container,
+				*openvpnSidecar,
+			}
 
 			dep.Spec.Template.Spec.Volumes = append(getVolumes(), corev1.Volume{
 				Name: resources.CloudConfigConfigMapName,
@@ -107,28 +110,24 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 	}
 }
 
-func getCPIContainerList(version string, data *resources.TemplateData) ([]corev1.Container, error) {
+func getCPIContainer(version string, data *resources.TemplateData) (corev1.Container, error) {
 	controllerManagerImage := fmt.Sprintf("%s/cloud-provider-vsphere/cpi/release/manager:v%s", data.ImageRegistry(resources.RegistryGCR), version)
 
-	containerList := []corev1.Container{
-		{
-			Name:  vsphereCPIControllerManager,
-			Image: controllerManagerImage,
-			Args: []string{
-				"--v=2",
-				"--cloud-provider=vsphere",
-				"--cloud-config=/etc/cloud/config",
-				"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
-			},
-			VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
-				MountPath: "/etc/cloud",
-				Name:      resources.CloudConfigConfigMapName,
-			}),
-			Resources: vsphereCPIResourceRequirements,
+	return corev1.Container{
+		Name:  ccmContainerName,
+		Image: controllerManagerImage,
+		Args: []string{
+			"--v=2",
+			"--cloud-provider=vsphere",
+			"--cloud-config=/etc/cloud/config",
+			"--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig",
 		},
-	}
-
-	return containerList, nil
+		VolumeMounts: append(getVolumeMounts(), corev1.VolumeMount{
+			MountPath: "/etc/cloud",
+			Name:      resources.CloudConfigConfigMapName,
+		}),
+		Resources: vsphereCPIResourceRequirements,
+	}, nil
 }
 
 const latestVsphereCPIVersion = "1.21.0"

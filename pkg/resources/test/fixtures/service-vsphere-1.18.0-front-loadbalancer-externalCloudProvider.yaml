@@ -1,0 +1,15 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+spec:
+  ports:
+  - name: secure
+    port: 443
+    protocol: TCP
+    targetPort: 443
+  selector:
+    app: nodeport-proxy-envoy
+  type: LoadBalancer
+status:
+  loadBalancer: {}
