@@ -191,6 +191,9 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 
 	if cloudcontroller.ExternalCloudControllerFeatureSupported(dc, partialCluster) {
 		partialCluster.Spec.Features = map[string]bool{kubermaticv1.ClusterFeatureExternalCloudProvider: true}
+		if cloudcontroller.ExternalCloudControllerClusterName(partialCluster) {
+			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
+		}
 	}
 
 	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster); err != nil {
