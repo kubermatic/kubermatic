@@ -580,7 +580,7 @@ func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
 // cloud-controllers are disabled.
 // * There is no 'cloud-provider' flag.
 // * The cloud controllers are disabled.
-// This is used to avoid deploing the CCM before the in-tree cloud controllers
+// This is used to avoid deploying the CCM before the in-tree cloud controllers
 // have been deactivated.
 func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 	kcm := appsv1.Deployment{}
