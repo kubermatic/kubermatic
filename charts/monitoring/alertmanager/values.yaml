@@ -13,6 +13,27 @@
 # limitations under the License.
 
 alertmanager:
+  sidecarContainers:
+    prom-label-proxy:
+      args:
+        - -enable-label-apis
+        - -label=tenant_id
+        - -upstream=http://127.0.0.1:9093
+        - -insecure-listen-address=0.0.0.0:8080
+        - -header=X-Scope-OrgID
+      image: aborilov/prom-label-proxy:latest
+      # image: quay.io/prometheuscommunity/prom-label-proxy:master
+      imagePullPolicy: Always
+      ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+      securityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        readOnlyRootFilesystem: true
   image:
     repository: quay.io/prometheus/alertmanager
     tag: v0.21.0
