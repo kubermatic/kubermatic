@@ -116,6 +116,9 @@ func getCPIContainer(version string, data *resources.TemplateData) (corev1.Conta
 	return corev1.Container{
 		Name:  ccmContainerName,
 		Image: controllerManagerImage,
+		Command: []string{
+			"/bin/vsphere-cloud-controller-manager",
+		},
 		Args: []string{
 			"--v=2",
 			"--cloud-provider=vsphere",
@@ -151,9 +154,9 @@ func getVsphereCPIVersion(version semver.Semver) (string, error) {
 	}
 }
 
-// VsphereSupported checks if this version of Kubernetes is supported
+// VsphereCloudControllerSupported checks if this version of Kubernetes is supported
 // by our implementation of the external cloud controller.
-func VsphereSupported(version semver.Semver) bool {
+func VsphereCloudControllerSupported(version semver.Semver) bool {
 	if _, err := getVsphereCPIVersion(version); err != nil {
 		return false
 	}

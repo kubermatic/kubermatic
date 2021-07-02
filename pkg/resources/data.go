@@ -653,6 +653,9 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 	case cluster.Spec.Cloud.AWS != nil:
 		return "aws"
 	case cluster.Spec.Cloud.VSphere != nil:
+		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+			return cloudProviderExternalFlag
+		}
 		return "vsphere"
 	case cluster.Spec.Cloud.Azure != nil:
 		return "azure"
