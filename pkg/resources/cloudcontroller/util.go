@@ -25,7 +25,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 )
 
-// ExternalCloudControllerFeatureSupported checks if the
+// ExternalCloudControllerFeatureSupported checks if the cloud provider supports
+// external CCM.
 func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluster *kubermaticv1.Cluster) bool {
 	switch {
 	case cluster.Spec.Cloud.Openstack != nil:
@@ -46,6 +47,17 @@ func ExternalCloudControllerFeatureSupported(dc *kubermaticv1.Datacenter, cluste
 	case cluster.Spec.Cloud.Hetzner != nil:
 		return dc.Spec.Hetzner.Network != "" && cluster.Spec.Version.Minor() >= 18
 
+	default:
+		return false
+	}
+}
+
+// ExternalCloudControllerClusterName checks if the ClusterFeatureCCMClusterName is supported
+// for the cloud provider.
+func ExternalCloudControllerClusterName(cluster *kubermaticv1.Cluster) bool {
+	switch {
+	case cluster.Spec.Cloud.Openstack != nil:
+		return true
 	default:
 		return false
 	}
