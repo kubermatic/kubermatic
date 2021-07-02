@@ -32,7 +32,7 @@ spec:
         - -timeout
         - "1"
         - -command
-        - '{"command":"--v=2","args":["--cloud-provider=vsphere","--cloud-config=/etc/cloud/config","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig"]}'
+        - '{"command":"/bin/vsphere-cloud-controller-manager","args":["--v=2","--cloud-provider=vsphere","--cloud-config=/etc/cloud/config","--kubeconfig=/etc/kubernetes/kubeconfig/kubeconfig"]}'
         command:
         - /http-prober-bin/http-prober
         image: gcr.io/cloud-provider-vsphere/cpi/release/manager:v1.18.2
