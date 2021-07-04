@@ -40,7 +40,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
-	"k8c.io/kubermatic/v2/pkg/handler/v2/whitelisted_registry"
+	whitelistedregistry "k8c.io/kubermatic/v2/pkg/handler/v2/whitelisted_registry"
 )
 
 // RegisterV2 declares all router paths for v2
@@ -283,6 +283,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodDelete).
 		Path("/constraints/{constraint_name}").
 		Handler(r.deleteDefaultConstraint())
+
+	mux.Methods(http.MethodPatch).
+		Path("/constraints/{constraint_name}").
+		Handler(r.patchDefaultConstraint())
 
 	// Define a set of endpoints for gatekeeper constraints
 	mux.Methods(http.MethodGet).
@@ -1589,6 +1593,33 @@ func (r Routing) deleteDefaultConstraint() http.Handler {
 			middleware.UserSaver(r.userProvider),
 		)(constraint.DeleteDefaultEndpoint(r.userInfoGetter, r.defaultConstraintProvider)),
 		constraint.DecodeDefaultConstraintReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v2/constraints/{constraint_name} constraint patchDefaultConstraint
+//
+//     Patch a specified default constraint
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: Constraint
+//       401: empty
+//       403: empty
+func (r Routing) patchDefaultConstraint() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+		)(constraint.PatchDefaultEndpoint(r.userInfoGetter, r.defaultConstraintProvider, r.constraintTemplateProvider)),
+		constraint.DecodePatchDefaultConstraintReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

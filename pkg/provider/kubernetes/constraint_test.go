@@ -523,3 +523,63 @@ func TestDeleteDefaultConstraint(t *testing.T) {
 		})
 	}
 }
+
+func TestUpdateDefaultConstraint(t *testing.T) {
+	testCases := []struct {
+		name             string
+		updateConstraint func(*kubermaticv1.Constraint)
+		existingObjects  []ctrlruntimeclient.Object
+		expectedCT       *kubermaticv1.Constraint
+	}{
+		{
+			name: "scenario 1: update default constraint",
+			updateConstraint: func(ct *kubermaticv1.Constraint) {
+				ct.Spec.Match.Kinds = append(ct.Spec.Match.Kinds, kubermaticv1.Kind{Kinds: []string{"pod"}, APIGroups: []string{"v1"}})
+				ct.Spec.Match.Scope = "*"
+			},
+			existingObjects: []ctrlruntimeclient.Object{
+				genConstraint("ct1", testKubermaticNamespace),
+			},
+		},
+	}
+
+	for idx := range testCases {
+		tc := testCases[idx]
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			ctx := context.Background()
+			client := fakectrlruntimeclient.
+				NewClientBuilder().
+				WithScheme(scheme.Scheme).
+				WithObjects(tc.existingObjects...).
+				Build()
+
+			fakeImpersonationClient := func(impCfg restclient.ImpersonationConfig) (ctrlruntimeclient.Client, error) {
+				return client, nil
+			}
+			provider, err := kubernetes.NewDefaultConstraintProvider(fakeImpersonationClient, client, testKubermaticNamespace)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			// fetch default constraint to get the ResourceVersion
+			constraint := &kubermaticv1.Constraint{}
+			if err := client.Get(ctx, ctrlruntimeclient.ObjectKeyFromObject(tc.existingObjects[0]), constraint); err != nil {
+				t.Fatal(err)
+			}
+
+			updatedCT := constraint.DeepCopy()
+			tc.updateConstraint(updatedCT)
+
+			constraint, err = provider.Update(updatedCT)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !reflect.DeepEqual(constraint, updatedCT) {
+				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(constraint, updatedCT))
+			}
+		})
+	}
+}
