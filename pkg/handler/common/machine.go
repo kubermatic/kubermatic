@@ -542,7 +542,7 @@ func RestartMachineDeployment(ctx context.Context, userInfoGetter provider.UserI
 	if machineDeployment.Annotations == nil {
 		machineDeployment.Annotations = map[string]string{}
 	}
-	machineDeployment.Annotations["forceRestart"] = strconv.FormatInt(time.Now().UnixNano(), 10)
+	machineDeployment.Annotations[kubermaticv1.ForceRestartAnnotation] = strconv.FormatInt(time.Now().UnixNano(), 10)
 
 	if err := client.Update(ctx, machineDeployment); err != nil {
 		return nil, fmt.Errorf("failed to update machine deployment: %v", err)
