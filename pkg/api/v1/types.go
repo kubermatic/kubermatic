@@ -1494,6 +1494,15 @@ type AWSNodeSpec struct {
 	AssignPublicIP *bool `json:"assignPublicIP"`
 	// IsSpotInstance indicates whether the created machine is an aws ec2 spot instance or on-demand ec2 instance.
 	IsSpotInstance *bool `json:"isSpotInstance"`
+	// SpotInstanceMaxPrice is the maximum price you are willing to pay per instance hour. Your instance runs when
+	// your maximum price is greater than the Spot Price.
+	SpotInstanceMaxPrice *string `json:"spotInstanceMaxPrice"`
+	// SpotInstancePersistentRequest ensures that your request will be submitted every time your Spot Instance is terminated.
+	SpotInstancePersistentRequest *bool `json:"spotInstancePersistentRequest"`
+	// SpotInstanceInterruptionBehavior sets the interruption behavior for the spot instance when capacity is no longer
+	// available at the price you specified, if there is no capacity, or if a constraint cannot be met. Charges for EBS
+	// volume storage apply when an instance is stopped.
+	SpotInstanceInterruptionBehavior *string `json:"spotInstanceInterruptionBehavior"`
 }
 
 func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {
@@ -1516,25 +1525,31 @@ func (spec *AWSNodeSpec) MarshalJSON() ([]byte, error) {
 	}
 
 	res := struct {
-		InstanceType     string            `json:"instanceType"`
-		VolumeSize       int64             `json:"diskSize"`
-		VolumeType       string            `json:"volumeType"`
-		AMI              string            `json:"ami"`
-		Tags             map[string]string `json:"tags"`
-		AvailabilityZone string            `json:"availabilityZone"`
-		SubnetID         string            `json:"subnetID"`
-		AssignPublicIP   *bool             `json:"assignPublicIP"`
-		IsSpotInstance   *bool             `json:"isSpotInstance"`
+		InstanceType                     string            `json:"instanceType"`
+		VolumeSize                       int64             `json:"diskSize"`
+		VolumeType                       string            `json:"volumeType"`
+		AMI                              string            `json:"ami"`
+		Tags                             map[string]string `json:"tags"`
+		AvailabilityZone                 string            `json:"availabilityZone"`
+		SubnetID                         string            `json:"subnetID"`
+		AssignPublicIP                   *bool             `json:"assignPublicIP"`
+		IsSpotInstance                   *bool             `json:"isSpotInstance"`
+		SpotInstanceMaxPrice             *string           `json:"spotInstanceMaxPrice,omitempty"`
+		SpotInstancePersistentRequest    *bool             `json:"spotInstancePersistentRequest,omitempty"`
+		SpotInstanceInterruptionBehavior *string           `json:"spotInstanceInterruptionBehavior,omitempty"`
 	}{
-		InstanceType:     spec.InstanceType,
-		VolumeSize:       spec.VolumeSize,
-		VolumeType:       spec.VolumeType,
-		AMI:              spec.AMI,
-		Tags:             spec.Tags,
-		AvailabilityZone: spec.AvailabilityZone,
-		SubnetID:         spec.SubnetID,
-		AssignPublicIP:   spec.AssignPublicIP,
-		IsSpotInstance:   spec.IsSpotInstance,
+		InstanceType:                     spec.InstanceType,
+		VolumeSize:                       spec.VolumeSize,
+		VolumeType:                       spec.VolumeType,
+		AMI:                              spec.AMI,
+		Tags:                             spec.Tags,
+		AvailabilityZone:                 spec.AvailabilityZone,
+		SubnetID:                         spec.SubnetID,
+		AssignPublicIP:                   spec.AssignPublicIP,
+		IsSpotInstance:                   spec.IsSpotInstance,
+		SpotInstanceMaxPrice:             spec.SpotInstanceMaxPrice,
+		SpotInstancePersistentRequest:    spec.SpotInstancePersistentRequest,
+		SpotInstanceInterruptionBehavior: spec.SpotInstanceInterruptionBehavior,
 	}
 
 	return json.Marshal(&res)
