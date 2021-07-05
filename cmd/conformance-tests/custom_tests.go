@@ -28,7 +28,10 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	"k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1/helper"
+	"k8c.io/kubermatic/v2/pkg/resources"
 
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -420,5 +423,78 @@ func (r *testRunner) testUserClusterPodAndNodeMetrics(ctx context.Context, log *
 	}
 
 	log.Info("Successfully validated user cluster pod and node metrics.")
+	return nil
+}
+
+func (r *testRunner) testExternalCCMMigration(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster,
+	seedClient, userClient ctrlruntimeclient.Client) error {
+	log.Info("Testing migration to external CCM for living cluster")
+
+	newCluster := cluster.DeepCopy()
+	newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
+	if err := seedClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(cluster)); err != nil {
+		return err
+	}
+
+	// check the cluster has the migrationNeeded labels
+	err := wait.Poll(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
+		annotatedCluster := &kubermaticv1.Cluster{}
+		if err := seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, annotatedCluster); err != nil {
+			return false, err
+		}
+		_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
+		_, csiOk := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
+		if !ccmOk && !csiOk {
+			return false, nil
+		}
+		return true, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get cluster annotated with ccm migration needed annotations: %v", err)
+	}
+
+	// check the machineControllerWebhook deployment is updated with the "-node-external-cloud-provider" flag
+	err = wait.Poll(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
+		machineControllerWebhookPods := &corev1.PodList{}
+		if err := seedClient.List(ctx, machineControllerWebhookPods, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName), ctrlruntimeclient.MatchingLabels{
+			resources.AppLabelKey: resources.MachineControllerWebhookDeploymentName,
+		}); err != nil {
+			return false, err
+		}
+		if len(machineControllerWebhookPods.Items) != 1 {
+			return false, nil
+		}
+		for _, arg := range machineControllerWebhookPods.Items[0].Spec.Containers[0].Args {
+			if arg == "-node-external-cloud-provider" {
+				return true, nil
+			}
+		}
+		return false, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get cluster annotated with ccm migration needed annotations: %v", err)
+	}
+
+	// roll out all the machines
+	if err := userClient.DeleteAllOf(ctx, &v1alpha1.Machine{}); err != nil {
+		return err
+	}
+
+	// check the cluster has been completely migrated
+	err = wait.Poll(r.userClusterPollInterval, r.customTestTimeout, func() (done bool, err error) {
+		migratingCluster := &kubermaticv1.Cluster{}
+		if err := seedClient.Get(ctx, types.NamespacedName{Name: cluster.Name}, migratingCluster); err != nil {
+			return false, err
+		}
+		if helper.ClusterConditionHasStatus(migratingCluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+			return true, nil
+		}
+		return false, nil
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get cluster with CSIKubeletMigrationCompleted condition set to true: %v", err)
+	}
+
+	log.Info("Successfully external CCM migration for living cluster")
 	return nil
 }
