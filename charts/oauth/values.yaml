@@ -19,7 +19,11 @@ dex:
   replicas: 2
   # this options allows setting custom envvars in the dex container
   # this list is directly handed to the container spec
-  env: []
+  env:
+    - name: KUBERNETES_POD_NAMESPACE
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
   #  - name: HTTP_PROXY
   #    value: "http://USER:PASSWORD@IPADDR:PORT"
   #  - name: HTTPS_PROXY
