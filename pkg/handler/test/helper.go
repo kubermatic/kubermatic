@@ -1756,11 +1756,20 @@ rules:
 `, ruleGroupName))
 }
 
-func GenDefaultWhitelistedRegistry(name, registryPrefix string) apiv2.WhitelistedRegistry {
+func GenDefaultAPIWhitelistedRegistry(name, registryPrefix string) apiv2.WhitelistedRegistry {
 	return apiv2.WhitelistedRegistry{
 		Name: name,
 		Spec: kubermaticv1.WhitelistedRegistrySpec{
 			RegistryPrefix: registryPrefix,
 		},
 	}
+}
+
+func GenWhitelistedRegistry(name, registryPrefix string) *kubermaticv1.WhitelistedRegistry {
+	wr := &kubermaticv1.WhitelistedRegistry{}
+	wr.Name = name
+	wr.Spec = kubermaticv1.WhitelistedRegistrySpec{
+		RegistryPrefix: registryPrefix,
+	}
+	return wr
 }

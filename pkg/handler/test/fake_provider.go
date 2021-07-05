@@ -268,3 +268,11 @@ type FakePrivilegedWhitelisedRegistryProvider struct {
 func (p *FakePrivilegedWhitelisedRegistryProvider) CreateUnsecured(wr *kubermaticapiv1.WhitelistedRegistry) (*kubermaticapiv1.WhitelistedRegistry, error) {
 	return p.Provider.CreateUnsecured(wr)
 }
+
+func (p *FakePrivilegedWhitelisedRegistryProvider) GetUnsecured(name string) (*kubermaticapiv1.WhitelistedRegistry, error) {
+	return p.Provider.GetUnsecured(name)
+}
+
+func (p *FakePrivilegedWhitelisedRegistryProvider) ListUnsecured() (*kubermaticapiv1.WhitelistedRegistryList, error) {
+	return p.Provider.ListUnsecured()
+}
