@@ -753,6 +753,18 @@ func (r *testRunner) testCluster(
 		log.Errorf("Failed to verify that pod and node metrics are available: %v", err)
 	}
 
+	// Test migration to external CCM
+	if cluster.Spec.Cloud.Openstack != nil {
+		if err := junitReporterWrapper(
+			"[Kubermatic] Test CCM migration", report, func() error {
+				return retryNAttempts(maxTestAttempts, func(attempt int) error {
+					return r.testExternalCCMMigration(ctx, log, cluster, r.seedClusterClient, userClusterClient)
+				})
+			}); err != nil {
+			log.Errorf("Failed to verify live migration to external CCM: %v", err)
+		}
+	}
+
 	return nil
 }
 
