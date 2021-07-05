@@ -183,7 +183,7 @@ func (req machineDeploymentReq) GetSeedCluster() apiv1.SeedCluster {
 }
 
 // machineDeploymentReq defines HTTP request for getMachineDeployment
-// swagger:parameters getMachineDeployment
+// swagger:parameters getMachineDeployment restartMachineDeployment
 type machineDeploymentReq struct {
 	common.ProjectReq
 	// in: path
@@ -403,6 +403,13 @@ func PatchMachineDeployment(sshKeyProvider provider.SSHKeyProvider, projectProvi
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(patchMachineDeploymentReq)
 		return handlercommon.PatchMachineDeployment(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, sshKeyProvider, seedsGetter, req.ProjectID, req.ClusterID, req.MachineDeploymentID, req.Patch)
+	}
+}
+
+func RestartMachineDeployment(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, userInfoGetter provider.UserInfoGetter) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(machineDeploymentReq)
+		return handlercommon.RestartMachineDeployment(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, req.ProjectID, req.ClusterID, req.MachineDeploymentID)
 	}
 }
 

@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -513,6 +514,35 @@ func PatchMachineDeployment(ctx context.Context, userInfoGetter provider.UserInf
 	machineDeployment.Spec.Template.Spec = patchedMachineDeployment.Spec.Template.Spec
 	machineDeployment.Spec.Replicas = patchedMachineDeployment.Spec.Replicas
 	machineDeployment.Spec.Paused = patchedMachineDeployment.Spec.Paused
+
+	if err := client.Update(ctx, machineDeployment); err != nil {
+		return nil, fmt.Errorf("failed to update machine deployment: %v", err)
+	}
+
+	return outputMachineDeployment(machineDeployment)
+}
+
+func RestartMachineDeployment(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, projectID, clusterID, machineDeploymentID string) (interface{}, error) {
+	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
+	cluster, err := GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, projectID, clusterID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := common.GetClusterClient(ctx, userInfoGetter, clusterProvider, cluster, projectID)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	machineDeployment := &clusterv1alpha1.MachineDeployment{}
+	if err := client.Get(ctx, types.NamespacedName{Namespace: metav1.NamespaceSystem, Name: machineDeploymentID}, machineDeployment); err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if machineDeployment.Annotations == nil {
+		machineDeployment.Annotations = map[string]string{}
+	}
+	machineDeployment.Annotations["forceRestart"] = strconv.FormatInt(time.Now().UnixNano(), 10)
 
 	if err := client.Update(ctx, machineDeployment); err != nil {
 		return nil, fmt.Errorf("failed to update machine deployment: %v", err)
