@@ -27,6 +27,8 @@ type Client struct {
 type ClientService interface {
 	CreateWhitelistedRegistry(params *CreateWhitelistedRegistryParams, authInfo runtime.ClientAuthInfoWriter) (*CreateWhitelistedRegistryCreated, error)
 
+	ListWhitelistedRegistries(params *ListWhitelistedRegistriesParams, authInfo runtime.ClientAuthInfoWriter) (*ListWhitelistedRegistriesOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -61,6 +63,40 @@ func (a *Client) CreateWhitelistedRegistry(params *CreateWhitelistedRegistryPara
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateWhitelistedRegistryDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  ListWhitelistedRegistries lists whitelisted registries
+*/
+func (a *Client) ListWhitelistedRegistries(params *ListWhitelistedRegistriesParams, authInfo runtime.ClientAuthInfoWriter) (*ListWhitelistedRegistriesOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewListWhitelistedRegistriesParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "listWhitelistedRegistries",
+		Method:             "GET",
+		PathPattern:        "/api/v2/whitelistedregistries",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &ListWhitelistedRegistriesReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*ListWhitelistedRegistriesOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*ListWhitelistedRegistriesDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

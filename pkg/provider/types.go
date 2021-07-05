@@ -1039,4 +1039,16 @@ type PrivilegedWhitelistedRegistryProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
 	CreateUnsecured(ct *kubermaticv1.WhitelistedRegistry) (*kubermaticv1.WhitelistedRegistry, error)
+
+	// GetUnsecured gets the given whitelisted registry
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	GetUnsecured(name string) (*kubermaticv1.WhitelistedRegistry, error)
+
+	// ListUnsecured gets a list of all whitelisted registries
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resources
+	ListUnsecured() (*kubermaticv1.WhitelistedRegistryList, error)
 }
