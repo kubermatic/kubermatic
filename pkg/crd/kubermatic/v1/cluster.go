@@ -44,6 +44,9 @@ const (
 
 	// CredentialPrefix is the prefix used for the secrets containing cloud provider crednentials.
 	CredentialPrefix = "credential"
+
+	// ForceRestartAnnotation is key of the annotation used to restart machine deployments.
+	ForceRestartAnnotation = "forceRestart"
 )
 
 const (
