@@ -21,7 +21,9 @@ dex:
   # this list is directly handed to the container spec
   env:
     - name: KUBERNETES_POD_NAMESPACE
-      value: oauth
+      valueFrom:
+        fieldRef:
+          fieldPath: metadata.namespace
   #  - name: HTTP_PROXY
   #    value: "http://USER:PASSWORD@IPADDR:PORT"
   #  - name: HTTPS_PROXY
