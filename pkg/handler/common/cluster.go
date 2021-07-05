@@ -75,15 +75,72 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 
 	clusterProvider := ctx.Value(middleware.ClusterProviderContextKey).(provider.ClusterProvider)
 	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+
 	adminUserInfo, err := userInfoGetter(ctx, "")
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
-	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+
+	_, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, body.Cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
+	partialCluster, err := GenerateCluster(ctx, projectID, body, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle)
+	if err != nil {
+		return nil, err
+	}
+
+	project, err := common.GetProject(ctx, userInfoGetter, projectProvider, privilegedProjectProvider, projectID, &provider.ProjectGetOptions{IncludeUninitialized: false})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+	existingClusters, err := clusterProvider.List(project, &provider.ClusterListOptions{ClusterSpecName: partialCluster.Spec.HumanReadableName})
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	if len(existingClusters.Items) > 0 {
+		return nil, errors.NewAlreadyExists("cluster", partialCluster.Spec.HumanReadableName)
+	}
+
+	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster); err != nil {
+		return nil, err
+	}
+	kuberneteshelper.AddFinalizer(partialCluster, apiv1.CredentialsSecretsCleanupFinalizer)
+
+	newCluster, err := createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, partialCluster)
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
+
+	log := kubermaticlog.Logger.With("cluster", newCluster.Name)
+
+	// Block for up to 10 seconds to give the rbac controller time to create the bindings.
+	// During that time we swallow all errors
+	if err := wait.PollImmediate(time.Second, 10*time.Second, func() (bool, error) {
+		_, err := GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, newCluster.Name, &provider.ClusterGetOptions{})
+		if err != nil {
+			log.Debugw("Error when waiting for cluster to become ready after creation", zap.Error(err))
+			return false, nil
+		}
+		return true, nil
+	}); err != nil {
+		log.Error("Timed out waiting for cluster to become ready")
+		return ConvertInternalClusterToExternal(newCluster, dc, true), errors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
+	}
+
+	return ConvertInternalClusterToExternal(newCluster, dc, true), nil
+}
+
+func GenerateCluster(ctx context.Context, projectID string, body apiv1.CreateClusterSpec,
+	seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider, exposeStrategy kubermaticv1.ExposeStrategy,
+	userInfoGetter provider.UserInfoGetter, caBundle *x509.CertPool) (*kubermaticv1.Cluster, error) {
+	privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
+	adminUserInfo, err := userInfoGetter(ctx, "")
+	if err != nil {
+		return nil, common.KubernetesErrorToHTTPError(err)
+	}
 	seed, dc, err := provider.DatacenterFromSeedMap(adminUserInfo, seedsGetter, body.Cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return nil, common.KubernetesErrorToHTTPError(err)
@@ -109,15 +166,6 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 	spec.ExposeStrategy = exposeStrategy
 	if seed.Spec.ExposeStrategy != "" {
 		spec.ExposeStrategy = seed.Spec.ExposeStrategy
-	}
-
-	existingClusters, err := clusterProvider.List(project, &provider.ClusterListOptions{ClusterSpecName: spec.HumanReadableName})
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	if len(existingClusters.Items) > 0 {
-		return nil, errors.NewAlreadyExists("cluster", spec.HumanReadableName)
 	}
 
 	if err = validation.ValidateUpdateWindow(spec.UpdateWindow); err != nil {
@@ -157,7 +205,7 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 
 			data, err := json.Marshal(body.NodeDeployment)
 			if err != nil {
-				return "", fmt.Errorf("cannot marshal initial machine deployment: %v", err)
+				return nil, fmt.Errorf("cannot marshal initial machine deployment: %v", err)
 			}
 			partialCluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = string(data)
 		}
@@ -195,34 +243,7 @@ func CreateEndpoint(ctx context.Context, projectID string, body apiv1.CreateClus
 			partialCluster.Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] = true
 		}
 	}
-
-	if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster); err != nil {
-		return nil, err
-	}
-	kuberneteshelper.AddFinalizer(partialCluster, apiv1.CredentialsSecretsCleanupFinalizer)
-
-	newCluster, err := createNewCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, partialCluster)
-	if err != nil {
-		return nil, common.KubernetesErrorToHTTPError(err)
-	}
-
-	log := kubermaticlog.Logger.With("cluster", newCluster.Name)
-
-	// Block for up to 10 seconds to give the rbac controller time to create the bindings.
-	// During that time we swallow all errors
-	if err := wait.PollImmediate(time.Second, 10*time.Second, func() (bool, error) {
-		_, err := GetInternalCluster(ctx, userInfoGetter, clusterProvider, privilegedClusterProvider, project, projectID, newCluster.Name, &provider.ClusterGetOptions{})
-		if err != nil {
-			log.Debugw("Error when waiting for cluster to become ready after creation", zap.Error(err))
-			return false, nil
-		}
-		return true, nil
-	}); err != nil {
-		log.Error("Timed out waiting for cluster to become ready")
-		return ConvertInternalClusterToExternal(newCluster, dc, true), errors.New(http.StatusInternalServerError, "timed out waiting for cluster to become ready")
-	}
-
-	return ConvertInternalClusterToExternal(newCluster, dc, true), nil
+	return partialCluster, nil
 }
 
 func GetExternalClusters(ctx context.Context, userInfoGetter provider.UserInfoGetter, clusterProvider provider.ClusterProvider, projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider, seedsGetter provider.SeedsGetter, projectID string) ([]*apiv1.Cluster, error) {

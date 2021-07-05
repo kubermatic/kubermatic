@@ -507,7 +507,7 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 		req.Body.Cluster.Type = apiv1.KubernetesClusterType
 	}
 
-	seedName, err := findSeedNameForDatacenter(c, req.Body.Cluster.Spec.Cloud.DatacenterName)
+	seedName, err := FindSeedNameForDatacenter(c, req.Body.Cluster.Spec.Cloud.DatacenterName)
 	if err != nil {
 		return nil, err
 	}
@@ -523,7 +523,7 @@ func (req CreateClusterReq) Validate(clusterType kubermaticv1.ClusterType, updat
 	return handlercommon.ValidateClusterSpec(clusterType, updateManager, req.Body)
 }
 
-func findSeedNameForDatacenter(ctx context.Context, datacenter string) (string, error) {
+func FindSeedNameForDatacenter(ctx context.Context, datacenter string) (string, error) {
 	seedsGetter, ok := ctx.Value(middleware.SeedsGetterContextKey).(provider.SeedsGetter)
 	if !ok {
 		return "", fmt.Errorf("seeds getter is not set")
