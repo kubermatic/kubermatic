@@ -123,16 +123,22 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 		if err := json.Unmarshal(decodedProviderSpec.CloudProviderSpec.Raw, &config); err != nil {
 			return nil, fmt.Errorf("failed to parse aws config: %v", err)
 		}
+
+		spotInstanceMaxPrice, spotInstanceInterruptionBehavior, spotInstancePersistentRequest := extractSpotInstanceConfigs(config)
+
 		cloudSpec.AWS = &apiv1.AWSNodeSpec{
-			Tags:             config.Tags,
-			VolumeSize:       config.DiskSize,
-			VolumeType:       config.DiskType.Value,
-			InstanceType:     config.InstanceType.Value,
-			AMI:              config.AMI.Value,
-			AvailabilityZone: config.AvailabilityZone.Value,
-			SubnetID:         config.SubnetID.Value,
-			AssignPublicIP:   config.AssignPublicIP,
-			IsSpotInstance:   config.IsSpotInstance,
+			Tags:                             config.Tags,
+			VolumeSize:                       config.DiskSize,
+			VolumeType:                       config.DiskType.Value,
+			InstanceType:                     config.InstanceType.Value,
+			AMI:                              config.AMI.Value,
+			AvailabilityZone:                 config.AvailabilityZone.Value,
+			SubnetID:                         config.SubnetID.Value,
+			AssignPublicIP:                   config.AssignPublicIP,
+			IsSpotInstance:                   config.IsSpotInstance,
+			SpotInstanceMaxPrice:             spotInstanceMaxPrice,
+			SpotInstancePersistentRequest:    spotInstancePersistentRequest,
+			SpotInstanceInterruptionBehavior: spotInstanceInterruptionBehavior,
 		}
 	case providerconfig.CloudProviderAzure:
 		config := &azure.RawConfig{}
@@ -277,4 +283,16 @@ func GetAPIV2NodeCloudSpec(machineSpec clusterv1alpha1.MachineSpec) (*apiv1.Node
 	}
 
 	return cloudSpec, nil
+}
+
+func extractSpotInstanceConfigs(config *aws.RawConfig) (*string, *string, *bool) {
+	if config.IsSpotInstance != nil &&
+		*config.IsSpotInstance &&
+		config.SpotInstanceConfig != nil {
+		return &config.SpotInstanceConfig.MaxPrice.Value,
+			&config.SpotInstanceConfig.InterruptionBehavior.Value,
+			&config.SpotInstanceConfig.PersistentRequest.Value
+	}
+
+	return nil, nil, nil
 }

@@ -34,6 +34,18 @@ type AWSNodeSpec struct {
 	// IsSpotInstance indicates whether the created machine is an aws ec2 spot instance or on-demand ec2 instance.
 	IsSpotInstance bool `json:"isSpotInstance,omitempty"`
 
+	// SpotInstanceInterruptionBehavior sets the interruption behavior for the spot instance when capacity is no longer
+	// available at the price you specified, if there is no capacity, or if a constraint cannot be met. Charges for EBS
+	// volume storage apply when an instance is stopped.
+	SpotInstanceInterruptionBehavior string `json:"spotInstanceInterruptionBehavior,omitempty"`
+
+	// SpotInstanceMaxPrice is the maximum price you are willing to pay per instance hour. Your instance runs when
+	// your maximum price is greater than the Spot Price.
+	SpotInstanceMaxPrice string `json:"spotInstanceMaxPrice,omitempty"`
+
+	// SpotInstancePersistentRequest ensures that your request will be submitted every time your Spot Instance is terminated.
+	SpotInstancePersistentRequest bool `json:"spotInstancePersistentRequest,omitempty"`
+
 	// The VPC subnet to which the node shall be connected.
 	SubnetID string `json:"subnetID,omitempty"`
 
