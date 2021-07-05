@@ -167,9 +167,14 @@ func (h *AdmissionHandler) rejectUserSSHKeyAgentChanges(ctx context.Context, clu
 			return fmt.Errorf("failed to fetch cluster name=%s: %v", cluster.Name, err)
 		}
 
-		if !reflect.DeepEqual(oldCluster.Spec.EnableUserSSHKeyAgent, cluster.Spec.EnableUserSSHKeyAgent) {
-			return errors.New("enableUserSSHKeyAgent field cannot be updated after cluster creation")
+		if oldCluster.Spec.EnableUserSSHKeyAgent != nil {
+			if !reflect.DeepEqual(oldCluster.Spec.EnableUserSSHKeyAgent, cluster.Spec.EnableUserSSHKeyAgent) {
+				return errors.New("enableUserSSHKeyAgent field cannot be updated after cluster creation")
+			}
+		} else if cluster.Spec.EnableUserSSHKeyAgent != nil && !*cluster.Spec.EnableUserSSHKeyAgent {
+			return errors.New("UserSSHKey agent is enabled by default for user clusters created prior KKP 2.16 version")
 		}
+
 	}
 
 	return nil
