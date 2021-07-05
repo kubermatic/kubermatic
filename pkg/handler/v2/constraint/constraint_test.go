@@ -629,8 +629,8 @@ func TestPatchConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			Patch:            `{"spec":{"constraintType":"somethingdifferentthatshouldnotbeapplied","match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":["namespaces"]}]}}}`,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["pods"],"apiGroups":["v1"]},{"kinds":["namespaces"]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"labels":["gatekeeper","opa"]},"selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"deployment":"prod","domain":"sales"},"matchExpressions":[{"key":"cluster","operator":"Exists"}]}}}}`,
+			Patch:            `{"spec":{"constraintType":"RequiredLabel","parameters":{"labels":["test"]},"match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":["namespaces"]}]}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["pods"],"apiGroups":["v1"]},{"kinds":["namespaces"]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"labels":["test"]},"selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"deployment":"prod","domain":"sales"},"matchExpressions":[{"key":"cluster","operator":"Exists"}]}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -645,7 +645,7 @@ func TestPatchConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			Patch:            `{"spec":{"constraintType":"somethingdifferentthatshouldnotbeapplied","match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":"namespaces"}]}}}`,
+			Patch:            `{"spec":{"constraintType":"RequiredLabel","parameters":{"labels":["test"]},"match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":["namespaces"]}]}}}`,
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
@@ -661,8 +661,8 @@ func TestPatchConstraints(t *testing.T) {
 			ConstraintName:   "ct1",
 			ProjectID:        test.GenDefaultProject().Name,
 			ClusterID:        test.GenDefaultCluster().Name,
-			Patch:            `{"spec":{"constraintType":"somethingdifferentthatshouldnotbeapplied","match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":["namespaces"]}]}}}`,
-			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["pods"],"apiGroups":["v1"]},{"kinds":["namespaces"]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"labels":["gatekeeper","opa"]},"selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"deployment":"prod","domain":"sales"},"matchExpressions":[{"key":"cluster","operator":"Exists"}]}}}}`,
+			Patch:            `{"spec":{"constraintType":"RequiredLabel","parameters":{"labels":["test"]},"match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":["namespaces"]}]}}}`,
+			ExpectedResponse: `{"name":"ct1","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["pods"],"apiGroups":["v1"]},{"kinds":["namespaces"]}],"labelSelector":{},"namespaceSelector":{}},"parameters":{"labels":["test"]},"selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"deployment":"prod","domain":"sales"},"matchExpressions":[{"key":"cluster","operator":"Exists"}]}}}}`,
 			HTTPStatus:       http.StatusOK,
 			ExistingObjects: test.GenDefaultKubermaticObjects(
 				test.GenTestSeed(),
@@ -689,6 +689,38 @@ func TestPatchConstraints(t *testing.T) {
 			),
 			ExistingAPIUser: test.GenDefaultAPIUser(),
 		},
+		{
+			Name:             "scenario 5: cannot change constraint name",
+			ConstraintName:   "ct1",
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			Patch:            `{"name":"changedname","spec":{"constraintType":"RequiredLabel","match":{"kinds":[{"kinds":["pods"], "apiGroups":["v1"]}, {"kinds":["namespaces"]}]}}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"Changing constraint name is not allowed: \"ct1\" to \"changedname\""}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenConstraintTemplate("requiredlabel"),
+				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
+		{
+			Name:             "scenario 6: cannot change constraint type",
+			ConstraintName:   "ct1",
+			ProjectID:        test.GenDefaultProject().Name,
+			ClusterID:        test.GenDefaultCluster().Name,
+			Patch:            `{"spec":{"match":{"kinds":[{"apiGroups":[""],"kinds":["pods"]}]},"parameters":{"rawJSON":"{\"labels\":[\"test1\"]}"},"constraintType":"somethingdifferentthatshouldnotbeapplied", "disabled": false, "selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"filtered":"false"}}}}}`,
+			ExpectedResponse: `{"error":{"code":400,"message":"Changing constraint type is not allowed: \"RequiredLabel\" to \"somethingdifferentthatshouldnotbeapplied\""}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenConstraintTemplate("requiredlabel"),
+				test.GenConstraint("ct1", test.GenDefaultCluster().Status.NamespaceName, "RequiredLabel"),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+		},
 	}
 
 	for _, tc := range testcases {
@@ -702,7 +734,7 @@ func TestPatchConstraints(t *testing.T) {
 			}
 
 			ep.ServeHTTP(res, req)
-
+			fmt.Println(res)
 			if res.Code != tc.HTTPStatus {
 				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
 			}
@@ -1018,7 +1050,7 @@ func TestPatchDefaultConstraints(t *testing.T) {
 		{
 			Name:             "scenario 4: cannot change default constraint name",
 			ConstraintName:   "ct1",
-			Patch:            `{"name":"changedname","spec":{"crd":{"spec":{"names":{"kind":"labelconstraint","shortNames":["lc"]}}}}}`,
+			Patch:            `{"name":"changedname","spec":{"match":{"kinds":[{"apiGroups":[""],"kinds":["pods"]}]},"parameters":{"rawJSON":"{\"labels\":[\"test1\"]}"},"constraintType":"RequiredLabel", "disabled": false, "selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"filtered":"false"}}}}}`,
 			ExpectedResponse: `{"error":{"code":400,"message":"Changing default constraint name is not allowed: \"ct1\" to \"changedname\""}}`,
 			HTTPStatus:       http.StatusBadRequest,
 			ExistingObjects: []ctrlruntimeclient.Object{
@@ -1040,15 +1072,16 @@ func TestPatchDefaultConstraints(t *testing.T) {
 			ExistingAPIUser: test.GenDefaultAdminAPIUser(),
 		},
 		{
-			Name:             "scenario 5: cannot patch non-existing default constraint",
+			Name:             "scenario 6: cannot patch non-existing default constraint",
 			ConstraintName:   "doesnotexist",
-			Patch:            `{"spec":{"match":{"kinds":[{"apiGroups":[""],"kinds":["pods"]}]},"parameters":{"rawJSON":"{\"labels\":[\"test1\"]}"},"constraintType":"somethingdifferentthatshouldnotbeapplied", "disabled": false, "selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"filtered":"false"}}}}}`,
+			Patch:            `{"spec":{"match":{"kinds":[{"apiGroups":[""],"kinds":["pods"]}]},"parameters":{"rawJSON":"{\"labels\":[\"test1\"]}"},"constraintType":"RequiredLabel", "disabled": false, "selector":{"providers":["aws","gcp"],"labelSelector":{"matchLabels":{"filtered":"false"}}}}}`,
 			ExpectedResponse: `{"error":{"code":404,"message":"constraints.kubermatic.k8s.io \"doesnotexist\" not found"}}`,
 			HTTPStatus:       http.StatusNotFound,
 			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
 			ExistingObjects: []ctrlruntimeclient.Object{
 				test.GenConstraintTemplate("requiredlabel"),
-			}},
+			},
+		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.Name, func(t *testing.T) {

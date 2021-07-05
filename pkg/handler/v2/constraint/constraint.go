@@ -467,10 +467,17 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshall patch ct: %v", err))
 		}
 
-		patchedConstraint := convertAPIToInternalConstraint(req.Name, clus.Status.NamespaceName, patched.Spec)
+		// Constraint Name cannot be changed by patch
+		if patched.Name != originalConstraint.Name {
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Changing constraint name is not allowed: %q to %q", originalConstraint.Name, patched.Name))
+		}
 
 		// ConstraintType cannot be changed by patch
-		patchedConstraint.Spec.ConstraintType = originalConstraint.Spec.ConstraintType
+		if patched.Spec.ConstraintType != originalConstraint.Spec.ConstraintType {
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Changing constraint type is not allowed: %q to %q", originalConstraint.Spec.ConstraintType, patched.Spec.ConstraintType))
+		}
+
+		patchedConstraint := convertAPIToInternalConstraint(originalConstraint.Name, clus.Status.NamespaceName, patched.Spec)
 
 		// restore ResourceVersion to make patching safer and tests work more easily
 		patchedConstraint.ResourceVersion = originalConstraint.ResourceVersion
