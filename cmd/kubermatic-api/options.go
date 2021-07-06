@@ -178,4 +178,5 @@ type providers struct {
 	clusterTemplateInstanceProviderGetter provider.ClusterTemplateInstanceProviderGetter
 	ruleGroupProviderGetter               provider.RuleGroupProviderGetter
 	privilegedWhitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider
+	etcdBackupConfigProviderGetter        provider.EtcdBackupConfigProviderGetter
 }

@@ -86,6 +86,7 @@ type Routing struct {
 	clusterTemplateInstanceProviderGetter provider.ClusterTemplateInstanceProviderGetter
 	ruleGroupProviderGetter               provider.RuleGroupProviderGetter
 	privilegedWhitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider
+	etcdBackupConfigProviderGetter        provider.EtcdBackupConfigProviderGetter
 	versions                              kubermatic.Versions
 	caBundle                              *x509.CertPool
 }
@@ -139,6 +140,7 @@ func NewV2Routing(routingParams handler.RoutingParams) Routing {
 		clusterTemplateInstanceProviderGetter: routingParams.ClusterTemplateInstanceProviderGetter,
 		ruleGroupProviderGetter:               routingParams.RuleGroupProviderGetter,
 		privilegedWhitelistedRegistryProvider: routingParams.PrivilegedWhitelistedRegistryProvider,
+		etcdBackupConfigProviderGetter:        routingParams.EtcdBackupConfigProviderGetter,
 		versions:                              routingParams.Versions,
 		caBundle:                              routingParams.CABundle,
 	}

@@ -194,6 +194,7 @@ type newRoutingFunc func(
 	kubermaticVersions kubermatic.Versions,
 	defaultConstraintProvider provider.DefaultConstraintProvider,
 	privilegedWhitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider,
+	etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter,
 ) http.Handler
 
 func getRuntimeObjects(objs ...ctrlruntimeclient.Object) []runtime.Object {
@@ -410,6 +411,15 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		return nil, fmt.Errorf("can not find clusterTemplateInstanceProvider for seed %q", seed.Name)
 	}
 
+	etcdBackupConfigProvider := kubernetes.NewEtcdBackupConfigProvider(fakeImpersonationClient, fakeClient)
+	etcdBackupConfigProviders := map[string]provider.EtcdBackupConfigProvider{"us-central1": etcdBackupConfigProvider}
+	etcdBackupConfigProviderGetter := func(seed *kubermaticv1.Seed) (provider.EtcdBackupConfigProvider, error) {
+		if etcdBackupConfig, exists := etcdBackupConfigProviders[seed.Name]; exists {
+			return etcdBackupConfig, nil
+		}
+		return nil, fmt.Errorf("can not find etcdBackupConfigProvider for cluster %q", seed.Name)
+	}
+
 	eventRecorderProvider := kubernetes.NewEventRecorder()
 
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
@@ -469,6 +479,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		kubermaticVersions,
 		fakeDefaultConstraintProvider,
 		fakePrivilegedWhitelistedRegistryProvider,
+		etcdBackupConfigProviderGetter,
 	)
 
 	return mainRouter, &ClientsSets{kubermaticClient, fakeClient, kubernetesClient, tokenAuth, tokenGenerator}, nil

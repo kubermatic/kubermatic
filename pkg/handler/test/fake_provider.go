@@ -288,3 +288,12 @@ func (p *FakePrivilegedWhitelisedRegistryProvider) PatchUnsecured(wr *kubermatic
 func (p *FakePrivilegedWhitelisedRegistryProvider) DeleteUnsecured(name string) error {
 	return p.Provider.DeleteUnsecured(name)
 }
+
+type FakeEtcdBackupConfigProvider struct {
+	Provider   *kubernetes.EtcdBackupConfigProvider
+	FakeClient ctrlruntimeclient.Client
+}
+
+func (p *FakeEtcdBackupConfigProvider) Create(userInfo *provider.UserInfo, ebc *kubermaticapiv1.EtcdBackupConfig) (*kubermaticapiv1.EtcdBackupConfig, error) {
+	return p.Provider.Create(userInfo, ebc)
+}
