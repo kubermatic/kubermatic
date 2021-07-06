@@ -1,5 +1,57 @@
 # Kubermatic 2.17
 
+## [v2.17.2](https://github.com/kubermatic/kubermatic/releases/tag/v2.17.2)
+
+### Bugfixes
+
+- Kubermatic API, etcd-launcher, and dnat-controller images are defaulted to the docker.io registry only if the provided custom image has less than 3 parts [#7287](https://github.com/kubermatic/kubermatic/issues/7287) ([xmudrii](https://github.com/xmudrii))
+- Fix a bug that always applies default values to container resources [#7302](https://github.com/kubermatic/kubermatic/issues/7302) ([WeirdMachine](https://github.com/WeirdMachine))
+- Add `ClusterFeatureCCMClusterName` feature for OpenStack clusters. This feature adds the `--cluster-name` flag to the OpenStack external CCM deployment. The feature gate is enabled by default for newly created clusters. Enabling this feature gate for existing clusters will cause the external CCM to lose the track of the existing cloud resources (such as Load Balancers), so it's up to the users to manually clean up any leftover resources. [#7330](https://github.com/kubermatic/kubermatic/issues/7330) ([xmudrii](https://github.com/xmudrii))
+- Explicitly set the namespace for Dex pods in the oauth chart. This fixes the problem with KKP installation failing on Kubernetes 1.21 clusters. [#7348](https://github.com/kubermatic/kubermatic/issues/7348) ([WeirdMachine](https://github.com/WeirdMachine))
+
+### Misc
+
+- allow service account to create projects when belongs to projectmanagers group [#7043](https://github.com/kubermatic/kubermatic/issues/7043) ([zreigz](https://github.com/zreigz))
+- Added option to set the Load Balancer SKU when creating Azure clusters [#7208](https://github.com/kubermatic/kubermatic/issues/7208) ([lsviben](https://github.com/lsviben))
+- add application credentials and OIDC token for OpenStack [#7221](https://github.com/kubermatic/kubermatic/issues/7221) ([zreigz](https://github.com/zreigz))
+- Add `projectmanagers` group for RBAC controller. The new group will be assigned to service accounts. [#7263](https://github.com/kubermatic/kubermatic/issues/7263) ([zreigz](https://github.com/zreigz))
+- Allow configuring remote_write in Prometheus Helm chart. [#7288](https://github.com/kubermatic/kubermatic/issues/7288) ([rastislavs](https://github.com/rastislavs))
+- Support standard load balancers for azure in KKP [#7308](https://github.com/kubermatic/kubermatic/issues/7308) ([lsviben](https://github.com/lsviben))
+- Upgrade machine-controller to v1.27.11 [#7347](https://github.com/kubermatic/kubermatic/issues/7347) ([xmudrii](https://github.com/xmudrii))
+
+### Dashboard
+
+- Add project managers group as an option for service accounts. [#3375](https://github.com/kubermatic/dashboard/issues/3375) ([maciaszczykm](https://github.com/maciaszczykm))
+- Added option to select Azure LoadBalancer SKU in cluster creation [#3463](https://github.com/kubermatic/dashboard/issues/3463) ([kgroschoff](https://github.com/kgroschoff))
+- Added support for Application Credentials to the Openstack provider [#3489](https://github.com/kubermatic/dashboard/issues/3489) ([floreks](https://github.com/floreks))
+
+
+
+
+## [v2.17.1](https://github.com/kubermatic/kubermatic/releases/tag/v2.17.1)
+
+### Security
+
+- Upgrade machine-controller to v1.27.8 [#7209](https://github.com/kubermatic/kubermatic/pull/7166) to address [runC vulnerability CVE-2021-30465](https://github.com/opencontainers/runc/security/advisories/GHSA-c3xm-pvg7-gh7r)
+
+### Bugfixes
+
+- Fixed using a custom CA Bundle for Openstack by authenticating after setting the proper CA bundle ([#7192](https://github.com/kubermatic/kubermatic/issues/7192))
+- Fix user ssh key agent migration ([#7193](https://github.com/kubermatic/kubermatic/issues/7193))
+- Fix issue where Kubermatic non-admin users were not allowed to manage Kubermatic Constraints ([#6942](https://github.com/kubermatic/kubermatic/issues/6942))
+- Fix KKP vSphere client not using the provided custom CA bundle ([#6973](https://github.com/kubermatic/kubermatic/issues/6973))
+- Use optimistic lock when adding finalizers to prevent lost updates, and avoiding resource leaks ([#7153](https://github.com/kubermatic/kubermatic/issues/6759))
+
+### Misc
+
+- Use the systemd cgroup driver for newly-created Kubernetes 1.19+ clusters using the kubeadm provider. Since the kubelet-configmap addon is not reconciled, this change will not affect existing clusters, only newly-created clusters ([#7065](https://github.com/kubermatic/kubermatic/issues/7065))
+- Re-enable NodeLocal DNS Cache in user clusters ([#7075](https://github.com/kubermatic/kubermatic/issues/7075))
+- Open NodePort range in openstack ([#7131](https://github.com/kubermatic/kubermatic/issues/7131))
+- Upgrade machine controller to v1.27.8 ([#7209](https://github.com/kubermatic/kubermatic/issues/7209))
+
+
+
+
 ## [v2.17.0](https://github.com/kubermatic/kubermatic/releases/tag/v2.17.0)
 
 ### Supported Kubernetes Versions
@@ -126,6 +178,24 @@
 - Fix bug with changing the theme based on the color scheme if enforced_theme was set. [#3163](https://github.com/kubermatic/dashboard/issues/3163)
 
 # Kubermatic 2.16
+
+## [v2.16.11](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.11)
+
+### Security
+
+- Upgrade machine-controller to v1.24.5 [#7165](https://github.com/kubermatic/kubermatic/issues/7165) to address [runC vulnerability CVE-2021-30465](https://github.com/opencontainers/runc/security/advisories/GHSA-c3xm-pvg7-gh7r)
+
+### Bugfixes
+
+- Fix a bug that always applies default values to container resources [#7302](https://github.com/kubermatic/kubermatic/issues/7302) ([WeirdMachine](https://github.com/WeirdMachine))
+- Add `ClusterFeatureCCMClusterName` feature for OpenStack clusters. This feature adds the `--cluster-name` flag to the OpenStack external CCM deployment. The feature gate is enabled by default for newly created clusters. Enabling this feature gate for existing clusters will cause the external CCM to lose the track of the existing cloud resources (such as Load Balancers), so it's up to the users to manually clean up any leftover resources. [#7330](https://github.com/kubermatic/kubermatic/issues/7330) ([xmudrii](https://github.com/xmudrii))
+
+### Misc
+
+- Add support for `use-octavia` setting in Openstack provider specs. It defaults to `true` but leaves the possibility to set it to `false` if your provider doesn't support Octavia yet but Neutron LBaaSv2 [#6529](https://github.com/kubermatic/kubermatic/issues/6529) ([Happy2C0de](https://github.com/Happy2C0de))
+
+
+
 
 ## [v2.16.10](https://github.com/kubermatic/kubermatic/releases/tag/v2.16.10)
 
