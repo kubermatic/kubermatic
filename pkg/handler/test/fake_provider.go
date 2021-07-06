@@ -260,6 +260,10 @@ func (p *FakeDefaultConstraintProvider) Delete(name string) error {
 	return p.Provider.Delete(name)
 }
 
+func (p *FakeDefaultConstraintProvider) Update(constraint *kubermaticapiv1.Constraint) (*kubermaticapiv1.Constraint, error) {
+	return p.Provider.Update(constraint)
+}
+
 type FakePrivilegedWhitelisedRegistryProvider struct {
 	Provider   *kubernetes.PrivilegedWhitelistedRegistryProvider
 	FakeClient ctrlruntimeclient.Client
