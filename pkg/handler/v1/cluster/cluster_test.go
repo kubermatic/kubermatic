@@ -726,7 +726,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 3
 		{
 			Name:             "scenario 3: unable to create a cluster when the user doesn't belong to the project",
-			Body:             `{"cluster":{"humanReadableName":"keen-snyder","pause":false,"spec":{"version":"1.15.0","cloud":{"version":"1.15.0","fake":{},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             `{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"1.15.0","cloud":{"version":"1.15.0","fake":{"token":"dummy_token"},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
 			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"john@acme.com\" doesn't belong to the given project = my-first-project-ID"}}`,
 			HTTPStatus:       http.StatusForbidden,
 			ProjectToSync:    test.GenDefaultProject().Name,
@@ -743,7 +743,7 @@ func TestCreateClusterEndpoint(t *testing.T) {
 		// scenario 4
 		{
 			Name:             "scenario 4: unable to create a cluster when project is not ready",
-			Body:             `{"cluster":{"humanReadableName":"keen-snyder","pause":false,"spec":{"version":"1.15.0","cloud":{"fake":{},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
+			Body:             `{"cluster":{"name":"keen-snyder","pause":false,"spec":{"version":"1.15.0","cloud":{"fake":{"token":"dummy_token"},"dc":"fake-dc"}}},"sshKeys":["key-c08aa5c7abf34504f18552846485267d-yafn"]}`,
 			ExpectedResponse: `{"error":{"code":503,"message":"Project is not initialized yet"}}`,
 			HTTPStatus:       http.StatusServiceUnavailable,
 			ExistingProject: func() *kubermaticv1.Project {

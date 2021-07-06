@@ -18,6 +18,7 @@ package clustertemplate
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -30,13 +31,15 @@ import (
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
+	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
+	clusterv2 "k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
+	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	kubernetesprovider "k8c.io/kubermatic/v2/pkg/provider/kubernetes"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/rand"
-	"k8s.io/utils/pointer"
 )
 
 // scopeList holds a list of user cluster template access levels.
@@ -47,9 +50,12 @@ var scopeList = []string{
 }
 
 func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectProvider provider.PrivilegedProjectProvider,
-	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider, settingsProvider provider.SettingsProvider, updateManager common.UpdateManager) endpoint.Endpoint {
+	userInfoGetter provider.UserInfoGetter, clusterTemplateProvider provider.ClusterTemplateProvider, settingsProvider provider.SettingsProvider, updateManager common.UpdateManager,
+	seedsGetter provider.SeedsGetter, credentialManager provider.PresetProvider, caBundle *x509.CertPool, exposeStrategy kubermaticv1.ExposeStrategy) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createClusterTemplateReq)
+
+		privilegedClusterProvider := ctx.Value(middleware.PrivilegedClusterProviderContextKey).(provider.PrivilegedClusterProvider)
 
 		globalSettings, err := settingsProvider.GetGlobalSettings()
 		if err != nil {
@@ -64,47 +70,41 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
-		userInfo, err := userInfoGetter(ctx, "")
+		adminUserInfo, err := userInfoGetter(ctx, "")
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		spec, err := genSpec(req.Body.Cluster)
+		partialCluster, err := handlercommon.GenerateCluster(ctx, req.ProjectID, req.Body.CreateClusterSpec, seedsGetter, credentialManager, exposeStrategy, userInfoGetter, caBundle)
 		if err != nil {
-			return nil, common.KubernetesErrorToHTTPError(err)
+			return nil, err
 		}
 
 		newClusterTemplate := &kubermaticv1.ClusterTemplate{
 			ObjectMeta: metav1.ObjectMeta{
-				Name:        rand.String(10),
+				Name:        partialCluster.Name,
 				Labels:      map[string]string{},
 				Annotations: map[string]string{},
 			},
-			Credential:             req.Body.Cluster.Credential,
-			ClusterLabels:          req.Body.Cluster.Labels,
+			ClusterLabels:          partialCluster.Labels,
 			InheritedClusterLabels: req.Body.Cluster.InheritedLabels,
-			Spec:                   *spec,
+			Spec:                   partialCluster.Spec,
 		}
 
-		if req.Body.NodeDeployment != nil {
-			isBYO, err := common.IsBringYourOwnProvider(spec.Cloud)
-			if err != nil {
-				return nil, errors.NewBadRequest(fmt.Sprintf("cannot verify the provider due to an invalid spec: %v", err))
-			}
-			if !isBYO {
-				data, err := json.Marshal(req.Body.NodeDeployment)
-				if err != nil {
-					return "", fmt.Errorf("cannot marshal initial machine deployment: %v", err)
-				}
-				newClusterTemplate.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = string(data)
-			}
+		if err := kubernetesprovider.CreateOrUpdateCredentialSecretForCluster(ctx, privilegedClusterProvider.GetSeedClusterAdminRuntimeClient(), partialCluster); err != nil {
+			return nil, err
 		}
-		newClusterTemplate.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey] = userInfo.Email
+
+		kuberneteshelper.AddFinalizer(newClusterTemplate, apiv1.CredentialsSecretsCleanupFinalizer)
+
+		newClusterTemplate.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation] = partialCluster.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
+
+		newClusterTemplate.Annotations[kubermaticv1.ClusterTemplateUserAnnotationKey] = adminUserInfo.Email
 		newClusterTemplate.Labels[kubermaticv1.ClusterTemplateProjectLabelKey] = project.Name
 		newClusterTemplate.Labels[kubermaticv1.ClusterTemplateScopeLabelKey] = req.Body.Scope
 		newClusterTemplate.Labels[kubermaticv1.ClusterTemplateHumanReadableNameLabelKey] = req.Body.Name
 
-		clusterTemplate, err := clusterTemplateProvider.New(userInfo, newClusterTemplate, req.Body.Scope, project.Name)
+		clusterTemplate, err := clusterTemplateProvider.New(adminUserInfo, newClusterTemplate, req.Body.Scope, project.Name)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
@@ -141,6 +141,16 @@ type createClusterTemplateReq struct {
 		Scope string `json:"scope"`
 		apiv1.CreateClusterSpec
 	}
+
+	// private field for the seed name. Needed for the cluster provider.
+	seedName string
+}
+
+// GetSeedCluster returns the SeedCluster object
+func (req createClusterTemplateReq) GetSeedCluster() apiv1.SeedCluster {
+	return apiv1.SeedCluster{
+		SeedName: req.seedName,
+	}
 }
 
 func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -159,6 +169,12 @@ func DecodeCreateReq(c context.Context, r *http.Request) (interface{}, error) {
 	if len(req.Body.Cluster.Type) == 0 {
 		req.Body.Cluster.Type = apiv1.KubernetesClusterType
 	}
+
+	seedName, err := clusterv2.FindSeedNameForDatacenter(c, req.Body.Cluster.Spec.Cloud.DatacenterName)
+	if err != nil {
+		return nil, err
+	}
+	req.seedName = seedName
 
 	return req, nil
 }
@@ -676,56 +692,10 @@ func DecodeGetReq(c context.Context, r *http.Request) (interface{}, error) {
 	return req, nil
 }
 
-// genSpec builds ClusterSpec kubermatic Custom Resource from API Cluster
-func genSpec(apiCluster apiv1.Cluster) (*kubermaticv1.ClusterSpec, error) {
-	var userSSHKeysAgentEnabled = pointer.BoolPtr(true)
-
-	if apiCluster.Spec.EnableUserSSHKeyAgent != nil {
-		userSSHKeysAgentEnabled = apiCluster.Spec.EnableUserSSHKeyAgent
-	}
-
-	spec := &kubermaticv1.ClusterSpec{
-		HumanReadableName:                    apiCluster.Name,
-		Cloud:                                apiCluster.Spec.Cloud,
-		MachineNetworks:                      apiCluster.Spec.MachineNetworks,
-		OIDC:                                 apiCluster.Spec.OIDC,
-		UpdateWindow:                         apiCluster.Spec.UpdateWindow,
-		Version:                              apiCluster.Spec.Version,
-		UsePodSecurityPolicyAdmissionPlugin:  apiCluster.Spec.UsePodSecurityPolicyAdmissionPlugin,
-		UsePodNodeSelectorAdmissionPlugin:    apiCluster.Spec.UsePodNodeSelectorAdmissionPlugin,
-		EnableUserSSHKeyAgent:                userSSHKeysAgentEnabled,
-		AuditLogging:                         apiCluster.Spec.AuditLogging,
-		AdmissionPlugins:                     apiCluster.Spec.AdmissionPlugins,
-		OPAIntegration:                       apiCluster.Spec.OPAIntegration,
-		PodNodeSelectorAdmissionPluginConfig: apiCluster.Spec.PodNodeSelectorAdmissionPluginConfig,
-		ServiceAccount:                       apiCluster.Spec.ServiceAccount,
-		MLA:                                  apiCluster.Spec.MLA,
-		ContainerRuntime:                     apiCluster.Spec.ContainerRuntime,
-	}
-
-	if apiCluster.Spec.ClusterNetwork != nil {
-		spec.ClusterNetwork = *apiCluster.Spec.ClusterNetwork
-	}
-
-	providerName, err := provider.ClusterCloudProviderName(spec.Cloud)
-	if err != nil {
-		return nil, fmt.Errorf("invalid cloud spec: %v", err)
-	}
-	if providerName == "" {
-		return nil, fmt.Errorf("cluster has no cloudprovider")
-	}
-
-	if spec.ComponentsOverride.Etcd.ClusterSize == 0 {
-		spec.ComponentsOverride.Etcd.ClusterSize = kubermaticv1.DefaultEtcdClusterSize
-	}
-
-	return spec, nil
-}
-
 func convertInternalClusterTemplatetoExternal(template *kubermaticv1.ClusterTemplate) (*apiv2.ClusterTemplate, error) {
 	md := &apiv1.NodeDeployment{}
 	rawMachineDeployment, ok := template.Annotations[apiv1.InitialMachineDeploymentRequestAnnotation]
-	if ok {
+	if ok && rawMachineDeployment != "" {
 		err := json.Unmarshal([]byte(rawMachineDeployment), md)
 		if err != nil {
 			return nil, err
