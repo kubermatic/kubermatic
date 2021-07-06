@@ -1047,18 +1047,20 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) apiv1.ExternalCCMStatus {
 	status := apiv1.ExternalCCMStatus{}
 
+	_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
+	_, csiOk := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
+
 	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		status.ExternalCCM = true
+		if ccmOk && csiOk {
+			if helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+				status.MigrationCompleted = pointer.BoolPtr(true)
+			} else {
+				status.MigrationInProgress = pointer.BoolPtr(true)
+			}
+		}
 	} else if cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, cluster) {
 		status.MigrationNeeded = pointer.BoolPtr(true)
-	}
-
-	if _, condition := helper.GetClusterCondition(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted); condition != nil {
-		if helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
-			status.MigrationCompleted = pointer.BoolPtr(true)
-		} else {
-			status.MigrationInProgress = pointer.BoolPtr(true)
-		}
 	}
 
 	return status
