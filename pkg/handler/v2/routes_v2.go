@@ -3600,7 +3600,8 @@ func (r Routing) createClusterTemplate() http.Handler {
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.settingsProvider, r.updateManager)),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+		)(clustertemplate.CreateEndpoint(r.projectProvider, r.privilegedProjectProvider, r.userInfoGetter, r.clusterTemplateProvider, r.settingsProvider, r.updateManager, r.seedsGetter, r.presetsProvider, r.caBundle, r.exposeStrategy)),
 		clustertemplate.DecodeCreateReq,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
