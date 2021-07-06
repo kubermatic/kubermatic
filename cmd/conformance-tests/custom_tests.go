@@ -433,7 +433,7 @@ func (r *testRunner) testExternalCCMMigration(ctx context.Context, log *zap.Suga
 	newCluster := cluster.DeepCopy()
 	newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
 	if err := seedClient.Patch(ctx, newCluster, ctrlruntimeclient.MergeFrom(cluster)); err != nil {
-		return err
+		return fmt.Errorf("failed to add the externalCloudProvider cluster feature: %v", err)
 	}
 
 	// check the cluster has the migrationNeeded labels
@@ -465,19 +465,19 @@ func (r *testRunner) testExternalCCMMigration(ctx context.Context, log *zap.Suga
 			return false, nil
 		}
 		for _, arg := range machineControllerWebhookPods.Items[0].Spec.Containers[0].Args {
-			if arg == "-node-external-cloud-provider" {
+			if strings.Contains(arg, "-node-external-cloud-provider") {
 				return true, nil
 			}
 		}
 		return false, nil
 	})
 	if err != nil {
-		return fmt.Errorf("failed to get cluster annotated with ccm migration needed annotations: %v", err)
+		return fmt.Errorf("failed to get machineControllerWebhook with the \"-node-external-cloud-provider\" flag: %v", err)
 	}
 
 	// roll out all the machines
 	if err := userClient.DeleteAllOf(ctx, &v1alpha1.Machine{}); err != nil {
-		return err
+		return fmt.Errorf("error while rolling out the machines: %v", err)
 	}
 
 	// check the cluster has been completely migrated
