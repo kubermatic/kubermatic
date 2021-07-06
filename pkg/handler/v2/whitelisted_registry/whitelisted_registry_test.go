@@ -210,3 +210,131 @@ func TestListWhitelistedRegistries(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteWhitelistedRegistry(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name             string
+		WRToDeleteName   string
+		ExpectedResponse string
+		HTTPStatus       int
+		ExistingAPIUser  *apiv1.User
+		ExistingObjects  []ctrlruntimeclient.Object
+	}{
+		{
+			Name:             "scenario 1: admin can delete whitelisted registry",
+			WRToDeleteName:   "wr1",
+			ExpectedResponse: `{}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenWhitelistedRegistry("wr1", "quay.io")},
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+		{
+			Name:             "scenario 2: non-admin cannot delete whitelisted registry",
+			WRToDeleteName:   "wr1",
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenWhitelistedRegistry("wr1", "quay.io")},
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+		},
+		{
+			Name:             "scenario 3: delete non-existing whitelisted registry should fail",
+			WRToDeleteName:   "idontexist",
+			ExpectedResponse: `{"error":{"code":404,"message":"whitelistedregistries.kubermatic.k8s.io \"idontexist\" not found"}}`,
+			HTTPStatus:       http.StatusNotFound,
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenWhitelistedRegistry("wr1", "quay.io")},
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
+			req := httptest.NewRequest("DELETE", fmt.Sprintf("/api/v2/whitelistedregistries/%s", tc.WRToDeleteName), strings.NewReader(""))
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}
+
+func TestPatchWhitelistedRegistry(t *testing.T) {
+	t.Parallel()
+	testcases := []struct {
+		Name             string
+		RawPatch         string
+		WRName           string
+		ExpectedResponse string
+		HTTPStatus       int
+		ExistingAPIUser  *apiv1.User
+		ExistingObjects  []ctrlruntimeclient.Object
+	}{
+		{
+			Name:             "scenario 1: admin can patch whitelisted registry",
+			RawPatch:         `{"spec":{"registryPrefix":"docker.io"}}`,
+			WRName:           "wr1",
+			ExpectedResponse: `{"name":"wr1","spec":{"registryPrefix":"docker.io"}}`,
+			HTTPStatus:       http.StatusOK,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenWhitelistedRegistry("wr1", "quay.io")},
+		},
+		{
+			Name:             "scenario 2: non-admin cannot patch whitelisted registry",
+			RawPatch:         `{"spec":{"registryPrefix":"docker.io"}}`,
+			WRName:           "wr1",
+			ExpectedResponse: `{"error":{"code":403,"message":"forbidden: \"bob@acme.com\" doesn't have admin rights"}}`,
+			HTTPStatus:       http.StatusForbidden,
+			ExistingAPIUser:  test.GenDefaultAPIUser(),
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenWhitelistedRegistry("wr1", "quay.io")},
+		},
+		{
+			Name:             "scenario 3: cannot change whitelisted registry name",
+			RawPatch:         `{"name":"changedName","spec":{"registryPrefix":"docker.io"}}`,
+			WRName:           "wr1",
+			ExpectedResponse: `{"error":{"code":400,"message":"Changing whitelistedRegistry name is not allowed: \"wr1\" to \"changedName\""}}`,
+			HTTPStatus:       http.StatusBadRequest,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenWhitelistedRegistry("wr1", "quay.io")},
+		},
+		{
+			Name:             "scenario 4: cannot patch non-existing whitelisted registry",
+			RawPatch:         `{"spec":{"registryPrefix":"docker.io"}}`,
+			WRName:           "idontexist",
+			ExpectedResponse: `{"error":{"code":404,"message":"whitelistedregistries.kubermatic.k8s.io \"idontexist\" not found"}}`,
+			HTTPStatus:       http.StatusNotFound,
+			ExistingAPIUser:  test.GenDefaultAdminAPIUser(),
+			ExistingObjects:  []ctrlruntimeclient.Object{test.GenWhitelistedRegistry("wr1", "quay.io")},
+		},
+	}
+
+	for _, tc := range testcases {
+		t.Run(tc.Name, func(t *testing.T) {
+			tc.ExistingObjects = append(tc.ExistingObjects, test.APIUserToKubermaticUser(*tc.ExistingAPIUser))
+
+			req := httptest.NewRequest("PATCH", fmt.Sprintf("/api/v2/whitelistedregistries/%s", tc.WRName), strings.NewReader(tc.RawPatch))
+			res := httptest.NewRecorder()
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingObjects, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to %v", err)
+			}
+
+			ep.ServeHTTP(res, req)
+
+			if res.Code != tc.HTTPStatus {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.HTTPStatus, res.Code, res.Body.String())
+			}
+
+			test.CompareWithResult(t, res, tc.ExpectedResponse)
+		})
+	}
+}

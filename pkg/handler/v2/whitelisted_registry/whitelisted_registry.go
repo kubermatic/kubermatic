@@ -20,8 +20,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
+	jsonpatch "github.com/evanphx/json-patch"
 	"github.com/go-kit/kit/endpoint"
 	"github.com/gorilla/mux"
 
@@ -110,7 +112,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, whitelistedRegistryProv
 }
 
 // getWhitelistedRegistryReq represents a request for getting a whitelisted registry
-// swagger:parameters getWhitelistedRegistry
+// swagger:parameters getWhitelistedRegistry deleteWhitelistedRegistry
 type getWhitelistedRegistryReq struct {
 	// in: path
 	// required: true
@@ -158,5 +160,113 @@ func convertInternalWhitelistedRegistryToExternal(wr *kubermaticv1.WhitelistedRe
 	return &apiv2.WhitelistedRegistry{
 		Name: wr.Name,
 		Spec: wr.Spec,
+	}
+}
+
+func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, whitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getWhitelistedRegistryReq)
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		if !adminUserInfo.IsAdmin {
+			return nil, errors.New(http.StatusForbidden,
+				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
+		}
+
+		err = whitelistedRegistryProvider.DeleteUnsecured(req.WhitelistedRegistryName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return nil, nil
+	}
+}
+
+// patchWhitelistedRegistryReq defines HTTP request for patching whitelisted registries
+// swagger:parameters patchWhitelistedRegistry
+type patchWhitelistedRegistryReq struct {
+	getWhitelistedRegistryReq
+	// in: body
+	Patch json.RawMessage
+}
+
+// DecodePatchWhitelistedRegistryReq decodes http request into patchWhitelistedRegistryReq
+func DecodePatchWhitelistedRegistryReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchWhitelistedRegistryReq
+
+	wrReq, err := DecodeGetWhitelistedRegistryRequest(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.getWhitelistedRegistryReq = wrReq.(getWhitelistedRegistryReq)
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func PatchEndpoint(userInfoGetter provider.UserInfoGetter, whitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchWhitelistedRegistryReq)
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if !adminUserInfo.IsAdmin {
+			return nil, errors.New(http.StatusForbidden,
+				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
+		}
+
+		// get WR
+		originalWR, err := whitelistedRegistryProvider.GetUnsecured(req.WhitelistedRegistryName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		originalAPIWR := convertInternalWhitelistedRegistryToExternal(originalWR)
+
+		// patch
+		originalJSON, err := json.Marshal(originalAPIWR)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current whitelistdRegistry: %v", err))
+		}
+
+		patchedJSON, err := jsonpatch.MergePatch(originalJSON, req.Patch)
+		if err != nil {
+			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch whitelistdRegistry: %v", err))
+		}
+
+		var patched *apiv2.WhitelistedRegistry
+		err = json.Unmarshal(patchedJSON, &patched)
+		if err != nil {
+			return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patch whitelistdRegistry: %v", err))
+		}
+
+		// validate
+		if patched.Name != originalWR.Name {
+			return nil, errors.New(http.StatusBadRequest, fmt.Sprintf("Changing whitelistedRegistry name is not allowed: %q to %q", originalWR.Name, patched.Name))
+		}
+
+		patchedCT := &kubermaticv1.WhitelistedRegistry{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            patched.Name,
+				ResourceVersion: originalWR.ResourceVersion,
+			},
+			Spec: patched.Spec,
+		}
+
+		// apply patch
+		patchedCT, err = whitelistedRegistryProvider.PatchUnsecured(patchedCT)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalWhitelistedRegistryToExternal(patchedCT), nil
 	}
 }

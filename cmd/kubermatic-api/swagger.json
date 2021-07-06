@@ -14876,6 +14876,91 @@
             }
           }
         }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "whitelistedregistries"
+        ],
+        "summary": "Deletes the given whitelisted registry.",
+        "operationId": "deleteWhitelistedRegistry",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "WhitelistedRegistryName",
+            "name": "whitelisted_registry",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "description": "Patch a specified whitelisted registry",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "whitelistedregistries"
+        ],
+        "operationId": "patchWhitelistedRegistry",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "WhitelistedRegistryName",
+            "name": "whitelisted_registry",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ConstraintTemplate",
+            "schema": {
+              "$ref": "#/definitions/ConstraintTemplate"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     }
   },
