@@ -539,10 +539,10 @@ func RestartMachineDeployment(ctx context.Context, userInfoGetter provider.UserI
 		return nil, common.KubernetesErrorToHTTPError(err)
 	}
 
-	if machineDeployment.Annotations == nil {
-		machineDeployment.Annotations = map[string]string{}
+	if machineDeployment.Spec.Template.Annotations == nil {
+		machineDeployment.Spec.Template.Annotations = map[string]string{}
 	}
-	machineDeployment.Annotations[kubermaticv1.ForceRestartAnnotation] = strconv.FormatInt(time.Now().UnixNano(), 10)
+	machineDeployment.Spec.Template.Annotations[kubermaticv1.ForceRestartAnnotation] = strconv.FormatInt(time.Now().UnixNano(), 10)
 
 	if err := client.Update(ctx, machineDeployment); err != nil {
 		return nil, fmt.Errorf("failed to update machine deployment: %v", err)
