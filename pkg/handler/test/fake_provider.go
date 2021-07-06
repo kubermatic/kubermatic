@@ -280,3 +280,11 @@ func (p *FakePrivilegedWhitelisedRegistryProvider) GetUnsecured(name string) (*k
 func (p *FakePrivilegedWhitelisedRegistryProvider) ListUnsecured() (*kubermaticapiv1.WhitelistedRegistryList, error) {
 	return p.Provider.ListUnsecured()
 }
+
+func (p *FakePrivilegedWhitelisedRegistryProvider) PatchUnsecured(wr *kubermaticapiv1.WhitelistedRegistry) (*kubermaticapiv1.WhitelistedRegistry, error) {
+	return p.Provider.PatchUnsecured(wr)
+}
+
+func (p *FakePrivilegedWhitelisedRegistryProvider) DeleteUnsecured(name string) error {
+	return p.Provider.DeleteUnsecured(name)
+}
