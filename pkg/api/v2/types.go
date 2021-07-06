@@ -201,3 +201,12 @@ type WhitelistedRegistry struct {
 
 	Spec crdapiv1.WhitelistedRegistrySpec `json:"spec"`
 }
+
+// EtcdBackupConfig represents an object holding the configuration for etcd backups
+// swagger:model EtcdBackupConfig
+type EtcdBackupConfig struct {
+	Name string `json:"name"`
+
+	Spec   crdapiv1.EtcdBackupConfigSpec   `json:"spec"`
+	Status crdapiv1.EtcdBackupConfigStatus `json:"status"`
+}
