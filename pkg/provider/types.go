@@ -888,6 +888,9 @@ type DefaultConstraintProvider interface {
 
 	// Delete deletes the given default constraint
 	Delete(name string) error
+
+	// Update a default constraint
+	Update(ct *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error)
 }
 
 // AlertmanagerProvider declares the set of method for interacting with alertmanagers

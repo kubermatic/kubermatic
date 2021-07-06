@@ -8465,6 +8465,55 @@
             }
           }
         }
+      },
+      "patch": {
+        "description": "Patch a specified default constraint",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "constraint"
+        ],
+        "operationId": "patchDefaultConstraint",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "Name",
+            "name": "constraint_name",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Constraint",
+            "schema": {
+              "$ref": "#/definitions/Constraint"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
       }
     },
     "/api/v2/constrainttemplates": {

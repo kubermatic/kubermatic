@@ -196,3 +196,13 @@ func (p *DefaultConstraintProvider) Delete(name string) error {
 		},
 	})
 }
+
+func (p *DefaultConstraintProvider) Update(constraint *kubermaticv1.Constraint) (*kubermaticv1.Constraint, error) {
+	constraint.Namespace = p.kubermaticNamespace
+
+	if err := p.clientPrivileged.Update(context.Background(), constraint); err != nil {
+		return nil, err
+	}
+
+	return constraint, nil
+}

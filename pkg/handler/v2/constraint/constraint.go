@@ -467,10 +467,17 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshall patch ct: %v", err))
 		}
 
-		patchedConstraint := convertAPIToInternalConstraint(req.Name, clus.Status.NamespaceName, patched.Spec)
+		// Constraint Name cannot be changed by patch
+		if patched.Name != originalConstraint.Name {
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Changing constraint name is not allowed: %q to %q", originalConstraint.Name, patched.Name))
+		}
 
 		// ConstraintType cannot be changed by patch
-		patchedConstraint.Spec.ConstraintType = originalConstraint.Spec.ConstraintType
+		if patched.Spec.ConstraintType != originalConstraint.Spec.ConstraintType {
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Changing constraint type is not allowed: %q to %q", originalConstraint.Spec.ConstraintType, patched.Spec.ConstraintType))
+		}
+
+		patchedConstraint := convertAPIToInternalConstraint(originalConstraint.Name, clus.Status.NamespaceName, patched.Spec)
 
 		// restore ResourceVersion to make patching safer and tests work more easily
 		patchedConstraint.ResourceVersion = originalConstraint.ResourceVersion
@@ -659,4 +666,105 @@ func DeleteDefaultEndpoint(userInfoGetter provider.UserInfoGetter, defaultConstr
 
 		return nil, nil
 	}
+}
+
+// patchDefaultConstraintReq defines HTTP request for patching defaultconstraint
+// swagger:parameters patchDefaultConstraint
+type patchDefaultConstraintReq struct {
+	defaultConstraintReq
+	// in: body
+	Patch json.RawMessage
+}
+
+func PatchDefaultEndpoint(userInfoGetter provider.UserInfoGetter,
+	defaultConstraintProvider provider.DefaultConstraintProvider,
+	constraintTemplateProvider provider.ConstraintTemplateProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(patchDefaultConstraintReq)
+		if err := req.Validate(); err != nil {
+			return nil, utilerrors.NewBadRequest(err.Error())
+		}
+
+		adminUserInfo, err := userInfoGetter(ctx, "")
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		if !adminUserInfo.IsAdmin {
+			return nil, utilerrors.New(http.StatusForbidden,
+				fmt.Sprintf("forbidden: \"%s\" doesn't have admin rights", adminUserInfo.Email))
+		}
+
+		// get default Constraint
+		originalDC, err := defaultConstraintProvider.Get(req.Name)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		originalAPIDC := convertInternalToAPIConstraint(originalDC)
+
+		originalJSON, err := json.Marshal(originalAPIDC)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to convert current default constraint: %v", err))
+		}
+
+		// patch
+		patchedJSON, err := jsonpatch.MergePatch(originalJSON, req.Patch)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("failed to merge patch default constraint: %v", err))
+		}
+
+		var patched *apiv2.Constraint
+		err = json.Unmarshal(patchedJSON, &patched)
+		if err != nil {
+			return nil, utilerrors.New(http.StatusInternalServerError, fmt.Sprintf("failed to unmarshal patch default constraint: %v", err))
+		}
+
+		// Default Constraint Name cannot be changed by patch
+		if patched.Name != originalDC.Name {
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Changing default constraint name is not allowed: %q to %q", originalDC.Name, patched.Name))
+		}
+
+		// Default ConstraintType cannot be changed by patch
+		if patched.Spec.ConstraintType != originalDC.Spec.ConstraintType {
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("Changing default constraint type is not allowed: %q to %q", originalDC.Spec.ConstraintType, patched.Spec.ConstraintType))
+		}
+
+		// restore ResourceVersion to make patching safer and tests work more easily
+		patchedDC := &v1.Constraint{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:            originalDC.Name,
+				ResourceVersion: originalDC.ResourceVersion,
+			},
+			Spec: patched.Spec,
+		}
+
+		// validate
+		if err := validateConstraint(constraintTemplateProvider, patchedDC); err != nil {
+			return nil, utilerrors.New(http.StatusBadRequest, fmt.Sprintf("patched default constraint validation failed: %v", err))
+		}
+
+		// apply patch
+		patchedDC, err = defaultConstraintProvider.Update(patchedDC)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalToAPIConstraint(patchedDC), nil
+	}
+}
+
+func DecodePatchDefaultConstraintReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req patchDefaultConstraintReq
+
+	ctReq, err := DecodeDefaultConstraintReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.defaultConstraintReq = ctReq.(defaultConstraintReq)
+
+	if req.Patch, err = ioutil.ReadAll(r.Body); err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }

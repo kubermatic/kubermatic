@@ -31,6 +31,8 @@ type ClientService interface {
 
 	ListDefaultConstraint(params *ListDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*ListDefaultConstraintOK, error)
 
+	PatchDefaultConstraint(params *PatchDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*PatchDefaultConstraintOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -133,6 +135,40 @@ func (a *Client) ListDefaultConstraint(params *ListDefaultConstraintParams, auth
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListDefaultConstraintDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchDefaultConstraint Patch a specified default constraint
+*/
+func (a *Client) PatchDefaultConstraint(params *PatchDefaultConstraintParams, authInfo runtime.ClientAuthInfoWriter) (*PatchDefaultConstraintOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchDefaultConstraintParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchDefaultConstraint",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/constraints/{constraint_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchDefaultConstraintReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchDefaultConstraintOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchDefaultConstraintDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
