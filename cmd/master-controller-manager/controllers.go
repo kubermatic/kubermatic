@@ -36,6 +36,7 @@ import (
 	userprojectbindingsync "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-project-binding-sync"
 	usersynchronizer "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/user-synchronizer"
 	"k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/usersshkeyssynchronizer"
+	whitelistedregistrycontroller "k8c.io/kubermatic/v2/pkg/controller/master-controller-manager/whitelisted-registry-controller"
 	seedcontrollerlifecycle "k8c.io/kubermatic/v2/pkg/controller/shared/seed-controller-lifecycle"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 	"k8c.io/kubermatic/v2/pkg/provider"
@@ -99,6 +100,9 @@ func createAllControllers(ctrlCtx *controllerContext) error {
 	}
 	if err := userprojectbindingsync.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.seedKubeconfigGetter); err != nil {
 		return fmt.Errorf("failed to create userprojectbindingsync controller: %v", err)
+	}
+	if err := whitelistedregistrycontroller.Add(ctrlCtx.mgr, ctrlCtx.log, 1, ctrlCtx.namespace); err != nil {
+		return fmt.Errorf("failed to create whitelistedregistry controller: %v", err)
 	}
 
 	return nil
