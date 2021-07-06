@@ -1058,7 +1058,9 @@ type ExternalCCMStatus struct {
 	ExternalCCM bool `json:"externalCCM"`
 	// MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled
 	MigrationNeeded *bool `json:"migrationNeeded,omitempty"`
-	// MigrationCompleted reflects the CSIKubeletMigrationCompleted condition of the cluster
+	// MigrationInProgress is enabled when the external ccm migration is in progress
+	MigrationInProgress *bool `json:"migrationInProgress,omitempty"`
+	// MigrationCompleted is enabled when the external ccm migration is completed
 	MigrationCompleted *bool `json:"migrationCompleted,omitempty"`
 }
 

@@ -17467,9 +17467,14 @@
           "x-go-name": "ExternalCCM"
         },
         "migrationCompleted": {
-          "description": "MigrationCompleted reflects the CSIKubeletMigrationCompleted condition of the cluster",
+          "description": "MigrationCompleted is enabled when the external ccm migration is completed",
           "type": "boolean",
           "x-go-name": "MigrationCompleted"
+        },
+        "migrationInProgress": {
+          "description": "MigrationInProgress is enabled when the external ccm migration is in progress",
+          "type": "boolean",
+          "x-go-name": "MigrationInProgress"
         },
         "migrationNeeded": {
           "description": "MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled",
