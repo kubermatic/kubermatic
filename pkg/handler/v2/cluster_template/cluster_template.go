@@ -715,8 +715,9 @@ func genSpec(apiCluster apiv1.Cluster) (*kubermaticv1.ClusterSpec, error) {
 		return nil, fmt.Errorf("cluster has no cloudprovider")
 	}
 
-	if spec.ComponentsOverride.Etcd.ClusterSize == 0 {
-		spec.ComponentsOverride.Etcd.ClusterSize = kubermaticv1.DefaultEtcdClusterSize
+	if spec.ComponentsOverride.Etcd.ClusterSize == nil {
+		n := int32(kubermaticv1.DefaultEtcdClusterSize)
+		spec.ComponentsOverride.Etcd.ClusterSize = &n
 	}
 
 	return spec, nil

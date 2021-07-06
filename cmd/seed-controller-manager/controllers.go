@@ -91,24 +91,47 @@ func createSeedConditionUpToDateController(ctrlCtx *controllerContext) error {
 	)
 }
 
-func defaultComponentSettings(ctrlCtx *controllerContext) kubermaticv1.ComponentSettings {
-	return kubermaticv1.ComponentSettings{
-		Apiserver: kubermaticv1.APIServerSettings{
-			DeploymentSettings:          kubermaticv1.DeploymentSettings{Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.apiServerDefaultReplicas))},
-			EndpointReconcilingDisabled: utilpointer.BoolPtr(ctrlCtx.runOptions.apiServerEndpointReconcilingDisabled),
-			NodePortRange:               ctrlCtx.runOptions.nodePortRange,
-		},
-		ControllerManager: kubermaticv1.ControllerSettings{
-			DeploymentSettings: kubermaticv1.DeploymentSettings{
-				Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.controllerManagerDefaultReplicas)),
-			},
-		},
-		Scheduler: kubermaticv1.ControllerSettings{
-			DeploymentSettings: kubermaticv1.DeploymentSettings{
-				Replicas: utilpointer.Int32Ptr(int32(ctrlCtx.runOptions.schedulerDefaultReplicas)),
-			},
-		},
+func defaultComponentSettings(ctrlCtx *controllerContext, seed *kubermaticv1.Seed) kubermaticv1.ComponentSettings {
+	// Copy default settings.
+	ret := seed.Spec.DefaultComponentSettings
+
+	if replicas := ctrlCtx.runOptions.apiServerDefaultReplicas; replicas != 0 {
+		if ret.Apiserver.Replicas != nil && replicas != int(*ret.Apiserver.Replicas) {
+			ctrlCtx.log.Panicf("cannot preceed due to conflicting settings, cli argument 'api-server-default-replicas'[%d] and 'seedResource.spec.defaultComponentSettings.apiserver.replicas'[%d] do not match", replicas, *ret.Apiserver.Replicas)
+		}
+
+		ret.Apiserver.Replicas = utilpointer.Int32Ptr(int32(replicas))
 	}
+
+	if reconcilingDisabled := ctrlCtx.runOptions.apiServerEndpointReconcilingDisabled; reconcilingDisabled {
+		ret.Apiserver.EndpointReconcilingDisabled = &reconcilingDisabled
+	}
+
+	if nodePortRange := ctrlCtx.runOptions.nodePortRange; nodePortRange != "" {
+		if ret.Apiserver.NodePortRange != "" && ret.Apiserver.NodePortRange != nodePortRange {
+			ctrlCtx.log.Panicf("cannot preceed due to conflicting settings, cli argument 'nodeport-range'[%s] and 'seedResource.spec.defaultComponentSettings.apiserver.nodePortRange'[%s] do not match", nodePortRange, ret.Apiserver.NodePortRange)
+		}
+
+		ret.Apiserver.NodePortRange = nodePortRange
+	}
+
+	if replicas := ctrlCtx.runOptions.controllerManagerDefaultReplicas; replicas != 0 {
+		if ret.ControllerManager.Replicas != nil && replicas != int(*ret.ControllerManager.Replicas) {
+			ctrlCtx.log.Panicf("cannot preceed due to conflicting settings, cli argument 'controller-manager-default-replicas'[%d] and 'seedResource.spec.defaultComponentSettings.controllerManager.replicas'[%d] do not match", replicas, *ret.ControllerManager.Replicas)
+		}
+
+		ret.ControllerManager.Replicas = utilpointer.Int32Ptr(int32(replicas))
+	}
+
+	if replicas := ctrlCtx.runOptions.schedulerDefaultReplicas; replicas != 0 {
+		if ret.Scheduler.Replicas != nil && replicas != int(*ret.Scheduler.Replicas) {
+			ctrlCtx.log.Panicf("cannot preceed due to conflicting settings, cli argument 'schedular-default-replicas'[%d] and 'seedResource.spec.defaultComponentSettings.schedular.replicas'[%d] do not match", replicas, *ret.Scheduler.Replicas)
+		}
+
+		ret.Scheduler.Replicas = utilpointer.Int32Ptr(int32(replicas))
+	}
+
+	return ret
 }
 
 func createCloudController(ctrlCtx *controllerContext) error {

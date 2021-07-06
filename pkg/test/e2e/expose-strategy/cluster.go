@@ -84,7 +84,7 @@ func (c *ClusterJig) SetUp() error {
 					},
 				},
 				Etcd: kubermaticv1.EtcdStatefulSetSettings{
-					ClusterSize: 1,
+					ClusterSize: pointer.Int32Ptr(1),
 				},
 				Scheduler: kubermaticv1.ControllerSettings{
 					DeploymentSettings: kubermaticv1.DeploymentSettings{
