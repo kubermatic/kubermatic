@@ -25,6 +25,9 @@ func TestExternalCCMMigration(t *testing.T) {
 	}{
 		{
 			Name: "scenario 1: CCM migration not needed since the beginning",
+			Datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{Openstack: &kubermaticv1.DatacenterSpecOpenstack{}},
+			},
 			Cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
@@ -45,6 +48,9 @@ func TestExternalCCMMigration(t *testing.T) {
 		},
 		{
 			Name: "scenario 2: CCM migration not needed because cluster has already migrated",
+			Datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{Openstack: &kubermaticv1.DatacenterSpecOpenstack{}},
+			},
 			Cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
@@ -119,6 +125,9 @@ func TestExternalCCMMigration(t *testing.T) {
 		},
 		{
 			Name: "scenario 5: external CCM migration in progress, cluster condition existing",
+			Datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{Openstack: &kubermaticv1.DatacenterSpecOpenstack{}},
+			},
 			Cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
@@ -132,6 +141,9 @@ func TestExternalCCMMigration(t *testing.T) {
 					},
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+					},
+					Version: semver.Semver{
+						Version: version,
 					},
 				},
 				Status: kubermaticv1.ClusterStatus{
@@ -149,7 +161,10 @@ func TestExternalCCMMigration(t *testing.T) {
 			},
 		},
 		{
-			Name: "scenario 5: external CCM migration in progress, cluster condition not existing",
+			Name: "scenario 6: external CCM migration in progress, cluster condition not existing",
+			Datacenter: &kubermaticv1.Datacenter{
+				Spec: kubermaticv1.DatacenterSpec{Openstack: &kubermaticv1.DatacenterSpecOpenstack{}},
+			},
 			Cluster: &kubermaticv1.Cluster{
 				ObjectMeta: metav1.ObjectMeta{
 					Annotations: map[string]string{
@@ -163,6 +178,9 @@ func TestExternalCCMMigration(t *testing.T) {
 					},
 					Features: map[string]bool{
 						kubermaticv1.ClusterFeatureExternalCloudProvider: true,
+					},
+					Version: semver.Semver{
+						Version: version,
 					},
 				},
 			},

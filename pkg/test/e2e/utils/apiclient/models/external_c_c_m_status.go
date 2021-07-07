@@ -18,14 +18,8 @@ type ExternalCCMStatus struct {
 	// ExternalCCM reflects the ClusterFeatureExternalCloudProvider in the cluster .spec.features
 	ExternalCCM bool `json:"externalCCM,omitempty"`
 
-	// MigrationCompleted is enabled when the external ccm migration is completed
-	MigrationCompleted bool `json:"migrationCompleted,omitempty"`
-
-	// MigrationInProgress is enabled when the external ccm migration is in progress
-	MigrationInProgress bool `json:"migrationInProgress,omitempty"`
-
-	// MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled
-	MigrationNeeded bool `json:"migrationNeeded,omitempty"`
+	// ExternalCCMMigration represents the migration status to the external CCM
+	ExternalCCMMigration string `json:"externalCCMMigration"`
 }
 
 // Validate validates this external c c m status

@@ -1047,7 +1047,10 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) apiv1.ExternalCCMStatus {
 	status := apiv1.ExternalCCMStatus{}
 
-	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+	externalCCMEnabled := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
+	externalCCMSupported := cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, cluster)
+
+	if externalCCMEnabled {
 		status.ExternalCCM = true
 		_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
 		_, csiOk := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
@@ -1060,9 +1063,13 @@ func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacente
 		} else {
 			status.ExternalCCMMigration = apiv1.ExternalCCMMigrationNotNeeded
 		}
-	} else if cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, cluster) {
+	}
+
+	if !externalCCMEnabled && externalCCMSupported {
 		status.ExternalCCMMigration = apiv1.ExternalCCMMigrationSupported
-	} else {
+	}
+
+	if !externalCCMEnabled && !externalCCMSupported {
 		status.ExternalCCMMigration = apiv1.ExternalCCMMigrationUnsupported
 	}
 
