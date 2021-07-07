@@ -17457,6 +17457,10 @@
       "title": "ExposeStrategy is the strategy to expose the cluster with.",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
+    "ExternalCCMMigrationStatus": {
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
     "ExternalCCMStatus": {
       "description": "ExternalCCMStatus represents the external CCM status",
       "type": "object",
@@ -17466,20 +17470,8 @@
           "type": "boolean",
           "x-go-name": "ExternalCCM"
         },
-        "migrationCompleted": {
-          "description": "MigrationCompleted is enabled when the external ccm migration is completed",
-          "type": "boolean",
-          "x-go-name": "MigrationCompleted"
-        },
-        "migrationInProgress": {
-          "description": "MigrationInProgress is enabled when the external ccm migration is in progress",
-          "type": "boolean",
-          "x-go-name": "MigrationInProgress"
-        },
-        "migrationNeeded": {
-          "description": "MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled",
-          "type": "boolean",
-          "x-go-name": "MigrationNeeded"
+        "externalCCMMigration": {
+          "$ref": "#/definitions/ExternalCCMMigrationStatus"
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"

@@ -1051,17 +1051,22 @@ type ClusterStatus struct {
 	CCM ExternalCCMStatus `json:"ccm"`
 }
 
+type ExternalCCMMigrationStatus string
+
+var (
+	ExternalCCMMigrationNotNeeded   ExternalCCMMigrationStatus = "notNeeded"
+	ExternalCCMMigrationSupported   ExternalCCMMigrationStatus = "supported"
+	ExternalCCMMigrationUnsupported ExternalCCMMigrationStatus = "unsupported"
+	ExternalCCMMigrationInProgress  ExternalCCMMigrationStatus = "inProgress"
+)
+
 // ExternalCCMStatus represents the external CCM status
 // swagger:model ExternalCCMStatus
 type ExternalCCMStatus struct {
 	// ExternalCCM reflects the ClusterFeatureExternalCloudProvider in the cluster .spec.features
 	ExternalCCM bool `json:"externalCCM"`
-	// MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled
-	MigrationNeeded *bool `json:"migrationNeeded,omitempty"`
-	// MigrationInProgress is enabled when the external ccm migration is in progress
-	MigrationInProgress *bool `json:"migrationInProgress,omitempty"`
-	// MigrationCompleted is enabled when the external ccm migration is completed
-	MigrationCompleted *bool `json:"migrationCompleted,omitempty"`
+	// ExternalCCMMigration represents the migration status to the external CCM
+	ExternalCCMMigration ExternalCCMMigrationStatus `json:"externalCCMMigration"`
 }
 
 // ClusterHealth stores health information about the cluster's components.

@@ -1047,20 +1047,23 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) apiv1.ExternalCCMStatus {
 	status := apiv1.ExternalCCMStatus{}
 
-	_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
-	_, csiOk := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
-
 	if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
 		status.ExternalCCM = true
+		_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
+		_, csiOk := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
 		if ccmOk && csiOk {
 			if helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
-				status.MigrationCompleted = pointer.BoolPtr(true)
+				status.ExternalCCMMigration = apiv1.ExternalCCMMigrationNotNeeded
 			} else {
-				status.MigrationInProgress = pointer.BoolPtr(true)
+				status.ExternalCCMMigration = apiv1.ExternalCCMMigrationInProgress
 			}
+		} else {
+			status.ExternalCCMMigration = apiv1.ExternalCCMMigrationNotNeeded
 		}
 	} else if cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, cluster) {
-		status.MigrationNeeded = pointer.BoolPtr(true)
+		status.ExternalCCMMigration = apiv1.ExternalCCMMigrationSupported
+	} else {
+		status.ExternalCCMMigration = apiv1.ExternalCCMMigrationUnsupported
 	}
 
 	return status
