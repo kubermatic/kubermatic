@@ -22,6 +22,16 @@ spec:
   type: ClusterIP
   clusterIP: None
   ports:
+{{- if .Values.alertmanager.sidecarServicePorts }}
+{{- range $name, $spec :=  .Values.alertmanager.sidecarServicePorts }}
+  - name: {{ $name }}
+    {{- if kindIs "string" $spec }}
+      {{- tpl $spec $ | nindent 4 }}
+    {{- else }}
+      {{- toYaml $spec | nindent 4 }}
+    {{- end }}
+{{- end }}
+{{- end }}
   - name: web
     port: 9093
     protocol: TCP
