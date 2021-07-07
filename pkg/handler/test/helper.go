@@ -1784,3 +1784,15 @@ func GenWhitelistedRegistry(name, registryPrefix string) *kubermaticv1.Whitelist
 	}
 	return wr
 }
+
+func GenAPIEtcdBackupConfig(name, clusterID string) *apiv2.EtcdBackupConfig {
+	keep := 5
+	return &apiv2.EtcdBackupConfig{
+		Name: name,
+		Spec: apiv2.EtcdBackupConfigSpec{
+			ClusterID: clusterID,
+			Schedule:  "5 * * * * *",
+			Keep:      &keep,
+		},
+	}
+}

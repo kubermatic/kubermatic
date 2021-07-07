@@ -25,12 +25,16 @@ import (
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	handlercommon "k8c.io/kubermatic/v2/pkg/handler/common"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8c.io/kubermatic/v2/pkg/util/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/tools/reference"
 )
 
 func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
@@ -38,19 +42,22 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createEtcdBackupConfigReq)
 
-		ebc := &kubermaticv1.EtcdBackupConfig{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: req.Body.Name,
-			},
-			Spec: req.Body.Spec,
+		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.Body.Spec.ClusterID, nil)
+		if err != nil {
+			return nil, err
 		}
 
-		ebc, err := createEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID, ebc)
+		if err := req.validate(); err != nil {
+			return nil, err
+		}
+
+		ebc, err := convertAPIToInternalEtcdBackupConfig(req.Body.Name, &req.Body.Spec, c)
+		ebc, err = createEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID, ebc)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
 
-		return convertInternalToAPIETCDBackupConfig(ebc), nil
+		return convertInternalToAPIEtcdBackupConfig(ebc), nil
 	}
 }
 
@@ -66,7 +73,15 @@ type ebcBody struct {
 	// Name of the etcd backup config
 	Name string `json:"name"`
 	// EtcdBackupConfigSpec Spec of the etcd backup config
-	Spec kubermaticv1.EtcdBackupConfigSpec `json:"spec"`
+	Spec apiv2.EtcdBackupConfigSpec `json:"spec"`
+}
+
+func (r *createEtcdBackupConfigReq) validate() error {
+	// schedule and keep have to either be both set, or both absent
+	if (r.Body.Spec.Keep == nil && r.Body.Spec.Schedule != "") || (r.Body.Spec.Keep != nil && r.Body.Spec.Schedule == "") {
+		return errors.NewBadRequest("EtcdBackupConfig has to have both Schedule and Keep options set or both empty")
+	}
+	return nil
 }
 
 func DecodeCreateEtcdBackupConfigReq(c context.Context, r *http.Request) (interface{}, error) {
@@ -83,12 +98,39 @@ func DecodeCreateEtcdBackupConfigReq(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
-func convertInternalToAPIETCDBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *apiv2.EtcdBackupConfig {
+func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *apiv2.EtcdBackupConfig {
 	return &apiv2.EtcdBackupConfig{
-		Name:   ebc.Name,
-		Spec:   ebc.Spec,
+		Name: ebc.Name,
+		Spec: apiv2.EtcdBackupConfigSpec{
+			ClusterID: ebc.Spec.Cluster.Name,
+			Schedule:  ebc.Spec.Schedule,
+			Keep:      ebc.Spec.Keep,
+		},
 		Status: ebc.Status,
 	}
+}
+
+func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackupConfigSpec, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfig, error) {
+
+	clusterObjectRef, err := reference.GetReference(scheme.Scheme, cluster)
+	if err != nil {
+		return nil, err
+	}
+
+	return &kubermaticv1.EtcdBackupConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
+			},
+		},
+		Spec: kubermaticv1.EtcdBackupConfigSpec{
+			Name:     name,
+			Cluster:  *clusterObjectRef,
+			Schedule: ebcSpec.Schedule,
+			Keep:     ebcSpec.Keep,
+		},
+	}, nil
 }
 
 func createEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, projectID string, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
