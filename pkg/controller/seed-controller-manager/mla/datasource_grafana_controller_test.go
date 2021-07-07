@@ -100,6 +100,9 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						MLA:               &kubermaticv1.MLASettings{LoggingEnabled: true, MonitoringEnabled: true},
 						ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 					},
+					Address: kubermaticv1.ClusterAddress{
+						ExternalName: "abcd.test.kubermatic.io",
+					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
 			},
@@ -178,6 +181,9 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						MLA:               &kubermaticv1.MLASettings{LoggingEnabled: true, MonitoringEnabled: true},
 						ExposeStrategy:    kubermaticv1.ExposeStrategyNodePort,
 					},
+					Address: kubermaticv1.ClusterAddress{
+						ExternalName: "abcd.test.kubermatic.io",
+					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
 			},
@@ -231,6 +237,9 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 						HumanReadableName: "New Super Cluster",
 						MLA:               &kubermaticv1.MLASettings{LoggingEnabled: true, MonitoringEnabled: true},
 						ExposeStrategy:    kubermaticv1.ExposeStrategyLoadBalancer,
+					},
+					Address: kubermaticv1.ClusterAddress{
+						ExternalName: "abcd.test.kubermatic.io",
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
@@ -298,6 +307,9 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					Spec: kubermaticv1.ClusterSpec{
 						HumanReadableName: "Super Cluster",
 					},
+					Address: kubermaticv1.ClusterAddress{
+						ExternalName: "abcd.test.kubermatic.io",
+					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
 			},
@@ -325,6 +337,9 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 					},
 					Spec: kubermaticv1.ClusterSpec{
 						HumanReadableName: "Super Cluster",
+					},
+					Address: kubermaticv1.ClusterAddress{
+						ExternalName: "abcd.test.kubermatic.io",
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
@@ -456,6 +471,9 @@ func TestDatasourceGrafanaReconcile(t *testing.T) {
 							LoggingEnabled:    true,
 						},
 						ExposeStrategy: kubermaticv1.ExposeStrategyNodePort,
+					},
+					Address: kubermaticv1.ClusterAddress{
+						ExternalName: "abcd.test.kubermatic.io",
 					},
 					Status: kubermaticv1.ClusterStatus{NamespaceName: "cluster-clusterUID"},
 				},
