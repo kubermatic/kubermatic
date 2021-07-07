@@ -352,6 +352,7 @@ type createConstraintReq struct {
 type constraintBody struct {
 	// Name is the name for the constraint
 	Name string `json:"name"`
+
 	// Spec is the constraint specification
 	Spec v1.ConstraintSpec
 }

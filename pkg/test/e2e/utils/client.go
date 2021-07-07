@@ -28,13 +28,16 @@ import (
 	semver "github.com/Masterminds/semver/v3"
 	"github.com/go-openapi/runtime"
 	httptransport "github.com/go-openapi/runtime/client"
-
 	"github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
+
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	apiclient "k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/admin"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constraint"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constraints"
+	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/constrainttemplates"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/credentials"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/datacenter"
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils/apiclient/client/gcp"
@@ -1399,6 +1402,42 @@ func (r *TestClient) GetConstraint(projectID, clusterID, name string) (*apiv2.Co
 	return convertConstraint(project.Payload)
 }
 
+func (r *TestClient) CreateConstraint(name, ctKind string) (*kubermaticv1.Constraint, error) {
+
+	kind := &models.Kind{
+		Kinds: []string{"ConfigMap"}, APIGroups: []string{""},
+	}
+	spec := &models.ConstraintSpec{
+		ConstraintType: ctKind,
+		Match: &models.Match{
+			Kinds: []*models.Kind{kind},
+		},
+		Parameters: models.Parameters{
+			"rawJSON": `{"labels":["gatekeeper"]}`,
+		},
+	}
+
+	params := &constraint.CreateDefaultConstraintParams{
+		Body: &models.ConstraintBody{
+			Name: name,
+			Spec: spec,
+		},
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	constraint, err := r.client.Constraint.CreateDefaultConstraint(params, r.bearerToken)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return convertDefaultConstraint(constraint.Payload)
+}
+
 func convertConstraint(constraint *models.Constraint) (*apiv2.Constraint, error) {
 	apiConstraint := &apiv2.Constraint{}
 	apiConstraint.Name = constraint.Name
@@ -1407,4 +1446,101 @@ func convertConstraint(constraint *models.Constraint) (*apiv2.Constraint, error)
 	}
 
 	return apiConstraint, nil
+}
+
+func convertDefaultConstraint(constraint *models.Constraint) (*kubermaticv1.Constraint, error) {
+	Constraint := &kubermaticv1.Constraint{}
+	Constraint.Name = constraint.Name
+	return Constraint, nil
+}
+
+func (r *TestClient) CreateCT(name, ctKind string) (*kubermaticv1.ConstraintTemplate, error) {
+
+	spec := models.ConstraintTemplateSpec{
+		Crd: &models.CRD{
+			Spec: &models.CRDSpec{
+				Names: &models.Names{
+					Kind: ctKind,
+				},
+				Validation: &models.Validation{
+					OpenAPIV3Schema: &models.JSONSchemaProps{
+						Properties: map[string]models.JSONSchemaProps{
+							"labels": {
+								Type: "array",
+								Items: &models.JSONSchemaPropsOrArray{
+									Schema: &models.JSONSchemaProps{
+										Type: "string",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		Targets: []*models.Target{
+			{
+				Target: "admission.k8s.gatekeeper.sh",
+				Rego:   "package requiredlabels\nviolation[{\"msg\": msg, \"details\": {\"missing_labels\": missing}}] {\n  provided := {label | input.review.object.metadata.labels[label]}\n  required := {label | label := input.parameters.labels[_]}\n  missing := required - provided\n  count(missing) > 0\n  msg := sprintf(\"you must provide labels: %v\", [missing])\n}",
+			},
+		},
+	}
+	params := &constrainttemplates.CreateConstraintTemplateParams{
+		Body: &models.CtBody{
+			Name: name,
+			Spec: &spec,
+		},
+	}
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	r.test.Logf("Creating constraint template %s...", name)
+	ct, err := r.client.Constrainttemplates.CreateConstraintTemplate(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+	return convertDefaultConstraintTemplate(ct.Payload)
+}
+
+func convertDefaultConstraintTemplate(constraintTemplate *models.ConstraintTemplate) (*kubermaticv1.ConstraintTemplate, error) {
+	Constraint := &kubermaticv1.ConstraintTemplate{}
+	Constraint.Name = constraintTemplate.Name
+	return Constraint, nil
+}
+
+func (r *TestClient) DeleteConstraintTemplate(name string) error {
+	r.test.Log("Deleting constraint template...")
+
+	params := &constrainttemplates.DeleteConstraintTemplateParams{
+		Name: name,
+	}
+	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
+
+	_, err := r.client.Constrainttemplates.DeleteConstraintTemplate(params, r.bearerToken)
+	if err != nil {
+		return err
+	}
+
+	r.test.Log("Constraint template deleted successfully")
+	return nil
+}
+
+func (r *TestClient) DeleteConstraint(name string) error {
+	r.test.Log("Deleting constraint...")
+
+	params := &constraints.DeleteDefaultConstraintParams{
+		Name: name,
+	}
+	SetupParams(r.test, params, 1*time.Second, 3*time.Minute, http.StatusConflict)
+
+	_, err := r.client.Constraints.DeleteDefaultConstraint(params, r.bearerToken)
+	if err != nil {
+		return err
+	}
+
+	r.test.Log("Constraint deleted successfully")
+	return nil
 }
