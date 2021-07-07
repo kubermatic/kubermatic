@@ -429,6 +429,9 @@ func GatewayCertificateCreator(c *kubermaticv1.Cluster, mlaGatewayCAGetter func(
 			if err != nil {
 				return nil, fmt.Errorf("failed to get MLA Gateway ca: %v", err)
 			}
+			if c.Address.ExternalName == "" {
+				return nil, fmt.Errorf("unable to issue MLA Gateway certificate: cluster ExternalName is empty")
+			}
 			commonName := resources.MLAGatewaySNIPrefix + c.Address.ExternalName
 			altNames := certutil.AltNames{
 				DNSNames: []string{
