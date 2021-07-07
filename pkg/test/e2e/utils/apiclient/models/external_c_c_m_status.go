@@ -6,6 +6,7 @@ package models
 // Editing this file might prove futile when you re-run the swagger generate command
 
 import (
+	"github.com/go-openapi/errors"
 	"github.com/go-openapi/strfmt"
 	"github.com/go-openapi/swag"
 )
@@ -18,12 +19,37 @@ type ExternalCCMStatus struct {
 	// ExternalCCM reflects the ClusterFeatureExternalCloudProvider in the cluster .spec.features
 	ExternalCCM bool `json:"externalCCM,omitempty"`
 
-	// ExternalCCMMigration represents the migration status to the external CCM
-	ExternalCCMMigration string `json:"externalCCMMigration"`
+	// external c c m migration
+	ExternalCCMMigration ExternalCCMMigrationStatus `json:"externalCCMMigration,omitempty"`
 }
 
 // Validate validates this external c c m status
 func (m *ExternalCCMStatus) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := m.validateExternalCCMMigration(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (m *ExternalCCMStatus) validateExternalCCMMigration(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.ExternalCCMMigration) { // not required
+		return nil
+	}
+
+	if err := m.ExternalCCMMigration.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("externalCCMMigration")
+		}
+		return err
+	}
+
 	return nil
 }
 
