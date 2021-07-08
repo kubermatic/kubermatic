@@ -16503,8 +16503,8 @@
       "description": "ClusterStatus defines the cluster status",
       "type": "object",
       "properties": {
-        "ccm": {
-          "$ref": "#/definitions/ExternalCCMStatus"
+        "externalCCMMigration": {
+          "$ref": "#/definitions/ExternalCCMMigrationStatus"
         },
         "url": {
           "description": "URL specifies the address at which the cluster is available",
@@ -17459,21 +17459,6 @@
     },
     "ExternalCCMMigrationStatus": {
       "type": "string",
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
-    },
-    "ExternalCCMStatus": {
-      "description": "ExternalCCMStatus represents the external CCM status",
-      "type": "object",
-      "properties": {
-        "externalCCM": {
-          "description": "ExternalCCM reflects the ClusterFeatureExternalCloudProvider in the cluster .spec.features",
-          "type": "boolean",
-          "x-go-name": "ExternalCCM"
-        },
-        "externalCCMMigration": {
-          "$ref": "#/definitions/ExternalCCMMigrationStatus"
-        }
-      },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
     "ExternalDocumentation": {

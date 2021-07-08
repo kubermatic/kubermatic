@@ -37,7 +37,7 @@ func TestExternalCCMMigration(t *testing.T) {
 		Name           string
 		Datacenter     *kubermaticv1.Datacenter
 		Cluster        *kubermaticv1.Cluster
-		ExpectedStatus apiv1.ExternalCCMStatus
+		ExpectedStatus apiv1.ExternalCCMMigrationStatus
 	}{
 		{
 			Name: "scenario 1: CCM migration not needed since the beginning",
@@ -57,10 +57,7 @@ func TestExternalCCMMigration(t *testing.T) {
 					},
 				},
 			},
-			ExpectedStatus: apiv1.ExternalCCMStatus{
-				ExternalCCM:          true,
-				ExternalCCMMigration: apiv1.ExternalCCMMigrationNotNeeded,
-			},
+			ExpectedStatus: apiv1.ExternalCCMMigrationNotNeeded,
 		},
 		{
 			Name: "scenario 2: CCM migration not needed because cluster has already migrated",
@@ -94,10 +91,7 @@ func TestExternalCCMMigration(t *testing.T) {
 					},
 				},
 			},
-			ExpectedStatus: apiv1.ExternalCCMStatus{
-				ExternalCCM:          true,
-				ExternalCCMMigration: apiv1.ExternalCCMMigrationNotNeeded,
-			},
+			ExpectedStatus: apiv1.ExternalCCMMigrationNotNeeded,
 		},
 		{
 			Name: "scenario 3: CCM migration supported",
@@ -114,10 +108,7 @@ func TestExternalCCMMigration(t *testing.T) {
 					},
 				},
 			},
-			ExpectedStatus: apiv1.ExternalCCMStatus{
-				ExternalCCM:          false,
-				ExternalCCMMigration: apiv1.ExternalCCMMigrationSupported,
-			},
+			ExpectedStatus: apiv1.ExternalCCMMigrationSupported,
 		},
 		{
 			Name: "scenario 4: CCM migration unsupported",
@@ -127,17 +118,14 @@ func TestExternalCCMMigration(t *testing.T) {
 			Cluster: &kubermaticv1.Cluster{
 				Spec: kubermaticv1.ClusterSpec{
 					Cloud: kubermaticv1.CloudSpec{
-						AWS: &kubermaticv1.AWSCloudSpec{},
+						Fake: &kubermaticv1.FakeCloudSpec{},
 					},
 					Version: semver.Semver{
 						Version: version,
 					},
 				},
 			},
-			ExpectedStatus: apiv1.ExternalCCMStatus{
-				ExternalCCM:          false,
-				ExternalCCMMigration: apiv1.ExternalCCMMigrationUnsupported,
-			},
+			ExpectedStatus: apiv1.ExternalCCMMigrationUnsupported,
 		},
 		{
 			Name: "scenario 5: external CCM migration in progress, cluster condition existing",
@@ -171,10 +159,7 @@ func TestExternalCCMMigration(t *testing.T) {
 					},
 				},
 			},
-			ExpectedStatus: apiv1.ExternalCCMStatus{
-				ExternalCCM:          true,
-				ExternalCCMMigration: apiv1.ExternalCCMMigrationInProgress,
-			},
+			ExpectedStatus: apiv1.ExternalCCMMigrationInProgress,
 		},
 		{
 			Name: "scenario 6: external CCM migration in progress, cluster condition not existing",
@@ -200,10 +185,7 @@ func TestExternalCCMMigration(t *testing.T) {
 					},
 				},
 			},
-			ExpectedStatus: apiv1.ExternalCCMStatus{
-				ExternalCCM:          true,
-				ExternalCCMMigration: apiv1.ExternalCCMMigrationInProgress,
-			},
+			ExpectedStatus: apiv1.ExternalCCMMigrationInProgress,
 		},
 	}
 

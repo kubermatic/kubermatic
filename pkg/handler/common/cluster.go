@@ -936,9 +936,9 @@ func ConvertInternalClusterToExternal(internalCluster *kubermaticv1.Cluster, dat
 			ClusterNetwork:                       &internalCluster.Spec.ClusterNetwork,
 		},
 		Status: apiv1.ClusterStatus{
-			Version: internalCluster.Spec.Version,
-			URL:     internalCluster.Address.URL,
-			CCM:     convertInternalCCMStatusToExternal(internalCluster, datacenter),
+			Version:              internalCluster.Spec.Version,
+			URL:                  internalCluster.Address.URL,
+			ExternalCCMMigration: convertInternalCCMStatusToExternal(internalCluster, datacenter),
 		},
 		Type: apiv1.KubernetesClusterType,
 	}
@@ -1044,34 +1044,23 @@ func getSSHKey(ctx context.Context, userInfoGetter provider.UserInfoGetter, sshK
 	return sshKeyProvider.Get(userInfo, keyName)
 }
 
-func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) apiv1.ExternalCCMStatus {
-	status := apiv1.ExternalCCMStatus{}
+func convertInternalCCMStatusToExternal(cluster *kubermaticv1.Cluster, datacenter *kubermaticv1.Datacenter) apiv1.ExternalCCMMigrationStatus {
+	switch externalCCMEnabled, externalCCMSupported := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider], cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, cluster); {
 
-	externalCCMEnabled := cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]
-	externalCCMSupported := cloudcontroller.ExternalCloudControllerFeatureSupported(datacenter, cluster)
-
-	if externalCCMEnabled {
-		status.ExternalCCM = true
+	case externalCCMEnabled:
 		_, ccmOk := cluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
 		_, csiOk := cluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
-		if ccmOk && csiOk {
-			if helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
-				status.ExternalCCMMigration = apiv1.ExternalCCMMigrationNotNeeded
-			} else {
-				status.ExternalCCMMigration = apiv1.ExternalCCMMigrationInProgress
-			}
-		} else {
-			status.ExternalCCMMigration = apiv1.ExternalCCMMigrationNotNeeded
+
+		if ccmOk && csiOk && !helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
+			return apiv1.ExternalCCMMigrationInProgress
 		}
+		return apiv1.ExternalCCMMigrationNotNeeded
+
+	case externalCCMSupported:
+		return apiv1.ExternalCCMMigrationSupported
+
+	default:
+		return apiv1.ExternalCCMMigrationUnsupported
 	}
 
-	if !externalCCMEnabled && externalCCMSupported {
-		status.ExternalCCMMigration = apiv1.ExternalCCMMigrationSupported
-	}
-
-	if !externalCCMEnabled && !externalCCMSupported {
-		status.ExternalCCMMigration = apiv1.ExternalCCMMigrationUnsupported
-	}
-
-	return status
 }
