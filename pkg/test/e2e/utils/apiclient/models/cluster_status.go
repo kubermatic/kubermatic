@@ -19,8 +19,8 @@ type ClusterStatus struct {
 	// URL specifies the address at which the cluster is available
 	URL string `json:"url,omitempty"`
 
-	// ccm
-	Ccm *ExternalCCMStatus `json:"ccm,omitempty"`
+	// external c c m migration
+	ExternalCCMMigration ExternalCCMMigrationStatus `json:"externalCCMMigration,omitempty"`
 
 	// version
 	Version Semver `json:"version,omitempty"`
@@ -30,7 +30,7 @@ type ClusterStatus struct {
 func (m *ClusterStatus) Validate(formats strfmt.Registry) error {
 	var res []error
 
-	if err := m.validateCcm(formats); err != nil {
+	if err := m.validateExternalCCMMigration(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -40,19 +40,17 @@ func (m *ClusterStatus) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *ClusterStatus) validateCcm(formats strfmt.Registry) error {
+func (m *ClusterStatus) validateExternalCCMMigration(formats strfmt.Registry) error {
 
-	if swag.IsZero(m.Ccm) { // not required
+	if swag.IsZero(m.ExternalCCMMigration) { // not required
 		return nil
 	}
 
-	if m.Ccm != nil {
-		if err := m.Ccm.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("ccm")
-			}
-			return err
+	if err := m.ExternalCCMMigration.Validate(formats); err != nil {
+		if ve, ok := err.(*errors.Validation); ok {
+			return ve.ValidateName("externalCCMMigration")
 		}
+		return err
 	}
 
 	return nil
