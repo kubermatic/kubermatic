@@ -1047,20 +1047,22 @@ type ClusterStatus struct {
 	Version ksemver.Semver `json:"version"`
 	// URL specifies the address at which the cluster is available
 	URL string `json:"url"`
-	// CCM represents the externalCCM status
-	CCM ExternalCCMStatus `json:"ccm"`
+	// ExternalCCMMigration represents the migration status to the external CCM
+	ExternalCCMMigration ExternalCCMMigrationStatus `json:"externalCCMMigration"`
 }
 
-// ExternalCCMStatus represents the external CCM status
-// swagger:model ExternalCCMStatus
-type ExternalCCMStatus struct {
-	// ExternalCCM reflects the ClusterFeatureExternalCloudProvider in the cluster .spec.features
-	ExternalCCM bool `json:"externalCCM"`
-	// MigrationNeeded is enabled when the cloud provider supports external CCM and the externalCCM feature is disabled
-	MigrationNeeded *bool `json:"migrationNeeded,omitempty"`
-	// MigrationCompleted reflects the CSIKubeletMigrationCompleted condition of the cluster
-	MigrationCompleted *bool `json:"migrationCompleted,omitempty"`
-}
+type ExternalCCMMigrationStatus string
+
+var (
+	// ExternalCCMMigrationNotNeeded indicates that the external CCM is already in use
+	ExternalCCMMigrationNotNeeded ExternalCCMMigrationStatus = "NotNeeded"
+	// ExternalCCMMigrationSupported indicates that the external CCM is not used but supported
+	ExternalCCMMigrationSupported ExternalCCMMigrationStatus = "Supported"
+	// ExternalCCMMigrationUnsupported indicates that the external CCM is not used and not supported
+	ExternalCCMMigrationUnsupported ExternalCCMMigrationStatus = "Unsupported"
+	// ExternalCCMMigrationInProgress indicates that the migration procedure to the external CCM is in progress
+	ExternalCCMMigrationInProgress ExternalCCMMigrationStatus = "InProgress"
+)
 
 // ClusterHealth stores health information about the cluster's components.
 // swagger:model ClusterHealth
