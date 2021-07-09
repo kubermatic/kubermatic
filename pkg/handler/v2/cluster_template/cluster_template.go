@@ -86,6 +86,7 @@ func CreateEndpoint(projectProvider provider.ProjectProvider, privilegedProjectP
 				Labels:      map[string]string{},
 				Annotations: map[string]string{},
 			},
+			Credential:             partialCluster.GetSecretName(),
 			ClusterLabels:          partialCluster.Labels,
 			InheritedClusterLabels: req.Body.Cluster.InheritedLabels,
 			Spec:                   partialCluster.Spec,
