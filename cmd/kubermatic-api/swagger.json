@@ -10089,6 +10089,64 @@
         }
       }
     },
+    "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs": {
+      "post": {
+        "description": "Creates a etcd backup config that will belong to the given cluster",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "etcdbackupconfig"
+        ],
+        "operationId": "createEtcdBackupConfig",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "ProjectID",
+            "name": "project_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "type": "string",
+            "x-go-name": "ClusterID",
+            "name": "cluster_id",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/ebcBody"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "EtcdBackupConfig",
+            "schema": {
+              "$ref": "#/definitions/EtcdBackupConfig"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/projects/{project_id}/clusters/{cluster_id}/events": {
       "get": {
         "produces": [
@@ -16068,6 +16126,57 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
     },
+    "BackupStatus": {
+      "type": "object",
+      "properties": {
+        "backupFinishedTime": {
+          "$ref": "#/definitions/Time"
+        },
+        "backupMessage": {
+          "type": "string",
+          "x-go-name": "BackupMessage"
+        },
+        "backupName": {
+          "type": "string",
+          "x-go-name": "BackupName"
+        },
+        "backupPhase": {
+          "$ref": "#/definitions/BackupStatusPhase"
+        },
+        "backupStartTime": {
+          "$ref": "#/definitions/Time"
+        },
+        "deleteFinishedTime": {
+          "$ref": "#/definitions/Time"
+        },
+        "deleteJobName": {
+          "type": "string",
+          "x-go-name": "DeleteJobName"
+        },
+        "deleteMessage": {
+          "type": "string",
+          "x-go-name": "DeleteMessage"
+        },
+        "deletePhase": {
+          "$ref": "#/definitions/BackupStatusPhase"
+        },
+        "deleteStartTime": {
+          "$ref": "#/definitions/Time"
+        },
+        "jobName": {
+          "type": "string",
+          "x-go-name": "JobName"
+        },
+        "scheduledTime": {
+          "$ref": "#/definitions/Time"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "BackupStatusPhase": {
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
     "BringYourOwnCloudSpec": {
       "type": "object",
       "title": "BringYourOwnCloudSpec specifies access data for a bring your own cluster.",
@@ -16600,6 +16709,10 @@
       "type": "integer",
       "format": "int8",
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "ConditionStatus": {
+      "type": "string",
+      "x-go-package": "k8s.io/api/core/v1"
     },
     "Constraint": {
       "description": "Constraint represents a gatekeeper Constraint",
@@ -17397,6 +17510,106 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/handler"
+    },
+    "EtcdBackupConfig": {
+      "description": "EtcdBackupConfig represents an object holding the configuration for etcd backups",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/EtcdBackupConfigSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/EtcdBackupConfigStatus"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EtcdBackupConfigCondition": {
+      "type": "object",
+      "properties": {
+        "lastHeartbeatTime": {
+          "$ref": "#/definitions/Time"
+        },
+        "lastTransitionTime": {
+          "$ref": "#/definitions/Time"
+        },
+        "message": {
+          "description": "Human readable message indicating details about last transition.\n+optional",
+          "type": "string",
+          "x-go-name": "Message"
+        },
+        "reason": {
+          "description": "(brief) reason for the condition's last transition.\n+optional",
+          "type": "string",
+          "x-go-name": "Reason"
+        },
+        "status": {
+          "$ref": "#/definitions/ConditionStatus"
+        },
+        "type": {
+          "$ref": "#/definitions/EtcdBackupConfigConditionType"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "EtcdBackupConfigConditionType": {
+      "description": "EtcdBackupConfigConditionType is used to indicate the type of a EtcdBackupConfig condition. For all condition\ntypes, the `true` value must indicate success. All condition types must be registered within\nthe `AllClusterConditionTypes` variable.",
+      "type": "string",
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "EtcdBackupConfigSpec": {
+      "description": "EtcdBackupConfigSpec represents an object holding the etcd backup configuration specification",
+      "type": "object",
+      "properties": {
+        "clusterId": {
+          "description": "ClusterID is the id of the cluster which will be backed up",
+          "type": "string",
+          "x-go-name": "ClusterID"
+        },
+        "keep": {
+          "description": "Keep is the number of backups to keep around before deleting the oldest one\nIf not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.",
+          "type": "integer",
+          "format": "int64",
+          "x-go-name": "Keep"
+        },
+        "schedule": {
+          "description": "Schedule is a cron expression defining when to perform\nthe backup. If not set, the backup is performed exactly\nonce, immediately.",
+          "type": "string",
+          "x-go-name": "Schedule"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "EtcdBackupConfigStatus": {
+      "type": "object",
+      "properties": {
+        "cleanupRunning": {
+          "description": "If the controller was configured with a cleanupContainer, CleanupRunning keeps track of the corresponding job",
+          "type": "boolean",
+          "x-go-name": "CleanupRunning"
+        },
+        "conditions": {
+          "description": "Conditions contains conditions of the EtcdBackupConfig",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EtcdBackupConfigCondition"
+          },
+          "x-go-name": "Conditions"
+        },
+        "lastBackups": {
+          "description": "CurrentBackups tracks the creation and deletion progress if all backups managed by the EtcdBackupConfig",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/BackupStatus"
+          },
+          "x-go-name": "CurrentBackups"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "Event": {
       "type": "object",
@@ -20721,11 +20934,10 @@
       "x-go-package": "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
     },
     "Time": {
-      "description": "Programs using times should typically store and pass them as values,\nnot pointers. That is, time variables and struct fields should be of\ntype time.Time, not *time.Time.\n\nA Time value can be used by multiple goroutines simultaneously except\nthat the methods GobDecode, UnmarshalBinary, UnmarshalJSON and\nUnmarshalText are not concurrency-safe.\n\nTime instants can be compared using the Before, After, and Equal methods.\nThe Sub method subtracts two instants, producing a Duration.\nThe Add method adds a Time and a Duration, producing a Time.\n\nThe zero value of type Time is January 1, year 1, 00:00:00.000000000 UTC.\nAs this time is unlikely to come up in practice, the IsZero method gives\na simple way of detecting a time that has not been initialized explicitly.\n\nEach Time has associated with it a Location, consulted when computing the\npresentation form of the time, such as in the Format, Hour, and Year methods.\nThe methods Local, UTC, and In return a Time with a specific location.\nChanging the location in this way changes only the presentation; it does not\nchange the instant in time being denoted and therefore does not affect the\ncomputations described in earlier paragraphs.\n\nRepresentations of a Time value saved by the GobEncode, MarshalBinary,\nMarshalJSON, and MarshalText methods store the Time.Location's offset, but not\nthe location name. They therefore lose information about Daylight Saving Time.\n\nIn addition to the required “wall clock” reading, a Time may contain an optional\nreading of the current process's monotonic clock, to provide additional precision\nfor comparison or subtraction.\nSee the “Monotonic Clocks” section in the package documentation for details.\n\nNote that the Go == operator compares not just the time instant but also the\nLocation and the monotonic clock reading. Therefore, Time values should not\nbe used as map or database keys without first guaranteeing that the\nidentical Location has been set for all values, which can be achieved\nthrough use of the UTC or Local method, and that the monotonic clock reading\nhas been stripped by setting t = t.Round(0). In general, prefer t.Equal(u)\nto t == u, since t.Equal uses the most accurate comparison available and\ncorrectly handles the case when only one of its arguments has a monotonic\nclock reading.",
-      "type": "string",
-      "format": "date-time",
-      "title": "A Time represents an instant in time with nanosecond precision.",
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+      "description": "+protobuf.options.marshal=false\n+protobuf.as=Timestamp\n+protobuf.options.(gogoproto.goproto_stringer)=false",
+      "type": "object",
+      "title": "Time is a wrapper around time.Time which supports correct\nmarshaling to YAML and JSON.  Wrappers are provided for many\nof the factory methods that the time package offers.",
+      "x-go-package": "k8s.io/apimachinery/pkg/apis/meta/v1"
     },
     "Trace": {
       "type": "object",
@@ -21115,6 +21327,20 @@
         }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/constraint_template"
+    },
+    "ebcBody": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "Name of the etcd backup config",
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/EtcdBackupConfigSpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
     },
     "errorResponse": {
       "description": "ErrorResponse is the default representation of an error",
