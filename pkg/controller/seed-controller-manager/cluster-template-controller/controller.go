@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"sort"
 
+	"k8s.io/apimachinery/pkg/types"
+
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -34,9 +36,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -93,7 +93,7 @@ func Add(
 
 	if err := c.Watch(
 		&source.Kind{Type: &kubermaticv1.Cluster{}},
-		enqueueClusterTemplateInstances(reconciler.seedClient, reconciler.log),
+		enqueueClusterTemplateInstances(),
 		workerlabel.Predicates(workerName),
 	); err != nil {
 		return fmt.Errorf("failed to create watch for clusters: %w", err)
@@ -291,22 +291,20 @@ func genNewCluster(template *kubermaticv1.ClusterTemplate, instance *kubermaticv
 	return newCluster
 }
 
-func enqueueClusterTemplateInstances(client ctrlruntimeclient.Client, log *zap.SugaredLogger) handler.EventHandler {
+func enqueueClusterTemplateInstances() handler.EventHandler {
 	return handler.EnqueueRequestsFromMapFunc(func(a ctrlruntimeclient.Object) []reconcile.Request {
 		var requests []reconcile.Request
 
-		instanceList := &kubermaticv1.ClusterTemplateInstanceList{}
-
-		if err := client.List(context.Background(), instanceList); err != nil {
-			log.Error(err)
-			utilruntime.HandleError(fmt.Errorf("failed to list cluster template instances: %v", err))
+		clusterLabels := a.GetLabels()
+		if clusterLabels != nil {
+			instanceName, ok := clusterLabels[kubernetes.ClusterTemplateInstanceLabelKey]
+			if ok && instanceName != "" {
+				requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
+					Name: instanceName,
+				}})
+			}
 		}
 
-		for _, instance := range instanceList.Items {
-			requests = append(requests, reconcile.Request{NamespacedName: types.NamespacedName{
-				Name: instance.Name,
-			}})
-		}
 		return requests
 	})
 }
