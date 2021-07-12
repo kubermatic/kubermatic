@@ -27,6 +27,7 @@ import (
 	controllerutil "k8c.io/kubermatic/v2/pkg/controller/util"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	kuberneteshelper "k8c.io/kubermatic/v2/pkg/kubernetes"
+	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
 
 	corev1 "k8s.io/api/core/v1"
@@ -137,27 +138,40 @@ func (r *reconciler) reconcile(ctx context.Context, log *zap.SugaredLogger, requ
 
 func (r *reconciler) handleDeletion(ctx context.Context, log *zap.SugaredLogger, template *kubermaticv1.ClusterTemplate) error {
 
-	// if finalizer not set to master ClusterTemplate then return
-	if !kuberneteshelper.HasFinalizer(template, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer) {
-		return nil
-	}
-
-	if err := r.syncAllSeeds(log, template, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
-		err := seedClient.Delete(ctx, &kubermaticv1.ClusterTemplate{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: template.Name,
-			},
-		})
-
-		return ctrlruntimeclient.IgnoreNotFound(err)
-	}); err != nil {
-		return err
-	}
-
 	if kuberneteshelper.HasFinalizer(template, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer) {
+		if err := r.syncAllSeeds(log, template, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
+			err := seedClient.Delete(ctx, &kubermaticv1.ClusterTemplate{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: template.Name,
+				},
+			})
+
+			return ctrlruntimeclient.IgnoreNotFound(err)
+		}); err != nil {
+			return err
+		}
 		kuberneteshelper.RemoveFinalizer(template, kubermaticapiv1.ClusterTemplateSeedCleanupFinalizer)
 		if err := r.masterClient.Update(ctx, template); err != nil {
 			return fmt.Errorf("failed to remove cluster template finalizer %s: %w", template.Name, err)
+		}
+	}
+
+	if kuberneteshelper.HasFinalizer(template, kubermaticapiv1.CredentialsSecretsCleanupFinalizer) {
+		if err := r.syncAllSeeds(log, template, func(seedClient ctrlruntimeclient.Client, template *kubermaticv1.ClusterTemplate) error {
+			err := seedClient.Delete(ctx, &corev1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      template.Credential,
+					Namespace: resources.KubermaticNamespace,
+				},
+			})
+			return ctrlruntimeclient.IgnoreNotFound(err)
+		}); err != nil {
+			return err
+		}
+
+		kuberneteshelper.RemoveFinalizer(template, kubermaticapiv1.CredentialsSecretsCleanupFinalizer)
+		if err := r.masterClient.Update(ctx, template); err != nil {
+			return fmt.Errorf("failed to remove credential secret finalizer %s: %w", template.Name, err)
 		}
 	}
 
