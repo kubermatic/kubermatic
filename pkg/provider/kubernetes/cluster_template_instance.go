@@ -29,7 +29,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const ClusterTemplateLabelKey = "template-id"
+const (
+	ClusterTemplateLabelKey         = "template-id"
+	ClusterTemplateInstanceLabelKey = "template-instance-id"
+)
 
 // AlertmanagerProvider struct that holds required components in order to manage alertmanager objects.
 type ClusterTemplateInstanceProvider struct {

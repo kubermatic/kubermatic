@@ -26,6 +26,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/addoninstaller"
 	backupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/backup"
 	cloudcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cloud"
+	clustertemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/cluster-template-controller"
 	seedconstraintsynchronizer "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-controller"
 	constrainttemplatecontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/constraint-template-controller"
 	etcdbackupcontroller "k8c.io/kubermatic/v2/pkg/controller/seed-controller-manager/etcdbackup"
@@ -67,6 +68,7 @@ var AllControllers = map[string]controllerCreator{
 	constrainttemplatecontroller.ControllerName:   createConstraintTemplateController,
 	initialmachinedeployment.ControllerName:       createInitialMachineDeploymentController,
 	mla.ControllerName:                            createMLAController,
+	clustertemplatecontroller.ControllerName:      createClusterTemplateController,
 }
 
 type controllerCreator func(*controllerContext) error
@@ -425,6 +427,16 @@ func userClusterMLAEnabled(ctrlCtx *controllerContext) bool {
 func createConstraintController(ctrlCtx *controllerContext) error {
 	return seedconstraintsynchronizer.Add(
 		ctrlCtx.ctx,
+		ctrlCtx.mgr,
+		ctrlCtx.log,
+		ctrlCtx.runOptions.workerName,
+		ctrlCtx.runOptions.namespace,
+		ctrlCtx.runOptions.workerCount,
+	)
+}
+
+func createClusterTemplateController(ctrlCtx *controllerContext) error {
+	return clustertemplatecontroller.Add(
 		ctrlCtx.mgr,
 		ctrlCtx.log,
 		ctrlCtx.runOptions.workerName,

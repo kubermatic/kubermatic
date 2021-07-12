@@ -2216,6 +2216,8 @@ const (
 	ClusterTemplateSeedCleanupFinalizer = "kubermatic.io/cleanup-seed-cluster-template"
 	// WhitelistedRegistryCleanupFinalizer indicates that whitelisted registry Constraints need to be cleaned up
 	WhitelistedRegistryCleanupFinalizer = "kubermatic.io/cleanup-whitelisted-registry"
+	// ClusterTemplateSeedCleanupFinalizer indicates that cluster template instance on seed clusters need cleanup
+	SeedClusterTemplateInstanceFinalizer = "kubermatic.io/cleanup-seed-cluster-template-instance"
 )
 
 func ToInternalClusterType(externalClusterType string) kubermaticv1.ClusterType {
