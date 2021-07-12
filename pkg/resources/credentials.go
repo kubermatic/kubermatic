@@ -186,6 +186,95 @@ func GetCredentials(data CredentialsData) (Credentials, error) {
 	return credentials, err
 }
 
+func CopyCredentials(data CredentialsData, cluster *kubermaticv1.Cluster) error {
+	credentials := Credentials{}
+	var err error
+
+	if data.Cluster().Spec.Cloud.AWS != nil {
+		if credentials.AWS, err = GetAWSCredentials(data); err != nil {
+			return err
+		}
+		cluster.Spec.Cloud.AWS.AccessKeyID = credentials.AWS.AccessKeyID
+		cluster.Spec.Cloud.AWS.SecretAccessKey = credentials.AWS.SecretAccessKey
+	}
+	if data.Cluster().Spec.Cloud.Azure != nil {
+		if credentials.Azure, err = GetAzureCredentials(data); err != nil {
+			return err
+		}
+		cluster.Spec.Cloud.Azure.TenantID = credentials.Azure.TenantID
+		cluster.Spec.Cloud.Azure.ClientID = credentials.Azure.ClientID
+		cluster.Spec.Cloud.Azure.ClientSecret = credentials.Azure.ClientSecret
+		cluster.Spec.Cloud.Azure.SubscriptionID = credentials.Azure.SubscriptionID
+	}
+	if data.Cluster().Spec.Cloud.Digitalocean != nil {
+		if credentials.Digitalocean, err = GetDigitaloceanCredentials(data); err != nil {
+			return err
+		}
+		cluster.Spec.Cloud.Digitalocean.Token = credentials.Digitalocean.Token
+	}
+	if data.Cluster().Spec.Cloud.GCP != nil {
+		if credentials.GCP, err = GetGCPCredentials(data); err != nil {
+			return err
+		}
+		cluster.Spec.Cloud.GCP.ServiceAccount = credentials.GCP.ServiceAccount
+	}
+	if data.Cluster().Spec.Cloud.Hetzner != nil {
+		if credentials.Hetzner, err = GetHetznerCredentials(data); err != nil {
+			return err
+		}
+		cluster.Spec.Cloud.Hetzner.Token = credentials.Hetzner.Token
+	}
+	if data.Cluster().Spec.Cloud.Openstack != nil {
+		if credentials.Openstack, err = GetOpenstackCredentials(data); err != nil {
+			return err
+		}
+		cluster.Spec.Cloud.Openstack.Token = credentials.Openstack.Token
+		cluster.Spec.Cloud.Openstack.TenantID = credentials.Openstack.TenantID
+		cluster.Spec.Cloud.Openstack.Tenant = credentials.Openstack.Tenant
+		cluster.Spec.Cloud.Openstack.Domain = credentials.Openstack.Domain
+		cluster.Spec.Cloud.Openstack.ApplicationCredentialID = credentials.Openstack.ApplicationCredentialID
+		cluster.Spec.Cloud.Openstack.ApplicationCredentialSecret = credentials.Openstack.ApplicationCredentialSecret
+		cluster.Spec.Cloud.Openstack.Password = credentials.Openstack.Password
+		cluster.Spec.Cloud.Openstack.Username = credentials.Openstack.Username
+
+	}
+	if data.Cluster().Spec.Cloud.Packet != nil {
+		if credentials.Packet, err = GetPacketCredentials(data); err != nil {
+			return err
+		}
+		cluster.Spec.Cloud.Packet.ProjectID = credentials.Packet.ProjectID
+		cluster.Spec.Cloud.Packet.APIKey = credentials.Packet.APIKey
+	}
+	if data.Cluster().Spec.Cloud.Kubevirt != nil {
+		if credentials.Kubevirt, err = GetKubevirtCredentials(data); err != nil {
+			return err
+		}
+		cluster.Spec.Cloud.Kubevirt.Kubeconfig = credentials.Kubevirt.KubeConfig
+	}
+	if data.Cluster().Spec.Cloud.VSphere != nil {
+		if credentials.VSphere, err = GetVSphereCredentials(data); err != nil {
+			return err
+		}
+		cluster.Spec.Cloud.VSphere.Username = credentials.VSphere.Username
+		cluster.Spec.Cloud.VSphere.Password = credentials.VSphere.Password
+	}
+	if data.Cluster().Spec.Cloud.Alibaba != nil {
+		if credentials.Alibaba, err = GetAlibabaCredentials(data); err != nil {
+			return err
+		}
+		cluster.Spec.Cloud.Alibaba.AccessKeyID = credentials.Alibaba.AccessKeyID
+		cluster.Spec.Cloud.Alibaba.AccessKeySecret = credentials.Alibaba.AccessKeySecret
+	}
+	if data.Cluster().Spec.Cloud.Anexia != nil {
+		if credentials.Anexia, err = GetAnexiaCredentials(data); err != nil {
+			return err
+		}
+		cluster.Spec.Cloud.Anexia.Token = credentials.Anexia.Token
+	}
+
+	return nil
+}
+
 func GetAWSCredentials(data CredentialsData) (AWSCredentials, error) {
 	spec := data.Cluster().Spec.Cloud.AWS
 	awsCredentials := AWSCredentials{}

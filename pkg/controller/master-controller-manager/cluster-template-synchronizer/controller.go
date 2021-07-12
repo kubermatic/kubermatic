@@ -200,7 +200,9 @@ func clusterTemplateCreatorGetter(template *kubermaticv1.ClusterTemplate) reconc
 			c.Name = template.Name
 			c.Spec = template.Spec
 			c.Labels = template.Labels
-
+			c.Annotations = template.Annotations
+			c.InheritedClusterLabels = template.InheritedClusterLabels
+			c.Credential = template.Credential
 			return c, nil
 		}
 	}
