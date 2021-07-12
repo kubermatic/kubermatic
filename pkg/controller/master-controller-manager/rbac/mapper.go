@@ -490,7 +490,7 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	//
 	// owners of a named resource
 	if strings.HasPrefix(groupName, OwnerGroupNamePrefix) {
-		return []string{"get", "update", "delete"}, nil
+		return []string{"get", "update", "patch", "delete"}, nil
 	}
 
 	// verbs for editors
@@ -498,7 +498,7 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 	// editors of a project
 	// special case - editors are not allowed to delete a project
 	if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == kubermaticv1.ProjectKindName {
-		return []string{"get", "update"}, nil
+		return []string{"get", "update", "patch"}, nil
 	}
 	// special case - editors are not allowed to interact with members of a project (UserProjectBinding)
 	if strings.HasPrefix(groupName, EditorGroupNamePrefix) && resourceKind == kubermaticv1.UserProjectBindingKind {
@@ -511,7 +511,7 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 
 	// editors of a named resource
 	if strings.HasPrefix(groupName, EditorGroupNamePrefix) {
-		return []string{"get", "update", "delete"}, nil
+		return []string{"get", "update", "patch", "delete"}, nil
 	}
 
 	// verbs for viewers
@@ -542,7 +542,7 @@ func generateVerbsForNamedResource(groupName, resourceKind string) ([]string, er
 		return nil, nil
 	}
 	if strings.HasPrefix(groupName, ProjectManagerGroupNamePrefix) {
-		return []string{"get", "update", "delete"}, nil
+		return []string{"get", "update", "patch", "delete"}, nil
 	}
 
 	// unknown group passed

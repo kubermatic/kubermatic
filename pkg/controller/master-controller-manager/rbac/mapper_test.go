@@ -34,13 +34,13 @@ func TestGenerateVerbsForNamedResources(t *testing.T) {
 		{
 			name:          "scenario 1: owners of a project can read, update and delete any named resource",
 			groupName:     "owners-projectID",
-			expectedVerbs: []string{"get", "update", "delete"},
+			expectedVerbs: []string{"get", "update", "patch", "delete"},
 			resourceKind:  "",
 		},
 		{
 			name:          "scenario 2: editors of a project can read, update and delete almost any named resource",
 			groupName:     "editors-projectID",
-			expectedVerbs: []string{"get", "update", "delete"},
+			expectedVerbs: []string{"get", "update", "patch", "delete"},
 			resourceKind:  "",
 		},
 		{
@@ -52,7 +52,7 @@ func TestGenerateVerbsForNamedResources(t *testing.T) {
 		{
 			name:          "scenario 4: projectmanagers of a project can manage any named resource",
 			groupName:     "projectmanagers-projectID",
-			expectedVerbs: []string{"get", "update", "delete"},
+			expectedVerbs: []string{"get", "update", "patch", "delete"},
 			resourceKind:  "",
 		},
 
@@ -60,7 +60,7 @@ func TestGenerateVerbsForNamedResources(t *testing.T) {
 		{
 			name:          "scenario 5: editors of a project cannot delete the project",
 			groupName:     "editors-projectID",
-			expectedVerbs: []string{"get", "update"},
+			expectedVerbs: []string{"get", "update", "patch"},
 			resourceKind:  "Project",
 		},
 
@@ -68,7 +68,7 @@ func TestGenerateVerbsForNamedResources(t *testing.T) {
 		{
 			name:          "scenario 6: owners of a project can interact with UserProjectBinding named resource",
 			groupName:     "owners-projectID",
-			expectedVerbs: []string{"get", "update", "delete"},
+			expectedVerbs: []string{"get", "update", "patch", "delete"},
 			resourceKind:  "UserProjectBinding",
 		},
 		{
@@ -98,7 +98,7 @@ func TestGenerateVerbsForNamedResources(t *testing.T) {
 		{
 			name:          "scenario 11: projectmanagers of a project can interact with ServiceAccount (User) named resource",
 			groupName:     "projectmanagers-projectID",
-			expectedVerbs: []string{"get", "update", "delete"},
+			expectedVerbs: []string{"get", "update", "patch", "delete"},
 			resourceKind:  "User",
 		},
 	}
