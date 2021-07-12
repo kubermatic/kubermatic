@@ -21,9 +21,6 @@ import (
 	"fmt"
 	"sort"
 
-	"k8s.io/apimachinery/pkg/types"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
-
 	"go.uber.org/zap"
 
 	kubermaticapiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -37,7 +34,9 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	"k8s.io/client-go/tools/record"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
@@ -125,7 +124,8 @@ func (r *reconciler) Reconcile(ctx context.Context, request reconcile.Request) (
 }
 
 func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.ClusterTemplateInstance, log *zap.SugaredLogger) error {
-
+	var remove = true
+	var add = false
 	clusterTemplateLabelSelector := ctrlruntimeclient.MatchingLabels{kubernetes.ClusterTemplateInstanceLabelKey: instance.Name}
 
 	clusterList := &kubermaticv1.ClusterList{}
@@ -139,7 +139,7 @@ func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.Clust
 			return nil
 		}
 
-		if err := r.patchFinalizer(ctx, instance, true); err != nil {
+		if err := r.patchFinalizer(ctx, instance, remove); err != nil {
 			return err
 		}
 
@@ -148,7 +148,7 @@ func (r *reconciler) reconcile(ctx context.Context, instance *kubermaticv1.Clust
 
 	// initialization
 	if !kuberneteshelper.HasFinalizer(instance, finalizer) {
-		if err := r.patchFinalizer(ctx, instance, false); err != nil {
+		if err := r.patchFinalizer(ctx, instance, add); err != nil {
 			return err
 		}
 	}
