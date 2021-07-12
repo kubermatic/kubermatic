@@ -691,12 +691,23 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		// The following feature gates are always enabled when the
 		// 'externalCloudProvider' feature is activated.
 		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-			featureFlags = append(featureFlags, "CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true")
+			featureFlags = append(featureFlags, "CSIMigration=true", "ExpandCSIVolumes=true")
+		}
+		if cluster.Spec.Cloud.Openstack != nil {
+			featureFlags = append(featureFlags, "CSIMigrationOpenStack=true")
+		}
+		if cluster.Spec.Cloud.VSphere != nil {
+			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
 		}
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
 		if kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
-			featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
+			if cluster.Spec.Cloud.Openstack != nil {
+				featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
+			}
+			if cluster.Spec.Cloud.VSphere != nil {
+				featureFlags = append(featureFlags, "CSIMigrationvSphereComplete=true")
+			}
 		}
 	}
 	return featureFlags
