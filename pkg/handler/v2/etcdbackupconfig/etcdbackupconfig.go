@@ -19,6 +19,7 @@ package etcdbackupconfig
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
@@ -52,6 +53,10 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 		}
 
 		ebc, err := convertAPIToInternalEtcdBackupConfig(req.Body.Name, &req.Body.Spec, c)
+		if err != nil {
+			return nil, err
+		}
+
 		ebc, err = createEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID, ebc)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
@@ -114,7 +119,7 @@ func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackup
 
 	clusterObjectRef, err := reference.GetReference(scheme.Scheme, cluster)
 	if err != nil {
-		return nil, err
+		return nil, errors.New(http.StatusInternalServerError, fmt.Sprintf("error getting cluster object reference: %v", err))
 	}
 
 	return &kubermaticv1.EtcdBackupConfig{
