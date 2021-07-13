@@ -43,7 +43,7 @@ func CreateEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider prov
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req := request.(createEtcdBackupConfigReq)
 
-		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.Body.Spec.ClusterID, nil)
+		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
 		if err != nil {
 			return nil, err
 		}

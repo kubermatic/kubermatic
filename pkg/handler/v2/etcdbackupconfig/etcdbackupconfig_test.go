@@ -85,6 +85,23 @@ func TestCreateEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusCreated,
 			ExpectedResponse:       test.GenAPIEtcdBackupConfig("test-ebc", test.GenDefaultCluster().Name),
 		},
+		{
+			Name:      "validation fails when schedule is set and keep is not",
+			ProjectID: test.GenDefaultProject().Name,
+			ClusterID: test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser: test.GenDefaultAPIUser(),
+			EtcdBackupConfig: func() *apiv2.EtcdBackupConfig {
+				ebc := test.GenAPIEtcdBackupConfig("test-ebc", test.GenDefaultCluster().Name)
+				ebc.Spec.Keep = nil
+				return ebc
+			}(),
+			ExpectedHTTPStatusCode: http.StatusBadRequest,
+			ExpectedResponse:       nil,
+		},
 	}
 
 	for _, tc := range testCases {
