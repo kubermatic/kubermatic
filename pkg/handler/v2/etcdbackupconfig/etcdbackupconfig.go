@@ -124,7 +124,8 @@ func convertAPIToInternalEtcdBackupConfig(name string, ebcSpec *apiv2.EtcdBackup
 
 	return &kubermaticv1.EtcdBackupConfig{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:      name,
+			Namespace: cluster.Status.NamespaceName,
 			OwnerReferences: []metav1.OwnerReference{
 				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
 			},
