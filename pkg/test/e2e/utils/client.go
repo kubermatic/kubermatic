@@ -1545,3 +1545,126 @@ func (r *TestClient) DeleteConstraint(name string) error {
 	r.test.Log("Constraint deleted successfully")
 	return nil
 }
+
+// CreateClusterTemplate method creates cluster template object
+func (r *TestClient) CreateClusterTemplate(projectID, name, scope, credential, version, location string) (*apiv2.ClusterTemplate, error) {
+
+	vr, err := semver.NewVersion(version)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse version %s: %v", version, err)
+	}
+	params := &project.CreateClusterTemplateParams{
+		Body: project.CreateClusterTemplateBody{
+			Name:  name,
+			Scope: scope,
+			Cluster: &models.Cluster{
+				Type:       "kubernetes",
+				Name:       name,
+				Credential: credential,
+				Spec: &models.ClusterSpec{
+					Cloud: &models.CloudSpec{
+						DatacenterName: location,
+						Digitalocean:   &models.DigitaloceanCloudSpec{},
+					},
+					Version: vr,
+				},
+			},
+			NodeDeployment: nil,
+		},
+		ProjectID: projectID,
+	}
+
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	template, err := r.client.Project.CreateClusterTemplate(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &apiv2.ClusterTemplate{
+		Name:      template.Payload.Name,
+		ID:        template.Payload.ID,
+		ProjectID: template.Payload.ProjectID,
+		User:      template.Payload.User,
+		Scope:     template.Payload.Scope,
+		Cluster: &apiv1.Cluster{
+			ObjectMeta: apiv1.ObjectMeta{
+				Name: template.Payload.Cluster.Name,
+			},
+			Labels:          template.Payload.Cluster.Labels,
+			InheritedLabels: template.Payload.Cluster.InheritedLabels,
+			Type:            template.Payload.Cluster.Type,
+			Credential:      template.Payload.Cluster.Credential,
+
+			Status: apiv1.ClusterStatus{},
+		},
+	}, nil
+}
+
+// CreateClusterTemplate method creates cluster template instance object
+func (r *TestClient) CreateClusterTemplateInstance(projectID, templateID string, replicas int64) (*apiv2.ClusterTemplateInstance, error) {
+
+	params := &project.CreateClusterTemplateInstanceParams{
+		Body: project.CreateClusterTemplateInstanceBody{
+			Replicas: replicas,
+		},
+		ProjectID:         projectID,
+		ClusterTemplateID: templateID,
+	}
+
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	instance, err := r.client.Project.CreateClusterTemplateInstance(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &apiv2.ClusterTemplateInstance{
+		Name: instance.Payload.Name,
+		Spec: kubermaticv1.ClusterTemplateInstanceSpec{
+			ProjectID:           instance.Payload.Spec.ProjectID,
+			ClusterTemplateID:   instance.Payload.Spec.ClusterTemplateID,
+			ClusterTemplateName: instance.Payload.Spec.ClusterTemplateName,
+			Replicas:            instance.Payload.Spec.Replicas,
+		},
+	}, nil
+}
+
+// ListClusters method lists user clusters
+func (r *TestClient) ListClusters(projectID string) ([]*apiv1.Cluster, error) {
+
+	params := &project.ListClustersV2Params{
+		ProjectID: projectID,
+	}
+
+	SetupRetryParams(r.test, params, Backoff{
+		Duration: 1 * time.Second,
+		Steps:    4,
+		Factor:   1.5,
+	})
+
+	clusterList := []*apiv1.Cluster{}
+
+	clusters, err := r.client.Project.ListClustersV2(params, r.bearerToken)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, cluster := range clusters.Payload {
+		apiCluster, err := convertCluster(cluster)
+		if err != nil {
+			return nil, err
+		}
+		clusterList = append(clusterList, apiCluster)
+	}
+
+	return clusterList, nil
+}
