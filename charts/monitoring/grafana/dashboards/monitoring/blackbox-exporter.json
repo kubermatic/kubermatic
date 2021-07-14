@@ -68,7 +68,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "avg_over_time(probe_success{job=\"blackbox-user-cluster-apiservers\"}[15m]) * 100",
+          "expr": "avg_over_time(probe_success{job=\"blackbox-exporter-user-cluster-apiservers\"}[15m]) * 100",
           "interval": "$interval",
           "legendFormat": "{{  instance  }}",
           "refId": "A"
