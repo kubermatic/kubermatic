@@ -20,6 +20,7 @@ package opa
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -31,7 +32,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 
 	corev1 "k8s.io/api/core/v1"
-	apiextensionsv1beta1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -40,11 +40,14 @@ import (
 )
 
 var (
-	datacenter = "kubermatic"
-	location   = "do-fra1"
-	version    = utils.KubernetesVersion()
-	credential = "e2e-digitalocean"
-	ctKind     = "RequiredLabels"
+	datacenter             = "kubermatic"
+	location               = "do-fra1"
+	version                = utils.KubernetesVersion()
+	credential             = "e2e-digitalocean"
+	ctKind                 = "RequiredLabels"
+	masterNamespace        = "kubermatic"
+	defaultConstraintName  = "testconstraint"
+	constraintTemplateName = "requiredlabels"
 )
 
 func TestOPAIntegration(t *testing.T) {
@@ -54,7 +57,7 @@ func TestOPAIntegration(t *testing.T) {
 		t.Fatalf("failed to register gatekeeper scheme: %v", err)
 	}
 
-	client, _, _, err := utils.GetClients()
+	seedClient, _, _, err := utils.GetClients()
 	if err != nil {
 		t.Fatalf("failed to get client for seed cluster: %v", err)
 	}
@@ -64,77 +67,90 @@ func TestOPAIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to get master token: %v", err)
 	}
-	testClient := utils.NewTestClient(masterToken, t)
+	masterClient := utils.NewTestClient(masterToken, t)
+
+	masterAdminToken, err := utils.RetrieveAdminMasterToken(ctx)
+	if err != nil {
+		t.Fatalf("failed to get master admin token: %v", err)
+	}
+	masterAdminClient := utils.NewTestClient(masterAdminToken, t)
 
 	// create dummy project
 	t.Log("creating project...")
-	project, err := testClient.CreateProject(rand.String(10))
+	project, err := masterClient.CreateProject(rand.String(10))
 	if err != nil {
 		t.Fatalf("failed to create project: %v", err)
 	}
 	defer cleanupProject(t, project.ID)
 
 	t.Log("creating cluster...")
-	apiCluster, err := testClient.CreateDOCluster(project.ID, datacenter, rand.String(10), credential, version, location, 1)
+	apiCluster, err := masterClient.CreateDOCluster(project.ID, datacenter, rand.String(10), credential, version, location, 1)
 	if err != nil {
 		t.Fatalf("failed to create cluster: %v", err)
 	}
 
 	// wait for the cluster to become healthy
-	if err := testClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
+	if err := masterClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
 		t.Fatalf("cluster did not become healthy: %v", err)
 	}
 
-	if err := testClient.WaitForClusterNodeDeploymentsToByReady(project.ID, datacenter, apiCluster.ID, 1); err != nil {
+	if err := masterClient.WaitForClusterNodeDeploymentsToByReady(project.ID, datacenter, apiCluster.ID, 1); err != nil {
 		t.Fatalf("cluster nodes not ready: %v", err)
 	}
 
 	// get the cluster object (the CRD, not the API's representation)
 	cluster := &kubermaticv1.Cluster{}
-	if err := client.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
+	if err := seedClient.Get(ctx, types.NamespacedName{Name: apiCluster.ID}, cluster); err != nil {
 		t.Fatalf("failed to get cluster: %v", err)
 	}
 
 	// enable OPA
 	t.Log("enabling OPA...")
-	if err := setOPAIntegration(ctx, client, cluster, true); err != nil {
+	if err := setOPAIntegration(ctx, seedClient, cluster, true); err != nil {
 		t.Fatalf("failed to set OPA integration to true: %v", err)
 	}
 
 	t.Log("waiting for cluster to healthy after enabling OPA...")
-	if err := testClient.WaitForOPAEnabledClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
+	if err := masterClient.WaitForOPAEnabledClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
 		t.Fatalf("cluster not ready: %v", err)
 	}
 
 	// Create CT
 	t.Log("creating Constraint Template...")
-	ct, err := createCT(ctx, client)
+	ct, err := masterAdminClient.CreateCT(constraintTemplateName, ctKind)
 	if err != nil {
 		t.Fatalf("error creating Constraint Template: %v", err)
 	}
 
-	// Check CT on user cluster
 	t.Log("creating client for user cluster...")
-	userClient, err := testClient.GetUserClusterClient(datacenter, project.ID, apiCluster.ID)
+	userClient, err := masterClient.GetUserClusterClient(datacenter, project.ID, apiCluster.ID)
 	if err != nil {
 		t.Fatalf("error creating user cluster client: %v", err)
 	}
+
 	if err := waitForCTSync(ctx, userClient, ct.Name, false); err != nil {
 		t.Fatal(err)
 	}
 
-	// Create Constraint
-	t.Log("creating Constraint...")
-	constraint, err := createConstraint(ctx, client, cluster.Status.NamespaceName, ctKind)
+	t.Log("constraint template synced to user cluster...")
+
+	// Create Default Constraint
+	t.Log("creating Default Constraint...")
+	defaultConstraint, err := masterAdminClient.CreateConstraint(defaultConstraintName, ctKind)
 	if err != nil {
-		t.Fatalf("error creating Constraint: %v", err)
+		t.Fatalf("error creating Default Constraint: %v", getErrorResponse(err))
 	}
 
-	// Check Constraint
-	t.Log("waiting for Constraint sync...")
-	if err := waitForConstraintSync(ctx, client, constraint.Name, constraint.Namespace, false); err != nil {
+	t.Log("waiting for Default Constraint sync...")
+	if err := waitForConstraintSync(ctx, seedClient, defaultConstraint.Name, masterNamespace, false); err != nil {
 		t.Fatal(err)
 	}
+	t.Log("synced to Default Constraint kubermatic namespace...")
+
+	if err := waitForConstraintSync(ctx, seedClient, defaultConstraint.Name, cluster.Status.NamespaceName, false); err != nil {
+		t.Fatal(err)
+	}
+	t.Log("synced to Default Constraint user cluster namespace...")
 
 	// Test if constraint works
 	t.Log("testing if Constraint works by creating policy-breaking configmap...")
@@ -151,13 +167,20 @@ func TestOPAIntegration(t *testing.T) {
 
 	// Delete constraint
 	t.Log("Deleting Constraint...")
-	if err := client.Delete(ctx, constraint); err != nil {
+	if err := masterAdminClient.DeleteConstraint(defaultConstraint.Name); err != nil {
 		t.Fatalf("error deleting Constraint: %v", err)
 	}
 	t.Log("waiting for Constraint sync delete...")
-	if err := waitForConstraintSync(ctx, client, constraint.Name, constraint.Namespace, true); err != nil {
+
+	if err := waitForConstraintSync(ctx, seedClient, defaultConstraint.Name, masterNamespace, true); err != nil {
 		t.Fatal(err)
 	}
+	t.Log("synced to Default Constraint kubermatic namespace...")
+
+	if err := waitForConstraintSync(ctx, seedClient, defaultConstraint.Name, cluster.Status.NamespaceName, true); err != nil {
+		t.Fatal(err)
+	}
+	t.Log("synced to Default Constraint user cluster namespace...")
 
 	// Check that constraint does not work
 	t.Log("testing if policy breaking configmap can be created...")
@@ -168,7 +191,7 @@ func TestOPAIntegration(t *testing.T) {
 
 	// Delete CT
 	t.Log("deleting Constraint Template...")
-	if err := client.Delete(ctx, ct); err != nil {
+	if err := masterAdminClient.DeleteConstraintTemplate(ct.Name); err != nil {
 		t.Fatalf("error deleting Constraint Template: %v", err)
 	}
 
@@ -180,18 +203,27 @@ func TestOPAIntegration(t *testing.T) {
 
 	// Disable OPA Integration
 	t.Log("disabling OPA...")
-	if err := setOPAIntegration(ctx, client, cluster, false); err != nil {
+	if err := setOPAIntegration(ctx, seedClient, cluster, false); err != nil {
 		t.Fatalf("failed to set OPA integration to false: %v", err)
 	}
 
 	// Check that cluster is healthy
 	t.Log("waiting for cluster to healthy after disabling OPA...")
-	if err := testClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
+	if err := masterClient.WaitForClusterHealthy(project.ID, datacenter, apiCluster.ID); err != nil {
 		t.Fatalf("cluster not healthy: %v", err)
 	}
 
 	// Test that cluster deletes cleanly
-	testClient.CleanupCluster(t, project.ID, datacenter, apiCluster.ID)
+	masterClient.CleanupCluster(t, project.ID, datacenter, apiCluster.ID)
+}
+
+// getErrorResponse converts the client error response to string
+func getErrorResponse(err error) string {
+	rawData, newErr := json.Marshal(err)
+	if newErr != nil {
+		return err.Error()
+	}
+	return string(rawData)
 }
 
 func setOPAIntegration(ctx context.Context, client ctrlruntimeclient.Client, cluster *kubermaticv1.Cluster, enabled bool) error {
@@ -204,7 +236,7 @@ func setOPAIntegration(ctx context.Context, client ctrlruntimeclient.Client, clu
 }
 
 func testConstraintForConfigMap(ctx context.Context, userClient ctrlruntimeclient.Client) error {
-	if !utils.WaitFor(1*time.Second, 5*time.Minute, func() bool {
+	if !utils.WaitFor(1*time.Second, 2*time.Minute, func() bool {
 		cm := genTestConfigMap()
 		err := userClient.Create(ctx, cm)
 		return err != nil && strings.Contains(err.Error(), "you must provide labels")
@@ -238,65 +270,9 @@ func waitForConstraintSync(ctx context.Context, client ctrlruntimeclient.Client,
 		}
 		return err == nil
 	}) {
-		return fmt.Errorf("timeout waiting for Constraint to be synced to user cluster")
+		return fmt.Errorf("timeout waiting for Constraint to be synced")
 	}
 	return nil
-}
-
-func createConstraint(ctx context.Context, client ctrlruntimeclient.Client, namespace, kind string) (*kubermaticv1.Constraint, error) {
-	c := &kubermaticv1.Constraint{}
-	c.Kind = kubermaticv1.ConstraintKind
-	c.Name = "testconstraint"
-	c.Namespace = namespace
-	c.Spec = kubermaticv1.ConstraintSpec{
-		ConstraintType: kind,
-		Match: kubermaticv1.Match{
-			Kinds: []kubermaticv1.Kind{
-				{Kinds: []string{"ConfigMap"}, APIGroups: []string{""}},
-			},
-		},
-		Parameters: kubermaticv1.Parameters{
-			"rawJSON": `{"labels":["gatekeeper"]}`,
-		},
-	}
-
-	return c, client.Create(ctx, c)
-}
-
-func createCT(ctx context.Context, client ctrlruntimeclient.Client) (*kubermaticv1.ConstraintTemplate, error) {
-	ct := &kubermaticv1.ConstraintTemplate{}
-	ct.Name = "requiredlabels"
-	ct.Spec = kubermaticv1.ConstraintTemplateSpec{
-		CRD: constrainttemplatev1beta1.CRD{
-			Spec: constrainttemplatev1beta1.CRDSpec{
-				Names: constrainttemplatev1beta1.Names{
-					Kind: ctKind,
-				},
-				Validation: &constrainttemplatev1beta1.Validation{
-					OpenAPIV3Schema: &apiextensionsv1beta1.JSONSchemaProps{
-						Properties: map[string]apiextensionsv1beta1.JSONSchemaProps{
-							"labels": {
-								Type: "array",
-								Items: &apiextensionsv1beta1.JSONSchemaPropsOrArray{
-									Schema: &apiextensionsv1beta1.JSONSchemaProps{
-										Type: "string",
-									},
-								},
-							},
-						},
-					},
-				},
-			},
-		},
-		Targets: []constrainttemplatev1beta1.Target{
-			{
-				Target: "admission.k8s.gatekeeper.sh",
-				Rego:   "package requiredlabels\nviolation[{\"msg\": msg, \"details\": {\"missing_labels\": missing}}] {\n  provided := {label | input.review.object.metadata.labels[label]}\n  required := {label | label := input.parameters.labels[_]}\n  missing := required - provided\n  count(missing) > 0\n  msg := sprintf(\"you must provide labels: %v\", [missing])\n}",
-			},
-		},
-	}
-
-	return ct, client.Create(ctx, ct)
 }
 
 func genTestConfigMap() *corev1.ConfigMap {
