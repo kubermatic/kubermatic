@@ -1,40 +1,4 @@
 {
-  "__inputs": [
-    {
-      "description": "",
-      "label": "prometheus",
-      "name": "DS_PROMETHEUS",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus",
-      "type": "datasource"
-    }
-  ],
-  "__requires": [
-    {
-      "id": "grafana",
-      "name": "Grafana",
-      "type": "grafana",
-      "version": "7.4.3"
-    },
-    {
-      "id": "graph",
-      "name": "Graph",
-      "type": "panel",
-      "version": ""
-    },
-    {
-      "id": "prometheus",
-      "name": "Prometheus",
-      "type": "datasource",
-      "version": "1.0.0"
-    },
-    {
-      "id": "singlestat",
-      "name": "Singlestat",
-      "type": "panel",
-      "version": ""
-    }
-  ],
   "annotations": {
     "list": []
   },
@@ -51,7 +15,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "$datasource",
       "editable": true,
       "fieldConfig": {
         "defaults": {
@@ -159,7 +123,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "$datasource",
       "editable": true,
       "fieldConfig": {
         "defaults": {
@@ -280,7 +244,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "$datasource",
       "editable": true,
       "fieldConfig": {
         "defaults": {
@@ -379,7 +343,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "$datasource",
       "editable": true,
       "fieldConfig": {
         "defaults": {
@@ -479,7 +443,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "$datasource",
       "editable": true,
       "fieldConfig": {
         "defaults": {
@@ -584,7 +548,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "$datasource",
       "decimals": 0,
       "editable": true,
       "fieldConfig": {
@@ -688,7 +652,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "$datasource",
       "editable": true,
       "fieldConfig": {
         "defaults": {
@@ -777,7 +741,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "$datasource",
       "editable": true,
       "fieldConfig": {
         "defaults": {
@@ -880,7 +844,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "$datasource",
       "decimals": 2,
       "editable": true,
       "fieldConfig": {
@@ -985,7 +949,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "$datasource",
       "editable": true,
       "fieldConfig": {
         "defaults": {
@@ -1076,7 +1040,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "$datasource",
       "editable": true,
       "fieldConfig": {
         "defaults": {
@@ -1170,6 +1134,20 @@
   "templating": {
     "list": [
       {
+        "current": {},
+        "hide": 2,
+        "includeAll": false,
+        "label": null,
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
         "auto": true,
         "auto_count": 10,
         "auto_min": "10s",
@@ -1260,7 +1238,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "$datasource",
         "definition": "",
         "description": null,
         "error": null,
