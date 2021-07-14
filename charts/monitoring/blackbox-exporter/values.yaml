@@ -50,3 +50,13 @@ blackboxExporter:
         valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
         fail_if_not_ssl: true
         preferred_ip_protocol: "ip4"
+    # A module that requires HTTPS and HTTP 2xx codes on its targets but will skip tls verify.
+    https_2xx_skip_tls_verify:
+      prober: http
+      timeout: 5s
+      http:
+        method: GET
+        preferred_ip_protocol: "ip4"
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        tls_config:
+          insecure_skip_verify: true
