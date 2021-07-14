@@ -21,6 +21,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	"k8s.io/apimachinery/pkg/types"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
@@ -74,4 +75,40 @@ func (p *EtcdBackupConfigProvider) Create(userInfo *provider.UserInfo, etcdBacku
 func (p *EtcdBackupConfigProvider) CreateUnsecured(etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
 	err := p.clientPrivileged.Create(context.Background(), etcdBackupConfig)
 	return etcdBackupConfig, err
+}
+
+func (p *EtcdBackupConfigProvider) Get(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error) {
+
+	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	ebc := &kubermaticv1.EtcdBackupConfig{}
+	err = impersonationClient.Get(context.Background(), types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, ebc)
+	return ebc, err
+}
+
+func (p *EtcdBackupConfigProvider) GetUnsecured(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error) {
+	ebc := &kubermaticv1.EtcdBackupConfig{}
+	err := p.clientPrivileged.Get(context.Background(), types.NamespacedName{Name: name, Namespace: cluster.Status.NamespaceName}, ebc)
+	return ebc, err
+}
+
+func (p *EtcdBackupConfigProvider) List(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error) {
+
+	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	ebcList := &kubermaticv1.EtcdBackupConfigList{}
+	err = impersonationClient.List(context.Background(), ebcList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
+	return ebcList, err
+}
+
+func (p *EtcdBackupConfigProvider) ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error) {
+	ebcList := &kubermaticv1.EtcdBackupConfigList{}
+	err := p.clientPrivileged.List(context.Background(), ebcList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
+	return ebcList, err
 }

@@ -1072,6 +1072,12 @@ type PrivilegedWhitelistedRegistryProvider interface {
 type EtcdBackupConfigProvider interface {
 	// Create creates the given etcdBackupConfig
 	Create(userInfo *UserInfo, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+
+	// Get gets the given etcdBackupConfig
+	Get(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error)
+
+	// List gets a list of etcdBackupConfig for a given cluster
+	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
 }
 
 // PrivilegedEtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs using a privileged client
@@ -1081,4 +1087,16 @@ type PrivilegedEtcdBackupConfigProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
 	CreateUnsecured(etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+
+	// GetUnsecured gets the given etcdBackupConfig
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resource
+	GetUnsecured(cluster *kubermaticv1.Cluster, name string) (*kubermaticv1.EtcdBackupConfig, error)
+
+	// ListUnsecured gets a list of all etcdBackupConfigs for a given cluster
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to get the resources
+	ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
 }
