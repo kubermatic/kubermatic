@@ -292,6 +292,8 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 
 	clusterTemplateInstanceProviderGetter := kubernetesprovider.ClusterTemplateInstanceProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
 
+	etcdBackupConfigProviderGetter := kubernetesprovider.EtcdBackupConfigProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
+
 	settingsWatcher, err := kuberneteswatcher.NewSettingsWatcher(settingsProvider)
 	if err != nil {
 		return providers{}, fmt.Errorf("failed to create settings watcher due to %v", err)
@@ -338,6 +340,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		ruleGroupProviderGetter:               ruleGroupProviderGetter,
 		clusterTemplateInstanceProviderGetter: clusterTemplateInstanceProviderGetter,
 		privilegedWhitelistedRegistryProvider: privilegedWhitelistedRegistryProvider,
+		etcdBackupConfigProviderGetter:        etcdBackupConfigProviderGetter,
 	}, nil
 }
 
@@ -449,6 +452,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ClusterTemplateInstanceProviderGetter: prov.clusterTemplateInstanceProviderGetter,
 		RuleGroupProviderGetter:               prov.ruleGroupProviderGetter,
 		PrivilegedWhitelistedRegistryProvider: prov.privilegedWhitelistedRegistryProvider,
+		EtcdBackupConfigProviderGetter:        prov.etcdBackupConfigProviderGetter,
 		Versions:                              options.versions,
 		CABundle:                              options.caBundle.CertPool(),
 	}

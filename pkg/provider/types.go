@@ -1067,3 +1067,18 @@ type PrivilegedWhitelistedRegistryProvider interface {
 	// is unsafe in a sense that it uses privileged account to delete the resource
 	DeleteUnsecured(name string) error
 }
+
+// EtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs
+type EtcdBackupConfigProvider interface {
+	// Create creates the given etcdBackupConfig
+	Create(userInfo *UserInfo, etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+}
+
+// PrivilegedEtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs using a privileged client
+type PrivilegedEtcdBackupConfigProvider interface {
+	// CreateUnsecured creates the given etcdBackupConfig
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to create the resource
+	CreateUnsecured(etcdBackupConfig *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
+}
