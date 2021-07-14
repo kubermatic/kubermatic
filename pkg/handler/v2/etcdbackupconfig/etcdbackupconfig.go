@@ -182,8 +182,8 @@ func DecodeGetEtcdBackupConfigReq(c context.Context, r *http.Request) (interface
 	}
 	req.GetClusterReq = cr.(cluster.GetClusterReq)
 
-	ebcName := mux.Vars(r)["ebc_name"]
-	if ebcName == "" {
+	req.EtcdBackupConfigName = mux.Vars(r)["ebc_name"]
+	if req.EtcdBackupConfigName == "" {
 		return "", fmt.Errorf("'ebc_name' parameter is required but was not provided")
 	}
 

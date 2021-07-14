@@ -34,6 +34,7 @@ import (
 	constrainttemplatev1beta1 "github.com/open-policy-agent/frameworks/constraint/pkg/apis/templates/v1beta1"
 	gatekeeperconfigv1alpha1 "github.com/open-policy-agent/gatekeeper/apis/config/v1alpha1"
 	prometheusapi "github.com/prometheus/client_golang/api"
+	"k8s.io/client-go/tools/reference"
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
@@ -1793,6 +1794,27 @@ func GenAPIEtcdBackupConfig(name, clusterID string) *apiv2.EtcdBackupConfig {
 			ClusterID: clusterID,
 			Schedule:  "5 * * * * *",
 			Keep:      &keep,
+		},
+	}
+}
+
+func GenEtcdBackupConfig(name string, cluster *kubermaticv1.Cluster) *kubermaticv1.EtcdBackupConfig {
+	keep := 5
+	clusterObjectRef, _ := reference.GetReference(scheme.Scheme, cluster)
+
+	return &kubermaticv1.EtcdBackupConfig{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: cluster.Status.NamespaceName,
+			OwnerReferences: []metav1.OwnerReference{
+				*metav1.NewControllerRef(cluster, kubermaticv1.SchemeGroupVersion.WithKind("Cluster")),
+			},
+		},
+		Spec: kubermaticv1.EtcdBackupConfigSpec{
+			Name:     name,
+			Cluster:  *clusterObjectRef,
+			Schedule: "5 * * * * *",
+			Keep:     &keep,
 		},
 	}
 }
