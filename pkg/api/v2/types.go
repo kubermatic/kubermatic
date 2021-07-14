@@ -201,3 +201,26 @@ type WhitelistedRegistry struct {
 
 	Spec crdapiv1.WhitelistedRegistrySpec `json:"spec"`
 }
+
+// EtcdBackupConfig represents an object holding the configuration for etcd backups
+// swagger:model EtcdBackupConfig
+type EtcdBackupConfig struct {
+	Name string `json:"name"`
+
+	Spec   EtcdBackupConfigSpec            `json:"spec"`
+	Status crdapiv1.EtcdBackupConfigStatus `json:"status"`
+}
+
+// EtcdBackupConfigSpec represents an object holding the etcd backup configuration specification
+// swagger:model EtcdBackupConfigSpec
+type EtcdBackupConfigSpec struct {
+	// ClusterID is the id of the cluster which will be backed up
+	ClusterID string `json:"clusterId"`
+	// Schedule is a cron expression defining when to perform
+	// the backup. If not set, the backup is performed exactly
+	// once, immediately.
+	Schedule string `json:"schedule,omitempty"`
+	// Keep is the number of backups to keep around before deleting the oldest one
+	// If not set, defaults to DefaultKeptBackupsCount. Only used if Schedule is set.
+	Keep *int `json:"keep,omitempty"`
+}

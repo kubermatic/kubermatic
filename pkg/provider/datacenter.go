@@ -73,6 +73,9 @@ type RuleGroupProviderGetter = func(seed *kubermaticv1.Seed) (RuleGroupProvider,
 // ClusterTemplateInstanceProviderGetter is used to get a ClusterTemplateInstanceProvider
 type ClusterTemplateInstanceProviderGetter = func(seed *kubermaticv1.Seed) (ClusterTemplateInstanceProvider, error)
 
+// EtcdBackupConfigProviderGetter is used to get a EtcdBackupConfigProvider
+type EtcdBackupConfigProviderGetter = func(seed *kubermaticv1.Seed) (EtcdBackupConfigProvider, error)
+
 // SeedGetterFactory returns a SeedGetter. It has validation of all its arguments
 func SeedGetterFactory(ctx context.Context, client ctrlruntimeclient.Client, seedName string, namespace string) (SeedGetter, error) {
 	return func() (*kubermaticv1.Seed, error) {

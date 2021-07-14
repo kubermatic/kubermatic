@@ -22,6 +22,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/gorilla/mux"
+	"k8c.io/kubermatic/v2/pkg/handler/v2/etcdbackupconfig"
 
 	"k8c.io/kubermatic/v2/pkg/handler"
 	"k8c.io/kubermatic/v2/pkg/handler/middleware"
@@ -592,6 +593,11 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 	mux.Methods(http.MethodPatch).
 		Path("/whitelistedregistries/{whitelisted_registry}").
 		Handler(r.patchWhitelistedRegistry())
+
+	// Defines a set of HTTP endpoints for managing etcd backup configs
+	mux.Methods(http.MethodPost).
+		Path("/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs").
+		Handler(r.createEtcdBackupConfig())
 
 }
 
@@ -4101,6 +4107,37 @@ func (r Routing) patchWhitelistedRegistry() http.Handler {
 		)(whitelistedregistry.PatchEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
 		whitelistedregistry.DecodePatchWhitelistedRegistryReq,
 		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route POST /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs etcdbackupconfig createEtcdBackupConfig
+//
+//     Creates a etcd backup config that will belong to the given cluster
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       201: EtcdBackupConfig
+//       401: empty
+//       403: empty
+func (r Routing) createEtcdBackupConfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.EtcdBackupConfig(r.clusterProviderGetter, r.etcdBackupConfigProviderGetter, r.seedsGetter),
+			middleware.PrivilegedEtcdBackupConfig(r.clusterProviderGetter, r.etcdBackupConfigProviderGetter, r.seedsGetter),
+		)(etcdbackupconfig.CreateEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		etcdbackupconfig.DecodeCreateEtcdBackupConfigReq,
+		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
