@@ -64,6 +64,11 @@ prometheus:
     #  honor_labels: true
     #  ...
 
+    # Enable Blackbox Exporter scraping rules, this requires to deploy blackbox exporter in the cluster.
+    blackBoxExporter:
+      enabled: true
+      url: blackbox-exporter:9115
+
   # Similarly to the scraping config, you can configure the
   # target alertmanagers here.
   alertmanagers:
