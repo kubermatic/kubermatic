@@ -19,15 +19,13 @@ package reconciling
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 
 	"github.com/go-test/deep"
 	"go.uber.org/zap"
 
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+	k8cequality "k8c.io/kubermatic/v2/pkg/crd/equality"
 	kubermaticlog "k8c.io/kubermatic/v2/pkg/log"
 
-	"k8s.io/apimachinery/pkg/api/equality"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -40,17 +38,8 @@ func init() {
 
 // DeepEqual compares both objects for equality
 func DeepEqual(a, b metav1.Object) bool {
-	// The ClusterTemplate consist with ClusterSpec which has nested Semver type.
-	// The semverlib.Version doesn't implement Equality function. Using equality.Semantic.DeepEqual for this object cause
-	// an informative panic.
-	if _, ok := a.(*kubermaticv1.ClusterTemplate); ok {
-		if reflect.DeepEqual(a, b) {
-			return true
-		}
-	} else {
-		if equality.Semantic.DeepEqual(a, b) {
-			return true
-		}
+	if k8cequality.Semantic.DeepEqual(a, b) {
+		return true
 	}
 
 	// For some reason unstructured objects returned from the api have types for their fields
