@@ -165,6 +165,10 @@ run-nodeport-proxy-e2e-test-in-kind:
 run-expose-strategy-e2e-test-in-kind:
 	./hack/run-expose-strategy-e2e-test-in-kind.sh
 
+.PHONY: run-ccm-migration-e2e-test-in-kind
+run-ccm-migration-e2e-test-in-kind:
+	./hack/run-ccm-migration-e2e-test-in-kind.sh
+
 .PHONY: verify
 verify:
 	./hack/verify-codegen.sh
