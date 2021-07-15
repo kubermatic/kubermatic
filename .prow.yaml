@@ -894,8 +894,7 @@ presubmits:
 
   - name: pre-kubermatic-e2e-openstack-ubuntu-1.21
     decorate: true
-    #optional: true
-    run_if_changed: "(cmd/|codegen/|hack/|pkg/|charts/kubermatic|addons/|.prow.yaml)"
+    optional: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
       preset-openstack: "true"
@@ -1308,6 +1307,55 @@ presubmits:
             cpu: 2
           limits:
             memory: 6Gi
+
+  #########################################################
+  # external ccm migration e2e tests
+  #########################################################
+
+  - name: pre-kubermatic-ccm-migration-e2e
+    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow.yaml)"
+    decorate: true
+    clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
+    labels:
+      preset-openstack: "true"
+      preset-vault: "true"
+      preset-docker-pull: "true"
+      preset-docker-push: "true"
+      preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
+      preset-kubeconfig-ci: "true"
+      preset-kind-volume-mounts: "true"
+      preset-goproxy: "true"
+    spec:
+      containers:
+        - image: quay.io/kubermatic/build:go-1.16-node-14-kind-0.8-0
+          imagePullPolicy: Always
+          command:
+            - make
+          args:
+            - run-ccm-migration-e2e-test-in-kind.sh
+          env:
+            - name: HELM_BINARY
+              value: helm3
+            - name: KUBERMATIC_EDITION
+              value: ee
+            - name: PROVIDER
+              value: "openstack"
+            - name: DISTRIBUTIONS
+              value: ubuntu
+            - name: SERVICE_ACCOUNT_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: e2e-ci
+                  key: serviceAccountSigningKey
+          securityContext:
+            privileged: true
+          resources:
+            requests:
+              memory: 4Gi
+              cpu: 2
+            limits:
+              memory: 6Gi
 
   #########################################################
   # misc
