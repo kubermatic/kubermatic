@@ -23,6 +23,7 @@ import (
 	"net/http"
 
 	"github.com/go-kit/kit/endpoint"
+	"github.com/gorilla/mux"
 
 	apiv2 "k8c.io/kubermatic/v2/pkg/api/v2"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -103,6 +104,92 @@ func DecodeCreateEtcdBackupConfigReq(c context.Context, r *http.Request) (interf
 	return req, nil
 }
 
+func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getEtcdBackupConfigReq)
+
+		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		ebc, err := getEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		return convertInternalToAPIEtcdBackupConfig(ebc), nil
+	}
+}
+
+// getEtcdBackupConfigReq represents a request for getting a cluster etcd backup configuration
+// swagger:parameters getEtcdBackupConfig
+type getEtcdBackupConfigReq struct {
+	cluster.GetClusterReq
+	// in: path
+	// required: true
+	EtcdBackupConfigName string `json:"ebc_name"`
+}
+
+func ListEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(listEtcdBackupConfigReq)
+
+		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		ebcList, err := listEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+
+		var ebcAPIList []*apiv2.EtcdBackupConfig
+		for _, ebc := range ebcList.Items {
+			ebcAPIList = append(ebcAPIList, convertInternalToAPIEtcdBackupConfig(&ebc))
+		}
+
+		return ebcAPIList, nil
+	}
+}
+
+// listEtcdBackupConfigReq represents a request for listing cluster etcd backup configurations
+// swagger:parameters listEtcdBackupConfig
+type listEtcdBackupConfigReq struct {
+	cluster.GetClusterReq
+}
+
+func DecodeListEtcdBackupConfigReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req listEtcdBackupConfigReq
+
+	cr, err := cluster.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+
+	req.GetClusterReq = cr.(cluster.GetClusterReq)
+	return req, nil
+}
+
+func DecodeGetEtcdBackupConfigReq(c context.Context, r *http.Request) (interface{}, error) {
+	var req getEtcdBackupConfigReq
+	cr, err := cluster.DecodeGetClusterReq(c, r)
+	if err != nil {
+		return nil, err
+	}
+	req.GetClusterReq = cr.(cluster.GetClusterReq)
+
+	req.EtcdBackupConfigName = mux.Vars(r)["ebc_name"]
+	if req.EtcdBackupConfigName == "" {
+		return "", fmt.Errorf("'ebc_name' parameter is required but was not provided")
+	}
+
+	return req, nil
+}
+
 func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *apiv2.EtcdBackupConfig {
 	return &apiv2.EtcdBackupConfig{
 		Name: ebc.Name,
@@ -152,6 +239,36 @@ func createEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInf
 		return nil, err
 	}
 	return etcdBackupConfigProvider.Create(userInfo, etcdBackupConfig)
+}
+
+func getEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdBackupConfigName string) (*kubermaticv1.EtcdBackupConfig, error) {
+	adminUserInfo, privilegedEtcdBackupConfigProvider, err := getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx, userInfoGetter)
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedEtcdBackupConfigProvider.GetUnsecured(cluster, etcdBackupConfigName)
+	}
+	userInfo, etcdBackupConfigProvider, err := getUserInfoEtcdBackupConfigProvider(ctx, userInfoGetter, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return etcdBackupConfigProvider.Get(userInfo, cluster, etcdBackupConfigName)
+}
+
+func listEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID string) (*kubermaticv1.EtcdBackupConfigList, error) {
+	adminUserInfo, privilegedEtcdBackupConfigProvider, err := getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx, userInfoGetter)
+	if err != nil {
+		return nil, err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedEtcdBackupConfigProvider.ListUnsecured(cluster)
+	}
+	userInfo, etcdBackupConfigProvider, err := getUserInfoEtcdBackupConfigProvider(ctx, userInfoGetter, projectID)
+	if err != nil {
+		return nil, err
+	}
+	return etcdBackupConfigProvider.List(userInfo, cluster)
 }
 
 func getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdBackupConfigProvider, error) {
