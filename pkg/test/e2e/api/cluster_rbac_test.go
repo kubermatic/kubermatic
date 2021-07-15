@@ -20,7 +20,6 @@ package api
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 	"time"
 
@@ -142,15 +141,6 @@ func TestCreateClusterRoleBinding(t *testing.T) {
 			testClient.CleanupCluster(t, project.ID, tc.dc, cluster.ID)
 		})
 	}
-}
-
-// getErrorResponse converts the client error response to string
-func getErrorResponse(err error) string {
-	rawData, newErr := json.Marshal(err)
-	if newErr != nil {
-		return err.Error()
-	}
-	return string(rawData)
 }
 
 func createProjectWithCluster(t *testing.T, testClient *utils.TestClient, dc, credential, version, location string, replicas int32) (*v1.Project, *v1.Cluster) {
