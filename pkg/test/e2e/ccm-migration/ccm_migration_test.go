@@ -39,13 +39,13 @@ import (
 
 const (
 	userClusterPollInterval = 5 * time.Second
-	customTestTimeout = 10 * time.Minute
+	customTestTimeout       = 10 * time.Minute
 )
 
 var _ = ginkgo.Describe("The Tunneling strategy", func() {
 	var (
 		userClient ctrlruntimeclient.Client
-		clusterJig  *ClusterJig
+		clusterJig *ClusterJig
 	)
 
 	ginkgo.Context("supported provider", func() {
@@ -63,7 +63,7 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 			}
 
 			gomega.Expect(clusterJig.SetUp(kubermaticv1.CloudSpec{
-				Openstack:   &kubermaticv1.OpenstackCloudSpec{
+				Openstack: &kubermaticv1.OpenstackCloudSpec{
 					CredentialsReference: &types2.GlobalSecretKeySelector{
 						ObjectReference: corev1.ObjectReference{
 							Name:      fmt.Sprintf("credential-openstack-%s", clusterJig.Name),
@@ -81,7 +81,7 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 		ginkgo.It("migrating cluster to external CCM", func() {
 			ginkgo.By("enabling externalCloudProvider feature")
 			newCluster := clusterJig.Cluster.DeepCopy()
-			newCluster.Spec.Features = map[string]bool {
+			newCluster.Spec.Features = map[string]bool{
 				kubermaticv1.ClusterFeatureExternalCloudProvider: true,
 			}
 			gomega.Expect(clusterJig.SeedClient.Patch(context.TODO(), newCluster, ctrlruntimeclient.MergeFrom(clusterJig.Cluster))).NotTo(gomega.HaveOccurred())

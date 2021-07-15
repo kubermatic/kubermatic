@@ -47,8 +47,8 @@ type ClusterJig struct {
 	Name           string
 	DatacenterName string
 	Version        semver.Semver
-	SeedClient         ctrlruntimeclient.Client
-	userClient ctrlruntimeclient.Client
+	SeedClient     ctrlruntimeclient.Client
+	userClient     ctrlruntimeclient.Client
 
 	Cluster *kubermaticv1.Cluster
 }
@@ -56,8 +56,8 @@ type ClusterJig struct {
 type credentials struct {
 	username string
 	password string
-	tenant string
-	domain string
+	tenant   string
+	domain   string
 }
 
 func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials credentials) error {
@@ -88,7 +88,7 @@ func (c *ClusterJig) createSecret(secretName string, osCredentials credentials) 
 			Name:      secretName,
 			Namespace: resources.KubermaticNamespace,
 			Labels: map[string]string{
-				"name":                         secretName,
+				"name": secretName,
 			},
 		},
 		Type: corev1.SecretTypeOpaque,

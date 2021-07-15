@@ -142,7 +142,7 @@ func execute(method string, url *url.URL, config *rest.Config, stdin io.Reader, 
 // goes wrong during the clients creation.
 func GetClientsOrDie() (ctrlruntimeclient.Client, rest.Interface, *rest.Config) {
 	cli, restCli, config, err := GetClients()
-	if err != nil  {
+	if err != nil {
 		panic(err)
 	}
 	return cli, restCli, config

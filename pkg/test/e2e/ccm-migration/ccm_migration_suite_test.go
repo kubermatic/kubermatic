@@ -47,10 +47,10 @@ func init() {
 	flag.BoolVar(&options.debugLog, "debug-log", false, "Activate debug logs.")
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources.")
 
-	flag.StringVar(&options.osCredentials.username, "os-username", "", "openstack username")
-	flag.StringVar(&options.osCredentials.password, "os-password", "", "openstack password")
-	flag.StringVar(&options.osCredentials.tenant, "os-tenant", "", "openstack tenant")
-	flag.StringVar(&options.osCredentials.domain, "os-domain", "", "openstack domain")
+	flag.StringVar(&options.osCredentials.username, "openstack-username", "", "openstack username")
+	flag.StringVar(&options.osCredentials.password, "openstack-password", "", "openstack password")
+	flag.StringVar(&options.osCredentials.tenant, "openstack-tenant", "", "openstack tenant")
+	flag.StringVar(&options.osCredentials.domain, "openstack-domain", "", "openstack domain")
 }
 
 func TestCCMMigration(t *testing.T) {

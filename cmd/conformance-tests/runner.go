@@ -752,6 +752,7 @@ func (r *testRunner) testCluster(
 		}); err != nil {
 		log.Errorf("Failed to verify that pod and node metrics are available: %v", err)
 	}
+
 	return nil
 }
 
