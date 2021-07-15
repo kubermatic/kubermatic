@@ -1333,7 +1333,7 @@ presubmits:
           command:
             - make
           args:
-            - run-ccm-migration-e2e-test-in-kind.sh
+            - run-ccm-migration-e2e-test-in-kind
           env:
             - name: HELM_BINARY
               value: helm3
