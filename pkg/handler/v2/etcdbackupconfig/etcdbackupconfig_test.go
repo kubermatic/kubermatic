@@ -321,3 +321,88 @@ func TestListEndpoint(t *testing.T) {
 		})
 	}
 }
+
+func TestDeleteEndpoint(t *testing.T) {
+	t.Parallel()
+	testCases := []struct {
+		Name                      string
+		EtcdBackupConfigName      string
+		ProjectID                 string
+		ClusterID                 string
+		ExistingKubermaticObjects []ctrlruntimeclient.Object
+		ExistingAPIUser           *apiv1.User
+		ExpectedHTTPStatusCode    int
+	}{
+		{
+			Name:                 "delete etcdbackupconfig that belongs to the given cluster",
+			EtcdBackupConfigName: "test-1",
+			ProjectID:            test.GenDefaultProject().Name,
+			ClusterID:            test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster()),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusOK,
+		},
+		{
+			Name:                 "delete etcdbackupconfig which doesn't exist",
+			EtcdBackupConfigName: "test-1",
+			ProjectID:            test.GenDefaultProject().Name,
+			ClusterID:            test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+			),
+			ExistingAPIUser:        test.GenDefaultAPIUser(),
+			ExpectedHTTPStatusCode: http.StatusNotFound,
+		},
+		{
+			Name:                 "user john cannot delete etcdbackupconfig that belongs to bob's cluster",
+			EtcdBackupConfigName: "test-1",
+			ProjectID:            test.GenDefaultProject().Name,
+			ClusterID:            test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenAdminUser("John", "john@acme.com", false),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster()),
+			),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExpectedHTTPStatusCode: http.StatusForbidden,
+		},
+		{
+			Name:                 "admin user john can delete etcdbackupconfig that belongs to bob's cluster",
+			EtcdBackupConfigName: "test-1",
+			ProjectID:            test.GenDefaultProject().Name,
+			ClusterID:            test.GenDefaultCluster().Name,
+			ExistingKubermaticObjects: test.GenDefaultKubermaticObjects(
+				test.GenTestSeed(),
+				test.GenDefaultCluster(),
+				test.GenAdminUser("John", "john@acme.com", true),
+				test.GenEtcdBackupConfig("test-1", test.GenDefaultCluster()),
+			),
+			ExistingAPIUser:        test.GenAPIUser("John", "john@acme.com"),
+			ExpectedHTTPStatusCode: http.StatusOK,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.Name, func(t *testing.T) {
+			requestURL := fmt.Sprintf("/api/v2/projects/%s/clusters/%s/etcdbackupconfigs/%s", tc.ProjectID, tc.ClusterID, tc.EtcdBackupConfigName)
+			req := httptest.NewRequest(http.MethodDelete, requestURL, nil)
+			resp := httptest.NewRecorder()
+
+			ep, err := test.CreateTestEndpoint(*tc.ExistingAPIUser, nil, tc.ExistingKubermaticObjects, nil, nil, hack.NewTestRouting)
+			if err != nil {
+				t.Fatalf("failed to create test endpoint due to: %v", err)
+			}
+			ep.ServeHTTP(resp, req)
+
+			if resp.Code != tc.ExpectedHTTPStatusCode {
+				t.Fatalf("Expected HTTP status code %d, got %d: %s", tc.ExpectedHTTPStatusCode, resp.Code, resp.Body.String())
+			}
+		})
+	}
+}

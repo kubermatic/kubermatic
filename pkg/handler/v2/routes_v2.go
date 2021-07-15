@@ -607,6 +607,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs").
 		Handler(r.listEtcdBackupConfig())
 
+	mux.Methods(http.MethodDelete).
+		Path("/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}").
+		Handler(r.deleteEtcdBackupConfig())
+
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -4201,6 +4205,34 @@ func (r Routing) listEtcdBackupConfig() http.Handler {
 			middleware.PrivilegedEtcdBackupConfig(r.clusterProviderGetter, r.etcdBackupConfigProviderGetter, r.seedsGetter),
 		)(etcdbackupconfig.ListEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		etcdbackupconfig.DecodeListEtcdBackupConfigReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route DELETE /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name} etcdbackupconfig deleteEtcdBackupConfig
+//
+//     Deletes a etcd backup config for a given cluster based on its name
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: empty
+//       401: empty
+//       403: empty
+func (r Routing) deleteEtcdBackupConfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.EtcdBackupConfig(r.clusterProviderGetter, r.etcdBackupConfigProviderGetter, r.seedsGetter),
+			middleware.PrivilegedEtcdBackupConfig(r.clusterProviderGetter, r.etcdBackupConfigProviderGetter, r.seedsGetter),
+		)(etcdbackupconfig.GetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		etcdbackupconfig.DecodeGetEtcdBackupConfigReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
