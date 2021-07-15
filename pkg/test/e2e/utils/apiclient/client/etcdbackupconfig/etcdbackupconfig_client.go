@@ -27,6 +27,8 @@ type Client struct {
 type ClientService interface {
 	CreateEtcdBackupConfig(params *CreateEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*CreateEtcdBackupConfigCreated, error)
 
+	DeleteEtcdBackupConfig(params *DeleteEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteEtcdBackupConfigOK, error)
+
 	GetEtcdBackupConfig(params *GetEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*GetEtcdBackupConfigOK, error)
 
 	ListEtcdBackupConfig(params *ListEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*ListEtcdBackupConfigOK, error)
@@ -65,6 +67,40 @@ func (a *Client) CreateEtcdBackupConfig(params *CreateEtcdBackupConfigParams, au
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*CreateEtcdBackupConfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  DeleteEtcdBackupConfig Deletes a etcd backup config for a given cluster based on its name
+*/
+func (a *Client) DeleteEtcdBackupConfig(params *DeleteEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*DeleteEtcdBackupConfigOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewDeleteEtcdBackupConfigParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "deleteEtcdBackupConfig",
+		Method:             "DELETE",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &DeleteEtcdBackupConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*DeleteEtcdBackupConfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*DeleteEtcdBackupConfigDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 
