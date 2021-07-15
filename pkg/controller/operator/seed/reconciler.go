@@ -439,18 +439,25 @@ func (r *Reconciler) reconcileConfigMaps(ctx context.Context, cfg *operatorv1alp
 func (r *Reconciler) reconcileSecrets(ctx context.Context, cfg *operatorv1alpha1.KubermaticConfiguration, seed *kubermaticv1.Seed, client ctrlruntimeclient.Client, log *zap.SugaredLogger) error {
 	log.Debug("reconciling Secrets")
 
-	creators := []reconciling.NamedSecretCreatorGetter{
-		common.ExtraFilesSecretCreator(cfg),
-		common.WebhookServingCASecretCreator(cfg),
-		common.WebhookServingCertSecretCreator(cfg, client),
+	creators := [][]reconciling.NamedSecretCreatorGetter{
+		{
+			common.WebhookServingCASecretCreator(cfg),
+		},
+		{
+			common.ExtraFilesSecretCreator(cfg),
+			common.WebhookServingCertSecretCreator(cfg, client),
+		},
 	}
 
 	if cfg.Spec.ImagePullSecret != "" {
-		creators = append(creators, common.DockercfgSecretCreator(cfg))
+		creators[1] = append(creators[1], common.DockercfgSecretCreator(cfg))
 	}
 
-	if err := reconciling.ReconcileSecrets(ctx, creators, cfg.Namespace, client, common.OwnershipModifierFactory(seed, r.scheme)); err != nil {
-		return fmt.Errorf("failed to reconcile Kubermatic Secrets: %v", err)
+	modifier := common.OwnershipModifierFactory(seed, r.scheme)
+	for _, c := range creators {
+		if err := reconciling.ReconcileSecrets(ctx, c, cfg.Namespace, client, modifier); err != nil {
+			return fmt.Errorf("failed to reconcile Kubermatic Secrets: %v", err)
+		}
 	}
 
 	if cfg.Spec.FeatureGates.Has(features.VerticalPodAutoscaler) {

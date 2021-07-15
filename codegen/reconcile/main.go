@@ -221,7 +221,6 @@ var (
 package reconciling
 
 import (
-	"fmt"
 	"context"
 
 	"k8s.io/apimachinery/pkg/types"
@@ -310,6 +309,7 @@ func {{ .APIVersionPrefix }}{{ .ResourceName }}ObjectWrapper(create {{ .APIVersi
 
 // Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }} will create and update the {{ .APIVersionPrefix }}{{ .ResourceNamePlural }} coming from the passed {{ .APIVersionPrefix }}{{ .ResourceName }}Creator slice
 func Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }}(ctx context.Context, namedGetters []Named{{ .APIVersionPrefix }}{{ .ResourceName }}CreatorGetter, namespace string, client ctrlruntimeclient.Client, objectModifiers ...ObjectModifier) error {
+	var objs []EnsureObject
 	for _, get := range namedGetters {
 		name, create := get()
 {{- if .DefaultingFunc }}
@@ -323,12 +323,15 @@ func Reconcile{{ .APIVersionPrefix }}{{ .ResourceNamePlural }}(ctx context.Conte
 			createObject = objectModifier(createObject)
 		}
 
-		if err := EnsureNamedObject(ctx, types.NamespacedName{Namespace: namespace, Name: name}, createObject, client, &{{ .ImportAlias }}.{{ .ResourceName }}{}, {{ .RequiresRecreate}}); err != nil {
-			return fmt.Errorf("failed to ensure {{ .ResourceName }} %s/%s: %v", namespace, name, err)
-		}
+		objs = append(objs, EnsureObject{
+			Name: types.NamespacedName{Namespace: namespace, Name: name},
+			Creator: createObject,
+			EmptyObj: &{{ .ImportAlias }}.{{ .ResourceName }}{},
+			RequiresRecreate: {{ .RequiresRecreate }},
+		})
 	}
 
-	return nil
+	return EnsureNamedObjectsConcurrent(ctx, client, objs)
 }
 
 `))
