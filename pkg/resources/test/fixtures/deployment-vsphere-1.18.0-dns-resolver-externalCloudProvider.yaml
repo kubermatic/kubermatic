@@ -1,0 +1,140 @@
+# This file has been generated, DO NOT EDIT.
+
+metadata:
+  creationTimestamp: null
+  labels:
+    app: dns-resolver
+  name: dns-resolver
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dns-resolver
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        prometheus.io/path: /metrics
+        prometheus.io/port: "9253"
+        prometheus.io/scrape: "true"
+      creationTimestamp: null
+      labels:
+        app: dns-resolver
+        ca-secret-revision: "123456"
+        cluster: de-test-01
+        dns-resolver-configmap-revision: "123456"
+        openvpn-client-certificates-secret-revision: "123456"
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: dns-resolver
+                  cluster: de-test-01
+              topologyKey: kubernetes.io/hostname
+            weight: 100
+          - podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: dns-resolver
+              topologyKey: kubernetes.io/hostname
+            weight: 10
+      containers:
+      - args:
+        - --client
+        - --proto
+        - tcp
+        - --dev
+        - tun
+        - --auth-nocache
+        - --remote
+        - openvpn-server.cluster-de-test-01.svc.cluster.local.
+        - "1194"
+        - --nobind
+        - --connect-timeout
+        - "5"
+        - --connect-retry
+        - "1"
+        - --ca
+        - /etc/openvpn/pki/client/ca.crt
+        - --cert
+        - /etc/openvpn/pki/client/client.crt
+        - --key
+        - /etc/openvpn/pki/client/client.key
+        - --remote-cert-tls
+        - server
+        - --link-mtu
+        - "1432"
+        - --cipher
+        - AES-256-GCM
+        - --auth
+        - SHA1
+        - --keysize
+        - "256"
+        - --script-security
+        - "2"
+        - --status
+        - /run/openvpn-status
+        - --log
+        - /dev/stdout
+        command:
+        - /usr/sbin/openvpn
+        image: quay.io/kubermatic/openvpn:v2.5.2-r0
+        name: openvpn-client
+        resources:
+          limits:
+            cpu: 100m
+            memory: 32Mi
+          requests:
+            cpu: 5m
+            memory: 5Mi
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - mountPath: /etc/openvpn/pki/client
+          name: openvpn-client-certificates
+          readOnly: true
+      - args:
+        - -conf
+        - /etc/coredns/Corefile
+        image: k8s.gcr.io/coredns/coredns:v1.6.7
+        name: dns-resolver
+        readinessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 2
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 15
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 5m
+            memory: 20Mi
+        volumeMounts:
+        - mountPath: /etc/coredns
+          name: dns-resolver
+          readOnly: true
+      imagePullSecrets:
+      - name: dockercfg
+      volumes:
+      - configMap:
+          name: dns-resolver
+        name: dns-resolver
+      - name: openvpn-client-certificates
+        secret:
+          secretName: openvpn-client-certificates
+      - name: ca
+        secret:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          secretName: ca
+status: {}

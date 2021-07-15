@@ -1,0 +1,218 @@
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+
+{{ if eq .Cluster.CloudProviderName "vsphere" }}
+{{ $version := "UNSUPPORTED" }}
+{{ if eq .Cluster.MajorMinorVersion "1.18" }}
+{{ $version = "v2.2.1 "}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.19" }}
+{{ $version = "v2.2.1 "}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.20" }}
+{{ $version = "v2.2.1 "}}
+{{ end }}
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: vsphere-csi-controller
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vsphere-csi-controller
+  template:
+    metadata:
+      labels:
+        app: vsphere-csi-controller
+        role: vsphere-csi
+    spec:
+      serviceAccountName: vsphere-csi-controller
+      dnsPolicy: "Default"
+      containers:
+        - name: csi-attacher
+          image: quay.io/k8scsi/csi-attacher:v3.1.0
+          args:
+            - "--v=4"
+            - "--timeout=300s"
+            - "--csi-address=$(ADDRESS)"
+            - "--leader-election"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+        - name: csi-resizer
+          image: quay.io/k8scsi/csi-resizer:v1.1.0
+          args:
+            - "--v=4"
+            - "--timeout=300s"
+            - "--handle-volume-inuse-error=false"
+            - "--csi-address=$(ADDRESS)"
+            - "--kube-api-qps=100"
+            - "--kube-api-burst=100"
+            - "--leader-election"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+        - name: vsphere-csi-controller
+          image: gcr.io/cloud-provider-vsphere/csi/release/driver:{{ $version }}
+          args:
+            - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
+            - "--fss-namespace=$(CSI_NAMESPACE)"
+          imagePullPolicy: "Always"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix:///csi/csi.sock
+            - name: X_CSI_MODE
+              value: "controller"
+            - name: VSPHERE_CSI_CONFIG
+              value: "/etc/cloud/config"
+            - name: LOGGER_LEVEL
+              value: "PRODUCTION" # Options: DEVELOPMENT, PRODUCTION
+            - name: INCLUSTER_CLIENT_QPS
+              value: "100"
+            - name: INCLUSTER_CLIENT_BURST
+              value: "100"
+            - name: CSI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: X_CSI_SERIAL_VOL_ACCESS_TIMEOUT
+              value: 3m
+          volumeMounts:
+            - mountPath: /etc/cloud
+              name: vsphere-config-volume
+              readOnly: true
+            - mountPath: /csi
+              name: socket-dir
+          ports:
+            - name: healthz
+              containerPort: 9808
+              protocol: TCP
+            - name: prometheus
+              containerPort: 2112
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            timeoutSeconds: 3
+            periodSeconds: 5
+            failureThreshold: 3
+        - name: liveness-probe
+          image: quay.io/k8scsi/livenessprobe:v2.2.0
+          args:
+            - "--v=4"
+            - "--csi-address=/csi/csi.sock"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /csi
+        - name: vsphere-syncer
+          image: gcr.io/cloud-provider-vsphere/csi/release/syncer:{{ $version }}
+          args:
+            - "--leader-election"
+            - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
+            - "--fss-namespace=$(CSI_NAMESPACE)"
+          imagePullPolicy: "Always"
+          ports:
+            - containerPort: 2113
+              name: prometheus
+              protocol: TCP
+          env:
+            - name: FULL_SYNC_INTERVAL_MINUTES
+              value: "30"
+            - name: VSPHERE_CSI_CONFIG
+              value: "/etc/cloud/config"
+            - name: LOGGER_LEVEL
+              value: "PRODUCTION" # Options: DEVELOPMENT, PRODUCTION
+            - name: INCLUSTER_CLIENT_QPS
+              value: "100"
+            - name: INCLUSTER_CLIENT_BURST
+              value: "100"
+            - name: CSI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          volumeMounts:
+            - mountPath: /etc/cloud
+              name: vsphere-config-volume
+              readOnly: true
+        - name: csi-provisioner
+          image: quay.io/k8scsi/csi-provisioner:v2.1.0
+          args:
+            - "--v=4"
+            - "--timeout=300s"
+            - "--csi-address=$(ADDRESS)"
+            - "--kube-api-qps=100"
+            - "--kube-api-burst=100"
+            - "--leader-election"
+            - "--default-fstype=ext4"
+            # needed only for topology aware setup
+            #- "--feature-gates=Topology=true"
+            #- "--strict-topology"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+          volumeMounts:
+            - mountPath: /csi
+              name: socket-dir
+      volumes:
+        - name: vsphere-config-volume
+          secret:
+            secretName: cloud-config
+        - name: socket-dir
+          emptyDir: {}
+---
+apiVersion: v1
+data:
+  "csi-migration": "false"
+  "csi-auth-check": "true"
+  "online-volume-extend": "true"
+kind: ConfigMap
+metadata:
+  name: internal-feature-states.csi.vsphere.vmware.com
+  namespace: kube-system
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vsphere-csi-controller
+  namespace: kube-system
+  labels:
+    app: vsphere-csi-controller
+spec:
+  ports:
+    - name: ctlr
+      port: 2112
+      targetPort: 2112
+      protocol: TCP
+    - name: syncer
+      port: 2113
+      targetPort: 2113
+      protocol: TCP
+  selector:
+    app: vsphere-csi-controller
+{{ end }}
+{{ end }}

@@ -580,7 +580,7 @@ func (d *TemplateData) GetCSIMigrationFeatureGates() []string {
 // cloud-controllers are disabled.
 // * There is no 'cloud-provider' flag.
 // * The cloud controllers are disabled.
-// This is used to avoid deploing the CCM before the in-tree cloud controllers
+// This is used to avoid deploying the CCM before the in-tree cloud controllers
 // have been deactivated.
 func (d *TemplateData) KCMCloudControllersDeactivated() bool {
 	kcm := appsv1.Deployment{}
@@ -653,6 +653,9 @@ func GetKubernetesCloudProviderName(cluster *kubermaticv1.Cluster, externalCloud
 	case cluster.Spec.Cloud.AWS != nil:
 		return "aws"
 	case cluster.Spec.Cloud.VSphere != nil:
+		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
+			return cloudProviderExternalFlag
+		}
 		return "vsphere"
 	case cluster.Spec.Cloud.Azure != nil:
 		return "azure"
@@ -688,12 +691,23 @@ func GetCSIMigrationFeatureGates(cluster *kubermaticv1.Cluster) []string {
 		// The following feature gates are always enabled when the
 		// 'externalCloudProvider' feature is activated.
 		if cluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] {
-			featureFlags = append(featureFlags, "CSIMigration=true", "CSIMigrationOpenStack=true", "ExpandCSIVolumes=true")
+			featureFlags = append(featureFlags, "CSIMigration=true", "ExpandCSIVolumes=true")
+		}
+		if cluster.Spec.Cloud.Openstack != nil {
+			featureFlags = append(featureFlags, "CSIMigrationOpenStack=true")
+		}
+		if cluster.Spec.Cloud.VSphere != nil {
+			featureFlags = append(featureFlags, "CSIMigrationvSphere=true")
 		}
 		// The CSIMigrationNeededAnnotation is removed when all kubelets have
 		// been migrated.
 		if kubermaticv1helper.ClusterConditionHasStatus(cluster, kubermaticv1.ClusterConditionCSIKubeletMigrationCompleted, corev1.ConditionTrue) {
-			featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
+			if cluster.Spec.Cloud.Openstack != nil {
+				featureFlags = append(featureFlags, "CSIMigrationOpenStackComplete=true")
+			}
+			if cluster.Spec.Cloud.VSphere != nil {
+				featureFlags = append(featureFlags, "CSIMigrationvSphereComplete=true")
+			}
 		}
 	}
 	return featureFlags

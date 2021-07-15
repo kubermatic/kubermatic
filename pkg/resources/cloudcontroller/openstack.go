@@ -29,6 +29,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 )
 
 const (
@@ -75,8 +76,7 @@ func openStackDeploymentCreator(data *resources.TemplateData) reconciling.NamedD
 				return nil, err
 			}
 
-			f := false
-			dep.Spec.Template.Spec.AutomountServiceAccountToken = &f
+			dep.Spec.Template.Spec.AutomountServiceAccountToken = pointer.BoolPtr(false)
 
 			openvpnSidecar, err := vpnsidecar.OpenVPNSidecarContainer(data, openvpnClientContainerName)
 			if err != nil {
@@ -141,11 +141,11 @@ func getOSFlags(data *resources.TemplateData) []string {
 	return flags
 }
 
-const latestCCMVersion = "1.20.2"
+const latestOpenstackCCMVersion = "1.20.2"
 
 func getOSVersion(version semver.Semver) (string, error) {
 	if version.Minor() < 17 {
-		return "", fmt.Errorf("Kubernetes version %s is not supported", version.String())
+		return "", fmt.Errorf("kubernetes version %s is not supported", version.String())
 	}
 
 	switch version.Minor() {
@@ -156,18 +156,16 @@ func getOSVersion(version semver.Semver) (string, error) {
 	case 19:
 		return "1.19.2", nil
 	case 20:
-		return latestCCMVersion, nil
+		return latestOpenstackCCMVersion, nil
 	case 21:
-		return latestCCMVersion, nil
+		return latestOpenstackCCMVersion, nil
 	default:
-		return latestCCMVersion, nil
+		return latestOpenstackCCMVersion, nil
 	}
 }
 
 // OpenStackCloudControllerSupported checks if this version of Kubernetes is supported
 // by our implementation of the external cloud controller.
-// This is not called for now, but it's here so we can use it later to automagically
-// enable external cloud controller support for supported versions.
 func OpenStackCloudControllerSupported(version semver.Semver) bool {
 	if _, err := getOSVersion(version); err != nil {
 		return false
