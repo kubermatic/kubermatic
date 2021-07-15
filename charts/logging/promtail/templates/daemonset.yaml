@@ -49,6 +49,18 @@ spec:
     {{- if .Values.promtail.priorityClassName }}
       priorityClassName: {{ .Values.promtail.priorityClassName }}
     {{- end }}
+      {{- if .Values.promtail.initContainer.enabled }}
+      initContainers:
+        - name: init
+          image: "{{ .Values.promtail.initContainer.image.registry }}/{{ .Values.promtail.initContainer.image.repository }}:{{ .Values.promtail.initContainer.image.tag }}"
+          imagePullPolicy: {{ .Values.promtail.initContainer.image.pullPolicy }}
+          command:
+            - sh
+            - -c
+            - sysctl -w fs.inotify.max_user_instances={{ .Values.promtail.initContainer.fsInotifyMaxUserInstances }}
+          securityContext:
+            privileged: true
+      {{- end }}
       containers:
         - name: promtail
           image: "{{ .Values.promtail.image.repository }}:{{ .Values.promtail.image.tag }}"
