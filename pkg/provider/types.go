@@ -1078,6 +1078,9 @@ type EtcdBackupConfigProvider interface {
 
 	// List gets a list of etcdBackupConfig for a given cluster
 	List(userInfo *UserInfo, cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
+
+	// Delete deletes the given etcdBackupConfig
+	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
 }
 
 // PrivilegedEtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs using a privileged client
@@ -1097,6 +1100,12 @@ type PrivilegedEtcdBackupConfigProvider interface {
 	// ListUnsecured gets a list of all etcdBackupConfigs for a given cluster
 	//
 	// Note that this function:
-	// is unsafe in a sense that it uses privileged account to get the resources
+	// is unsafe in a sense that it uses privileged account to list the resources
 	ListUnsecured(cluster *kubermaticv1.Cluster) (*kubermaticv1.EtcdBackupConfigList, error)
+
+	// DeleteUnsecured deletes the given etcdBackupConfig
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to delete the resource
+	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
 }
