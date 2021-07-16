@@ -18,6 +18,7 @@ package cloudcontroller
 
 import (
 	"fmt"
+	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 
 	"k8c.io/kubermatic/v2/pkg/resources"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -85,10 +86,7 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 			if err != nil {
 				return nil, fmt.Errorf("failed to get openvpn sidecar: %v", err)
 			}
-			container, err := getCPIContainer(version, data)
-			if err != nil {
-				return nil, err
-			}
+			container := getCPIContainer(version, data)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				container,
 				*openvpnSidecar,
@@ -110,10 +108,9 @@ func vsphereDeploymentCreator(data *resources.TemplateData) reconciling.NamedDep
 	}
 }
 
-func getCPIContainer(version string, data *resources.TemplateData) (corev1.Container, error) {
+func getCPIContainer(version string, data *resources.TemplateData) corev1.Container {
 	controllerManagerImage := fmt.Sprintf("%s/cloud-provider-vsphere/cpi/release/manager:v%s", data.ImageRegistry(resources.RegistryGCR), version)
-
-	return corev1.Container{
+	c := corev1.Container{
 		Name:  ccmContainerName,
 		Image: controllerManagerImage,
 		Command: []string{
@@ -130,7 +127,12 @@ func getCPIContainer(version string, data *resources.TemplateData) (corev1.Conta
 			Name:      resources.CloudConfigConfigMapName,
 		}),
 		Resources: vsphereCPIResourceRequirements,
-	}, nil
+	}
+	if data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureCCMClusterName] {
+		c.Args = append(c.Args, "--cluster-name", data.Cluster().Name)
+	}
+
+	return c
 }
 
 const latestVsphereCPIVersion = "1.21.0"
