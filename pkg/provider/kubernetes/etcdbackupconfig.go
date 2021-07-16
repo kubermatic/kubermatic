@@ -21,6 +21,7 @@ import (
 
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/provider"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/types"
@@ -111,4 +112,30 @@ func (p *EtcdBackupConfigProvider) ListUnsecured(cluster *kubermaticv1.Cluster) 
 	ebcList := &kubermaticv1.EtcdBackupConfigList{}
 	err := p.clientPrivileged.List(context.Background(), ebcList, ctrlruntimeclient.InNamespace(cluster.Status.NamespaceName))
 	return ebcList, err
+}
+
+func (p *EtcdBackupConfigProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticv1.Cluster, name string) error {
+
+	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return err
+	}
+
+	ebc := &kubermaticv1.EtcdBackupConfig{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      name,
+			Namespace: cluster.Status.NamespaceName,
+		},
+	}
+	return impersonationClient.Delete(context.Background(), ebc)
+}
+
+func (p *EtcdBackupConfigProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error {
+	ebc := &kubermaticv1.EtcdBackupConfig{
+		ObjectMeta: v1.ObjectMeta{
+			Name:      name,
+			Namespace: cluster.Status.NamespaceName,
+		},
+	}
+	return p.clientPrivileged.Delete(context.Background(), ebc)
 }

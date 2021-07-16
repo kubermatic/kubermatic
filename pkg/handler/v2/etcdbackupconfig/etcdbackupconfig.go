@@ -124,7 +124,7 @@ func GetEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provide
 }
 
 // getEtcdBackupConfigReq represents a request for getting a cluster etcd backup configuration
-// swagger:parameters getEtcdBackupConfig
+// swagger:parameters getEtcdBackupConfig deleteEtcdBackupConfig
 type getEtcdBackupConfigReq struct {
 	cluster.GetClusterReq
 	// in: path
@@ -188,6 +188,24 @@ func DecodeGetEtcdBackupConfigReq(c context.Context, r *http.Request) (interface
 	}
 
 	return req, nil
+}
+
+func DeleteEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provider.ProjectProvider,
+	privilegedProjectProvider provider.PrivilegedProjectProvider) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (interface{}, error) {
+		req := request.(getEtcdBackupConfigReq)
+
+		c, err := handlercommon.GetCluster(ctx, projectProvider, privilegedProjectProvider, userInfoGetter, req.ProjectID, req.ClusterID, nil)
+		if err != nil {
+			return nil, err
+		}
+
+		err = deleteEtcdBackupConfig(ctx, userInfoGetter, c, req.ProjectID, req.EtcdBackupConfigName)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
+		return nil, nil
+	}
 }
 
 func convertInternalToAPIEtcdBackupConfig(ebc *kubermaticv1.EtcdBackupConfig) *apiv2.EtcdBackupConfig {
@@ -269,6 +287,21 @@ func listEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoG
 		return nil, err
 	}
 	return etcdBackupConfigProvider.List(userInfo, cluster)
+}
+
+func deleteEtcdBackupConfig(ctx context.Context, userInfoGetter provider.UserInfoGetter, cluster *kubermaticv1.Cluster, projectID, etcdBackupConfigName string) error {
+	adminUserInfo, privilegedEtcdBackupConfigProvider, err := getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx, userInfoGetter)
+	if err != nil {
+		return err
+	}
+	if adminUserInfo.IsAdmin {
+		return privilegedEtcdBackupConfigProvider.DeleteUnsecured(cluster, etcdBackupConfigName)
+	}
+	userInfo, etcdBackupConfigProvider, err := getUserInfoEtcdBackupConfigProvider(ctx, userInfoGetter, projectID)
+	if err != nil {
+		return err
+	}
+	return etcdBackupConfigProvider.Delete(userInfo, cluster, etcdBackupConfigName)
 }
 
 func getAdminUserInfoPrivilegedEtcdBackupConfigProvider(ctx context.Context, userInfoGetter provider.UserInfoGetter) (*provider.UserInfo, provider.PrivilegedEtcdBackupConfigProvider, error) {
