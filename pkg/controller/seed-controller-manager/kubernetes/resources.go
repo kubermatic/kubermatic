@@ -410,7 +410,7 @@ func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.
 		apiserver.EctdAllowCreator(c),
 		apiserver.OpenVPNServerAllowCreator(c),
 	}
-	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, "", r.Client); err != nil {
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Network Policies: %v", err)
 	}
 
