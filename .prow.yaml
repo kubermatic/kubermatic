@@ -1313,7 +1313,7 @@ presubmits:
   #########################################################
 
   - name: pre-kubermatic-ccm-migration-e2e
-    run_if_changed: "(cmd/nodeport-proxy/|pkg/|.prow.yaml)"
+    run_if_changed: "(|pkg/|.prow.yaml)"
     decorate: true
     clone_uri: "ssh://git@github.com/kubermatic/kubermatic.git"
     labels:
@@ -1321,9 +1321,6 @@ presubmits:
       preset-vault: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
-      preset-repo-ssh: "true"
-      preset-e2e-ssh: "true"
-      preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
     spec:
