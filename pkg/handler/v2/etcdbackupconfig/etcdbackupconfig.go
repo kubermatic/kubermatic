@@ -236,6 +236,9 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		}
 		// apply patch
 		ebc, err = patchEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID, originalEBC, ebc)
+		if err != nil {
+			return nil, common.KubernetesErrorToHTTPError(err)
+		}
 
 		return convertInternalToAPIEtcdBackupConfig(ebc), nil
 	}
