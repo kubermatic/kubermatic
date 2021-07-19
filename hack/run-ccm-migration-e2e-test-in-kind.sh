@@ -106,6 +106,7 @@ time retry 5 kind load docker-image "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TA
 time retry 5 kind load docker-image "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time retry 5 kind load docker-image "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" --name "${KIND_CLUSTER_NAME}"
 
+DISABLE_CLUSTER_EXPOSER=true
 export KUBECONFIG=~/.kube/config
 if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
   # Start cluster exposer, which will expose services from within kind as
