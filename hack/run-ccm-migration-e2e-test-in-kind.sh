@@ -292,8 +292,6 @@ echodate "Patching Kubermatic ingress domain with nodeport-proxy service cluster
 retry 5 patch_kubermatic_domain
 echodate "Kubermatic ingress domain patched."
 
-exit 0
-
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-tenant=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
