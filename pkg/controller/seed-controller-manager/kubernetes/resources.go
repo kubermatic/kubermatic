@@ -99,6 +99,10 @@ func (r *Reconciler) ensureResourcesAreDeployed(ctx context.Context, cluster *ku
 		return err
 	}
 
+	if err := r.ensureNetworkPolicies(ctx, cluster); err != nil {
+		return err
+	}
+
 	// check that all StatefulSets are created
 	if err := r.ensureStatefulSets(ctx, cluster, data); err != nil {
 		return err
@@ -394,6 +398,20 @@ func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermati
 	}
 	if err := reconciling.ReconcileClusterRoleBindings(ctx, namedClusterRoleBindingsCreatorGetters, "", r.Client); err != nil {
 		return fmt.Errorf("failed to ensure Cluster Role Bindings: %v", err)
+	}
+
+	return nil
+}
+
+func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster) error {
+	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
+		apiserver.DenyAllPolicyCreator(),
+		apiserver.DnsAllowCreator(c),
+		apiserver.EctdAllowCreator(c),
+		apiserver.OpenVPNServerAllowCreator(c),
+	}
+	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, "", r.Client); err != nil {
+		return fmt.Errorf("failed to ensure Network Policies: %v", err)
 	}
 
 	return nil
