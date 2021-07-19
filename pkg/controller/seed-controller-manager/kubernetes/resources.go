@@ -406,7 +406,7 @@ func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermati
 func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster) error {
 	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
 		apiserver.DenyAllPolicyCreator(),
-		apiserver.DnsAllowCreator(c),
+		apiserver.DNSAllowCreator(c),
 		apiserver.EctdAllowCreator(c),
 		apiserver.OpenVPNServerAllowCreator(c),
 	}

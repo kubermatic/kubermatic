@@ -82,9 +82,9 @@ func EctdAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCre
 	}
 }
 
-// DnsAllowCreator returns a func to create/update the apiserver
+// DNSAllowCreator returns a func to create/update the apiserver
 // deny all egress policy.
-func DnsAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCreatorGetter {
+func DNSAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCreatorGetter {
 	return func() (string, reconciling.NetworkPolicyCreator) {
 		return "dns-allow", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
 			np.Spec = networkingv1.NetworkPolicySpec{
