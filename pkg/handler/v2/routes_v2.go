@@ -611,6 +611,10 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}").
 		Handler(r.deleteEtcdBackupConfig())
 
+	mux.Methods(http.MethodPatch).
+		Path("/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}").
+		Handler(r.patchEtcdBackupConfig())
+
 }
 
 // swagger:route POST /api/v2/projects/{project_id}/clusters project createClusterV2
@@ -4214,9 +4218,6 @@ func (r Routing) listEtcdBackupConfig() http.Handler {
 //
 //     Deletes a etcd backup config for a given cluster based on its name
 //
-//     Produces:
-//     - application/json
-//
 //     Responses:
 //       default: errorResponse
 //       200: empty
@@ -4231,8 +4232,39 @@ func (r Routing) deleteEtcdBackupConfig() http.Handler {
 			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
 			middleware.EtcdBackupConfig(r.clusterProviderGetter, r.etcdBackupConfigProviderGetter, r.seedsGetter),
 			middleware.PrivilegedEtcdBackupConfig(r.clusterProviderGetter, r.etcdBackupConfigProviderGetter, r.seedsGetter),
-		)(etcdbackupconfig.GetEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		)(etcdbackupconfig.DeleteEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
 		etcdbackupconfig.DecodeGetEtcdBackupConfigReq,
+		handler.EncodeJSON,
+		r.defaultServerOptions()...,
+	)
+}
+
+// swagger:route PATCH /api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name} etcdbackupconfig patchEtcdBackupConfig
+//
+//     Patches a etcd backup config for a given cluster based on its name
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Responses:
+//       default: errorResponse
+//       200: EtcdBackupConfig
+//       401: empty
+//       403: empty
+func (r Routing) patchEtcdBackupConfig() http.Handler {
+	return httptransport.NewServer(
+		endpoint.Chain(
+			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
+			middleware.UserSaver(r.userProvider),
+			middleware.SetClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.SetPrivilegedClusterProvider(r.clusterProviderGetter, r.seedsGetter),
+			middleware.EtcdBackupConfig(r.clusterProviderGetter, r.etcdBackupConfigProviderGetter, r.seedsGetter),
+			middleware.PrivilegedEtcdBackupConfig(r.clusterProviderGetter, r.etcdBackupConfigProviderGetter, r.seedsGetter),
+		)(etcdbackupconfig.PatchEndpoint(r.userInfoGetter, r.projectProvider, r.privilegedProjectProvider)),
+		etcdbackupconfig.DecodePatchEtcdBackupConfigReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)

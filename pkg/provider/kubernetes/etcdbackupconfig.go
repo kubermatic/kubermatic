@@ -139,3 +139,19 @@ func (p *EtcdBackupConfigProvider) DeleteUnsecured(cluster *kubermaticv1.Cluster
 	}
 	return p.clientPrivileged.Delete(context.Background(), ebc)
 }
+
+func (p *EtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+
+	impersonationClient, err := createImpersonationClientWrapperFromUserInfo(userInfo, p.createSeedImpersonatedClient)
+	if err != nil {
+		return nil, err
+	}
+
+	err = impersonationClient.Patch(context.Background(), new, ctrlruntimeclient.MergeFrom(old))
+	return new, err
+}
+
+func (p *EtcdBackupConfigProvider) PatchUnsecured(old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error) {
+	err := p.clientPrivileged.Patch(context.Background(), new, ctrlruntimeclient.MergeFrom(old))
+	return new, err
+}

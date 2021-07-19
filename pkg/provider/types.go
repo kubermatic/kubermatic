@@ -1081,6 +1081,9 @@ type EtcdBackupConfigProvider interface {
 
 	// Delete deletes the given etcdBackupConfig
 	Delete(userInfo *UserInfo, cluster *kubermaticv1.Cluster, name string) error
+
+	// Patch updates the given etcdBackupConfig
+	Patch(userInfo *UserInfo, old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 }
 
 // PrivilegedEtcdBackupConfigProvider declares the set of method for interacting with etcd backup configs using a privileged client
@@ -1108,4 +1111,10 @@ type PrivilegedEtcdBackupConfigProvider interface {
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource
 	DeleteUnsecured(cluster *kubermaticv1.Cluster, name string) error
+
+	// PatchUnsecured patches the given etcdBackupConfig
+	//
+	// Note that this function:
+	// is unsafe in a sense that it uses privileged account to patch the resource
+	PatchUnsecured(old, new *kubermaticv1.EtcdBackupConfig) (*kubermaticv1.EtcdBackupConfig, error)
 }
