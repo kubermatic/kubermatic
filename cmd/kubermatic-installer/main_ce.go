@@ -29,6 +29,7 @@ func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.
 	return []cli.Command{
 		VersionCommand(logger, versions),
 		DeployCommand(logger, versions),
+		DefaultsCommand(logger),
 		ConvertKubeconfigCommand(logger),
 	}
 }
