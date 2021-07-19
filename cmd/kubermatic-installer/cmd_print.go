@@ -44,11 +44,11 @@ var (
 	}
 )
 
-func DefaultsCommand(logger *logrus.Logger) cli.Command {
+func PrintCommand(logger *logrus.Logger) cli.Command {
 	return cli.Command{
 		Name:   "print",
 		Usage:  "Prints default values for CRDs",
-		Action: DefaultsAction(logger),
+		Action: PrintAction(logger),
 		Flags: []cli.Flag{
 			kubermaticConfigFlag,
 			seedFlag,
@@ -56,7 +56,7 @@ func DefaultsCommand(logger *logrus.Logger) cli.Command {
 	}
 }
 
-func DefaultsAction(logger *logrus.Logger) cli.ActionFunc {
+func PrintAction(logger *logrus.Logger) cli.ActionFunc {
 	return handleErrors(logger, setupLogger(logger, func(ctx *cli.Context) error {
 
 		nopLogger := zap.NewNop().Sugar()
