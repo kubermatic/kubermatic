@@ -17,95 +17,41 @@ limitations under the License.
 package main
 
 import (
-	"fmt"
-	"os"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
-	"go.uber.org/zap"
 
-	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
-	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
-	yamlutil "k8c.io/kubermatic/v2/pkg/util/yaml"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-)
-
-var (
-	seedFlag = cli.BoolFlag{
-		Name:  "seed",
-		Usage: "Print Seed defaults",
-	}
-
-	kubermaticConfigFlag = cli.BoolFlag{
-		Name:  "config",
-		Usage: "Print KubermaticConfiguration defaults",
-	}
+	"k8c.io/kubermatic/v2/docs"
 )
 
 func PrintCommand(logger *logrus.Logger) cli.Command {
 	return cli.Command{
-		Name:   "print",
-		Usage:  "Prints default values for CRDs",
-		Action: PrintAction(logger),
-		Flags: []cli.Flag{
-			kubermaticConfigFlag,
-			seedFlag,
-		},
+		Name:        "print",
+		Usage:       "Prints example configuration manifest",
+		UsageText:   "kubermatic-installer print <resource>",
+		Description: "Print an example configuration manifest with defaults for the given resource.\n   Supported resources are \"seed\" and \"kubermaticconfiguration\".",
+		ArgsUsage:   "Supported resources are \"seed\" and \"kubermaticconfiguration\".",
+		Action:      PrintAction(logger),
 	}
 }
 
 func PrintAction(logger *logrus.Logger) cli.ActionFunc {
 	return handleErrors(logger, setupLogger(logger, func(ctx *cli.Context) error {
 
-		nopLogger := zap.NewNop().Sugar()
-		var defaulted interface{}
-		var err error
+		arg := strings.ToLower(ctx.Args().First())
 
-		if ctx.Bool(seedFlag.Name) {
-
-			config := &kubermaticv1.Seed{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "kubermatic.k8s.io/v1",
-					Kind:       "Seed",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kubermatic",
-					Namespace: "kubermatic",
-				},
-			}
-
-			defaulted, err = common.DefaultSeed(config, nopLogger)
-
-			if err != nil {
-				return cli.NewExitError(fmt.Errorf("failed to create default Seed: %v", err), 1)
-			}
-		}
-
-		if ctx.Bool(kubermaticConfigFlag.Name) || defaulted == nil {
-
-			config := &operatorv1alpha1.KubermaticConfiguration{
-				TypeMeta: metav1.TypeMeta{
-					APIVersion: "operator.kubermatic.io/v1alpha1",
-					Kind:       "KubermaticConfiguration",
-				},
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      "kubermatic",
-					Namespace: "kubermatic",
-				},
-			}
-
-			defaulted, err = common.DefaultConfiguration(config, nopLogger)
-
-			if err != nil {
-				return cli.NewExitError(fmt.Errorf("failed to create default KubermaticConfiguration: %v", err), 1)
-			}
-
-		}
-
-		if err = yamlutil.Encode(defaulted, os.Stdout); err != nil {
-			return cli.NewExitError(fmt.Errorf("failed to create YAML: %v", err), 1)
+		switch arg {
+		case "":
+			fallthrough
+		case "config":
+			fallthrough
+		case "kubermaticconfiguration":
+			println(docs.ExampleKubermaticConfiguration)
+		case "seed":
+			println(docs.ExampleSeedConfiguration)
+		default:
+			println(ctx.Command.ArgsUsage)
 		}
 
 		return nil
