@@ -57,31 +57,6 @@ parameters:
   diskformat: thin
 {{ end }}
 
-{{ if eq .Cluster.CloudProviderName "openstack" }}
-{{ if .Cluster.Features.Has "externalCloudProvider" }}
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
-  labels:
-    kubernetes.io/cluster-service: "true"
-  name: cinder-csi
-provisioner: cinder.csi.openstack.org
-volumeBindingMode: WaitForFirstConsumer
-{{ else }}
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  annotations:
-    storageclass.beta.kubernetes.io/is-default-class: "true"
-  labels:
-    kubernetes.io/cluster-service: "true"
-  name: standard
-provisioner: kubernetes.io/cinder
-{{ end }}
-{{ end }}
-
 {{ if eq .Cluster.CloudProviderName "gcp" }}
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
