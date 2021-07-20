@@ -151,3 +151,67 @@ func OpenVPNServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetwork
 		}
 	}
 }
+
+func MachineControllerWebhookCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCreatorGetter {
+	return func() (string, reconciling.NetworkPolicyCreator) {
+		return "machine-controller-webhook-allow", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			np.Spec = networkingv1.NetworkPolicySpec{
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeEgress,
+				},
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						resources.AppLabelKey: name,
+					},
+				},
+				Egress: []networkingv1.NetworkPolicyEgressRule{
+					{
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										resources.AppLabelKey: "machine-controller-webhook",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return np, nil
+		}
+	}
+}
+
+func MetricsServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCreatorGetter {
+	return func() (string, reconciling.NetworkPolicyCreator) {
+		return "metrics-server-allow", func(np *networkingv1.NetworkPolicy) (*networkingv1.NetworkPolicy, error) {
+			np.Spec = networkingv1.NetworkPolicySpec{
+				PolicyTypes: []networkingv1.PolicyType{
+					networkingv1.PolicyTypeEgress,
+				},
+				PodSelector: metav1.LabelSelector{
+					MatchLabels: map[string]string{
+						resources.AppLabelKey: name,
+					},
+				},
+				Egress: []networkingv1.NetworkPolicyEgressRule{
+					{
+						To: []networkingv1.NetworkPolicyPeer{
+							{
+								PodSelector: &metav1.LabelSelector{
+									MatchLabels: map[string]string{
+										resources.AppLabelKey: "metrics-server",
+									},
+								},
+							},
+						},
+					},
+				},
+			}
+
+			return np, nil
+		}
+	}
+}
