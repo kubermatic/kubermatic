@@ -151,8 +151,9 @@ func getConstraintStatus(uc *unstructured.Unstructured) (*apiv2.ConstraintStatus
 
 func convertInternalToAPIConstraint(c *v1.Constraint) *apiv2.Constraint {
 	return &apiv2.Constraint{
-		Name: c.Name,
-		Spec: c.Spec,
+		Name:   c.Name,
+		Labels: c.Labels,
+		Spec:   c.Spec,
 	}
 }
 
