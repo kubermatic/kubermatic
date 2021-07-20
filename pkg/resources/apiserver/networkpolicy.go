@@ -68,7 +68,7 @@ func EctdAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCre
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										resources.AppLabelKey: "etcd",
-										"cluster":             c.Status.NamespaceName,
+										"cluster":             c.ObjectMeta.Name,
 									},
 								},
 							},
@@ -103,7 +103,7 @@ func DNSAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetworkPolicyCrea
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										resources.AppLabelKey: "dns-resolver",
-										"cluster":             c.Status.NamespaceName,
+										"cluster":             c.ObjectMeta.Name,
 									},
 								},
 							},
@@ -138,7 +138,7 @@ func OpenVPNServerAllowCreator(c *kubermaticv1.Cluster) reconciling.NamedNetwork
 								PodSelector: &metav1.LabelSelector{
 									MatchLabels: map[string]string{
 										resources.AppLabelKey: "openvpn-server",
-										"cluster":             c.Status.NamespaceName,
+										"cluster":             c.ObjectMeta.Name,
 									},
 								},
 							},
