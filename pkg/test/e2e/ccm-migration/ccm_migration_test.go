@@ -1,5 +1,3 @@
-// +build e2e
-
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 
@@ -44,7 +42,7 @@ const (
 	customTestTimeout       = 10 * time.Minute
 )
 
-var _ = ginkgo.Describe("The Tunneling strategy", func() {
+var _ = ginkgo.Describe("CCM migration", func() {
 	var (
 		userClient ctrlruntimeclient.Client
 		clusterJig *ClusterJig
@@ -53,7 +51,7 @@ var _ = ginkgo.Describe("The Tunneling strategy", func() {
 	ginkgo.Context("supported provider", func() {
 		ginkgo.BeforeEach(func() {
 			seedClient, _, _ := e2eutils.GetClientsOrDie()
-			clusterClientProvider, err := clusterclient.NewInternal(seedClient)
+			clusterClientProvider, err := clusterclient.NewExternal(seedClient)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
 
 			clusterJig = &ClusterJig{

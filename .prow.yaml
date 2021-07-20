@@ -1321,38 +1321,43 @@ presubmits:
       preset-vault: "true"
       preset-docker-pull: "true"
       preset-docker-push: "true"
+      preset-repo-ssh: "true"
+      preset-e2e-ssh: "true"
+      preset-kubeconfig-ci: "true"
       preset-kind-volume-mounts: "true"
       preset-goproxy: "true"
     spec:
       containers:
         - image: quay.io/kubermatic/build:go-1.16-node-14-kind-0.8-0
-          imagePullPolicy: Always
-          command:
-            - make
-          args:
-            - run-ccm-migration-e2e-test-in-kind
           env:
-            - name: HELM_BINARY
-              value: helm3
             - name: KUBERMATIC_EDITION
               value: ee
+            - name: VERSIONS_TO_TEST
+              value: "v1.20.0"
             - name: PROVIDER
               value: "openstack"
             - name: DISTRIBUTIONS
               value: ubuntu
+            - name: DEFAULT_TIMEOUT_MINUTES
+              value: "20"
             - name: SERVICE_ACCOUNT_KEY
               valueFrom:
                 secretKeyRef:
                   name: e2e-ci
                   key: serviceAccountSigningKey
+          command:
+            - make
+          args:
+            - run-ccm-migration-e2e-test-in-kind
+          # docker-in-docker needs privileged mode
           securityContext:
             privileged: true
           resources:
             requests:
               memory: 4Gi
-              cpu: 2
+              cpu: 3.5
             limits:
-              memory: 6Gi
+              memory: 4Gi
 
   #########################################################
   # misc
