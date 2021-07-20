@@ -35,7 +35,8 @@ type ConstraintTemplate struct {
 // Constraint represents a gatekeeper Constraint
 // swagger:model Constraint
 type Constraint struct {
-	Name string `json:"name"`
+	Name   string            `json:"name"`
+	Labels map[string]string `json:"labels,omitempty"`
 
 	Spec   crdapiv1.ConstraintSpec `json:"spec"`
 	Status *ConstraintStatus       `json:"status,omitempty"`
