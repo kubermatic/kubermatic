@@ -39,7 +39,7 @@ type AlertmanagerProvider struct {
 	// whenever a connection to Seed API server is required
 	createSeedImpersonatedClient impersonationClient
 
-	//privilegedClient is used for admins to interact with alertmanager configuration.
+	// privilegedClient is used for admins to interact with alertmanager configuration.
 	privilegedClient ctrlruntimeclient.Client
 }
 

@@ -134,9 +134,9 @@ func (r *reconciler) reconcile(ctx context.Context, machine *clusterv1alpha1.Mac
 	}
 
 	machine.Spec.ProviderSpec.Value = &runtime.RawExtension{Raw: cfgSerialized}
-	newAnnotationVal := strings.Replace(machine.Annotations[annotationMachineUninitialized],
+	newAnnotationVal := strings.ReplaceAll(machine.Annotations[annotationMachineUninitialized],
 		annotationValue,
-		"", -1)
+		"")
 	machine.Annotations[annotationMachineUninitialized] = newAnnotationVal
 	if err := r.Update(ctx, machine); err != nil {
 		return fmt.Errorf("failed to update machine %q after adding network: %v", machine.Name, err)

@@ -31,6 +31,7 @@ import (
 	"time"
 
 	minio "github.com/minio/minio-go"
+
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	"k8c.io/kubermatic/v2/pkg/resources/certificates/triple"
 	"k8c.io/kubermatic/v2/pkg/resources/reconciling"
@@ -69,27 +70,27 @@ const (
 const (
 	// ApiserverDeploymentName is the name of the apiserver deployment
 	ApiserverDeploymentName = "apiserver"
-	//ControllerManagerDeploymentName is the name for the controller manager deployment
+	// ControllerManagerDeploymentName is the name for the controller manager deployment
 	ControllerManagerDeploymentName = "controller-manager"
-	//SchedulerDeploymentName is the name for the scheduler deployment
+	// SchedulerDeploymentName is the name for the scheduler deployment
 	SchedulerDeploymentName = "scheduler"
-	//MachineControllerDeploymentName is the name for the machine-controller deployment
+	// MachineControllerDeploymentName is the name for the machine-controller deployment
 	MachineControllerDeploymentName = "machine-controller"
 	// MachineControllerWebhookDeploymentName is the name for the machine-controller webhook deployment
 	MachineControllerWebhookDeploymentName = "machine-controller-webhook"
-	//MetricsServerDeploymentName is the name for the metrics-server deployment
+	// MetricsServerDeploymentName is the name for the metrics-server deployment
 	MetricsServerDeploymentName = "metrics-server"
-	//OpenVPNServerDeploymentName is the name for the openvpn server deployment
+	// OpenVPNServerDeploymentName is the name for the openvpn server deployment
 	OpenVPNServerDeploymentName = "openvpn-server"
-	//DNSResolverDeploymentName is the name of the dns resolver deployment
+	// DNSResolverDeploymentName is the name of the dns resolver deployment
 	DNSResolverDeploymentName = "dns-resolver"
-	//DNSResolverConfigMapName is the name of the dns resolvers configmap
+	// DNSResolverConfigMapName is the name of the dns resolvers configmap
 	DNSResolverConfigMapName = "dns-resolver"
-	//DNSResolverServiceName is the name of the dns resolvers service
+	// DNSResolverServiceName is the name of the dns resolvers service
 	DNSResolverServiceName = "dns-resolver"
-	//DNSResolverPodDisruptionBudetName is the name of the dns resolvers pdb
+	// DNSResolverPodDisruptionBudetName is the name of the dns resolvers pdb
 	DNSResolverPodDisruptionBudetName = "dns-resolver"
-	//DNSResolverVPAName is the name of the dns resolvers VerticalPodAutoscaler
+	// DNSResolverVPAName is the name of the dns resolvers VerticalPodAutoscaler
 	KubeStateMetricsDeploymentName = "kube-state-metrics"
 	// UserClusterControllerDeploymentName is the name of the usercluster-controller deployment
 	UserClusterControllerDeploymentName = "usercluster-controller"
@@ -106,14 +107,14 @@ const (
 	// GatekeeperAuditDeploymentName is the name of the gatekeeper audit deployment
 	GatekeeperAuditDeploymentName = "gatekeeper-audit"
 
-	//PrometheusStatefulSetName is the name for the prometheus StatefulSet
+	// PrometheusStatefulSetName is the name for the prometheus StatefulSet
 	PrometheusStatefulSetName = "prometheus"
-	//EtcdStatefulSetName is the name for the etcd StatefulSet
+	// EtcdStatefulSetName is the name for the etcd StatefulSet
 	EtcdStatefulSetName = "etcd"
 	// EtcdDefaultBackupConfigName is the name for the default (preinstalled) EtcdBackupConfig of a cluster
 	EtcdDefaultBackupConfigName = "default-backups"
 
-	//ApiserverServiceName is the name for the apiserver service
+	// ApiserverServiceName is the name for the apiserver service
 	ApiserverServiceName = "apiserver-external"
 	// FrontLoadBalancerServiceName is the name of the LoadBalancer service that fronts everything
 	// when using exposeStrategy "LoadBalancer"
@@ -122,46 +123,46 @@ const (
 	MetricsServerServiceName = "metrics-server"
 	// MetricsServerExternalNameServiceName is the name for the metrics-server service inside the user cluster
 	MetricsServerExternalNameServiceName = "metrics-server"
-	//EtcdServiceName is the name for the etcd service
+	// EtcdServiceName is the name for the etcd service
 	EtcdServiceName = "etcd"
-	//EtcdDefragCronJobName is the name for the defrag cronjob deployment
+	// EtcdDefragCronJobName is the name for the defrag cronjob deployment
 	EtcdDefragCronJobName = "etcd-defragger"
-	//OpenVPNServerServiceName is the name for the openvpn server service
+	// OpenVPNServerServiceName is the name for the openvpn server service
 	OpenVPNServerServiceName = "openvpn-server"
-	//MachineControllerWebhookServiceName is the name of the machine-controller webhook service
+	// MachineControllerWebhookServiceName is the name of the machine-controller webhook service
 	MachineControllerWebhookServiceName = "machine-controller-webhook"
-	//GatekeeperWebhookServiceName is the name of the gatekeeper webhook service
+	// GatekeeperWebhookServiceName is the name of the gatekeeper webhook service
 	GatekeeperWebhookServiceName = "gatekeeper-webhook-service"
 
 	// MetricsServerAPIServiceName is the name for the metrics-server APIService
 	MetricsServerAPIServiceName = "v1beta1.metrics.k8s.io"
 
-	//AdminKubeconfigSecretName is the name for the secret containing the private ca key
+	// AdminKubeconfigSecretName is the name for the secret containing the private ca key
 	AdminKubeconfigSecretName = "admin-kubeconfig"
-	//ViewerKubeconfigSecretName is the name for the secret containing the viewer kubeconfig
+	// ViewerKubeconfigSecretName is the name for the secret containing the viewer kubeconfig
 	ViewerKubeconfigSecretName = "viewer-kubeconfig"
-	//SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
+	// SchedulerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the scheduler
 	SchedulerKubeconfigSecretName = "scheduler-kubeconfig"
-	//KubeletDnatControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller
+	// KubeletDnatControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the kubeletdnatcontroller
 	KubeletDnatControllerKubeconfigSecretName = "kubeletdnatcontroller-kubeconfig"
-	//KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics
+	// KubeStateMetricsKubeconfigSecretName is the name for the secret containing the kubeconfig used by kube-state-metrics
 	KubeStateMetricsKubeconfigSecretName = "kube-state-metrics-kubeconfig"
-	//MetricsServerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the metrics-server
+	// MetricsServerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the metrics-server
 	MetricsServerKubeconfigSecretName = "metrics-server"
-	//ControllerManagerKubeconfigSecretName is the name of the secret containing the kubeconfig used by controller manager
+	// ControllerManagerKubeconfigSecretName is the name of the secret containing the kubeconfig used by controller manager
 	ControllerManagerKubeconfigSecretName = "controllermanager-kubeconfig"
-	//MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller
+	// MachineControllerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the machinecontroller
 	MachineControllerKubeconfigSecretName = "machinecontroller-kubeconfig"
-	//CloudControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the external cloud provider
+	// CloudControllerManagerKubeconfigSecretName is the name for the secret containing the kubeconfig used by the external cloud provider
 	CloudControllerManagerKubeconfigSecretName = "cloud-controller-manager-kubeconfig"
-	//MachineControllerWebhookServingCertSecretName is the name for the secret containing the serving cert for the
-	//machine-controller webhook
+	// MachineControllerWebhookServingCertSecretName is the name for the secret containing the serving cert for the
+	// machine-controller webhook
 	MachineControllerWebhookServingCertSecretName = "machinecontroller-webhook-serving-cert"
-	//MachineControllerWebhookServingCertCertKeyName is the name for the key that contains the cert
+	// MachineControllerWebhookServingCertCertKeyName is the name for the key that contains the cert
 	MachineControllerWebhookServingCertCertKeyName = "cert.pem"
-	//MachineControllerWebhookServingCertKeyKeyName is the name for the key that contains the key
+	// MachineControllerWebhookServingCertKeyKeyName is the name for the key that contains the key
 	MachineControllerWebhookServingCertKeyKeyName = "key.pem"
-	//PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver
+	// PrometheusApiserverClientCertificateSecretName is the name for the secret containing the client certificate used by prometheus to access the apiserver
 	PrometheusApiserverClientCertificateSecretName = "prometheus-apiserver-certificate"
 	// ClusterAutoscalerKubeconfigSecretName is the name of the kubeconfig secret used for
 	// the cluster-autoscaler
@@ -174,33 +175,33 @@ const (
 	// ImagePullSecretName specifies the name of the dockercfg secret used to access the private repo.
 	ImagePullSecretName = "dockercfg"
 
-	//FrontProxyCASecretName is the name for the secret containing the front proxy ca
+	// FrontProxyCASecretName is the name for the secret containing the front proxy ca
 	FrontProxyCASecretName = "front-proxy-ca"
-	//CASecretName is the name for the secret containing the root ca
+	// CASecretName is the name for the secret containing the root ca
 	CASecretName = "ca"
-	//ApiserverTLSSecretName is the name for the secrets required for the apiserver tls
+	// ApiserverTLSSecretName is the name for the secrets required for the apiserver tls
 	ApiserverTLSSecretName = "apiserver-tls"
-	//KubeletClientCertificatesSecretName is the name for the secret containing the kubelet client certificates
+	// KubeletClientCertificatesSecretName is the name for the secret containing the kubelet client certificates
 	KubeletClientCertificatesSecretName = "kubelet-client-certificates"
-	//ServiceAccountKeySecretName is the name for the secret containing the service account key
+	// ServiceAccountKeySecretName is the name for the secret containing the service account key
 	ServiceAccountKeySecretName = "service-account-key"
-	//TokensSecretName is the name for the secret containing the user tokens
+	// TokensSecretName is the name for the secret containing the user tokens
 	TokensSecretName = "tokens"
-	//ViewerTokenSecretName is the name for the secret containing the viewer token
+	// ViewerTokenSecretName is the name for the secret containing the viewer token
 	ViewerTokenSecretName = "viewer-token"
 	// OpenVPNCASecretName is the name of the secret that contains the OpenVPN CA
 	OpenVPNCASecretName = "openvpn-ca"
-	//OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates
+	// OpenVPNServerCertificatesSecretName is the name for the secret containing the openvpn server certificates
 	OpenVPNServerCertificatesSecretName = "openvpn-server-certificates"
-	//OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates
+	// OpenVPNClientCertificatesSecretName is the name for the secret containing the openvpn client certificates
 	OpenVPNClientCertificatesSecretName = "openvpn-client-certificates"
-	//CloudConfigSecretName is the name for the secret containing the cloud-config inside the user cluster.
+	// CloudConfigSecretName is the name for the secret containing the cloud-config inside the user cluster.
 	CloudConfigSecretName = "cloud-config"
-	//EtcdTLSCertificateSecretName is the name for the secret containing the etcd tls certificate used for transport security
+	// EtcdTLSCertificateSecretName is the name for the secret containing the etcd tls certificate used for transport security
 	EtcdTLSCertificateSecretName = "etcd-tls-certificate"
-	//ApiserverEtcdClientCertificateSecretName is the name for the secret containing the client certificate used by the apiserver for authenticating against etcd
+	// ApiserverEtcdClientCertificateSecretName is the name for the secret containing the client certificate used by the apiserver for authenticating against etcd
 	ApiserverEtcdClientCertificateSecretName = "apiserver-etcd-client-certificate"
-	//ApiserverFrontProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
+	// ApiserverFrontProxyClientCertificateSecretName is the name for the secret containing the apiserver's client certificate for proxy auth
 	ApiserverFrontProxyClientCertificateSecretName = "apiserver-proxy-client-certificate"
 	// GoogleServiceAccountSecretName is the name of the secret that contains the Google Service Account.
 	GoogleServiceAccountSecretName = "google-service-account"
@@ -224,51 +225,51 @@ const (
 	CloudConfigConfigMapName = "cloud-config"
 	// CloudConfigConfigMapKey is the key under which the cloud-config in the cloud-config configmap can be found
 	CloudConfigConfigMapKey = "config"
-	//OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster
+	// OpenVPNClientConfigsConfigMapName is the name for the ConfigMap containing the OpenVPN client config used within the user cluster
 	OpenVPNClientConfigsConfigMapName = "openvpn-client-configs"
-	//OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster
+	// OpenVPNClientConfigConfigMapName is the name for the ConfigMap containing the OpenVPN client config used by the client inside the user cluster
 	OpenVPNClientConfigConfigMapName = "openvpn-client-config"
-	//ClusterInfoConfigMapName is the name for the ConfigMap containing the cluster-info used by the bootstrap token mechanism
+	// ClusterInfoConfigMapName is the name for the ConfigMap containing the cluster-info used by the bootstrap token mechanism
 	ClusterInfoConfigMapName = "cluster-info"
-	//PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
+	// PrometheusConfigConfigMapName is the name for the configmap containing the prometheus config
 	PrometheusConfigConfigMapName = "prometheus"
-	//AuditConfigMapName is the name for the configmap that contains the content of the file that will be passed to the apiserver with the flag "--audit-policy-file".
+	// AuditConfigMapName is the name for the configmap that contains the content of the file that will be passed to the apiserver with the flag "--audit-policy-file".
 	AuditConfigMapName = "audit-config"
-	//AdmissionControlConfigMapName is the name for the configmap that contains the Admission Controller config file
+	// AdmissionControlConfigMapName is the name for the configmap that contains the Admission Controller config file
 	AdmissionControlConfigMapName = "adm-control"
 
-	//PrometheusServiceAccountName is the name for the Prometheus serviceaccount
+	// PrometheusServiceAccountName is the name for the Prometheus serviceaccount
 	PrometheusServiceAccountName = "prometheus"
 
-	//PrometheusRoleName is the name for the Prometheus role
+	// PrometheusRoleName is the name for the Prometheus role
 	PrometheusRoleName = "prometheus"
 
-	//PrometheusRoleBindingName is the name for the Prometheus rolebinding
+	// PrometheusRoleBindingName is the name for the Prometheus rolebinding
 	PrometheusRoleBindingName = "prometheus"
 
-	//GatekeeperRoleName is the name for the Gatekeeper role
+	// GatekeeperRoleName is the name for the Gatekeeper role
 	GatekeeperRoleName = "gatekeeper-manager-role"
-	//GatekeeperRoleBindingName is the name for the Gatekeeper rolebinding
+	// GatekeeperRoleBindingName is the name for the Gatekeeper rolebinding
 	GatekeeperRoleBindingName = "gatekeeper-manager-rolebinding"
-	//GatekeeperServiceAccountName is the name for the Gatekeeper service account
+	// GatekeeperServiceAccountName is the name for the Gatekeeper service account
 	GatekeeperServiceAccountName = "gatekeeper-admin"
 
-	//CloudControllerManagerRoleBindingName is the name for the cloud controller manager rolebinding.
+	// CloudControllerManagerRoleBindingName is the name for the cloud controller manager rolebinding.
 	CloudControllerManagerRoleBindingName = "cloud-controller-manager"
 
-	//MachineControllerCertUsername is the name of the user coming from kubeconfig cert
+	// MachineControllerCertUsername is the name of the user coming from kubeconfig cert
 	MachineControllerCertUsername = "machine-controller"
-	//KubeStateMetricsCertUsername is the name of the user coming from kubeconfig cert
+	// KubeStateMetricsCertUsername is the name of the user coming from kubeconfig cert
 	KubeStateMetricsCertUsername = "kube-state-metrics"
-	//MetricsServerCertUsername is the name of the user coming from kubeconfig cert
+	// MetricsServerCertUsername is the name of the user coming from kubeconfig cert
 	MetricsServerCertUsername = "metrics-server"
-	//ControllerManagerCertUsername is the name of the user coming from kubeconfig cert
+	// ControllerManagerCertUsername is the name of the user coming from kubeconfig cert
 	ControllerManagerCertUsername = "system:kube-controller-manager"
-	//CloudControllerManagerCertUsername is the name of the user coming from kubeconfig cert
+	// CloudControllerManagerCertUsername is the name of the user coming from kubeconfig cert
 	CloudControllerManagerCertUsername = "system:cloud-controller-manager"
-	//SchedulerCertUsername is the name of the user coming from kubeconfig cert
+	// SchedulerCertUsername is the name of the user coming from kubeconfig cert
 	SchedulerCertUsername = "system:kube-scheduler"
-	//KubeletDnatControllerCertUsername is the name of the user coming from kubeconfig cert
+	// KubeletDnatControllerCertUsername is the name of the user coming from kubeconfig cert
 	KubeletDnatControllerCertUsername = "kubermatic:kubeletdnat-controller"
 	// PrometheusCertUsername is the name of the user coming from kubeconfig cert
 	PrometheusCertUsername = "prometheus"
@@ -284,31 +285,31 @@ const (
 	// KubeletDnatControllerClusterRoleBindingName is the name for the KubeletDnatController clusterrolebinding
 	KubeletDnatControllerClusterRoleBindingName = "system:kubermatic-kubeletdnat-controller"
 
-	//ClusterInfoReaderRoleName is the name for the role which allows reading the cluster-info ConfigMap
+	// ClusterInfoReaderRoleName is the name for the role which allows reading the cluster-info ConfigMap
 	ClusterInfoReaderRoleName = "cluster-info"
-	//MachineControllerRoleName is the name for the MachineController roles
+	// MachineControllerRoleName is the name for the MachineController roles
 	MachineControllerRoleName = "machine-controller"
-	//MachineControllerRoleBindingName is the name for the MachineController rolebinding
+	// MachineControllerRoleBindingName is the name for the MachineController rolebinding
 	MachineControllerRoleBindingName = "machine-controller"
-	//ClusterInfoAnonymousRoleBindingName is the name for the RoleBinding giving access to the cluster-info ConfigMap to anonymous users
+	// ClusterInfoAnonymousRoleBindingName is the name for the RoleBinding giving access to the cluster-info ConfigMap to anonymous users
 	ClusterInfoAnonymousRoleBindingName = "cluster-info"
-	//MetricsServerAuthReaderRoleName is the name for the metrics server role
+	// MetricsServerAuthReaderRoleName is the name for the metrics server role
 	MetricsServerAuthReaderRoleName = "metrics-server-auth-reader"
-	//MachineControllerClusterRoleName is the name for the MachineController cluster role
+	// MachineControllerClusterRoleName is the name for the MachineController cluster role
 	MachineControllerClusterRoleName = "system:kubermatic-machine-controller"
-	//KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role
+	// KubeStateMetricsClusterRoleName is the name for the KubeStateMetrics cluster role
 	KubeStateMetricsClusterRoleName = "system:kubermatic-kube-state-metrics"
-	//MetricsServerClusterRoleName is the name for the metrics server cluster role
+	// MetricsServerClusterRoleName is the name for the metrics server cluster role
 	MetricsServerClusterRoleName = "system:metrics-server"
-	//PrometheusClusterRoleName is the name for the Prometheus cluster role
+	// PrometheusClusterRoleName is the name for the Prometheus cluster role
 	PrometheusClusterRoleName = "external-prometheus"
-	//MachineControllerClusterRoleBindingName is the name for the MachineController ClusterRoleBinding
+	// MachineControllerClusterRoleBindingName is the name for the MachineController ClusterRoleBinding
 	MachineControllerClusterRoleBindingName = "system:kubermatic-machine-controller"
-	//KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics ClusterRoleBinding
+	// KubeStateMetricsClusterRoleBindingName is the name for the KubeStateMetrics ClusterRoleBinding
 	KubeStateMetricsClusterRoleBindingName = "system:kubermatic-kube-state-metrics"
-	//PrometheusClusterRoleBindingName is the name for the Prometheus ClusterRoleBinding
+	// PrometheusClusterRoleBindingName is the name for the Prometheus ClusterRoleBinding
 	PrometheusClusterRoleBindingName = "system:external-prometheus"
-	//MetricsServerResourceReaderClusterRoleBindingName is the name for the metrics server ClusterRoleBinding
+	// MetricsServerResourceReaderClusterRoleBindingName is the name for the metrics server ClusterRoleBinding
 	MetricsServerResourceReaderClusterRoleBindingName = "system:metrics-server"
 	// ClusterAutoscalerClusterRoleName is the name of the clusterrole for the cluster autoscaler
 	ClusterAutoscalerClusterRoleName = "system:kubermatic-cluster-autoscaler"

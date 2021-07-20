@@ -830,7 +830,7 @@ func findMachineAndNode(ctx context.Context, name string, client ctrlruntimeclie
 		}
 	}
 
-	//Check if we can get a owner ref from a machine
+	// Check if we can get a owner ref from a machine
 	if node != nil && machine == nil {
 		machine = getMachineForNode(node, machineList.Items)
 	}

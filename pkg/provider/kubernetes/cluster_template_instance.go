@@ -40,7 +40,7 @@ type ClusterTemplateInstanceProvider struct {
 	// whenever a connection to Seed API server is required
 	createSeedImpersonatedClient impersonationClient
 
-	//privilegedClient is used for admins
+	// privilegedClient is used for admins
 	privilegedClient ctrlruntimeclient.Client
 }
 

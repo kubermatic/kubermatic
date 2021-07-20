@@ -126,7 +126,8 @@ func hasContainerNamed(spec corev1.PodSpec, name string) bool {
 }
 
 func wrapContainer(data isRunningInitContainerData, container corev1.Container, crdsToWaitFor ...string) (*corev1.Container, error) {
-	commandWithArgs := append(container.Command, container.Args...)
+	commandWithArgs := container.Command
+	commandWithArgs = append(commandWithArgs, container.Args...)
 	if len(commandWithArgs) == 0 {
 		return nil, fmt.Errorf("container %q has no command or args set", container.Name)
 	}

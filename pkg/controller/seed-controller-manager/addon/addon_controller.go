@@ -408,7 +408,7 @@ func getFileDeleteFinalizer(log *zap.SugaredLogger, filename string) fileHandlin
 }
 
 func (r *Reconciler) writeCombinedManifest(log *zap.SugaredLogger, manifest *bytes.Buffer, addon *kubermaticv1.Addon, cluster *kubermaticv1.Cluster) (string, fileHandlingDone, error) {
-	//Write combined Manifest to disk
+	// Write combined Manifest to disk
 	manifestFilename := path.Join("/tmp", fmt.Sprintf("cluster-%s-%s.yaml", cluster.Name, addon.Name))
 	if err := ioutil.WriteFile(manifestFilename, manifest.Bytes(), 0644); err != nil {
 		return "", nil, fmt.Errorf("failed to write combined manifest to %s: %v", manifestFilename, err)

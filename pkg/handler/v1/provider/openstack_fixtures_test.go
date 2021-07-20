@@ -194,7 +194,7 @@ const GetFlaivorsDetail = `
     ]
 }`
 
-//GetUserProjects is response  pf GET /users/{user_id}/projects
+// GetUserProjects is response  pf GET /users/{user_id}/projects
 const GetUserProjects = `
 {
     "projects": [

@@ -34,7 +34,7 @@ type RuleGroupProvider struct {
 	// whenever a connection to Seed API server is required
 	createSeedImpersonatedClient impersonationClient
 
-	//privilegedClient is used for admins to interact with RuleGroup objects.
+	// privilegedClient is used for admins to interact with RuleGroup objects.
 	privilegedClient ctrlruntimeclient.Client
 }
 
