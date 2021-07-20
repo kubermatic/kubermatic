@@ -33,6 +33,8 @@ type ClientService interface {
 
 	ListEtcdBackupConfig(params *ListEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*ListEtcdBackupConfigOK, error)
 
+	PatchEtcdBackupConfig(params *PatchEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*PatchEtcdBackupConfigOK, error)
+
 	SetTransport(transport runtime.ClientTransport)
 }
 
@@ -169,6 +171,40 @@ func (a *Client) ListEtcdBackupConfig(params *ListEtcdBackupConfigParams, authIn
 	}
 	// unexpected success response
 	unexpectedSuccess := result.(*ListEtcdBackupConfigDefault)
+	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
+}
+
+/*
+  PatchEtcdBackupConfig Patches a etcd backup config for a given cluster based on its name
+*/
+func (a *Client) PatchEtcdBackupConfig(params *PatchEtcdBackupConfigParams, authInfo runtime.ClientAuthInfoWriter) (*PatchEtcdBackupConfigOK, error) {
+	// TODO: Validate the params before sending
+	if params == nil {
+		params = NewPatchEtcdBackupConfigParams()
+	}
+
+	result, err := a.transport.Submit(&runtime.ClientOperation{
+		ID:                 "patchEtcdBackupConfig",
+		Method:             "PATCH",
+		PathPattern:        "/api/v2/projects/{project_id}/clusters/{cluster_id}/etcdbackupconfigs/{ebc_name}",
+		ProducesMediaTypes: []string{"application/json"},
+		ConsumesMediaTypes: []string{"application/json"},
+		Schemes:            []string{"https"},
+		Params:             params,
+		Reader:             &PatchEtcdBackupConfigReader{formats: a.formats},
+		AuthInfo:           authInfo,
+		Context:            params.Context,
+		Client:             params.HTTPClient,
+	})
+	if err != nil {
+		return nil, err
+	}
+	success, ok := result.(*PatchEtcdBackupConfigOK)
+	if ok {
+		return success, nil
+	}
+	// unexpected success response
+	unexpectedSuccess := result.(*PatchEtcdBackupConfigDefault)
 	return nil, runtime.NewAPIError("unexpected success response: content available as default response in error", unexpectedSuccess, unexpectedSuccess.Code())
 }
 

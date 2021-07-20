@@ -309,3 +309,7 @@ func (p *FakeEtcdBackupConfigProvider) List(userInfo *provider.UserInfo, cluster
 func (p *FakeEtcdBackupConfigProvider) Delete(userInfo *provider.UserInfo, cluster *kubermaticapiv1.Cluster, name string) error {
 	return p.Provider.Delete(userInfo, cluster, name)
 }
+
+func (p *FakeEtcdBackupConfigProvider) Patch(userInfo *provider.UserInfo, old, new *kubermaticapiv1.EtcdBackupConfig) (*kubermaticapiv1.EtcdBackupConfig, error) {
+	return p.Provider.Patch(userInfo, old, new)
+}
