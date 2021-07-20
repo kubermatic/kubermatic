@@ -29,7 +29,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "decimals": 0,
       "editable": true,
       "fontSize": "80%",
@@ -79,7 +79,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "decimals": 0,
       "editable": true,
       "fontSize": "80%",
@@ -128,7 +128,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "decimals": 0,
       "editable": true,
       "fontSize": "80%",
@@ -174,7 +174,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fill": 1,
       "fillGradient": 0,
@@ -266,7 +266,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fill": 1,
       "fillGradient": 0,
@@ -358,7 +358,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fill": 1,
       "fillGradient": 0,
@@ -466,7 +466,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fontSize": "80%",
       "format": "short",
@@ -513,7 +513,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fontSize": "80%",
       "format": "short",
@@ -557,7 +557,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fill": 1,
       "fillGradient": 0,
@@ -649,7 +649,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fill": 1,
       "fillGradient": 0,
@@ -757,7 +757,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fontSize": "80%",
       "format": "short",
@@ -804,7 +804,7 @@
         "label": "Others",
         "threshold": 0
       },
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fontSize": "80%",
       "format": "short",
@@ -848,7 +848,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fill": 1,
       "fillGradient": 0,
@@ -940,7 +940,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fill": 1,
       "fillGradient": 0,
@@ -1033,7 +1033,22 @@
   "style": "dark",
   "tags": [],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "multi": false,
+        "label": "Data Source",
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      }
+    ]
   },
   "time": {
     "from": "now-6h",
