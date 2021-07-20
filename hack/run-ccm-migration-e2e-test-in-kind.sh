@@ -63,9 +63,8 @@ if type ginkgo > /dev/null; then
     --race \
     --progress \
     -- --kubeconfig "${HOME}/.kube/config" \
-    -- --kubeconfig "${HOME}/.kube/config" \
-    --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
-    --datacenter byo-kubernetes \
+    --kubernetes-version "1.20.0" \
+    --datacenter "syseleven-dbl1" \
     --debug-log \
     - $EXTRA_ARGS
 else
@@ -75,8 +74,8 @@ else
     --ginkgo.trace \
     --ginkgo.progress \
     --kubeconfig "${HOME}/.kube/config" \
-    --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
-    --datacenter byo-kubernetes \
+    --kubernetes-version "1.20.0" \
+    --datacenter "syseleven-dbl1" \
     --debug-log \
     - $EXTRA_ARGS
 fi
