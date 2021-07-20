@@ -226,16 +226,12 @@ func PatchEndpoint(userInfoGetter provider.UserInfoGetter, projectProvider provi
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}
+		newEBC := originalEBC.DeepCopy()
+		newEBC.Spec.Keep = req.Body.Keep
+		newEBC.Spec.Schedule = req.Body.Schedule
 
-		originalAPIEBC := convertInternalToAPIEtcdBackupConfig(originalEBC)
-		originalAPIEBC.Spec = req.Body
-
-		ebc, err := convertAPIToInternalEtcdBackupConfig(req.EtcdBackupConfigName, &originalAPIEBC.Spec, c)
-		if err != nil {
-			return nil, err
-		}
 		// apply patch
-		ebc, err = patchEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID, originalEBC, ebc)
+		ebc, err := patchEtcdBackupConfig(ctx, userInfoGetter, req.ProjectID, originalEBC, newEBC)
 		if err != nil {
 			return nil, common.KubernetesErrorToHTTPError(err)
 		}

@@ -32,6 +32,10 @@ import (
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	modifiedSchedule = "2 10 * * *"
+)
+
 func TestCreateEndpoint(t *testing.T) {
 	t.Parallel()
 	testCases := []struct {
@@ -425,7 +429,7 @@ func TestPatchEndpoint(t *testing.T) {
 			EtcdBackupConfigName: "test-1",
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
 				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
-				spec.Schedule = "2 10 * * *"
+				spec.Schedule = modifiedSchedule
 				return &spec
 			}(),
 			ProjectID: test.GenDefaultProject().Name,
@@ -439,7 +443,7 @@ func TestPatchEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: func() *apiv2.EtcdBackupConfig {
 				ebc := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name)
-				ebc.Spec.Schedule = "2 10 * * *"
+				ebc.Spec.Schedule = modifiedSchedule
 				return ebc
 			}(),
 		},
@@ -448,7 +452,7 @@ func TestPatchEndpoint(t *testing.T) {
 			EtcdBackupConfigName: "test-1",
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
 				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
-				spec.Schedule = "2 10 * * *"
+				spec.Schedule = modifiedSchedule
 				return &spec
 			}(),
 			ProjectID: test.GenDefaultProject().Name,
@@ -465,7 +469,7 @@ func TestPatchEndpoint(t *testing.T) {
 			EtcdBackupConfigName: "test-1",
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
 				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
-				spec.Schedule = "2 10 * * *"
+				spec.Schedule = modifiedSchedule
 				return &spec
 			}(),
 			ProjectID: test.GenDefaultProject().Name,
@@ -484,7 +488,7 @@ func TestPatchEndpoint(t *testing.T) {
 			EtcdBackupConfigName: "test-1",
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
 				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
-				spec.Schedule = "2 10 * * *"
+				spec.Schedule = modifiedSchedule
 				return &spec
 			}(),
 			ProjectID: test.GenDefaultProject().Name,
@@ -499,7 +503,7 @@ func TestPatchEndpoint(t *testing.T) {
 			ExpectedHTTPStatusCode: http.StatusOK,
 			ExpectedResponse: func() *apiv2.EtcdBackupConfig {
 				ebc := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name)
-				ebc.Spec.Schedule = "2 10 * * *"
+				ebc.Spec.Schedule = modifiedSchedule
 				return ebc
 			}(),
 		},
@@ -508,7 +512,7 @@ func TestPatchEndpoint(t *testing.T) {
 			EtcdBackupConfigName: "test-1",
 			PatchSpec: func() *apiv2.EtcdBackupConfigSpec {
 				spec := test.GenAPIEtcdBackupConfig("test-1", test.GenDefaultCluster().Name).Spec
-				spec.Schedule = "2 10 * * *"
+				spec.Schedule = modifiedSchedule
 				spec.Keep = nil
 				return &spec
 			}(),
