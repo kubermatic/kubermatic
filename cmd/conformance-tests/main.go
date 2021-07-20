@@ -42,6 +42,7 @@ import (
 
 	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	clusterclient "k8c.io/kubermatic/v2/pkg/cluster/client"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
@@ -164,6 +165,7 @@ var (
 	sexcludeDistributions string
 )
 
+//nolint:gocritic,exitAfterDefer
 func main() {
 	var err error
 
@@ -273,7 +275,7 @@ func main() {
 		log.Fatal("No distribution to use in tests remained after evaluating -distributions and -exclude-distributions")
 	}
 
-	osNames := []string{}
+	var osNames []string
 	for dist := range opts.distributions {
 		osNames = append(osNames, string(dist))
 	}

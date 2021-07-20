@@ -29,6 +29,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	providerconfig "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
+
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
 	kubermaticv1 "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
 	operatorv1alpha1 "k8c.io/kubermatic/v2/pkg/crd/operator/v1alpha1"
@@ -69,7 +70,9 @@ func main() {
 		log.Fatalf("Failed to find go files: %v", err)
 	}
 
-	files := append(kubermaticFiles, operatorFiles...)
+	var files []string
+	files = append(files, kubermaticFiles...)
+	files = append(files, operatorFiles...)
 	files = append(files, filepath.Join(root, "vendor/k8s.io/api/core/v1/types.go"))
 
 	cm := genyaml.NewCommentMap(files...)
@@ -245,11 +248,14 @@ func validateReflect(value reflect.Value, path []string) error {
 		typ = value.Type()
 	}
 
+	p := path
+
 	switch typ.Kind() {
 	case reflect.Struct:
 		for i := 0; i < typ.NumField(); i++ {
 			fieldName := typ.Field(i).Name
-			p := append(path, fieldName)
+
+			p = append(p, fieldName)
 
 			if err := validateReflect(value.Field(i), p); err != nil {
 				// super special exception: allow not defining the Fake cloud provider
@@ -268,7 +274,7 @@ func validateReflect(value reflect.Value, path []string) error {
 		}
 
 		for _, mapKey := range mapKeys {
-			p := append(path, fmt.Sprintf("[%s]", mapKey))
+			p = append(p, fmt.Sprintf("[%s]", mapKey))
 
 			if err := validateReflect(value.MapIndex(mapKey), p); err != nil {
 				return err
@@ -289,7 +295,7 @@ func validateReflect(value reflect.Value, path []string) error {
 		}
 
 		for i := 0; i < value.Len(); i++ {
-			p := append(path, fmt.Sprintf("[%d]", i))
+			p = append(p, fmt.Sprintf("[%d]", i))
 
 			if err := validateReflect(value.Index(i), p); err != nil {
 				return err

@@ -85,6 +85,7 @@ type opts struct {
 	helmBinary        string
 }
 
+//nolint:gocritic,exitAfterDefer
 func main() {
 	var err error
 
