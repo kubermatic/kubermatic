@@ -16872,6 +16872,13 @@
       "description": "Constraint represents a gatekeeper Constraint",
       "type": "object",
       "properties": {
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "x-go-name": "Labels"
+        },
         "name": {
           "type": "string",
           "x-go-name": "Name"
