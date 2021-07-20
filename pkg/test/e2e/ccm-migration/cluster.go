@@ -61,14 +61,18 @@ type credentials struct {
 }
 
 func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials credentials) error {
-	c.Log.Debugw("Creating cluster", "name", c.Name)
+	c.Log.Debugw("Setting up new cluster", "name", c.Name)
 
 	if err := c.createSecret(cloudSpec.Openstack.CredentialsReference.Name, osCredentials); err != nil {
 		return err
 	}
+	c.Log.Debugw("secret created", "name", cloudSpec.Openstack.CredentialsReference.Name)
+
 	if err := c.createCluster(cloudSpec); err != nil {
 		return nil
 	}
+	c.Log.Debugw("Cluster created", "name", c.Name)
+
 	return c.waitForClusterControlPlaneReady(c.Cluster)
 }
 

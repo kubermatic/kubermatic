@@ -73,6 +73,9 @@ var _ = ginkgo.Describe("CCM migration", func() {
 				},
 				DatacenterName: options.datacenter,
 			}, options.osCredentials)).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
+			clusterJig.Log.Debugw("Cluster set up", "name", clusterJig.Cluster.Name)
+
+			time.Sleep(1000*time.Second)
 
 			userClient, err = clusterClientProvider.GetClient(context.TODO(), clusterJig.Cluster)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
