@@ -148,8 +148,9 @@ func migrateCertManagerV2(
 		{Version: "v1alpha2", Group: "cert-manager.io", Kind: "certificate"},
 	}
 
-	allCRDs := append(
-		restorableCRDs,
+	allCRDs := restorableCRDs
+	allCRDs = append(
+		allCRDs,
 		schema.GroupVersionKind{Version: "v1alpha2", Group: "acme.cert-manager.io", Kind: "challenge"},
 		schema.GroupVersionKind{Version: "v1alpha2", Group: "acme.cert-manager.io", Kind: "order"},
 	)

@@ -390,8 +390,8 @@ func TestUpdateAddon(t *testing.T) {
 				},
 			},
 		},
-		//TODO(irozzo) Add test to ensure that user added addons are not
-		//deleted when the following is merged:
+		// TODO(irozzo) Add test to ensure that user added addons are not
+		// deleted when the following is merged:
 		// https://github.com/kubernetes-sigs/controller-runtime/pull/800
 	}
 

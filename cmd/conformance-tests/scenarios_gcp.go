@@ -53,7 +53,7 @@ type gcpScenario struct {
 }
 
 func (s *gcpScenario) Name() string {
-	version := strings.Replace(s.version.String(), ".", "-", -1)
+	version := strings.ReplaceAll(s.version.String(), ".", "-")
 	return fmt.Sprintf("gcp-%s-%s", getOSNameFromSpec(s.nodeOsSpec), version)
 }
 

@@ -261,7 +261,7 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf(" diff: %s", diff.ObjectGoPrintSideBySide(matchMap, matchMap))
 			}
 
-			//cast params to bytes for comparison
+			// cast params to bytes for comparison
 			expectedParamsBytes, err := json.Marshal(tc.expectedConstraint.Spec.Parameters)
 			if err != nil {
 				t.Fatal(err)
