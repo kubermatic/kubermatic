@@ -28,6 +28,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources/cloudcontroller"
 	"k8c.io/kubermatic/v2/pkg/resources/clusterautoscaler"
 	"k8c.io/kubermatic/v2/pkg/resources/controllermanager"
+	"k8c.io/kubermatic/v2/pkg/resources/csicinder"
 	"k8c.io/kubermatic/v2/pkg/resources/dns"
 	"k8c.io/kubermatic/v2/pkg/resources/etcd"
 	"k8c.io/kubermatic/v2/pkg/resources/gatekeeper"
@@ -244,6 +245,9 @@ func GetServiceCreators(data *resources.TemplateData) []reconciling.NamedService
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {
 		creators = append(creators, rancherserver.ServiceCreator(data.Cluster().Spec.ExposeStrategy))
 	}
+	if data.Cluster().Spec.Cloud.Openstack != nil {
+		creators = append(creators, csicinder.ServiceCreator())
+	}
 
 	return creators
 }
@@ -352,6 +356,9 @@ func (r *Reconciler) ensureServiceAccounts(ctx context.Context, c *kubermaticv1.
 	if err := reconciling.ReconcileServiceAccounts(ctx, namedServiceAccountCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
 		return fmt.Errorf("failed to ensure ServiceAccounts: %v", err)
 	}
+	if c.Spec.Cloud.Openstack != nil {
+		namedServiceAccountCreatorGetters = append(namedServiceAccountCreatorGetters, csicinder.ControllerServiceAccountCreator())
+	}
 
 	return nil
 }
@@ -428,6 +435,9 @@ func GetStatefulSetCreators(data *resources.TemplateData, enableDataCorruptionCh
 	}
 	if flag := data.Cluster().Spec.Features[kubermaticv1.ClusterFeatureRancherIntegration]; flag {
 		creators = append(creators, rancherserver.StatefulSetCreator(data))
+	}
+	if data.Cluster().Spec.Cloud.Openstack != nil {
+		creators = append(creators, csicinder.StatefulSetCreator())
 	}
 	return creators
 }

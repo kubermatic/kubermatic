@@ -74,12 +74,18 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to get cloudConfig: %v", err)
 	}
+	cluster := &kubermaticv1.Cluster{}
+	if err := r.seedClient.Get(ctx,
+		types.NamespacedName{Namespace: r.namespace, Name: strings.TrimPrefix(r.namespace, "cluster-")}, cluster); err != nil {
+		return fmt.Errorf("failed getting cluster for reconcile: %v", err)
+	}
 
 	data := reconcileData{
 		caCert:        caCert,
 		openVPNCACert: openVPNCACert,
 		userSSHKeys:   userSSHKeys,
 		cloudConfig:   cloudConfig,
+		cluster:       cluster,
 	}
 
 	if r.userClusterMLA.Monitoring || r.userClusterMLA.Logging {
@@ -162,7 +168,7 @@ func (r *reconciler) reconcile(ctx context.Context) error {
 			return err
 		}
 	} else {
-		if err := r.healthCheck(ctx); err != nil {
+		if err := r.healthCheck(ctx, data.cluster); err != nil {
 			return err
 		}
 	}
@@ -759,6 +765,7 @@ type reconcileData struct {
 	mlaGatewayCACert *resources.ECDSAKeyPair
 	userSSHKeys      map[string][]byte
 	cloudConfig      []byte
+	cluster          *kubermaticv1.Cluster
 }
 
 func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
@@ -771,15 +778,10 @@ func (r *reconciler) ensureOPAIntegrationIsRemoved(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) healthCheck(ctx context.Context) error {
-	cluster := &kubermaticv1.Cluster{}
-	if err := r.seedClient.Get(ctx,
-		types.NamespacedName{Namespace: r.namespace, Name: strings.TrimPrefix(r.namespace, "cluster-")}, cluster); err != nil {
-		return fmt.Errorf("failed getting cluster for cluster health check: %v", err)
-	}
+func (r *reconciler) healthCheck(ctx context.Context, cluster *kubermaticv1.Cluster) error {
 	oldCluster := cluster.DeepCopy()
 
-	ctrlHealth, auditHealth, err := r.getGatekeeperHealth(ctx)
+	ctrlHealth, auditHealth, err := r.getGatekeeperHealth(ctx, cluster)
 	if err != nil {
 		return err
 	}
@@ -795,7 +797,7 @@ func (r *reconciler) healthCheck(ctx context.Context) error {
 	return nil
 }
 
-func (r *reconciler) getGatekeeperHealth(ctx context.Context) (
+func (r *reconciler) getGatekeeperHealth(ctx context.Context, cluster *kubermaticv1.Cluster) (
 	ctlrHealth kubermaticv1.HealthStatus, auditHealth kubermaticv1.HealthStatus, err error) {
 
 	ctlrHealth, err = resources.HealthyDeployment(ctx,
