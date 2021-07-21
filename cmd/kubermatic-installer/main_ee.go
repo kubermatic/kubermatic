@@ -31,7 +31,7 @@ func commands(logger *logrus.Logger, versions kubermaticversion.Versions) []cli.
 		VersionCommand(logger, versions),
 		DeployCommand(logger, versions),
 		ConvertKubeconfigCommand(logger),
-		PrintCommand(logger),
+		PrintCommand(),
 		eeinstaller.ConvertDatacentersCommand(logger),
 		eeinstaller.ConvertHelmValuesCommand(logger),
 	}

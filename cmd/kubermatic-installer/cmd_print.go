@@ -19,34 +19,29 @@ package main
 import (
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli"
 
 	"k8c.io/kubermatic/v2/docs"
 )
 
-func PrintCommand(logger *logrus.Logger) cli.Command {
+func PrintCommand() cli.Command {
 	return cli.Command{
 		Name:        "print",
 		Usage:       "Prints example configuration manifest",
 		UsageText:   "kubermatic-installer print <resource>",
 		Description: "Print an example configuration manifest with defaults for the given resource.\n   Supported resources are \"seed\" and \"kubermaticconfiguration\".",
 		ArgsUsage:   "Supported resources are \"seed\" and \"kubermaticconfiguration\".",
-		Action:      PrintAction(logger),
+		Action:      PrintAction(),
 	}
 }
 
-func PrintAction(logger *logrus.Logger) cli.ActionFunc {
-	return handleErrors(logger, setupLogger(logger, func(ctx *cli.Context) error {
+func PrintAction() cli.ActionFunc {
+	return func(ctx *cli.Context) error {
 
 		arg := strings.ToLower(ctx.Args().First())
 
 		switch arg {
-		case "":
-			fallthrough
-		case "config":
-			fallthrough
-		case "kubermaticconfiguration":
+		case "", "config", "kubermaticconfiguration":
 			println(docs.ExampleKubermaticConfiguration)
 		case "seed":
 			println(docs.ExampleSeedConfiguration)
@@ -55,5 +50,5 @@ func PrintAction(logger *logrus.Logger) cli.ActionFunc {
 		}
 
 		return nil
-	}))
+	}
 }
