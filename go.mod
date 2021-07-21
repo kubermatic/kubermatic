@@ -1,6 +1,6 @@
 module k8c.io/kubermatic/v2
 
-go 1.14
+go 1.16
 
 require (
 	code.cloudfoundry.org/go-pubsub v0.0.0-20180503211407-becd51dc37cb
@@ -55,7 +55,6 @@ require (
 	github.com/kubermatic/machine-controller v1.32.0
 	github.com/minio/minio-go v6.0.14+incompatible
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
-	github.com/nelsam/hel v0.0.0-20200611165952-2d829bae0c66 // indirect
 	github.com/onsi/ginkgo v1.14.2
 	github.com/onsi/gomega v1.10.3
 	github.com/open-policy-agent/frameworks/constraint v0.0.0-20201118071520-0d37681951a4

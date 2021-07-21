@@ -74,7 +74,7 @@ type vSphereScenario struct {
 }
 
 func (s *vSphereScenario) Name() string {
-	return fmt.Sprintf("vsphere-%s-%s", getOSNameFromSpec(s.nodeOsSpec), strings.Replace(s.version.String(), ".", "-", -1))
+	return fmt.Sprintf("vsphere-%s-%s", getOSNameFromSpec(s.nodeOsSpec), strings.ReplaceAll(s.version.String(), ".", "-"))
 }
 
 func (s *vSphereScenario) Cluster(secrets secrets) *apimodels.CreateClusterSpec {

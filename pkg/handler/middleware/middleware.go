@@ -96,7 +96,7 @@ const (
 	SeedsGetterContextKey kubermaticcontext.Key = "seeds-getter"
 )
 
-//seedClusterGetter defines functionality to retrieve a seed name
+// seedClusterGetter defines functionality to retrieve a seed name
 type seedClusterGetter interface {
 	GetSeedCluster() apiv1.SeedCluster
 }

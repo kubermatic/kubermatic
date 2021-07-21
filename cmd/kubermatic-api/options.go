@@ -63,7 +63,7 @@ type serverRunOptions struct {
 	oidcSkipTLSVerify              bool
 	oidcIssuerOfflineAccessAsScope bool
 
-	//service account configuration
+	// service account configuration
 	serviceAccountSigningKey string
 
 	featureGates features.FeatureGate

@@ -29,7 +29,7 @@ import (
 // syncAddress will set the all address relevant fields on the cluster
 func (r *Reconciler) syncAddress(ctx context.Context, log *zap.SugaredLogger, cluster *kubermaticv1.Cluster, seed *kubermaticv1.Seed) error {
 	var err error
-	//TODO(mrIncompetent): The token should be moved out of Address. But maybe we rather implement another auth-handling? Like openid-connect?
+	// TODO(mrIncompetent): The token should be moved out of Address. But maybe we rather implement another auth-handling? Like openid-connect?
 	if cluster.Address.AdminToken == "" {
 		// Generate token according to https://kubernetes.io/docs/admin/bootstrap-tokens/#token-format
 		err = r.updateCluster(ctx, cluster, func(c *kubermaticv1.Cluster) {

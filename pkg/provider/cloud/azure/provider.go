@@ -424,10 +424,10 @@ func (a *Azure) ensureSecurityGroup(cloud kubermaticv1.CloudSpec, location strin
 			},
 		},
 	}
-	updatedRules := append(*parameters.SecurityRules, tcpDenyAllRule())
-	updatedRules = append(*parameters.SecurityRules, udpDenyAllRule())
-	updatedRules = append(*parameters.SecurityRules, icmpAllowAllRule())
+
+	updatedRules := append(*parameters.SecurityRules, tcpDenyAllRule(), udpDenyAllRule(), icmpAllowAllRule())
 	parameters.SecurityRules = &updatedRules
+
 	if _, err = sgClient.CreateOrUpdate(a.ctx, cloud.Azure.ResourceGroup, cloud.Azure.SecurityGroup, parameters); err != nil {
 		return fmt.Errorf("failed to create or update resource group %q: %v", cloud.Azure.ResourceGroup, err)
 	}
