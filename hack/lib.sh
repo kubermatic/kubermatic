@@ -190,7 +190,6 @@ format_dashboard() {
     jq '(.templating.list[] | select(.type=="datasource") | .current) = {}' |
     jq '(.templating.list[] | select(.type=="interval") | .current) = {}' |
     jq '(.panels[] | select(.scopedVars!=null) | .scopedVars) = {}' |
-    jq '(.templating.list[] | select(.type=="datasource") | .hide) = 2' |
     jq '(.annotations.list) = []' |
     jq '(.links) = []' |
     jq '(.refresh) = "30s"' |
