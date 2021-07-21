@@ -19,7 +19,7 @@ package ccmmigration
 import (
 	"context"
 	"fmt"
-	"github.com/kubermatic/machine-controller/pkg/machines/v1alpha1"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	types2 "github.com/kubermatic/machine-controller/pkg/providerconfig/types"
 	"github.com/onsi/ginkgo"
 	"github.com/onsi/gomega"
@@ -29,6 +29,8 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -79,6 +81,41 @@ var _ = ginkgo.Describe("CCM migration", func() {
 
 			userClient, err = clusterClientProvider.GetClient(context.TODO(), clusterJig.Cluster)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			clusterv1alpha1.AddToScheme(userClient.Scheme())
+
+			providerSpec := `{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "<< IDENTITY_ENDPOINT >>","username": "<< USERNAME >>","password": "<< PASSWORD >>"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`
+
+			machineDeployment := &clusterv1alpha1.MachineDeployment{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:                       "test",
+					Namespace:                  "kube-system",
+				},
+				Spec:       clusterv1alpha1.MachineDeploymentSpec{
+					Selector: metav1.LabelSelector{
+						MatchLabels: map[string]string{
+							"testKey": "testValue",
+						},
+					},
+					Template: clusterv1alpha1.MachineTemplateSpec{
+						ObjectMeta: metav1.ObjectMeta{
+							Labels: map[string]string{
+								"testKey": "testValue",
+							},
+						},
+						Spec: clusterv1alpha1.MachineSpec{
+							ProviderSpec: clusterv1alpha1.ProviderSpec{
+								Value: &runtime.RawExtension{
+									Raw: []byte(providerSpec),
+								},
+							},
+							Versions: clusterv1alpha1.MachineVersionInfo{
+								Kubelet: "1.20.0",
+							},
+						},
+					},
+				},
+			}
+			gomega.Expect(userClient.Create(context.TODO(), machineDeployment)).NotTo(gomega.HaveOccurred())
 		})
 
 		ginkgo.It("migrating cluster to external CCM", func() {
@@ -117,8 +154,10 @@ var _ = ginkgo.Describe("CCM migration", func() {
 				return false, nil
 			})).NotTo(gomega.HaveOccurred())
 
+			lista := &clusterv1alpha1.MachineList{}
 			ginkgo.By("rolling out all the machines")
-			gomega.Expect(userClient.DeleteAllOf(context.TODO(), &v1alpha1.Machine{})).NotTo(gomega.HaveOccurred())
+			gomega.Expect(userClient.List(context.TODO(), lista)).NotTo(gomega.HaveOccurred())
+			gomega.Expect(userClient.DeleteAllOf(context.TODO(), &clusterv1alpha1.Machine{})).NotTo(gomega.HaveOccurred())
 
 			ginkgo.By("waiting for the complete cluster migration")
 			gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
