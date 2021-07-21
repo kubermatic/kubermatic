@@ -72,6 +72,7 @@ require (
 	github.com/teris-io/shortid v0.0.0-20201117134242-e59966efd125 // indirect
 	github.com/urfave/cli v1.22.5
 	github.com/vmware/govmomi v0.23.1
+	github.com/wozniakjan/reverse-kube-resource v0.0.0-20210729145353-0b5c5dc398b7
 	go.etcd.io/etcd/v3 v3.3.0-rc.0.0.20200728214110-6c81b20ec8de
 	go.uber.org/zap v1.16.0
 	golang.org/x/crypto v0.0.0-20201124201722-c8d3bf9c5392
