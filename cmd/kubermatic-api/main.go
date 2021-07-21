@@ -270,9 +270,9 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		return providers{}, fmt.Errorf("failed to create cluster template provider due to %v", err)
 	}
 
-	privilegedWhitelistedRegistryProvider, err := kubernetesprovider.NewWhitelistedRegistryPrivilegedProvider(mgr.GetClient())
+	privilegedAllowedRegistryProvider, err := kubernetesprovider.NewAllowedRegistryPrivilegedProvider(mgr.GetClient())
 	if err != nil {
-		return providers{}, fmt.Errorf("failed to create whitelisted registry provider due to %v", err)
+		return providers{}, fmt.Errorf("failed to create allowed registry provider due to %v", err)
 	}
 
 	constraintProviderGetter := kubernetesprovider.ConstraintProviderFactory(mgr.GetRESTMapper(), seedKubeconfigGetter)
@@ -339,7 +339,7 @@ func createInitProviders(ctx context.Context, options serverRunOptions) (provide
 		clusterTemplateProvider:               clusterTemplateProvider,
 		ruleGroupProviderGetter:               ruleGroupProviderGetter,
 		clusterTemplateInstanceProviderGetter: clusterTemplateInstanceProviderGetter,
-		privilegedWhitelistedRegistryProvider: privilegedWhitelistedRegistryProvider,
+		privilegedAllowedRegistryProvider:     privilegedAllowedRegistryProvider,
 		etcdBackupConfigProviderGetter:        etcdBackupConfigProviderGetter,
 	}, nil
 }
@@ -451,7 +451,7 @@ func createAPIHandler(options serverRunOptions, prov providers, oidcIssuerVerifi
 		ClusterTemplateProvider:               prov.clusterTemplateProvider,
 		ClusterTemplateInstanceProviderGetter: prov.clusterTemplateInstanceProviderGetter,
 		RuleGroupProviderGetter:               prov.ruleGroupProviderGetter,
-		PrivilegedWhitelistedRegistryProvider: prov.privilegedWhitelistedRegistryProvider,
+		PrivilegedAllowedRegistryProvider:     prov.privilegedAllowedRegistryProvider,
 		EtcdBackupConfigProviderGetter:        prov.etcdBackupConfigProviderGetter,
 		Versions:                              options.versions,
 		CABundle:                              options.caBundle.CertPool(),

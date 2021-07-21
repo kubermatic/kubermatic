@@ -43,6 +43,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().AddonConfigs().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("alertmanagers"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().Alertmanagers().Informer()}, nil
+	case v1.SchemeGroupVersion.WithResource("allowedregistries"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().AllowedRegistries().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("clusters"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().Clusters().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("clustertemplates"):
@@ -71,8 +73,6 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().UserProjectBindings().Informer()}, nil
 	case v1.SchemeGroupVersion.WithResource("usersshkeies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().UserSSHKeys().Informer()}, nil
-	case v1.SchemeGroupVersion.WithResource("whitelistedregistries"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Kubermatic().V1().WhitelistedRegistries().Informer()}, nil
 
 	}
 

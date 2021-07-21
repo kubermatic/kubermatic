@@ -195,12 +195,12 @@ type RuleGroup struct {
 	Type crdapiv1.RuleGroupType `json:"type"`
 }
 
-// WhitelistedRegistry represents a object containing a whitelisted image registry prefix
-// swagger:model WhitelistedRegistry
-type WhitelistedRegistry struct {
+// AllowedRegistry represents a object containing a allowed image registry prefix
+// swagger:model AllowedRegistry
+type AllowedRegistry struct {
 	Name string `json:"name"`
 
-	Spec crdapiv1.WhitelistedRegistrySpec `json:"spec"`
+	Spec crdapiv1.AllowedRegistrySpec `json:"spec"`
 }
 
 // EtcdBackupConfig represents an object holding the configuration for etcd backups

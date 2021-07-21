@@ -8315,6 +8315,209 @@
         }
       }
     },
+    "/api/v2/allowedregistries": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "allowedregistry"
+        ],
+        "summary": "List allowed registries.",
+        "operationId": "listAllowedRegistries",
+        "responses": {
+          "200": {
+            "description": "AllowedRegistry",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AllowedRegistry"
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "post": {
+        "description": "Creates a allowed registry",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "allowedregistry"
+        ],
+        "operationId": "createAllowedRegistry",
+        "parameters": [
+          {
+            "name": "Body",
+            "in": "body",
+            "schema": {
+              "$ref": "#/definitions/wrBody"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "AllowedRegistry",
+            "schema": {
+              "$ref": "#/definitions/AllowedRegistry"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
+    "/api/v2/allowedregistries/{allowed_registry}": {
+      "get": {
+        "description": "Get allowed registries specified by name",
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "allowedregistries"
+        ],
+        "operationId": "getAllowedRegistry",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AllowedRegistryName",
+            "name": "allowed_registry",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "AllowedRegistry",
+            "schema": {
+              "$ref": "#/definitions/AllowedRegistry"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "allowedregistries"
+        ],
+        "summary": "Deletes the given allowed registry.",
+        "operationId": "deleteAllowedRegistry",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AllowedRegistryName",
+            "name": "allowed_registry",
+            "in": "path",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/responses/empty"
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      },
+      "patch": {
+        "description": "Patch a specified allowed registry",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "tags": [
+          "allowedregistries"
+        ],
+        "operationId": "patchAllowedRegistry",
+        "parameters": [
+          {
+            "type": "string",
+            "x-go-name": "AllowedRegistryName",
+            "name": "allowed_registry",
+            "in": "path",
+            "required": true
+          },
+          {
+            "name": "Patch",
+            "in": "body",
+            "schema": {
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ConstraintTemplate",
+            "schema": {
+              "$ref": "#/definitions/ConstraintTemplate"
+            }
+          },
+          "401": {
+            "$ref": "#/responses/empty"
+          },
+          "403": {
+            "$ref": "#/responses/empty"
+          },
+          "default": {
+            "description": "errorResponse",
+            "schema": {
+              "$ref": "#/definitions/errorResponse"
+            }
+          }
+        }
+      }
+    },
     "/api/v2/constraints": {
       "get": {
         "produces": [
@@ -15032,209 +15235,6 @@
           }
         }
       }
-    },
-    "/api/v2/whitelistedregistries": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "whitelistedregistry"
-        ],
-        "summary": "List whitelisted registries.",
-        "operationId": "listWhitelistedRegistries",
-        "responses": {
-          "200": {
-            "description": "WhitelistedRegistry",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/WhitelistedRegistry"
-              }
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
-      "post": {
-        "description": "Creates a whitelisted registry",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "whitelistedregistry"
-        ],
-        "operationId": "createWhitelistedRegistry",
-        "parameters": [
-          {
-            "name": "Body",
-            "in": "body",
-            "schema": {
-              "$ref": "#/definitions/wrBody"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "WhitelistedRegistry",
-            "schema": {
-              "$ref": "#/definitions/WhitelistedRegistry"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/whitelistedregistries/{whitelisted_registry}": {
-      "get": {
-        "description": "Get whitelisted registries specified by name",
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "whitelistedregistries"
-        ],
-        "operationId": "getWhitelistedRegistry",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "WhitelistedRegistryName",
-            "name": "whitelisted_registry",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "WhitelistedRegistry",
-            "schema": {
-              "$ref": "#/definitions/WhitelistedRegistry"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
-      "delete": {
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "whitelistedregistries"
-        ],
-        "summary": "Deletes the given whitelisted registry.",
-        "operationId": "deleteWhitelistedRegistry",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "WhitelistedRegistryName",
-            "name": "whitelisted_registry",
-            "in": "path",
-            "required": true
-          }
-        ],
-        "responses": {
-          "200": {
-            "$ref": "#/responses/empty"
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      },
-      "patch": {
-        "description": "Patch a specified whitelisted registry",
-        "consumes": [
-          "application/json"
-        ],
-        "produces": [
-          "application/json"
-        ],
-        "tags": [
-          "whitelistedregistries"
-        ],
-        "operationId": "patchWhitelistedRegistry",
-        "parameters": [
-          {
-            "type": "string",
-            "x-go-name": "WhitelistedRegistryName",
-            "name": "whitelisted_registry",
-            "in": "path",
-            "required": true
-          },
-          {
-            "name": "Patch",
-            "in": "body",
-            "schema": {
-              "type": "object"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "ConstraintTemplate",
-            "schema": {
-              "$ref": "#/definitions/ConstraintTemplate"
-            }
-          },
-          "401": {
-            "$ref": "#/responses/empty"
-          },
-          "403": {
-            "$ref": "#/responses/empty"
-          },
-          "default": {
-            "description": "errorResponse",
-            "schema": {
-              "$ref": "#/definitions/errorResponse"
-            }
-          }
-        }
-      }
     }
   },
   "definitions": {
@@ -15993,6 +15993,32 @@
         "$ref": "#/definitions/AlibabaZone"
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v1"
+    },
+    "AllowedRegistry": {
+      "description": "AllowedRegistry represents a object containing a allowed image registry prefix",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "x-go-name": "Name"
+        },
+        "spec": {
+          "$ref": "#/definitions/AllowedRegistrySpec"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
+    },
+    "AllowedRegistrySpec": {
+      "type": "object",
+      "title": "AllowedRegistrySpec specifies the data for allowed registry spec.",
+      "properties": {
+        "registryPrefix": {
+          "description": "RegistryPrefix contains the prefix of the registry which will be allowed. User clusters will be able to deploy\nonly images which are prefixed with one of the allowed image registry prefixes.",
+          "type": "string",
+          "x-go-name": "RegistryPrefix"
+        }
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
     "AnexiaCloudSpec": {
       "type": "object",
@@ -21462,32 +21488,6 @@
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
     },
-    "WhitelistedRegistry": {
-      "description": "WhitelistedRegistry represents a object containing a whitelisted image registry prefix",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "x-go-name": "Name"
-        },
-        "spec": {
-          "$ref": "#/definitions/WhitelistedRegistrySpec"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/api/v2"
-    },
-    "WhitelistedRegistrySpec": {
-      "type": "object",
-      "title": "WhitelistedRegistrySpec specifies the data for whitelisted registry spec.",
-      "properties": {
-        "registryPrefix": {
-          "description": "RegistryPrefix contains the prefix of the registry which will be whitelisted. User clusters will be able to deploy\nonly images which are prefixed with one of the whitelisted registry prefixes.",
-          "type": "string",
-          "x-go-name": "RegistryPrefix"
-        }
-      },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
-    },
     "body": {
       "type": "object",
       "properties": {
@@ -21561,15 +21561,15 @@
       "type": "object",
       "properties": {
         "name": {
-          "description": "Name of the whitelisted registry",
+          "description": "Name of the allowed registry",
           "type": "string",
           "x-go-name": "Name"
         },
         "spec": {
-          "$ref": "#/definitions/WhitelistedRegistrySpec"
+          "$ref": "#/definitions/AllowedRegistrySpec"
         }
       },
-      "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/whitelisted_registry"
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/handler/v2/allowed_registry"
     }
   },
   "responses": {

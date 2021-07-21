@@ -452,12 +452,12 @@ func (k NewRuleGroupSliceWrapper) EqualOrDie(expected NewRuleGroupSliceWrapper, 
 	}
 }
 
-// NewWhitelistedRegistrySliceWrapper wraps []apiv2.WhitelistedRegistry
+// NewAllowedRegistrySliceWrapper wraps []apiv2.AllowedRegistry
 // to provide convenient methods for tests
-type NewWhitelistedRegistrySliceWrapper []*apiv2.WhitelistedRegistry
+type NewAllowedRegistrySliceWrapper []*apiv2.AllowedRegistry
 
 // DecodeOrDie reads and decodes json data from the reader
-func (k *NewWhitelistedRegistrySliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewWhitelistedRegistrySliceWrapper {
+func (k *NewAllowedRegistrySliceWrapper) DecodeOrDie(r io.Reader, t *testing.T) *NewAllowedRegistrySliceWrapper {
 	t.Helper()
 	dec := json.NewDecoder(r)
 	err := dec.Decode(k)
@@ -468,14 +468,14 @@ func (k *NewWhitelistedRegistrySliceWrapper) DecodeOrDie(r io.Reader, t *testing
 }
 
 // Sort sorts the collection by Name
-func (k NewWhitelistedRegistrySliceWrapper) Sort() {
+func (k NewAllowedRegistrySliceWrapper) Sort() {
 	sort.Slice(k, func(i, j int) bool {
 		return k[i].Name < k[j].Name
 	})
 }
 
 // EqualOrDie compares whether expected collection is equal to the actual one
-func (k NewWhitelistedRegistrySliceWrapper) EqualOrDie(expected NewWhitelistedRegistrySliceWrapper, t *testing.T) {
+func (k NewAllowedRegistrySliceWrapper) EqualOrDie(expected NewAllowedRegistrySliceWrapper, t *testing.T) {
 	t.Helper()
 	if diff := deep.Equal(k, expected); diff != nil {
 		t.Errorf("actual slice is different that the expected one. Diff: %v", diff)
