@@ -28,6 +28,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"go.uber.org/zap"
+	"k8s.io/utils/pointer"
 
 	apiv1 "k8c.io/kubermatic/v2/pkg/api/v1"
 	"k8c.io/kubermatic/v2/pkg/controller/operator/common"
@@ -463,36 +464,31 @@ func getTemplateData(clusterVersion *kubermaticversion.Version, kubermaticVersio
 	fakeCluster.Spec.ClusterNetwork.Pods.CIDRBlocks = []string{"172.25.0.0/16"}
 	fakeCluster.Spec.ClusterNetwork.Services.CIDRBlocks = []string{"10.10.10.0/24"}
 	fakeCluster.Spec.ClusterNetwork.DNSDomain = "cluster.local"
+	fakeCluster.Spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(true)
 	fakeCluster.Status.NamespaceName = mockNamespaceName
 
 	fakeDynamicClient := fake.NewClientBuilder().WithRuntimeObjects(objects...).Build()
 
-	return resources.NewTemplateData(
-		context.Background(),
-		fakeDynamicClient,
-		fakeCluster,
-		&kubermaticv1.Datacenter{},
-		&kubermaticv1.Seed{},
-		"",
-		"",
-		"192.0.2.0/24",
-		resource.Quantity{},
-		"",
-		"",
-		false,
-		false,
-		"",
-		"",
-		"",
-		// Since this is the image-loader we hardcode the default image for pulling.
-		resources.DefaultKubermaticImage,
-		resources.DefaultEtcdLauncherImage,
-		resources.DefaultDNATControllerImage,
-		20*time.Minute,
-		false,
-		kubermaticVersions,
-		caBundle,
-	), nil
+
+	return resources.NewTemplateDataBuilder().
+		WithContext(context.Background()).
+		WithClient(fakeDynamicClient).
+		WithCluster(fakeCluster).
+		WithDatacenter(&kubermaticv1.Datacenter{}).
+		WithSeed(&kubermaticv1.Seed{}).
+		WithNodeAccessNetwork("192.0.2.0/24").
+		WithEtcdDiskSize(resource.Quantity{}).
+		WithInClusterPrometheusDefaultRulesDisabled(false).
+		WithInClusterPrometheusDefaultScrapingConfigsDisabled(false).
+		WithKubermaticImage(resources.DefaultKubermaticImage).
+		WithEtcdLauncherImage(resources.DefaultEtcdLauncherImage).
+		WithDnatControllerImage(resources.DefaultDNATControllerImage).
+		WithBackupPeriod(20 * time.Minute).
+		WithFailureDomainZoneAntiaffinity(false).
+		WithVersions(kubermaticVersions).
+		WithCABundle(caBundle).
+		Build(), nil
+
 }
 
 func createNamedSecrets(secretNames []string) *corev1.SecretList {
