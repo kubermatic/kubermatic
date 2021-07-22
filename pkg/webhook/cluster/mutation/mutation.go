@@ -136,6 +136,10 @@ func (h *AdmissionHandler) applyDefaults(c *kubermaticv1.Cluster) {
 		}
 	}
 
+	if c.Spec.ClusterNetwork.IPVS.StrictArp == nil {
+		c.Spec.ClusterNetwork.IPVS.StrictArp = pointer.BoolPtr(true)
+	}
+
 	if c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled == nil {
 		c.Spec.ClusterNetwork.NodeLocalDNSCacheEnabled = pointer.BoolPtr(true)
 	}
@@ -181,7 +185,7 @@ func (h *AdmissionHandler) mutateUpdate(ctx context.Context, oldCluster, newClus
 	switch {
 	case newCluster.Spec.Cloud.Openstack != nil:
 		if v, oldV := newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider],
-			oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
+				oldCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider]; v && !oldV {
 			if newCluster.ObjectMeta.Annotations == nil {
 				newCluster.ObjectMeta.Annotations = map[string]string{}
 			}

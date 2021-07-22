@@ -68,12 +68,12 @@ type TemplateData struct {
 }
 
 func NewTemplateData(
-	cluster *kubermaticv1.Cluster,
-	credentials resources.Credentials,
-	kubeconfig string,
-	dnsClusterIP string,
-	dnsResolverIP string,
-	variables map[string]interface{},
+		cluster *kubermaticv1.Cluster,
+		credentials resources.Credentials,
+		kubeconfig string,
+		dnsClusterIP string,
+		dnsResolverIP string,
+		variables map[string]interface{},
 ) (*TemplateData, error) {
 	providerName, err := provider.ClusterCloudProviderName(cluster.Spec.Cloud)
 	if err != nil {
@@ -127,6 +127,7 @@ func NewTemplateData(
 				PodCIDRBlocks:     cluster.Spec.ClusterNetwork.Pods.CIDRBlocks,
 				ServiceCIDRBlocks: cluster.Spec.ClusterNetwork.Services.CIDRBlocks,
 				ProxyMode:         cluster.Spec.ClusterNetwork.ProxyMode,
+				StrictArp:         *cluster.Spec.ClusterNetwork.IPVS.StrictArp,
 			},
 			CNIPlugin: cniPlugin,
 		},
@@ -191,6 +192,7 @@ type ClusterNetwork struct {
 	PodCIDRBlocks     []string
 	ServiceCIDRBlocks []string
 	ProxyMode         string
+	StrictArp         bool
 }
 
 type CNIPlugin struct {

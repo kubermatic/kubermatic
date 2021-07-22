@@ -16879,6 +16879,9 @@
           "type": "string",
           "x-go-name": "DNSDomain"
         },
+        "ipvs": {
+          "$ref": "#/definitions/IPVSConfiguration"
+        },
         "nodeLocalDNSCacheEnabled": {
           "description": "NodeLocalDNSCacheEnabled controls whether the NodeLocal DNS Cache feature is enabled.\nDefaults to true.",
           "type": "boolean",
@@ -18685,6 +18688,18 @@
       "type": "object",
       "additionalProperties": {
         "type": "string"
+      },
+      "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
+    },
+    "IPVSConfiguration": {
+      "type": "object",
+      "title": "IPVSConfiguration contains ipvs-related configuration details for kube-proxy.",
+      "properties": {
+        "strictArp": {
+          "description": "StrictArp configure arp_ignore and arp_announce to avoid answering ARP queries from kube-ipvs0 interface.",
+          "type": "boolean",
+          "x-go-name": "StrictArp"
+        }
       },
       "x-go-package": "k8c.io/kubermatic/v2/pkg/crd/kubermatic/v1"
     },
