@@ -1,3 +1,5 @@
+// +build e2e
+
 /*
 Copyright 2021 The Kubermatic Kubernetes Platform contributors.
 
@@ -47,10 +49,14 @@ func init() {
 	flag.BoolVar(&options.debugLog, "debug-log", false, "Activate debug logs.")
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources.")
 
+	flag.StringVar(&options.osCredentials.authUrl, "openstack-auth-url", "", "openstack auth url")
 	flag.StringVar(&options.osCredentials.username, "openstack-username", "", "openstack username")
 	flag.StringVar(&options.osCredentials.password, "openstack-password", "", "openstack password")
 	flag.StringVar(&options.osCredentials.tenant, "openstack-tenant", "", "openstack tenant")
 	flag.StringVar(&options.osCredentials.domain, "openstack-domain", "", "openstack domain")
+	flag.StringVar(&options.osCredentials.region, "openstack-region", "", "openstack region")
+	flag.StringVar(&options.osCredentials.floatingIpPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
+	flag.StringVar(&options.osCredentials.network, "openstack-network", "", "openstack network")
 }
 
 func TestCCMMigration(t *testing.T) {

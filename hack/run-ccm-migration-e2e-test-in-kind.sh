@@ -57,16 +57,22 @@ fi
 type kind > /dev/null || fatal \
   "Kind is required to run this script, please refer to: https://kind.sigs.k8s.io/docs/user/quick-start/#installation"
 
-#function clean_up {
-#  echodate "Deleting cluster ${KIND_CLUSTER_NAME}"
-#  kind delete cluster --name "${KIND_CLUSTER_NAME}" || true
-#}
-#appendTrap clean_up EXIT
+function clean_up {
+  echodate "Deleting cluster ${KIND_CLUSTER_NAME}"
+  kind delete cluster --name "${KIND_CLUSTER_NAME}" || true
+}
+appendTrap clean_up EXIT
 
 # Only start docker daemon in CI envorinment.
 if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
   start_docker_daemon
 fi
+
+# setup Kind cluster
+time retry 5 kind create cluster \
+  --name="${KIND_CLUSTER_NAME}" \
+  --image=kindest/node:"${KIND_NODE_VERSION}"
+kind export kubeconfig --name=${KIND_CLUSTER_NAME}
 
 # build Docker images
 make clean
@@ -93,60 +99,11 @@ make -C addons docker \
 rm _build/kubermatic-installer
 make _build/kubermatic-installer
 
-# setup Kind cluster
-time retry 5 kind create cluster \
-  --name="${KIND_CLUSTER_NAME}" \
-  --image=kindest/node:"${KIND_NODE_VERSION}"
-kind export kubeconfig --name=${KIND_CLUSTER_NAME}
-
-# load nodeport-proxy image
 time retry 5 kind load docker-image "${DOCKER_REPO}/nodeport-proxy:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time retry 5 kind load docker-image "${DOCKER_REPO}/addons:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time retry 5 kind load docker-image "${DOCKER_REPO}/kubermatic${REPOSUFFIX}:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time retry 5 kind load docker-image "${DOCKER_REPO}/kubeletdnat-controller:${TAG}" --name "${KIND_CLUSTER_NAME}"
 time retry 5 kind load docker-image "${DOCKER_REPO}/user-ssh-keys-agent:${TAG}" --name "${KIND_CLUSTER_NAME}"
-
-DISABLE_CLUSTER_EXPOSER=true
-export KUBECONFIG=~/.kube/config
-if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
-  # Start cluster exposer, which will expose services from within kind as
-  # a NodePort service on the host
-  echodate "Starting cluster exposer"
-
-  CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./pkg/test/clusterexposer/cmd
-  /tmp/clusterexposer \
-    --kubeconfig-inner "$KUBECONFIG" \
-    --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
-    --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
-
-  function print_cluster_exposer_logs {
-    if [[ $? -ne 0 ]]; then
-      # Tolerate errors and just continue
-      set +e
-      echodate "Printing cluster exposer logs"
-      cat /var/log/clusterexposer.log
-      echodate "Done printing cluster exposer logs"
-      set -e
-    fi
-  }
-  appendTrap print_cluster_exposer_logs EXIT
-
-  TEST_NAME="Wait for cluster exposer"
-  echodate "Waiting for cluster exposer to be running"
-
-  retry 5 curl -s --fail http://127.0.0.1:2047/metrics -o /dev/null
-  echodate "Cluster exposer is running"
-
-  echodate "Setting up iptables rules for to make nodeports available"
-  KIND_NETWORK_IF=$(ip -br addr | grep -- 'br-' | cut -d' ' -f1)
-
-  iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.18.0.2
-  # By default all traffic gets dropped unless specified (tested with docker server 18.09.1)
-  iptables -t filter -I DOCKER-USER -d 172.18.0.2/32 ! -i $KIND_NETWORK_IF -o $KIND_NETWORK_IF -p tcp -m multiport --dports=30000:33000 -j ACCEPT
-  # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
-
-  echodate "Successfully set up iptables rules for nodeports"
-fi
 
 # This is just used as a const
 # NB: The CE requires Seeds to be named this way
@@ -294,10 +251,55 @@ echodate "Patching Kubermatic ingress domain with nodeport-proxy service cluster
 retry 5 patch_kubermatic_domain
 echodate "Kubermatic ingress domain patched."
 
+if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
+  # Start cluster exposer, which will expose services from within kind as
+  # a NodePort service on the host
+  echodate "Starting cluster exposer"
+
+  CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./pkg/test/clusterexposer/cmd
+  /tmp/clusterexposer \
+    --kubeconfig-inner "$KUBECONFIG" \
+    --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
+    --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
+
+  function print_cluster_exposer_logs {
+    if [[ $? -ne 0 ]]; then
+      # Tolerate errors and just continue
+      set +e
+      echodate "Printing cluster exposer logs"
+      cat /var/log/clusterexposer.log
+      echodate "Done printing cluster exposer logs"
+      set -e
+    fi
+  }
+  appendTrap print_cluster_exposer_logs EXIT
+
+  TEST_NAME="Wait for cluster exposer"
+  echodate "Waiting for cluster exposer to be running"
+
+  retry 5 curl -s --fail http://127.0.0.1:2047/metrics -o /dev/null
+  echodate "Cluster exposer is running"
+
+  echodate "Setting up iptables rules for to make nodeports available"
+  KIND_NETWORK_IF=$(ip -br addr | grep -- 'br-' | cut -d' ' -f1)
+
+  iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.18.0.2
+  # By default all traffic gets dropped unless specified (tested with docker server 18.09.1)
+  iptables -t filter -I DOCKER-USER -d 172.18.0.2/32 ! -i $KIND_NETWORK_IF -o $KIND_NETWORK_IF -p tcp -m multiport --dports=30000:33000 -j ACCEPT
+  # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
+
+  echodate "Successfully set up iptables rules for nodeports"
+fi
+
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-tenant=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
-    -openstack-password=${OS_PASSWORD}"
+    -openstack-password=${OS_PASSWORD}
+    -openstack-auth-url-${OS_AUTH_URL}
+    -openstack-region=${OS_REGION}
+    -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
+    -openstack-network=${OS_NETWORK_NAME}
+    -datacenter=${OS_DATACENTER}"
 
 # run tests
 # use ginkgo binary by preference to have better output:
@@ -313,9 +315,7 @@ if type ginkgo > /dev/null; then
     --race \
     --progress \
     -- --kubeconfig "${HOME}/.kube/config" \
-    -- --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
-    --datacenter byo-kubernetes \
     --debug-log \
     - $EXTRA_ARGS
 else
@@ -326,7 +326,6 @@ else
     --ginkgo.progress \
     --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
-    --datacenter byo-kubernetes \
     --debug-log \
     - $EXTRA_ARGS
 fi

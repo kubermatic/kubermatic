@@ -19,7 +19,9 @@ package ccmmigration
 import (
 	"context"
 	"fmt"
+	clusterv1alpha1 "github.com/kubermatic/machine-controller/pkg/apis/cluster/v1alpha1"
 	"k8c.io/kubermatic/v2/pkg/resources"
+	"k8s.io/apimachinery/pkg/runtime"
 	"time"
 
 	"github.com/pkg/errors"
@@ -54,10 +56,14 @@ type ClusterJig struct {
 }
 
 type credentials struct {
+	authUrl string
 	username string
 	password string
 	tenant   string
 	domain   string
+	region string
+	floatingIpPool string
+	network string
 }
 
 func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials credentials) error {
@@ -74,6 +80,50 @@ func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials crede
 	c.Log.Debugw("Cluster created", "name", c.Name)
 
 	return c.waitForClusterControlPlaneReady(c.Cluster)
+}
+
+func (c *ClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client, osCredentials credentials) error {
+	providerSpec := fmt.Sprintf(`{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "%s","username": "%s","password": "%s", "tenantName": "%s", "region": "%s", "domainName": "%s", "floatingIpPool": "%s", "network": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
+		osCredentials.authUrl,
+		osCredentials.username,
+		osCredentials.password,
+		osCredentials.tenant,
+		osCredentials.region,
+		osCredentials.domain,
+		osCredentials.floatingIpPool,
+		osCredentials.network)
+
+	machineDeployment := &clusterv1alpha1.MachineDeployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:                       "test-machine",
+			Namespace:                  "kube-system",
+		},
+		Spec:       clusterv1alpha1.MachineDeploymentSpec{
+			Selector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"name": "test-machine",
+				},
+			},
+			Template: clusterv1alpha1.MachineTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"name": "test-machine",
+					},
+				},
+				Spec: clusterv1alpha1.MachineSpec{
+					ProviderSpec: clusterv1alpha1.ProviderSpec{
+						Value: &runtime.RawExtension{
+							Raw: []byte(providerSpec),
+						},
+					},
+					Versions: clusterv1alpha1.MachineVersionInfo{
+						Kubelet: "1.20.0",
+					},
+				},
+			},
+		},
+	}
+	return userClient.Create(context.TODO(), machineDeployment)
 }
 
 func (c *ClusterJig) createSecret(secretName string, osCredentials credentials) error {

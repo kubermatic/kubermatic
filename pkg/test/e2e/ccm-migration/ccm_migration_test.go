@@ -1,3 +1,5 @@
+// +build e2e
+
 /*
 Copyright 2020 The Kubermatic Kubernetes Platform contributors.
 
@@ -29,8 +31,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/resources"
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
@@ -77,45 +77,12 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			}, options.osCredentials)).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
 			clusterJig.Log.Debugw("Cluster set up", "name", clusterJig.Cluster.Name)
 
-			time.Sleep(1000*time.Second)
-
 			userClient, err = clusterClientProvider.GetClient(context.TODO(), clusterJig.Cluster)
 			gomega.Expect(err).NotTo(gomega.HaveOccurred())
-			clusterv1alpha1.AddToScheme(userClient.Scheme())
+			gomega.Expect(clusterv1alpha1.AddToScheme(userClient.Scheme())).NotTo(gomega.HaveOccurred())
 
-			providerSpec := `{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "<< IDENTITY_ENDPOINT >>","username": "<< USERNAME >>","password": "<< PASSWORD >>"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`
-
-			machineDeployment := &clusterv1alpha1.MachineDeployment{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:                       "test",
-					Namespace:                  "kube-system",
-				},
-				Spec:       clusterv1alpha1.MachineDeploymentSpec{
-					Selector: metav1.LabelSelector{
-						MatchLabels: map[string]string{
-							"testKey": "testValue",
-						},
-					},
-					Template: clusterv1alpha1.MachineTemplateSpec{
-						ObjectMeta: metav1.ObjectMeta{
-							Labels: map[string]string{
-								"testKey": "testValue",
-							},
-						},
-						Spec: clusterv1alpha1.MachineSpec{
-							ProviderSpec: clusterv1alpha1.ProviderSpec{
-								Value: &runtime.RawExtension{
-									Raw: []byte(providerSpec),
-								},
-							},
-							Versions: clusterv1alpha1.MachineVersionInfo{
-								Kubelet: "1.20.0",
-							},
-						},
-					},
-				},
-			}
-			gomega.Expect(userClient.Create(context.TODO(), machineDeployment)).NotTo(gomega.HaveOccurred())
+			gomega.Expect(clusterJig.CreateMachineDeployment(userClient, options.osCredentials))
+			clusterJig.Log.Debug("MachineDeployment created")
 		})
 
 		ginkgo.It("migrating cluster to external CCM", func() {
@@ -130,7 +97,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			annotatedCluster := &kubermaticv1.Cluster{}
 			gomega.Expect(clusterJig.SeedClient.Get(context.TODO(), types.NamespacedName{Name: clusterJig.Cluster.Name}, annotatedCluster)).NotTo(gomega.HaveOccurred())
 
-			ginkgo.By("asserting the annotations not existence in the cluster")
+			ginkgo.By("asserting the annotations existence in the cluster")
 			_, ccmOk := annotatedCluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
 			_, csiOk := annotatedCluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
 			gomega.Expect(ccmOk && csiOk).To(gomega.BeTrue())
@@ -154,10 +121,12 @@ var _ = ginkgo.Describe("CCM migration", func() {
 				return false, nil
 			})).NotTo(gomega.HaveOccurred())
 
-			lista := &clusterv1alpha1.MachineList{}
+			machines := &clusterv1alpha1.MachineList{}
 			ginkgo.By("rolling out all the machines")
-			gomega.Expect(userClient.List(context.TODO(), lista)).NotTo(gomega.HaveOccurred())
-			gomega.Expect(userClient.DeleteAllOf(context.TODO(), &clusterv1alpha1.Machine{})).NotTo(gomega.HaveOccurred())
+			gomega.Expect(userClient.List(context.TODO(), machines)).NotTo(gomega.HaveOccurred())
+			for _, m := range machines.Items {
+				gomega.Expect(userClient.Delete(context.TODO(), &m)).NotTo(gomega.HaveOccurred())
+			}
 
 			ginkgo.By("waiting for the complete cluster migration")
 			gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
@@ -172,37 +141,4 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			})).NotTo(gomega.HaveOccurred())
 		})
 	})
-
-	/*ginkgo.Context("unsupported provider", func() {
-		ginkgo.BeforeEach(func() {
-			k8scli, _, _ := e2eutils.GetClientsOrDie()
-			clusterJig = &ClusterJig{
-				Log:            e2eutils.DefaultLogger,
-				SeedClient:         k8scli,
-				Name:           rand.String(10),
-				DatacenterName: options.datacenter,
-				Version:        options.kubernetesVersion,
-			}
-			gomega.Expect(clusterJig.SetUp(kubermaticv1.CloudSpec{
-				Fake:   &kubermaticv1.FakeCloudSpec{},
-				DatacenterName: options.datacenter,
-			})).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
-		})
-
-		ginkgo.It("migrating cluster to external CCM", func() {
-			ginkgo.By("enabling externalCloudProvider feature")
-			newCluster := clusterJig.Cluster.DeepCopy()
-			newCluster.Spec.Features[kubermaticv1.ClusterFeatureExternalCloudProvider] = true
-			gomega.Expect(clusterJig.SeedClient.Patch(context.TODO(), newCluster, ctrlruntimeclient.MergeFrom(clusterJig.Cluster))).To(nil)
-
-			ginkgo.By("getting the patched cluster")
-			annotatedCluster := &kubermaticv1.Cluster{}
-			gomega.Expect(clusterJig.SeedClient.Get(context.TODO(), types.NamespacedName{Name: clusterJig.Cluster.Name}, annotatedCluster)).To(nil)
-
-			ginkgo.By("asserting the annotations not existence in the cluster")
-			_, ccmOk := annotatedCluster.Annotations[kubermaticv1.CCMMigrationNeededAnnotation]
-			_, csiOk := annotatedCluster.Annotations[kubermaticv1.CSIMigrationNeededAnnotation]
-			gomega.Expect(ccmOk && csiOk).To(gomega.BeFalse())
-		})
-	})*/
 })
