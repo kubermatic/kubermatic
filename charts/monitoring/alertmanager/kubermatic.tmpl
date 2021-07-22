@@ -2,40 +2,78 @@
 {* Capable of displaying the user-cluster from which alerts originate. *}
 {* Shows a pretty flag if the seed cluster name matches regex. *}
 
-{{ define "slack.kubermatic.pretty.runbook" }}{{ with .Annotations.runbook_url }}<{{ .}}|:notebook:>{{ end }}{{ end }}
-{{ define "slack.kubermatic.titlelink" }}{{ end }}
-{{ define "slack.kubermatic.pretty.icon" }}{{ end }}
-{{ define "slack.kubermatic.color" }}{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}{{ end }}
+{{ define "__alert_silence_link" -}}
+    {{ .ExternalURL }}/#/silences/new?filter=%7B
+    {{- range .CommonLabels.SortedPairs -}}
+        {{- if ne .Name "alertname" -}}
+            {{- .Name }}%3D%22{{- reReplaceAll " +" "%20" .Value -}}%22%2C%20
+        {{- end -}}
+    {{- end -}}
+    alertname%3D%22{{ reReplaceAll " +" "%20" .CommonLabels.alertname }}%22%7D
+{{- end }}
+
+{{ define "__alert_severity" -}}
+    {{- if eq .CommonLabels.severity "critical" -}}
+    *Severity:* `Critical`
+    {{- else if eq .CommonLabels.severity "warning" -}}
+    *Severity:* `Warning`
+    {{- else if eq .CommonLabels.severity "info" -}}
+    *Severity:* `Info`
+    {{- else -}}
+    *Severity:* `{{ .CommonLabels.severity }}`
+    {{- end }}
+{{- end }}
 
 {{ define "slack.kubermatic.pretty.labels" -}}
-{{- with .Labels.seed_cluster -}}
-{{- if      (match "^(eu|europe)-" .) }}:flag-eu:
-{{- else if (match "^usa?-" .) }}:flag-us:
-{{- else if (match "^asia-" .) }}:flag-cn:
-{{- else }}[{{ . }}]{{ end -}}
-{{- end -}} {{ with .Labels.cluster }} [{{ . }}]{{ end }}
+    {{- with .CommonLabels.seed_cluster -}}
+    {{- if      (match "^(eu|europe)-" .) }}:flag-eu:
+    {{- else if (match "^(bgh|cld|nun)" .) }}:flag-eu:
+    {{- else if (match "^usa?-" .) }}:flag-us:
+    {{- else if (match "^asia-" .) }}:flag-cn:
+    {{- else }}[{{ . }}]{{ end -}}
+    {{- end }} 
 {{- end }}
 
 {{ define "slack.kubermatic.title" -}}
-{{- with (index .Alerts 0) -}}
-{{- template "slack.kubermatic.pretty.icon" . }} {{ template "slack.kubermatic.pretty.labels" . }} <{{ $.ExternalURL }}/#/alerts?receiver={{ $.Receiver }}|{{ .Labels.alertname }}>
-{{- end -}}
+    {{ if eq .Status "resolved" }}[{{ .Status | toUpper }}]{{- end }}{{ .CommonLabels.alertname  }}
 {{- end }}
 
 {{ define "slack.kubermatic.text" -}}
-{{- with (index .Alerts 0) -}}
-{{ .Annotations.message }} {{ template "slack.kubermatic.pretty.runbook" . }}
-{{- end -}}
+
+    {{ template "__alert_severity" . }}
+    {{ template "slack.kubermatic.pretty.labels" . }}{{- " " -}}{{ .CommonLabels.seed_cluster  }}
+    {{- if (index .Alerts 0).Annotations.summary }}
+    {{- "\n" -}}
+    *Summary:* {{ (index .Alerts 0).Annotations.summary }}
+    {{- end }}
+
+    {{ range .Alerts }}
+
+        {{- if .Annotations.description }}
+        {{- "\n" -}}
+        {{ .Annotations.description }}
+        {{- "\n" -}}
+        {{- end }}
+        {{- if .Annotations.message }}
+        {{- "\n" -}}
+        {{ .Annotations.message }}
+        {{- "\n" -}}
+        {{- end }}
+
+    {{- end }}
+
 {{- end }}
 
-{* slack fallback for constraint environments like Android notifications *}
-
-{{ define "slack.kubermatic.fallback.icon" }}{{ if eq .Status "firing" }}✗{{ else }}✓{{ end }}{{ end }}
-{{ define "slack.kubermatic.fallback.labels" }}[{{ .Labels.seed_cluster | toUpper }}]{{ end }} {* do not include user cluster IDs in fallbacks *}
-{{ define "slack.kubermatic.fallback.runbook" }}{{ with .Annotations.runbook_url }}<{{ .}}|:notebook:>{{ end }}{{ end }}
-
-{{ define "slack.kubermatic.fallback" -}}
-{{- with (index .Alerts 0) -}}
-{{- template "slack.kubermatic.fallback.icon" . }} {{ template "slack.kubermatic.fallback.labels" . }} {{ .Labels.alertname }} {{ .Annotations.message }}
-{{- end -}}
+{{ define "slack.kubermatic.color" -}}
+    {{ if eq .Status "firing" -}}
+        {{ if eq .CommonLabels.severity "warning" -}}
+            warning
+        {{- else if eq .CommonLabels.severity "critical" -}}
+            danger
+        {{- else -}}
+            #439FE0
+        {{- end -}}
+    {{ else -}}
+    good
+    {{- end }}
 {{- end }}
