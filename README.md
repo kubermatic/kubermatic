@@ -95,7 +95,7 @@ running controllers manage the cluster.
 ##### seed-controller-manager
 
 ```bash
-./hack/run-controller.sh
+./hack/run-seed-controller-manager.sh
 ```
 
 ##### master-controller-manager
@@ -109,15 +109,8 @@ running controllers manage the cluster.
 Before every push, make sure you run:
 
 ```bash
-make check
+make lint
 ```
-
-gofmt errors can be automatically fixed by running
-
-```bash
-make fix
-```
-
 #### Run tests
 
 ```bash
@@ -126,7 +119,7 @@ make test
 
 #### Update code generation
 
-Kuberneres code-generator tool does not work out of GOPATH
+Kuberneres code-generator tool does not work outside of GOPATH
 [see](https://github.com/kubernetes/kubernetes/issues/86753), if you followed
 the recommendation and cloned your repository at `$(go env GOPATH)/src/k8c.io`
 you can run the following command:
