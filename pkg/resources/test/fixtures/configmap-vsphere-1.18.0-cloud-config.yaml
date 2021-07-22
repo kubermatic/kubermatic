@@ -23,6 +23,12 @@ data:
     resourcepool-path = ""
 
 
+    [VirtualCenter "vs-endpoint.io"]
+    user = "vs-username"
+    password = "vs-password"
+    port = 443
+    datacenters = "vs-datacenter"
+
   fakeVmwareUUID: VMware-42 00 00 00 00 00 00 00-00 00 00 00 00 00 00 00
 metadata:
   creationTimestamp: null

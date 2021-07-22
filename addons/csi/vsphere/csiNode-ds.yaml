@@ -1,0 +1,185 @@
+# Copyright 2021 The Kubermatic Kubernetes Platform contributors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{{ if .Cluster.Features.Has "externalCloudProvider" }}
+
+{{ if eq .Cluster.CloudProviderName "vsphere" }}
+{{ $version := "UNSUPPORTED" }}
+{{ if eq .Cluster.MajorMinorVersion "1.18" }}
+{{ $version = "v2.2.1 "}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.19" }}
+{{ $version = "v2.2.1 "}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.20" }}
+{{ $version = "v2.2.1 "}}
+{{ end }}
+{{ if eq .Cluster.MajorMinorVersion "1.21" }}
+{{ $version = "v2.2.1 "}}
+{{ end }}
+
+---
+kind: DaemonSet
+apiVersion: apps/v1
+metadata:
+  name: vsphere-csi-node
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      app: vsphere-csi-node
+  updateStrategy:
+    type: "RollingUpdate"
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: vsphere-csi-node
+        role: vsphere-csi
+    spec:
+      serviceAccountName: vsphere-csi-node
+      dnsPolicy: "Default"
+      containers:
+        - name: node-driver-registrar
+          image: quay.io/k8scsi/csi-node-driver-registrar:v2.1.0
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+            - "--kubelet-registration-path=$(DRIVER_REG_SOCK_PATH)"
+            - "--health-port=9809"
+          env:
+            - name: ADDRESS
+              value: /csi/csi.sock
+            - name: DRIVER_REG_SOCK_PATH
+              value: /var/lib/kubelet/plugins/csi.vsphere.vmware.com/csi.sock
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+            - name: registration-dir
+              mountPath: /registration
+          ports:
+            - containerPort: 9809
+              name: healthz
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 5
+            timeoutSeconds: 5
+        - name: vsphere-csi-node
+          image: gcr.io/cloud-provider-vsphere/csi/release/driver:{{ $version }}
+          args:
+            - "--fss-name=internal-feature-states.csi.vsphere.vmware.com"
+            - "--fss-namespace=$(CSI_NAMESPACE)"
+          imagePullPolicy: "Always"
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: CSI_ENDPOINT
+              value: unix:///csi/csi.sock
+            - name: X_CSI_MODE
+              value: "node"
+            - name: X_CSI_SPEC_REQ_VALIDATION
+              value: "false"
+            # needed only for topology aware setups
+            #- name: VSPHERE_CSI_CONFIG
+            #  value: "/etc/cloud/csi-vsphere.conf" # here csi-vsphere.conf is the name of the file used for creating secret using "--from-file" flag
+            - name: X_CSI_DEBUG
+              value: "true"
+            - name: LOGGER_LEVEL
+              value: "PRODUCTION" # Options: DEVELOPMENT, PRODUCTION
+            - name: CSI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN"]
+            allowPrivilegeEscalation: true
+          volumeMounts:
+            # needed only for topology aware setups
+            #- name: vsphere-config-volume
+            #  mountPath: /etc/cloud
+            #  readOnly: true
+            - name: plugin-dir
+              mountPath: /csi
+            - name: pods-mount-dir
+              mountPath: /var/lib/kubelet
+              # needed so that any mounts setup inside this container are
+              # propagated back to the host machine.
+              mountPropagation: "Bidirectional"
+            - name: device-dir
+              mountPath: /dev
+            - name: blocks-dir
+              mountPath: /sys/block
+            - name: sys-devices-dir
+              mountPath: /sys/devices
+          ports:
+            - containerPort: 9808
+              name: healthz
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: healthz
+            initialDelaySeconds: 10
+            timeoutSeconds: 5
+            periodSeconds: 5
+            failureThreshold: 3
+        - name: liveness-probe
+          image: quay.io/k8scsi/livenessprobe:v2.2.0
+          args:
+            - "--v=4"
+            - "--csi-address=/csi/csi.sock"
+          volumeMounts:
+            - name: plugin-dir
+              mountPath: /csi
+      volumes:
+        # needed only for topology aware setups
+        #- name: vsphere-config-volume
+        #  secret:
+        #    secretName: vsphere-config-secret
+        - name: registration-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins_registry
+            type: Directory
+        - name: plugin-dir
+          hostPath:
+            path: /var/lib/kubelet/plugins/csi.vsphere.vmware.com
+            type: DirectoryOrCreate
+        - name: pods-mount-dir
+          hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+        - name: device-dir
+          hostPath:
+            path: /dev
+        - name: blocks-dir
+          hostPath:
+            path: /sys/block
+            type: Directory
+        - name: sys-devices-dir
+          hostPath:
+            path: /sys/devices
+            type: Directory
+      tolerations:
+        - effect: NoExecute
+          operator: Exists
+        - effect: NoSchedule
+          operator: Exists
+{{ end }}
+{{ end }}

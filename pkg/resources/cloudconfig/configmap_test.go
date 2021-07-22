@@ -65,6 +65,11 @@ func TestVSphereCloudConfig(t *testing.T) {
 				Workspace: vsphere.WorkspaceOpts{
 					VCenterIP: "vsphere.com",
 				},
+				VirtualCenter: map[string]*vsphere.VirtualCenterConfig{
+					"vsphere.com": {
+						VCenterPort: "443",
+					},
+				},
 			},
 		},
 		{
@@ -93,6 +98,11 @@ func TestVSphereCloudConfig(t *testing.T) {
 				},
 				Workspace: vsphere.WorkspaceOpts{
 					VCenterIP: "vsphere.com",
+				},
+				VirtualCenter: map[string]*vsphere.VirtualCenterConfig{
+					"vsphere.com": {
+						VCenterPort: "9443",
+					},
 				},
 			},
 		},
@@ -127,6 +137,11 @@ func TestVSphereCloudConfig(t *testing.T) {
 				Workspace: vsphere.WorkspaceOpts{
 					VCenterIP:        "vsphere.com",
 					DefaultDatastore: "super-cool-datastore",
+				},
+				VirtualCenter: map[string]*vsphere.VirtualCenterConfig{
+					"vsphere.com": {
+						VCenterPort: "9443",
+					},
 				},
 			},
 		},
