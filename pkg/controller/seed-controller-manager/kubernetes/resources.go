@@ -404,16 +404,18 @@ func (r *Reconciler) ensureClusterRoleBindings(ctx context.Context, c *kubermati
 }
 
 func (r *Reconciler) ensureNetworkPolicies(ctx context.Context, c *kubermaticv1.Cluster) error {
-	namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
-		apiserver.DenyAllPolicyCreator(),
-		apiserver.DNSAllowCreator(c),
-		apiserver.EctdAllowCreator(c),
-		apiserver.OpenVPNServerAllowCreator(c),
-		apiserver.MachineControllerWebhookCreator(c),
-		apiserver.MetricsServerAllowCreator(c),
-	}
-	if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
-		return fmt.Errorf("failed to ensure Network Policies: %v", err)
+	if c.Spec.Features[kubermaticv1.ApiserverNetworkPolicy] {
+		namedNetworkPolicyCreatorGetters := []reconciling.NamedNetworkPolicyCreatorGetter{
+			apiserver.DenyAllPolicyCreator(),
+			apiserver.DNSAllowCreator(c),
+			apiserver.EctdAllowCreator(c),
+			apiserver.OpenVPNServerAllowCreator(c),
+			apiserver.MachineControllerWebhookCreator(c),
+			apiserver.MetricsServerAllowCreator(c),
+		}
+		if err := reconciling.ReconcileNetworkPolicies(ctx, namedNetworkPolicyCreatorGetters, c.Status.NamespaceName, r.Client); err != nil {
+			return fmt.Errorf("failed to ensure Network Policies: %v", err)
+		}
 	}
 
 	return nil
