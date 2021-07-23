@@ -32,7 +32,6 @@ import (
 	e2eutils "k8c.io/kubermatic/v2/pkg/test/e2e/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/apimachinery/pkg/util/rand"
 	"k8s.io/apimachinery/pkg/util/wait"
 	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
@@ -59,7 +58,7 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			clusterJig = &ClusterJig{
 				Log:            e2eutils.DefaultLogger,
 				SeedClient:     seedClient,
-				Name:           rand.String(10),
+				Name:           options.userClusterName,
 				DatacenterName: options.datacenter,
 				Version:        options.kubernetesVersion,
 			}
@@ -77,12 +76,22 @@ var _ = ginkgo.Describe("CCM migration", func() {
 			}, options.osCredentials)).NotTo(gomega.HaveOccurred(), "user cluster should deploy successfully")
 			clusterJig.Log.Debugw("Cluster set up", "name", clusterJig.Cluster.Name)
 
-			userClient, err = clusterClientProvider.GetClient(context.TODO(), clusterJig.Cluster)
-			gomega.Expect(err).NotTo(gomega.HaveOccurred())
+			gomega.Expect(wait.Poll(userClusterPollInterval, customTestTimeout, func() (done bool, err error) {
+				userClient, err = clusterClientProvider.GetClient(context.TODO(), clusterJig.Cluster)
+				if err != nil {
+					clusterJig.Log.Debug("user cluster client get failed, retrying...")
+					return false, nil
+				}
+				return true, nil
+			})).NotTo(gomega.HaveOccurred())
 			gomega.Expect(clusterv1alpha1.AddToScheme(userClient.Scheme())).NotTo(gomega.HaveOccurred())
 
 			gomega.Expect(clusterJig.CreateMachineDeployment(userClient, options.osCredentials))
 			clusterJig.Log.Debug("MachineDeployment created")
+		})
+
+		ginkgo.AfterEach(func() {
+			gomega.Expect(clusterJig.SeedClient.Delete(context.TODO(), clusterJig.Cluster)).NotTo(gomega.HaveOccurred())
 		})
 
 		ginkgo.It("migrating cluster to external CCM", func() {

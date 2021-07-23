@@ -34,6 +34,7 @@ type testOptions struct {
 	skipCleanup       bool
 	debugLog          bool
 	datacenter        string
+	userClusterName   string
 	kubernetesVersion semver.Semver
 
 	osCredentials credentials
@@ -45,17 +46,18 @@ var options = testOptions{
 
 func init() {
 	flag.StringVar(&options.datacenter, "datacenter", "byo-kubernetes", "Name of the datacenter used by the user clusters created for the test.")
+	flag.StringVar(&options.userClusterName, "user-cluster-name", "", "name of the user cluster to be created")
 	flag.Var(&options.kubernetesVersion, "kubernetes-version", "Kubernetes version for the user cluster")
 	flag.BoolVar(&options.debugLog, "debug-log", false, "Activate debug logs.")
 	flag.BoolVar(&options.skipCleanup, "skip-cleanup", false, "Skip clean-up of resources.")
 
-	flag.StringVar(&options.osCredentials.authUrl, "openstack-auth-url", "", "openstack auth url")
+	flag.StringVar(&options.osCredentials.authURL, "openstack-auth-url", "", "openstack auth url")
 	flag.StringVar(&options.osCredentials.username, "openstack-username", "", "openstack username")
 	flag.StringVar(&options.osCredentials.password, "openstack-password", "", "openstack password")
 	flag.StringVar(&options.osCredentials.tenant, "openstack-tenant", "", "openstack tenant")
 	flag.StringVar(&options.osCredentials.domain, "openstack-domain", "", "openstack domain")
 	flag.StringVar(&options.osCredentials.region, "openstack-region", "", "openstack region")
-	flag.StringVar(&options.osCredentials.floatingIpPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
+	flag.StringVar(&options.osCredentials.floatingIPPool, "openstack-floating-ip-pool", "", "openstack floating ip pool")
 	flag.StringVar(&options.osCredentials.network, "openstack-network", "", "openstack network")
 }
 

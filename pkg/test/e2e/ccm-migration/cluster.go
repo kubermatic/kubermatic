@@ -50,20 +50,18 @@ type ClusterJig struct {
 	DatacenterName string
 	Version        semver.Semver
 	SeedClient     ctrlruntimeclient.Client
-	userClient     ctrlruntimeclient.Client
-
-	Cluster *kubermaticv1.Cluster
+	Cluster        *kubermaticv1.Cluster
 }
 
 type credentials struct {
-	authUrl string
-	username string
-	password string
-	tenant   string
-	domain   string
-	region string
-	floatingIpPool string
-	network string
+	authURL        string
+	username       string
+	password       string
+	tenant         string
+	domain         string
+	region         string
+	floatingIPPool string
+	network        string
 }
 
 func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials credentials) error {
@@ -83,22 +81,22 @@ func (c *ClusterJig) SetUp(cloudSpec kubermaticv1.CloudSpec, osCredentials crede
 }
 
 func (c *ClusterJig) CreateMachineDeployment(userClient ctrlruntimeclient.Client, osCredentials credentials) error {
-	providerSpec := fmt.Sprintf(`{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "%s","username": "%s","password": "%s", "tenantName": "%s", "region": "%s", "domainName": "%s", "floatingIpPool": "%s", "network": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
-		osCredentials.authUrl,
+	providerSpec := fmt.Sprintf(`{"cloudProvider": "openstack","cloudProviderSpec": {"identityEndpoint": "%s","username": "%s","password": "%s", "tenantName": "%s", "region": "%s", "domainName": "%s", "floatingIPPool": "%s", "network": "%s", "image": "machine-controller-e2e-ubuntu", "flavor": "m1.small"},"operatingSystem": "ubuntu","operatingSystemSpec":{"distUpgradeOnBoot": false,"disableAutoUpdate": true}}`,
+		osCredentials.authURL,
 		osCredentials.username,
 		osCredentials.password,
 		osCredentials.tenant,
 		osCredentials.region,
 		osCredentials.domain,
-		osCredentials.floatingIpPool,
+		osCredentials.floatingIPPool,
 		osCredentials.network)
 
 	machineDeployment := &clusterv1alpha1.MachineDeployment{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:                       "test-machine",
-			Namespace:                  "kube-system",
+			Name:      "test-machine",
+			Namespace: "kube-system",
 		},
-		Spec:       clusterv1alpha1.MachineDeploymentSpec{
+		Spec: clusterv1alpha1.MachineDeploymentSpec{
 			Selector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"name": "test-machine",

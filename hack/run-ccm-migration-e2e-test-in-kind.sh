@@ -28,16 +28,26 @@ function generate_secret {
   echo ''
 }
 
-# We replace the domain with a dns name relying on nip.io poining to the
-# nodeport-proxy service. This makes the testing of expose strategies relying
-# on nodeport-proxy very easy from within the kind cluster.
-# TODO(irozzo) Find another solution in case nip.io does not result to be
-# available enough for our own CI usage.
-function patch_kubermatic_domain {
-  local ip="$(kubectl get service nodeport-proxy -n kubermatic -otemplate --template='{{ .spec.clusterIP }}')"
-  [ -z "${ip}" ] && return 1
-  kubectl patch kubermaticconfigurations.operator.kubermatic.io -n kubermatic e2e \
-    --type="json" -p='[{"op": "replace", "path": "/spec/ingress/domain", "value": "'${ip}.nip.io'"}]'
+function apply_api_server_nodeport {
+  cat << EOF > "${API_SERVER_NODEPORT_MANIFEST}"
+apiVersion: v1
+kind: Service
+metadata:
+  name: apiserver-external-nodeport
+  namespace: cluster-${USER_CLUSTER_NAME}
+spec:
+  ports:
+  - name: secure
+    port: 6443
+    protocol: TCP
+    nodePort: ${KIND_PORT}
+  selector:
+    app: apiserver
+  type: NodePort
+EOF
+
+  time retry 10 kubectl apply -f apiserver_nodeport.yaml
+  echo "user cluster API server nodeport created"
 }
 
 DOCKER_REPO="${DOCKER_REPO:-quay.io/kubermatic}"
@@ -45,7 +55,10 @@ GOOS="${GOOS:-linux}"
 TAG="$(git rev-parse HEAD)"
 KIND_CLUSTER_NAME="${KIND_CLUSTER_NAME:-kubermatic}"
 KIND_NODE_VERSION="${KIND_NODE_VERSION:-v1.20.2}"
+KIND_PORT="${KIND_PORT-31000}"
 USER_CLUSTER_KUBERNETES_VERSION="${USER_CLUSTER_KUBERNETES_VERSION:-v1.20.2}"
+USER_CLUSTER_NAME="${USER_CLUSTER_NAME-$(head -3 /dev/urandom | tr -cd '[:alnum:]' | tr '[:upper:]' '[:lower:]' | cut -c -10)}"
+API_SERVER_NODEPORT_MANIFEST="${API_SERVER_NODEPORT_MANIFEST-apiserver_nodeport.yaml}"
 KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 HELM_BINARY="${HELM_BINARY:-helm}" # This works when helm 3 is in path
 
@@ -68,10 +81,22 @@ if [[ ! -z "${JOB_NAME:-}" ]] && [[ ! -z "${PROW_JOB_ID:-}" ]]; then
   start_docker_daemon
 fi
 
+cat << EOF > kind-config.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: ${KIND_PORT}
+    hostPort: 6443
+    protocol: TCP
+EOF
+
 # setup Kind cluster
 time retry 5 kind create cluster \
   --name="${KIND_CLUSTER_NAME}" \
-  --image=kindest/node:"${KIND_NODE_VERSION}"
+  --image=kindest/node:"${KIND_NODE_VERSION}" \
+  --config=kind-config.yaml
 kind export kubeconfig --name=${KIND_CLUSTER_NAME}
 
 # build Docker images
@@ -245,67 +270,22 @@ echodate "Waiting for Kubermatic Operator to deploy Seed components..."
 retry 8 check_all_deployments_ready kubermatic
 echodate "Kubermatic Seed is ready."
 
-exit 0
-
-echodate "Patching Kubermatic ingress domain with nodeport-proxy service cluster IP..."
-retry 5 patch_kubermatic_domain
-echodate "Kubermatic ingress domain patched."
-
-if [ -z "${DISABLE_CLUSTER_EXPOSER:-}" ]; then
-  # Start cluster exposer, which will expose services from within kind as
-  # a NodePort service on the host
-  echodate "Starting cluster exposer"
-
-  CGO_ENABLED=0 go build --tags "$KUBERMATIC_EDITION" -v -o /tmp/clusterexposer ./pkg/test/clusterexposer/cmd
-  /tmp/clusterexposer \
-    --kubeconfig-inner "$KUBECONFIG" \
-    --kubeconfig-outer "/etc/kubeconfig/kubeconfig" \
-    --build-id "$PROW_JOB_ID" &> /var/log/clusterexposer.log &
-
-  function print_cluster_exposer_logs {
-    if [[ $? -ne 0 ]]; then
-      # Tolerate errors and just continue
-      set +e
-      echodate "Printing cluster exposer logs"
-      cat /var/log/clusterexposer.log
-      echodate "Done printing cluster exposer logs"
-      set -e
-    fi
-  }
-  appendTrap print_cluster_exposer_logs EXIT
-
-  TEST_NAME="Wait for cluster exposer"
-  echodate "Waiting for cluster exposer to be running"
-
-  retry 5 curl -s --fail http://127.0.0.1:2047/metrics -o /dev/null
-  echodate "Cluster exposer is running"
-
-  echodate "Setting up iptables rules for to make nodeports available"
-  KIND_NETWORK_IF=$(ip -br addr | grep -- 'br-' | cut -d' ' -f1)
-
-  iptables -t nat -A PREROUTING -i eth0 -p tcp -m multiport --dports=30000:33000 -j DNAT --to-destination 172.18.0.2
-  # By default all traffic gets dropped unless specified (tested with docker server 18.09.1)
-  iptables -t filter -I DOCKER-USER -d 172.18.0.2/32 ! -i $KIND_NETWORK_IF -o $KIND_NETWORK_IF -p tcp -m multiport --dports=30000:33000 -j ACCEPT
-  # Docker sets up a MASQUERADE rule for postrouting, so nothing to do for us
-
-  echodate "Successfully set up iptables rules for nodeports"
-fi
+apply_api_server_nodeport &
 
 EXTRA_ARGS="-openstack-domain=${OS_DOMAIN}
     -openstack-tenant=${OS_TENANT_NAME}
     -openstack-username=${OS_USERNAME}
     -openstack-password=${OS_PASSWORD}
-    -openstack-auth-url-${OS_AUTH_URL}
+    -openstack-auth-url=${OS_AUTH_URL}
     -openstack-region=${OS_REGION}
     -openstack-floating-ip-pool=${OS_FLOATING_IP_POOL}
-    -openstack-network=${OS_NETWORK_NAME}
-    -datacenter=${OS_DATACENTER}"
+    -openstack-network=${OS_NETWORK_NAME}"
 
 # run tests
 # use ginkgo binary by preference to have better output:
 # https://github.com/onsi/ginkgo/issues/633
 if type ginkgo > /dev/null; then
-  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ \
+  ginkgo --tags=e2e -v pkg/test/e2e/ccm-migration/ $EXTRA_ARGS \
     -r \
     --randomizeAllSpecs \
     --randomizeSuites \
@@ -317,9 +297,10 @@ if type ginkgo > /dev/null; then
     -- --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
-    - $EXTRA_ARGS
+    --user-cluster-name="${USER_CLUSTER_NAME}" \
+    --datacenter="${OS_DATACENTER}"
 else
-  CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... \
+  CGO_ENABLED=1 go test --tags=e2e -v -race ./pkg/test/e2e/ccm-migration/... $EXTRA_ARGS \
     --ginkgo.randomizeAllSpecs \
     --ginkgo.failOnPending \
     --ginkgo.trace \
@@ -327,5 +308,6 @@ else
     --kubeconfig "${HOME}/.kube/config" \
     --kubernetes-version "${USER_CLUSTER_KUBERNETES_VERSION}" \
     --debug-log \
-    - $EXTRA_ARGS
+    --user-cluster-name="${USER_CLUSTER_NAME}" \
+    --datacenter="${OS_DATACENTER}"
 fi
