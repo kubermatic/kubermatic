@@ -775,7 +775,7 @@
     "list": [
       {
         "current": {},
-        "hide": 2,
+        "hide": 0,
         "label": null,
         "name": "datasource",
         "options": [],

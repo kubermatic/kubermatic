@@ -377,7 +377,7 @@
     "list": [
       {
         "current": {},
-        "hide": 2,
+        "hide": 0,
         "label": "Data Source",
         "name": "datasource",
         "options": [],

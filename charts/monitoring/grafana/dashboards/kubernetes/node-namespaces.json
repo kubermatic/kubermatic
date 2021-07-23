@@ -26,7 +26,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "description": "",
       "editable": true,
       "fill": 1,
@@ -151,7 +151,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "description": "",
       "editable": true,
       "fill": 1,
@@ -247,9 +247,23 @@
   "templating": {
     "list": [
       {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
         "allValue": null,
         "current": {},
-        "datasource": "prometheus",
+        "datasource": "$datasource",
         "definition": "label_values(container_memory_rss{job=\"cadvisor\"}, kubernetes_io_hostname)",
         "hide": 0,
         "includeAll": true,

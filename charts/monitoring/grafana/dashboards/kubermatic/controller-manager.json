@@ -27,7 +27,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -156,7 +156,7 @@
         "mode": "spectrum"
       },
       "dataFormat": "tsbuckets",
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "gridPos": {
         "h": 9,
@@ -226,9 +226,23 @@
   "templating": {
     "list": [
       {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
         "allValue": "*",
         "current": {},
-        "datasource": "prometheus",
+        "datasource": "$datasource",
         "definition": "label_values(controller_runtime_reconcile_time_seconds_bucket,controller)",
         "hide": 0,
         "includeAll": true,
