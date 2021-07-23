@@ -13,7 +13,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "prometheus",
+      "datasource": "$datasource",
       "editable": true,
       "fill": 1,
       "gridPos": {
@@ -107,6 +107,20 @@
   "templating": {
     "list": [
       {
+        "current": {},
+        "hide": 0,
+        "includeAll": false,
+        "label": "Data Source",
+        "multi": false,
+        "name": "datasource",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
         "current": {
           "text": "",
           "value": ""
@@ -127,7 +141,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "prometheus",
+        "datasource": "$datasource",
         "definition": "label_values(etcd_object_counts{resource=~\".*$filter.*\"}, resource)",
         "hide": 0,
         "includeAll": true,

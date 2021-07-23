@@ -2028,7 +2028,7 @@
     "list": [
       {
         "current": {},
-        "hide": 2,
+        "hide": 0,
         "includeAll": false,
         "label": "Data Source",
         "multi": false,
