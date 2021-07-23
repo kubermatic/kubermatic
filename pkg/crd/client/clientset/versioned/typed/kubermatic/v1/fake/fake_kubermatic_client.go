@@ -24,6 +24,10 @@ func (c *FakeKubermaticV1) Alertmanagers(namespace string) v1.AlertmanagerInterf
 	return &FakeAlertmanagers{c, namespace}
 }
 
+func (c *FakeKubermaticV1) AllowedRegistries() v1.AllowedRegistryInterface {
+	return &FakeAllowedRegistries{c}
+}
+
 func (c *FakeKubermaticV1) Clusters() v1.ClusterInterface {
 	return &FakeClusters{c}
 }
@@ -78,10 +82,6 @@ func (c *FakeKubermaticV1) UserProjectBindings() v1.UserProjectBindingInterface 
 
 func (c *FakeKubermaticV1) UserSSHKeys() v1.UserSSHKeyInterface {
 	return &FakeUserSSHKeys{c}
-}
-
-func (c *FakeKubermaticV1) WhitelistedRegistries() v1.WhitelistedRegistryInterface {
-	return &FakeWhitelistedRegistries{c}
 }
 
 // RESTClient returns a RESTClient that is used to communicate

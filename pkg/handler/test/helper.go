@@ -194,7 +194,7 @@ type newRoutingFunc func(
 	ruleGroupProviderGetter provider.RuleGroupProviderGetter,
 	kubermaticVersions kubermatic.Versions,
 	defaultConstraintProvider provider.DefaultConstraintProvider,
-	privilegedWhitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider,
+	privilegedAllowedRegistryProvider provider.PrivilegedAllowedRegistryProvider,
 	etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter,
 ) http.Handler
 
@@ -350,12 +350,12 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		FakeClient: fakeClient,
 	}
 
-	privilegedWhitelistedRegistryProvider, err := kubernetes.NewWhitelistedRegistryPrivilegedProvider(fakeClient)
+	privilegedAllowedRegistryProvider, err := kubernetes.NewAllowedRegistryPrivilegedProvider(fakeClient)
 	if err != nil {
 		return nil, nil, err
 	}
-	fakePrivilegedWhitelistedRegistryProvider := &FakePrivilegedWhitelisedRegistryProvider{
-		Provider:   privilegedWhitelistedRegistryProvider,
+	fakePrivilegedAllowedRegistryProvider := &FakePrivilegedAllowedRegistryProvider{
+		Provider:   privilegedAllowedRegistryProvider,
 		FakeClient: fakeClient,
 	}
 
@@ -479,7 +479,7 @@ func initTestEndpoint(user apiv1.User, seedsGetter provider.SeedsGetter, kubeObj
 		ruleGroupProviderGetter,
 		kubermaticVersions,
 		fakeDefaultConstraintProvider,
-		fakePrivilegedWhitelistedRegistryProvider,
+		fakePrivilegedAllowedRegistryProvider,
 		etcdBackupConfigProviderGetter,
 	)
 
@@ -1768,19 +1768,19 @@ rules:
 `, ruleGroupName))
 }
 
-func GenDefaultAPIWhitelistedRegistry(name, registryPrefix string) apiv2.WhitelistedRegistry {
-	return apiv2.WhitelistedRegistry{
+func GenDefaultAPIAllowedRegistry(name, registryPrefix string) apiv2.AllowedRegistry {
+	return apiv2.AllowedRegistry{
 		Name: name,
-		Spec: kubermaticv1.WhitelistedRegistrySpec{
+		Spec: kubermaticv1.AllowedRegistrySpec{
 			RegistryPrefix: registryPrefix,
 		},
 	}
 }
 
-func GenWhitelistedRegistry(name, registryPrefix string) *kubermaticv1.WhitelistedRegistry {
-	wr := &kubermaticv1.WhitelistedRegistry{}
+func GenAllowedRegistry(name, registryPrefix string) *kubermaticv1.AllowedRegistry {
+	wr := &kubermaticv1.AllowedRegistry{}
 	wr.Name = name
-	wr.Spec = kubermaticv1.WhitelistedRegistrySpec{
+	wr.Spec = kubermaticv1.AllowedRegistrySpec{
 		RegistryPrefix: registryPrefix,
 	}
 	return wr

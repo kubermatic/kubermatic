@@ -86,7 +86,7 @@ func NewTestRouting(
 	ruleGroupProviderGetter provider.RuleGroupProviderGetter,
 	kubermaticVersions kubermatic.Versions,
 	defaultConstraintProvider provider.DefaultConstraintProvider,
-	privilegedWhitelistedRegistryProvider provider.PrivilegedWhitelistedRegistryProvider,
+	privilegedAllowedRegistryProvider provider.PrivilegedAllowedRegistryProvider,
 	etcdBackupConfigProviderGetter provider.EtcdBackupConfigProviderGetter) http.Handler {
 
 	updateManager := version.New(versions, updates)
@@ -136,7 +136,7 @@ func NewTestRouting(
 		ClusterTemplateProvider:               clusterTemplateProvider,
 		ClusterTemplateInstanceProviderGetter: clusterTemplateInstanceProviderGetter,
 		RuleGroupProviderGetter:               ruleGroupProviderGetter,
-		PrivilegedWhitelistedRegistryProvider: privilegedWhitelistedRegistryProvider,
+		PrivilegedAllowedRegistryProvider:     privilegedAllowedRegistryProvider,
 		EtcdBackupConfigProviderGetter:        etcdBackupConfigProviderGetter,
 		Versions:                              kubermaticVersions,
 		CABundle:                              certificates.NewFakeCABundle().CertPool(),

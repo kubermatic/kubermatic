@@ -11,20 +11,20 @@ import (
 	"github.com/go-openapi/swag"
 )
 
-// WrBody wr body
+// AllowedRegistry AllowedRegistry represents a object containing a allowed image registry prefix
 //
-// swagger:model wrBody
-type WrBody struct {
+// swagger:model AllowedRegistry
+type AllowedRegistry struct {
 
-	// Name of the allowed registry
+	// name
 	Name string `json:"name,omitempty"`
 
 	// spec
 	Spec *AllowedRegistrySpec `json:"spec,omitempty"`
 }
 
-// Validate validates this wr body
-func (m *WrBody) Validate(formats strfmt.Registry) error {
+// Validate validates this allowed registry
+func (m *AllowedRegistry) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateSpec(formats); err != nil {
@@ -37,7 +37,7 @@ func (m *WrBody) Validate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *WrBody) validateSpec(formats strfmt.Registry) error {
+func (m *AllowedRegistry) validateSpec(formats strfmt.Registry) error {
 
 	if swag.IsZero(m.Spec) { // not required
 		return nil
@@ -56,7 +56,7 @@ func (m *WrBody) validateSpec(formats strfmt.Registry) error {
 }
 
 // MarshalBinary interface implementation
-func (m *WrBody) MarshalBinary() ([]byte, error) {
+func (m *AllowedRegistry) MarshalBinary() ([]byte, error) {
 	if m == nil {
 		return nil, nil
 	}
@@ -64,8 +64,8 @@ func (m *WrBody) MarshalBinary() ([]byte, error) {
 }
 
 // UnmarshalBinary interface implementation
-func (m *WrBody) UnmarshalBinary(b []byte) error {
-	var res WrBody
+func (m *AllowedRegistry) UnmarshalBinary(b []byte) error {
+	var res AllowedRegistry
 	if err := swag.ReadJSON(b, &res); err != nil {
 		return err
 	}

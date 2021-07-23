@@ -29,6 +29,7 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v1/common"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/addon"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/alertmanager"
+	allowedregistry "k8c.io/kubermatic/v2/pkg/handler/v2/allowed_registry"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/cluster"
 	clustertemplate "k8c.io/kubermatic/v2/pkg/handler/v2/cluster_template"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/constraint"
@@ -41,7 +42,6 @@ import (
 	"k8c.io/kubermatic/v2/pkg/handler/v2/provider"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/rulegroup"
 	"k8c.io/kubermatic/v2/pkg/handler/v2/seedsettings"
-	whitelistedregistry "k8c.io/kubermatic/v2/pkg/handler/v2/whitelisted_registry"
 )
 
 // RegisterV2 declares all router paths for v2
@@ -573,26 +573,26 @@ func (r Routing) RegisterV2(mux *mux.Router, metrics common.ServerMetrics) {
 		Path("/projects/{project_id}/clusters/{cluster_id}/rulegroups/{rulegroup_id}").
 		Handler(r.deleteRuleGroup())
 
-	// Defines a set of HTTP endpoints for managing whitelisted registries
+	// Defines a set of HTTP endpoints for managing allowed registries
 	mux.Methods(http.MethodPost).
-		Path("/whitelistedregistries").
-		Handler(r.createWhitelistedRegistry())
+		Path("/allowedregistries").
+		Handler(r.createAllowedRegistry())
 
 	mux.Methods(http.MethodGet).
-		Path("/whitelistedregistries").
-		Handler(r.listWhitelistedRegistries())
+		Path("/allowedregistries").
+		Handler(r.listAllowedRegistries())
 
 	mux.Methods(http.MethodGet).
-		Path("/whitelistedregistries/{whitelisted_registry}").
-		Handler(r.getWhitelistedRegistry())
+		Path("/allowedregistries/{allowed_registry}").
+		Handler(r.getAllowedRegistry())
 
 	mux.Methods(http.MethodDelete).
-		Path("/whitelistedregistries/{whitelisted_registry}").
-		Handler(r.deleteWhitelistedRegistry())
+		Path("/allowedregistries/{allowed_registry}").
+		Handler(r.deleteAllowedRegistry())
 
 	mux.Methods(http.MethodPatch).
-		Path("/whitelistedregistries/{whitelisted_registry}").
-		Handler(r.patchWhitelistedRegistry())
+		Path("/allowedregistries/{allowed_registry}").
+		Handler(r.patchAllowedRegistry())
 
 	// Defines a set of HTTP endpoints for managing etcd backup configs
 	mux.Methods(http.MethodPost).
@@ -3999,9 +3999,9 @@ func (r Routing) migrateClusterToExternalCCM() http.Handler {
 	)
 }
 
-// swagger:route POST /api/v2/whitelistedregistries whitelistedregistry createWhitelistedRegistry
+// swagger:route POST /api/v2/allowedregistries allowedregistry createAllowedRegistry
 //
-//     Creates a whitelisted registry
+//     Creates a allowed registry
 //
 //     Consumes:
 //     - application/json
@@ -4011,24 +4011,24 @@ func (r Routing) migrateClusterToExternalCCM() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       201: WhitelistedRegistry
+//       201: AllowedRegistry
 //       401: empty
 //       403: empty
-func (r Routing) createWhitelistedRegistry() http.Handler {
+func (r Routing) createAllowedRegistry() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(whitelistedregistry.CreateEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
-		whitelistedregistry.DecodeCreateWhitelistedRegistryRequest,
+		)(allowedregistry.CreateEndpoint(r.userInfoGetter, r.privilegedAllowedRegistryProvider)),
+		allowedregistry.DecodeCreateAllowedRegistryRequest,
 		handler.SetStatusCreatedHeader(handler.EncodeJSON),
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v2/whitelistedregistries whitelistedregistry listWhitelistedRegistries
+// swagger:route GET /api/v2/allowedregistries allowedregistry listAllowedRegistries
 //
-//     List whitelisted registries.
+//     List allowed registries.
 //
 //
 //     Produces:
@@ -4036,24 +4036,24 @@ func (r Routing) createWhitelistedRegistry() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: []WhitelistedRegistry
+//       200: []AllowedRegistry
 //       401: empty
 //       403: empty
-func (r Routing) listWhitelistedRegistries() http.Handler {
+func (r Routing) listAllowedRegistries() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(whitelistedregistry.ListEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
+		)(allowedregistry.ListEndpoint(r.userInfoGetter, r.privilegedAllowedRegistryProvider)),
 		common.DecodeEmptyReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route GET /api/v2/whitelistedregistries/{whitelisted_registry} whitelistedregistries getWhitelistedRegistry
+// swagger:route GET /api/v2/allowedregistries/{allowed_registry} allowedregistries getAllowedRegistry
 //
-//     Get whitelisted registries specified by name
+//     Get allowed registries specified by name
 //
 //
 //     Produces:
@@ -4061,24 +4061,24 @@ func (r Routing) listWhitelistedRegistries() http.Handler {
 //
 //     Responses:
 //       default: errorResponse
-//       200: WhitelistedRegistry
+//       200: AllowedRegistry
 //       401: empty
 //       403: empty
-func (r Routing) getWhitelistedRegistry() http.Handler {
+func (r Routing) getAllowedRegistry() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(whitelistedregistry.GetEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
-		whitelistedregistry.DecodeGetWhitelistedRegistryRequest,
+		)(allowedregistry.GetEndpoint(r.userInfoGetter, r.privilegedAllowedRegistryProvider)),
+		allowedregistry.DecodeGetAllowedRegistryRequest,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route DELETE /api/v2/whitelistedregistries/{whitelisted_registry} whitelistedregistries deleteWhitelistedRegistry
+// swagger:route DELETE /api/v2/allowedregistries/{allowed_registry} allowedregistries deleteAllowedRegistry
 //
-//    Deletes the given whitelisted registry.
+//    Deletes the given allowed registry.
 //
 //     Produces:
 //     - application/json
@@ -4088,21 +4088,21 @@ func (r Routing) getWhitelistedRegistry() http.Handler {
 //       200: empty
 //       401: empty
 //       403: empty
-func (r Routing) deleteWhitelistedRegistry() http.Handler {
+func (r Routing) deleteAllowedRegistry() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(whitelistedregistry.DeleteEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
-		whitelistedregistry.DecodeGetWhitelistedRegistryRequest,
+		)(allowedregistry.DeleteEndpoint(r.userInfoGetter, r.privilegedAllowedRegistryProvider)),
+		allowedregistry.DecodeGetAllowedRegistryRequest,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
 }
 
-// swagger:route PATCH /api/v2/whitelistedregistries/{whitelisted_registry} whitelistedregistries patchWhitelistedRegistry
+// swagger:route PATCH /api/v2/allowedregistries/{allowed_registry} allowedregistries patchAllowedRegistry
 //
-//     Patch a specified whitelisted registry
+//     Patch a specified allowed registry
 //
 //     Consumes:
 //     - application/json
@@ -4115,13 +4115,13 @@ func (r Routing) deleteWhitelistedRegistry() http.Handler {
 //       200: ConstraintTemplate
 //       401: empty
 //       403: empty
-func (r Routing) patchWhitelistedRegistry() http.Handler {
+func (r Routing) patchAllowedRegistry() http.Handler {
 	return httptransport.NewServer(
 		endpoint.Chain(
 			middleware.TokenVerifier(r.tokenVerifiers, r.userProvider),
 			middleware.UserSaver(r.userProvider),
-		)(whitelistedregistry.PatchEndpoint(r.userInfoGetter, r.privilegedWhitelistedRegistryProvider)),
-		whitelistedregistry.DecodePatchWhitelistedRegistryReq,
+		)(allowedregistry.PatchEndpoint(r.userInfoGetter, r.privilegedAllowedRegistryProvider)),
+		allowedregistry.DecodePatchAllowedRegistryReq,
 		handler.EncodeJSON,
 		r.defaultServerOptions()...,
 	)
