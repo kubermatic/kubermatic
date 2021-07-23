@@ -1,4 +1,4 @@
-# Enforce whitelisted registries with OPA
+# Enforce allowed registries with OPA
 
 **Author**: Lovro Sviben (@lsviben)
 
@@ -8,7 +8,7 @@
 
 The current OPA integration in KKP allows for the creation of any kind of OPA policies. But we would like to make it more
 user-friendly and accessible for users then just making them learn REGO or look for a solution online.
-One of the more useful policies that could be enforced is the enforcement for whitelisted registries in all user clusters.
+One of the more useful policies that could be enforced is the enforcement for allowed registries in all user clusters.
 
 ## Overview
 
@@ -22,7 +22,7 @@ With this, and especially Default Constraints, we can allow admins to easily enf
 
 ## Goals
 
-Add a feature for admins to add a list of whitelisted registries and enforce them across user clusters
+Add a feature for admins to add a list of allowed registries and enforce them across user clusters
 
 ## Prerequisites
 
@@ -30,18 +30,18 @@ Default Constraints (in progress)
 
 ## Implementation
 
-The idea is to add a WhitelistedRegistries CRD and a controller which will handle the CRDs and create appropriate Constraint Templates and
+The idea is to add a AllowedRegistries CRD and a controller which will handle the CRDs and create appropriate Constraint Templates and
 Constraints.
 
-### WhitelistedRegistries CRD and controller
+### AllowedRegistries CRD and controller
 
 The CRD would look something like this:
 
 ```yaml
 apiVersion: kubermatic.k8s.io/v1
-kind: WhitelistedRegistries
+kind: AllowedRegistry
 metadata:
-  name: whitelisted-registy
+  name: allowed-registy
 spec:
   registries: ["myharborinstance.com/", "quay.com"]
   selector:
@@ -58,7 +58,7 @@ And the controller would run in the master cluster and handle the Constraint Tem
 
 ### Enforcement through OPA
 
-The underlying enforcement of the whitelisting would be done through the creation of a whitelist Constraint Template and corresponding
+The underlying enforcement of the allowing registries would be done through the creation of a AllowedRegistry Constraint Template and corresponding
 Default Constraint. The Constraint Template would be something along the lines of this REGO:
 
 ```
@@ -74,24 +74,24 @@ deny[msg] {
 
 But with parametrized registry name list through Constraints. Creation of the proper REGO will be one of the tasks that need to be done.
 
-The whitelist controller will ensure the Constraint Template and the Default Constraint, and the CT and Default Constraint Controllers will take care of the rest.
+The allowed registry controller will ensure the Constraint Template and the Default Constraint, and the CT and Default Constraint Controllers will take care of the rest.
 
 ### Additional options
 
-We could also add Cluster filtering to the whitelisted registry, which would be done through the Default Constraint filtering, to allow
+We could also add Cluster filtering to the allowed registry, which would be done through the Default Constraint filtering, to allow
 admins to fine tune which clusters they want to target. 
 
 
 ### API/UI 
 
-The whitelisting feature will be available for KKP admins through a new endpoint and through the UI. The UI team will need to decide where to 
+The allowed registry feature will be available for KKP admins through a new endpoint and through the UI. The UI team will need to decide where to 
 place the new feature.
 
 ## Tasks
 
-1. Whitelisting CRD
-2. Whitelisting controller
-3. Whitelisting REGO for the Constraint Template
-4. Whitelisting API
-5. Whitelisting UI
+1. AllowedRegistry CRD
+2. AllowedRegistry controller
+3. AllowedRegistry REGO for the Constraint Template
+4. AllowedRegistry API
+5. AllowedRegistry UI
 

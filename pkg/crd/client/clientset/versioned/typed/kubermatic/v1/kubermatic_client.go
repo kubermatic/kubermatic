@@ -13,6 +13,7 @@ type KubermaticV1Interface interface {
 	AddonsGetter
 	AddonConfigsGetter
 	AlertmanagersGetter
+	AllowedRegistriesGetter
 	ClustersGetter
 	ClusterTemplatesGetter
 	ClusterTemplateInstancesGetter
@@ -27,7 +28,6 @@ type KubermaticV1Interface interface {
 	UsersGetter
 	UserProjectBindingsGetter
 	UserSSHKeysGetter
-	WhitelistedRegistriesGetter
 }
 
 // KubermaticV1Client is used to interact with features provided by the kubermatic.k8s.io group.
@@ -45,6 +45,10 @@ func (c *KubermaticV1Client) AddonConfigs() AddonConfigInterface {
 
 func (c *KubermaticV1Client) Alertmanagers(namespace string) AlertmanagerInterface {
 	return newAlertmanagers(c, namespace)
+}
+
+func (c *KubermaticV1Client) AllowedRegistries() AllowedRegistryInterface {
+	return newAllowedRegistries(c)
 }
 
 func (c *KubermaticV1Client) Clusters() ClusterInterface {
@@ -101,10 +105,6 @@ func (c *KubermaticV1Client) UserProjectBindings() UserProjectBindingInterface {
 
 func (c *KubermaticV1Client) UserSSHKeys() UserSSHKeyInterface {
 	return newUserSSHKeys(c)
-}
-
-func (c *KubermaticV1Client) WhitelistedRegistries() WhitelistedRegistryInterface {
-	return newWhitelistedRegistries(c)
 }
 
 // NewForConfig creates a new KubermaticV1Client for the given config.

@@ -22,6 +22,10 @@ type AlertmanagerListerExpansion interface{}
 // AlertmanagerNamespaceLister.
 type AlertmanagerNamespaceListerExpansion interface{}
 
+// AllowedRegistryListerExpansion allows custom methods to be added to
+// AllowedRegistryLister.
+type AllowedRegistryListerExpansion interface{}
+
 // ClusterListerExpansion allows custom methods to be added to
 // ClusterLister.
 type ClusterListerExpansion interface{}
@@ -93,7 +97,3 @@ type UserProjectBindingListerExpansion interface{}
 // UserSSHKeyListerExpansion allows custom methods to be added to
 // UserSSHKeyLister.
 type UserSSHKeyListerExpansion interface{}
-
-// WhitelistedRegistryListerExpansion allows custom methods to be added to
-// WhitelistedRegistryLister.
-type WhitelistedRegistryListerExpansion interface{}

@@ -264,28 +264,28 @@ func (p *FakeDefaultConstraintProvider) Update(constraint *kubermaticapiv1.Const
 	return p.Provider.Update(constraint)
 }
 
-type FakePrivilegedWhitelisedRegistryProvider struct {
-	Provider   *kubernetes.PrivilegedWhitelistedRegistryProvider
+type FakePrivilegedAllowedRegistryProvider struct {
+	Provider   *kubernetes.PrivilegedAllowedRegistryProvider
 	FakeClient ctrlruntimeclient.Client
 }
 
-func (p *FakePrivilegedWhitelisedRegistryProvider) CreateUnsecured(wr *kubermaticapiv1.WhitelistedRegistry) (*kubermaticapiv1.WhitelistedRegistry, error) {
+func (p *FakePrivilegedAllowedRegistryProvider) CreateUnsecured(wr *kubermaticapiv1.AllowedRegistry) (*kubermaticapiv1.AllowedRegistry, error) {
 	return p.Provider.CreateUnsecured(wr)
 }
 
-func (p *FakePrivilegedWhitelisedRegistryProvider) GetUnsecured(name string) (*kubermaticapiv1.WhitelistedRegistry, error) {
+func (p *FakePrivilegedAllowedRegistryProvider) GetUnsecured(name string) (*kubermaticapiv1.AllowedRegistry, error) {
 	return p.Provider.GetUnsecured(name)
 }
 
-func (p *FakePrivilegedWhitelisedRegistryProvider) ListUnsecured() (*kubermaticapiv1.WhitelistedRegistryList, error) {
+func (p *FakePrivilegedAllowedRegistryProvider) ListUnsecured() (*kubermaticapiv1.AllowedRegistryList, error) {
 	return p.Provider.ListUnsecured()
 }
 
-func (p *FakePrivilegedWhitelisedRegistryProvider) PatchUnsecured(wr *kubermaticapiv1.WhitelistedRegistry) (*kubermaticapiv1.WhitelistedRegistry, error) {
+func (p *FakePrivilegedAllowedRegistryProvider) PatchUnsecured(wr *kubermaticapiv1.AllowedRegistry) (*kubermaticapiv1.AllowedRegistry, error) {
 	return p.Provider.PatchUnsecured(wr)
 }
 
-func (p *FakePrivilegedWhitelisedRegistryProvider) DeleteUnsecured(name string) error {
+func (p *FakePrivilegedAllowedRegistryProvider) DeleteUnsecured(name string) error {
 	return p.Provider.DeleteUnsecured(name)
 }
 

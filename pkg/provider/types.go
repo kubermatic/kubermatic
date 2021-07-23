@@ -1035,33 +1035,33 @@ type PrivilegedRuleGroupProvider interface {
 	DeleteUnsecured(cluster *kubermaticv1.Cluster, ruleGroupName string) error
 }
 
-// PrivilegedWhitelistedRegistryProvider declares the set of method for interacting with whitelisted registries
-type PrivilegedWhitelistedRegistryProvider interface {
-	// CreateUnsecured creates the given whitelisted registry
+// PrivilegedAllowedRegistryProvider declares the set of method for interacting with allowed registries
+type PrivilegedAllowedRegistryProvider interface {
+	// CreateUnsecured creates the given allowed registry
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to create the resource
-	CreateUnsecured(wr *kubermaticv1.WhitelistedRegistry) (*kubermaticv1.WhitelistedRegistry, error)
+	CreateUnsecured(wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
 
-	// GetUnsecured gets the given whitelisted registry
+	// GetUnsecured gets the given allowed registry
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resource
-	GetUnsecured(name string) (*kubermaticv1.WhitelistedRegistry, error)
+	GetUnsecured(name string) (*kubermaticv1.AllowedRegistry, error)
 
-	// ListUnsecured gets a list of all whitelisted registries
+	// ListUnsecured gets a list of all allowed registries
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to get the resources
-	ListUnsecured() (*kubermaticv1.WhitelistedRegistryList, error)
+	ListUnsecured() (*kubermaticv1.AllowedRegistryList, error)
 
-	// PatchUnsecured patches a whitelisted registry
+	// PatchUnsecured patches a allowed registry
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to update the resource
-	PatchUnsecured(wr *kubermaticv1.WhitelistedRegistry) (*kubermaticv1.WhitelistedRegistry, error)
+	PatchUnsecured(wr *kubermaticv1.AllowedRegistry) (*kubermaticv1.AllowedRegistry, error)
 
-	// DeleteUnsecured deletes the whitelisted registry with the given name
+	// DeleteUnsecured deletes the allowed registry with the given name
 	//
 	// Note that this function:
 	// is unsafe in a sense that it uses privileged account to delete the resource

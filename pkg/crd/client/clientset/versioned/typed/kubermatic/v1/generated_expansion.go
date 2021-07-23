@@ -8,6 +8,8 @@ type AddonConfigExpansion interface{}
 
 type AlertmanagerExpansion interface{}
 
+type AllowedRegistryExpansion interface{}
+
 type ClusterExpansion interface{}
 
 type ClusterTemplateExpansion interface{}
@@ -35,5 +37,3 @@ type UserExpansion interface{}
 type UserProjectBindingExpansion interface{}
 
 type UserSSHKeyExpansion interface{}
-
-type WhitelistedRegistryExpansion interface{}

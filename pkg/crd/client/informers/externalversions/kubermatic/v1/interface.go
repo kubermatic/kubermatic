@@ -14,6 +14,8 @@ type Interface interface {
 	AddonConfigs() AddonConfigInformer
 	// Alertmanagers returns a AlertmanagerInformer.
 	Alertmanagers() AlertmanagerInformer
+	// AllowedRegistries returns a AllowedRegistryInformer.
+	AllowedRegistries() AllowedRegistryInformer
 	// Clusters returns a ClusterInformer.
 	Clusters() ClusterInformer
 	// ClusterTemplates returns a ClusterTemplateInformer.
@@ -42,8 +44,6 @@ type Interface interface {
 	UserProjectBindings() UserProjectBindingInformer
 	// UserSSHKeys returns a UserSSHKeyInformer.
 	UserSSHKeys() UserSSHKeyInformer
-	// WhitelistedRegistries returns a WhitelistedRegistryInformer.
-	WhitelistedRegistries() WhitelistedRegistryInformer
 }
 
 type version struct {
@@ -70,6 +70,11 @@ func (v *version) AddonConfigs() AddonConfigInformer {
 // Alertmanagers returns a AlertmanagerInformer.
 func (v *version) Alertmanagers() AlertmanagerInformer {
 	return &alertmanagerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// AllowedRegistries returns a AllowedRegistryInformer.
+func (v *version) AllowedRegistries() AllowedRegistryInformer {
+	return &allowedRegistryInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
 
 // Clusters returns a ClusterInformer.
@@ -140,9 +145,4 @@ func (v *version) UserProjectBindings() UserProjectBindingInformer {
 // UserSSHKeys returns a UserSSHKeyInformer.
 func (v *version) UserSSHKeys() UserSSHKeyInformer {
 	return &userSSHKeyInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
-}
-
-// WhitelistedRegistries returns a WhitelistedRegistryInformer.
-func (v *version) WhitelistedRegistries() WhitelistedRegistryInformer {
-	return &whitelistedRegistryInformer{factory: v.factory, tweakListOptions: v.tweakListOptions}
 }
