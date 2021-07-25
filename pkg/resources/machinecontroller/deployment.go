@@ -144,13 +144,13 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 			if t := data.MachineControllerImageTag(); t != "" {
 				tag = t
 			}
-
+			isExternal := isExternalCloudProvider(data)
 			dep.Spec.Template.Spec.Containers = []corev1.Container{
 				{
 					Name:    Name,
 					Image:   repository + ":" + tag,
 					Command: []string{"/usr/local/bin/machine-controller"},
-					Args:    getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime),
+					Args:   getFlags(clusterDNSIP, data.DC().Node, data.Cluster().Spec.ContainerRuntime, isExternal),
 					Env: append(envVars, corev1.EnvVar{
 						Name:  "KUBECONFIG",
 						Value: "/etc/kubernetes/kubeconfig/kubeconfig",
@@ -191,6 +191,10 @@ func DeploymentCreatorWithoutInitWrapper(data machinecontrollerData) reconciling
 			return dep, nil
 		}
 	}
+}
+
+func isExternalCloudProvider(data machinecontrollerData) bool {
+	return data.Cluster().Spec.Cloud.Anexia != nil
 }
 
 func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
@@ -252,7 +256,7 @@ func getEnvVars(data machinecontrollerData) ([]corev1.EnvVar, error) {
 	return vars, nil
 }
 
-func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string) []string {
+func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri string, isExternal bool) []string {
 	flags := []string{
 		"-kubeconfig", "/etc/kubernetes/kubeconfig/kubeconfig",
 		"-logtostderr",
@@ -279,6 +283,10 @@ func getFlags(clusterDNSIP string, nodeSettings *kubermaticv1.NodeSettings, cri 
 		}
 		if nodeSettings.PauseImage != "" {
 			flags = append(flags, "-node-pause-image", nodeSettings.PauseImage)
+		}
+
+		if isExternal {
+			flags = append(flags, "-node-external-cloud-provider", "true")
 		}
 
 		// TODO(kron4eg): deprecate and remove this
